@@ -82,8 +82,6 @@ extern xsbBool quotes_are_needed(char *string);
 
 /*======================================================================*/
 
-/* attv_dbgmsg() is used in unify_xsb_i.h */
-
 #undef IFTHEN_FAILED
 #define IFTHEN_FAILED	return 0
 #undef IFTHEN_SUCCEED
@@ -184,7 +182,7 @@ xsbBool unify(CTXTdeclc Cell rop1, Cell rop2)
 
 /*----------------------------------------*/
   unify_xsb(unify);
-  /* unify_xsb_i already ends with this statement
+  /* unify_xsb.h already ends with this statement
      IFTHEN_SUCCEED;
   */
 /*----------------------------------------*/
@@ -835,8 +833,7 @@ xsbBool startProfileThread()
   struct sched_param param;
 
   if (!if_profiling) {
-    int result = pthread_create( &a_thread, NULL, (void*)&setProfileBit, 
-               (void*)NULL);
+    pthread_create(&a_thread, NULL, (void*)&setProfileBit, (void*)NULL);
     param.sched_priority = sched_get_priority_max(SCHED_OTHER);
     pthread_setschedparam(a_thread, SCHED_OTHER, &param);
 
