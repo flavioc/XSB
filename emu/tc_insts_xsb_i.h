@@ -219,6 +219,7 @@ XSB_Start_Instr(trie_no_cp_var,_trie_no_cp_var)
 	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_no_cp_var"));
 	NodePtr = (BTNptr) lpcreg;
 	num_vars_in_var_regs = DecodeTrieVar(opatom);
+        xsb_dbgmsg((LOG_TRIE_INSTR, "symbol number is %d\n",num_vars_in_var_regs));
 	var_regs[num_vars_in_var_regs] = (CPtr) *reg_arrayptr;
 #ifdef DEBUG_ASSERTIONS
         { int i = num_vars_in_var_regs;
@@ -321,6 +322,41 @@ XSB_End_Instr()
 
 /*----------------------------------------------------------------------*/
 
+/* Documentation on trie_xxx_val instructions (TLS).  Documentation
+   refers to trie_no_cp_val below, but appllies also to
+   unify_with_trie_val macro.
+
+These instructions can be somewhat confusing as they are, to some
+extent, overcoded.  They can most easily be explained using reasoning
+by cases.  First, note that tries are used in 3 main ways: a) variant
+tabling, b) subsumptive tabling, and c) asserted tries, and the
+behavior of the val instructions differs somewhat in each case.  
+
+a) Variant Tabling.  In this case, the routine variant_answer_search()
+distinguishes between usage 1) an attv of the call that is unchanged
+by the answer usage 2) an attv of the call that is changed to another
+attv in the answer, or usage 3) a variable in the call that is bound
+to an attv, usage 4) a variable in the call that is bound to another
+variable in the call.  The routine variant_answer_search() generates
+trie_xxx_val instructions only usages 1 and 4 above.  In usages 2 and
+3 a trie_xxx_attv instruction is generated.  Thus in variant tabling
+*reg_arrayptr will dereference only to an attv iff trie_xxx_val
+dereferences to that same attv (case b.2 in the code below
+corresponding to usage 1 ); and reg_arrayptr will dereference to a ref
+vanilla variable iff the associated symbol is a ref (case a
+corresponding to usage 4)
+
+b) Subsumptive tabling: need to check
+
+c) Asserted tries.  For asserted tries, the trie_xxx_val instructions
+are generated only for variables (I think) -- but the corresponding
+position can be anything you like: a vanilla variable (case a), an
+attributed variable (case b), or a constant/structure/number/list
+(case c).  Case b.2 will never happen as this depends on the trie
+position being an attv, which, as stated, wont happen.
+
+*/
+
 XSB_Start_Instr(trie_no_cp_val,_trie_no_cp_val)
   Def2ops
   TRIE_R_LOCK();
@@ -329,25 +365,26 @@ XSB_Start_Instr(trie_no_cp_val,_trie_no_cp_val)
 {
   Cell cell2deref;							
   XSB_Deref(*reg_arrayptr);    						
-  if (isref(*reg_arrayptr)) {						
+  if (isref(*reg_arrayptr)) {		                 // case a 
     cell2deref = (Cell)var_regs[(int)int_val(opatom)];			
     XSB_Deref(cell2deref);	       					
     if (cell2deref != *reg_arrayptr)					
       bind_ref((CPtr) *reg_arrayptr, cell2deref);			
   }									
-  else if (isattv(*reg_arrayptr)) {					
+  else if (isattv(*reg_arrayptr)) {			 // case b 		
+    xsb_dbgmsg((LOG_TRIE_INSTR, "symbol number is %d\n",(int)int_val(opatom)));
     cell2deref = (Cell) var_regs[(int)int_val(opatom)];			
     XSB_Deref(cell2deref);     						
-    if (*reg_arrayptr != cell2deref) {					
+    if (*reg_arrayptr != cell2deref) {			// case b.1		
       /* Do not trigger attv interrupt! */			      
       
       bind_ref(clref_val(*reg_arrayptr), cell2deref);			
     }									
-    else {								
+    else {					       // case b.2		
       attv_dbgmsg(">>>> keep old attr in unify_with_trie_val\n");	
     }									
   }									
-  else {								
+  else {					      // case c			
     op1 = (Cell)*reg_arrayptr;						
     op2 = (Cell) var_regs[(int)int_val(opatom)];			
     if (unify(CTXTc op1,op2) == FALSE) {					

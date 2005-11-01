@@ -721,7 +721,7 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
       break;								\
     case XSB_ATTV:							\
       /* Now xtemp1 can only be the first occurrence of an attv */	\
-      *(hreg++) = (Cell) xtemp1;					\
+      /* *(hreg++) = (Cell) xtemp1;	*/				\
       xtemp1 = clref_val(xtemp1); /* the VAR part of the attv */	\
       StandardizeAndTrailVariable(xtemp1, ctr);				\
       one_node_chk_ins(flag, EncodeNewTrieAttv(ctr), TrieType);		\
@@ -743,18 +743,17 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
 /*
  * Called in SLG instruction `new_answer_dealloc', variant_answer_search()
  * checks if the answer has been returned before and, if not, inserts it
- * into the answer trie.  Here, `arity' is the number of variables in the
- * call (arity of the answer substitution), `attv_num' is the number of
- * attributed variables in the call, `cptr' is the pointer to VarsInCall
- * (all the variables in call, saved in the CP stack and already bound to
- * some terms), and `subgoal_ptr' is the subgoal frame of the call.  At
- * the end of this function, `flagptr' tells if the answer has been
- * returned before.
+ * into the answer trie.  Here, `sf_size' is the number of variables in the
+ * substitution factor of the called subgoal, `attv_num' is the number of
+ * attributed variables in the call, `cptr' is the pointer to the
+ * substitution factor, and `subgoal_ptr' is the subgoal frame of the
+ * call.  At the end of this function, `flagptr' tells if the answer
+ * has been returned before.
  *
  * The returned value of this function is the leaf of the answer trie.
  */
 
-BTNptr variant_answer_search(CTXTdeclc int arity, int attv_num, CPtr cptr,
+BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
 			     VariantSF subgoal_ptr, xsbBool *flagptr) {
 
   Psc   psc;
@@ -772,8 +771,8 @@ BTNptr variant_answer_search(CTXTdeclc int arity, int attv_num, CPtr cptr,
   ctr = 0;
   if ( IsNULL(subg_ans_root_ptr(subgoal_ptr)) ) {
     Cell retSymbol;
-    if ( arity > 0 )
-      retSymbol = EncodeTriePSC(get_ret_psc(arity));
+    if ( sf_size > 0 )
+      retSymbol = EncodeTriePSC(get_ret_psc(sf_size));
     else
       retSymbol = EncodeTrieConstant(makestring(get_ret_string()));
     subg_ans_root_ptr(subgoal_ptr) =
@@ -784,27 +783,24 @@ BTNptr variant_answer_search(CTXTdeclc int arity, int attv_num, CPtr cptr,
   GNodePtrPtr = &BTN_Child(Paren);
 
   /* Documentation rewritten by TLS: 
-   * For attributed variables, you want to know which attributed
-   * variables are identical to those in the call, and which have
-   * changed (i.e. are new attributed variables), hence the marking,
-   * which binds the VAR part of the attvs to an element of
-   * VarEnumerator[].  In the for() loop these variables will be
-   * treated as vals and a trie_xxx_val instruction generated.  
-   * Those attvs that whose corresponding call cell is a variable or
-   * a different attv will be unmarked in the first pass (I hope).  Their VAR
-   * part will not be part of VarEnumerator, and they will be handled
-   * in the for() loop by a trie_xxx_attv instruction.
-   * 
-   * I do find the use of cell() in the marking rather than a
-   * dereference a little scary.  The code assumes the pointers have
-   * been set up using a dereference in variant_call_search().
+   * To properly generate instructions for attributed variables, you
+   * need to know which attributed variables are identical to those in
+   * the call, and which represent new bindings to attributed or vanilla
+   * variables.  The marking below binds binds the VAR part of the
+   * attvs to an element of VarEnumerator[].  When the for() loop
+   * dereferences these variables they can be recognized as pointing
+   * into VarEnumerator, and a trie_xxx_val instruction will be
+   * generated for them.  Other attvs will dereference elsewhere and
+   * will generate a trie_xxx_attv instruction.  Note that in doing
+   * this, attributes in the call will not need to be re-entered in
+   * the table.
    *
    * To save time, this is only done when there is at least one attv in
    * the call (attv_num > 0).
    * TLS: probably only need to inc counter for shared attvs.
    */
   if (attv_num > 0) {
-    for (i = 0; i < arity; i++) {
+    for (i = 0; i < sf_size; i++) {
       tmp_var = cell(cptr - i);
       if (isattv(tmp_var)) {
 	xtemp1 = clref_val(tmp_var); /* the VAR part */
@@ -818,7 +814,7 @@ BTNptr variant_answer_search(CTXTdeclc int arity, int attv_num, CPtr cptr,
   }
   attv_ctr = attv_num;
 
-  for (i = 0; i < arity; i++) {
+  for (i = 0; i < sf_size; i++) {
     xtemp1 = (CPtr) (cptr - i); /* One element of VarsInCall.  It might
 				 * have been bound in the answer for
 				 * the call.
@@ -851,10 +847,9 @@ BTNptr variant_answer_search(CTXTdeclc int arity, int attv_num, CPtr cptr,
          * The variables will be used in 
 	 * delay_chk_insert() (in function do_delay_stuff()).
 	 */
+
 #ifndef IGNORE_DELAYVAR
-	bld_free(hreg); /* To make sure there is no pointer from heap to 
-			 * local stack.
-			 */
+        bld_free(hreg); // make sure there is no pointer from heap to local stack.
 	bind_ref(xtemp1, hreg);
 	xtemp1 = hreg++;
 #endif
@@ -899,7 +894,7 @@ BTNptr variant_answer_search(CTXTdeclc int arity, int attv_num, CPtr cptr,
       break;
     case XSB_ATTV:
       /* Now xtemp1 can only be the first occurrence of an attv */
-      *(hreg++) = (Cell) xtemp1;
+      //      *(hreg++) = (Cell) xtemp1;
       xtemp1 = clref_val(xtemp1); /* the VAR part of the attv */
       /*
        * Bind the VAR part of this attv to VarEnumerator[ctr], so all the
@@ -925,7 +920,7 @@ BTNptr variant_answer_search(CTXTdeclc int arity, int attv_num, CPtr cptr,
 #ifndef IGNORE_DELAYVAR
   /*
    * Put the substitution factor of the answer into a term ret/n (if 
-   * the arity of the substitution factor is 0, then put integer 0
+   * the sf_size of the substitution factor is 0, then put integer 0
    * into cell ans_var_pos_reg).
    *
    * Notice that simple_table_undo_bindings in pre-1.9 version of XSB
@@ -942,7 +937,7 @@ BTNptr variant_answer_search(CTXTdeclc int arity, int attv_num, CPtr cptr,
 #endif
 
   /*
-     * Save the number of variables in the answer, i.e. the arity of
+     * Save the number of variables in the answer, i.e. the sf_size of
      * the substitution factor of the answer, into `AnsVarCtr'.
      */
   AnsVarCtr = ctr;		
@@ -953,7 +948,7 @@ BTNptr variant_answer_search(CTXTdeclc int arity, int attv_num, CPtr cptr,
 
   /* if there is no term to insert, an ESCAPE node has to be created/found */
 
-  if (arity == 0) {
+  if (sf_size == 0) {
     one_node_chk_ins(flag, ESCAPE_NODE_SYMBOL, BASIC_ANSWER_TRIE_TT);
     Instr(Paren) = trie_proceed;
   }
