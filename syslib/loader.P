@@ -280,15 +280,12 @@ load_pred1(PSC) :-
 		;
 		xsb_sys_mutex_unlock( MUTEX_LOAD_UNDEF ),
 		xsb_backtrace(BT),
-		throw(error(undefined_predicate(Name,Arity,ModName),
-			    ['The predicate: ', Name, '/', Arity,
-			     ' is not defined in module ', ModName],BT))
+		throw(error(existence_error(procedure,ModName:Name/Arity),[],BT))
 	    )
 	;
 	    xsb_sys_mutex_unlock( MUTEX_LOAD_UNDEF ),
 	    xsb_backtrace(BT),
-	    throw(error(undefined_predicate(Name,Arity,usermod),
-			['Undefined predicate: ', Name, '/', Arity],BT))
+	    throw(error(existence_error(procedure,usermod:Name/Arity),[],BT))
 	).
 
 

@@ -35,11 +35,12 @@
               check_number/3,
               check_var/3, 
               default_error_handler/1,
-	  default_sys_error_handler/1,
+	      default_sys_error_handler/1,
               get_sys_error_description/2,
               get_sys_error_description/3,
               print_backtrace/1,
-              get_backtrace/2.
+	      get_backtrace/2,
+	      get_backtrace_list/2.
 
 :- import (dynamic)/1 from assert.
  :- import ground/1 from basics.

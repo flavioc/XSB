@@ -55,6 +55,7 @@
 	stat_flag/2, 
 	stat_set_flag/2, 
 	stat_sta/1,
+	xwam_state/2,
 	buff_alloc/2, 
 	buff_word/3, 
 	buff_set_word/3,
