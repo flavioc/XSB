@@ -71,6 +71,7 @@
 #define BUFF_CELL	37
 #define BUFF_SET_CELL	38
 #define COPY_TERM	39
+#define XWAM_STATE	40
 /* check for substring */
 #define DIRNAME_CANONIC 41
 /* for efficiency reasons, the following predicates are also implemented */

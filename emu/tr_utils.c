@@ -347,6 +347,46 @@ static void free_trie_ht(CTXTdeclc BTHTptr ht) {
   SM_DeallocateStruct(*smBTHT,ht);
 }
 
+/* delete_variant_sf_and_answers deletes and reclaims space for
+   answers and their subgoal frame in a variant table, and is used by
+   abolish_table_call.  It copies code from delete_variant_table, but
+   uses its own stack.  (Not easy to integrate due to macro usage.) */
+
+void delete_variant_sf_and_answers(CTXTdeclc VariantSF pSF) {
+  int node_stk_top = 0;
+  BTNptr rnod, *Bkp; 
+  BTHTptr ht;
+  
+  BTNptr *freeing_stack = NULL;
+  int freeing_stack_size = 0;
+
+  if ( IsNonNULL(subg_ans_root_ptr(pSF)) ) {
+    push_node((BTNptr)subg_ans_root_ptr(pSF));
+    while (node_stk_top != 0) {
+      pop_node(rnod);
+      if ( IsHashHeader(rnod) ) {
+	ht = (BTHTptr) rnod;
+	for (Bkp = BTHT_BucketArray(ht);
+	     Bkp < BTHT_BucketArray(ht) + BTHT_NumBuckets(ht);
+	     Bkp++) {
+	  if ( IsNonNULL(*Bkp) )
+	    push_node(*Bkp);
+	}
+	free_trie_ht(CTXTc ht);
+      }
+      else {
+	if (BTN_Sibling(rnod)) 
+	  push_node(BTN_Sibling(rnod));
+	if ( ! IsLeafNode(rnod) )
+	  push_node(BTN_Child(rnod));
+	SM_DeallocateStruct(*smBTN,rnod);
+      }
+    }
+  } /* free answer trie */
+  free_answer_list(pSF);
+  FreeProducerSF(pSF);
+  free(freeing_stack);
+}
 
 static void delete_variant_table(CTXTdeclc BTNptr x) {
 
@@ -399,7 +439,7 @@ static void delete_variant_table(CTXTdeclc BTNptr x) {
 		free_trie_ht(CTXTc ht);
 	      }
 	      else {
-	       	if (BTN_Sibling(rnod)) 
+		if (BTN_Sibling(rnod)) 
 		  push_node(BTN_Sibling(rnod));
 		if ( ! IsLeafNode(rnod) )
 		  push_node(BTN_Child(rnod));
@@ -407,8 +447,6 @@ static void delete_variant_table(CTXTdeclc BTNptr x) {
 	      }
 	    }
 	  } /* free answer trie */
-	  free_answer_list(pSF);
-	  FreeProducerSF(pSF);
 	} /* is leaf */
 	else 
 	  push_node(BTN_Child(node));

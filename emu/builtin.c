@@ -124,6 +124,8 @@
 #include "thread_xsb.h"
 
 /*======================================================================*/
+extern void delete_variant_sf_and_answers(CTXTdeclc VariantSF pSF);
+extern int abolish_table_pred_cps_check(CTXTdeclc Psc psc);
 extern struct token_t *GetToken(CTXTdeclc FILE *, STRFILE *, int);
 
 extern int  sys_syscall(CTXTdeclc int);
@@ -746,6 +748,7 @@ void init_builtin_table(void)
   set_builtin_table(BUFF_CELL, "buff_cell");
   set_builtin_table(BUFF_SET_CELL, "buff_set_cell");
   set_builtin_table(COPY_TERM,"copy_term");
+  set_builtin_table(XWAM_STATE,"xwam_state");
 
   set_builtin_table(STR_MATCH, "str_match");
   set_builtin_table(DIRNAME_CANONIC, "dirname_canonic");
@@ -1500,6 +1503,18 @@ int builtin_call(CTXTdeclc byte number)
     ctop_int(CTXTc 1, value);
     break;
   }
+  case XWAM_STATE: { /* return info about xwam state: R1: +InfoCode, R2: -ReturnedValue */
+    switch (ptoc_int(CTXTc 1)) { /* extend as needed */
+    case 0: /* current trail size */
+      ctop_int(CTXTc 2, (pb)trreg-(pb)tcpstack.low);
+      break;
+    case 1: /* current CP Stack size */
+      ctop_int(CTXTc 2, (pb)tcpstack.high - (pb)breg);
+      break;
+    default: xsb_error("Undefined component of XWAM_STATE");
+    }
+    break;
+  }
   case CODE_LOAD:		/* R1: +FileName, bytecode file to be loaded */
 				/* R2: -int, addr of 1st instruction;	     */
 				/*	0 indicates an error                 */
@@ -2152,22 +2167,40 @@ case WRITE_OUT_PROFILE:
 		 Arity, "Predicate specification", term);
       break;
     }
-    if (abolish_table_predicate(CTXTc psc))
+    if (abolish_table_predicate(CTXTc psc)) {
       return TRUE;
+    }
   }
 
   case ABOLISH_TABLE_CALL: {
     VariantSF subgoal;
     TIFptr tif;
+    Psc psc;
+    int action;
 
     TRIE_W_LOCK();
     subgoal = (VariantSF) ptoc_int(CTXTc 1);
     tif = (TIFptr) subgoal->tif_ptr;
-    //    compl_subgoal_ptr(subg_compl_stack_ptr(subgoal)) = NULL; (dsw?)
-    reclaim_incomplete_table_structs(subgoal);
-    delete_branch(CTXTc subgoal->leaf_ptr, &tif->call_trie);
-    TRIE_W_UNLOCK();
-    return TRUE;
+    psc = TIF_PSC(tif);
+    if (!is_completed(subgoal)) {
+      TRIE_W_UNLOCK();
+      xsb_abort("[abolish_table_call] Cannot abolish incomplete tabled call"
+		" of predicate %s/%d\n",get_name(psc),get_arity(psc));
+    }
+    if (flags[NUM_THREADS] == 1 || !get_shared(psc)) {
+      action = abolish_table_pred_cps_check(CTXTc psc);
+    } else action = 1;
+    if (!action) {
+      delete_branch(CTXTc subgoal->leaf_ptr, &tif->call_trie); /* delete call */
+      delete_variant_sf_and_answers(CTXTc subgoal); // delete answers
+      TRIE_W_UNLOCK();
+      return TRUE;
+    }
+    else {
+      TRIE_W_UNLOCK();
+      xsb_abort("Cannot abolish a table call for a table in use: %s/%d\n",get_name(psc),get_arity(psc));
+      return TRUE;
+    }
   }
 
   case ABOLISH_MODULE_TABLES: {
