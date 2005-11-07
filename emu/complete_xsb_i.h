@@ -37,6 +37,12 @@
 
 #define check_fixpoint(sg, b)    find_fixpoint(CTXTc sg, b)
 
+#define find_leader(cs_ptr)						\
+  while (!(prev_compl_frame(cs_ptr) >= COMPLSTACKBOTTOM			\
+	   || is_leader(cs_ptr))) {					\
+    cs_ptr = prev_compl_frame(cs_ptr);					\
+      }
+
 /*----------------------------------------------------------------------*/
 
 XSB_Start_Instr(check_complete,_check_complete)
@@ -48,6 +54,8 @@ XSB_Start_Instr(check_complete,_check_complete)
   switch_envs(breg);    /* in CHAT: undo_bindings() */
   ptcpreg = tcp_ptcp(breg);
   delayreg = tcp_pdreg(breg);
+
+  xsb_dbgmsg((LOG_DEBUG,"Check complete %x",breg));
 
   cs_ptr = tcp_compl_stack_ptr(breg);
   pthread_mutex_lock(&completing_mut);
@@ -113,7 +121,7 @@ XSB_Start_Instr(check_complete,_check_complete)
 		break ;
   }
   pthread_mutex_unlock(&completing_mut);
-#else
+#else /* not CONC_COMPL */
   CPtr    orig_breg = breg;
   xsbBool leader = FALSE;
   VariantSF subgoal;
@@ -206,11 +214,27 @@ XSB_Start_Instr(check_complete,_check_complete)
 
   }
   else {    /* if not leader */
+    CPtr tmp_breg = breg;
+    CPtr tmp_cs_ptr = cs_ptr;
+
 #ifdef LOCAL_EVAL
     makeConsumerFromGenerator(CTXTc subgoal);
 /*     subg_cp_ptr(subgoal) = NULL; */
 #endif
     breg = tcp_prevbreg(breg); 
+    
+    /* in the case where we backtrack to a check_complete instruction
+     * for a subtoal that is not the leader, we need to set its
+     * prevbreg value to the leader.  Otherwise, we could end up
+     * backtracking into the same choice point multiple times --
+     * incorrectly if we have a cut. */
+
+    find_leader(tmp_cs_ptr); 
+    tcp_prevbreg(tmp_breg) = subg_cp_ptr(compl_subgoal_ptr(tmp_cs_ptr));
+
+    xsb_dbgmsg((LOG_SCHED,"backtracking from check complete to: %x @breg %x\n",
+		  breg,*tcp_pcreg(breg)));
+
     /* since the trail condition registers are not reset in
      * tabletrust for local, they should be restored here
      */
