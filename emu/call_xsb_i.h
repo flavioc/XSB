@@ -24,8 +24,8 @@
 */
 
 
-
-
+/* load argument registers with fields of a term, and set pcreg to
+   term's entry point, to effect an execute */
 static inline int prolog_call0(CTXTdeclc Cell term)
 {
     Psc  psc;
@@ -47,44 +47,18 @@ static inline int prolog_call0(CTXTdeclc Cell term)
       if (isnonvar(term))
 	err_handle(CTXTc TYPE, 1, "call", 1, "callable term", term);
       else err(INSTANTIATION, 1, "call", 1);
-      pcreg = (pb)&fail_inst;
       return FALSE;
     }
 #ifdef CP_DEBUG
     pscreg = psc;
 #endif
-    switch (get_type(psc)) {
-    case T_PRED:
-    case T_DYNA:
-    case T_UDEF:
-    default:
-    case T_FORN:
-      pcreg = get_ep(psc);
-      break;
-/****    case T_FORN:
-#ifdef FOREIGN
-      proc_ptr = (PFI) get_ep(psc);
-      if (proc_ptr())
-	pcreg = cpreg;
-      else
-	pcreg = (pb)&fail_inst;	 
-#else
-      xsb_exit("Foreign call in configuration that does not support it !");
-#endif
-      break;
-    case T_UDEF:
-    default:
-      psc = synint_proc(psc, MYSIG_UNDEF);
-      if (psc) pcreg = get_ep(psc);
-      break;
-*****/
-    }
+    pcreg = get_ep(psc);
     if (asynint_val) intercept(CTXTc psc);
-
     return TRUE;
 }
 
-
+/* fill argument registers with subfields of a term, to prepare for an
+   execute */
 static inline int prolog_code_call(CTXTdeclc Cell term, int value)
 {
   Psc  psc;
@@ -97,6 +71,6 @@ static inline int prolog_code_call(CTXTdeclc Cell term, int value)
       bld_copy(reg+disp, cell((CPtr)(addr)+disp));
     }
     bld_int(reg+get_arity(psc)+1, value);
-  } else psc = NULL; 
+  } else bld_int(reg+1, value);
   return TRUE;
 }
