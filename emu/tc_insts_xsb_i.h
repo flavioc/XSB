@@ -334,17 +334,17 @@ behavior of the val instructions differs somewhat in each case.
 
 a) Variant Tabling.  In this case, the routine variant_answer_search()
 distinguishes between usage 1) an attv of the call that is unchanged
-by the answer usage 2) an attv of the call that is changed to another
-attv in the answer, or usage 3) a variable in the call that is bound
-to an attv, usage 4) a variable in the call that is bound to another
-variable in the call.  The routine variant_answer_search() generates
-trie_xxx_val instructions only usages 1 and 4 above.  In usages 2 and
-3 a trie_xxx_attv instruction is generated.  Thus in variant tabling
-*reg_arrayptr will dereference only to an attv iff trie_xxx_val
-dereferences to that same attv (case b.2 in the code below
-corresponding to usage 1 ); and reg_arrayptr will dereference to a ref
-vanilla variable iff the associated symbol is a ref (case a
-corresponding to usage 4)
+by the answer; usage 2) an attv of the call that is changed to another
+attv in the answer; usage 3) a variable in the call that is bound to
+an attv; usage 4) a variable in the call that is bound to another
+variable in the call by a binding in the answer.  The routine
+variant_answer_search() generates trie_xxx_val instructions only
+usages 1 and 4 above.  In usages 2 and 3 a trie_xxx_attv instruction
+is generated.  Thus in variant tabling *reg_arrayptr will dereference
+only to an attv iff trie_xxx_val dereferences to that same attv (case
+b.2 in the code below corresponding to usage 1 ); and reg_arrayptr
+will dereference to a ref vanilla variable iff the associated symbol
+is a ref (case a corresponding to usage 4)
 
 b) Subsumptive tabling: need to check
 
