@@ -944,7 +944,7 @@ void Parse(CTXTdecl)
       switch (cur->BindTypes[j]) {
       case 2:
 	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR,
-			      SQL_CHAR, 0, 0,(char *) cur->BindList[j], 0, &SQL_NTSval);
+			      SQL_CHAR, strlen((char *)cur->BindList[j]) + 1, 0,(char *) cur->BindList[j], 0, &SQL_NTSval);
 	break;
       case 3:
 	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR,
@@ -973,7 +973,7 @@ void Parse(CTXTdecl)
       case 2:
 	/* we're sloppy here.  it's ok for us to use the default values*/
 	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR,
-			      SQL_CHAR, 0, 0,(char *)cur->BindList[j], 0, &SQL_NTSval);
+			      SQL_CHAR, strlen((char *)cur->BindList[j]) + 1, 0,(char *)cur->BindList[j], 0, &SQL_NTSval);
 	break;
       case 3:
 	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR,
