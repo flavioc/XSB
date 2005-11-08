@@ -794,10 +794,16 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
    * will generate a trie_xxx_attv instruction.  Note that in doing
    * this, attributes in the call will not need to be re-entered in
    * the table.
-   *
-   * To save time, this is only done when there is at least one attv in
-   * the call (attv_num > 0).
-   * TLS: probably only need to inc counter for shared attvs.
+   * 
+   * According to Bao's algorithm, in order for trie instructions for
+   * completed tables to work for attvs, attvs in the call must be
+   * traversed before the main loop and bound to elements of
+   * varEnumerator so that the trie_xxx_val instructions can recognize
+   * them and avoid interrupts.  As a result, both here and in the tabletry
+   * setup for completed tables, the substitution factor is traversed
+   * and the attvs set to the lower portion of varEnumerator.  To save
+   * time, this is only done when there is at least one attv in 
+   * the call (attv_num > 0).  ¹
    */
   if (attv_num > 0) {
     for (i = 0; i < sf_size; i++) {
