@@ -104,15 +104,16 @@ string_to_term(Atom,Goal) :-
 
 eval_cmdline_goal :-
 	xsb_flag(goal, CmdGoal),
-	  file_open(CmdGoal, sr, FileDes),
-	    eval_cmdline_goal(FileDes).
+	file_open(CmdGoal, sr, FileDes),
+	eval_cmdline_goal(FileDes).
 
 eval_cmdline_goal(FileDes) :-
 	file_read(FileDes, Goal),
-	Goal \= end_of_file,
-	(call(Goal) -> true ; true),
-	eval_cmdline_goal(FileDes).
-eval_cmdline_goal(FileDes) :- file_close(FileDes).
+	(Goal \= end_of_file
+	 ->	(call(Goal) -> true ; true),
+		eval_cmdline_goal(FileDes)
+	 ;	file_close(FileDes)
+	).
 
 '_$keyboard_int'(_Call) :- 
         abort.
