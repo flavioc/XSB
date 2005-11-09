@@ -50,6 +50,7 @@
 #include "cinterf.h"
 #include "error_xsb.h"
 #include "orient_xsb.h"
+#include "loader_xsb.h"
 
 /*
   This was the old test for being a kosher Prolog string
@@ -66,7 +67,7 @@ extern void xsb_sprint_variable(CTXTdeclc char *sptr, CPtr var);
 char *p_charlist_to_c_string(CTXTdeclc prolog_term term, VarString *buf,
 			     char *in_func, char *where);
 void c_string_to_p_charlist(CTXTdeclc char *name, prolog_term list,
-			    char *in_func, char *where);
+			    int regs_to_protect, char *in_func, char *where);
 
 /*======================================================================*/
 /* Low level C interface						*/
@@ -395,13 +396,15 @@ char *p_charlist_to_c_string(CTXTdeclc prolog_term term, VarString *buf,
 }
 
 
-/* convert a C string into a prolog list of characters.
+/* convert a C string into a prolog list of characters. 
+   (codelist might be a better suffix.)
    LIST must be a Prolog variable. IN_FUNC is a string that should indicate the
    high-level function from this c_string_to_p_charlist was called.
+   regs_to_protect is the number of registers with values (needed for stack expansion)
    WHERE is another string with additional info. These two are used to provide
    informative error messages to the user. */
 void c_string_to_p_charlist(CTXTdeclc char *name, prolog_term list,
-			    char *in_func, char *where)
+			    int regs_to_protect, char *in_func, char *where)
 {
   Cell new_list;
   CPtr top = 0;
@@ -413,6 +416,7 @@ void c_string_to_p_charlist(CTXTdeclc char *name, prolog_term list,
   if (len == 0) {
     bind_nil((CPtr)(list));
   } else {
+    check_glstack_overflow(regs_to_protect, pcreg, 2*len*sizeof(Cell));
     new_list = makelist(hreg);
     for (i = 0; i < len; i++) {
       follow(hreg++) = makeint(*(unsigned char *)name);
@@ -500,9 +504,9 @@ DllExport char *call_conv p2c_chars(CTXTdeclc prolog_term term, char *buf, int b
   return strcpy(buf,bufvar.string);
 }
 
-DllExport void call_conv c2p_chars(CTXTdeclc char *str, prolog_term term)
+DllExport void call_conv c2p_chars(CTXTdeclc char *str, int regs_to_protect, prolog_term term)
 {
-  c_string_to_p_charlist(CTXTc str,term,"c2p_chars", "char* -> list");
+  c_string_to_p_charlist(CTXTc str,term,regs_to_protect,"c2p_chars", "char* -> list");
 }
 
 
@@ -1205,7 +1209,9 @@ if (!xsb_initted)
 	
 	if (0 == (rc = xsb(CTXTc 0,argc,argv)))     /* initialize xsb */
 		{
+		  printf("xsb-initted\n");
 		if (0 == (rc = xsb(CTXTc 1,0,0)))       /* enter xsb to set up regs */
+		  printf("xsb-regs set\n");
 		xsb_initted = 1;
 		}
 	}
@@ -1358,7 +1364,7 @@ DllExport int call_conv xsb_query_string(CTXTdeclc char *goal)
 {
   if (xsb_inquery) return(2);
   updateWarningStart();
-  c2p_string(CTXTc goal,reg_term(CTXTc 1));
+  c2p_chars(CTXTc goal,2,reg_term(CTXTc 1));
   c2p_int(CTXTc 2,reg_term(CTXTc 3));  /* set command for calling a string goal */
   xsb(CTXTc 1,0,0);
   if (is_var(reg_term(CTXTc 1))) return(1);
