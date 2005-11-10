@@ -91,7 +91,7 @@ DllExport void call_conv xsb_throw(CTXTdeclc prolog_term Ball)
   prolog_term term_to_assert;
   Cell *space_for_ball_assert;
 
-  space_for_ball_assert = (Cell *) mem_alloc(3*sizeof(Cell));
+  space_for_ball_assert = (Cell *) malloc(3*sizeof(Cell));
   if (!space_for_ball_assert) xsb_exit("out of memory in xsb_throw!");
 
   exceptballpsc = pair_psc((Pair)insert("$$exception_ball", (byte)2, 
@@ -126,7 +126,7 @@ void call_conv xsb_type_error(CTXTdeclc char *valid_type,Cell culprit,
 
   sprintf(message,"in arg %d of predicate %s/%d)",arg,predicate,arity);
 
-  tptr =   (Cell *) mem_alloc(10*sizeof(Cell));
+  tptr =   (Cell *) malloc(10*sizeof(Cell));
 
   ball_to_throw = makecs(tptr);
   bld_functor(tptr, pair_psc(insert("error",3,
@@ -160,7 +160,7 @@ void call_conv xsb_domain_error(CTXTdeclc char *valid_domain,Cell culprit,
 
   sprintf(message,"in arg %d of predicate %s/%d)",arg,predicate,arity);
 
-  tptr =   (Cell *) mem_alloc(10*sizeof(Cell));
+  tptr =   (Cell *) malloc(10*sizeof(Cell));
 
   ball_to_throw = makecs(tptr);
   bld_functor(tptr, pair_psc(insert("error",3,
@@ -195,7 +195,7 @@ void call_conv xsb_permission_error(CTXTdeclc
 
   sprintf(message,"(return %d) in predicate %s/%d)",rtrn,predicate,arity);
 
-  tptr =   (Cell *) mem_alloc(10*sizeof(Cell));
+  tptr =   (Cell *) malloc(10*sizeof(Cell));
 
   ball_to_throw = makecs(tptr);
   bld_functor(tptr, pair_psc(insert("error",3,
@@ -233,7 +233,7 @@ void call_conv xsb_instantiation_error(CTXTdeclc char *predicate,int arity,
     sprintf(message," in arg %d of predicate %s/%d",arg,predicate,arity);
   }    
 
-  tptr =   (Cell *) mem_alloc(10*sizeof(Cell));
+  tptr =   (Cell *) malloc(10*sizeof(Cell));
 
   ball_to_throw = makecs(tptr);
   bld_functor(tptr, pair_psc(insert("error",3,
@@ -263,7 +263,7 @@ void call_conv xsb_basic_abort(char *message)
   th = find_context(xsb_thread_self());
 #endif
 
-  tptr =   (Cell *) mem_alloc(10*sizeof(Cell));
+  tptr =   (Cell *) malloc(10*sizeof(Cell));
   ball_to_throw = makecs(tptr);
   bld_functor(tptr, pair_psc(insert("_$abort_ball",2,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));
