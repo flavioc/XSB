@@ -27,10 +27,10 @@ OBJEXT=.xwam
 ALL = 	slx${OBJEXT} perlmatch${OBJEXT} gap${OBJEXT} \
 	regmatch${OBJEXT} wildmatch${OBJEXT} \
 	xasp${OBJEXT} libwww${OBJEXT} xsbdoc${OBJEXT} \
-	xmc${OBJEXT} iprolog${OBJEXT}
+	xmc${OBJEXT} justify${OBJEXT}
 
-SUBDIR = iprolog flora2 slx perlmatch gap regmatch wildmatch libwww xasp \
-	 xsbdoc xmc iprolog
+SUBDIR = flora2 slx perlmatch gap regmatch wildmatch libwww xasp \
+	 xsbdoc xmc justify
 
 Option = [optimize]
 
@@ -112,6 +112,10 @@ wildmatch::
 xmc::
 	@echo ""
 	cd xmc; make
+
+justify::
+	@echo ""
+	cd justify; make
 
 init:
 	/bin/rm -f $(SVFILE)
