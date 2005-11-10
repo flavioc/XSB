@@ -17,7 +17,7 @@
 ** 
 ** You should have received a copy of the GNU Library General Public License
 ** along with XSB; if not, write to the Free Software Foundation,
-** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** Inc, 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
 ** $Id$
 ** 
@@ -30,6 +30,9 @@
  * returned.  Does so by linking them through their "previous breg" choice
  * point fields.  The value returned is the scheduling chain of such
  * consumers (NULL if no such consumers of this producer exist).
+ * sched_answers() schedules all consumers for a given subgoal in an
+ * SCC; it calls ScheduleConsumers which links each single consumer
+ * into the scheduling chain.
  */
 
 #define ScheduleConsumer(Consumer,First,Last) {		\
@@ -40,6 +43,8 @@
    Last = Consumer;					\
  }
 
+#define ANSWER_TEMPLATE nlcp_template(consumer_cpf)
+
 static CPtr sched_answers(CTXTdeclc VariantSF producer_sf, CPtr *last_consumer)
 {
 
@@ -49,22 +54,19 @@ static CPtr sched_answers(CTXTdeclc VariantSF producer_sf, CPtr *last_consumer)
 #ifdef PROFILE
   subinst_table[SCHED_ANSWERS][1]++;
 #endif	
-
+  xsb_dbgmsg((LOG_COMPLETION,"scheduling answers for %x\n",
+	      subg_cp_ptr(producer_sf)));
   first_sched_cons = last_sched_cons = NULL;
   consumer_cpf = subg_asf_list_ptr(producer_sf);
 
   /**** The producer has answers and consuming calls ****/  
   if ( has_answers(producer_sf) && IsNonNULL(consumer_cpf) ) {
-    xsb_dbgmsg((LOG_SCHED, "SchedAnswers: consumer_cpf=%d,producer_sf=%d",
-	       (int)consumer_cpf,(int)producer_sf));
     /**** Check each consumer for unresolved answers ****/
     if ( IsSubsumptiveProducer(producer_sf) )
       while ( IsNonNULL(consumer_cpf) ) {
 	SubConsSF consumer_sf;
 	ALNptr answer_continuation;
 	BTNptr next_answer;
-
-#define ANSWER_TEMPLATE nlcp_template(consumer_cpf)
 
 	consumer_sf = (SubConsSF)nlcp_subgoal_ptr(consumer_cpf);
 
@@ -87,20 +89,25 @@ static CPtr sched_answers(CTXTdeclc VariantSF producer_sf, CPtr *last_consumer)
 		;
 	else
 #endif
-	if ( IsNonNULL(ALN_Next(nlcp_trie_return(consumer_cpf))) )
-	  ScheduleConsumer(consumer_cpf,first_sched_cons,last_sched_cons);
+	  if ( IsNonNULL(ALN_Next(nlcp_trie_return(consumer_cpf))) ) {
+	    xsb_dbgmsg((LOG_SCHED,"Scheduling Answer for: consumer_cpf=%x\n",
+	       (int)consumer_cpf));
+	    ScheduleConsumer(consumer_cpf,first_sched_cons,last_sched_cons); 
+	  }
 	consumer_cpf = nlcp_prevlookup(consumer_cpf);
       }
 
     if( last_consumer )
       *last_consumer = last_sched_cons;
-    if( last_sched_cons )
+    if( last_sched_cons ) {
       /* by default the schain points to the leader */
       nlcp_prevbreg(last_sched_cons) = breg ;
+      xsb_dbgmsg((LOG_SCHED, 
+		  "scheduling fixed point base for last %x at %x @breg %x\n",
+		  last_sched_cons,breg,*tcp_pcreg(breg)));
+    }
   } /* if any answers and active nodes */
 
-  xsb_dbgmsg((LOG_SCHED, "first active =%d, last=%d",
-	     (int)first_sched_cons,(int)last_sched_cons));
   return first_sched_cons;
 }
 
@@ -118,12 +125,15 @@ static CPtr find_fixpoint(CTXTdeclc CPtr leader_csf, CPtr producer_cpf)
 
   VariantSF currSubg;
   CPtr complFrame; /* completion frame for currSubg */
-  CPtr last_cons; /* last consumer scheduled */
+  CPtr last_cons = 0; /* last consumer scheduled */
   CPtr sched_chain = 0, prev_sched = 0, tmp_sched = 0; /* build sched chain */
 
 #ifdef PROFILE
   subinst_table[OUTER_FIXPOINT][1]++;
 #endif
+  xsb_dbgmsg((LOG_COMPLETION,"starting fp: %x\n",
+  	      subg_cp_ptr(compl_subgoal_ptr(leader_csf))));
+
   complFrame = openreg;
   /* for each subgoal in the ASCC, from youngest to leader there is no
    * need to include the leader.  This is because sched_answers() is
@@ -141,6 +151,7 @@ static CPtr find_fixpoint(CTXTdeclc CPtr leader_csf, CPtr producer_cpf)
     subinst_table[ITER_FIXPOINT][1]++;
 #endif
     currSubg = compl_subgoal_ptr(complFrame);
+    xsb_dbgmsg((LOG_COMPLETION,"iterating: %x\n",subg_cp_ptr(currSubg)));
     /* check if all answers have been resolved for this subgoal */
 
     /* if there are unresolved answers for currSubg */
@@ -169,6 +180,9 @@ static CPtr find_fixpoint(CTXTdeclc CPtr leader_csf, CPtr producer_cpf)
   if (prev_sched)  /* if anything has been scheduled */
     /* the first generator should backtrack to leader */
     nlcp_prevbreg(prev_sched) = producer_cpf;  
+
+  xsb_dbgmsg((LOG_COMPLETION,"ending fp: %x\n",
+	      subg_cp_ptr(compl_subgoal_ptr(leader_csf))));
 
   return sched_chain;
 }

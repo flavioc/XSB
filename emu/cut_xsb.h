@@ -86,7 +86,6 @@
      cut_breg = (CPtr)(tcpstack.high - oint_val(OP1));		\
      cut_restore_trail_condition_registers(cut_breg);		\
      if (breg != cut_breg) { /* not cutting back to the current CP */\
-/*      xsb_dbgmsg("Tidying trail (cutbreg = %p, breg = %p)", cut_breg,breg); */\
 	while (cp_prevbreg(breg) != cut_breg) {			\
            inst_cut_over = *cp_pcreg(breg);                     \
            CHECK_TABLE_CUT(inst_cut_over) ;                     \

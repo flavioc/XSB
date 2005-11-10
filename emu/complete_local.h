@@ -27,6 +27,9 @@
 #ifdef LOCAL_EVAL
 void makeConsumerFromGenerator(CTXTdeclc VariantSF producer_sf)
 {
+  xsb_dbgmsg((LOG_COMPLETION,
+	      "Transforming %x from a generator to consumer (prev %x)\n",
+	      breg,nlcp_prevbreg(breg)));
   nlcp_trie_return(breg) = subg_ans_list_ptr(producer_sf);
   nlcp_pcreg(breg) = (pb) &answer_return_inst;
   nlcp_prevlookup(breg) = subg_asf_list_ptr(producer_sf);

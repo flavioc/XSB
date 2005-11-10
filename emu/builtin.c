@@ -131,7 +131,7 @@ extern struct token_t *GetToken(CTXTdeclc FILE *, STRFILE *, int);
 extern int  sys_syscall(CTXTdeclc int);
 extern xsbBool sys_system(CTXTdeclc int);
 extern xsbBool formatted_io(CTXTdecl), read_canonical(CTXTdecl);
-//extern xsbBool private_builtin(void);
+extern xsbBool private_builtin(void);
 
 extern void xsb_segfault_quitter(int err);
 
@@ -2504,11 +2504,6 @@ case WRITE_OUT_PROFILE:
   }
   case GC_HEAP: return(gc_heap(CTXTc 0)) ;
     
-    /* This is the builtin where people should put their private, experimental
-       builtin code. SEE THE EXAMPLE IN private_builtin.c to UNDERSTAND HOW TO
-       DO IT. Note: even though this is a single builtin, YOU CAN SIMULATE ANY
-       NUMBER OF BUILTINS WITH IT.  */
-       
   case FLOAT_OP:
   {
     char * operator = ptoc_string(CTXTc 1);
@@ -2549,9 +2544,15 @@ case WRITE_OUT_PROFILE:
     ctop_int(CTXTc 10, (FLOAT_LOW_24_BITS(result)));    
     return TRUE;
   }
+
+    /* This is the builtin where people should put their private, experimental
+       builtin code. SEE THE EXAMPLE IN private_builtin.c to UNDERSTAND HOW TO
+       DO IT. Note: even though this is a single builtin, YOU CAN SIMULATE ANY
+       NUMBER OF BUILTINS WITH IT.  */
+       
   case PRIVATE_BUILTIN: 
   {
-      //private_builtin();
+    //    private_builtin();
     return TRUE;
   }
   case SEGFAULT_HANDLER: { /* Set the desired segfault handler:

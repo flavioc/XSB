@@ -1209,9 +1209,7 @@ if (!xsb_initted)
 	
 	if (0 == (rc = xsb(CTXTc 0,argc,argv)))     /* initialize xsb */
 		{
-		  printf("xsb-initted\n");
 		if (0 == (rc = xsb(CTXTc 1,0,0)))       /* enter xsb to set up regs */
-		  printf("xsb-regs set\n");
 		xsb_initted = 1;
 		}
 	}
