@@ -37,17 +37,21 @@ head_ce_to_formula(','(CE1,CE2),Var,ListIn,ListOut,Cmpt):- !,
 	head_ce_to_formula(CE1,Var,ListIn,ListMid,Cmpt),
 	head_ce_to_formula(CE2,Var,ListMid,ListOut,Cmpt).
 head_ce_to_formula(exists(R,Cid),Var,
-	                   [hasAttr_int(Var,R,Cid)|L],L,_Cmpt):- !,
-	cdf_id_fields(Cid,cid,_,_).
+	                   [hasAttr_int(Var,R,Cid)|L],L,Cmpt):- !,
+	cdf_id_fields(Cid,cid,_,_),
+	cdf_id_fields(R,_,_,Cmpt).
 head_ce_to_formula(all(R,Cid),Var,
-	                   [allAttr_int(Var,R,Cid)|L],L,_Cmpt):- !,
-	cdf_id_fields(Cid,cid,_,_).
+	                   [allAttr_int(Var,R,Cid)|L],L,Cmpt):- !,
+	cdf_id_fields(Cid,cid,_,_),
+	cdf_id_fields(R,_,_,Cmpt).
 head_ce_to_formula(atLeast(N,R,Cid),Var,
-	                   [minAttr_int(Var,R,Cid,N)|L],L,_C):- !,
-	cdf_id_fields(Cid,cid,_,_).
+	                   [minAttr_int(Var,R,Cid,N)|L],L,Cmpt):- !,
+	cdf_id_fields(Cid,cid,_,_),
+	cdf_id_fields(R,_,_,Cmpt).
 head_ce_to_formula(atMost(N,R,Cid),Var,
-	                  [maxAttr_int(Var,R,Cid,N)|L],L,_C):- !,
-	cdf_id_fields(Cid,cid,_,_).
+	                  [maxAttr_int(Var,R,Cid,N)|L],L,Cmpt):- !,
+	cdf_id_fields(Cid,cid,_,_),
+	cdf_id_fields(R,_,_,Cmpt).
 head_ce_to_formula(component(Cmpt),_Var,L,L,Cmpt):- !.
 head_ce_to_formula(Cid,Var,[isa_int(Var,Cid)|L],L,_Cmpt):- 
 	cdf_id_fields(Cid,cid,_,_),!.

@@ -1729,7 +1729,8 @@ newDLRule(Head,Body,Name):-
 	dlrule_to_cdf('<='(Head,Body),CDFList,Cmpt),
 	asserta(compdlrule(Cmpt,Head,Body)),
 	member((:-(H,B)),CDFList),
-	transform_intensional_rules(H,BlankBody,NewHead,Name),
+	(var(Cmpt) -> Cmpt = Name ; true),
+	transform_intensional_rules(H,BlankBody,NewHead,Cmpt),
 %	transform_intensional_rules(H,NewHead,Name),
 	functor(H,T,A),
 	functor(BlankHead,T,A),
@@ -1747,7 +1748,7 @@ retractallDLRule(Head,Body,Name) :-
 	retractallDLRule_1(Head,Body,Name) ,
 	maybe_invalidate_cache(Flg,Head,retract).
 
-retractallDLRule_1(H,B,Name) :- 
+retractallDLRule_1(H,B,Name) :-
 	dlrule_to_cdf('<='(H,B),CDFList,Name),
 	member((:-(Head,Body)),CDFList),
 	transform_intensional_rules(Head,BlankBody,NewHead,Name),
