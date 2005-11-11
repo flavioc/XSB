@@ -265,9 +265,11 @@ void call_conv xsb_basic_abort(char *message)
 
   tptr =   (Cell *) malloc(10*sizeof(Cell));
   ball_to_throw = makecs(tptr);
-  bld_functor(tptr, pair_psc(insert("_$abort_ball",2,
+  bld_functor(tptr, pair_psc(insert("error",3,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));
 
+  tptr++;
+  bld_string(tptr,string_find("misc_error",1));
   tptr++;
 #ifdef MULTI_THREAD
   sprintf(mtmessage,"[th %d] %s",tid,message);

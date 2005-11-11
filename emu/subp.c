@@ -733,10 +733,8 @@ void print_op(FILE *file, char *string, int pos)
 
 void remove_incomplete_tables_reset_freezes(CTXTdecl)
 {
-  if (xwammode) {
     remove_incomplete_tables();
     reset_freeze_registers;
-  }
 }
 
 /* ----- C level exception handlers ----------------------------------- */
