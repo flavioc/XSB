@@ -13,7 +13,8 @@
 	write_component_intensional/1,
 	merge_intensional_rules/0,
 	retract_intensional_rules/1,
-	cdf_exists/1.
+	cdf_exists/1,
+	throw_cdf_writable/1.
 
 :- import allAttr_ext/3, isa_ext/2, hasAttr_ext/3, classHasAttr_ext/3, 
 	minAttr_ext/4, maxAttr_ext/4,
@@ -146,7 +147,7 @@ dump_intensional_rules_1(Dir) :-
 	write_component_intensional(_Comp),
 	told.
 
-write_component_intensional(Comp):- 
+write_component_intensional(Comp):-
 	get_intensional_mfile_expansion(Head,Call),
 	component_table_int(Head,SrcArg,_Arg2),
 	Head =.. [H|_],
