@@ -506,11 +506,11 @@ arg0(I, T, A) :-
 			( I =:= 0 -> functor(T, A, _)
 			; I > 0 -> arg(I, T, A)
 			)
-		; abort('Uninstantiated argument 2 of arg0/3')
+		; instantiation_error(arg0/3,2,bound)
 		)
 	; (I_type =:= XSB_FREE; I_type =:= XSB_ATTV) ->		% variable
-		abort('Uninstantiated argument 1 of arg0/3')
-	; abort('Wrong type in argument 1 of arg0/3')
+  	    instantiation_error(arg0/3,1,bound)
+	;   type_error(nonNegativeInteger,I,arg0/3,1)
 	).
 
 X =.. L :- X =.. L.
@@ -549,7 +549,7 @@ hilog_functor(T, F, N) :-
 		    )
 		    % Here F is either a variable or a compound term.
 		;   ( N =:= 0 ->
-			abort('Wrong type in argument 2 of hilog_functor/3')
+		        type_error(atom,F,hilog_functor/3,2)
 		    ;	conname(apply, Name),
 			NewN is N + 1,
 			psc_insert(Name, NewN, PSC2, 0),
@@ -558,10 +558,10 @@ hilog_functor(T, F, N) :-
 		    )
 		)
 	    ;	( var(N) ->
-		    abort('Uninstantiated argument 3 of hilog_functor/3')
+	            instantiation_error(hilog_functor/3,3,bound)
 		;   ( integer(N) ->
-			abort('Argument 3 of hilog_functor/3 must be in the range 0..255')
-		    ;	abort('Wrong type in argument 3 of hilog_functor/3')
+		        domain_error('0..255',F,hilog_functor/3,3)
+		    ;   type_error(positiveInteger,F,hilog_functor/3,3)
 		    )
 		)
 	    )
@@ -606,8 +606,8 @@ hilog_arg(I, T, A) :- hilog_arg(I, T, A).
 	hilog_functor(X, H, HiLogN),
 	hilog_arglist(X, T, HiLogN, HiLogN).
 '^=..'(_, L) :-  
-	var(L), !, abort('Uninstantiated argument 2 of ^=../2').
-'^=..'(_, _) :- abort('Argument 2 of ^=../2 is not a proper list').
+	var(L), !, instantiation_error('^='/2,2,bound).
+'^=..'(_, L) :- type_error(list,L,'^='/3,2).
 
 hilog_arglist(_, [], 0, _) :- !.
 hilog_arglist(X, [Y|Z], I, N) :- K is I - 1, J is N - K,
@@ -627,30 +627,33 @@ number_chars(T, L) :- number_chars(T, L).
 number_codes(T, L) :- number_codes(T, L).
 number_digits(T, L) :- number_digits(T, L).
 
+/* TLS: using C builtin is_charlist/1 */
 name(T, L) :-
 	term_type(T, Type),
 	( Type =:= XSB_FREE -> 
-		( var(L) -> abort('Uninstantiated arguments 1 & 2 of name/2')
-		; ( ascii_list(L) -> 
+		( var(L) -> instantiation_error(name/2,'1 or 2',bound)
+		; ( is_charlist(L) -> 
 			( int_fromlist(L, T) -> true ; atom_codes(T, L) )
-		  ; abort(['Wrong type in argument 2 of name/2:',L])
+		  ; domain_error(asciiList,L,name/2,2)
 		  )
 		)
 	; Type =:= XSB_INT -> int_name(T, [], L)	% integer
 	; Type =:= XSB_FLOAT -> real_name(T, [], L)	% real
 	; Type =:= XSB_STRING -> atom_codes(T, L)
-	; abort(['Wrong type in argument 1 of name/2:',T])
+	; type_error(atomic,T,name/2,1)
 	).
 
-ascii_list([]).
-ascii_list([H|T]) :- check(H), ascii_list(T).	%was l_ascii_list
-
-check(N) :- 
-	var(N), !, abort('Uninstantiated argument 2 of name/2').
-check(N) :- 
-	( integer(N) -> N >= 0, N =< 255
-	; abort([N, ': Non ASCII integer in argument 2 of name/2'])
-	).
+/* TLS: using C builtin is_charlist/1
+| ascii_list([]).
+| ascii_list([H|T]) :- ascii_check(H), ascii_list(T).	%was l_ascii_list
+| 
+| ascii_check(N) :- 
+| 	var(N), !, instantiation_error(name/2,2,ground).
+| ascii_check(N) :- 
+| 	( integer(N) -> N >= 0, N =< 255
+| 	; domain_error(asciiInteger,N,name/2,2)
+| 	).
+*/
 
 int_fromlist([45,H|Rest], I) :-	% It can start with a minus but 
 	!,			% it shouldn''t be empty. 
@@ -687,16 +690,12 @@ atom_concat(One,Two,Three):-
 	     ; (var(Two) -> 
 	           (atom(Three) -> 
 		   atom_disassemble(Three,One,Two)
-	             ;  xsb_backtrace(Bt),
-		    throw(error(instantiation_error,('Arg 2 or 3 of atom_concat ',
-		             'must be an atom'),Bt)) )
+	             ;  instantiation_error(atom_concat/2,'2 or 3',ground) )
 	         ; type_error(atom,Two,atom_concat/3,2) ) )
                ; var(One) -> 
 	        (atom(Three) -> 
 	            atom_disassemble(Three,One,Two)
-	          ; xsb_backtrace(Bt),
-	             throw(error(instantiation_error,('Arg 1 or 3 of atom_concat ',
-		             'must be an atom'),Bt)) )
+	          ; instantiation_error(atom_concat/2,'2 or 3',ground) )
 	       ; type_error(atom,Two,atom_concat/3,1) ).
 
 % TLS: I dont think this mode will be used much, so I'm not bothering
@@ -749,25 +748,25 @@ op(Priority, Specifier, OPs) :-
 				( all_atoms(L) -> 
 					abort('Not permitted to change the meaning of the "," operator')
 				; contains_var(L) ->
-					abort('Uninstantiated argument 3 of op/3')
-				; abort('Wrong type(s) in argument 3 of op/3 (atom or atom list expected)')
+				        instantiation_error(op/3,3,bound)
+				; domain_error(atom_or_atomList,Ops,op/3,3)
 				)
-			; abort('Uninstantiated argument 3 of op/3')
+			; instantiation_error(op/3,3,bound)
 			)
-		; abort('Wrong type(s) in argument 3 of op/3 (atom or atom list expected)')
+		; domain_error(atom_or_atomList,Ops,op/3,3)
 		)
 	; var(Priority) -> 
-		abort('Uninstantiated argument 1 of op/3')
+		instantiation_error(op/3,1,bound)
 	; var(Specifier) -> 
-		abort('Uninstantiated argument 2 of op/3')
+		instantiation_error(op/3,2,bound)
 	; \+ integer(Priority) ->
-		abort('Wrong type in argument 1 of op/3 (integer expected)')
+	        type_error(integer,Priority,op/3,1)
 	; \+ atom(Specifier) ->
-		abort('Wrong type in argument 2 of op/3 (atom expected)')
+	        type_error(atom,Specifier,op/3,2)
 	; integer(Priority), (Priority < 0 ; Priority > 1200) ->
-		abort('Argument 1 of op/3 must be in the range 0..1200')
+	        domain_error(operator_priority,Priority,op/3,2)
 	; \+ op_specifier(Specifier) ->
-		abort('Argument 2 of op/3 is not a valid operator specifier')
+	        domain_error(operator_specifier,Specifier,op/3,2)
 	; abort('Argument 2 of op/3 is not compatible with current set of operators')
 	).
 
@@ -833,8 +832,8 @@ call(Goal) :-
 		goal_cut_trans(Goal, Trans_Goal, C), 
 		call_c(Trans_Goal)
 	; var(Goal) -> 
-		abort('call/1: Uninstantiated argument 1')
-	; abort('call/1: Argument 1 must be a callable term')
+	        instantiation_error(call/1,1,bound)
+	; type_error(callable,Goal,call/1,1)
 	).
 
 %  call_c(X)
@@ -1212,14 +1211,10 @@ contains_var([_|T]) :- contains_var(T).
 length([], N, N).
 length([_|R], M, N) :- N1 is M+1, length(R, N1, N).
 
-abort :-
-	xsb_backtrace(BackTrace),
-	throw('_$abort_ball'(BackTrace)).
+abort :- misc_error('Aborting...').
 
 %  abort/1
-abort(Msg) :-
-	xsb_backtrace(BackTrace),
-	throw('_$abort_ball'(Msg,BackTrace)).
+abort(Msg) :- misc_error(Msg).
 
 error_write(X):- 
 	message(X,STDERR).
@@ -1230,7 +1225,6 @@ error_writeln(X):-
 warning(Message) :- 
 	message('++Warning[XSB]: [Runtime/P] ', STDWARN),
 	messageln(Message, STDWARN).
-
 
 %  message/1
 message(X) :- message(X, STDMSG).
@@ -1319,7 +1313,13 @@ import(P/A, MName) :-
    before that */
 set_timer(Seconds) :- stat_set_flag(SYS_TIMER, Seconds).
 
+/* ================ Garbage Collecting Shared Data/Code ===================*/
 
+gc_tables(Number):- 
+	gc_clauses(GC_TABLED_PREDS,Number).
+
+gc_dynamic(Number):- 
+	gc_clauses(GC_DYNAMIC,Number).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%

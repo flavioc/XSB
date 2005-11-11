@@ -41,7 +41,7 @@
             error_write/1, error_writeln/1,
 	expand_term/2,	file_exists/1,	fail/0,		fail_if/1,
 	fileerrors/0,	float/1,	functor/3,
-	get/1,		get0/1,		
+        gc_dynamic/1,   gc_tables/1,    get/1,		get0/1,		
         get_char/1,	get_char/2,     get_code/1,	get_code/2,
         halt/0,		
 	ceil/2, floor/2, round/2,
@@ -107,23 +107,24 @@
 :- import '_$hilog_symbol'/1, add_hilog_symbol/1 from hilogsym.
 :- import retract0/1, assertz/1, clause/2, retractall/1 from assert.
 :- import domain_error/4, check_atom/3, check_nonvar/3,type_error/4,
-  permission_error/4, instantiation_error/3, check_nonneg_integer/3
+   permission_error/4, instantiation_error/3, check_nonneg_integer/3, 
+   misc_error/1
      from error_handler.
 :- import  check_nonvar_list/3 from error_handler.
 :- import '_$load_undef'/1 from loader.
 :- import windows_os_loader/0 from loader.
 
-:- import call0/1, conname/2, str_len/2,
-	  expand_filename/2, machine_file_exists/1, 
+ :- import call0/1, conname/2,
+          expand_filename/2, gc_clauses/2,is_charlist/1,
+          machine_file_exists/1, 
 	  psc_arity/2, psc_import/3, psc_insert/4,
 	  psc_name/2, psc_type/2,
 	  stat_set_flag/2, stat_flag/2, term_compare/3,
-	  stat_sta/1, stat_cputime/1, stat_walltime/1,
+	  stat_sta/1, stat_cputime/1, stat_walltime/1,str_len/2,
           term_psc/2, term_new/2, term_new_mod/3, term_type/2  %%, close_open_tables/0
 	  from machine.
 :- import '$$set_scope_marker'/0, '$$unwind_stack'/0, 
-	  '$$clean_up_block'/0,
-	  xsb_backtrace/1
+	  '$$clean_up_block'/0
      from machine. 
 :- import numbervars/1 from num_vars.
 :- import calculate_singleton/3 from singlton.

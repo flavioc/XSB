@@ -49,24 +49,26 @@ default_error_handler(Error) :-
 	fail.
 
 /* messages are handled via abort/1.  */
-default_sys_error_handler('_$abort_ball'(Backtrace)):- 
-	% here is where we may do something abt backtraces.
-	get_sys_error_description('_$abort_ball'(Backtrace),NewMsg),
-	messageln(NewMsg,STDERR),
-	xsb_flag(backtrace_on_error,BT),
-	(BT == on
-	 ->	print_backtrace(Backtrace)
-	 ;	true
-	).
-default_sys_error_handler('_$abort_ball'(Msg,Backtrace)) :-
-	% here is where we may do something abt backtraces.
-	get_sys_error_description('_$abort_ball'(Msg, Backtrace),NewMsg),
-	messageln(NewMsg,STDERR),
-	xsb_flag(backtrace_on_error,BT),
-	(BT == on
-	 ->	print_backtrace(Backtrace)
-	 ;	true
-	).
+/* Obsolete ..
+| default_sys_error_handler('_$abort_ball'(Backtrace)):- 
+| 	% here is where we may do something abt backtraces.
+| 	get_sys_error_description('_$abort_ball'(Backtrace),NewMsg),
+| 	messageln(NewMsg,STDERR),
+| 	xsb_flag(backtrace_on_error,BT),
+| 	(BT == on
+| 	 ->	print_backtrace(Backtrace)
+| 	 ;	true
+| 	).
+| default_sys_error_handler('_$abort_ball'(Msg,Backtrace)) :-
+| 	% here is where we may do something abt backtraces.
+| 	get_sys_error_description('_$abort_ball'(Msg, Backtrace),NewMsg),
+| 	messageln(NewMsg,STDERR),
+| 	xsb_flag(backtrace_on_error,BT),
+| 	(BT == on
+| 	 ->	print_backtrace(Backtrace)
+| 	 ;	true
+| 	).
+*/
 default_sys_error_handler(error(Error,Msg,Backtrace)) :-
 	% here is where we may do something abt backtraces.
 	xsb_flag(backtrace_on_error,BT),
@@ -81,12 +83,18 @@ default_sys_error_handler(X) :-
 	messageln(('Unhandled Exception: ',X),STDERR).
 
 % get_sys_error_description/3
-get_sys_error_description('_$abort_ball'(AbortMsgs, Backtrace), ExceptionDescription, BacktraceList) :- !,
-	get_sys_error_description('_$abort_ball'(AbortMsgs, Backtrace), ExceptionDescription),
-	get_backtrace(Backtrace, BacktraceList).
-get_sys_error_description('_$abort_ball'(Backtrace), 'Aborting...', BacktraceList) :- !,
-	get_backtrace(Backtrace, BacktraceList).
-get_sys_error_description(error(Error,Msg,Backtrace), ExceptionDescription, BacktraceList) :- !,
+/* Obsolete 
+| get_sys_error_description('_$abort_ball'(AbortMsgs, Backtrace), 
+| 	                  ExceptionDescription, BacktraceList) :- !,
+| 	get_sys_error_description('_$abort_ball'(AbortMsgs, Backtrace), 
+| 	                          ExceptionDescription),
+| 	get_backtrace(Backtrace, BacktraceList).
+| get_sys_error_description('_$abort_ball'(Backtrace),'Aborting...',BacktraceList) :- 
+|	!,
+| 	get_backtrace(Backtrace, BacktraceList).
+*/
+get_sys_error_description(error(Error,Msg,Backtrace), 
+	                        ExceptionDescription, BacktraceList) :- !,
 	get_sys_error_description(error(Error,Msg), ExceptionDescription),
 	get_backtrace(Backtrace, BacktraceList).
 get_sys_error_description(error(Error,Msg), ExceptionDescription, []) :-
@@ -94,9 +102,11 @@ get_sys_error_description(error(Error,Msg), ExceptionDescription, []) :-
 
 % get_sys_error_description/2
 % This needs to handle either comma lists or lists as input -- just as message/[1,2]
-get_sys_error_description('_$abort_ball'(AbortMsgs, _Backtrace), ExceptionDesc) :- 
-	ExceptionDesc = AbortMsgs.
-get_sys_error_description('_$abort_ball'(_Backtrace), 'Aborting...'). 
+/* Obsolete
+| get_sys_error_description('_$abort_ball'(AbortMsgs, _Backtrace), ExceptionDesc) :- 
+| 	ExceptionDesc = AbortMsgs.
+| get_sys_error_description('_$abort_ball'(_Backtrace), 'Aborting...'). 
+*/
 get_sys_error_description(error(instantiation_error,Msg), ExceptionDesc) :- 
 	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Instantiation] ', Msg).
 get_sys_error_description(error(type_error(Valid_type,Culprit),Msg), ExceptionDesc) :-
