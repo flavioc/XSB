@@ -7,6 +7,7 @@
 :- import allAttr/3, hasAttr/3, 
 	   isa/2, maxAttr/4, minAttr/4,
 	   cdf_id_fields/4 from cdf_init_cdf.
+:- import get_component_intensional/3 from cdf_comps_share.
 :- import cdf_warning/2 from cdf_exceptions.
 :- import pretty_print/1 from newpp.
 %:- import compdlrule/3,compdltrans/3 from usermod.
@@ -39,19 +40,19 @@ head_ce_to_formula(','(CE1,CE2),Var,ListIn,ListOut,Cmpt):- !,
 head_ce_to_formula(exists(R,Cid),Var,
 	                   [hasAttr_int(Var,R,Cid)|L],L,Cmpt):- !,
 	cdf_id_fields(Cid,cid,_,_),
-	cdf_id_fields(R,_,_,Cmpt).
+	get_component_intensional(hasAttr_int(Var,R,Cid), _, Cmpt).
 head_ce_to_formula(all(R,Cid),Var,
 	                   [allAttr_int(Var,R,Cid)|L],L,Cmpt):- !,
 	cdf_id_fields(Cid,cid,_,_),
-	cdf_id_fields(R,_,_,Cmpt).
+	get_component_intensional(allAttr_int(Var,R,Cid), _, Cmpt).
 head_ce_to_formula(atLeast(N,R,Cid),Var,
 	                   [minAttr_int(Var,R,Cid,N)|L],L,Cmpt):- !,
 	cdf_id_fields(Cid,cid,_,_),
-	cdf_id_fields(R,_,_,Cmpt).
+	get_component_intensional(minAttr_int(Var,R,Cid,N), _, Cmpt).
 head_ce_to_formula(atMost(N,R,Cid),Var,
 	                  [maxAttr_int(Var,R,Cid,N)|L],L,Cmpt):- !,
 	cdf_id_fields(Cid,cid,_,_),
-	cdf_id_fields(R,_,_,Cmpt).
+	get_component_intensional(maxAttr_int(Var,R,Cid,N), _, Cmpt).
 head_ce_to_formula(component(Cmpt),_Var,L,L,Cmpt):- !.
 head_ce_to_formula(Cid,Var,[isa_int(Var,Cid)|L],L,_Cmpt):- 
 	cdf_id_fields(Cid,cid,_,_),!.
