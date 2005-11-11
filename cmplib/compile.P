@@ -185,7 +185,7 @@ abort_if_syntax_errors(Modname) :-
 	).
 
 abort_quietly :-
-	throw('_$abort_ball'([[]])).
+	throw(error(misc_error,'Aborting...',[[]])).
 
 /*================================================================*/
 /* db_preprocess(+PFile, +HFile, +OptFile, -SourceFile)	*/
