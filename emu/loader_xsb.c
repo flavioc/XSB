@@ -135,6 +135,7 @@ struct TDispBlkHdr_t tdispblkhdr = {NULL, NULL};
 /* === working variables ==============================================	*/
 
 static pw   *reloc_table = NULL;
+static unsigned long reloc_table_size = 0;
 static pseg last_text = NULL;	/* permanent var, chain of text seg */
 static pseg current_seg;	/* starting address -- used for relocation */
 static CPtr *index_reloc;         	/* index relocation table */
@@ -217,7 +218,7 @@ static int get_index_tab(FILE *fd, int clause_no)
 
   size = hsize(clause_no);
 
-  indextab = (struct hrec *)malloc(size*sizeof(struct hrec)); 
+  indextab = (struct hrec *)mem_alloc(size*sizeof(struct hrec)); 
 
   for (j = 0; j < size; j++) {
     indextab[j].l = 0;
@@ -454,15 +455,15 @@ static void load_index(FILE *fd, int index_bytes, int table_num)
       temp_ptr = hptr = hreg;
     else 
 #endif
-       temp_ptr = hptr = (CPtr)malloc(temp_space*sizeof(CPtr));
+       temp_ptr = hptr = (CPtr)mem_alloc(temp_space*sizeof(CPtr));
     t_len = get_index_tab(fd, clause_no);
     
     gen_index((xsbBool)(table_num > 0), clause_no, sob_arg_p, arity);
-    free(indextab);
+    mem_dealloc(indextab,hsize(clause_no)*sizeof(struct hrec));
 #ifndef MULTI_THREAD
-    if (temp_ptr != hreg) free(temp_ptr);
+    if (temp_ptr != hreg) mem_dealloc(temp_ptr,temp_space*sizeof(CPtr));
 #else
-    free(temp_ptr);
+    mem_dealloc(temp_ptr,temp_space*sizeof(CPtr));
 #endif
     count += 10 + t_len;
   }
@@ -477,7 +478,7 @@ static pseg load_seg(FILE *fd, int seg_num, int text_bytes, int index_bytes)
    current_seg = (pseg) mem_alloc(ZOOM_FACTOR*text_bytes+SIZE_SEG_HDR);
 
    /* Allocate first chunk of index_reloc */
-   index_reloc = (CPtr *)malloc(NUM_INDEX_BLKS*sizeof(CPtr));
+   index_reloc = (CPtr *)mem_alloc(NUM_INDEX_BLKS*sizeof(CPtr));
    if (!index_reloc) {
      xsb_error("Couldn't allocate index relocation space");
      return NULL;
@@ -497,7 +498,7 @@ static pseg load_seg(FILE *fd, int seg_num, int text_bytes, int index_bytes)
    }
    index_block_chain = &seg_index(current_seg);
    load_index(fd, index_bytes, current_tab);
-   free(index_reloc);
+   mem_dealloc(index_reloc,NUM_INDEX_BLKS*sizeof(CPtr));
    
    /* set text-index segment chain */
    if (last_text) seg_next(last_text) = current_seg;
@@ -669,11 +670,6 @@ static xsbBool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
   }
   if (!temp_pair) return FALSE;
   
-  /*	if (count >= REL_TAB_SIZE) {
-	xsb_dbgmsg(("Reloc_table overflow"));
-	return FALSE;
-	}  */
-  
   reloc_table[count] = (pw)temp_pair;
   return TRUE;
 }  /* load_one_sym */
@@ -702,7 +698,8 @@ static xsbBool load_syms(FILE *fd, int psc_count, int count, Psc cur_mod, int ex
 {
   int i;
   
-  reloc_table = (pw *) calloc((psc_count), sizeof(pw));
+  reloc_table = (pw *) mem_calloc((psc_count), sizeof(pw));
+  reloc_table_size = psc_count*sizeof(pw);
   /* xsb_dbgmsg(("reloc_table %x,psc_count %d",reloc_table,psc_count)); */
 
   for (i = count; i < psc_count; i++) {
@@ -923,9 +920,9 @@ byte *loader(CTXTdeclc char *file, int exp)
 
   fclose(fd);
   if (reloc_table) {
-    free(reloc_table);
+    mem_dealloc(reloc_table,reloc_table_size);
+    reloc_table = 0;
   }
-  reloc_table = 0;
   return first_inst;
 } /* loader */
 

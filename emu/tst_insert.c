@@ -42,6 +42,7 @@
 #include "trie_internals.h"
 #include "tst_aux.h"
 #include "thread_xsb.h"
+#include "memory_xsb.h"
 
 
 

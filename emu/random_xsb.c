@@ -48,6 +48,7 @@
 #include "ptoc_tag_xsb_i.h"
 #include "error_xsb.h"
 #include "context.h"
+#include "memory_xsb.h"
 
 #ifndef MULTI_THREAD
 struct random_seeds_t *random_seeds = 0;
@@ -56,7 +57,7 @@ struct random_seeds_t *random_seeds = 0;
 struct random_seeds_t *init_random_seeds() {
 
   struct random_seeds_t *seeds;
-  seeds = (struct random_seeds_t *)malloc(sizeof(struct random_seeds_t));
+  seeds = (struct random_seeds_t *)mem_alloc(sizeof(struct random_seeds_t));
   if (!seeds) xsb_abort("No space for random seeds!!");
   seeds->IX = 6293;
   seeds->IY = 21877;

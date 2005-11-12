@@ -449,7 +449,7 @@ void expand_trie_ht(BTHTptr pHT) {
 
 
   new_size = TrieHT_NewSize(pHT);
-  bucket_array = (BTNptr *)realloc( BTHT_BucketArray(pHT),
+  bucket_array = (BTNptr *)mem_realloc( BTHT_BucketArray(pHT), BTHT_NumBuckets(pHT)*sizeof(void*),
 				     new_size * sizeof(BTNptr) );
   if ( IsNULL(bucket_array) )
     return;

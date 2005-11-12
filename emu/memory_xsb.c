@@ -99,6 +99,42 @@ byte *mem_alloc(unsigned long size)
 }
 
 
+/* === calloc permanent memory ============================================= */
+
+byte *mem_calloc(unsigned long size, unsigned long occs)
+{
+    byte * ptr;
+    unsigned long length = (size*occs+7) & ~0x7;
+
+    SYS_MUTEX_LOCK(MUTEX_MEM);
+    pspacesize += length;
+    ptr = (byte *) calloc(size,occs);
+#if defined(GENERAL_TAGGING)
+    //    printf("mem_calloc %x %x\n",ptr,ptr+length);
+    extend_enc_dec_as_nec(ptr,ptr+length);
+#endif
+    SYS_MUTEX_UNLOCK(MUTEX_MEM);
+    return ptr;
+}
+
+
+/* === realloc permanent memory ============================================ */
+
+byte *mem_realloc(void *addr, unsigned long oldsize, unsigned long newsize)
+{
+    newsize = (newsize+7) & ~0x7 ;	      /* round to 8 */
+    oldsize = (oldsize+7) & ~0x7 ;	      /* round to 8 */
+    SYS_MUTEX_LOCK(MUTEX_MEM);
+    pspacesize = pspacesize - oldsize + newsize;
+    addr = (byte *) realloc(addr,newsize);
+#if defined(GENERAL_TAGGING)
+    extend_enc_dec_as_nec(addr,addr+newsize);
+#endif
+    SYS_MUTEX_UNLOCK(MUTEX_MEM);
+    return addr;
+}
+
+
 /* === dealloc permanent memory ============================================ */
 
 void mem_dealloc(void *addr, unsigned long size)

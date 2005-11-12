@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef MULTI_THREAD
-     th = malloc( sizeof( th_context ) ) ;
+  th = malloc( sizeof( th_context ) ) ;  /* don't use mem_alloc */
 #endif
 
   xsb(CTXTc 0, argc, argv);  /* init xsb */

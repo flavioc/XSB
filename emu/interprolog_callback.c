@@ -60,7 +60,7 @@ Java_com_xsb_interprolog_NativeEngine_get_1bytes
 			xsb_close_query(CTXT);
 			return NULL;
 		}
-		b = (jbyte *) malloc(size);
+		b = (jbyte *) mem_alloc(size);
 		newHead = p2p_car(p2p_arg(reg_term(CTXTc 1), 2));
 		newTail = p2p_cdr(p2p_arg(reg_term(CTXTc 1), 2));
 		b[i-1] = p2c_int(newHead);
@@ -73,7 +73,7 @@ Java_com_xsb_interprolog_NativeEngine_get_1bytes
 		xsb_close_query(CTXT);
 		bytes = (*env)->NewByteArray(env, size);
 		(*env)->SetByteArrayRegion(env, bytes, 0, size, b);
-		free(b);
+		mem_dealloc(b,size);
 		return bytes;
 }
 
@@ -169,7 +169,7 @@ Java_com_xsb_interprolog_NativeEngine_xsb_1init_1internal
 	char *XSBPath = (*env)->GetStringUTFChars(env, jXSBPath, 0);
 
 #ifdef MULTI_THREAD
-     th = malloc( sizeof( th_context ) ) ;
+     th = mem_alloc( sizeof( th_context ) ) ;
 #endif
 
 	if (debug==JNI_TRUE) printf("Entering Java_com_xsb_interprolog_NativeEngine_xsb_1init_1internal\n");
@@ -193,20 +193,20 @@ Java_com_xsb_interprolog_NativeEngine_xsb_1init_1internal_1arg
 	char *XSBPath;
 
 	myargc = (*env)->GetArrayLength(env, jXSBParameters) + 2;
-       	myargv = (char **) malloc(myargc * sizeof(char *));
+       	myargv = (char **) mem_alloc(myargc * sizeof(char *));
 
 	XSBPath = (*env)->GetStringUTFChars(env, jXSBPath, 0);
 	if (debug==JNI_TRUE) printf("Entering Java_com_xsb_interprolog_NativeEngine_xsb_1init_1internal\n");
 	myargv[0] = XSBPath;
 	myargv[1] = "-n";
 	
-	parameters = (jstring *) malloc((myargc - 2) * sizeof(jstring *));
+	parameters = (jstring *) mem_alloc((myargc - 2) * sizeof(jstring *));
 	for (i=0; i < myargc-2; i++) {
           parameters[i] = (jstring)(*env)->GetObjectArrayElement(env, jXSBParameters, i);
 	  myargv[i + 2] = (*env)->GetStringUTFChars(env, parameters[i], 0);
 	}
 #ifdef MULTI_THREAD
-     th = malloc( sizeof( th_context ) ) ;
+     th = mem_alloc( sizeof( th_context ) ) ;
 #endif
 
 	rcode=xsb_init(CTXTc myargc,myargv);
@@ -217,8 +217,8 @@ Java_com_xsb_interprolog_NativeEngine_xsb_1init_1internal_1arg
 	  (*env)->ReleaseStringUTFChars(env, parameters[i], myargv[i + 2]);
 	  // may be needed ?(*env)->DeleteLocalRef(env, parameters[i]);
 	}
-	free(parameters);
-	free(myargv);
+	mem_dealloc(parameters,(myargc-2)*sizeof(jstring *));
+	mem_dealloc(myargv,myargc*sizeof(char *));
 
 	if (debug==JNI_TRUE) printf("Exiting Java_com_xsb_interprolog_NativeEngine_xsb_1init_1internal\n");
 	return rcode;
@@ -264,7 +264,7 @@ xsbBool interprolog_callback(CTXTdecl) {
 	
 	size = p2c_int(reg_term(CTXTc 1));
 
-	b = (jbyte *) malloc(size);
+	b = (jbyte *) mem_alloc(size);
 	newHead = p2p_car(reg_term(CTXTc 2));
 	newTail = p2p_cdr(reg_term(CTXTc 2));
 	b[i-1] = p2c_int(newHead);
@@ -301,6 +301,7 @@ xsbBool interprolog_callback(CTXTdecl) {
 			c2p_int(CTXTc b[i], newHead);
 		i++;
 	}
+	mem_dealloc(b,size);
 	c2p_nil(CTXTc newTail);
 	return 1;
 }

@@ -108,7 +108,7 @@ static PNDE current_pnde_block_top = NULL; /* the top of current PNDE block */
     NEW_ENTRY = NEXT_FREE++;						\
   else {								\
     char *new_block;							\
-    if ((new_block = (char *) malloc(BLOCK_SIZE + sizeof(Cell))) == NULL)\
+    if ((new_block = (char *) mem_alloc(BLOCK_SIZE + sizeof(Cell))) == NULL)\
       xsb_abort(ABORT_MESG);						\
     *(char **) new_block = CURRENT_BLOCK;				\
     CURRENT_BLOCK = new_block;						\
@@ -623,7 +623,7 @@ static void handle_unsupported_answer_subst(CTXTdeclc NODEptr as_leaf)
       simplify_neg_fails(CTXTc unsup_subgoal);
     }
   }
-  free(unsup_asi);
+  mem_dealloc(unsup_asi,sizeof(struct AS_info));
 }
 
 /*
@@ -690,7 +690,7 @@ static void simplify_pos_unconditional(CTXTdeclc NODEptr as_leaf)
    * free it, and really mark `as_leaf' as an unconditional answer.
    */
   Child(as_leaf) = NULL;
-  free(asi);
+  mem_dealloc(asi,sizeof(struct AS_info));
 }
 
 /*
@@ -837,7 +837,7 @@ void abolish_wfs_space(void)
 
   while (current_de_block) {
     last_block = *(char **) current_de_block;
-    free(current_de_block);
+    mem_dealloc(current_de_block,de_block_size + sizeof(Cell));
     current_de_block = last_block;
   }
 
@@ -845,7 +845,7 @@ void abolish_wfs_space(void)
 
   while (current_dl_block) {
     last_block = *(char **) current_dl_block;
-    free(current_dl_block);
+    mem_dealloc(current_dl_block,dl_block_size + sizeof(Cell));
     current_dl_block = last_block;
   }
 
@@ -853,7 +853,7 @@ void abolish_wfs_space(void)
   
   while (current_pnde_block) {
     last_block = *(char **) current_pnde_block;
-    free(current_pnde_block);
+    mem_dealloc(current_pnde_block,pnde_block_size + sizeof(Cell));
     current_pnde_block = last_block;
   }
 

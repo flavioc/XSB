@@ -75,6 +75,7 @@
 #include "socket_xsb.h"
 #include "psc_xsb.h"
 #include "register.h"
+#include "memory_xsb.h"
 
 #ifdef WIN_NT
 typedef int socklen_t;
@@ -221,7 +222,7 @@ int write_select(SOCKET sock_handle, int timeout) {
    error:   SOCK_READMSG_FAILED
    Read message header, then read the message itself.
 */
-static int readmsg(SOCKET sock_handle, char **msg_buff)	
+static int readmsg(SOCKET sock_handle, char **msg_buff, unsigned long *msg_len)	
 {
      int actual_len;
      /* 4-char buf that keeps the length of the subsequent msg */
@@ -239,8 +240,9 @@ static int readmsg(SOCKET sock_handle, char **msg_buff)
 
      memcpy((void *) &net_encoded_len, (void *) lenbuf, XSB_MSG_HEADER_LENGTH);
      msglen = ntohl(net_encoded_len);
+     *msg_len = (msglen+1)*sizeof(char);
 
-     if ((*msg_buff = (char *)calloc(msglen+1, sizeof(char))) == NULL) {
+     if ((*msg_buff = (char *)mem_calloc(msglen+1, sizeof(char))) == NULL) {
 	  xsb_abort("[SOCKET_RECV] Can't allocate memory for the message buffer");
      }
 
@@ -346,10 +348,10 @@ static int socket_connect(CTXTdeclc int *rc, int timeout) {
      }
 }
 
-static int socket_recv(CTXTdeclc int *rc, char** buffer, int timeout) {
+static int socket_recv(CTXTdeclc int *rc, char** buffer, unsigned long *buffer_len, int timeout) {
      SOCKET sock_handle = (SOCKET) ptoc_int(CTXTc 2);
      if (read_select(sock_handle, timeout)) {
-	  *rc = readmsg(sock_handle, buffer);
+	  *rc = readmsg(sock_handle, buffer, buffer_len);
 	  return NORMAL_TERMINATION;
      } else {
 	  return TIMED_OUT;
@@ -369,7 +371,7 @@ static int socket_send(CTXTdeclc int *rc, int timeout) {
      msg_body_len = strlen(send_msg_aux);
 
      /* We use the first XSB_MSG_HEADER_LENGTH bytes for the message size.*/
-     message_buffer = calloc(msg_body_len + XSB_MSG_HEADER_LENGTH + 1, sizeof(char));
+     message_buffer = mem_calloc(msg_body_len + XSB_MSG_HEADER_LENGTH + 1, sizeof(char));
      if (message_buffer == NULL) {
 	  xsb_abort("[SOCKET_SEND] Can't allocate memory for the message buffer");
      }
@@ -379,7 +381,7 @@ static int socket_send(CTXTdeclc int *rc, int timeout) {
      strcpy(message_buffer + XSB_MSG_HEADER_LENGTH, send_msg_aux);
 
      *rc = sendto(sock_handle, message_buffer, msg_body_len+XSB_MSG_HEADER_LENGTH, 0, NULL, 0);
-     free(message_buffer);
+     mem_dealloc(message_buffer,(msg_body_len + XSB_MSG_HEADER_LENGTH + 1)*sizeof(char));
 
      return NORMAL_TERMINATION;
 }
@@ -422,6 +424,7 @@ xsbBool xsb_socket_request(CTXTdecl)
      struct linger sock_linger_opt;
      int rc;
      char *message_buffer;
+     unsigned long msg_len;
      char char_read;
 
      switch (ptoc_int(CTXTc 1)) {
@@ -552,7 +555,7 @@ xsbBool xsb_socket_request(CTXTdecl)
     
      case SOCKET_RECV:
 	  /* socket_request(SOCKET_RECV,+Sockfd, -Msg, -Error,_,_,_) */
-	  timeout_flag = socket_recv(CTXTc &rc, &message_buffer, (int)pflags[SYS_TIMER]);
+	  timeout_flag = socket_recv(CTXTc &rc, &message_buffer, &msg_len, (int)pflags[SYS_TIMER]);
 	  
 	  if (timeout_flag == TIMED_OUT) {
 	       return set_error_code(CTXTc TIMEOUT_ERR, 4, "SOCKET_SEND");
@@ -575,7 +578,7 @@ xsbBool xsb_socket_request(CTXTdecl)
 	       
 	       if (message_buffer != NULL) {
 		    ctop_string(CTXTc 3, (char*)string_find(message_buffer, 1));
-		    free(message_buffer);
+		    mem_dealloc(message_buffer,msg_len);
 	       } else {  /* this happens at end of file */
 		    ctop_string(CTXTc 3, (char*)string_find("", 1));
 	       }
@@ -750,7 +753,7 @@ xsbBool xsb_socket_request(CTXTdecl)
 	  if (isinteger(timeout_term)|isboxedinteger(timeout_term)) {
 	       timeout = oint_val(timeout_term);
 	       /* initialize tv */
-	       tv = (struct timeval *)malloc(sizeof(struct timeval));
+	       tv = (struct timeval *)mem_alloc(sizeof(struct timeval));
 	       tv->tv_sec = timeout;
 	       tv->tv_usec = 0;
 	  } else
@@ -819,7 +822,7 @@ xsbBool xsb_socket_request(CTXTdecl)
 			  connections[count].exception_fds,connections[count].sizee);
 	  }
 
-	  if (tv) free((struct timeval *)tv);
+	  if (tv) mem_dealloc((struct timeval *)tv,sizeof(struct timeval));
 	  return set_error_code(CTXTc ecode, 7, "SOCKET_SELECT");
      }
 
@@ -923,7 +926,7 @@ static xsbBool list_sockfd(prolog_term list, fd_set *fdset, int *max_fd,
      prolog_term head;
 
      *size = getsize(local);
-     *fds = (int*)malloc(sizeof(int)*(*size));
+     *fds = (int*)mem_alloc(sizeof(int)*(*size));
 
      while (!isnil(list)) {
 	  head = p2p_car(list);
@@ -979,10 +982,10 @@ static void select_destroy(char *connection_name)
 		    connections[i].connection_name = NULL;
 		    connections[i].maximum_fd = 0;
 
-		    /* free the fds obtained by malloc() */
-		    free(connections[i].read_fds);
-		    free(connections[i].write_fds);
-		    free(connections[i].exception_fds); 
+		    /* free the fds obtained by mem_alloc() */
+		    mem_dealloc(connections[i].read_fds,connections[i].sizer);
+		    mem_dealloc(connections[i].write_fds,connections[i].sizew);
+		    mem_dealloc(connections[i].exception_fds,connections[i].sizee); 
       
 		    connections[i].sizer = 0;
 		    connections[i].sizew = 0 ;

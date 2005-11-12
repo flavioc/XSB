@@ -24,6 +24,7 @@
 #include "ptoc_tag_xsb_i.h"
 #include "thread_xsb.h"
 #include "rw_lock.h"
+#include "memory_xsb.h"
 
 #ifdef MULTI_THREAD
 #include <errno.h>
@@ -257,7 +258,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 			cleanup_machine(CTXT) ;
 			thread_free_dyn_blks(CTXT);
 			thread_free_tab_blks(CTXT);
-			free( th ) ;
+			mem_dealloc(th,sizeof(th_context)) ;
 			flags[NUM_THREADS]-- ;
 			pthread_mutex_lock( &th_mutex );
 			tid2 = pthread_self();

@@ -755,17 +755,17 @@ void init_machine(CTXTdecl)
   findall_solutions = NULL;
 
 #define MAXSBUFFS 30
-  LSBuff = (VarString **)calloc(sizeof(VarString *),MAXSBUFFS);
+  LSBuff = (VarString **)mem_calloc(sizeof(VarString *),MAXSBUFFS);
 
   /* vars for io_builtins_XXX */
   opstk_size = 0;
   funstk_size = 0;
   funstk = NULL;
   opstk = NULL;
-  rc_vars = (struct vartype *)malloc(MAXVAR*sizeof(struct vartype));
+  rc_vars = (struct vartype *)mem_alloc(MAXVAR*sizeof(struct vartype));
 
   /* vars for token_xsb_XXX */
-  token = (struct token_t *)malloc(sizeof(struct token_t));
+  token = (struct token_t *)mem_alloc(sizeof(struct token_t));
   strbuff = NULL;
   lastc = ' ';
   strbuff_len = InitStrLen;
@@ -773,11 +773,11 @@ void init_machine(CTXTdecl)
   random_seeds = 0;
 
   /* used in trie_lookup */
-  a_tstCCPStack = (struct tstCCPStack_t *)malloc(sizeof(struct tstCCPStack_t));
-  a_variant_cont = (struct VariantContinuation *)malloc(sizeof(struct VariantContinuation));
-  a_tstCPStack = (struct tstCPStack_t *)malloc(sizeof(struct tstCPStack_t));
+  a_tstCCPStack = (struct tstCCPStack_t *)mem_alloc(sizeof(struct tstCCPStack_t));
+  a_variant_cont = (struct VariantContinuation *)mem_alloc(sizeof(struct VariantContinuation));
+  a_tstCPStack = (struct tstCPStack_t *)mem_alloc(sizeof(struct tstCPStack_t));
 
-  asrtBuff = (struct asrtBuff_t *)malloc(sizeof(struct asrtBuff_t));
+  asrtBuff = (struct asrtBuff_t *)mem_alloc(sizeof(struct asrtBuff_t));
   asrtBuff->Buff = NULL;
   asrtBuff->Buff_size = 512;
   asrtBuff->Loc = NULL;
@@ -785,7 +785,7 @@ void init_machine(CTXTdecl)
   asrtBuff->Size = 0;
   i_have_dyn_mutex = 0;
 
-  last_answer = (VarString *)malloc(sizeof(VarString));
+  last_answer = (VarString *)mem_alloc(sizeof(VarString));
   XSB_StrInit(last_answer);
   OldestCl = retracted_buffer;
   NewestCl = retracted_buffer;
@@ -805,13 +805,13 @@ void init_machine(CTXTdecl)
   th->last_ans = 1;
 #endif
 
-  tsgLBuff1 = (VarString *)malloc(sizeof(VarString));
+  tsgLBuff1 = (VarString *)mem_alloc(sizeof(VarString));
   XSB_StrInit(tsgLBuff1);
-  tsgLBuff2 = (VarString *)malloc(sizeof(VarString));
+  tsgLBuff2 = (VarString *)mem_alloc(sizeof(VarString));
   XSB_StrInit(tsgLBuff2);
-  tsgSBuff1 = (VarString *)malloc(sizeof(VarString));
+  tsgSBuff1 = (VarString *)mem_alloc(sizeof(VarString));
   XSB_StrInit(tsgSBuff1);
-  tsgSBuff2 = (VarString *)malloc(sizeof(VarString));
+  tsgSBuff2 = (VarString *)mem_alloc(sizeof(VarString));
   XSB_StrInit(tsgSBuff2);
 
   /* Allocate Stack Spaces and set Boundary Parameters
@@ -961,8 +961,8 @@ void init_symbols(void)
   int  i, new_indicator;
 
   inst_begin = 0;
-  symbol_table.table = (void **)calloc(symbol_table.size, sizeof(Pair));
-  string_table.table = (void **)calloc(string_table.size, sizeof(char *));
+  symbol_table.table = (void **)mem_calloc(symbol_table.size, sizeof(Pair));
+  string_table.table = (void **)mem_calloc(string_table.size, sizeof(char *));
 
   /* insert mod name global */
   /*tp = insert_module(T_MODU, "global");	/ loaded */

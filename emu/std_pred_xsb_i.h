@@ -309,11 +309,9 @@ inline static xsbBool atom_to_list(CTXTdeclc int call_type)
   term = ptoc_tag(CTXTc 1);
   list = ptoc_tag(CTXTc 2);
   if (!isnonvar(term)) {	/* use is: CODES/CHARS --> ATOM */
-    if (atomnameaddr == NULL) {
-      atomnameaddr = (char *)malloc(INITIAL_NAMELEN);
-      atomnamelen = INITIAL_NAMELEN;
-      /* printf("Allocated namebuf: %p, %d\n",atomnameaddr,atomnamelen);*/
-    }
+    atomnameaddr = (char *)mem_alloc(INITIAL_NAMELEN);
+    atomnamelen = INITIAL_NAMELEN;
+    //    printf("Allocated namebuf: %p, %d\n",atomnameaddr,atomnamelen);
     atomname = atomnameaddr;
     atomnamelast = atomnameaddr + (atomnamelen - 1);
     term2 = list;	/* DON'T use heap for temp storage */
@@ -345,7 +343,7 @@ inline static xsbBool atom_to_list(CTXTdeclc int call_type)
 	  return FALSE;	/* fail */
 	}
 	if (atomname >= atomnamelast) {
-	  atomnameaddr = (char *)realloc(atomnameaddr, (atomnamelen << 1));
+	  atomnameaddr = (char *)mem_realloc(atomnameaddr,atomnamelen,(atomnamelen << 1));
 	  atomname = atomnameaddr + (atomnamelen - 1);
 	  atomnamelen = atomnamelen << 1;
 	  atomnamelast = atomnameaddr + (atomnamelen - 1);
@@ -361,6 +359,7 @@ inline static xsbBool atom_to_list(CTXTdeclc int call_type)
       }
     } while (1);
     bind_string((CPtr)(term), (char *)string_find((char *)atomnameaddr, 1));
+    mem_dealloc(atomnameaddr,atomnamelen);
     SYS_MUTEX_UNLOCK(MUTEX_ATOM_BUF);
     return TRUE;
   } else {	/* use is: ATOM --> CODES/CHARS */
@@ -640,7 +639,7 @@ inline static xsbBool sort(CTXTdecl)
   list = ptoc_tag(CTXTc 1); /* reset in case moved */
   if (len > 0) {
     term2 = list;
-    cell_tbl = (Cell *)malloc((len * sizeof(Cell)));
+    cell_tbl = (Cell *)mem_alloc((len * sizeof(Cell)));
     if (!cell_tbl)
       xsb_abort("Cannot allocate temporary memory for sort/2");
     for (i=0 ; i < len ; ++i) {
@@ -664,7 +663,7 @@ inline static xsbBool sort(CTXTdecl)
 	follow(top) = makelist(hreg);
       }
     } follow(top) = makenil;
-    free(cell_tbl);
+    mem_dealloc(cell_tbl,len * sizeof(Cell));
     term = ptoc_tag(CTXTc 2);
     return unify(CTXTc new_list, term);
   }
@@ -707,7 +706,7 @@ inline static xsbBool keysort(CTXTdecl)
   term = ptoc_tag(CTXTc 2);
   if (len > 0) {
     term2 = list;
-    cell_tbl = (Cell *)malloc(len * sizeof(Cell));
+    cell_tbl = (Cell *)mem_alloc(len * sizeof(Cell));
     if (!cell_tbl)
       xsb_abort("Cannot allocate temporary memory for keysort/2");
     for (i=0 ; i < len ; ++i) {
@@ -727,7 +726,7 @@ inline static xsbBool keysort(CTXTdecl)
       top = hreg++;
       follow(top) = makelist(hreg);
     } follow(top) = makenil;
-    free(cell_tbl);
+    mem_dealloc(cell_tbl,len * sizeof(Cell));
     return unify(CTXTc new_list, term);
   }
   return unify(CTXTc list, term);
@@ -841,7 +840,7 @@ inline static xsbBool parsort(CTXTdecl)
   term = ptoc_tag(CTXTc 4);
   if (len > 0) {
     term2 = list;
-    cell_tbl = (Cell *)malloc(len * sizeof(Cell));
+    cell_tbl = (Cell *)mem_alloc(len * sizeof(Cell));
     if (!cell_tbl)
       xsb_abort("Cannot allocate temporary memory for parsort/4");
     for (i=0 ; i < len ; ++i) {
@@ -874,7 +873,7 @@ inline static xsbBool parsort(CTXTdecl)
       } 
     }
     follow(top) = makenil;
-    free(cell_tbl);
+    mem_dealloc(cell_tbl,len * sizeof(Cell));
     return unify(CTXTc new_list, term);
   }
   return unify(CTXTc list, term);

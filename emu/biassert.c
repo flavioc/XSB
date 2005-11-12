@@ -625,8 +625,8 @@ static char *buff_realloc(CTXTdecl)
 {
   /*  xsb_dbgmsg((LOG_DEBUG,"Enter buff_realloc(%d) %X", asrtBuff->Buff_size,asrtBuff->Buff)); */
   asrtBuff->Buff_size = asrtBuff->Buff_size + asrtBuff->Buff_size;
-  if (asrtBuff->Buff == NULL) asrtBuff->Buff = (char *)malloc(asrtBuff->Buff_size);
-  else asrtBuff->Buff = (char *)realloc(asrtBuff->Buff,asrtBuff->Buff_size);
+  if (asrtBuff->Buff == NULL) asrtBuff->Buff = (char *)mem_alloc(asrtBuff->Buff_size);
+  else asrtBuff->Buff = (char *)mem_realloc(asrtBuff->Buff,(asrtBuff->Buff_size / 2),asrtBuff->Buff_size);
   asrtBuff->BLim = asrtBuff->Buff_size-16;
   /*  xsb_dbgmsg((LOG_DEBUG,"Leave buff_realloc(%d) %X", asrtBuff->Buff_size,asrtBuff->Buff)); */
   return(asrtBuff->Buff);
@@ -2468,8 +2468,8 @@ PrRef build_prref( CTXTdeclc Psc psc )
     struct DispBlk_t *dispblk;
     if (*(pb)get_ep(psc) != switchonthread) {
       /* create new switchonthread instruction and dispblock */
-      pb disp_instr_addr = calloc(sizeof(Cell),2);
-      dispblk = (struct DispBlk_t *)calloc(sizeof(struct DispBlk_t)+MAXTHREAD*sizeof(Cell),1);
+      pb disp_instr_addr = mem_calloc(sizeof(Cell),2);
+      dispblk = (struct DispBlk_t *)mem_calloc(sizeof(struct DispBlk_t)+MAXTHREAD*sizeof(Cell),1);
 
       if (DispBlkHdr.firstDB) DispBlkHdr.firstDB->PrevDB = dispblk;
       dispblk->NextDB = DispBlkHdr.firstDB;

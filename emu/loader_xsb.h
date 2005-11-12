@@ -25,7 +25,6 @@
 
 #include "context.h"
 
-#define REL_TAB_SIZE      32768
 #define FOREIGN_NAMELEN   128
 #define SHORT_LDOPTIONLEN 254
 

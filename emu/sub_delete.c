@@ -36,6 +36,7 @@
 #include "macro_xsb.h"
 #include "error_xsb.h"
 #include "thread_xsb.h"
+#include "memory_xsb.h"
 
 extern BTHTptr hhadded;
 
@@ -89,12 +90,12 @@ static void free_al(VariantSF sf) {
    -------------------------------------- */
 
 static void delete_btht(BTHTptr btht) {
-  free(BTHT_BucketArray(btht));
+  mem_dealloc(BTHT_BucketArray(btht),BTHT_NumBuckets(btht)*sizeof(void *));
   free_btht(btht);
 }
 
 static void delete_tstht(TSTHTptr tstht) {
-  free(BTHT_BucketArray(tstht));
+  mem_dealloc(BTHT_BucketArray(tstht),BTHT_NumBuckets(tstht)*sizeof(void *));
   free_tsi(tstht);
   free_tstht(tstht);
 }

@@ -211,6 +211,8 @@ static CPtr heap_bot,heap_top,
   tr_bot,tr_top,
   cp_bot,cp_top,
   compl_top,compl_bot;
+static unsigned long heap_marks_size;
+
 
 #define stack_boundaries \
   heap_top = hreg; \
@@ -554,11 +556,11 @@ int gc_heap(CTXTdeclc int arity)
 #endif
 
       /* get rid of the marking areas - if they exist */
-      if (heap_marks)  { free((heap_marks-1)); heap_marks = NULL; }
-      if (tr_marks)    { free(tr_marks); tr_marks = NULL; }
-      if (ls_marks)    { free(ls_marks); ls_marks = NULL; }
-      if (cp_marks)    { free(cp_marks); cp_marks = NULL; }
-      if (slide_buf)   { free(slide_buf); slide_buf = NULL; }
+      if (heap_marks)  { mem_dealloc((heap_marks-1),heap_marks_size); heap_marks = NULL; }
+      if (tr_marks)    { mem_dealloc(tr_marks,tr_top-tr_bot+1); tr_marks = NULL; }
+      if (ls_marks)    { mem_dealloc(ls_marks,ls_bot - ls_top + 1); ls_marks = NULL; }
+      if (cp_marks)    { mem_dealloc(cp_marks,cp_bot - cp_top + 1); cp_marks = NULL; }
+      if (slide_buf)   { mem_dealloc(slide_buf,(slide_buf_size+1)*sizeof(CPtr)); slide_buf = NULL; }
       goto end;
     }
     
@@ -618,14 +620,14 @@ int gc_heap(CTXTdeclc int arity)
 	
 	GC_PROFILE_COPY_START_TIME;
 	
-	begin_new_heap = (CPtr)malloc(marked*sizeof(Cell));
+	begin_new_heap = (CPtr)mem_alloc(marked*sizeof(Cell));
 	if (begin_new_heap == NULL)
 	  xsb_exit("copying garbage collection could not allocate new heap");
 	end_new_heap = begin_new_heap+marked;
 
 	hreg = copy_heap(CTXTc marked,begin_new_heap,end_new_heap,arity);
 
-	free(begin_new_heap);
+	mem_dealloc(begin_new_heap,marked*sizeof(Cell));
 	adapt_hfreg_from_choicepoints(CTXTc hreg);
 	hbreg = cp_hreg(breg);
 
@@ -645,26 +647,26 @@ int gc_heap(CTXTdeclc int arity)
     /* get rid of the marking areas - if they exist */
     if (heap_marks)  { 
       check_zero(heap_marks,(heap_top - heap_bot),"heap") ;
-      free((heap_marks-1)) ; /* see its calloc */
+      mem_dealloc((heap_marks-1),heap_marks_size) ; /* see its calloc */
       heap_marks = NULL ;
     }
     if (tr_marks)    { 
       check_zero(tr_marks,(tr_top - tr_bot + 1),"tr") ;
-      free(tr_marks) ;
+      mem_dealloc(tr_marks,tr_top-tr_bot+1) ;
       tr_marks = NULL ;
     }
     if (ls_marks)    { 
       check_zero(ls_marks,(ls_bot - ls_top + 1),"ls") ;
-      free(ls_marks) ;
+      mem_dealloc(ls_marks,ls_bot - ls_top + 1) ;
       ls_marks = NULL ;
     }
     if (cp_marks)    {  
       check_zero(cp_marks,(cp_bot - cp_top + 1),"cp") ;
-      free(cp_marks) ;
+      mem_dealloc(cp_marks,cp_bot - cp_top + 1) ;
       cp_marks = NULL ;
     }
     if (slide_buf)   { 
-      free(slide_buf); 
+      mem_dealloc(slide_buf,(slide_buf_size+1)*sizeof(CPtr)); 
       slide_buf = NULL; 
     }
 #ifdef SAFE_GC

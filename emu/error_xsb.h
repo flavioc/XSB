@@ -128,6 +128,6 @@ xsbBool assert_buff_to_clref_p(CTXTdeclc prolog_term, byte, PrRef, int,
 
 int assert_code_to_buff_p(CTXTdeclc prolog_term);
 
-DllExport void call_conv xsb_throw(CTXTdeclc prolog_term);
+DllExport void call_conv xsb_throw(CTXTdeclc prolog_term, unsigned long);
 
 extern prolog_term build_xsb_backtrace(CTXTdecl);
