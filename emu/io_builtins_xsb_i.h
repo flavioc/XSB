@@ -247,6 +247,7 @@ inline static xsbBool file_function(CTXTdecl)
       ctop_int(CTXTc 5,ioport);
     }
     else ctop_int(CTXTc 5,-1);
+    mem_dealloc(addr,MAXPATHLEN);
 
     break;
   }
@@ -505,6 +506,7 @@ inline static xsbBool file_function(CTXTdecl)
       }
     } else
       ctop_int(CTXTc 5, -3);
+    mem_dealloc(addr,MAXPATHLEN);
 
     break;
 

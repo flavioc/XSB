@@ -48,6 +48,7 @@
 #include "cell_xsb.h"
 #include "error_xsb.h"
 #include "extensions_xsb.h"
+#include "memory_xsb.h"
 
 char executable[MAXPATHLEN] = {'\0'};	/* This is set to a real name below */
 
@@ -69,7 +70,7 @@ char xsbinfo_dir[MAXPATHLEN];
 
 
 void set_xsbinfo_dir () {
-  struct stat *fileinfo = malloc(1*sizeof(struct stat));
+  struct stat *fileinfo = mem_alloc(1*sizeof(struct stat));
   char old_xinitrc[MAXPATHLEN], new_xinitrc[MAXPATHLEN],
     user_config_dir[MAXPATHLEN], user_arch_dir[MAXPATHLEN];
   int retcode;
@@ -92,14 +93,14 @@ void set_xsbinfo_dir () {
   if ((retcode == 0) && (stat(new_xinitrc, fileinfo) != 0)) {
     xsb_warn("It appears that you have an old-style `.xsbrc' file!\n           The XSB initialization file is now %s.\n           If your `.xinitrc' defines the `library_directory' predicate,\n           please consult the XSB manual for the new conventions.", new_xinitrc);
   }
-  free(fileinfo);
+  mem_dealloc(fileinfo,1*sizeof(struct stat));
 }
 
 
 /* Check if PATH exists. Create if it doesn't. Bark if it can't create or if
    PATH exists, but isn't a directory. */
 static void check_create_dir(char *path) {
-  struct stat *fileinfo = malloc(1*sizeof(struct stat));
+  struct stat *fileinfo = mem_alloc(1*sizeof(struct stat));
   int retcode = stat(path, fileinfo);
 
   if (!fileinfo) {
@@ -122,7 +123,7 @@ static void check_create_dir(char *path) {
     xsb_warn("Cannot create directory `%s'!\n           XSB uses this directory to store data.", path);
     /* exit(1); */
   }
-  free(fileinfo);
+  mem_dealloc(fileinfo,1*sizeof(struct stat));
 }
 
 /* uses the global executable var */

@@ -84,7 +84,7 @@ typedef struct xsb_timeout xsbTimeout;
 
 int make_timed_call(CTXTdeclc xsbTimeout*, void (*) (xsbTimeout*));
 
-#define NEW_TIMEOUT_OBJECT  (xsbTimeout *)malloc(sizeof(xsbTimeout))
+// #define NEW_TIMEOUT_OBJECT  (xsbTimeout *)mem_alloc(sizeof(xsbTimeout))
 
 
 

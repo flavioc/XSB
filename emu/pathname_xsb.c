@@ -199,7 +199,7 @@ char *tilde_expand_filename(char *filename) {
 char *expand_filename(char *filename) {
   char aux_filename[MAXPATHLEN],
    aux_filename2[MAXPATHLEN];
-  char *absolute_filename = malloc(MAXPATHLEN); // since xsb may not be initialized
+  char *absolute_filename = mem_alloc(MAXPATHLEN); // since xsb may not be initialized
 
   if (is_absolute_filename(filename)) {
     return rectify_pathname(filename, absolute_filename);
@@ -235,7 +235,7 @@ DllExport char * call_conv strip_names_from_path(char* path, int how_many)
 {
   int i, abort_flag=FALSE;
   char *cutoff_ptr;
-  char *buffer = (char *) malloc(MAXPATHLEN);
+  char *buffer = malloc(MAXPATHLEN);  // can't change to mem_alloc for mt, lock not initted?
 
 #ifdef SIMPLESCALAR
   if (!buffer)

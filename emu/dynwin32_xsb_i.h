@@ -58,11 +58,12 @@ xsbBool dummy()
 
 // construct a path to config\bin\cfile_name.dll by removing "lib\xsb_configuration.P"
 // from xsb_config_file location and appending "bin\cfile_name.dll"
-static char *create_bin_dll_path(char *xsb_config_file_location, char *dll_file_name){
+static char *create_bin_dll_path(char *xsb_config_file_location, char *dll_file_name, int *dirlen){
   char *xsb_bin_dir;
   int char_count;
   char_count = strlen(xsb_config_file_location)-strlen("lib")-1-strlen("xsb_configuration.P");
-  xsb_bin_dir = malloc(sizeof(char)*(char_count+strlen(dll_file_name)+5)); // 5 stands for bin\\ + null
+  *dirlen = sizeof(char)*(char_count+strlen(dll_file_name)+5); // 5 stands for bin\\ + null
+  xsb_bin_dir = mem_alloc(*dirlen);
   strncpy(xsb_bin_dir, xsb_config_file_location,char_count);
   xsb_bin_dir[char_count]='\0';
   strcat(xsb_bin_dir, "bin");
@@ -88,6 +89,7 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   xsbBool	dummy();
   char *basename_ptr;
   char *xsb_bin_dir;
+  int dirlen;
   
   /* (1) create filename.so */
   
@@ -105,15 +107,15 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
     basename_ptr = strrchr(sofilename, SLASH); // get \file.dll
     if(basename_ptr != NULL){
       basename_ptr = basename_ptr + 1;
-      xsb_bin_dir = create_bin_dll_path(xsb_config_file, basename_ptr);
+      xsb_bin_dir = create_bin_dll_path(xsb_config_file, basename_ptr,&dirlen);
       if(( handle = LoadLibrary(xsb_bin_dir)) == 0 ){
 	if (( handle = LoadLibrary(basename_ptr)) == 0 ) {
-	  free(xsb_bin_dir);
+	  mem_dealloc(xsb_bin_dir,dirlen);
 	  xsb_warn("Cannot load library %s or %s; error #%d",basename_ptr,sofilename,GetLastError());
 	  return 0;
 	}
       }
-      free(xsb_bin_dir);
+      mem_dealloc(xsb_bin_dir,dirlen);
     }
   }
   

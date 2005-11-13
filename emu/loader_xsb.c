@@ -399,9 +399,10 @@ static int load_text(FILE *fd, int seg_num, int text_bytes, int *current_tab)
 	get_obj_word_bb(inst_addr);
 	if (oprand==2) {	/* second operand of switchonbound */
 	  if (cell(inst_addr) >= (unsigned long)(NUM_INDEX_BLKS*num_index_reloc)) {
+	    int tmp_nir = num_index_reloc;
 	    num_index_reloc = (cell(inst_addr)/NUM_INDEX_BLKS)+1;
-	    index_reloc = (CPtr *)realloc(index_reloc,NUM_INDEX_BLKS*
-					  num_index_reloc*sizeof(CPtr));
+	    index_reloc = (CPtr *)mem_realloc(index_reloc,tmp_nir,
+					      NUM_INDEX_BLKS*num_index_reloc*sizeof(CPtr));
 	    if (!index_reloc) {
 	      xsb_error("Couldn't allocate index relocation space");
 	      return FALSE;
@@ -712,8 +713,8 @@ static xsbBool load_syms(FILE *fd, int psc_count, int count, Psc cur_mod, int ex
 static void new_tdispblk(TIFptr *instr_ptr, Psc psc) {
   struct TDispBlk_t *tdispblk;
 
-  if (!(tdispblk = (struct TDispBlk_t *)calloc(sizeof(struct TDispBlk_t)+MAXTABTHREAD*sizeof(Cell),1)))
-    xsb_exit("No space for table dispatch block");
+  if (!(tdispblk = (struct TDispBlk_t *)mem_calloc(sizeof(struct TDispBlk_t)+MAXTABTHREAD*sizeof(Cell),1)))
+    xsb_exit("No space for table dispatch block");  /* never deallocated */
   if (tdispblkhdr.firstDB) tdispblkhdr.firstDB->PrevDB = tdispblk;
   tdispblk->NextDB = tdispblkhdr.firstDB;
   tdispblkhdr.firstDB = tdispblk;

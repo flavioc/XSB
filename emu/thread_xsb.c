@@ -37,6 +37,9 @@ Cell copy_term_from_thread( th_context *th, th_context *from, Cell arg1 );
 typedef struct
 {	
 	pthread_t	tid;
+#ifdef WIN_NT
+	pthread_t *	tid_addr;
+#endif
 	int		valid;
 	int		detached ;
 	th_context *	ctxt ;
@@ -94,6 +97,7 @@ static int th_new( pthread_t_p t, th_context *ctxt )
 	pos->valid = 1;
 #ifdef WIN_NT
 	pos->tid = *t;
+	pos->tid_addr = t;
 #else
 	pos->tid = t;
 #endif
@@ -105,16 +109,19 @@ static pthread_t_p th_get( int i )
 {
 	if( th_vec[i].valid )
 #ifdef WIN_NT
-		return &th_vec[i].tid ;
+	  return th_vec[i].tid_addr;
 #else
-		return th_vec[i].tid ;
+	  return th_vec[i].tid ;
 #endif
 	else
-		return (pthread_t_p)0 ;
+	  return (pthread_t_p)0 ;
 }
 
 static void th_delete( int i )
 {
+#ifdef WIN_NT
+	mem_dealloc(th_vec[i].tid_addr,sizeof(pthread_t));
+#endif	
 	th_vec[i].valid = 0;
 }
 
@@ -187,7 +194,7 @@ static int xsb_thread_create(th_context *th)
 	Integer id ;
 
 	goal = ptoc_tag(th, 2) ;
-	new_th = malloc(sizeof(th_context)) ;
+	new_th = mem_alloc(sizeof(th_context)) ;
 
 	copy_pflags(new_th, th) ;
 	init_machine(new_th) ;
@@ -196,7 +203,7 @@ static int xsb_thread_create(th_context *th)
 	flags[NUM_THREADS]++ ;
 
 #ifdef WIN_NT
-	thr = malloc(sizeof(pthread_t));
+	thr = mem_alloc(sizeof(pthread_t));
 	rc = pthread_create( thr, NULL, &xsb_thread_run, (void *)new_th ) ;
 #else
 	rc = pthread_create( &thr, NULL, &xsb_thread_run, (void *)new_th ) ;
@@ -308,7 +315,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 		{
 			Integer arg = ptoc_int(CTXTc 2) ;
 			pthread_mutexattr_t attr ;
-			id = (Integer) malloc( sizeof(pthread_mutex_t) ) ;
+			id = (Integer) mem_alloc( sizeof(pthread_mutex_t) ) ;
         		pthread_mutexattr_init( &attr ) ;
 			switch(arg)
 			{
@@ -358,7 +365,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 		case XSB_MUTEX_DESTROY:
 			id = ptoc_int(CTXTc 2) ;
 			rc = pthread_mutex_destroy( (pthread_mutex_t *)id ) ;
-			free( (pthread_mutex_t *)id ) ;
+			mem_dealloc( (pthread_mutex_t *)id, sizeof(pthread_mutex_t) ) ;
 			break ;
 
 		case XSB_SYS_MUTEX_LOCK:

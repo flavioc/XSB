@@ -1197,6 +1197,7 @@ DllExport int call_conv xsb_init(CTXTdeclc int argc, char *argv[])
 {
 int rc = 1;
 char executable1[MAXPATHLEN];
+ char *expfilename;
 
 updateWarningStart();
 if (!xsb_initted)
@@ -1205,8 +1206,10 @@ if (!xsb_initted)
 	the absolute or relative path name to the XSB installation directory */
 	sprintf(executable1, "%s%cconfig%c%s%cbin%cxsb",
 	argv[0], SLASH, SLASH, FULL_CONFIG_NAME, SLASH, SLASH);
-	strcpy(executable, expand_filename(executable1));
-	
+	expfilename = expand_filename(executable1);
+	strcpy(executable, expfilename);
+	mem_dealloc(expfilename,MAXPATHLEN);
+
 	if (0 == (rc = xsb(CTXTc 0,argc,argv)))     /* initialize xsb */
 		{
 		if (0 == (rc = xsb(CTXTc 1,0,0)))       /* enter xsb to set up regs */

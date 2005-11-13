@@ -168,10 +168,12 @@ static void display_file(char *infile_name)
 static void version_message(void)
 {
   char licensemsg[MAXPATHLEN], configmsg[MAXPATHLEN];
+  char *stripped_config_file;
 
   sprintf(licensemsg, "%s%cetc%ccopying.msg", install_dir, SLASH, SLASH);
+  stripped_config_file = strip_names_from_path(xsb_config_file, 2);
   sprintf(configmsg, "%s%cbanner.msg", 
-	  strip_names_from_path(xsb_config_file, 2), SLASH);
+	  stripped_config_file, SLASH);
 
   display_file(configmsg);
   fprintf(stdmsg, "\n");

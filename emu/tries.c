@@ -237,10 +237,10 @@ void init_trie_aux_areas(CTXTdecl)
 
 void free_trie_aux_areas(CTXTdecl)
 {
-  free(term_stack);
-  free(var_addr);
-  free(Addr_Stack);
-  free(reg_array);
+  mem_dealloc(term_stack,term_stacksize);
+  mem_dealloc(var_addr,var_addr_arraysz);
+  mem_dealloc(Addr_Stack,addr_stack_size);
+  mem_dealloc(reg_array,reg_array_size);
 }
 
 /*-------------------------------------------------------------------------*/

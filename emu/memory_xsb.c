@@ -82,7 +82,7 @@ void extend_enc_dec_as_nec(void *lptr, void *hptr) {
 
 /* === alloc permanent memory ============================================== */
 
-byte *mem_alloc(unsigned long size)
+void *mem_alloc(unsigned long size)
 {
     byte * ptr;
 
@@ -101,7 +101,7 @@ byte *mem_alloc(unsigned long size)
 
 /* === calloc permanent memory ============================================= */
 
-byte *mem_calloc(unsigned long size, unsigned long occs)
+void *mem_calloc(unsigned long size, unsigned long occs)
 {
     byte * ptr;
     unsigned long length = (size*occs+7) & ~0x7;
@@ -120,7 +120,7 @@ byte *mem_calloc(unsigned long size, unsigned long occs)
 
 /* === realloc permanent memory ============================================ */
 
-byte *mem_realloc(void *addr, unsigned long oldsize, unsigned long newsize)
+void *mem_realloc(void *addr, unsigned long oldsize, unsigned long newsize)
 {
     newsize = (newsize+7) & ~0x7 ;	      /* round to 8 */
     oldsize = (oldsize+7) & ~0x7 ;	      /* round to 8 */

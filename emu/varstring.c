@@ -65,6 +65,7 @@
 
 #include "auxlry.h"
 #include "cell_xsb.h"
+#include "memory_xsb.h"
 #ifndef DEBUG_VARSTRING
 #include "error_xsb.h"
 #endif
@@ -118,7 +119,7 @@ DllExport void call_conv varstring_init(VarString *vstr)
 
 DllExport void call_conv varstring_create(VarString **vstr)
 {
-  *vstr = (VarString *) malloc(sizeof(VarString));
+  *vstr = (VarString *) mem_alloc(sizeof(VarString)); // never released!
   varstring_init(*vstr);
 }
 
@@ -134,7 +135,7 @@ static void vs_init(VarString *vstr, int increment)
   if (increment < 1)
     increment = DEFAULT_VARSTR_INCREMENT;
 
-  if (NULL == (vstr->string = (char *)calloc(1, increment))) {
+  if (NULL == (vstr->string = (char *)mem_calloc(1, increment))) {
 #ifdef DEBUG_VARSTRING
     fprintf(stderr, "Cannot allocate memory for a variable-length string\n");
     return;
@@ -290,7 +291,7 @@ static inline void  vs_destroy(VarString *vstr)
   fprintf(stderr,
 	    "Deallocating a variable-length string\n");
 #endif
-  free(vstr->string);
+  mem_dealloc(vstr->string,vstr->size);
   vstr->string    = NULL;
   vstr->size        = 0;
   vstr->length      = 0;
@@ -377,7 +378,7 @@ static void vs_adjust_size(VarString *vstr, int minsize)
 
   newsize = (minsize/vstr->increment +1) * (vstr->increment);
 
-  if (NULL == (vstr->string = (char *)realloc(vstr->string, newsize))) {
+  if (NULL == (vstr->string = (char *)mem_realloc(vstr->string, vstr->size, newsize))) {
 #ifdef DEBUG_VARSTRING
     fprintf(stderr, "No room to expand a variable-length string\n");
     return;

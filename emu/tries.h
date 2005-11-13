@@ -397,7 +397,7 @@ extern CPtr reg_arrayptr, var_regs[];
 
 /* allocate an array for easy expansion */ 
 #define alloc_arr(AArrType,AArrayNam,AArraySz){\
-    AArrayNam = (AArrType *)malloc(sizeof(AArrType) * AArraySz);\
+    AArrayNam = (AArrType *)mem_alloc(sizeof(AArrType) * AArraySz); \
     if (AArrayNam == NULL) {\
       xsb_exit("No More memory for reallocating Array");\
     }\
@@ -416,7 +416,7 @@ extern CPtr reg_arrayptr, var_regs[];
     for (i = 0; i < Siz; i++) {\
       ArrayNam[i] = Temp[i];\
     }\
-    free(Temp);\
+    mem_dealloc(Temp,Siz*sizeof(ArrType));\
 }
 
 #define will_overflow_reg_array(x) {\

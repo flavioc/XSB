@@ -61,6 +61,7 @@
 #include "system_defs_xsb.h"
 #include "register.h"
 #include "psc_xsb.h"
+#include "memory_xsb.h"
 
 #define MAX_CMD_LEN 1024
 
@@ -78,7 +79,7 @@ static char *get_next_command_argument(char **buffptr, char **cmdlineprt);
 static int file_copy(char *, char *);
 static int copy_file_chunk(FILE *, FILE *, unsigned long);
 #ifndef WIN_NT
-static char *xreadlink(const char *);
+static char *xreadlink(const char *, int *);
 #endif
 
 static struct proc_table_t {
@@ -1175,14 +1176,15 @@ static int file_copy(char *source, char *dest)
       return 0;
     }
   } else if (S_ISLNK(source_stat.st_mode)) {
-    char *lpath;
+    char *lpath; 
+    int lpath_len;
 
-    lpath = xreadlink(source);
+    lpath = xreadlink(source,&lpath_len);
     if (symlink(lpath, dest) < 0) {
       xsb_warn("[file_copy] Cannot create symlink %s", dest);
       return 0;
     }
-    free(lpath);
+    mem_dealloc(lpath,lpath_len);
     return 1;
   }
 #endif
@@ -1233,22 +1235,24 @@ static int copy_file_chunk(FILE *src_file, FILE *dst_file, unsigned long chunksi
 }
 
 #ifndef WIN_NT
-static char *xreadlink(const char *path)
+static char *xreadlink(const char *path, int *bufsize)
 {                       
   static const int GROWBY = 80; /* how large we will grow strings by */
 
   char *buf = NULL;   
-  int bufsize = 0, readsize = 0;
+  int readsize = 0;
+  *bufsize = 0;
 
   do {
-    buf = realloc(buf, bufsize += GROWBY);
-    readsize = readlink(path, buf, bufsize); /* 1st try */
+    buf = mem_realloc(buf, *bufsize, *bufsize + GROWBY);
+    *bufsize += GROWBY;
+    readsize = readlink(path, buf, *bufsize); /* 1st try */
     if (readsize == -1) {
       xsb_warn("[file_copy] Internal error: xreadlink.\n");
       return NULL;
     }
   }           
-  while (bufsize < readsize + 1);
+  while (*bufsize < readsize + 1);
 
   buf[readsize] = '\0';
 
