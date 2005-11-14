@@ -231,7 +231,7 @@ static int get_index_tab(FILE *fd, int clause_no)
       val = (Cell) ival; 
       count += 9;
       break;
-    case 'l': val = (Cell)(list_str); 
+    case 'l': val = (Cell)(list_pscPair); 
       count += 5;
       break;
     case 'n': val = 0;

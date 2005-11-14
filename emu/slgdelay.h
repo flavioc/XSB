@@ -86,6 +86,9 @@ typedef struct pos_neg_de_list	*PNDE;
 
 /*--------------------------------------------------------------------*/
 
+/* hangs off of answer escape node, which is main access to it, along
+   with PDES; function is vaguely analogous to subgoal frame. */
+
 typedef struct AS_info {
   PNDE	  pdes;		/* pos DEs that refer to this answer substitution */
   VariantSF subgoal;	/* subgoal to which this answer substitution belongs */

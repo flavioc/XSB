@@ -962,7 +962,7 @@ void init_symbols(void)
   Pair temp, tp;
   int  i, new_indicator;
 
-  inst_begin = 0;
+  inst_begin_gl = 0;
   symbol_table.table = (void **)mem_calloc(symbol_table.size, sizeof(Pair));
   string_table.table = (void **)mem_calloc(string_table.size, sizeof(char *));
 
@@ -974,9 +974,9 @@ void init_symbols(void)
 
   /* insert "."/2 into global list */
   temp = (Pair)insert(".", 2, global_mod, &new_indicator);
-  list_str = temp;
+  list_pscPair = temp;
   list_psc = pair_psc(temp);
-  list_dot = get_name(list_psc);
+  list_dot_string = get_name(list_psc);
 
   if_psc = pair_psc(insert(":-", 2, global_mod, &new_indicator));
 
@@ -988,7 +988,7 @@ void init_symbols(void)
   standard_psc = pair_psc(insert_module(0, "standard"));	/* unloaded */
 
   true_psc = make_code_psc_rec("true", 0, standard_psc);
-  true_sym = get_name(true_psc);
+  true_string = get_name(true_psc);
   
   comma_psc = make_code_psc_rec(",", 2, standard_psc);
 
@@ -1000,7 +1000,7 @@ void init_symbols(void)
   tnot_psc = make_code_psc_rec("tnot", 1, tables_psc);
 
   /* insert "[]"/0 into String Table */
-  nil_sym = string_find("[]", 1);
+  nil_string = string_find("[]", 1);
 
   /*
    * Initialize ret PSCs.  Notice that ret_psc[0] is set to a pointer

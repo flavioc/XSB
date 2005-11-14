@@ -158,7 +158,10 @@ void log_rec(CTXTdeclc Psc psc, char *ctype) {
 
 /* lfcastro: with INSN_BLOCKS, we use a block for each WAM instruction, 
    and define temporary variables locally; otherwise, temp variables are 
-   global to the emuloop function */
+   global to the emuloop function.
+
+   TLS: this experiment does not seem to have worked -- no other
+   occurrences of INSN_BLOCKS in the system.*/
 
 #ifdef INSN_BLOCKS
 
@@ -186,12 +189,12 @@ void log_rec(CTXTdeclc Psc psc, char *ctype) {
 
 #ifdef JUMPTABLE_EMULOOP
 
-static void *instr_addr[256];
+static void *instr_addr_table[256];
 
 #define XSB_End_Instr()                                      \
                    XSB_Debug_Instr                           \
                    XSB_Profile_Instr                         \
-		   goto *instr_addr[(byte)*lpcreg];          \
+		   goto *instr_addr_table[(byte)*lpcreg];          \
 		   }
 
 
@@ -199,7 +202,7 @@ static void *instr_addr[256];
                    do {                                      \
                       XSB_Debug_Instr                        \
                       XSB_Profile_Instr                      \
-                      goto *instr_addr[(byte)*lpcreg];       \
+                      goto *instr_addr_table[(byte)*lpcreg];       \
                    } while(0)
 
 
@@ -269,6 +272,7 @@ static void *instr_addr[256];
 #define WRITE		1
 #define READFLAG	0
 
+/* TLS Macro does not appear to be used */
 #ifdef USE_BP_LPCREG
 #define POST_LPCREG_DECL asm ("bp")
 #else
@@ -332,7 +336,9 @@ extern long prof_flag;
 extern void debug_inst(CTXTdeclc byte *, CPtr);
 #endif
 
-int debug_assert = 0;
+/* TLS: took out unused global.
+ * int debug_assert = 0;
+ */ 
 
 #ifndef MULTI_THREAD
 xsbBool neg_delay;
@@ -410,12 +416,12 @@ int emuloop(CTXTdeclc byte *startaddr)
 #endif
 
   xsb_segfault_message = xsb_default_segfault_msg;
-  rreg = reg; /* for SUN */
+  rreg = reg; /* for SUN (TLS ???) */
 
 #ifdef JUMPTABLE_EMULOOP
 
 #define XSB_INST(INum,Instr,Label,d1,d2,d3,d4) \
-        instr_addr[INum] = && Label
+        instr_addr_table[INum] = && Label
 #include "xsb_inst_list.h"
 
 #endif
@@ -564,6 +570,7 @@ contcase:     /* the main loop */
     }
   XSB_End_Instr()
 
+    /* "avar" stands for anonymous variable */
   XSB_Start_Instr(uniavar,_uniavar) /* PPP */
     ADVANCE_PC(size_xxx);
     if (!flag) {	/* if (flag == READ) */
@@ -660,6 +667,7 @@ contcase:     /* the main loop */
     bld_ref((CPtr)op2, (CPtr)op1);
   XSB_End_Instr()
 
+    /* does not dereference op1 (as opposed to putdval) */
   XSB_Start_Instr(putpval,_putpval) /* PVR */
     DefOps13
     Op1(get_xvx);
@@ -956,6 +964,8 @@ contcase:     /* the main loop */
     RESTORE_SUB
   XSB_End_Instr()
 
+      /* Used for tabling: puts a pointer to the subgoal_frame in the 
+	 local environment for a tabled subgoal */	 
   XSB_Start_Instr(getVn,_getVn) /* PPV */
     Def1op
     Op1(get_xxv);
@@ -1081,7 +1091,7 @@ contcase:     /* the main loop */
       op1 = (Cell)int_val(op1);
       break;
     case XSB_LIST:
-      op1 = (Cell)(list_str); 
+      op1 = (Cell)(list_pscPair); 
       break;
     case XSB_FREE:
     case XSB_REF1:
@@ -1144,7 +1154,7 @@ contcase:     /* the main loop */
               depth++;
               argsleft[depth] = 2;
               stk[depth] = clref_val(op1);
-	      op1 = (Cell)(list_str); 
+	      op1 = (Cell)(list_pscPair); 
 	      break;
 	    case XSB_STRUCT:
 	      depth++;
@@ -1172,7 +1182,7 @@ contcase:     /* the main loop */
 	  op1 = (Cell)int_val(op1);
 	  break;
 	case XSB_LIST:
-	  op1 = (Cell)(list_str); 
+	  op1 = (Cell)(list_pscPair); 
 	  break;
 	case XSB_STRUCT:
 	  op1 = (Cell)get_str_psc(op1);
@@ -1478,6 +1488,7 @@ contcase:     /* the main loop */
     }
   XSB_End_Instr()
 
+    /* Used for the @=/2 operator */
   XSB_Start_Instr(fun_test_ne,_fun_test_ne)   /* PRR-L */
     Def3ops
     Op1(Register(get_xrx));
@@ -1585,6 +1596,7 @@ contcase:     /* the main loop */
   XSB_End_Instr() 
 
 
+    /* dereferences op1 (as opposed to putpval) */
   XSB_Start_Instr(putdval,_putdval) /* PVR */
     Def2ops
     Op1(Variable(get_xvx));
@@ -1747,6 +1759,8 @@ contcase:     /* the main loop */
      proceed_sub;
   XSB_End_Instr()
 
+    /* This is the WAM-execute.  Name was changed because of conflict
+       with some system files for pthreads. */
   XSB_Start_Instr(xsb_execute,_xsb_execute) /* PPP-S */
     Def1op
     Psc psc;
@@ -1902,7 +1916,7 @@ contcase:     /* the main loop */
   XSB_Start_Instr(halt,_halt)  /* PPP */
     ADVANCE_PC(size_xxx);
     pcreg = lpcreg; 
-    inst_begin = lpcreg;  /* hack for the moment to make this a ``creturn'' */
+    inst_begin_gl = lpcreg;  /* hack for the moment to make this a ``creturn'' */
     return(0);	/* not "goto contcase"! */
   XSB_End_Instr()
 
@@ -1926,6 +1940,8 @@ contcase:     /* the main loop */
     }
   XSB_End_Instr()
 
+    /* Calls internal code -- does not go through psc record and omits
+       interrupt checks.  Not sure if profile_interrupt should be here...*/
   XSB_Start_Instr(calld,_calld)   /* PPA-L */
     ADVANCE_PC(size_xxx); /* this is ok */
     cpreg = lpcreg+sizeof(Cell); 
@@ -2160,7 +2176,8 @@ DllExport int call_conv xsb(CTXTdeclc int flag, int argc, char *argv[])
      init_symbols();		/* preset a few symbols in PSC table */
      init_interrupt();		/* catch ^C interrupt signal */
 
-     /* "b" does nothing, but POSIX allows it */
+     /* "b" does nothing in UNIX, denotes binary file in Windows -- 
+	needed in Windows for reading byte-code files */
      fd = fopen(startup_file, "rb");
 
      if (!fd) {
@@ -2172,11 +2189,11 @@ DllExport int call_conv xsb(CTXTdeclc int flag, int argc, char *argv[])
      magic_num = read_magic(fd);
      fclose(fd);
      if (magic_num == 0x11121307 || magic_num == 0x11121305)
-       inst_begin = loader(CTXTc startup_file,0);
+       inst_begin_gl = loader(CTXTc startup_file,0);
      else
        xsb_exit("Incorrect startup file format");
 
-     if (!inst_begin)
+     if (!inst_begin_gl)
        xsb_exit("Error in loading startup file");
 
      if (xsb_mode == DISASSEMBLE) {
@@ -2192,7 +2209,7 @@ DllExport int call_conv xsb(CTXTdeclc int flag, int argc, char *argv[])
 
    } else if (flag == 1) {  /* continue execution */
 
-     return(emuloop(CTXTc inst_begin));
+     return(emuloop(CTXTc inst_begin_gl));
 
    } else if (flag == 2) {  /* shutdown xsb */
 

@@ -56,8 +56,12 @@
 
 /*----------------------------------------------------------------------*/
 
-int call_step = 0;
-int hitrace_suspend = 0;
+/* These variables are global, so in principle, you could run the
+   instruction debugger with multiple active threads.  It hasn't been
+   tested out, however. */
+
+int call_step_gl = 0;
+int hitrace_suspend_gl = 0;
 
 #ifdef DEBUG_VM
 int pil_step = 1;
@@ -176,7 +180,7 @@ static void print_term(FILE *fp, Cell term, byte car, int level)
       print_term(fp, term, CDR, level);
       return;
     case XSB_STRING:
-      if (string_val(term) != nil_sym)
+      if (string_val(term) != nil_string)
 	goto vertbar;
       else {
 	fprintf(fp, "]");
@@ -224,12 +228,12 @@ static void print_call(CTXTdeclc Psc psc)
 
 void debug_call(CTXTdeclc Psc psc)
 {
-  if (call_step || get_spy(psc)) {
+  if (call_step_gl || get_spy(psc)) {
     print_call(CTXTc psc);
 #ifdef DEBUG_VM
     debug_interact(CTXT);
 #endif
-  } else if (!hitrace_suspend) print_call(CTXTc psc);
+  } else if (!hitrace_suspend_gl) print_call(CTXTc psc);
 }
 
 /*======================================================================*/
@@ -900,7 +904,7 @@ void debug_inst(CTXTdeclc byte *lpcreg, CPtr le_reg)
   } else { 
     if (debug_ctr > 0) debug_ctr--;
     else 
-      if (call_step == 1 && *lpcreg == call) {
+      if (call_step_gl == 1 && *lpcreg == call) {
 	pil_step = 1; debug_interact(CTXT);
       }
     if (compl_step == 1 && *lpcreg == check_complete) {
@@ -1468,13 +1472,13 @@ static void debug_interact(CTXTdecl)
     goto again;
   case 'g':
     skip_to_nl();
-    pil_step = hitrace_suspend = call_step = 0;
+    pil_step = hitrace_suspend_gl = call_step_gl = 0;
     compl_step = 1;
     break;
   case 'G':
     skip_to_nl();
-    print_hide = hitrace_suspend = compl_step = 1;
-    pil_step = call_step = 0;
+    print_hide = hitrace_suspend_gl = compl_step = 1;
+    pil_step = call_step_gl = 0;
     break;
   case 'h':
   case '?':
@@ -1500,12 +1504,12 @@ static void debug_interact(CTXTdecl)
     break;
   case 'l':
     skip_to_nl();
-    pil_step = call_step = hitrace_suspend = 0;
+    pil_step = call_step_gl = hitrace_suspend_gl = 0;
     break;
   case 'L':
     skip_to_nl();
-    pil_step = flags[PIL_TRACE] = call_step = 0; 
-    print_hide = hitrace_suspend = 1;
+    pil_step = flags[PIL_TRACE] = call_step_gl = 0; 
+    print_hide = hitrace_suspend_gl = 1;
     break;
   case 'M':
     skip_to_nl();
@@ -1513,12 +1517,12 @@ static void debug_interact(CTXTdecl)
     goto again;
   case 'n':
     skip_to_nl();
-    pil_step = hitrace_suspend = 0;
-    call_step = 1;
+    pil_step = hitrace_suspend_gl = 0;
+    call_step_gl = 1;
     break;
   case 'N':
     skip_to_nl();
-    pil_step = flags[PIL_TRACE] = flags[HITRACE] = call_step = 0;
+    pil_step = flags[PIL_TRACE] = flags[HITRACE] = call_step_gl = 0;
     print_hide = 1;
     break;
   case 'o':
@@ -1550,7 +1554,7 @@ static void debug_interact(CTXTdecl)
     skip_to_nl();
     pil_step = 1;
     flags[PIL_TRACE] = 1;
-    hitrace_suspend = 0;
+    hitrace_suspend_gl = 0;
     break;
   case 'S':
     skip_to_nl(); 

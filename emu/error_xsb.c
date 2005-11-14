@@ -67,7 +67,7 @@ FILE *stdfdbk;	     	     	  /* stream for XSB feedback messages */
 
 /*----------------------------------------------------------------------*/
 
-static char *err_msg[] = {
+static char *err_msg_table[] = {
 	"Calculation", "Database", "Evaluation", "Implementation",
 	"Instantiation", "I/O Control", "I/O End-of-file", "I/O Formatting",
 	"Operator", "Overflow", "Range", "Syntax", "Type",
@@ -450,14 +450,14 @@ void err_handle(CTXTdeclc int description, int arg, char *f,
     /*
     sprintf(message, 
 	    "! %s error in argument %d of %s/%d",
-	    err_msg[description], arg, f, ar);
+	    err_msg_table[description], arg, f, ar);
     break;
     */
   case RANGE:	/* I assume expected != NULL */
     sprintf
       (message,
        "! %s error: in argument %d of %s/%d\n! %s expected, but %d found",
-       err_msg[description], arg, f, 
+       err_msg_table[description], arg, f, 
        ar, expected, (int) int_val(found));
     break;
   case TYPE:
@@ -465,12 +465,12 @@ void err_handle(CTXTdeclc int description, int arg, char *f,
   case ZERO_DIVIDE:
     sprintf(message,
 	    "! %s error in %s\n! %s expected, but %lx found",
-	    err_msg[description], f, expected, found);
+	    err_msg_table[description], f, expected, found);
     break;
   default:
     sprintf(message, 
 	    "! %s error (not completely handled yet): %s",
-	    err_msg[description], expected);
+	    err_msg_table[description], expected);
     break;
   }
   xsb_basic_abort(message);
@@ -506,17 +506,18 @@ void err_handle(CTXTdeclc int description, int arg, char *f,
    not, we call unwind_stack again to look for the right catcher to
    unify with the ball. */
 
-static byte *scope_marker;
+#ifndef MULTI_THREAD
+byte *catch_scope_marker;
+#endif
 
 int set_scope_marker(CTXTdecl)
 {
   /*   printf("%x %x\n",cp_ereg(breg),ereg);*/
-   scope_marker = pcreg;
+   catch_scope_marker = pcreg;
    /* skipping a putpval and a call instruction */
    /* is there a portable way to do this ?      */
    /* instruction builtin has already made pcreg point to the putpval */
-   scope_marker += THROWPAD;
-   /* printf("ssm sm 2 %d  x%x\n",scope_marker,scope_marker); */
+   catch_scope_marker += THROWPAD;
    return(TRUE);
 } /* set_scope_marker */
 
@@ -528,8 +529,7 @@ int unwind_stack(CTXTdecl)
    CPtr e,b, xtemp1, xtemp2;
    CPtr tmp_compl_frm = NULL;
 
-   cpmark = scope_marker;
-   /* printf("us sm 2 %d  x%x\n",scope_marker,scope_marker); */
+   cpmark = catch_scope_marker;
    /* first find the right environment */
    e = ereg;
    cp = cpreg; /* apparently not pcreg ... maybe not good in general */

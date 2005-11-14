@@ -87,11 +87,11 @@ CPtr interrupt_reg = &interrupt_counter;
 /*
  * Ptr to the beginning of instr. array
  */ 
-byte *inst_begin;
+byte *inst_begin_gl;
 
-char *nil_sym, *true_sym;
+char *nil_string, *true_string;
 
-Pair list_str;
+Pair list_pscPair;
 
 Psc list_psc, comma_psc, true_psc, if_psc, colon_psc;
 Psc tnot_psc, delay_psc;
@@ -105,7 +105,8 @@ Psc box_psc;
  */
 Psc ret_psc[MAX_ARITY];
 
-char *list_dot;
+/* TLS: changed name to accord with new global conventions. */
+char *list_dot_string;
 
 #ifndef MULTI_THREAD
 int asynint_code = 0;

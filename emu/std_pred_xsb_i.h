@@ -53,7 +53,7 @@ inline static xsbBool functor_builtin(CTXTdecl)
       return (atom_unify(CTXTc makestring(name), ptoc_tag(CTXTc 2)) &&
 	      int_unify(CTXTc makeint(arity), ptoc_tag(CTXTc 3)));
     } else if (islist(term))
-      return (atom_unify(CTXTc makestring(list_dot), ptoc_tag(CTXTc 2)) &&
+      return (atom_unify(CTXTc makestring(list_dot_string), ptoc_tag(CTXTc 2)) &&
 	      int_unify(CTXTc makeint(2), ptoc_tag(CTXTc 3)));
     else return (unify(CTXTc term, ptoc_tag(CTXTc 2)) &&
 		 int_unify(CTXTc makeint(0), ptoc_tag(CTXTc 3)));
@@ -69,7 +69,7 @@ inline static xsbBool functor_builtin(CTXTdecl)
 	if (value == 0) return unify(CTXTc functor, term);
 	else {
 	  if (value == 2 && isstring(functor) 
-	      && string_val(functor) == list_dot) {
+	      && string_val(functor) == list_dot_string) {
 	    /* term is a variable and I bind it to a list. */
 	    bind_list((CPtr)term, hreg);
 	    new_heap_free(hreg);
@@ -173,7 +173,7 @@ inline static xsbBool univ_builtin(CTXTdecl)
       }
     }
     else { /* term is list */
-      follow(hreg++) = makestring(list_dot);
+      follow(hreg++) = makestring(list_dot_string);
       top = hreg++;
       follow(top) = makelist(hreg); top = hreg++;
       follow(top) = (Cell)(clref_val(term)); top = hreg++;

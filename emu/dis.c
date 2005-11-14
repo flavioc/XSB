@@ -237,7 +237,7 @@ static void dis_text(void)
    int comma;
 
    fprintf(filedes, "\n/*text below\t\t*/\n\n");
-   this_seg = (pseg) inst_begin;
+   this_seg = (pseg) inst_begin_gl;
    while (this_seg) {		/* repeat for all text segment */
       fprintf(filedes, "segment([\n");
       endaddr = (CPtr) ((pb) seg_hdr(this_seg) + seg_size(this_seg)) ;

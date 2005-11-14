@@ -214,7 +214,7 @@
 #define CALLABLE		198
 #define IS_LIST			199
 #define FUNCTOR			200
-#define ARG             201
+#define ARG                     201
 #define UNIV			202
 #define IS_MOST_GENERAL_TERM    203
 
@@ -240,6 +240,7 @@
 #define GC_TABLED_PREDS           0
 #define GC_DYNAMIC                1
 
+#define FINDALL_FREE    	229
 
 #define ORACLE_QUERY		230
 #define ODBC_EXEC_QUERY		231

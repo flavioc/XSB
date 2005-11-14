@@ -683,7 +683,7 @@ int assert_code_to_buff_p(CTXTdeclc prolog_term Clause)
     Body = p2p_arg(Clause, 2);
     has_body = 1;
     if (isstring(Body)) {
-      if (string_val(Body) == true_sym) has_body = 0; 
+      if (string_val(Body) == true_string) has_body = 0; 
       else {
 	sym = insert(string_val(Body),0,(Psc)flags[CURRENT_MODULE],&v);
 	Body = makecs(hreg);
@@ -1492,7 +1492,7 @@ static void db_addbuff(byte Arity, ClRef Clause, PrRef Pred, int AZ, int ifSOB, 
 
 #define NUMHASHSIZES 16
 /* some primes for hash table sizes */
-static int hashsizes[NUMHASHSIZES] = {17,503,5003,49999,200003,400009,700001,1000003,
+static int hashsizes_table[NUMHASHSIZES] = {17,503,5003,49999,200003,400009,700001,1000003,
         1000033,1000037,1000039,1000081,1000099,1000117,1000121,1000133}; 
 
 static int hash_resize( PrRef Pred, SOBRef SOBrec, unsigned int OldTabSize )
@@ -1506,12 +1506,12 @@ static int hash_resize( PrRef Pred, SOBRef SOBrec, unsigned int OldTabSize )
    if( PredOpCode(Pred) != fail && ClRefType(SOBrec) == SOB_RECORD ) {
      ThisTabSize = ClRefHashSize(SOBrec) ;
      if (ClRefNumNonemptyBuckets(SOBrec) > (ThisTabSize/4)*3) {
-       if (ThisTabSize >= (unsigned int) hashsizes[NUMHASHSIZES-1]) {
+       if (ThisTabSize >= (unsigned int) hashsizes_table[NUMHASHSIZES-1]) {
 	 ThisTabSize = ThisTabSize+2;
        } else {
 	 for (i=0; i<NUMHASHSIZES; i++) 
-	   if ((unsigned int) hashsizes[i] > ThisTabSize) break; 
-	 ThisTabSize = hashsizes[i];
+	   if ((unsigned int) hashsizes_table[i] > ThisTabSize) break; 
+	 ThisTabSize = hashsizes_table[i];
        }
        /*printf("Resizing HT to %d\n",ThisTabSize);*/
      }
@@ -1569,7 +1569,7 @@ static int hash_val(int Ind, prolog_term Head, int TabSize )
 	      depth++;
 	      argsleft[depth] = 2;
 	      stk[depth] = clref_val(term);
-	      term = (Cell)(list_str); 
+	      term = (Cell)(list_pscPair); 
 	      break;
 	    case XSB_STRUCT:
 	      depth++;

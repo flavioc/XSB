@@ -51,6 +51,7 @@
 #include "error_xsb.h"
 #include "orient_xsb.h"
 #include "loader_xsb.h"
+#include "context.h"
 
 /*
   This was the old test for being a kosher Prolog string
@@ -518,16 +519,19 @@ DllExport void call_conv c2p_chars(CTXTdeclc char *str, int regs_to_protect, pro
 #include "setjmp_xsb.h"
 
 static char *c_dataptr_rest;
-static jmp_buf env;
+
+#ifndef MULTI_THREAD
+static jmp_buf cinterf_env;
+#endif
 
 /*
 ** procedure cppc_error
 **
 */
 
-static void cppc_error(int num)
+static void cppc_error(CTXTdeclc int num)
 {
-    longjmp(env, num);
+    longjmp(cinterf_env, num);
 }
 
 /*
@@ -535,15 +539,15 @@ static void cppc_error(int num)
 **
 */
 
-static char *skip_subfmt(char *ptr, char quote)
+static char *skip_subfmt(CTXTdeclc char *ptr, char quote)
 {
     while (*ptr) {
 	if (*ptr == quote) return ++ptr;
-	else if (*ptr == '[') ptr = skip_subfmt(++ptr, ']');
-	else if (*ptr == '(') ptr = skip_subfmt(++ptr, ')');
+	else if (*ptr == '[') ptr = skip_subfmt(CTXTc ++ptr, ']');
+	else if (*ptr == '(') ptr = skip_subfmt(CTXTc ++ptr, ')');
 	else ptr++;
     }
-    cppc_error(6);
+    cppc_error(CTXTc 6);
     return ptr;	/* never reach here */
 }
 
@@ -553,7 +557,7 @@ static char *skip_subfmt(char *ptr, char quote)
 ** count Prolog term size (arity). Ignored fields are not counted
 */
 
-static int count_arity(char *ptr, int quote)
+static int count_arity(CTXTdeclc char *ptr, int quote)
 {
     int arity = 0;
 
@@ -561,11 +565,11 @@ static int count_arity(char *ptr, int quote)
 	if (*ptr == quote) return arity;
 	else if (*ptr == '%') {
 	    if (*(++ptr)!='*') arity++;
-	} else if (*ptr == '[') ptr = skip_subfmt(++ptr, ']');
-	else if (*ptr == '(') ptr = skip_subfmt(++ptr, ')');
+	} else if (*ptr == '[') ptr = skip_subfmt(CTXTc ++ptr, ']');
+	else if (*ptr == '(') ptr = skip_subfmt(CTXTc ++ptr, ')');
 	else ptr++;
     }
-    cppc_error(5);
+    cppc_error(CTXTc 5);
     return -1;	/* never reach here */
 }
 
@@ -576,18 +580,18 @@ static int count_arity(char *ptr, int quote)
 ** should be the same as arity + ignored fields.
 */
 
-static int count_fields(char *ptr, int quote)
+static int count_fields(CTXTdeclc char *ptr, int quote)
 {
     int fields = 0;
 
     while (*ptr && fields <= MAX_ARITY) {
 	if (*ptr == quote) return fields;
 	else if (*ptr == '%') { fields++; ptr++; }
-	else if (*ptr == '[') ptr = skip_subfmt(++ptr, ']');
-	else if (*ptr == '(') ptr = skip_subfmt(++ptr, ')');
+	else if (*ptr == '[') ptr = skip_subfmt(CTXTc ++ptr, ']');
+	else if (*ptr == '(') ptr = skip_subfmt(CTXTc ++ptr, ')');
 	else ptr++;
     }
-    cppc_error(5);
+    cppc_error(CTXTc 5);
     return -1;	/* never reach here */
 }
 
@@ -597,7 +601,7 @@ static int count_fields(char *ptr, int quote)
 ** count C struct size (number of bytes). Ignored fields are also counted
 */
 
-static int count_csize(char *ptr, int quote)
+static int count_csize(CTXTdeclc char *ptr, int quote)
 {
     int size = 0;
 
@@ -614,15 +618,15 @@ static int count_csize(char *ptr, int quote)
 		case 'z': ptr++; size += 4 * (*ptr-'0'); ptr++; break;
 		case 't': size += sizeof(int *);
 		    ptr += 2;
-		    skip_subfmt(ptr, ')');
+		    skip_subfmt(CTXTc ptr, ')');
 		    break;
 		case 'l': size += sizeof(int *);
 		    ptr += 2;
-		    skip_subfmt(ptr, ')');
+		    skip_subfmt(CTXTc ptr, ')');
 		    break;
 		case '[': 
-		    size += count_csize(++ptr, ']');
-		    skip_subfmt(ptr, ']');
+		    size += count_csize(CTXTc ++ptr, ']');
+		    skip_subfmt(CTXTc ptr, ']');
 		    break;
 		case '0':
 		case '1':
@@ -635,11 +639,11 @@ static int count_csize(char *ptr, int quote)
 		case '8':
 		case '9':
 		    size += sizeof(int *); ptr++; break;
-		default: cppc_error(7); break;
+		default: cppc_error(CTXTc 7); break;
 	    }
 	}
     }
-    cppc_error(8);
+    cppc_error(CTXTc 8);
     return -1;	/* never reach here */
 }
 
@@ -657,7 +661,7 @@ static char *ctop_term0(CTXTdeclc char *ptr, char *c_dataptr, char **subformat,
     int  argno, fields, i;
     int ignore1;
 
-    if (*ptr++!= '%') cppc_error(1);
+    if (*ptr++!= '%') cppc_error(CTXTc 1);
     ch = *ptr++;
     if (ch=='*') ch = *ptr++;
     switch (ch) {
@@ -700,9 +704,9 @@ static char *ctop_term0(CTXTdeclc char *ptr, char *c_dataptr, char **subformat,
 
 	case '[':
 
-	fields = count_fields(ptr, ']');
+	fields = count_fields(CTXTc ptr, ']');
 	if (!ignore) {
-	    argno = count_arity(ptr, ']');
+	    argno = count_arity(CTXTc ptr, ']');
 	    if (!is_functor(variable)) c2p_functor(CTXTc "c2p", argno, variable);
 	}
 	argno = 0;
@@ -712,7 +716,7 @@ static char *ctop_term0(CTXTdeclc char *ptr, char *c_dataptr, char **subformat,
 	    ptr = ctop_term0(CTXTc ptr,c_dataptr,subformat,p2p_arg(variable,argno),ignore1);
 	    c_dataptr = c_dataptr_rest;
 	}
-	ptr = skip_subfmt(ptr, ']');
+	ptr = skip_subfmt(CTXTc ptr, ']');
 	break;
 
 	case 't':
@@ -722,9 +726,9 @@ static char *ctop_term0(CTXTdeclc char *ptr, char *c_dataptr, char **subformat,
 		fmtnum = (int)(*ptr-'0');
 		subformat[fmtnum] = ptr-2;
 		ptr++;
-		if (*(ptr++) !='(') cppc_error(2);
-		argno = count_arity(ptr, ')');
-		fields = count_fields(ptr, ')');
+		if (*(ptr++) !='(') cppc_error(CTXTc 2);
+		argno = count_arity(CTXTc ptr, ')');
+		fields = count_fields(CTXTc ptr, ')');
 		if (!is_functor(variable)) c2p_functor(CTXTc "c2p", argno, variable);
 		cdptr2 = * (char **)(c_dataptr);
 		argno = 0;
@@ -736,7 +740,7 @@ static char *ctop_term0(CTXTdeclc char *ptr, char *c_dataptr, char **subformat,
 		}
 	    } else c2p_nil(CTXTc variable);
 	}
-	ptr = skip_subfmt(ptr, ')');
+	ptr = skip_subfmt(CTXTc ptr, ')');
 	c_dataptr_rest = c_dataptr + 4;
 	break;
 
@@ -746,9 +750,9 @@ static char *ctop_term0(CTXTdeclc char *ptr, char *c_dataptr, char **subformat,
 		fmtnum = (int)(*ptr-'0');
 		subformat[fmtnum] = ptr-2;
 		ptr++;
-		if (*(ptr++) != '(') cppc_error(3);
-		argno = count_arity(ptr, ')');
-		fields = count_fields(ptr, ')');
+		if (*(ptr++) != '(') cppc_error(CTXTc 3);
+		argno = count_arity(CTXTc ptr, ')');
+		fields = count_fields(CTXTc ptr, ')');
 		if (!is_list(variable)) c2p_list(CTXTc variable);
 		cdptr2 = * (char **)(c_dataptr);
 		argno = 0;
@@ -762,12 +766,12 @@ static char *ctop_term0(CTXTdeclc char *ptr, char *c_dataptr, char **subformat,
 		    else if (argno==0)
 		       ptr = ctop_term0(CTXTc ptr,cdptr2,subformat,p2p_car(variable),ignore);
 		       /* always ignored */
-		    else cppc_error(30);
+		    else cppc_error(CTXTc 30);
 		    cdptr2 = c_dataptr_rest;
 		}
 	    } else c2p_nil(CTXTc variable);
 	}
-	ptr = skip_subfmt(ptr, ')');
+	ptr = skip_subfmt(CTXTc ptr, ')');
 	c_dataptr_rest = c_dataptr + 4;
 	break;
 
@@ -790,7 +794,7 @@ static char *ctop_term0(CTXTdeclc char *ptr, char *c_dataptr, char **subformat,
 	c_dataptr_rest = c_dataptr + 4;
 	break;
 
-	default: cppc_error(4);
+	default: cppc_error(CTXTc 4);
     }
     return ptr;
 }
@@ -800,7 +804,7 @@ static char *ctop_term0(CTXTdeclc char *ptr, char *c_dataptr, char **subformat,
 **
 */
 
-static char *ptoc_term0(char *ptr, char *c_dataptr, char **subformat,
+static char *ptoc_term0(CTXTdeclc char *ptr, char *c_dataptr, char **subformat,
 			prolog_term variable, int ignore)
 {
     char ch;
@@ -809,7 +813,7 @@ static char *ptoc_term0(char *ptr, char *c_dataptr, char **subformat,
     int  argno, fields, i, size;
     int ignore1;
 
-    if (*ptr++!= '%') cppc_error(9);
+    if (*ptr++!= '%') cppc_error(CTXTc 9);
     ch = *ptr++;
     if (ch=='*') ch = *ptr++;
     switch (ch) {
@@ -817,7 +821,7 @@ static char *ptoc_term0(char *ptr, char *c_dataptr, char **subformat,
 
 	if (!ignore) {
 	    if (is_int(variable)) *((int *)(c_dataptr)) = p2c_int(variable);
-	    else cppc_error(10);
+	    else cppc_error(CTXTc 10);
 	}
 	c_dataptr_rest = c_dataptr + sizeof(int);
 	break;
@@ -827,7 +831,7 @@ static char *ptoc_term0(char *ptr, char *c_dataptr, char **subformat,
 	if (!ignore) {
 	    if (is_int(variable)) *((char *)(c_dataptr)) = 
 	       (char)p2c_int(variable);
-	    else cppc_error(11);
+	    else cppc_error(CTXTc 11);
 	}
 	c_dataptr_rest = c_dataptr + 1;
 	break;
@@ -837,7 +841,7 @@ static char *ptoc_term0(char *ptr, char *c_dataptr, char **subformat,
 	if (!ignore) {
 	    if (is_string(variable)) *((char **)(c_dataptr)) =
 	       p2c_string(variable);		/* should make a copy??? */
-	    else cppc_error(12);
+	    else cppc_error(CTXTc 12);
 	}
 	c_dataptr_rest = c_dataptr + 4;
 	break;
@@ -849,7 +853,7 @@ static char *ptoc_term0(char *ptr, char *c_dataptr, char **subformat,
 	if (!ignore) {
 	    if (is_string(variable)) 
 	       strncpy(c_dataptr, p2c_string(variable), size);
-	    else cppc_error(12);
+	    else cppc_error(CTXTc 12);
 	}
 	c_dataptr_rest = c_dataptr + size;
 	break;
@@ -859,7 +863,7 @@ static char *ptoc_term0(char *ptr, char *c_dataptr, char **subformat,
 	if (!ignore) {
 	    if (is_float(variable)) 
 	      *((float *)(c_dataptr)) = (float)p2c_float(variable);
-	    else cppc_error(13);
+	    else cppc_error(CTXTc 13);
 	}
 	c_dataptr_rest = c_dataptr + sizeof(float);
 	break;
@@ -869,22 +873,22 @@ static char *ptoc_term0(char *ptr, char *c_dataptr, char **subformat,
 	if (!ignore) {
 	    if (is_float(variable)) *((double *)(c_dataptr)) =
 	       p2c_float(variable);
-	    else cppc_error(14);
+	    else cppc_error(CTXTc 14);
 	}
 	c_dataptr_rest = c_dataptr + sizeof(double);
 	break;
 
 	case '[':
 
-	fields = count_fields(ptr, ']');
+	fields = count_fields(CTXTc ptr, ']');
 	argno = 0;
 	for (i = 1; i <= fields; i++) {
 	    if (*(ptr+1)=='*') ignore1 = 1;
 	    else { ignore1 = ignore; argno++; }
-	    ptr = ptoc_term0(ptr, c_dataptr,subformat,p2p_arg(variable,argno),ignore1);
+	    ptr = ptoc_term0(CTXTc ptr, c_dataptr,subformat,p2p_arg(variable,argno),ignore1);
 	    c_dataptr = c_dataptr_rest;
 	}
-	ptr = skip_subfmt(ptr, ']');
+	ptr = skip_subfmt(CTXTc ptr, ']');
 	break;
 
 	case 't':
@@ -893,20 +897,20 @@ static char *ptoc_term0(char *ptr, char *c_dataptr, char **subformat,
 	    fmtnum = (int)(*ptr-'0');
 	    subformat[fmtnum] = ptr-2;
 	    ptr++;
-	    if (*(ptr++) != '(') cppc_error(15);
-	    fields = count_fields(ptr, ')');
-	    size = count_csize(ptr, ')');
+	    if (*(ptr++) != '(') cppc_error(CTXTc 15);
+	    fields = count_fields(CTXTc ptr, ')');
+	    size = count_csize(CTXTc ptr, ')');
 	    cdptr2 = (char *)mem_alloc(size);  /* leak */
 	    *((char **)c_dataptr) = cdptr2;
 	    argno = 0;
 	    for (i = 1; i <= fields; i++) {
 		if (*(ptr+1)=='*') ignore = 1;
 		else { ignore = 0; argno++; }
-		ptr = ptoc_term0(ptr,cdptr2,subformat,p2p_arg(variable,argno),ignore);
+		ptr = ptoc_term0(CTXTc ptr,cdptr2,subformat,p2p_arg(variable,argno),ignore);
 		cdptr2 = c_dataptr_rest;
 	    }
 	}
-	ptr = skip_subfmt(ptr, ')');
+	ptr = skip_subfmt(CTXTc ptr, ')');
 	c_dataptr_rest = c_dataptr + 4;
 	break;
 
@@ -915,9 +919,9 @@ static char *ptoc_term0(char *ptr, char *c_dataptr, char **subformat,
 	    fmtnum = (int)(*ptr-'0');
 	    subformat[fmtnum] = ptr-2;
 	    ptr++;
-	    if (*(ptr++)!='(') cppc_error(16);
-	    fields = count_fields(ptr, ')');
-	    size = count_csize(ptr, ')');
+	    if (*(ptr++)!='(') cppc_error(CTXTc 16);
+	    fields = count_fields(CTXTc ptr, ')');
+	    size = count_csize(CTXTc ptr, ')');
 	    cdptr2 = (char *)mem_alloc(size);  /* leak */
 	    *((char **)c_dataptr) = cdptr2;
 	    argno = 0;
@@ -925,14 +929,14 @@ static char *ptoc_term0(char *ptr, char *c_dataptr, char **subformat,
 		if (*(ptr+1)=='*') ignore = 1;
 		else { ignore = 0; argno++; }
 		if (argno==1)
-		   ptr = ptoc_term0(ptr,cdptr2,subformat,p2p_car(variable),ignore);
+		   ptr = ptoc_term0(CTXTc ptr,cdptr2,subformat,p2p_car(variable),ignore);
 		else if (argno==2)
-		   ptr = ptoc_term0(ptr,cdptr2,subformat,p2p_cdr(variable),ignore);
-		else cppc_error(31);
+		   ptr = ptoc_term0(CTXTc ptr,cdptr2,subformat,p2p_cdr(variable),ignore);
+		else cppc_error(CTXTc 31);
 		cdptr2 = c_dataptr_rest;
 	    }
 	}
-	ptr = skip_subfmt(ptr, ')');
+	ptr = skip_subfmt(CTXTc ptr, ')');
 	c_dataptr_rest = c_dataptr + 4;
 	break;
 
@@ -949,13 +953,13 @@ static char *ptoc_term0(char *ptr, char *c_dataptr, char **subformat,
 
 	if (!ignore) {
 	    if (!is_nil(variable)) {
-		ptoc_term0(subformat[ch-'0'], c_dataptr, subformat, variable, 0);
+		ptoc_term0(CTXTc subformat[ch-'0'], c_dataptr, subformat, variable, 0);
 	    } else *(int *)(c_dataptr) = 0;
 	}
 	c_dataptr_rest = c_dataptr + 4;
 	break;
 
-	default: cppc_error(17);
+	default: cppc_error(CTXTc 17);
     }
     return ptr;
 }
@@ -972,7 +976,7 @@ int ctop_term(CTXTdeclc char *fmt, char *c_dataptr, reg_num regnum)
     char *subformat[10];
 
     variable = reg_term(CTXTc regnum);
-    if ((my_errno = setjmp(env))) return my_errno;  /* catch an exception */
+    if ((my_errno = setjmp(cinterf_env))) return my_errno;  /* catch an exception */
     ctop_term0(CTXTc fmt, c_dataptr, subformat, variable, 0);
     return 0;
 }
@@ -989,8 +993,8 @@ int ptoc_term(CTXTdeclc char *fmt, char *c_dataptr, reg_num regnum)
     char *subformat[10];
 
     variable = reg_term(CTXTc regnum);
-    if ((my_errno = setjmp(env))) return my_errno;  /* catch an exception */
-    ptoc_term0(fmt, c_dataptr, subformat, variable, 0);
+    if ((my_errno = setjmp(cinterf_env))) return my_errno;  /* catch an exception */
+    ptoc_term0(CTXTc fmt, c_dataptr, subformat, variable, 0);
     return 0;
 }
 
@@ -1004,7 +1008,7 @@ int c2p_term(CTXTdeclc char *fmt, char *c_dataptr, prolog_term variable)
     int my_errno;
     char *subformat[10];
 
-    if ((my_errno = setjmp(env))) return my_errno;  /* catch an exception */
+    if ((my_errno = setjmp(cinterf_env))) return my_errno;  /* catch an exception */
     ctop_term0(CTXTc fmt, c_dataptr, subformat, variable, 0);
     return 0;
 }
@@ -1014,13 +1018,13 @@ int c2p_term(CTXTdeclc char *fmt, char *c_dataptr, prolog_term variable)
 **
 */
 
-int p2c_term(char *fmt, char *c_dataptr, prolog_term variable)
+int p2c_term(CTXTdeclc char *fmt, char *c_dataptr, prolog_term variable)
 {
     int my_errno;
     char *subformat[10];
 
-    if ((my_errno = setjmp(env))) return my_errno;  /* catch an exception */
-    ptoc_term0(fmt, c_dataptr, subformat, variable, 0);
+    if ((my_errno = setjmp(cinterf_env))) return my_errno;  /* catch an exception */
+    ptoc_term0(CTXTc fmt, c_dataptr, subformat, variable, 0);
     return 0;
 }
 /* quick test to see whether atom must be quoted */
@@ -1191,7 +1195,8 @@ static inline void updateWarningStart(void)
 /*                                                                      */
 /************************************************************************/
 
-int xsb_initted = 0;   /* if xsb has been called */
+static int xsb_initted_gl = 0;   /* if xsb has been called */
+static int xsb_inquery_gl = 0;   
 
 DllExport int call_conv xsb_init(CTXTdeclc int argc, char *argv[])
 {
@@ -1200,7 +1205,7 @@ char executable1[MAXPATHLEN];
  char *expfilename;
 
 updateWarningStart();
-if (!xsb_initted)
+if (!xsb_initted_gl)
 	{
 	/* we rely on the caller to tell us in argv[0]
 	the absolute or relative path name to the XSB installation directory */
@@ -1213,7 +1218,7 @@ if (!xsb_initted)
 	if (0 == (rc = xsb(CTXTc 0,argc,argv)))     /* initialize xsb */
 		{
 		if (0 == (rc = xsb(CTXTc 1,0,0)))       /* enter xsb to set up regs */
-		xsb_initted = 1;
+		xsb_initted_gl = 1;
 		}
 	}
 return(rc);
@@ -1279,11 +1284,9 @@ DllExport int call_conv xsb_init_string(CTXTdeclc char *cmdline_param) {
 /*                                                                      */
 /************************************************************************/
 
-int xsb_inquery = 0;
-
 DllExport int call_conv xsb_command(CTXTdecl)
 {
-  if (xsb_inquery) return(2);  /* error */
+  if (xsb_inquery_gl) return(2);  /* error */
   updateWarningStart();
   c2p_int(CTXTc 0,reg_term(CTXTc 3));  /* command for calling a goal */
   xsb(CTXTc 1,0,0);
@@ -1307,7 +1310,7 @@ DllExport int call_conv xsb_command(CTXTdecl)
 
 DllExport int call_conv xsb_command_string(CTXTdeclc char *goal)
 {
-  if (xsb_inquery) return(2);  /* error */
+  if (xsb_inquery_gl) return(2);  /* error */
   updateWarningStart();
   c2p_string(CTXTc goal,reg_term(CTXTc 1));
   c2p_int(CTXTc 2,reg_term(CTXTc 3));  /* command for calling a string goal */
@@ -1336,12 +1339,12 @@ DllExport int call_conv xsb_command_string(CTXTdeclc char *goal)
 
 DllExport int call_conv xsb_query(CTXTdecl)
 {
-  if (xsb_inquery) return(2);
+  if (xsb_inquery_gl) return(2);
   updateWarningStart();
   c2p_int(CTXTc 0,reg_term(CTXTc 3));  /* set command for calling a goal */
   xsb(CTXTc 1,0,0);
   if (is_var(reg_term(CTXTc 1))) return(1);
-  xsb_inquery = 1;
+  xsb_inquery_gl = 1;
   return(0);
 }
 
@@ -1363,13 +1366,13 @@ DllExport int call_conv xsb_query(CTXTdecl)
 
 DllExport int call_conv xsb_query_string(CTXTdeclc char *goal)
 {
-  if (xsb_inquery) return(2);
+  if (xsb_inquery_gl) return(2);
   updateWarningStart();
   c2p_chars(CTXTc goal,2,reg_term(CTXTc 1));
   c2p_int(CTXTc 2,reg_term(CTXTc 3));  /* set command for calling a string goal */
   xsb(CTXTc 1,0,0);
   if (is_var(reg_term(CTXTc 1))) return(1);
-  xsb_inquery = 1;
+  xsb_inquery_gl = 1;
   return(0);
 }
 
@@ -1456,12 +1459,12 @@ DllExport int call_conv
 
 DllExport int call_conv xsb_next(CTXTdecl)
 {
-  if (!xsb_inquery) return(2);
+  if (!xsb_inquery_gl) return(2);
   updateWarningStart();
   c2p_int(CTXTc 0,reg_term(CTXTc 3));  /* set command for next answer */
   xsb(CTXTc 1,0,0);
   if (is_var(reg_term(CTXTc 1))) {
-    xsb_inquery = 0;
+    xsb_inquery_gl = 0;
     return(1);
   } else return(0);
 }
@@ -1521,11 +1524,11 @@ DllExport int call_conv xsb_next_string_b(CTXTdeclc
 DllExport int call_conv xsb_close_query(CTXTdecl)
 {
   updateWarningStart();
-  if (!xsb_inquery) return(2);
+  if (!xsb_inquery_gl) return(2);
   c2p_int(CTXTc 1,reg_term(CTXTc 3));  /* set command for cut */
   xsb(CTXTc 1,0,0);
   if (is_var(reg_term(CTXTc 1))) {
-    xsb_inquery = 0;
+    xsb_inquery_gl = 0;
     return(0);
   } else return(2);
 }
@@ -1540,7 +1543,7 @@ DllExport int call_conv xsb_close_query(CTXTdecl)
 DllExport int call_conv xsb_close(CTXTdecl)
 {
   updateWarningStart();
-  if (xsb_initted) return(0);
+  if (xsb_initted_gl) return(0);
   else return(1);
 }
 

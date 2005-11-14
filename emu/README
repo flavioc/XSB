@@ -1,2 +1,34 @@
 
     This directory contains the C sources for the XSB emulator.
+
+Coding Conventions: 
+
+       Global Variables: Because gloabl variables may need concurrency
+       control to ensure thread safety, its important to keep track of
+       their use in XSB.  (This can be done by the gdb "info
+       variables" command).  Currently, when XSB is compiled for
+       multh-threading there are about 200 of these.  These global
+       variables represent process-level information and may either be
+       changeable, or constant-like (not changeable after an
+       initialization).
+
+       Changeable global variables are usually protected by mutexes or
+       some other concurrency control.  Constants, however are
+       perfectly safe for multi-threading.  However, when updating XSB
+       for new code, it is necessesary to ensure that all global
+       variables are "accounted for" -- either are constants, are
+       controlled by mutexes, or are safe (e.g. global counters).  In
+       order to aid this process, please use these conventions for
+       global variables.  
+
+       Constant-like variables:
+       
+       If the variable is 
+		-- a pointer to a psc Pair give it the form xxx_pscPair
+		-- a pointer to a Psc record give it the form xxx_psc
+		-- a pointer to a global string, give ti the form xxx_string
+		
+		-- a constant-like array, give it the form xxx_table.
+
+       instr_addr
+

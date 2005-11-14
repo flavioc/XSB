@@ -163,7 +163,7 @@ extern unsigned long enc[], dec[];
 #define makestring(str) (Cell)(enc_addr(str) | XSB_STRING)
 
 /* special-case strings [] */
-#define	makenil		makestring(nil_sym)
+#define	makenil		makestring(nil_string)
 
 /* pointer manipulation */
 #define cs_val(dcell) (Pair)dec_addr(dcell)
@@ -222,7 +222,7 @@ extern unsigned long enc[], dec[];
 #define isatomic(dcell)	((isstring(dcell)) || (isnumber(dcell)) || \
 			 (isconstr(dcell) && get_arity(get_str_psc(dcell))==0))
 
-#define isnil(dcell) (isstring(dcell) && (char *)string_val(dcell) == nil_sym)
+#define isnil(dcell) (isstring(dcell) && (char *)string_val(dcell) == nil_string)
 #define isboxed(term) (isconstr(term) && get_str_psc(term) == box_psc )
 
 /*======================================================================*/

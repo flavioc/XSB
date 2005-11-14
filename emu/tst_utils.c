@@ -241,7 +241,7 @@ static void symstkPrintNextTerm(CTXTdeclc FILE *fp, xsbBool list_recursion) {
     {
       char *string = string_val(symbol);
       if ( list_recursion ) {
-	if ( string == nil_sym )
+	if ( string == nil_string )
 	  fprintf(fp, "]");
 	else
 	  fprintf(fp, "|%s]", string);

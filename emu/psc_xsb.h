@@ -163,10 +163,10 @@ extern Psc box_psc;
 extern Psc tnot_psc;
 extern Psc colon_psc;
 extern Psc delay_psc;
-extern char *nil_sym;
-extern char *true_sym;
-extern Pair list_str;
-extern char *list_dot;
+extern char *nil_string;
+extern char *true_string;
+extern Pair list_pscPair;
+extern char *list_dot_string;
 
 extern Psc ret_psc[];
 extern Psc get_ret_psc(int);

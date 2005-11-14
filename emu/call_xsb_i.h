@@ -40,7 +40,7 @@ static inline int prolog_call0(CTXTdeclc Cell term)
     } else if (isstring(term)) {
       int  value;
       Pair sym;
-      if (string_val(term) == true_sym) return TRUE; /* short-circuit if calling "true" */
+      if (string_val(term) == true_string) return TRUE; /* short-circuit if calling "true" */
       sym = insert(string_val(term),0,(Psc)flags[CURRENT_MODULE],&value);
       psc = pair_psc(sym);
     } else {
