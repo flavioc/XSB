@@ -1049,17 +1049,17 @@ listing.
 
 listing(X) :- var(X), !, listing.
 listing([]) :- !.
-listing([Spec|Specs]) :- !, listing(Spec), nl, listing(Specs).
+listing([Spec|Specs]) :- !, listing(Spec), listing(Specs).
 listing(Head) :- 
 	(Head = (P/A)
-	 ->	functor(Head0,P,A)
+	 ->	functor(Head0,P,A),
+		listing0(Head0)
 	 ; atom(Head)
-	 ->	predicate_property(Head0, (dynamic)),
-		functor(Head0,Head,A), nl
-	 ;	Head0 = Head
-	),
-	listing0(Head0).
-listing(_).
+	 ->	findall(Head0,(predicate_property(Head0, (dynamic)),
+			       functor(Head0,Head,_)),Heads),
+	 	listing(Heads)
+	 ;	listing0(Head)
+	).
 
 listing0(Head) :-
 	clause(Head,Bod),

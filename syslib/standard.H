@@ -134,7 +134,7 @@
 	  file_write_quoted/2, file_write_canonical/2, file_nl/1
      from xsb_writ.
 :- import xsb_thread_self/1 from thread.
-
+:- import findall/3 from setof.
 
 
 /* --------------------- end of file standard.H ----------------------- */
