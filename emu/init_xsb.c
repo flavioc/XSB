@@ -714,6 +714,10 @@ char *init_para(CTXTdeclc int argc, char *argv[])
     break;
   }
 
+  /* Other basic initializations
+     --------------------------- */
+  realtime_count = real_time();
+
   return ( (char *) flags[BOOT_MODULE] );
 
 }
@@ -913,10 +917,6 @@ void init_machine(CTXTdecl)
   cp_prevbreg(breg) = breg;               /* note ! */
   cp_pdreg(breg) = delayreg;
 
-
-  /* Other basic initializations
-     --------------------------- */
-  realtime_count = real_time();
 
   /* init trie stuff */
 
