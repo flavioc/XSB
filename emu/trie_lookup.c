@@ -109,8 +109,6 @@
 static struct VariantContinuation variant_cont;
 #endif
 
-#define VAR_CONT_INIT_STACK_SIZE  64
-
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #define ContStack_ExpandOnOverflow(Stack,StackSize,NeededSize) {	\
@@ -344,17 +342,10 @@ void initSubsumptiveLookup(CTXTdecl) {
 
   tstCCPStack.ceiling = tstCCPStack.base + CALL_CPSTACK_SIZE;
 
-  variant_cont.subterms.stack.ptr =
-    mem_alloc(VAR_CONT_INIT_STACK_SIZE *
-	      sizeof(variant_cont.subterms.stack.ptr[0]),TABLE_SPACE);
-  variant_cont.bindings.stack.ptr =
-    mem_alloc(VAR_CONT_INIT_STACK_SIZE *
-	      sizeof(variant_cont.bindings.stack.ptr[0]),TABLE_SPACE);
-  if ( IsNULL(variant_cont.subterms.stack.ptr) ||
-       IsNULL(variant_cont.bindings.stack.ptr) )
-    xsb_abort("Not enough memory to initialize subsumptive subsystem");
+  variant_cont.subterms.stack.ptr = NULL;
+  variant_cont.bindings.stack.ptr = NULL;
   variant_cont.subterms.stack.size =
-    variant_cont.bindings.stack.size = VAR_CONT_INIT_STACK_SIZE;
+    variant_cont.bindings.stack.size = 0;
   
   /* set entries to unbound */
   for (i = 0; i < NUM_TRIEVARS; i++)

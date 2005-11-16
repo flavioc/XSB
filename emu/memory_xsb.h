@@ -131,9 +131,10 @@ extern System_Stack pdl,            /* PDL                        */
 #define THREAD_SPACE		12
 #define READ_CAN_SPACE		13
 #define LEAK_SPACE		14
-#define OTHER_SPACE		15
+#define SPECIAL_SPACE		15
+#define OTHER_SPACE		16
 
-#define NUM_CATS_SPACE		16
+#define NUM_CATS_SPACE		17
 
 /* Program and Symbol Tables Space (in Bytes)
    ------------------------------------------ */

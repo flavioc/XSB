@@ -988,7 +988,7 @@ int num_sets;
 void init_newtrie(CTXTdecl)
 {
   first_free_set = 0;
-  Set_ArraySz = 100;
+  Set_ArraySz = 10;  /* must be at least num_sets */
   num_sets = 1;
   Set_ArrayPtr = (BTNptr *) mem_calloc(Set_ArraySz,sizeof(BTNptr),TABLE_SPACE);
 
