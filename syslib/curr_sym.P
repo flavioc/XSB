@@ -43,8 +43,12 @@ current_atom(Module:Atom) :-
 	( First_PSC_Pair =:= 1 ->	% We are dealing with a global module!
 	    warning(('Predicate current_atom/1 for module "',
 		     ModuleName,
-		     '" is not yet implemented !')),
-	    fail
+		     '" does not include usermod strings !')),
+	    psc_scan_in_hash_table(0,PSC),
+	    psc_arity(PSC, Arity), 
+	    Arity =:= 0,
+	    psc_name(PSC, Name),
+	    Atom = Name
         ; psc_scan_in_module(First_PSC_Pair, PSC), 
 	  psc_arity(PSC, Arity), 
 	  0 = Arity,
