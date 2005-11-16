@@ -119,7 +119,7 @@ DllExport void call_conv varstring_init(VarString *vstr)
 
 DllExport void call_conv varstring_create(VarString **vstr)
 {
-  *vstr = (VarString *) mem_alloc(sizeof(VarString)); // never released!
+  *vstr = (VarString *) mem_alloc(sizeof(VarString),OTHER_SPACE); // never released!
   varstring_init(*vstr);
 }
 
@@ -135,7 +135,7 @@ static void vs_init(VarString *vstr, int increment)
   if (increment < 1)
     increment = DEFAULT_VARSTR_INCREMENT;
 
-  if (NULL == (vstr->string = (char *)mem_calloc(1, increment))) {
+  if (NULL == (vstr->string = (char *)mem_calloc(1, increment,OTHER_SPACE))) {
 #ifdef DEBUG_VARSTRING
     fprintf(stderr, "Cannot allocate memory for a variable-length string\n");
     return;
@@ -291,7 +291,7 @@ static inline void  vs_destroy(VarString *vstr)
   fprintf(stderr,
 	    "Deallocating a variable-length string\n");
 #endif
-  mem_dealloc(vstr->string,vstr->size);
+  mem_dealloc(vstr->string,vstr->size,OTHER_SPACE);
   vstr->string    = NULL;
   vstr->size        = 0;
   vstr->length      = 0;
@@ -378,7 +378,7 @@ static void vs_adjust_size(VarString *vstr, int minsize)
 
   newsize = (minsize/vstr->increment +1) * (vstr->increment);
 
-  if (NULL == (vstr->string = (char *)mem_realloc(vstr->string, vstr->size, newsize))) {
+  if (NULL == (vstr->string = (char *)mem_realloc(vstr->string, vstr->size, newsize,OTHER_SPACE))) {
 #ifdef DEBUG_VARSTRING
     fprintf(stderr, "No room to expand a variable-length string\n");
     return;

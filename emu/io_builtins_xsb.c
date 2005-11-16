@@ -202,7 +202,7 @@ xsbBool fmt_write(CTXTdecl)
   int i, Arity=0;
   long int_arg;     	     	     	      /* holder for int args         */
   float float_arg;    	     	     	      /* holder for float args       */
-  struct fmt_spec *current_fmt_spec = (struct fmt_spec *)mem_alloc(sizeof(struct fmt_spec));
+  struct fmt_spec *current_fmt_spec = (struct fmt_spec *)mem_alloc(sizeof(struct fmt_spec),LEAK_SPACE);
   int width=0, precision=0;    	     	      /* these are used in conjunction
 						 with the *.* format         */
   XSB_StrSet(&FmtBuf,"");
@@ -313,7 +313,7 @@ xsbBool fmt_write(CTXTdecl)
   xsb_segfault_message = xsb_default_segfault_msg;
   signal(SIGSEGV, xsb_default_segfault_handler);
   
-  mem_dealloc(current_fmt_spec,sizeof(struct fmt_spec));
+  mem_dealloc(current_fmt_spec,sizeof(struct fmt_spec),LEAK_SPACE);
   return TRUE;
 }
 
@@ -352,7 +352,7 @@ xsbBool fmt_write_string(CTXTdecl)
   int i, Arity;
   long int_arg;     	     	     	    /* holder for int args     	    */
   float float_arg;     	     	     	    /* holder for float args   	    */
-  struct fmt_spec *current_fmt_spec = (struct fmt_spec *)mem_alloc(sizeof(struct fmt_spec));
+  struct fmt_spec *current_fmt_spec = (struct fmt_spec *)mem_alloc(sizeof(struct fmt_spec),LEAK_SPACE);
   int width=0, precision=0;      	    /* these are used in conjunction
 					       with the *.* format     	    */
   int bytes_formatted=0;       	       	    /* the number of bytes formatted as
@@ -473,7 +473,7 @@ xsbBool fmt_write_string(CTXTdecl)
   xsb_segfault_message = xsb_default_segfault_msg;
   signal(SIGSEGV, xsb_default_segfault_handler);
 
-  mem_dealloc(current_fmt_spec,sizeof(struct fmt_spec));
+  mem_dealloc(current_fmt_spec,sizeof(struct fmt_spec),LEAK_SPACE);
   /* fmt_write_string is used in places where interning of the string is needed
      (such as constructing library search paths)
      Therefore, must use string_find(..., 1). */
@@ -508,7 +508,7 @@ xsbBool fmt_read(CTXTdecl)
   Integer i ;
   long int_arg;     	     	     	      /* holder for int args         */
   float float_arg;    	     	     	      /* holder for float args       */
-  struct fmt_spec *current_fmt_spec = (struct fmt_spec *)mem_alloc(sizeof(struct fmt_spec));
+  struct fmt_spec *current_fmt_spec = (struct fmt_spec *)mem_alloc(sizeof(struct fmt_spec),LEAK_SPACE);
   int Arity=0;
   int number_of_successes=0, curr_assignment=0;
   int cont; /* continuation indicator */
@@ -667,12 +667,12 @@ xsbBool fmt_read(CTXTdecl)
     number_of_successes = -1;
 
  EXIT_READ:
-  mem_dealloc(current_fmt_spec,sizeof(struct fmt_spec));
+  mem_dealloc(current_fmt_spec,sizeof(struct fmt_spec),LEAK_SPACE);
   ctop_int(CTXTc 5, number_of_successes);
   return TRUE;
 
  EXIT_READ_FALSE:
-  mem_dealloc(current_fmt_spec,sizeof(struct fmt_spec));
+  mem_dealloc(current_fmt_spec,sizeof(struct fmt_spec),LEAK_SPACE);
   return FALSE;
 }
 #undef FmtBuf
@@ -778,14 +778,14 @@ struct vartype rc_vars[MAXVAR];
 #define expand_opstk {\
     opstk_size = opstk_size+opstk_size;\
     opstk = (struct opstktype *)mem_realloc(opstk,(opstk_size/2)*sizeof(struct opstktype),\
-					    opstk_size*sizeof(struct opstktype));\
+					    opstk_size*sizeof(struct opstktype),READ_CAN_SPACE);\
     if (!opstk) xsb_abort("[READ_CANONICAL] Out of space for operand stack");\
     /*printf("RC opstk expanded to %d\n",opstk_size);*/ \
   }
 #define expand_funstk {\
     funstk_size = funstk_size+funstk_size;\
     funstk = (struct funstktype *)mem_realloc(funstk,(funstk_size/2)*sizeof(struct funstktype),\
-					  funstk_size*sizeof(struct funstktype));\
+					  funstk_size*sizeof(struct funstktype),READ_CAN_SPACE);\
     if (!funstk) xsb_abort("[READ CANONICAL] Out of space for function stack");\
     /*printf("RC funstk expanded to %d\n",funstk_size);*/ \
   }
@@ -845,10 +845,10 @@ int read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_locati
   
   if (opstk_size == 0) {
     opstk = 
-      (struct opstktype *)mem_alloc(INIT_STK_SIZE*sizeof(struct opstktype));
+      (struct opstktype *)mem_alloc(INIT_STK_SIZE*sizeof(struct opstktype),READ_CAN_SPACE);
     opstk_size = INIT_STK_SIZE;
     funstk = 
-      (struct funstktype *)mem_alloc(INIT_STK_SIZE*sizeof(struct funstktype));
+      (struct funstktype *)mem_alloc(INIT_STK_SIZE*sizeof(struct funstktype),READ_CAN_SPACE);
     funstk_size = INIT_STK_SIZE;
   }
 
@@ -1193,8 +1193,8 @@ int read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_locati
       }
 
       if (opstk_size > MAX_INIT_STK_SIZE) {
-	mem_dealloc(opstk,opstk_size); opstk = NULL;
-	mem_dealloc(funstk,funstk_size); funstk = NULL;
+	mem_dealloc(opstk,opstk_size,READ_CAN_SPACE); opstk = NULL;
+	mem_dealloc(funstk,funstk_size,READ_CAN_SPACE); funstk = NULL;
 	opstk_size = 0; funstk_size = 0;
       }
       return retpscptr;
@@ -1608,10 +1608,10 @@ void write_quotedname(FILE *file, char *string)
 	fprintf(file,"\'%s\'",lnew_string);
       } else {
 	char* new_string;
-	new_string  = (char *)mem_alloc(neededlen);
+	new_string  = (char *)mem_alloc(neededlen,LEAK_SPACE);
 	double_quotes(string,new_string);
 	fprintf(file,"\'%s\'",new_string);
-	mem_dealloc(new_string,neededlen);
+	mem_dealloc(new_string,neededlen,LEAK_SPACE);
       }
     }
   }

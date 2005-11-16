@@ -1184,7 +1184,7 @@ static int file_copy(char *source, char *dest)
       xsb_warn("[file_copy] Cannot create symlink %s", dest);
       return 0;
     }
-    mem_dealloc(lpath,lpath_len);
+    mem_dealloc(lpath,lpath_len,OTHER_SPACE);
     return 1;
   }
 #endif
@@ -1244,7 +1244,7 @@ static char *xreadlink(const char *path, int *bufsize)
   *bufsize = 0;
 
   do {
-    buf = mem_realloc(buf, *bufsize, *bufsize + GROWBY);
+    buf = mem_realloc(buf, *bufsize, *bufsize + GROWBY,OTHER_SPACE);
     *bufsize += GROWBY;
     readsize = readlink(path, buf, *bufsize); /* 1st try */
     if (readsize == -1) {

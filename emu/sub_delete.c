@@ -90,12 +90,12 @@ static void free_al(VariantSF sf) {
    -------------------------------------- */
 
 static void delete_btht(BTHTptr btht) {
-  mem_dealloc(BTHT_BucketArray(btht),BTHT_NumBuckets(btht)*sizeof(void *));
+  mem_dealloc(BTHT_BucketArray(btht),BTHT_NumBuckets(btht)*sizeof(void *),TABLE_SPACE);
   free_btht(btht);
 }
 
 static void delete_tstht(TSTHTptr tstht) {
-  mem_dealloc(BTHT_BucketArray(tstht),BTHT_NumBuckets(tstht)*sizeof(void *));
+  mem_dealloc(BTHT_BucketArray(tstht),BTHT_NumBuckets(tstht)*sizeof(void *),TABLE_SPACE);
   free_tsi(tstht);
   free_tstht(tstht);
 }

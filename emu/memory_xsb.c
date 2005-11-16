@@ -29,8 +29,8 @@
 /* for the abstract machine.  The following interface routines are	*/
 /* exported:								*/
 /*	Program area handling:						*/
-/*	    mem_alloc(size):  alloc size bytes (on 8 byte boundary)	*/
-/*	    mem_dealloc(addr, size):  dealloc space			*/
+/*	    mem_alloc(size,cat):  alloc size bytes (on 8 byte boundary)	*/
+/*	    mem_dealloc(addr,size,cat):  dealloc space			*/
 /*      Stack area:                                                     */
 /*          tcpstack_realloc(size)                                      */
 /*          complstack_realloc(size)                                    */
@@ -82,13 +82,13 @@ void extend_enc_dec_as_nec(void *lptr, void *hptr) {
 
 /* === alloc permanent memory ============================================== */
 
-void *mem_alloc(unsigned long size)
+void *mem_alloc(unsigned long size, int category)
 {
     byte * ptr;
 
     size = (size+7) & ~0x7 ;	      /* round to 8 */
     SYS_MUTEX_LOCK(MUTEX_MEM);
-    pspacesize += size;
+    pspacesize[category] += size;
     ptr = (byte *) malloc(size);
 #if defined(GENERAL_TAGGING)
     //    printf("mem_alloc %x %x\n",ptr,ptr+size);
@@ -101,13 +101,13 @@ void *mem_alloc(unsigned long size)
 
 /* === calloc permanent memory ============================================= */
 
-void *mem_calloc(unsigned long size, unsigned long occs)
+void *mem_calloc(unsigned long size, unsigned long occs, int category)
 {
     byte * ptr;
     unsigned long length = (size*occs+7) & ~0x7;
 
     SYS_MUTEX_LOCK(MUTEX_MEM);
-    pspacesize += length;
+    pspacesize[category] += length;
     ptr = (byte *) calloc(size,occs);
 #if defined(GENERAL_TAGGING)
     //    printf("mem_calloc %x %x\n",ptr,ptr+length);
@@ -120,12 +120,12 @@ void *mem_calloc(unsigned long size, unsigned long occs)
 
 /* === realloc permanent memory ============================================ */
 
-void *mem_realloc(void *addr, unsigned long oldsize, unsigned long newsize)
+void *mem_realloc(void *addr, unsigned long oldsize, unsigned long newsize, int category)
 {
     newsize = (newsize+7) & ~0x7 ;	      /* round to 8 */
     oldsize = (oldsize+7) & ~0x7 ;	      /* round to 8 */
     SYS_MUTEX_LOCK(MUTEX_MEM);
-    pspacesize = pspacesize - oldsize + newsize;
+    pspacesize[category] = pspacesize[category] - oldsize + newsize;
     addr = (byte *) realloc(addr,newsize);
 #if defined(GENERAL_TAGGING)
     extend_enc_dec_as_nec(addr,addr+newsize);
@@ -137,11 +137,11 @@ void *mem_realloc(void *addr, unsigned long oldsize, unsigned long newsize)
 
 /* === dealloc permanent memory ============================================ */
 
-void mem_dealloc(void *addr, unsigned long size)
+void mem_dealloc(void *addr, unsigned long size, int category)
 {
     size = (size+7) & ~0x7 ;	      /* round to 8 */
     SYS_MUTEX_LOCK(MUTEX_MEM);
-    pspacesize -= size;
+    pspacesize[category] -= size;
     free(addr);
     SYS_MUTEX_UNLOCK(MUTEX_MEM);
 }

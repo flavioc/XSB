@@ -120,7 +120,7 @@ static pthread_t_p th_get( int i )
 static void th_delete( int i )
 {
 #ifdef WIN_NT
-	mem_dealloc(th_vec[i].tid_addr,sizeof(pthread_t));
+	mem_dealloc(th_vec[i].tid_addr,sizeof(pthread_t),THREAD_SPACE);
 #endif	
 	th_vec[i].valid = 0;
 }
@@ -194,7 +194,7 @@ static int xsb_thread_create(th_context *th)
 	Integer id ;
 
 	goal = ptoc_tag(th, 2) ;
-	new_th = mem_alloc(sizeof(th_context)) ;
+	new_th = mem_alloc(sizeof(th_context),THREAD_SPACE) ;
 
 	copy_pflags(new_th, th) ;
 	init_machine(new_th) ;
@@ -203,7 +203,7 @@ static int xsb_thread_create(th_context *th)
 	flags[NUM_THREADS]++ ;
 
 #ifdef WIN_NT
-	thr = mem_alloc(sizeof(pthread_t));
+	thr = mem_alloc(sizeof(pthread_t),THREAD_SPACE);
 	rc = pthread_create( thr, NULL, &xsb_thread_run, (void *)new_th ) ;
 #else
 	rc = pthread_create( &thr, NULL, &xsb_thread_run, (void *)new_th ) ;
@@ -265,7 +265,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 			cleanup_machine(CTXT) ;
 			thread_free_dyn_blks(CTXT);
 			thread_free_tab_blks(CTXT);
-			mem_dealloc(th,sizeof(th_context)) ;
+			mem_dealloc(th,sizeof(th_context),THREAD_SPACE) ;
 			flags[NUM_THREADS]-- ;
 			pthread_mutex_lock( &th_mutex );
 			tid2 = pthread_self();
@@ -315,7 +315,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 		{
 			Integer arg = ptoc_int(CTXTc 2) ;
 			pthread_mutexattr_t attr ;
-			id = (Integer) mem_alloc( sizeof(pthread_mutex_t) ) ;
+			id = (Integer) mem_alloc( sizeof(pthread_mutex_t),THREAD_SPACE ) ;
         		pthread_mutexattr_init( &attr ) ;
 			switch(arg)
 			{
@@ -365,7 +365,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 		case XSB_MUTEX_DESTROY:
 			id = ptoc_int(CTXTc 2) ;
 			rc = pthread_mutex_destroy( (pthread_mutex_t *)id ) ;
-			mem_dealloc( (pthread_mutex_t *)id, sizeof(pthread_mutex_t) ) ;
+			mem_dealloc( (pthread_mutex_t *)id, sizeof(pthread_mutex_t),THREAD_SPACE ) ;
 			break ;
 
 		case XSB_SYS_MUTEX_LOCK:

@@ -228,6 +228,7 @@ case IS_INCOMPLETE: {
       as_leaf = (NODEptr) ptoc_int(CTXTc 1);
       delay_lists = ptoc_tag(CTXTc 2);
       if (is_conditional_answer(as_leaf)) {
+	int copy_of_var_addr_arraysz;
 	bind_list((CPtr)delay_lists, hreg);
 	{ /*
 	   * Make copy of var_regs & global_num_vars (after get_returns,
@@ -239,7 +240,9 @@ case IS_INCOMPLETE: {
 	   * answer for the head predicate.
 	   */
 	  int i;
-	  copy_of_var_addr = (CPtr *)mem_calloc(var_addr_arraysz, sizeof(CPtr));
+	  while (var_addr_arraysz < global_num_vars+1) trie_expand_array(CPtr,var_addr,var_addr_arraysz,"var_addr");
+	  copy_of_var_addr_arraysz = var_addr_arraysz;
+	  copy_of_var_addr = (CPtr *)mem_calloc(copy_of_var_addr_arraysz, sizeof(CPtr),OTHER_SPACE);
 	  if(copy_of_var_addr == NULL){
 	    xsb_exit("No enough memory to calloc copy_of_var_addr!\nBye");
 	  }
@@ -275,7 +278,7 @@ case IS_INCOMPLETE: {
 	  }
 	}
 	bind_nil(dls_tail);
-	mem_dealloc(copy_of_var_addr,var_addr_arraysz*sizeof(CPtr));
+	mem_dealloc(copy_of_var_addr,copy_of_var_addr_arraysz*sizeof(CPtr),OTHER_SPACE);
       } else {
 	bind_nil((CPtr)delay_lists);
       }

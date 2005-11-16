@@ -242,7 +242,7 @@ static int readmsg(SOCKET sock_handle, char **msg_buff, unsigned long *msg_len)
      msglen = ntohl(net_encoded_len);
      *msg_len = (msglen+1)*sizeof(char);
 
-     if ((*msg_buff = (char *)mem_calloc(msglen+1, sizeof(char))) == NULL) {
+     if ((*msg_buff = (char *)mem_calloc(msglen+1, sizeof(char),OTHER_SPACE)) == NULL) {
 	  xsb_abort("[SOCKET_RECV] Can't allocate memory for the message buffer");
      }
 
@@ -371,7 +371,7 @@ static int socket_send(CTXTdeclc int *rc, int timeout) {
      msg_body_len = strlen(send_msg_aux);
 
      /* We use the first XSB_MSG_HEADER_LENGTH bytes for the message size.*/
-     message_buffer = mem_calloc(msg_body_len + XSB_MSG_HEADER_LENGTH + 1, sizeof(char));
+     message_buffer = mem_calloc(msg_body_len + XSB_MSG_HEADER_LENGTH + 1, sizeof(char),LEAK_SPACE);
      if (message_buffer == NULL) {
 	  xsb_abort("[SOCKET_SEND] Can't allocate memory for the message buffer");
      }
@@ -381,7 +381,7 @@ static int socket_send(CTXTdeclc int *rc, int timeout) {
      strcpy(message_buffer + XSB_MSG_HEADER_LENGTH, send_msg_aux);
 
      *rc = sendto(sock_handle, message_buffer, msg_body_len+XSB_MSG_HEADER_LENGTH, 0, NULL, 0);
-     mem_dealloc(message_buffer,(msg_body_len + XSB_MSG_HEADER_LENGTH + 1)*sizeof(char));
+     mem_dealloc(message_buffer,(msg_body_len + XSB_MSG_HEADER_LENGTH + 1)*sizeof(char),LEAK_SPACE);
 
      return NORMAL_TERMINATION;
 }
@@ -578,7 +578,7 @@ xsbBool xsb_socket_request(CTXTdecl)
 	       
 	       if (message_buffer != NULL) {
 		    ctop_string(CTXTc 3, (char*)string_find(message_buffer, 1));
-		    mem_dealloc(message_buffer,msg_len);
+		    mem_dealloc(message_buffer,msg_len,OTHER_SPACE);
 	       } else {  /* this happens at end of file */
 		    ctop_string(CTXTc 3, (char*)string_find("", 1));
 	       }
@@ -753,7 +753,7 @@ xsbBool xsb_socket_request(CTXTdecl)
 	  if (isinteger(timeout_term)|isboxedinteger(timeout_term)) {
 	       timeout = oint_val(timeout_term);
 	       /* initialize tv */
-	       tv = (struct timeval *)mem_alloc(sizeof(struct timeval));
+	       tv = (struct timeval *)mem_alloc(sizeof(struct timeval),LEAK_SPACE);
 	       tv->tv_sec = timeout;
 	       tv->tv_usec = 0;
 	  } else
@@ -822,7 +822,7 @@ xsbBool xsb_socket_request(CTXTdecl)
 			  connections[count].exception_fds,connections[count].sizee);
 	  }
 
-	  if (tv) mem_dealloc((struct timeval *)tv,sizeof(struct timeval));
+	  if (tv) mem_dealloc((struct timeval *)tv,sizeof(struct timeval),LEAK_SPACE);
 	  return set_error_code(CTXTc ecode, 7, "SOCKET_SELECT");
      }
 
@@ -926,7 +926,7 @@ static xsbBool list_sockfd(prolog_term list, fd_set *fdset, int *max_fd,
      prolog_term head;
 
      *size = getsize(local);
-     *fds = (int*)mem_alloc(sizeof(int)*(*size));
+     *fds = (int*)mem_alloc(sizeof(int)*(*size),OTHER_SPACE);
 
      while (!isnil(list)) {
 	  head = p2p_car(list);
@@ -983,9 +983,9 @@ static void select_destroy(char *connection_name)
 		    connections[i].maximum_fd = 0;
 
 		    /* free the fds obtained by mem_alloc() */
-		    mem_dealloc(connections[i].read_fds,connections[i].sizer);
-		    mem_dealloc(connections[i].write_fds,connections[i].sizew);
-		    mem_dealloc(connections[i].exception_fds,connections[i].sizee); 
+		    mem_dealloc(connections[i].read_fds,connections[i].sizer,OTHER_SPACE);
+		    mem_dealloc(connections[i].write_fds,connections[i].sizew,OTHER_SPACE);
+		    mem_dealloc(connections[i].exception_fds,connections[i].sizee,OTHER_SPACE); 
       
 		    connections[i].sizer = 0;
 		    connections[i].sizew = 0 ;

@@ -219,16 +219,19 @@ void init_trie_aux_areas(CTXTdecl)
   smBTN = &smTableBTN;
   smBTHT = &smTableBTHT;
 
-  addr_stack_size = DEFAULT_ARRAYSIZ;
+  addr_stack_size = 0;
+  Addr_Stack = NULL;
   addr_stack_pointer = 0;
-  term_stacksize = DEFAULT_ARRAYSIZ;
-  term_stackptr = -1;
-  var_addr_arraysz = DEFAULT_ARRAYSIZ;
 
-  alloc_arr(CPtr,Addr_Stack,addr_stack_size);
-  alloc_arr(Cell,term_stack,term_stacksize);
-  alloc_arr(CPtr,var_addr,var_addr_arraysz);
-  alloc_arr(Cell,reg_array,reg_array_size);
+  term_stacksize = 0;
+  term_stack = NULL;
+  term_stackptr = -1;
+
+  var_addr_arraysz = 0;
+  var_addr = NULL;
+
+  reg_array = NULL;
+  reg_array_size = 0;
   reg_arrayptr = reg_array -1;
 
   for (i = 0; i < NUM_TRIEVARS; i++)
@@ -237,10 +240,10 @@ void init_trie_aux_areas(CTXTdecl)
 
 void free_trie_aux_areas(CTXTdecl)
 {
-  mem_dealloc(term_stack,term_stacksize);
-  mem_dealloc(var_addr,var_addr_arraysz);
-  mem_dealloc(Addr_Stack,addr_stack_size);
-  mem_dealloc(reg_array,reg_array_size);
+  mem_dealloc(term_stack,term_stacksize,TABLE_SPACE);
+  mem_dealloc(var_addr,var_addr_arraysz,TABLE_SPACE);
+  mem_dealloc(Addr_Stack,addr_stack_size,TABLE_SPACE);
+  mem_dealloc(reg_array,reg_array_size,TABLE_SPACE);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -450,7 +453,7 @@ void expand_trie_ht(BTHTptr pHT) {
 
   new_size = TrieHT_NewSize(pHT);
   bucket_array = (BTNptr *)mem_realloc( BTHT_BucketArray(pHT), BTHT_NumBuckets(pHT)*sizeof(void*),
-				     new_size * sizeof(BTNptr) );
+				     new_size * sizeof(BTNptr),TABLE_SPACE );
   if ( IsNULL(bucket_array) )
     return;
 
@@ -1252,8 +1255,11 @@ void load_solution_trie(CTXTdeclc int arity, int attv_num, CPtr cptr, BTNptr Tri
     /* Initialize var_addr[] as the attvs in the call. */
     if (attv_num > 0) {
       for (xtemp = cptr; xtemp > cptr - arity; xtemp--) {
-	if (isattv(cell(xtemp)))
-	  var_addr[num_heap_term_vars++] = (CPtr) cell(xtemp);
+	if (isattv(cell(xtemp))) {
+	  //	  var_addr[num_heap_term_vars] = (CPtr) cell(xtemp);
+	  safe_assign(var_addr,num_heap_term_vars,(CPtr) cell(xtemp),var_addr_arraysz);
+	  num_heap_term_vars++;
+	}
       }
     }
     follow_par_chain(CTXTc TriePtr);

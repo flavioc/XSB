@@ -171,7 +171,7 @@ void unload_seg(pseg s)
   i1 = seg_index(s) ;
   while (i1) {
     i2 = i_next(i1) ;
-    mem_dealloc((pb)i1, i_size(i1));
+    mem_dealloc((pb)i1, i_size(i1),COMPILED_SPACE);
     i1 = i2;
   }
   /* delete segment from segment dllist and dealloc it */
@@ -180,7 +180,7 @@ void unload_seg(pseg s)
   if (next) seg_prev(next) = prev ;
   if (prev) seg_next(prev) = next ;
   if (last_text==s) last_text = prev ;
-  mem_dealloc((pb)seg_hdr(s), seg_size(s));
+  mem_dealloc((pb)seg_hdr(s), seg_size(s),COMPILED_SPACE);
 }
 
 /*----------------------------------------------------------------------*/
@@ -218,7 +218,7 @@ static int get_index_tab(FILE *fd, int clause_no)
 
   size = hsize(clause_no);
 
-  indextab = (struct hrec *)mem_alloc(size*sizeof(struct hrec)); 
+  indextab = (struct hrec *)mem_alloc(size*sizeof(struct hrec),COMPILED_SPACE); 
 
   for (j = 0; j < size; j++) {
     indextab[j].l = 0;
@@ -261,7 +261,7 @@ static int get_index_tab(FILE *fd, int clause_no)
 
 inline static pindex new_index_seg(int no_cells)
 {
-  pindex new_i = (pindex)mem_alloc(SIZE_IDX_HDR + sizeof(Cell) * no_cells ) ;
+  pindex new_i = (pindex)mem_alloc(SIZE_IDX_HDR + sizeof(Cell) * no_cells,COMPILED_SPACE ) ;
  
   /* initialize fields of new index segment header */
   i_next(new_i) = 0 ;
@@ -402,7 +402,7 @@ static int load_text(FILE *fd, int seg_num, int text_bytes, int *current_tab)
 	    int tmp_nir = num_index_reloc;
 	    num_index_reloc = (cell(inst_addr)/NUM_INDEX_BLKS)+1;
 	    index_reloc = (CPtr *)mem_realloc(index_reloc,tmp_nir,
-					      NUM_INDEX_BLKS*num_index_reloc*sizeof(CPtr));
+					      NUM_INDEX_BLKS*num_index_reloc*sizeof(CPtr),COMPILED_SPACE);
 	    if (!index_reloc) {
 	      xsb_error("Couldn't allocate index relocation space");
 	      return FALSE;
@@ -456,15 +456,15 @@ static void load_index(FILE *fd, int index_bytes, int table_num)
       temp_ptr = hptr = hreg;
     else 
 #endif
-       temp_ptr = hptr = (CPtr)mem_alloc(temp_space*sizeof(CPtr));
+       temp_ptr = hptr = (CPtr)mem_alloc(temp_space*sizeof(CPtr),COMPILED_SPACE);
     t_len = get_index_tab(fd, clause_no);
     
     gen_index((xsbBool)(table_num > 0), clause_no, sob_arg_p, arity);
-    mem_dealloc(indextab,hsize(clause_no)*sizeof(struct hrec));
+    mem_dealloc(indextab,hsize(clause_no)*sizeof(struct hrec),COMPILED_SPACE);
 #ifndef MULTI_THREAD
-    if (temp_ptr != hreg) mem_dealloc(temp_ptr,temp_space*sizeof(CPtr));
+    if (temp_ptr != hreg) mem_dealloc(temp_ptr,temp_space*sizeof(CPtr),COMPILED_SPACE);
 #else
-    mem_dealloc(temp_ptr,temp_space*sizeof(CPtr));
+    mem_dealloc(temp_ptr,temp_space*sizeof(CPtr),COMPILED_SPACE);
 #endif
     count += 10 + t_len;
   }
@@ -476,10 +476,10 @@ static pseg load_seg(FILE *fd, int seg_num, int text_bytes, int index_bytes)
 {
    int current_tab;
 
-   current_seg = (pseg) mem_alloc(ZOOM_FACTOR*text_bytes+SIZE_SEG_HDR);
+   current_seg = (pseg) mem_alloc(ZOOM_FACTOR*text_bytes+SIZE_SEG_HDR,COMPILED_SPACE);
 
    /* Allocate first chunk of index_reloc */
-   index_reloc = (CPtr *)mem_alloc(NUM_INDEX_BLKS*sizeof(CPtr));
+   index_reloc = (CPtr *)mem_alloc(NUM_INDEX_BLKS*sizeof(CPtr),COMPILED_SPACE);
    if (!index_reloc) {
      xsb_error("Couldn't allocate index relocation space");
      return NULL;
@@ -494,12 +494,12 @@ static pseg load_seg(FILE *fd, int seg_num, int text_bytes, int index_bytes)
    seg_size(current_seg)  = text_bytes*ZOOM_FACTOR + SIZE_SEG_HDR;
    /* fd = file; */
    if (!load_text(fd, seg_num, text_bytes, &current_tab)) {
-     mem_dealloc((pb)seg_hdr(current_seg), text_bytes+SIZE_SEG_HDR);
+     mem_dealloc((pb)seg_hdr(current_seg), text_bytes+SIZE_SEG_HDR,COMPILED_SPACE);
      return NULL;
    }
    index_block_chain = &seg_index(current_seg);
    load_index(fd, index_bytes, current_tab);
-   mem_dealloc(index_reloc,NUM_INDEX_BLKS*sizeof(CPtr));
+   mem_dealloc(index_reloc,NUM_INDEX_BLKS*sizeof(CPtr),COMPILED_SPACE);
    
    /* set text-index segment chain */
    if (last_text) seg_next(last_text) = current_seg;
@@ -699,7 +699,7 @@ static xsbBool load_syms(FILE *fd, int psc_count, int count, Psc cur_mod, int ex
 {
   int i;
   
-  reloc_table = (pw *) mem_calloc((psc_count), sizeof(pw));
+  reloc_table = (pw *) mem_calloc((psc_count), sizeof(pw),COMPILED_SPACE);
   reloc_table_size = psc_count*sizeof(pw);
   /* xsb_dbgmsg(("reloc_table %x,psc_count %d",reloc_table,psc_count)); */
 
@@ -713,7 +713,7 @@ static xsbBool load_syms(FILE *fd, int psc_count, int count, Psc cur_mod, int ex
 static void new_tdispblk(TIFptr *instr_ptr, Psc psc) {
   struct TDispBlk_t *tdispblk;
 
-  if (!(tdispblk = (struct TDispBlk_t *)mem_calloc(sizeof(struct TDispBlk_t)+MAXTABTHREAD*sizeof(Cell),1)))
+  if (!(tdispblk = (struct TDispBlk_t *)mem_calloc(sizeof(struct TDispBlk_t)+MAXTABTHREAD*sizeof(Cell),1,COMPILED_SPACE)))
     xsb_exit("No space for table dispatch block");  /* never deallocated */
   if (tdispblkhdr.firstDB) tdispblkhdr.firstDB->PrevDB = tdispblk;
   tdispblk->NextDB = tdispblkhdr.firstDB;
@@ -921,7 +921,7 @@ byte *loader(CTXTdeclc char *file, int exp)
 
   fclose(fd);
   if (reloc_table) {
-    mem_dealloc(reloc_table,reloc_table_size);
+    mem_dealloc(reloc_table,reloc_table_size,COMPILED_SPACE);
     reloc_table = 0;
   }
   return first_inst;

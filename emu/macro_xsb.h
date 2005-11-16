@@ -61,7 +61,7 @@ typedef struct Deleted_Table_Frame {
 #define DTF_PrevPredDTF(pDTF)	   ( (pDTF)->next_pred_delTF )
 
 #define New_DelTF(pDTF,pTIF) {						\
-   pDTF = (DelTFptr)mem_alloc(sizeof(DeletedTableFrame));		\
+   pDTF = (DelTFptr)mem_alloc(sizeof(DeletedTableFrame),TABLE_SPACE);	\
    if ( IsNULL(pDTF) )							\
      xsb_abort("Ran out of memory in allocation of DeletedTableFrame");	\
    DTF_CallTrie(pDTF) = TIF_CallTrie(pTIF);				\
@@ -95,7 +95,7 @@ typedef struct Deleted_Table_Frame {
   if (DTF_NextPredDTF(pDTF) != 0) {					\
     DTF_PrevPredDTF(DTF_NextPredDTF(pDTF)) = DTF_PrevPredDTF(pDTF);	\
   }									\
-  mem_dealloc(pDTF,sizeof(DeletedTableFrame));				\
+  mem_dealloc(pDTF,sizeof(DeletedTableFrame),TABLE_SPACE);				\
 }
 
 /*===========================================================================*/
@@ -149,7 +149,7 @@ struct tif_list {
 extern struct tif_list  tif_list;
 
 #define New_TIF(pTIF,pPSC) {						\
-   pTIF = (TIFptr)mem_alloc(sizeof(TableInfoFrame));			\
+   pTIF = (TIFptr)mem_alloc(sizeof(TableInfoFrame),TABLE_SPACE);	\
    if ( IsNULL(pTIF) )							\
      xsb_abort("Ran out of memory in allocation of TableInfoFrame");	\
    TIF_PSC(pTIF) = pPSC;						\
@@ -197,7 +197,7 @@ extern struct tif_list  tif_list;
    TIF_NextTIF(tTIF) = TIF_NextTIF((pTIF));			\
  }								\
  delete_predicate_table(CTXTc pTIF);				\
- mem_dealloc((pTIF),sizeof(TableInfoFrame));			\
+ mem_dealloc((pTIF),sizeof(TableInfoFrame),TABLE_SPACE);			\
  }
 
 /*===========================================================================*/

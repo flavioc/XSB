@@ -244,7 +244,7 @@ int make_timed_call(CTXTdeclc xsbTimeout *pptr, void (*fptr)(xsbTimeout *))
 #ifdef MULTI_THREAD /* USE PTHREADS */
 
 #ifdef WIN_NT
-  pptr->timeout_info.timedThread = mem_alloc(sizeof(pthread_t));
+  pptr->timeout_info.timedThread = mem_alloc(sizeof(pthread_t),LEAK_SPACE);
 #define TIMED_THREAD_CREATE_ARG pptr->timeout_info.timedThread
 #else
 #define TIMED_THREAD_CREATE_ARG &pptr->timeout_info.timedThread
@@ -257,7 +257,7 @@ int make_timed_call(CTXTdeclc xsbTimeout *pptr, void (*fptr)(xsbTimeout *))
   PTHREAD_DETACH(pptr->timeout_info.timedThread);
   return_msg = OP_TIMED_OUT(pptr);
 #ifdef WIN_NT
-  mem_dealloc(pptr->timeout_info.timedThread,sizeof(pthread_t));
+  mem_dealloc(pptr->timeout_info.timedThread,sizeof(pthread_t),LEAK_SPACE);
 #endif
   if (return_msg == TIMER_SETUP_ERR) {
     return TIMER_SETUP_ERR;  

@@ -100,7 +100,7 @@ typedef struct AS_info {
 #define asi_dl_list(X)	(X) -> dl_list
 
 #define create_as_info(ANS, SUBG)		\
-    asi = (ASI) mem_alloc(sizeof(struct AS_info));	\
+    asi = (ASI) mem_alloc(sizeof(struct AS_info),TABLE_SPACE);	\
     Child(ANS) = (NODEptr) asi;			\
     asi_pdes(asi) = NULL;			\
     asi_subgoal(asi) = SUBG;			\

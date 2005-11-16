@@ -554,7 +554,7 @@ struct token_t *GetToken(CTXTdeclc FILE *card, STRFILE *instr, int prevch)
 	if (strbuff == NULL)
 	  {
 	    /* First call for GetToken, so allocate a buffer */
-	    strbuff = (char *)mem_alloc(strbuff_len);
+	    strbuff = (char *)mem_alloc(strbuff_len,OTHER_SPACE);
 	    exit_if_null(strbuff);
 	  }
 	s = strbuff;

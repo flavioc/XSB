@@ -63,7 +63,7 @@ static char *create_bin_dll_path(char *xsb_config_file_location, char *dll_file_
   int char_count;
   char_count = strlen(xsb_config_file_location)-strlen("lib")-1-strlen("xsb_configuration.P");
   *dirlen = sizeof(char)*(char_count+strlen(dll_file_name)+5); // 5 stands for bin\\ + null
-  xsb_bin_dir = mem_alloc(*dirlen);
+  xsb_bin_dir = mem_alloc(*dirlen,FOR_CODE_SPACE);
   strncpy(xsb_bin_dir, xsb_config_file_location,char_count);
   xsb_bin_dir[char_count]='\0';
   strcat(xsb_bin_dir, "bin");
@@ -110,12 +110,12 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
       xsb_bin_dir = create_bin_dll_path(xsb_config_file, basename_ptr,&dirlen);
       if(( handle = LoadLibrary(xsb_bin_dir)) == 0 ){
 	if (( handle = LoadLibrary(basename_ptr)) == 0 ) {
-	  mem_dealloc(xsb_bin_dir,dirlen);
+	  mem_dealloc(xsb_bin_dir,dirlen,FOR_CODE_SPACE);
 	  xsb_warn("Cannot load library %s or %s; error #%d",basename_ptr,sofilename,GetLastError());
 	  return 0;
 	}
       }
-      mem_dealloc(xsb_bin_dir,dirlen);
+      mem_dealloc(xsb_bin_dir,dirlen,FOR_CODE_SPACE);
     }
   }
   

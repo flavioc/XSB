@@ -85,7 +85,7 @@ xsbBucket *search_bucket(Cell name,
 	  if (bucket) {
 	    /* use memcpy() because client bucket might have extra fields */
 	    memcpy(prev, bucket, table->bucket_size);
-	    mem_dealloc(bucket,table->bucket_size);
+	    mem_dealloc(bucket,table->bucket_size,HASH_SPACE);
 	    //printf("dealloc bucket size: %d\n",table->bucket_size);
 	  } else {
 	    mark_bucket_free(prev,table->bucket_size);
@@ -99,7 +99,7 @@ xsbBucket *search_bucket(Cell name,
 	} else {
 	  /* Not top bucket: rearrange pointers & free space */
 	  prev->next = bucket->next;
-	  mem_dealloc(bucket,table->bucket_size);
+	  mem_dealloc(bucket,table->bucket_size,HASH_SPACE);
 	  //printf("dealloc bucket size: %d\n",table->bucket_size);
 	}
 	return NULL;
@@ -114,7 +114,7 @@ xsbBucket *search_bucket(Cell name,
   /* else create new bucket */
   /* calloc nullifies the allocated space; CLIENTS RELY ON THIS */
   if (!bucket) { /* i.e., it is not a top bucket */
-    bucket = (xsbBucket *)mem_calloc(1,table->bucket_size);
+    bucket = (xsbBucket *)mem_calloc(1,table->bucket_size,HASH_SPACE);
     //printf("calloc bucket, size: %d\n",table->bucket_size);
     if (!bucket)
       xsb_exit("Out of Memory: Can't allocate hash bucket");
@@ -129,7 +129,7 @@ xsbBucket *search_bucket(Cell name,
 static void init_hashtable(xsbHashTable *table)
 {
   /* calloc zeroes the allocated space; clients rely on this */
-  table->table = (byte *)mem_calloc(table->length,table->bucket_size);
+  table->table = (byte *)mem_calloc(table->length,table->bucket_size,HASH_SPACE);
   //printf("calloc table, size: %d\n",table->length*table->bucket_size);
   if (!table->table)
     xsb_exit("Out of Memory: Can't create hash table");
@@ -147,12 +147,12 @@ void destroy_hashtable(xsbHashTable *table)
     bucket=get_top_bucket(table,i)->next;
     while (bucket != NULL) {
       next = bucket->next;
-      mem_dealloc(bucket,table->bucket_size);
+      mem_dealloc(bucket,table->bucket_size,HASH_SPACE);
       //printf("dealloc bucket size: %d\n",table->bucket_size);
       bucket = next;
     }
   }
-  mem_dealloc(table->table,table->length*table->bucket_size);
+  mem_dealloc(table->table,table->length*table->bucket_size,HASH_SPACE);
   //printf("dealloc table size: %d\n",table->length*table->bucket_size);
 
 }

@@ -115,17 +115,37 @@ extern System_Stack pdl,            /* PDL                        */
    (((unsigned long)stack_size) < (min_exp)/K ? (stack_size) + (min_exp)/K : 2 * (stack_size))
 
 
+/* Categories of permanent space use: */
+#define ATOM_STR_SPACE		0
+#define ASSERT_SPACE		1
+#define COMPILED_SPACE		2
+#define FOR_CODE_SPACE		3
+#define TABLE_SPACE		4
+#define FINDALL_SPACE		5
+#define PROFILE_SPACE		6
+#define MT_PRIVATE_SPACE	7
+#define BUFF_SPACE		8
+#define GC_SPACE		9
+#define HASH_SPACE		10
+#define INTERPROLOG_SPACE	11
+#define THREAD_SPACE		12
+#define READ_CAN_SPACE		13
+#define LEAK_SPACE		14
+#define OTHER_SPACE		15
+
+#define NUM_CATS_SPACE		16
+
 /* Program and Symbol Tables Space (in Bytes)
    ------------------------------------------ */
-extern long pspacesize;
+extern long pspacesize[NUM_CATS_SPACE];
 
 
 /* Memory Function Prototypes
    -------------------------- */
-extern void *mem_alloc(unsigned long);
-extern void *mem_calloc(unsigned long, unsigned long);
-extern void *mem_realloc(void *, unsigned long, unsigned long);
-extern void mem_dealloc(void *, unsigned long);
+extern void *mem_alloc(unsigned long, int);
+extern void *mem_calloc(unsigned long, unsigned long, int);
+extern void *mem_realloc(void *, unsigned long, unsigned long, int);
+extern void mem_dealloc(void *, unsigned long, int);
 #ifndef MULTI_THREAD
 extern void tcpstack_realloc(long);
 extern void complstack_realloc(long);

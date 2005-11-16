@@ -73,12 +73,12 @@ void tstInitDataStructs(CTXTdecl) {
   extern void initCollectRelevantAnswers(CTXTdecl);
   extern void initSubsumptiveLookup(CTXTdecl);
 
-  DynStk_Init(&tstTermStack, TST_TERMSTACK_INITSIZE, Cell, "TST Term Stack");
-  DynStk_Init(&tstTermStackLog, TST_TERMSTACKLOG_INITSIZE, tstLogFrame,
+  DynStk_Init(&tstTermStack, 0 /*TST_TERMSTACK_INITSIZE*/, Cell, "TST Term Stack");
+  DynStk_Init(&tstTermStackLog, 0 /*TST_TERMSTACKLOG_INITSIZE*/, tstLogFrame,
 	      "TST TermStackLog");
-  DynStk_Init(&tstSymbolStack, TST_SYMBOLSTACK_INITSIZE, Cell,
+  DynStk_Init(&tstSymbolStack, 0 /*TST_SYMBOLSTACK_INITSIZE*/, Cell,
 	      "Trie-Symbol Stack");
-  DynStk_Init(&tstTrail, TST_TRAIL_INITSIZE, CPtr, "TST Trail");
+  DynStk_Init(&tstTrail, 0 /*TST_TRAIL_INITSIZE*/, CPtr, "TST Trail");
   initSubsumptiveLookup(CTXT);
   initCollectRelevantAnswers(CTXT);
 }

@@ -131,7 +131,7 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   /* object file (including orginal *.o and libraries) ready to be	*/
   /* read in.							*/
   buffsize = header.a_text + header.a_data + header.a_bss;
-  start = mem_alloc(buffsize);
+  start = mem_alloc(buffsize,FOR_CODE_SPACE);
   /* The "-T hex" option of ld starts the text segment at location	*/
   /* hex. Specifying -T is the same as using the -Ttext option.	*/
   sprintf(buff, "/usr/bin/ld -N -A %s -T %x -o %s %s %s -lc",
@@ -151,8 +151,8 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   loadsize = header.a_text + header.a_data + header.a_bss;
   if (loadsize > buffsize) {
     close(fd);			/* need to reallocate buffer */
-    mem_dealloc(start, buffsize);
-    start = mem_alloc(loadsize+BUFFEXTRA);
+    mem_dealloc(start, buffsize,FOR_CODE_SPACE);
+    start = mem_alloc(loadsize+BUFFEXTRA,FOR_CODE_SPACE);
     sprintf(buff, "/usr/bin/ld -N -A %s -T %x -o %s %s %s -lc",
 	    executable, (int)start, tfile, subfile, ld_option);
     system(buff);
@@ -168,7 +168,7 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   /* load symbol table and string table */
   fstat(fd, &statbuff);
   loadsize = statbuff.st_size-N_SYMOFF(header);
-  loc = (int *)mem_alloc(loadsize+8);
+  loc = (int *)mem_alloc(loadsize+8,FOR_CODE_SPACE);
   *loc = loadsize+8;
   *(loc+1) = header.a_syms/sizeof(struct nlist);
   lseek(fd, N_SYMOFF(header), 0);
@@ -177,6 +177,6 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   
   /* fifth step: link C procedure names with Prolog names.		*/
   dyn_link_all((char *)loc, cur_mod);
-  mem_dealloc((byte *)loc, loadsize+8);
+  mem_dealloc((byte *)loc, loadsize+8,FOR_CODE_SPACE);
   return (byte *)4;
 }

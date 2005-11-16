@@ -57,7 +57,7 @@ struct random_seeds_t *random_seeds = 0;
 struct random_seeds_t *init_random_seeds() {
 
   struct random_seeds_t *seeds;
-  seeds = (struct random_seeds_t *)mem_alloc(sizeof(struct random_seeds_t));
+  seeds = (struct random_seeds_t *)mem_alloc(sizeof(struct random_seeds_t),OTHER_SPACE);
   if (!seeds) xsb_abort("No space for random seeds!!");
   seeds->IX = 6293;
   seeds->IY = 21877;

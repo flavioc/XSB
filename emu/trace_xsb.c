@@ -96,6 +96,12 @@ void perproc_stat(void)
  * time of 'time_start'.
  */
 
+static char *pspace_cat[NUM_CATS_SPACE] =
+  {"atom        ","asserted    ","compiled    ","foreign     ",
+   "table       ","findall     ","profile     ","mt-private  ",
+   "buffer      ","gc temp     ","hash        ","interprolog ",
+   "thread      ","read canon  ","leaking...  ","other       "};
+
 void total_stat(CTXTdeclc double elapstime) {
 
   NodeStats
@@ -119,12 +125,13 @@ void total_stat(CTXTdeclc double elapstime) {
     trieassert_alloc, trieassert_used,
     gl_avail, tc_avail,
     de_space_alloc, de_space_used,
-    dl_space_alloc, dl_space_used;
+    dl_space_alloc, dl_space_used,
+    pspacetot;
 
   int
     num_de_blocks, num_dl_blocks,
-    de_count, dl_count;
-
+    de_count, dl_count,
+    i;
 
   tbtn = node_statistics(&smTableBTN);
   tbtht = hash_statistics(&smTableBTHT);
@@ -161,13 +168,17 @@ void total_stat(CTXTdeclc double elapstime) {
   dl_count = (dl_space_used - num_dl_blocks * sizeof(Cell)) /
 	     sizeof(struct delay_list);
 
+
+  pspacetot = 0;
+  for (i=0; i<NUM_CATS_SPACE; i++) pspacetot += pspacesize[i];
+
   total_alloc =
-    pspacesize  +  trieassert_alloc  +  tablespace_alloc  +
+    pspacetot  +  trieassert_alloc  +  tablespace_alloc  +
     (pdl.size + glstack.size + tcpstack.size + complstack.size) * K +
     de_space_alloc + dl_space_alloc;
 
   total_used  =
-    pspacesize  +  trieassert_used  +  tablespace_used  +
+    pspacetot  +  trieassert_used  +  tablespace_used  +
     (glstack.size * K - gl_avail) + (tcpstack.size * K - tc_avail) +
     de_space_used + dl_space_used;
 
@@ -176,8 +187,12 @@ void total_stat(CTXTdeclc double elapstime) {
   printf("Memory (total)    %12ld bytes: %12ld in use, %12ld free\n",
 	 total_alloc, total_used, total_alloc - total_used);
   printf("  permanent space %12ld bytes: %12ld in use, %12ld free\n",
-	 pspacesize + trieassert_alloc, pspacesize + trieassert_used,
+	 pspacetot + trieassert_alloc, pspacetot + trieassert_used,
 	 trieassert_alloc - trieassert_used);
+  for (i=0; i<NUM_CATS_SPACE; i++) 
+    if (pspacesize[i] > 0)
+     printf("    %s                      %12ld\n",pspace_cat[i],pspacesize[i]);
+
   printf("  glob/loc space  %12ld bytes: %12ld in use, %12ld free\n",
 	 glstack.size * K, glstack.size * K - gl_avail, gl_avail);
   printf("    global                            %12ld bytes\n",

@@ -478,6 +478,7 @@ xsb_dbgmsg((LOG_DEBUG,"After variant call search AT: %x\n",answer_template));
 	    int i;
 	    CPtr temp_hreg = hreg;
 	    new_heap_functor(hreg, get_ret_psc(num_heap_term_vars));
+	    if (var_addr == NULL) printf("var_addr NULL 3\n");
 	    for (i = 0; i < num_heap_term_vars; i++)
 	      cell(hreg++) = (Cell) var_addr[i];
 	    delay_positively(producer_sf, first_answer, makecs(temp_hreg));
@@ -581,6 +582,7 @@ XSB_Start_Instr(answer_return,_answer_return)
 	int i;
 	CPtr temp_hreg = hreg;
 	new_heap_functor(hreg, get_ret_psc(num_heap_term_vars));
+	if (var_addr == NULL) printf("var_addr NULL 4\n");
 	for (i = 0; i < num_heap_term_vars; i++) {
 	  cell(hreg++) = (Cell) var_addr[i];
 	}

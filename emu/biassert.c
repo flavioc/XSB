@@ -625,8 +625,8 @@ static char *buff_realloc(CTXTdecl)
 {
   /*  xsb_dbgmsg((LOG_DEBUG,"Enter buff_realloc(%d) %X", asrtBuff->Buff_size,asrtBuff->Buff)); */
   asrtBuff->Buff_size = asrtBuff->Buff_size + asrtBuff->Buff_size;
-  if (asrtBuff->Buff == NULL) asrtBuff->Buff = (char *)mem_alloc(asrtBuff->Buff_size);
-  else asrtBuff->Buff = (char *)mem_realloc(asrtBuff->Buff,(asrtBuff->Buff_size / 2),asrtBuff->Buff_size);
+  if (asrtBuff->Buff == NULL) asrtBuff->Buff = (char *)mem_alloc(asrtBuff->Buff_size,ASSERT_SPACE);
+  else asrtBuff->Buff = (char *)mem_realloc(asrtBuff->Buff,(asrtBuff->Buff_size / 2),asrtBuff->Buff_size,ASSERT_SPACE);
   asrtBuff->BLim = asrtBuff->Buff_size-16;
   /*  xsb_dbgmsg((LOG_DEBUG,"Leave buff_realloc(%d) %X", asrtBuff->Buff_size,asrtBuff->Buff)); */
   return(asrtBuff->Buff);
@@ -1185,7 +1185,7 @@ typedef ClRef SOBRef ;
 
 #define MakeClRef(ptr,Type,NCells)\
 {	long sz = (((NCells)*sizeof(Cell)+sizeof(ClRefHdr) + 7) & ~0x7);\
-	(ptr) = (ClRef)mem_alloc(sz);\
+	(ptr) = (ClRef)mem_alloc(sz,ASSERT_SPACE);\
 	(ptr)->buflen = ((Type)&3)+(sz&~3);\
 	(ptr)++;\
 }
@@ -2159,7 +2159,7 @@ static int really_delete_clause(ClRef Clause)
                 { /* if emptied bucket, decrement count; if all empty, reclaim SOB */
                     xsb_dbgmsg((LOG_RETRACT,"deleting sob - %p", sob ));
 		    delete_from_sobchain(sob) ;
-		    mem_dealloc((pb)ClRefAddr(sob), ClRefSize(sob));
+		    mem_dealloc((pb)ClRefAddr(sob), ClRefSize(sob),ASSERT_SPACE);
 		}
             }
             break ;
@@ -2168,7 +2168,7 @@ static int really_delete_clause(ClRef Clause)
         default :
 	  xsb_exit( "retract internal error!" ) ;
     }
-    mem_dealloc((pb)ClRefAddr(Clause), ClRefSize(Clause));
+    mem_dealloc((pb)ClRefAddr(Clause), ClRefSize(Clause),ASSERT_SPACE);
     if (xsb_profiling_enabled)
       remove_prog_seg((pb)Clause);
     return TRUE ;
@@ -2419,7 +2419,7 @@ xsbBool db_retract0( CTXTdecl /* ClRef, retract_nr */ )
 static inline void allocate_prref_tab(CTXTdeclc Psc psc, PrRef *prref, pb *new_ep) {
   int Loc;
 
-  if (!(*prref = (PrRef)mem_alloc(sizeof(PrRefData)))) xsb_exit("No space for a PrRef\n");
+  if (!(*prref = (PrRef)mem_alloc(sizeof(PrRefData),ASSERT_SPACE))) xsb_exit("No space for a PrRef\n");
   //  fprintf(stdout,"build_prref: %s/%d, shared=%d, prref=%p\n",get_name(psc),get_arity(psc),get_shared(psc),prref);
 
   if (xsb_profiling_enabled)
@@ -2433,7 +2433,7 @@ static inline void allocate_prref_tab(CTXTdeclc Psc psc, PrRef *prref, pb *new_e
       TIFptr tip;
       CPtr tp;
       New_TIF(tip,psc);
-      tp  = (CPtr)mem_alloc(FIXED_BLOCK_SIZE_FOR_TABLED_PRED) ;
+      tp  = (CPtr)mem_alloc(FIXED_BLOCK_SIZE_FOR_TABLED_PRED,ASSERT_SPACE) ;
       Loc = 0 ;
       dbgen_inst_ppvww(tabletrysingle,get_arity(psc),(tp+3),tip,tp,&Loc) ;
       dbgen_inst_pvv(allocate_gc,3,3,tp,&Loc) ;
@@ -2468,8 +2468,9 @@ PrRef build_prref( CTXTdeclc Psc psc )
     struct DispBlk_t *dispblk;
     if (*(pb)get_ep(psc) != switchonthread) {
       /* create new switchonthread instruction and dispblock */
-      pb disp_instr_addr = mem_calloc(sizeof(Cell),2);
-      dispblk = (struct DispBlk_t *)mem_calloc(sizeof(struct DispBlk_t)+MAXTHREAD*sizeof(Cell),1);
+      pb disp_instr_addr = mem_calloc(sizeof(Cell),2,MT_PRIVATE_SPACE);
+      dispblk = (struct DispBlk_t *)mem_calloc(sizeof(struct DispBlk_t)+MAXTHREAD*sizeof(Cell),
+					       1,MT_PRIVATE_SPACE);
 
       if (DispBlkHdr.firstDB) DispBlkHdr.firstDB->PrevDB = dispblk;
       dispblk->NextDB = DispBlkHdr.firstDB;
@@ -2538,13 +2539,13 @@ void free_prref(CTXTdeclc CPtr *p) {
 	TIFptr mtTIF = (TIFptr) *(p+2);
 	Free_TIF(mtTIF);
 	/* free prref, from calld instr set in db_build_prref */
-	mem_dealloc((pb)(*(p+6)), sizeof(PrRefData));
+	mem_dealloc((pb)(*(p+6)), sizeof(PrRefData),ASSERT_SPACE);
 	if (xsb_profiling_enabled)
 	  remove_prog_seg((pb)*(p+6));
-	mem_dealloc((pb)p, FIXED_BLOCK_SIZE_FOR_TABLED_PRED) ; /*free table hdr*/
+	mem_dealloc((pb)p, FIXED_BLOCK_SIZE_FOR_TABLED_PRED,ASSERT_SPACE) ; /*free table hdr*/
       }
     else {
-      mem_dealloc((pb)p, sizeof(PrRefData));  /* free prref */
+      mem_dealloc((pb)p, sizeof(PrRefData),ASSERT_SPACE);  /* free prref */
       if (xsb_profiling_enabled)
 	remove_prog_seg((pb)p);
     }
@@ -2601,7 +2602,7 @@ static void abolish_trie_asserted_stuff(CTXTdeclc PrRef prref) {
    delete_trie(CTXTc pRoot);
    switch_from_trie_assert;
    *(pb)prref = fail;
-   mem_dealloc((pb)(b-2),6*sizeof(Cell));  /* allocated in trie_assert */
+   mem_dealloc((pb)(b-2),6*sizeof(Cell),ASSERT_SPACE);  /* allocated in trie_assert */
 }
 
 /*----------------------------------------------------------------------*/
@@ -2642,7 +2643,7 @@ void retractall_prref(CTXTdeclc PrRef prref) {
 	  buffers_to_free[btop++] = (ClRef) ClRefFirstIndex(buffer);
 	if (another_buff(ClRefTryInstr(buffer)))
 	  buffers_to_free[btop++] = ClRefNext(buffer);
-	mem_dealloc((pb)ClRefAddr(buffer),ClRefSize(buffer));
+	mem_dealloc((pb)ClRefAddr(buffer),ClRefSize(buffer),ASSERT_SPACE);
 	if (xsb_profiling_enabled)
 	  remove_prog_seg((pb)buffer);
 	break ;
@@ -2653,7 +2654,7 @@ void retractall_prref(CTXTdeclc PrRef prref) {
 	if( ClRefNotRetracted(buffer) ) {
 	  /*		retract_clause(buffer,0) */
 	  /* really_delete_clause(buffer); */
-	  mem_dealloc((pb)ClRefAddr(buffer),ClRefSize(buffer));
+	  mem_dealloc((pb)ClRefAddr(buffer),ClRefSize(buffer),ASSERT_SPACE);
 	  if (xsb_profiling_enabled)
 	    remove_prog_seg((pb)buffer);
 	}
@@ -2779,7 +2780,7 @@ int trie_assert(CTXTdecl)
      * Allocate the trie node as in old trie assert: put it in a clref
      * block and pray.  See Note 1 below.
      */
-    Trie_Asserted_Clref = ((CPtr)mem_alloc(6*sizeof(Cell))) + 2;
+    Trie_Asserted_Clref = ((CPtr)mem_alloc(6*sizeof(Cell),ASSERT_SPACE)) + 2;
     *(Trie_Asserted_Clref-2) = 6*sizeof(Cell)+TRIE_CL; /* store size, encode type */
     *(byte *)(Trie_Asserted_Clref +2) = jump;
 

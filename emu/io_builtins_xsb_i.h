@@ -53,11 +53,11 @@ static FILE *stropen(char *str)
     if (iostrs[i] == NULL) break;
   }
   if (i>=MAXIOSTRS) return FALSE;
-  tmp = (STRFILE *)mem_alloc(sizeof(STRFILE));
+  tmp = (STRFILE *)mem_alloc(sizeof(STRFILE),OTHER_SPACE);
   iostrs[i] = tmp;
   len = strlen(str);
   // new copy is needed in case string came from concatenated longstring
-  stringbuff = (char *)mem_alloc(len+1);
+  stringbuff = (char *)mem_alloc(len+1,OTHER_SPACE);
   strcpy(stringbuff,str);
 
   tmp->strcnt = len;
@@ -70,8 +70,8 @@ static void strclose(int i)
 {
   i = iostrdecode(i);
   if (iostrs[i] != NULL) {
-    mem_dealloc(iostrs[i]->strbase,iostrs[i]->strcnt+1);
-    mem_dealloc((byte *)iostrs[i],sizeof(STRFILE));
+    mem_dealloc(iostrs[i]->strbase,iostrs[i]->strcnt+1,OTHER_SPACE);
+    mem_dealloc((byte *)iostrs[i],sizeof(STRFILE),OTHER_SPACE);
     iostrs[i] = NULL;
   }
 }
@@ -247,7 +247,7 @@ inline static xsbBool file_function(CTXTdecl)
       ctop_int(CTXTc 5,ioport);
     }
     else ctop_int(CTXTc 5,-1);
-    mem_dealloc(addr,MAXPATHLEN);
+    mem_dealloc(addr,MAXPATHLEN,OTHER_SPACE);
 
     break;
   }
@@ -387,7 +387,7 @@ inline static xsbBool file_function(CTXTdecl)
       if (line_buff_disp >= line_buff_len) {
 	int old_len = line_buff_len;
 	line_buff_len = line_buff_disp+MAX_IO_BUFSIZE;
-	if(!(line_buff = mem_realloc(line_buff,old_len,line_buff_len)))
+	if(!(line_buff = mem_realloc(line_buff,old_len,line_buff_len,LEAK_SPACE)))
 	  xsb_exit("No space for line buffer");
       }
       *(line_buff+line_buff_disp) = c = getc(fptr);
@@ -413,7 +413,7 @@ inline static xsbBool file_function(CTXTdecl)
 
     ctop_tag(CTXTc 3, new_list);
     
-    if (line_buff) mem_dealloc(line_buff,line_buff_len);
+    if (line_buff) mem_dealloc(line_buff,line_buff_len,LEAK_SPACE);
 
     /* this complex cond takes care of incomplete lines: lines that end with
        end of file and not with end-of-line. */
@@ -506,7 +506,7 @@ inline static xsbBool file_function(CTXTdecl)
       }
     } else
       ctop_int(CTXTc 5, -3);
-    mem_dealloc(addr,MAXPATHLEN);
+    mem_dealloc(addr,MAXPATHLEN,OTHER_SPACE);
 
     break;
 

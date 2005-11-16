@@ -1136,7 +1136,7 @@ int builtin_call(CTXTdeclc byte number)
   case PSC_PROP: {	/* R1: +PSC; R2: -term */
 			/* prop: as a buffer pointer */
     Psc psc = (Psc)ptoc_addr(1);
-    if (get_type(psc) == T_PRED || get_type(psc) == T_DYNA) {
+    if ((get_type(psc) == T_PRED || get_type(psc) == T_DYNA) && get_env(psc) != T_IMPORTED) {
       char str[100];
       sprintf(str,"[psc_prop/2] Cannot get property of predicate: %s/%d\n",
 	      get_name(psc),get_arity(psc));
@@ -1313,7 +1313,7 @@ int builtin_call(CTXTdeclc byte number)
     char *addr;
     int  value = ((ptoc_int(CTXTc 1)+7)>>3)<<3;
     value *= ZOOM_FACTOR ;
-    addr = (char *)mem_alloc(value);
+    addr = (char *)mem_alloc(value,BUFF_SPACE);
     value /= ZOOM_FACTOR ;
     *(Integer *)addr = value;	/* store buffer size at buf[0] */
     ctop_int(CTXTc 2, (Integer)addr);	/* use "integer" type now! */
@@ -1331,7 +1331,7 @@ int builtin_call(CTXTdeclc byte number)
 	       value, disp);
       break;
     }
-    mem_dealloc((byte *)(addr+value), disp-value);
+    mem_dealloc((byte *)(addr+value), disp-value,BUFF_SPACE);
     break;
   }
   case BUFF_WORD: {     /* R1: +buffer; r2: displacement(+integer); */
@@ -1693,7 +1693,7 @@ int builtin_call(CTXTdeclc byte number)
   case EXPAND_FILENAME:	       /* R1: +FileName, R2: -ExpandedFileName */
     {char *filename = expand_filename(ptoc_longstring(CTXTc 1));
     ctop_string(CTXTc 2, string_find(filename,1));
-    mem_dealloc(filename,MAXPATHLEN);
+    mem_dealloc(filename,MAXPATHLEN,OTHER_SPACE);
     }
     break;
   case TILDE_EXPAND_FILENAME:  /* R1: +FileN, R2: -TildeExpanded FN */
@@ -2745,13 +2745,13 @@ void add_to_profile_count_table(Psc apsc, int count) {
     if (psc_profile_count_table == NULL) {
       psc_profile_count_max = initial_psc_profile_count_size;
       psc_profile_count_table = (psc_profile_count *)
-	mem_alloc(psc_profile_count_max*sizeof(psc_profile_count));
+	mem_alloc(psc_profile_count_max*sizeof(psc_profile_count),PROFILE_SPACE);
     } else {
       psc_profile_count_max = 2*psc_profile_count_max;
       psc_profile_count_table = (psc_profile_count *)
 	mem_realloc(psc_profile_count_table,
 		    (psc_profile_count_max/2)*sizeof(psc_profile_count),
-		    psc_profile_count_max*sizeof(psc_profile_count));
+		    psc_profile_count_max*sizeof(psc_profile_count),PROFILE_SPACE);
     }
   }
   for (i=0; i<psc_profile_count_num; i++)
@@ -2794,7 +2794,7 @@ void add_prog_seg(Psc psc, byte *code_addr, long code_len) {
     prof_table_free = prof_table_free->Link[0];
   } else if (prof_table_count >= prof_table_length) {
     /* printf("Allocating another Profile Table segment\n"); */
-    prof_table = (ubi_btNodePtr)mem_alloc(prof_tab_incr*sizeof(ubi_btNode));
+    prof_table = (ubi_btNodePtr)mem_alloc(prof_tab_incr*sizeof(ubi_btNode),PROFILE_SPACE);
     prof_table_length = prof_tab_incr;
     newNode = prof_table;
     prof_table_count = 1;

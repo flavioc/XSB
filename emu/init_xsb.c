@@ -92,7 +92,7 @@ extern FILE *fdopen(int fildes, const char *type);
 extern void extend_enc_dec_as_nec(void *,void *);
 #endif
 
-long pspacesize = 0;	/* actual space dynamically allocated by loader.c */
+long pspacesize[NUM_CATS_SPACE] = {0};	/* actual space dynamically allocated by loader.c */
 
 /* The SLG-WAM data regions
    ------------------------ */
@@ -621,7 +621,7 @@ char *init_para(CTXTdeclc int argc, char *argv[])
   /* Done with command line arguments */
 
   /* This is where we will be looking for the .xsb directory */
-  flags[USER_HOME] = (Cell) mem_alloc(strlen(user_home) + 1);
+  flags[USER_HOME] = (Cell) mem_alloc(strlen(user_home) + 1,OTHER_SPACE);
   strcpy( (char *)flags[USER_HOME], user_home );
 
   /* install_dir is computed dynamically at system startup (in orient_xsb.c).
@@ -632,18 +632,18 @@ char *init_para(CTXTdeclc int argc, char *argv[])
      which would be cleaner.  However, this would mean rearranging
      main_xsb.c
   */ 
-  flags[INSTALL_DIR] = (Cell) mem_alloc(strlen(install_dir) + 1);   
+  flags[INSTALL_DIR] = (Cell) mem_alloc(strlen(install_dir) + 1,OTHER_SPACE);   
   strcpy( (char *)flags[INSTALL_DIR], install_dir );
 
   /* loader uses CONFIG_NAME flag before xsb_configuration is loaded */
-  flags[CONFIG_NAME] = (Cell) mem_alloc(strlen(CONFIGURATION) + 1);
+  flags[CONFIG_NAME] = (Cell) mem_alloc(strlen(CONFIGURATION) + 1,OTHER_SPACE);
   strcpy( (char *)flags[CONFIG_NAME], CONFIGURATION );
 
-  flags[CONFIG_FILE] = (Cell) mem_alloc(strlen(xsb_config_file) + 1);
+  flags[CONFIG_FILE] = (Cell) mem_alloc(strlen(xsb_config_file) + 1,OTHER_SPACE);
   strcpy( (char *)flags[CONFIG_FILE], xsb_config_file );
 
   /* the default for cmd_line_goal goal is "" */
-  flags[CMD_LINE_GOAL] = (Cell) mem_alloc(strlen(cmd_line_goal) + 1);
+  flags[CMD_LINE_GOAL] = (Cell) mem_alloc(strlen(cmd_line_goal) + 1,OTHER_SPACE);
   strcpy( (char *)flags[CMD_LINE_GOAL], cmd_line_goal );
   
 
@@ -665,8 +665,8 @@ char *init_para(CTXTdeclc int argc, char *argv[])
      *  an XSB-supplied "server" program is the interpreter file.  Since
      *  it is known where these files exist, the full paths are built.
      */
-    flags[BOOT_MODULE] = (Cell) mem_alloc(strlen_instdir + strlen_initfile + 1);
-    flags[CMD_LOOP_DRIVER] = (Cell)mem_alloc(strlen_instdir + strlen_2ndfile + 1);
+    flags[BOOT_MODULE] = (Cell) mem_alloc(strlen_instdir + strlen_initfile + 1,OTHER_SPACE);
+    flags[CMD_LOOP_DRIVER] = (Cell)mem_alloc(strlen_instdir + strlen_2ndfile + 1,OTHER_SPACE);
     sprintf( (char *)flags[BOOT_MODULE],
 	     "%s%s%s",
 	     install_dir, boot_module, XSB_OBJ_EXTENSION_STRING );
@@ -683,8 +683,8 @@ char *init_para(CTXTdeclc int argc, char *argv[])
      *  user must supply an adequate full path name in each case (including
      *  extension).
      */
-    flags[BOOT_MODULE] = (Cell) mem_alloc(strlen_initfile + 1);
-    flags[CMD_LOOP_DRIVER ] = (Cell) mem_alloc(strlen_2ndfile + 1);
+    flags[BOOT_MODULE] = (Cell) mem_alloc(strlen_initfile + 1,OTHER_SPACE);
+    flags[CMD_LOOP_DRIVER ] = (Cell) mem_alloc(strlen_2ndfile + 1,OTHER_SPACE);
     strcpy( (char *)flags[BOOT_MODULE], boot_module );
     strcpy( (char *)flags[CMD_LOOP_DRIVER], cmd_loop_driver );
     break;
@@ -694,8 +694,8 @@ char *init_para(CTXTdeclc int argc, char *argv[])
      *  The filename can be absolute; however if not, it will
      *  be looked for in XSB's library path.
      */
-    flags[BOOT_MODULE] = (Cell) mem_alloc(strlen_instdir + strlen_initfile + 1);
-    flags[CMD_LOOP_DRIVER ] = (Cell) mem_alloc(strlen_2ndfile + 1);
+    flags[BOOT_MODULE] = (Cell) mem_alloc(strlen_instdir + strlen_initfile + 1,OTHER_SPACE);
+    flags[CMD_LOOP_DRIVER ] = (Cell) mem_alloc(strlen_2ndfile + 1,OTHER_SPACE);
     sprintf( (char *)flags[BOOT_MODULE],
 	     "%s%s%s",
 	     install_dir, boot_module, XSB_OBJ_EXTENSION_STRING );
@@ -706,7 +706,7 @@ char *init_para(CTXTdeclc int argc, char *argv[])
      *  A loader file should have been specified for disassembling.
      *  Should include extension and all.
      */
-    flags[BOOT_MODULE] = (Cell) mem_alloc(strlen_initfile + 1);
+    flags[BOOT_MODULE] = (Cell) mem_alloc(strlen_initfile + 1,OTHER_SPACE);
     strcpy( (char *)flags[BOOT_MODULE], boot_module );
     break;
   default:
@@ -761,17 +761,17 @@ void init_machine(CTXTdecl)
   findall_solutions = NULL;
 
 #define MAXSBUFFS 30
-  LSBuff = (VarString **)mem_calloc(sizeof(VarString *),MAXSBUFFS);
+  LSBuff = (VarString **)mem_calloc(sizeof(VarString *),MAXSBUFFS,OTHER_SPACE);
 
   /* vars for io_builtins_XXX */
   opstk_size = 0;
   funstk_size = 0;
   funstk = NULL;
   opstk = NULL;
-  rc_vars = (struct vartype *)mem_alloc(MAXVAR*sizeof(struct vartype));
+  rc_vars = (struct vartype *)mem_alloc(MAXVAR*sizeof(struct vartype),OTHER_SPACE);
 
   /* vars for token_xsb_XXX */
-  token = (struct token_t *)mem_alloc(sizeof(struct token_t));
+  token = (struct token_t *)mem_alloc(sizeof(struct token_t),OTHER_SPACE);
   strbuff = NULL;
   lastc = ' ';
   strbuff_len = InitStrLen;
@@ -779,11 +779,11 @@ void init_machine(CTXTdecl)
   random_seeds = 0;
 
   /* used in trie_lookup */
-  a_tstCCPStack = (struct tstCCPStack_t *)mem_alloc(sizeof(struct tstCCPStack_t));
-  a_variant_cont = (struct VariantContinuation *)mem_alloc(sizeof(struct VariantContinuation));
-  a_tstCPStack = (struct tstCPStack_t *)mem_alloc(sizeof(struct tstCPStack_t));
+  a_tstCCPStack = (struct tstCCPStack_t *)mem_alloc(sizeof(struct tstCCPStack_t),OTHER_SPACE);
+  a_variant_cont = (struct VariantContinuation *)mem_alloc(sizeof(struct VariantContinuation),OTHER_SPACE);
+  a_tstCPStack = (struct tstCPStack_t *)mem_alloc(sizeof(struct tstCPStack_t),OTHER_SPACE);
 
-  asrtBuff = (struct asrtBuff_t *)mem_alloc(sizeof(struct asrtBuff_t));
+  asrtBuff = (struct asrtBuff_t *)mem_alloc(sizeof(struct asrtBuff_t),OTHER_SPACE);
   asrtBuff->Buff = NULL;
   asrtBuff->Buff_size = 512;
   asrtBuff->Loc = NULL;
@@ -791,7 +791,7 @@ void init_machine(CTXTdecl)
   asrtBuff->Size = 0;
   i_have_dyn_mutex = 0;
 
-  last_answer = (VarString *)mem_alloc(sizeof(VarString));
+  last_answer = (VarString *)mem_alloc(sizeof(VarString),OTHER_SPACE);
   XSB_StrInit(last_answer);
   OldestCl = retracted_buffer;
   NewestCl = retracted_buffer;
@@ -811,13 +811,13 @@ void init_machine(CTXTdecl)
   th->last_ans = 1;
 #endif
 
-  tsgLBuff1 = (VarString *)mem_alloc(sizeof(VarString));
+  tsgLBuff1 = (VarString *)mem_alloc(sizeof(VarString),OTHER_SPACE);
   XSB_StrInit(tsgLBuff1);
-  tsgLBuff2 = (VarString *)mem_alloc(sizeof(VarString));
+  tsgLBuff2 = (VarString *)mem_alloc(sizeof(VarString),OTHER_SPACE);
   XSB_StrInit(tsgLBuff2);
-  tsgSBuff1 = (VarString *)mem_alloc(sizeof(VarString));
+  tsgSBuff1 = (VarString *)mem_alloc(sizeof(VarString),OTHER_SPACE);
   XSB_StrInit(tsgSBuff1);
-  tsgSBuff2 = (VarString *)mem_alloc(sizeof(VarString));
+  tsgSBuff2 = (VarString *)mem_alloc(sizeof(VarString),OTHER_SPACE);
   XSB_StrInit(tsgSBuff2);
 
   /* Allocate Stack Spaces and set Boundary Parameters
@@ -963,8 +963,8 @@ void init_symbols(void)
   int  i, new_indicator;
 
   inst_begin_gl = 0;
-  symbol_table.table = (void **)mem_calloc(symbol_table.size, sizeof(Pair));
-  string_table.table = (void **)mem_calloc(string_table.size, sizeof(char *));
+  symbol_table.table = (void **)mem_calloc(symbol_table.size, sizeof(Pair),ATOM_STR_SPACE);
+  string_table.table = (void **)mem_calloc(string_table.size, sizeof(char *),ATOM_STR_SPACE);
 
   /* insert mod name global */
   /*tp = insert_module(T_MODU, "global");	/ loaded */

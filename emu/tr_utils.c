@@ -330,7 +330,7 @@ VariantSF get_call(CTXTdeclc Cell callTerm, Cell *retTerm) {
     unsigned long old_freeing_stack_size = freeing_stack_size; \
     freeing_stack_size = freeing_stack_size + freeing_stack_increment;\
     freeing_stack = (BTNptr *)mem_realloc(freeing_stack,old_freeing_stack_size*sizeof(BTNptr),\
-					  freeing_stack_size*sizeof(BTNptr));\
+					  freeing_stack_size*sizeof(BTNptr),TABLE_SPACE);\
   }\
   freeing_stack[node_stk_top] = node;\
   node_stk_top++;\
@@ -345,7 +345,7 @@ VariantSF get_call(CTXTdeclc Cell callTerm, Cell *retTerm) {
 static void free_trie_ht(CTXTdeclc BTHTptr ht) {
 
   TrieHT_RemoveFromAllocList(*smBTHT,ht);
-  mem_dealloc(BTHT_BucketArray(ht),BTHT_NumBuckets(ht)*sizeof(void *));
+  mem_dealloc(BTHT_BucketArray(ht),BTHT_NumBuckets(ht)*sizeof(void *),TABLE_SPACE);
   SM_DeallocateStruct(*smBTHT,ht);
 }
 
@@ -387,7 +387,7 @@ void delete_variant_sf_and_answers(CTXTdeclc VariantSF pSF) {
   } /* free answer trie */
   free_answer_list(pSF);
   FreeProducerSF(pSF);
-  mem_dealloc(freeing_stack,freeing_stack_size);
+  mem_dealloc(freeing_stack,freeing_stack_size,TABLE_SPACE);
 }
 
 static void delete_variant_table(CTXTdeclc BTNptr x) {
@@ -458,7 +458,7 @@ static void delete_variant_table(CTXTdeclc BTNptr x) {
   }
   TRIE_W_UNLOCK();
 
-  mem_dealloc(freeing_stack,freeing_stack_size);
+  mem_dealloc(freeing_stack,freeing_stack_size,TABLE_SPACE);
 
 }
 
@@ -682,7 +682,7 @@ void undelete_branch(BTNptr lowest_node_in_branch) {
   trie_op_top++;\
   if (trie_op_top >= trie_op_size) {\
     trie_op_size = 2*trie_op_size;\
-    delete_trie_op = (char *)mem_realloc(delete_trie_op,(trie_op_size/2)*sizeof(char),trie_op_size*sizeof(char));\
+    delete_trie_op = (char *)mem_realloc(delete_trie_op,(trie_op_size/2)*sizeof(char),trie_op_size*sizeof(char),TABLE_SPACE);\
     if (!delete_trie_op) xsb_exit("out of space for deleting trie");\
     /*xsb_dbgmsg((LOG_DEBUG,"realloc delete_trie_op to %d",trie_op_size));*/\
   }\
@@ -690,7 +690,7 @@ void undelete_branch(BTNptr lowest_node_in_branch) {
   trie_node_top++;\
   if (trie_node_top >= trie_node_size) {\
     trie_node_size = 2*trie_node_size;\
-    delete_trie_node = (BTNptr *)mem_realloc(delete_trie_node,(trie_node_size/2)*sizeof(BTNptr),trie_node_size*sizeof(BTNptr));\
+    delete_trie_node = (BTNptr *)mem_realloc(delete_trie_node,(trie_node_size/2)*sizeof(BTNptr),trie_node_size*sizeof(BTNptr),TABLE_SPACE);\
     if (!delete_trie_node) xsb_exit("out of space for deleting trie");\
     /*xsb_dbgmsg((LOG_DEBUG,"realloc delete_trie_node to %d",trie_node_size));*/\
   }\
@@ -700,7 +700,7 @@ void undelete_branch(BTNptr lowest_node_in_branch) {
   trie_op_top++;\
   if (trie_op_top >= trie_op_size) {\
     trie_op_size = 2*trie_op_size;\
-    delete_trie_op = (char *)mem_realloc(delete_trie_op,(trie_op_size/2)*sizeof(char),trie_op_size*sizeof(char));\
+    delete_trie_op = (char *)mem_realloc(delete_trie_op,(trie_op_size/2)*sizeof(char),trie_op_size*sizeof(char),TABLE_SPACE);\
     if (!delete_trie_op) xsb_exit("out of space for deleting trie");\
     /*xsb_dbgmsg((LOG_DEBUG,"realloc delete_trie_op to %d",trie_op_size));*/\
   }\
@@ -708,7 +708,7 @@ void undelete_branch(BTNptr lowest_node_in_branch) {
   trie_hh_top++;\
   if (trie_hh_top >= trie_hh_size) {\
     trie_hh_size = 2*trie_hh_size;\
-    delete_trie_hh = (BTHTptr *)mem_realloc(delete_trie_hh,(trie_hh_size/2)*sizeof(BTHTptr),trie_hh_size*sizeof(BTHTptr));\
+    delete_trie_hh = (BTHTptr *)mem_realloc(delete_trie_hh,(trie_hh_size/2)*sizeof(BTHTptr),trie_hh_size*sizeof(BTHTptr),TABLE_SPACE);\
     if (!delete_trie_hh) xsb_exit("out of space for deleting trie");\
     /*xsb_dbgmsg((LOG_DEBUG,"realloc delete_trie_hh to %d",trie_hh_size));*/\
   }\
@@ -729,9 +729,9 @@ void delete_trie(CTXTdeclc BTNptr iroot) {
   int trie_op_size, trie_node_size, trie_hh_size;
 
   if (!delete_trie_op) {
-    delete_trie_op = (char *)mem_alloc(DELETE_TRIE_STACK_INIT*sizeof(char));
-    delete_trie_node = (BTNptr *)mem_alloc(DELETE_TRIE_STACK_INIT*sizeof(BTNptr));
-    delete_trie_hh = (BTHTptr *)mem_alloc(DELETE_TRIE_STACK_INIT*sizeof(BTHTptr));
+    delete_trie_op = (char *)mem_alloc(DELETE_TRIE_STACK_INIT*sizeof(char),TABLE_SPACE);
+    delete_trie_node = (BTNptr *)mem_alloc(DELETE_TRIE_STACK_INIT*sizeof(BTNptr),TABLE_SPACE);
+    delete_trie_hh = (BTHTptr *)mem_alloc(DELETE_TRIE_STACK_INIT*sizeof(BTHTptr),TABLE_SPACE);
     trie_op_size = trie_node_size = trie_hh_size = DELETE_TRIE_STACK_INIT;
   }
 
@@ -790,9 +790,9 @@ void delete_trie(CTXTdeclc BTNptr iroot) {
       break;
     }
   }
-  mem_dealloc(delete_trie_op,trie_op_size); delete_trie_op = NULL;
-  mem_dealloc(delete_trie_node,trie_node_size); delete_trie_node = NULL;
-  mem_dealloc(delete_trie_hh,trie_hh_size); delete_trie_hh = NULL;
+  mem_dealloc(delete_trie_op,trie_op_size,TABLE_SPACE); delete_trie_op = NULL;
+  mem_dealloc(delete_trie_node,trie_node_size,TABLE_SPACE); delete_trie_node = NULL;
+  mem_dealloc(delete_trie_hh,trie_hh_size,TABLE_SPACE); delete_trie_hh = NULL;
   trie_op_size = 0; 
 }
 
@@ -990,7 +990,7 @@ void init_newtrie(CTXTdecl)
   first_free_set = 0;
   Set_ArraySz = 100;
   num_sets = 1;
-  Set_ArrayPtr = (BTNptr *) mem_calloc(Set_ArraySz,sizeof(BTNptr));
+  Set_ArrayPtr = (BTNptr *) mem_calloc(Set_ArraySz,sizeof(BTNptr),TABLE_SPACE);
 
   bt_storage_hash_table.length = STORAGE_TBL_SIZE;
   bt_storage_hash_table.bucket_size = sizeof(STORAGE_HANDLE);
@@ -1021,12 +1021,12 @@ Integer newtrie(CTXTdecl)
       temp_arrayptr = Set_ArrayPtr;
       temp_arraysz = Set_ArraySz;
       Set_ArraySz += ADJUST_SIZE;  /* adjust the array size */
-      Set_ArrayPtr = (BTNptr *) mem_calloc(Set_ArraySz ,sizeof(BTNptr));
+      Set_ArrayPtr = (BTNptr *) mem_calloc(Set_ArraySz ,sizeof(BTNptr),TABLE_SPACE);
       if (Set_ArrayPtr == NULL)
 	xsb_exit("Out of memory in new_trie/1");
       for (i = 0; i < num_sets; i++)
 	Set_ArrayPtr[i] = temp_arrayptr[i];
-      mem_dealloc(temp_arrayptr,temp_arraysz);
+      mem_dealloc(temp_arrayptr,temp_arraysz,TABLE_SPACE);
     }
     result = (Integer)num_sets;
     num_sets++;
@@ -1194,7 +1194,7 @@ static IGRptr newIGR(long root)
 {
   IGRptr igr;
   
-  igr = (IGRptr) mem_alloc(sizeof(InternGarbageRoot));
+  igr = (IGRptr) mem_alloc(sizeof(InternGarbageRoot),TABLE_SPACE);
   igr -> root   = root;
   igr -> leaves = NULL;
   igr -> next   = NULL;
@@ -1205,7 +1205,7 @@ static IGLptr newIGL(BTNptr leafn)
 {
   IGLptr igl;
   
-  igl = (IGLptr) mem_alloc(sizeof(InternGarbageLeaf));
+  igl = (IGLptr) mem_alloc(sizeof(InternGarbageLeaf),TABLE_SPACE);
   igl -> leaf = leafn;
   igl -> next = NULL;
   return igl;
@@ -1322,13 +1322,13 @@ void reclaim_uninterned_nr(CTXTdeclc long rootidx)
   else
     return;
 
-  mem_dealloc(r,sizeof(InternGarbageRoot));
+  mem_dealloc(r,sizeof(InternGarbageRoot),TABLE_SPACE);
 
   while(l != NULL){
     /* printf("Loop b %p\n", l); */
     leaf = l -> leaf;
     p = l -> next;
-    mem_dealloc(l,sizeof(InternGarbageLeaf));
+    mem_dealloc(l,sizeof(InternGarbageLeaf),TABLE_SPACE);
     switch_to_trie_assert;
     if(IsDeletedNode(leaf)) {
       delete_branch(CTXTc leaf, &(Set_ArrayPtr[rootidx]));
@@ -1360,7 +1360,7 @@ void trie_undispose(long rootIdx, BTNptr leafn)
   } else{
     if(p -> leaf == leafn){
       r -> leaves = p -> next;
-      mem_dealloc(p,sizeof(InternGarbageLeaf));
+      mem_dealloc(p,sizeof(InternGarbageLeaf),TABLE_SPACE);
       if(r -> leaves == NULL){
 	/* Do not want roots with no leaves hanging around */
 	getAndRemoveIGRnode(rootIdx);

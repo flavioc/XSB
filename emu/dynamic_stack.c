@@ -73,9 +73,11 @@ void dsInit(DynamicStack *ds, size_t stack_size, size_t frame_size,
   xsb_dbgmsg((LOG_TRIE_STACK, "Initializing %s", name));
 
   total_bytes = stack_size * frame_size;
-  DynStk_Base(*ds) = mem_alloc(total_bytes);
-  if ( IsNULL(DynStk_Base(*ds)) )
-    xsb_abort("Ran out of memory in allocation of %s", DynStk_Name(*ds));
+  if (total_bytes > 0) {
+    DynStk_Base(*ds) = mem_alloc(total_bytes,TABLE_SPACE);
+    if ( IsNULL(DynStk_Base(*ds)) )
+      xsb_abort("Ran out of memory in allocation of %s", DynStk_Name(*ds));
+  } else DynStk_Base(*ds) = NULL;
   DynStk_Top(*ds) = DynStk_Base(*ds);
   DynStk_Ceiling(*ds) = (char *)DynStk_Base(*ds) + total_bytes;
   DynStk_FrameSize(*ds) = frame_size;
@@ -109,8 +111,8 @@ void dsExpand(DynamicStack *ds, int num_frames) {
   dbg_dsPrint(LOG_TRIE_STACK, *ds, "Before expansion");
 
   total_bytes = new_size * DynStk_FrameSize(*ds);
-  new_base = mem_realloc(DynStk_Base(*ds),DynStk_CurSize(*ds)*DynStk_FrameSize(*ds),total_bytes);
-  if ( IsNULL(new_base) )
+  new_base = mem_realloc(DynStk_Base(*ds),DynStk_CurSize(*ds)*DynStk_FrameSize(*ds),total_bytes,TABLE_SPACE);
+  if ( IsNULL(new_base) && total_bytes > 0)
     xsb_abort("Ran out of memory during expansion of %s", DynStk_Name(*ds));
   DynStk_Top(*ds) =
     new_base + ((char *)DynStk_Top(*ds) - (char *)DynStk_Base(*ds));
@@ -136,12 +138,12 @@ void dsShrink(DynamicStack *ds) {
   if ( DynStk_CurSize(*ds) <= DynStk_InitSize(*ds) )
     return;
   total_bytes = DynStk_InitSize(*ds) * DynStk_FrameSize(*ds);
-  new_base = mem_realloc(DynStk_Base(*ds),DynStk_CurSize(*ds)*DynStk_FrameSize(*ds),total_bytes);
+  new_base = mem_realloc(DynStk_Base(*ds),DynStk_CurSize(*ds)*DynStk_FrameSize(*ds),total_bytes,TABLE_SPACE);
 
   xsb_dbgmsg((LOG_TRIE_STACK, "Shrinking %s: %d -> %d", DynStk_Name(*ds),
 	     DynStk_CurSize(*ds), DynStk_InitSize(*ds)));
 
-  if ( IsNULL(new_base) )
+  if ( IsNULL(new_base) && total_bytes > 0 )
     xsb_abort("Ran out of memory during expansion of %s", DynStk_Name(*ds));
   DynStk_Top(*ds) =
     new_base + ((char *)DynStk_Top(*ds) - (char *)DynStk_Base(*ds));

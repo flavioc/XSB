@@ -1,3 +1,4 @@
+
 /* File:      error_xsb.c
 ** Author(s): Sagonas, Demoen
 ** Contact:   xsb-contact@cs.sunysb.edu
@@ -92,7 +93,7 @@ DllExport void call_conv xsb_throw(CTXTdeclc prolog_term Ball, unsigned long Bal
   Cell *space_for_ball_assert;
   unsigned long space_for_ball_assert_len = 3*sizeof(Cell);
 
-  space_for_ball_assert = (Cell *) mem_alloc(space_for_ball_assert_len);
+  space_for_ball_assert = (Cell *) mem_alloc(space_for_ball_assert_len,LEAK_SPACE);
   if (!space_for_ball_assert) xsb_exit("out of memory in xsb_throw!");
 
   exceptballpsc = pair_psc((Pair)insert("$$exception_ball", (byte)2, 
@@ -108,8 +109,8 @@ DllExport void call_conv xsb_throw(CTXTdeclc prolog_term Ball, unsigned long Bal
   /* need arity of 3, for extra cut_to arg */
   Prref = get_prref(CTXTc exceptballpsc);
   assert_buff_to_clref_p(CTXTc term_to_assert,3,Prref,0,makeint(0),0,&clause);
-  mem_dealloc(cs_val(Ball),Ball_len);
-  mem_dealloc(space_for_ball_assert,space_for_ball_assert_len);
+  mem_dealloc(cs_val(Ball),Ball_len,LEAK_SPACE);
+  mem_dealloc(space_for_ball_assert,space_for_ball_assert_len,LEAK_SPACE);
   /* reset WAM emulator state to Prolog catcher */
   if (unwind_stack(CTXT)) xsb_exit("Unwind_stack failed in xsb_throw!");
   /* Resume main emulator instruction loop */
@@ -128,7 +129,7 @@ void call_conv xsb_type_error(CTXTdeclc char *valid_type,Cell culprit,
 
   sprintf(message,"in arg %d of predicate %s/%d)",arg,predicate,arity);
 
-  tptr =   (Cell *) mem_alloc(ball_len);
+  tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
 
   ball_to_throw = makecs(tptr);
   bld_functor(tptr, pair_psc(insert("error",3,
@@ -163,7 +164,7 @@ void call_conv xsb_domain_error(CTXTdeclc char *valid_domain,Cell culprit,
 
   sprintf(message,"in arg %d of predicate %s/%d)",arg,predicate,arity);
 
-  tptr =   (Cell *) mem_alloc(ball_len);
+  tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
 
   ball_to_throw = makecs(tptr);
   bld_functor(tptr, pair_psc(insert("error",3,
@@ -199,7 +200,7 @@ void call_conv xsb_permission_error(CTXTdeclc
 
   sprintf(message,"(return %d) in predicate %s/%d)",rtrn,predicate,arity);
 
-  tptr =   (Cell *) mem_alloc(ball_len);
+  tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
 
   ball_to_throw = makecs(tptr);
   bld_functor(tptr, pair_psc(insert("error",3,
@@ -238,7 +239,7 @@ void call_conv xsb_instantiation_error(CTXTdeclc char *predicate,int arity,
     sprintf(message," in arg %d of predicate %s/%d",arg,predicate,arity);
   }    
 
-  tptr =   (Cell *) mem_alloc(ball_len);
+  tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
 
   ball_to_throw = makecs(tptr);
   bld_functor(tptr, pair_psc(insert("error",3,
@@ -269,7 +270,7 @@ void call_conv xsb_basic_abort(char *message)
   th = find_context(xsb_thread_self());
 #endif
 
-  tptr =   (Cell *) mem_alloc(ball_len);
+  tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
   ball_to_throw = makecs(tptr);
   bld_functor(tptr, pair_psc(insert("error",3,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));

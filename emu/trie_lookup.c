@@ -346,10 +346,10 @@ void initSubsumptiveLookup(CTXTdecl) {
 
   variant_cont.subterms.stack.ptr =
     mem_alloc(VAR_CONT_INIT_STACK_SIZE *
-	      sizeof(variant_cont.subterms.stack.ptr[0]));
+	      sizeof(variant_cont.subterms.stack.ptr[0]),TABLE_SPACE);
   variant_cont.bindings.stack.ptr =
     mem_alloc(VAR_CONT_INIT_STACK_SIZE *
-	      sizeof(variant_cont.bindings.stack.ptr[0]));
+	      sizeof(variant_cont.bindings.stack.ptr[0]),TABLE_SPACE);
   if ( IsNULL(variant_cont.subterms.stack.ptr) ||
        IsNULL(variant_cont.bindings.stack.ptr) )
     xsb_abort("Not enough memory to initialize subsumptive subsystem");

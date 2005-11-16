@@ -395,28 +395,14 @@ extern CPtr reg_arrayptr, var_regs[];
 
 /*----------------------------------------------------------------------*/
 
-/* allocate an array for easy expansion */ 
-#define alloc_arr(AArrType,AArrayNam,AArraySz){\
-    AArrayNam = (AArrType *)mem_alloc(sizeof(AArrType) * AArraySz); \
-    if (AArrayNam == NULL) {\
-      xsb_exit("No More memory for reallocating Array");\
-    }\
-}
-
-/* expand the array by doubling its size */
+/* expand (or allocate) the array by doubling its size */
 #define trie_expand_array(ArrType,ArrayNam, ArraySz, Nam) {\
-    ArrType *Temp;\
-    int Siz;\
-    int i;\
-\
-    Temp = ArrayNam;\
-    Siz  = ArraySz;\
-    ArraySz = 2 * ArraySz;\
-    alloc_arr(ArrType,ArrayNam,ArraySz);\
-    for (i = 0; i < Siz; i++) {\
-      ArrayNam[i] = Temp[i];\
-    }\
-    mem_dealloc(Temp,Siz*sizeof(ArrType));\
+    int Siz = ArraySz;\
+    if (Siz == 0) ArraySz = DEFAULT_ARRAYSIZ;\
+    else ArraySz = 2 * ArraySz;\
+    ArrayNam = mem_realloc(ArrayNam,Siz*sizeof(ArrType),ArraySz*sizeof(ArrType),TABLE_SPACE);\
+    if (ArrayNam == NULL) \
+      xsb_exit("No More memory for reallocating Array");\
 }
 
 #define will_overflow_reg_array(x) {\
@@ -444,7 +430,8 @@ extern int reg_array_size;
 extern int delay_it;
 
 #define NUM_TRIEVARS 400
-#define DEFAULT_ARRAYSIZ 512 
+//#define DEFAULT_ARRAYSIZ 512 
+#define DEFAULT_ARRAYSIZ 16
 
 extern CPtr *copy_of_var_addr;
 extern int  copy_of_num_heap_term_vars;

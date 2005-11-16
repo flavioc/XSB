@@ -900,7 +900,7 @@ static char *ptoc_term0(CTXTdeclc char *ptr, char *c_dataptr, char **subformat,
 	    if (*(ptr++) != '(') cppc_error(CTXTc 15);
 	    fields = count_fields(CTXTc ptr, ')');
 	    size = count_csize(CTXTc ptr, ')');
-	    cdptr2 = (char *)mem_alloc(size);  /* leak */
+	    cdptr2 = (char *)mem_alloc(size,OTHER_SPACE);  /* leak */
 	    *((char **)c_dataptr) = cdptr2;
 	    argno = 0;
 	    for (i = 1; i <= fields; i++) {
@@ -922,7 +922,7 @@ static char *ptoc_term0(CTXTdeclc char *ptr, char *c_dataptr, char **subformat,
 	    if (*(ptr++)!='(') cppc_error(CTXTc 16);
 	    fields = count_fields(CTXTc ptr, ')');
 	    size = count_csize(CTXTc ptr, ')');
-	    cdptr2 = (char *)mem_alloc(size);  /* leak */
+	    cdptr2 = (char *)mem_alloc(size,OTHER_SPACE);  /* leak */
 	    *((char **)c_dataptr) = cdptr2;
 	    argno = 0;
 	    for (i = 1; i <= fields; i++) {
@@ -1213,7 +1213,7 @@ if (!xsb_initted_gl)
 	argv[0], SLASH, SLASH, FULL_CONFIG_NAME, SLASH, SLASH);
 	expfilename = expand_filename(executable1);
 	strcpy(executable, expfilename);
-	mem_dealloc(expfilename,MAXPATHLEN);
+	mem_dealloc(expfilename,MAXPATHLEN,OTHER_SPACE);
 
 	if (0 == (rc = xsb(CTXTc 0,argc,argv)))     /* initialize xsb */
 		{
@@ -1252,7 +1252,7 @@ DllExport int call_conv xsb_init_string(CTXTdeclc char *cmdline_param) {
 	    exit(1);
 	}
 	strncpy(cmdline, cmdline_param, 2*MAXPATHLEN - 1);
-	argv = (char **) mem_alloc(20*sizeof(char *));  /* count space even if never released */
+	argv = (char **) mem_alloc(20*sizeof(char *),OTHER_SPACE);  /* count space even if never released */
 
 	while (cmdline[i] == ' ') i++;
 	while (cmdline[i] != '\0') {
