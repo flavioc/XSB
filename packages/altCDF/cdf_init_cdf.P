@@ -100,7 +100,7 @@
 :- import call0/1 from machine.
 
 :- import '_$index'/3 from file_op.
-%%:- import conset/2, conget/2, coninc/1 from gensym.
+:- import conset/2, conget/2, coninc/1 from gensym.
 :- import ground/1,member/2 from basics.
 :- import abolish_table_pred/1 from tables.
 :- import concat_atom/2 from string.
@@ -663,10 +663,12 @@ immed_hasAttr1(SCid,Rid,TCid) :-
 immed_hasAttr1(SCid,Rid,TCid) :- 
 	immed_minAttr2(SCid,Rid,TCid,_).
 
+:- conset(loop_count,0).
 immed_hasAttr2(SCid,Rid,TCid) :-
 	check_hasAttr_indices(SCid,Rid,TCid),
 	hasAttr_ext(SCid,Rid,TCid).
 immed_hasAttr2(SCid,Rid,TCid) :-
+	(var(SCid),var(Rid),var(TCid) -> coninc(loop_count),conget(loop_count,CNT),(CNT>4->abort(loop);true) ; true),
 	hasAttr_int(SCid,Rid,TCid).
 
 check_hasAttr_indices(Scid,Rid,Tcid):- 
@@ -716,6 +718,9 @@ hasAttr1(SCid,Rid,TCid) :-
 	gens_good_isas(Rid),
 	gens_good_isas(TCid),!,
    	hasAttr_23fix(SCid,Rid,TCid).
+hasAttr1(SCid,Rid,TCid) :-
+	gens_good_isas(Rid),!,
+	hasAttr_2fix(SCid,Rid,TCid).
 hasAttr1(SCid,Rid,TCid) :-
 	immed_hasAttr1(SCidAb,RidAb,TCidAb),
 	once(explosive_isa(SCid,SCidAb)),
@@ -791,6 +796,29 @@ not_max_implicative_hasAttr_23fix(Term,BindPat) :-
 	BindPat = rln(SCidO,RidO,TCidO),
 	Term = rln(SCid,Rid,TCid),
 	hasAttr_23fix_sub(SCidO,RidO,TCidO),
+	\+ (BindPat = Term),	
+	once(explosive_isa(RidO,Rid)),	
+	once(explosive_isa(SCid,SCidO)),	
+	once(explosive_isa(TCidO,TCid)).	
+
+:- table hasAttr_2fix/3.
+hasAttr_2fix(SCid,Rid,TCid) :-
+	OutTerm = rln(SCid,Rid,TCid),
+	copy_term(OutTerm,BindPat),
+	hasAttr_2fix_sub(SCid,Rid,TCid),
+	(not_max_implicative_hasAttr_2fix(OutTerm,BindPat) -> fail ; true).
+
+:- table hasAttr_2fix_sub/3.
+hasAttr_2fix_sub(SCid,Rid,TCid) :-
+	isa(RidC,Rid),
+	immed_hasAttr1(SCidP,RidC,TCidC),
+	once(explosive_isa(SCid,SCidP)),
+	once(explosive_isa(TCidC,TCid)).
+
+not_max_implicative_hasAttr_2fix(Term,BindPat) :-
+	BindPat = rln(SCidO,RidO,TCidO),
+	Term = rln(SCid,Rid,TCid),
+	hasAttr_2fix_sub(SCidO,RidO,TCidO),
 	\+ (BindPat = Term),	
 	once(explosive_isa(RidO,Rid)),	
 	once(explosive_isa(SCid,SCidO)),	
@@ -1860,9 +1888,11 @@ abolish_hasAttr_inherits :-
 	abolish_table_pred(hasAttr_1fix(_,_,_)),
 	abolish_table_pred(hasAttr_12fix(_,_,_)),
 	abolish_table_pred(hasAttr_23fix(_,_,_)),
+	abolish_table_pred(hasAttr_2fix(_,_,_)),
 	abolish_table_pred(hasAttr_1fix_sub(_,_,_)),
 	abolish_table_pred(hasAttr_12fix_sub(_,_,_)),
-	abolish_table_pred(hasAttr_23fix_sub(_,_,_)).
+	abolish_table_pred(hasAttr_23fix_sub(_,_,_)),
+	abolish_table_pred(hasAttr_2fix_sub(_,_,_)).
 
 abolish_coversAttr_inherits :-
 	abolish_table_pred(coversAttr_1fix(_,_,_)),
