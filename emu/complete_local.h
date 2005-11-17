@@ -302,7 +302,9 @@ static inline void CompleteSimplifyAndReclaim(CTXTdeclc CPtr cs_ptr)
     compl_subg = compl_subgoal_ptr(ComplStkFrame);
     mark_as_completed(compl_subg); 
     if (neg_simplif_possible(compl_subg)) {
+      SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
       simplify_neg_fails(CTXTc compl_subg);
+      SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
     }
 
     ComplStkFrame = next_compl_frame(ComplStkFrame);

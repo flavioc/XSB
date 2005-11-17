@@ -55,25 +55,27 @@ static void simplify_pos_unconditional(CTXTdeclc NODEptr);
  * Some new global variables ...
  */
 
-static unsigned long de_block_size = 2048 * sizeof(struct delay_element);
-static unsigned long dl_block_size = 2048 * sizeof(struct delay_list);
-static unsigned long pnde_block_size = 2048 * sizeof(struct pos_neg_de_list);
+/* Constants */
+static unsigned long de_block_size_glc = 2048 * sizeof(struct delay_element);
+static unsigned long dl_block_size_glc = 2048 * sizeof(struct delay_list);
+static unsigned long pnde_block_size_glc = 2048 *sizeof(struct pos_neg_de_list);
 
-static char *current_de_block = NULL;
-static char *current_dl_block = NULL;
-static char *current_pnde_block = NULL;
+/* Rest of globals protected by MUTEX_DELAY (I hope) */
+static char *current_de_block_gl = NULL;
+static char *current_dl_block_gl = NULL;
+static char *current_pnde_block_gl = NULL;
 
-static DE released_des = NULL;		/* the list of released DEs */
-static DL released_dls = NULL;		/* the list of released DLs */
-static PNDE released_pndes = NULL;	/* the list of released PNDEs */
+static DE released_des_gl = NULL;	/* the list of released DEs */
+static DL released_dls_gl = NULL;	/* the list of released DLs */
+static PNDE released_pndes_gl = NULL;	/* the list of released PNDEs */
 
-static DE next_free_de = NULL;		/* next available free DE space */
-static DL next_free_dl = NULL;		/* next available free DL space */
-static PNDE next_free_pnde = NULL;	/* next available free PNDE space */
+static DE next_free_de_gl = NULL;	/* next available free DE space */
+static DL next_free_dl_gl = NULL;	/* next available free DL space */
+static PNDE next_free_pnde_gl = NULL;	/* next available free PNDE space */
 
-static DE current_de_block_top = NULL;	/* the top of current DE block */
-static DL current_dl_block_top = NULL;	/* the top of current DL block */
-static PNDE current_pnde_block_top = NULL; /* the top of current PNDE block */
+static DE current_de_block_top_gl = NULL;      /* the top of current DE block */
+static DL current_dl_block_top_gl = NULL;      /* the top of current DL block */
+static PNDE current_pnde_block_top_gl = NULL; /* the top of current PNDE block*/
 
 
 /*
@@ -146,24 +148,28 @@ static PNDE current_pnde_block_top = NULL; /* the top of current PNDE block */
     if (next)						\
       pnde_prev(next) = pnde_prev(PNDE_ITEM);		\
   }							\
-  release_entry(PNDE_ITEM, released_pndes, pnde_next);	\
+  release_entry(PNDE_ITEM, released_pndes_gl, pnde_next);	\
 }
 
 /*
- * The following functions are used for statistics.
+ * The following functions are used for statistics.  If changing their
+ * usage pattern, make sure you adjust the mutexes.  (MUTEX_DELAY is
+ * non-recursive.) 
  */
 
 unsigned long allocated_de_space(int * num_blocks)
 {
   int size = 0;
-  char *t = current_de_block;
+  char *t = current_de_block_gl;
 
   *num_blocks = 0;
+  SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
   while (t) {
     (*num_blocks)++;
-    size =+ (de_block_size + sizeof(Cell));
+    size =+ (de_block_size_glc + sizeof(Cell));
     t = *(char **)t;
   }
+  SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
   return size;
 }
 
@@ -172,18 +178,20 @@ static int released_de_num(void)
   int i = 0;
   DE p;
 
-  p = released_des;
+  p = released_des_gl;
+  SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
   while (p != NULL) {
     i++;
     p = de_next(p);
   }
+  SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
   return(i);
 }
 
 unsigned long unused_de_space(void)
 {
-  return (current_de_block_top
-	  - next_free_de
+  return (current_de_block_top_gl
+	  - next_free_de_gl
 	  + released_de_num()) * sizeof(struct delay_element);
 }
 
@@ -191,14 +199,16 @@ unsigned long unused_de_space(void)
 unsigned long allocated_dl_space(int * num_blocks)
 {
   int size = 0;
-  char *t = current_dl_block;
+  char *t = current_dl_block_gl;
 
   *num_blocks = 0;
+  SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
   while (t) {
     (*num_blocks)++;
-    size =+ (dl_block_size + sizeof(Cell));
+    size =+ (dl_block_size_glc + sizeof(Cell));
     t = *(char **)t;
   }
+  SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
   return size;
 }
 
@@ -207,18 +217,20 @@ static int released_dl_num(void)
   int i = 0;
   DL p;
 
-  p = released_dls;
+  p = released_dls_gl;
+  SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
   while (p != NULL) {
     i++;
     p = dl_next(p);
   }
+  SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
   return(i);
 }
 
 unsigned long unused_dl_space(void)
 {
-  return (current_dl_block_top
-	  - next_free_dl
+  return (current_dl_block_top_gl
+	  - next_free_dl_gl
 	  + released_dl_num()) * sizeof(struct delay_list);
 }
 
@@ -271,13 +283,13 @@ static DE intern_delay_element(CTXTdeclc Cell delay_elem)
 
   if (!was_simplifiable(subgoal, ans_subst)) {
     new_entry(de,
-	      released_des,
-	      next_free_de,
-	      current_de_block,
-	      current_de_block_top,
+	      released_des_gl,
+	      next_free_de_gl,
+	      current_de_block_gl,
+	      current_de_block_top_gl,
 	      de_next,
 	      DE,
-	      de_block_size,
+	      de_block_size_glc,
 	      "Not enough memory to expand DE space");
     de_subgoal(de) = subgoal;
     de_ans_subst(de) = ans_subst; /* Leaf of the answer (substitution) trie */
@@ -326,13 +338,13 @@ static DL intern_delay_list(CTXTdeclc CPtr dlist) /* assumes that dlist != NULL	
   }
   if (head) {
     new_entry(dl,
-	      released_dls,
-	      next_free_dl,
-	      current_dl_block,
-	      current_dl_block_top,
+	      released_dls_gl,
+	      next_free_dl_gl,
+	      current_dl_block_gl,
+	      current_dl_block_top_gl,
 	      dl_next,
 	      DL,
-	      dl_block_size,
+	      dl_block_size_glc,
 	      "Not enough memory to expand DL space");
     dl_de_list(dl) = head;
     dl_asl(dl) = NULL;
@@ -367,13 +379,13 @@ static void record_de_usage(DL dl)
   de = dl_de_list(dl);
   while (de) {
     new_entry(pnde,
-	      released_pndes,
-	      next_free_pnde,
-	      current_pnde_block,
-	      current_pnde_block_top,
+	      released_pndes_gl,
+	      next_free_pnde_gl,
+	      current_pnde_block_gl,
+	      current_pnde_block_top_gl,
 	      pnde_next,
 	      PNDE,
-	      pnde_block_size,
+	      pnde_block_size_glc,
 	      "Not enough memory to expand PNDE space");
     pnde_dl(pnde) = dl;
     pnde_de(pnde) = de;
@@ -451,6 +463,7 @@ void do_delay_stuff(CTXTdeclc NODEptr as_leaf, VariantSF subgoal, xsbBool sf_exi
     xsb_dbgmsg((LOG_DEBUG, "\n"));
 #endif
 
+    SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
     if (delayreg && (!sf_exists || is_conditional_answer(as_leaf))) {
       if ((dl = intern_delay_list(CTXTc delayreg)) != NULL) {
 	mark_conditional_answer(as_leaf, subgoal, dl);
@@ -471,6 +484,7 @@ void do_delay_stuff(CTXTdeclc NODEptr as_leaf, VariantSF subgoal, xsbBool sf_exi
     if (is_unconditional_answer(as_leaf) && subg_nde_list(subgoal)) {
       simplify_neg_succeeds(CTXTc subgoal);
     }
+    SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
 }
 
 /*----------------------------------------------------------------------*/
@@ -520,7 +534,7 @@ static xsbBool remove_de_from_dl(DE de, DL dl)
     dl_de_list(dl) = de_next(current);
   else
     de_next(prev_de) = de_next(current);
-  release_entry(current, released_des, de_next);
+  release_entry(current, released_des_gl, de_next);
   return (NULL != dl_de_list(dl));
 }
 
@@ -549,7 +563,7 @@ static xsbBool remove_dl_from_dl_list(DL dl, ASI asi)
   else
     dl_next(prev_dl) = dl_next(current);
 
-  release_entry(current, released_dls, dl_next);
+  release_entry(current, released_dls_gl, dl_next);
   return (NULL != asi_dl_list(asi));
 }
 
@@ -649,10 +663,10 @@ void release_all_dls(ASI asi)
 	de_asi = Delay(de_ans_subst(de));
 	remove_pnde(asi_pdes(de_asi), de_pnde(de));
       }
-      release_entry(de, released_des, de_next);
+      release_entry(de, released_des_gl, de_next);
       de = tmp_de; /* next DE */
     } /* while (de) */
-    release_entry(dl, released_dls, dl_next);
+    release_entry(dl, released_dls_gl, dl_next);
     dl = tmp_dl; /* next DL */
   }
 }
@@ -766,7 +780,7 @@ static void simplify_neg_succeeds(CTXTdeclc VariantSF subgoal)
 #ifdef DEBUG_DELAYVAR
 	fprintf(stddbg, ">>>> release DE (in simplify_neg_succeeds)\n");
 #endif
-	release_entry(de, released_des, de_next);
+	release_entry(de, released_des_gl, de_next);
 	de = tmp_de; /* next DE */
       } /* while */
       if (!remove_dl_from_dl_list(dl, used_asi)) {
@@ -815,7 +829,7 @@ void simplify_pos_unsupported(CTXTdeclc NODEptr as_leaf)
 #ifdef DEBUG_DELAYVAR
 	fprintf(stddbg, ">>>> release DE (in simplify_pos_unsupported)");
 #endif
-	release_entry(de, released_des, de_next);
+	release_entry(de, released_des_gl, de_next);
 	de = tmp_de; /* next DE */
       } /* while */
       if (!remove_dl_from_dl_list(dl, used_asi)) {
@@ -835,45 +849,47 @@ void abolish_wfs_space(void)
 
   /* clear DE blocks */
 
-  while (current_de_block) {
-    last_block = *(char **) current_de_block;
-    mem_dealloc(current_de_block,de_block_size + sizeof(Cell),TABLE_SPACE);
-    current_de_block = last_block;
+    SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
+  while (current_de_block_gl) {
+    last_block = *(char **) current_de_block_gl;
+    mem_dealloc(current_de_block_gl,de_block_size_glc + sizeof(Cell),TABLE_SPACE);
+    current_de_block_gl = last_block;
   }
 
   /* clear DL blocks */
 
-  while (current_dl_block) {
-    last_block = *(char **) current_dl_block;
-    mem_dealloc(current_dl_block,dl_block_size + sizeof(Cell),TABLE_SPACE);
-    current_dl_block = last_block;
+  while (current_dl_block_gl) {
+    last_block = *(char **) current_dl_block_gl;
+    mem_dealloc(current_dl_block_gl,dl_block_size_glc + sizeof(Cell),TABLE_SPACE);
+    current_dl_block_gl = last_block;
   }
 
   /* clear PNDE blocks */
   
-  while (current_pnde_block) {
-    last_block = *(char **) current_pnde_block;
-    mem_dealloc(current_pnde_block,pnde_block_size + sizeof(Cell),TABLE_SPACE);
-    current_pnde_block = last_block;
+  while (current_pnde_block_gl) {
+    last_block = *(char **) current_pnde_block_gl;
+    mem_dealloc(current_pnde_block_gl,pnde_block_size_glc + sizeof(Cell),TABLE_SPACE);
+    current_pnde_block_gl = last_block;
   }
 
   /* reset some pointers */
   
-  released_des = NULL;
-  released_dls = NULL;
-  released_pndes = NULL;
+  released_des_gl = NULL;
+  released_dls_gl = NULL;
+  released_pndes_gl = NULL;
 
-  next_free_de = NULL;
-  next_free_dl = NULL;
-  next_free_pnde = NULL;
+  next_free_de_gl = NULL;
+  next_free_dl_gl = NULL;
+  next_free_pnde_gl = NULL;
 
-  current_de_block_top = NULL;
-  current_dl_block_top = NULL;
-  current_pnde_block_top = NULL;
+  current_de_block_top_gl = NULL;
+  current_dl_block_top_gl = NULL;
+  current_pnde_block_top_gl = NULL;
 
 #ifndef LOCAL_EVAL
     abolish_edge_space();
 #endif
+    SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
 }
 
 /*
@@ -885,9 +901,11 @@ void force_answer_true(CTXTdeclc NODEptr as_leaf)
   VariantSF subgoal;
   
   if (is_conditional_answer(as_leaf)) {
+    SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
     subgoal = asi_subgoal(Delay(as_leaf));
     simplify_pos_unconditional(CTXTc as_leaf);
     simplify_neg_succeeds(CTXTc subgoal);
+    SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
   }
 }
 
@@ -897,12 +915,14 @@ void force_answer_false(CTXTdeclc NODEptr as_leaf)
   VariantSF subgoal;
 
   if (is_conditional_answer(as_leaf)) {
+    SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
     subgoal = asi_subgoal(asi);
     release_all_dls(asi);
     delete_branch(CTXTc as_leaf, &subg_ans_root_ptr(subgoal));
     simplify_pos_unsupported(CTXTc as_leaf);
     mark_subgoal_failed(subgoal);
     simplify_neg_fails(CTXTc subgoal);
+    SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
   }
 }
 

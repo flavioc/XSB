@@ -813,6 +813,10 @@ void delete_trie(CTXTdeclc BTNptr iroot) {
  * 
  * TLS: I have a question about the simplification done at the end of
  * this predicate.  It should only be performed if the trie is completed.
+ * 
+ * TLS: put in some protection for simplification operations using
+ * MUTEX_DELAY.  But I'm not sure that other parts of this function
+ * are thread-safe.
  */
 void delete_return(CTXTdeclc BTNptr l, VariantSF sg_frame) 
 {
@@ -829,7 +833,9 @@ void delete_return(CTXTdeclc BTNptr l, VariantSF sg_frame)
        delay lists */
     if (is_conditional_answer(l)) {
       ASI asi = Delay(l);
+      SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
       release_all_dls(asi);
+      SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
       /* TLS 12/00 changed following line from 
 	 (l == subg_ans_root_ptr(sg_frame) && ..
 	 so that negation failure simplification is properly performed */
@@ -885,11 +891,13 @@ void delete_return(CTXTdeclc BTNptr l, VariantSF sg_frame)
     }      
   }
   if (is_conditional_answer(l)) {
+    SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
     simplify_pos_unsupported(CTXTc l);
     if (groundcall) {
       mark_subgoal_failed(sg_frame);
       simplify_neg_fails(CTXTc sg_frame);
     }
+    SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
   }
 }
 

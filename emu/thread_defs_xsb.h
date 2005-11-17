@@ -35,7 +35,7 @@
 #define MAX_SYS_MUTEXES		40
 
 /* Be sure to update this if you add a recusive mutex */
-#define LAST_REC_MUTEX		6
+#define LAST_REC_MUTEX		7
 
 /* first mutexes are recursive */
 #define MUTEX_DYNAMIC		0
@@ -45,6 +45,7 @@
 #define MUTEX_SYMBOL		4
 #define MUTEX_FLAGS		5
 #define MUTEX_LOAD_UNDEF	6	/* Must be recursive */
+#define MUTEX_DELAY		7
 
 /* Non-recursive */
 #define MUTEX_STRING		15
