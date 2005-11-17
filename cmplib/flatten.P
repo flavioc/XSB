@@ -70,7 +70,13 @@ flt_args_head([Arg|Args], [NArg|NArgs], OldGoal, NewGoal, Level) :-
 
 flt_arg_head(varocc(Var), varocc(Var), OldGoal, OldGoal, _).
 flt_arg_head(integer(Int), integer(Int), OldGoal, OldGoal, _).
-flt_arg_head(real(Real), real(Real), OldGoal, OldGoal, _).
+flt_arg_head(real(Real), New, OldGoal, NewGoal, Level) :-
+	level_allowed(Allowed),
+	(Level =< Allowed
+	 ->	New = real(Real), NewGoal = OldGoal
+	 ;	gennum(Vid), New = varocc(Vid),
+		NewGoal = and(inlinegoal('=',2,[New,real(Real)]),OldGoal)
+	 ).
 flt_arg_head(constant(Sym), constant(Sym), OldGoal, OldGoal, _).
 flt_arg_head(structure(Sym,Args), New, OldGoal, NewGoal, Level) :-
         level_allowed(Allowed),
@@ -172,7 +178,15 @@ flt_args([Arg|Args], [NArg|NArgs], OldGoal, NewGoal, Level, InIs) :-
 
 flt_arg(varocc(Var), varocc(Var), OldGoal, OldGoal, _, _InIs).
 flt_arg(integer(Int), integer(Int), OldGoal, OldGoal, _, _InIs).
-flt_arg(real(Real), real(Real), OldGoal, OldGoal, _, _InIs).
+flt_arg(real(Real), New, OldGoal, NewGoal, Level, InIs) :-
+	level_allowed(Allowed),
+	(Level =< Allowed
+	 ->	New = real(Real), NewGoal = OldGoal
+	 ; InIs =:= 1
+	 ->	New = real(Real), NewGoal = OldGoal
+	 ;	gennum(Vid), New = varocc(Vid),
+		NewGoal = and(inlinegoal('=',2,[New,real(Real)]),OldGoal)
+	).
 flt_arg(constant(Sym), constant(Sym), OldGoal, OldGoal, _, _InIs).
 flt_arg(structure(Sym,Args), New, OldGoal, NewGoal, Level, InIs) :-
 	level_allowed(Allowed),
