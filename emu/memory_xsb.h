@@ -165,7 +165,8 @@ extern byte *inst_begin_gl;       /* ptr to beginning of instruction array. */
 
 extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
 	    resume_compl_suspension_inst, fail_inst, dynfail_inst, 
-  	    halt_inst, proceed_inst, resume_compl_suspension_inst2,
+  	    halt_inst, proceed_inst, 
+// resume_compl_suspension_inst2,
 	    reset_inst, trie_fail_unlock_inst;
 
 

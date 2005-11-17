@@ -107,11 +107,12 @@
 #define cut_restore_trail_condition_registers(CUTB) \
     if ((CPtr)  *CUTB >= (CPtr) pdl.low || \
 		*CUTB == (Cell) &answer_return_inst || \
-                *CUTB == (Cell) &resume_compl_suspension_inst ||\
-                *CUTB == (Cell) &resume_compl_suspension_inst2) { \
+ 	        *CUTB == (Cell) &resume_compl_suspension_inst) {	\
 	ebreg = cp_ebreg(CUTB); \
 	hbreg = cp_hreg(CUTB); \
     }
+
+	  //                *CUTB == (Cell) &resume_compl_suspension_inst2) { 
 
 /*----------------------------------------------------------------------*/
 /* Deletes all trail frames that are no longer conditional.		*/
