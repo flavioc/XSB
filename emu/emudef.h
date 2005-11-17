@@ -184,16 +184,41 @@ unsigned long dec[8] = {0xffffffff,0xffffffff,0xffffffff,0xffffffff,
   XSB_Deref(OP1);      							\
   if (isref(OP1)) {							\
     /* op1 is FREE */							\
-    bind_float_tagged(vptr(OP1), OP2);                	                \
+    bind_float_tagged(vptr(OP1), OP2);					\
   }									\
   else if (isofloat(OP1)) {						\
-    if (OP1 == OP2) {XSB_Next_Instr();} else Fail1;	                \
+    if ( (float)ofloat_val(OP1) == float_val(OP2)) {			\
+      XSB_Next_Instr();							\
+    }									\
+    else Fail1;								\
   }									\
   else if (isattv(OP1)) {						\
     xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_float, interrupt needed\n"));	\
     /* add_interrupt(OP1, OP2); */				        \
     add_interrupt(CTXTc cell(((CPtr)dec_addr(op1) + 1)),OP2); 		\
-    bind_float_tagged((CPtr)dec_addr(op1), OP2);                 		\
+    bind_float_tagged((CPtr)dec_addr(op1), OP2);			\
+  }									\
+  else Fail1;	/* op1 is INT, STRING, STRUCT, or LIST */ 
+
+/*======================================================================*/
+
+#define nunify_with_float_get(OP1,OP2)					\
+  XSB_Deref(OP1);      							\
+  if (isref(OP1)) {							\
+    /* op1 is FREE */							\
+    bind_boxedfloat(vptr(OP1), float_val(OP2));				\
+  }									\
+  else if (isofloat(OP1)) {						\
+    if ( (float)ofloat_val(OP1) == float_val(OP2)) {			\
+      XSB_Next_Instr();							\
+    }									\
+    else Fail1;								\
+  }									\
+  else if (isattv(OP1)) {						\
+    xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_float, interrupt needed\n"));	\
+    /* add_interrupt(OP1, OP2); */				        \
+    add_interrupt(CTXTc cell(((CPtr)dec_addr(op1) + 1)),OP2); 		\
+    bind_boxedfloat((CPtr)dec_addr(op1), float_val(OP2));		\
   }									\
   else Fail1;	/* op1 is INT, STRING, STRUCT, or LIST */ 
 
@@ -216,10 +241,18 @@ unsigned long dec[8] = {0xffffffff,0xffffffff,0xffffffff,0xffffffff,
     }									\
     else Fail1;								\
   }									\
-  else if (isattv(OP1)) {						\
+  else if ((Psc)OP2 == box_psc) {					\
+    Cell ignore_addr;							\
+    if (isfloat(OP1)) 							\
+      bld_boxedfloat(CTXTc &ignore_addr, float_val(OP1));		\
+    else if (isinteger(OP1)) 						\
+      bld_boxedint(&ignore_addr, int_val(OP1));				\
+    flag = READFLAG;							\
+    sreg = hreg - 3;							\
+  } else if (isattv(OP1)) {						\
     xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_str, interrupt needed\n"));	\
     /* add_interrupt(OP1, makecs(hreg)); */				\
-    add_interrupt(CTXTc cell(((CPtr)dec_addr(op1) + 1)),makecs(hreg));  \
+    add_interrupt(CTXTc cell(((CPtr)dec_addr(op1) + 1)),makecs(hreg));	\
     bind_copy((CPtr)dec_addr(op1), makecs(hreg));                       \
     new_heap_functor(hreg, (Psc)OP2);					\
     flag = WRITE;							\

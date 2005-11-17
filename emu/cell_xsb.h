@@ -99,9 +99,9 @@
 #else
 #define FLOAT_MASK 0xfffffff8
 #endif
-extern float getfloatval(Cell);
-extern Cell makefloat(float);
-extern int sign(Float);
+extern inline float getfloatval(Cell);
+extern inline Cell makefloat(float);
+extern inline int sign(Float);
 
 #define isref(cell)  (!((word)(cell)&0x3))
 #define isnonvar(cell) ((word)(cell)&0x3)		/* dcell -> xsbBool */
@@ -224,6 +224,7 @@ extern unsigned long enc[], dec[];
 
 #define isnil(dcell) (isstring(dcell) && (char *)string_val(dcell) == nil_string)
 #define isboxed(term) (isconstr(term) && get_str_psc(term) == box_psc )
+#define box_has_id(dcell, box_identifier) (int_val(cell(clref_val(dcell)+1))>>16 == box_identifier)
 
 /*======================================================================*/
 /* Miscellaneous							*/
@@ -233,16 +234,14 @@ extern unsigned long enc[], dec[];
 #define CELL_DEFS_INCLUDED
 
 #define arity_integer(dcell) \
-			(isinteger(dcell) && int_val(dcell) >= 0 \
-					  && int_val(dcell) <= MAX_ARITY)
+   (isinteger(dcell) && int_val(dcell) >= 0 \
+	  && int_val(dcell) <= MAX_ARITY)
             
-            
-#define isboxedinteger(dcell) (isconstr(dcell) && (get_str_psc(dcell)==box_psc) \
-                               && (int_val(cell(clref_val(dcell)+1))>>16 == ID_BOXED_INT))
+#define isboxedinteger(dcell) (isboxed(dcell) && box_has_id(dcell, ID_BOXED_INT))
 
 #ifndef FAST_FLOATS
-#define isboxedfloat(dcell) (isconstr(dcell) && (get_str_psc(dcell)==box_psc) \
-                             && (int_val(cell(clref_val(dcell)+1))>>16 == ID_BOXED_FLOAT))
+#define isboxedfloat(dcell) (isboxed(dcell) && box_has_id(dcell, ID_BOXED_FLOAT))
+
 #else
 //If FAST_FLOATS is defined, there should be no boxed floats (only Cell floats). 
 //  isboxedfloat is therefore expanded to FALSE (0), in hopes that the optimizer will remove.

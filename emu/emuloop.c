@@ -635,7 +635,7 @@ contcase:     /* the main loop */
     Op1(Register(get_xxr));
     Op2(get_xxxn);
     ADVANCE_PC(size_xxxX);
-    nunify_with_float(op1,op2);
+    nunify_with_float_get(op1,op2);
     //printf("\nGETFLOAT LEFT!\n");
   XSB_End_Instr()
 
@@ -654,7 +654,8 @@ contcase:     /* the main loop */
     Op1(get_xxr);
     Op2(get_xxxn);
     ADVANCE_PC(size_xxxX);
-    bld_float_tagged((CPtr)op1, op2);
+    //    bld_float_tagged((CPtr)op1, op2);
+    bld_boxedfloat(CTXTc (CPtr)op1, float_val(op2));
     //printf("\nPUTFLOAT DONE!\n");
   XSB_End_Instr()
 
@@ -1074,6 +1075,12 @@ contcase:     /* the main loop */
     }
   XSB_End_Instr()
 
+#define struct_hash_value(op1) \
+   (isboxedinteger(op1)?boxedint_val(op1): \
+    (isboxedfloat(op1)?  \
+     int_val(cell(clref_val(op1)+1)) ^ int_val(cell(clref_val(op1)+2)) ^ int_val(cell(clref_val(op1)+3)): \
+     (Cell)get_str_psc(op1)))
+
   XSB_Start_Instr(switchonbound,_switchonbound) /* PPR-L-L */
     Def3ops
     /* op1 is register, op2 is hash table offset, op3 is modulus */
@@ -1081,13 +1088,13 @@ contcase:     /* the main loop */
     XSB_Deref(op1);
     switch (cell_tag(op1)) {
     case XSB_STRUCT:
-      op1 = (Cell)get_str_psc(op1);
+      op1 = struct_hash_value(op1);
       break;
     case XSB_STRING:	/* We should change the compiler to avoid this test */
       op1 = (Cell)(isnil(op1) ? 0 : string_val(op1));
       break;
     case XSB_INT: 
-    case XSB_FLOAT:	/* Yes, use int_val to avoid conversion problem */
+    case XSB_FLOAT:  /* cvt to double and use that indexing.... */
       op1 = (Cell)int_val(op1);
       break;
     case XSB_LIST:
@@ -1160,7 +1167,8 @@ contcase:     /* the main loop */
 	      depth++;
               argsleft[depth] = get_arity(get_str_psc(op1));
               stk[depth] = clref_val(op1)+1;
-	      op1 = (Cell)get_str_psc(op1);
+	      //op1 = (Cell)get_str_psc(op1);
+	      op1 = struct_hash_value(op1);
 	      break;
 	    case XSB_STRING:
 	      op1 = (Cell)string_val(op1);
@@ -1185,7 +1193,8 @@ contcase:     /* the main loop */
 	  op1 = (Cell)(list_pscPair); 
 	  break;
 	case XSB_STRUCT:
-	  op1 = (Cell)get_str_psc(op1);
+	  //	  op1 = (Cell)get_str_psc(op1);
+	  op1 = struct_hash_value(op1);
 	  break;
 	case XSB_STRING:
 	  op1 = (Cell)string_val(op1);
@@ -1460,9 +1469,13 @@ contcase:     /* the main loop */
 	lpcreg = (byte *)op3;
     }
     else if (isboxedinteger(op1)) {
-       if (oint_val(op1) == oint_val(op2))
+       if (oint_val(op1) == int_val(op2))
           lpcreg = (byte *)op3;
     }	  
+    else if (isboxedfloat(op1)) {
+      if (ofloat_val(op1) == (double)int_val(op2))
+	lpcreg = (byte *) op3;
+    }
     else {
       arithmetic_comp_abort(CTXTc op1, "=\\=", op2);
     }
@@ -1480,9 +1493,13 @@ contcase:     /* the main loop */
 	lpcreg = (byte *) op3;
     }
     else if (isboxedinteger(op1)) {
-       if (oint_val(op1) != oint_val(op2))
+       if (oint_val(op1) != int_val(op2))
           lpcreg = (byte *)op3;
     }	  
+    else if (isboxedfloat(op1)) {
+      if (ofloat_val(op1) != (double)int_val(op2))
+	lpcreg = (byte *) op3;
+    }
     else {
       arithmetic_comp_abort(CTXTc op1, "=:=", op2);
     }

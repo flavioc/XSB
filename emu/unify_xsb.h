@@ -43,6 +43,19 @@
   if (isattv(op1)) goto loc##_label_op1_attv;                \
   if (isattv(op2)) goto loc##_label_op2_attv;                \
                                                              \
+  if (isfloat(op2) && isboxedfloat(op1) ) {                  \
+    if ( float_val(op2) == (float)boxedfloat_val(op1))       \
+      {IFTHEN_SUCCEED;}                                      \
+    else                                                     \
+      {IFTHEN_FAILED;}                                       \
+  }                                                          \
+  if (isfloat(op1) && isboxedfloat(op2) ) {                  \
+    if ( float_val(op1) == (float)boxedfloat_val(op2))       \
+      {IFTHEN_SUCCEED;}                                      \
+    else                                                     \
+      {IFTHEN_FAILED;}                                       \
+  }                                                          \
+                                                             \
   if (cell_tag(op1) != cell_tag(op2))                        \
     {IFTHEN_FAILED;}                                         \
                                                              \
