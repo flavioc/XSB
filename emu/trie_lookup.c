@@ -918,6 +918,10 @@ void *iter_sub_trie_lookup(CTXTdeclc void *trieNode, TriePathType *pathType) {
       }
       break;
 
+    case XSB_ATTV:
+      xsb_table_error(CTXTc 
+	      "Attributed variables not yet implemented in calls to subsumptive tables.");
+      break;
 
     /* SUBTERM HAS UNKNOWN CELL TAG
        ---------------------------- */

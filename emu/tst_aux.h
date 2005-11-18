@@ -352,6 +352,10 @@ extern DynamicStack tstTrail;
      Symbol = EncodeTrieList(subterm);				\
      TermStack_PushListArgs(subterm);				\
      break;							\
+   case XSB_ATTV:						\
+     xsb_table_error(CTXTc                                      \
+        "Attributed variables not yet implemented in answers for subsumptive tables.");	\
+      break;                                                    \
    default:							\
      Symbol = 0;  /* avoid "uninitialized" compiler warning */	\
      TrieError_UnknownSubtermTag(subterm);			\

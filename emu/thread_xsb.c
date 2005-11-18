@@ -1,3 +1,25 @@
+/* File:      thread_xsb.c
+** Author(s): Marques
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -68,6 +90,8 @@ pthread_cond_t completing_cond;
 #define P_PTHREAD_T tid
 #endif
 
+/* finds thread in the thread-vector, returning its index if found, -1
+   otherwise */
 static int th_find( pthread_t_p tid )
 {
 	xsb_thread_t *pos;
@@ -138,7 +162,7 @@ void init_system_mutexes( void )
 	pthread_mutexattr_t attr_std ;
 
 /* make system mutex recursive, for there are recursive prolog calls	*/
-/* to stuff that must be execute in mutual exclusion			*/
+/* to stuff that must be executed in mutual exclusion			*/
 
 	pthread_mutexattr_init( &attr_rec ) ;
 	if( pthread_mutexattr_settype( &attr_rec, PTHREAD_MUTEX_RECURSIVE_NP )<0 )
@@ -263,8 +287,8 @@ xsbBool xsb_thread_request( CTXTdecl )
 		case XSB_THREAD_EXIT:
 			rval = ptoc_int(CTXTc 2 ) ;
 			cleanup_machine(CTXT) ;
-			thread_free_dyn_blks(CTXT);
-			thread_free_tab_blks(CTXT);
+			thread_free_dyn_blks(CTXT);    /* biassert.c */
+			thread_free_tab_blks(CTXT);    /* loader_xsb.c */
 			mem_dealloc(th,sizeof(th_context),THREAD_SPACE) ;
 			flags[NUM_THREADS]-- ;
 			pthread_mutex_lock( &th_mutex );

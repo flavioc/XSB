@@ -23,7 +23,6 @@
 ** 
 */
 
-
 #include "xsb_config.h"
 #include "xsb_debug.h"
 
@@ -118,40 +117,11 @@ DllExport void call_conv xsb_throw(CTXTdeclc prolog_term Ball, unsigned long Bal
 }
 
 
-/*****************/
-void call_conv xsb_type_error(CTXTdeclc char *valid_type,Cell culprit, 
-					char *predicate,int arity, int arg) 
-{
-  prolog_term ball_to_throw;
-  int isnew;
-  Cell *tptr; char message[255];
-  unsigned long ball_len = 10*sizeof(Cell);
+/********************************************************************/
+/* Error types */
+/********************************************************************/
 
-  sprintf(message,"in arg %d of predicate %s/%d)",arg,predicate,arity);
-
-  tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
-
-  ball_to_throw = makecs(tptr);
-  bld_functor(tptr, pair_psc(insert("error",3,
-				    (Psc)flags[CURRENT_MODULE],&isnew)));
-  tptr++;
-  bld_cs(tptr,(Cell) (tptr+3));
-  tptr++;
-  bld_string(tptr,string_find(message,1));
-  tptr++;
-  bld_copy(tptr,build_xsb_backtrace(CTXT));
-  tptr++;
-  bld_functor(tptr, pair_psc(insert("type_error",2,
-				    (Psc)flags[CURRENT_MODULE],&isnew)));
-  tptr++;
-  bld_string(tptr,string_find(valid_type,1));
-  tptr++;
-  if (culprit == (Cell)NULL) bld_int(tptr,0); 
-  else bld_ref(tptr,culprit);
-
-  xsb_throw(CTXTc ball_to_throw, ball_len);
-
-}
+// void calculation_error
 
 /*****************/
 void call_conv xsb_domain_error(CTXTdeclc char *valid_domain,Cell culprit, 
@@ -183,6 +153,42 @@ void call_conv xsb_domain_error(CTXTdeclc char *valid_domain,Cell culprit,
   tptr++;
   if (culprit == (Cell)NULL) bld_int(tptr,0); 
   else bld_ref(tptr,culprit);
+
+  xsb_throw(CTXTc ball_to_throw,ball_len);
+
+}
+
+/*****************/
+
+// void existence_error
+
+/*****************/
+void call_conv xsb_instantiation_error(CTXTdeclc char *predicate,int arity,
+						 int arg,char *state) 
+{
+  prolog_term ball_to_throw;
+  int isnew;
+  Cell *tptr; char message[255];
+  unsigned long ball_len = 10*sizeof(Cell);
+
+  if (! IsNULL(state)) {
+    sprintf(message," in arg %d of predicate %s/%d must be %s",arg,predicate,arity,
+	    state);
+  } else {
+    sprintf(message," in arg %d of predicate %s/%d",arg,predicate,arity);
+  }    
+
+  tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
+
+  ball_to_throw = makecs(tptr);
+  bld_functor(tptr, pair_psc(insert("error",3,
+				    (Psc)flags[CURRENT_MODULE],&isnew)));
+  tptr++;
+  bld_string(tptr,string_find("instantiation_error",1));
+  tptr++;
+  bld_string(tptr,string_find(message,1));
+  tptr++;
+  bld_copy(tptr,build_xsb_backtrace(CTXT));
 
   xsb_throw(CTXTc ball_to_throw,ball_len);
 
@@ -223,21 +229,55 @@ void call_conv xsb_permission_error(CTXTdeclc
 
 }
 
-/*****************/
-void call_conv xsb_instantiation_error(CTXTdeclc char *predicate,int arity,
-						 int arg,char *state) 
+/**************/
+
+// representation_error
+
+/**************/
+
+void call_conv xsb_table_error(CTXTdeclc char *message) 
+{
+  prolog_term ball_to_throw;
+  int isnew;
+  Cell *tptr;
+  unsigned long ball_len = 10*sizeof(Cell);
+#ifdef MULTI_THREAD
+  char mtmessage[MAXBUFSIZE];
+  int tid = xsb_thread_self();
+  //  th_context *th;
+  //  th = find_context(xsb_thread_self());
+#endif
+
+  tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
+  ball_to_throw = makecs(tptr);
+  bld_functor(tptr, pair_psc(insert("error",3,
+				    (Psc)flags[CURRENT_MODULE],&isnew)));
+
+  tptr++;
+  bld_string(tptr,string_find("table_error",1));
+  tptr++;
+#ifdef MULTI_THREAD
+  sprintf(mtmessage,"[th %d] %s",tid,message);
+  bld_string(tptr,string_find(mtmessage,1));
+#else  
+  bld_string(tptr,string_find(message,1));
+#endif
+  tptr++;
+  bld_copy(tptr,build_xsb_backtrace(CTXT));
+  xsb_throw(CTXTc ball_to_throw,ball_len);
+}			       
+
+/**************/
+
+void call_conv xsb_type_error(CTXTdeclc char *valid_type,Cell culprit, 
+					char *predicate,int arity, int arg) 
 {
   prolog_term ball_to_throw;
   int isnew;
   Cell *tptr; char message[255];
   unsigned long ball_len = 10*sizeof(Cell);
 
-  if (! IsNULL(state)) {
-    sprintf(message," in arg %d of predicate %s/%d must be %s",arg,predicate,arity,
-	    state);
-  } else {
-    sprintf(message," in arg %d of predicate %s/%d",arg,predicate,arity);
-  }    
+  sprintf(message,"in arg %d of predicate %s/%d)",arg,predicate,arity);
 
   tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
 
@@ -245,13 +285,21 @@ void call_conv xsb_instantiation_error(CTXTdeclc char *predicate,int arity,
   bld_functor(tptr, pair_psc(insert("error",3,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));
   tptr++;
-  bld_string(tptr,string_find("instantiation_error",1));
+  bld_cs(tptr,(Cell) (tptr+3));
   tptr++;
   bld_string(tptr,string_find(message,1));
   tptr++;
   bld_copy(tptr,build_xsb_backtrace(CTXT));
+  tptr++;
+  bld_functor(tptr, pair_psc(insert("type_error",2,
+				    (Psc)flags[CURRENT_MODULE],&isnew)));
+  tptr++;
+  bld_string(tptr,string_find(valid_type,1));
+  tptr++;
+  if (culprit == (Cell)NULL) bld_int(tptr,0); 
+  else bld_ref(tptr,culprit);
 
-  xsb_throw(CTXTc ball_to_throw,ball_len);
+  xsb_throw(CTXTc ball_to_throw, ball_len);
 
 }
 
