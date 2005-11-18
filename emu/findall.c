@@ -191,11 +191,24 @@ copy_again : /* for tail recursion optimisation */
   switch ( cell_tag( from ) )
     {
     case XSB_INT :
-    case XSB_FLOAT :
     case XSB_STRING :
       *to = from;
       return;
-    
+    case XSB_FLOAT :
+#ifndef FAST_FLOATS
+      {
+	Float tempFloat = getfloatval(from);
+	new_heap_functor((*h),box_psc);
+	bld_int((*h),((ID_BOXED_FLOAT << BOX_ID_OFFSET ) | FLOAT_HIGH_16_BITS(tempFloat) ));
+	(*h)++;
+	bld_int((*h),FLOAT_MIDDLE_24_BITS(tempFloat)); (*h)++;
+	bld_int((*h),FLOAT_LOW_24_BITS(tempFloat)); (*h)++;
+	cell(to) = makecs((*h)-4);
+      }
+#else
+      *to = from;
+#endif
+      return;
     case XSB_REF :
     case XSB_REF1 :
       XSB_Deref(from);
