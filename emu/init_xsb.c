@@ -136,7 +136,7 @@ Cell trie_fail_unlock_inst;
 Cell halt_inst;
 Cell proceed_inst;
 
-extern double realtime_count;
+extern double realtime_count_gl;
 
 extern void perproc_reset_stat(void), reset_stat_total(void); 
 
@@ -716,7 +716,7 @@ char *init_para(CTXTdeclc int argc, char *argv[])
 
   /* Other basic initializations
      --------------------------- */
-  realtime_count = real_time();
+  realtime_count_gl = real_time();
 
   return ( (char *) flags[BOOT_MODULE] );
 

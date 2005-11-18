@@ -87,7 +87,7 @@ extern xsbBool quotes_are_needed(char *string);
 #undef IFTHEN_SUCCEED
 #define IFTHEN_SUCCEED	return 1
 
-double realtime_count;
+double realtime_count_gl;
 
 #ifndef MULTI_THREAD
 extern int asynint_val;	/* 0 - no interrupt (or being processed) */
@@ -106,7 +106,9 @@ static struct sigaction act, oact;
 void (*xsb_default_segfault_handler)(int); /* where the previous value of the
 					     SIGSEGV/SIGBUS handler is saved */
 
+#ifndef MULTI_THREAD
 Cell attv_interrupts[20480][2];
+#endif
 
 /*
  * Put an attv interrupt into the interrupt chain. op1 is the related
@@ -138,6 +140,9 @@ void add_interrupt(CTXTdeclc Cell op1, Cell op2) {
 }
 
 
+/* Builds a list of interrupts on the heap.  As of 11/05, Called by
+   the check_interrupt instruction; as well as synint_proc().  Both of
+   these calls usually set reg1 to the chain, and call the handler */
 Cell build_interrupt_chain(CTXTdecl) {
   Cell head;
   CPtr tmp = &head;
@@ -191,6 +196,7 @@ xsbBool unify(CTXTdeclc Cell rop1, Cell rop2)
 
 /*======================================================================*/
 /*  Determining whether two terms are identical.			*/
+/*  (Used mostly by subsumptive trie lookup routines)                   */
 /*======================================================================*/
 
 xsbBool are_identical_terms(Cell term1, Cell term2) {
@@ -246,7 +252,7 @@ void print_statistics(CTXTdeclc int amount) {
 
   switch (amount) {
   case 0:		    /* Reset Statistical Parameters */
-    realtime_count = real_time();
+    realtime_count_gl = real_time();
     perproc_reset_stat();	/* reset op-counts, starting time, and 'tds'
 				   struct variable (all 0's) */
     reset_stat_total(); 	/* reset 'ttt' struct variable (all 0's) */
@@ -255,7 +261,7 @@ void print_statistics(CTXTdeclc int amount) {
   case 1:		    /* Print Stack Usage and CPUtime: */
 
     perproc_stat();		/* move max usage into 'ttt' struct variable */
-    total_stat(CTXTc real_time()-realtime_count);   /* print */
+    total_stat(CTXTc real_time()-realtime_count_gl);   /* print */
     reset_stat_total(); 	/* reset 'ttt' struct variable (all 0's) */
     break;
   case 2:		    /* Print Detailed Table Usage */
@@ -263,7 +269,7 @@ void print_statistics(CTXTdeclc int amount) {
     break;
   case 3:		    /* Print Detailed Table, Stack, and CPUtime */
     perproc_stat();
-    total_stat(CTXTc real_time()-realtime_count);
+    total_stat(CTXTc real_time()-realtime_count_gl);
     reset_stat_total();
     print_detailed_tablespace_stats();
     print_detailed_subsumption_stats();
@@ -397,6 +403,9 @@ void keyint_proc(int sig)
     asynint_code = 0;
   }
 }
+
+/* Called during XSB initialization -- could be in init_xsb.c, apart
+   from funky use in keyint_proc() */
 
 void init_interrupt(void)
 {
@@ -665,6 +674,8 @@ int key_compare(CTXTdeclc const void * t1, const void * t2)
 
 /*======================================================================*/
 /* print an atom as quoted.						*/
+/* This, and the next few functions are used in file_puttoken.  I have  */
+/* no idea why we keep them here.                                       */
 /*======================================================================*/
 
 void print_aqatom(FILE *file, char *string) {

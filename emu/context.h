@@ -341,6 +341,7 @@ ThreadDepList TDL ;
 pthread_cond_t cond_var ;
 #endif
 
+Cell _attv_interrupts[20480][2];
 } ;
 
 typedef struct th_context th_context ;
@@ -507,6 +508,8 @@ typedef struct th_context th_context ;
 #define FCurNum (th->_FCurNum)
 
 #define  pflags			(th->_pflags)
+
+#define  attv_interrupts        (th->_attv_interrupts)
 
 #define CTXT			th
 #define CTXTc			th ,

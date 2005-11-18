@@ -920,6 +920,15 @@ contcase:     /* the main loop */
     RESTORE_SUB
   XSB_End_Instr()
 
+      /* TLS: according to David.  It may be that a call to a
+       *  predicate P performs a lot of shallow backtracking esp. to
+       *  facts. If so, the interrupt might not be handled until the
+       *  engine is not executing P any more.  Putting the handler in
+       *  trusts means that any interrupt posted during the
+       *  backtracking will be caught, and thus gives the profiler a
+       *  better chance of accurately reflecting where the time is
+       *  spent. */
+
   XSB_Start_Instr(trustmeelsefail,_trustmeelsefail) /* PPA */
     Def1op
     Op1(get_xxa);
