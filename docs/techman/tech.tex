@@ -626,11 +626,19 @@ new          & T\_VISIBLE & T\_HIDDEN & T\_UNLOADED & T\_VISIBLE \\
 \label{t:envset}
 \end{table}
 %
-The environment type is stored in the low-order 2 bits fo the enb byte
+The environment type is stored in the low-order 2 bits of the env byte
 in the psc record.  The high-order 2 bits are used to store spy
-information used by the debugger.  Bit x20 is used to indicate that
-the predicate is a shared predicate (for multi-threading).  Bit 0x80
-is used to indicate that the predicate is tabled.
+information used by the debugger.  Bits x10 and x20 are used to
+indicate that the predicate is a shared predicate (for
+multi-threading).  Bit x20 is 1 for a thread-shared predicate and 0
+for thread_private.  Bit x10 is 1 if Bit x20 has been explicitly set
+and is unchangable, and is 0 if it hasn't yet been set and can still
+be defaulted.  Bits x04 and x08 indicate that the predicate is tabled:
+If they are both 0, the predicate is not tabled.  If they are both 1,
+the predicate is tabled but it has not yet been determined whether it
+is variant or subsumptive.  If bit x4 is 1 and bit x8 is 0, it is
+determined to be subsumptively tabled; if bit x8 is 1 and bit x4 is 0,
+it is determined to be a variant table.
 
 \begin{table}\centering
 \begin{tabular}{l|l|l}
@@ -967,7 +975,8 @@ For private dynamic code, both assert[a/z] and retract[all] are
 thread-safe.  Private code is implemented by interposing a ``dispatch
 table'' between the jump from the psc record and the PrRef (or
 tabletrysingle code).  There is an instruction switchonthread that
-branches through thte table based on the current thread.
+branches through thte table based on the current thread.  See the
+section below on private tables and dynamic code for details.
 
 For shared predicates assert (and retract) use a mutex to lock out
 other code modifiers when they are manipulating the dynamic data
@@ -1026,6 +1035,12 @@ sequence like asserta(p(b2)), asserta(p(b1)), asserta(p(X)),
 asserta(p(a2)), asserta(p(a1)), which generates multiple ClRef1 (and
 0) blocks, there will be multiple dyntrymeelse instructions executed
 when backtracking through it.
+
+\subsubsection{Multi-threading and Private Tables and Dynamic Code}
+
+In the multi-threading engine, predicates default to being
+thread\_private.  This means that each thread has its own version of 
+
 
 \subsection{Storage of Compiled Code in Program Segments}
 %===========================
