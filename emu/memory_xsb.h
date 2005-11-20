@@ -116,25 +116,27 @@ extern System_Stack pdl,            /* PDL                        */
 
 
 /* Categories of permanent space use: */
-#define ATOM_STR_SPACE		0
-#define ASSERT_SPACE		1
-#define COMPILED_SPACE		2
-#define FOR_CODE_SPACE		3
-#define TABLE_SPACE		4
-#define FINDALL_SPACE		5
-#define PROFILE_SPACE		6
-#define MT_PRIVATE_SPACE	7
-#define BUFF_SPACE		8
-#define GC_SPACE		9
-#define HASH_SPACE		10
-#define INTERPROLOG_SPACE	11
-#define THREAD_SPACE		12
-#define READ_CAN_SPACE		13
-#define LEAK_SPACE		14
-#define SPECIAL_SPACE		15
-#define OTHER_SPACE		16
+#define ATOM_SPACE		0
+#define STRING_SPACE		1
+#define ASSERT_SPACE		2
+#define COMPILED_SPACE		3
+#define FOR_CODE_SPACE		4
+#define TABLE_SPACE		5
+#define FINDALL_SPACE		6
+#define PROFILE_SPACE		7
+#define MT_PRIVATE_SPACE	8
+#define BUFF_SPACE		9
+#define GC_SPACE		10
+#define HASH_SPACE		11
+#define INTERPROLOG_SPACE	12
+#define THREAD_SPACE		13
+#define READ_CAN_SPACE		14
+#define LEAK_SPACE		15
+#define SPECIAL_SPACE		16
+#define OTHER_SPACE		17
+// VARSTRING_SPACE??  some other to thread?
 
-#define NUM_CATS_SPACE		17
+#define NUM_CATS_SPACE		18
 
 /* Program and Symbol Tables Space (in Bytes)
    ------------------------------------------ */

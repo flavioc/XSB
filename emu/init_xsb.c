@@ -963,8 +963,8 @@ void init_symbols(void)
   int  i, new_indicator;
 
   inst_begin_gl = 0;
-  symbol_table.table = (void **)mem_calloc(symbol_table.size, sizeof(Pair),ATOM_STR_SPACE);
-  string_table.table = (void **)mem_calloc(string_table.size, sizeof(char *),ATOM_STR_SPACE);
+  symbol_table.table = (void **)mem_calloc(symbol_table.size, sizeof(Pair),ATOM_SPACE);
+  string_table.table = (void **)mem_calloc(string_table.size, sizeof(char *),STRING_SPACE);
 
   /* insert mod name global */
   /*tp = insert_module(T_MODU, "global");	/ loaded */

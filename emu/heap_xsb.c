@@ -86,6 +86,40 @@ Todo:
 	integrate with compiler
 
 ****************************************************************************/
+/****************************************************************************
+Thoughts on string table garbage collection:
+
+Mark and collect.  
+
+First mark all strings in use.  A string Cell is a tagged pointer to a
+sequence of chars, word aligned.  The previous word is the link
+pointer in the hash bucket chain.  Use the lowest bit in that pointer
+as the mark bit.  When marking what looks like a string, be sure it is
+a indeed a string by comparing it to the result of calling
+string_find.
+
+Mark: 
+
+a) Piggyback on marking of heap gc to mark all strings accessible
+from stacks and trail.  
+
+b) Mark tries by running trie-node blocks rooted at smTableBTN,
+smTSTN, and smAssertBTN.  Change trie-node free to set 2nd word in
+trie node to distinctive pattern (-1), so know to skip those nodes.
+At the same time can free blocks all of whose nodes are free.  Must
+remove the freed records from the free chains.
+
+c) Mark all strings in code by running atom-table to get entry points,
+including through private dispatch tables, and then scanning the code
+for instructions containing strings.
+
+d) Consider ways to deal with string pointers given to C programs in
+ptoc_string.
+
+Collect: run through the string table, freeing unmarked strings and
+unmarking marked strings.
+
+****************************************************************************/
 
 /* xsb_config.h must be the first #include. Pls don't move it. */
 #include "xsb_config.h"

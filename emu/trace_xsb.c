@@ -97,11 +97,11 @@ void perproc_stat(void)
  */
 
 static char *pspace_cat[NUM_CATS_SPACE] =
-  {"atom        ","asserted    ","compiled    ","foreign     ",
-   "table       ","findall     ","profile     ","mt-private  ",
-   "buffer      ","gc temp     ","hash        ","interprolog ",
-   "thread      ","read canon  ","leaking...  ","special     ",
-   "other       "};
+  {"atom        ","string      ","asserted    ","compiled    ",
+   "foreign     ","table       ","findall     ","profile     ",
+   "mt-private  ","buffer      ","gc temp     ","hash        ",
+   "interprolog ","thread      ","read canon  ","leaking...  ",
+   "special     ","other       "};
 
 void total_stat(CTXTdeclc double elapstime) {
 

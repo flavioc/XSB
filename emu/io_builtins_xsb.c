@@ -688,6 +688,9 @@ is just a stack of operands. They are Prolog terms. (How to handle
 variables remains to be seen.)
 ***/
 
+/* prevpsc is kept as an optimization to save a lookup in prolog.  If
+   it has changed, it is reset to 0.  So it doesn't need to be
+   protected for multithreading, since it is self-correcting. */
 static Psc prevpsc = 0;
 
 

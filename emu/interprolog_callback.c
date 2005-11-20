@@ -245,7 +245,7 @@ xsbBool interprolog_callback(CTXTdecl) {
 	jobject obj = theObj;
 	jclass cls;
 	jmethodID mid;
-	int i = 1, size, newHead, newTail;
+	int i = 1, size, bsize, newHead, newTail;
 	jbyte *b;
 	jbyteArray newBytes, bytes;
 	
@@ -262,9 +262,9 @@ xsbBool interprolog_callback(CTXTdecl) {
 	}
 	//printf("Got the method\n");
 	
-	size = p2c_int(reg_term(CTXTc 1));
+	bsize = p2c_int(reg_term(CTXTc 1));
 
-	b = (jbyte *) mem_alloc(size,INTERPROLOG_SPACE);
+	b = (jbyte *) mem_alloc(bsize,INTERPROLOG_SPACE);
 	newHead = p2p_car(reg_term(CTXTc 2));
 	newTail = p2p_cdr(reg_term(CTXTc 2));
 	b[i-1] = p2c_int(newHead);
@@ -274,8 +274,8 @@ xsbBool interprolog_callback(CTXTdecl) {
 		newTail = p2p_cdr(newTail);
 		i++;
 	}
-	bytes = (*env)->NewByteArray(env, size);
-	(*env)->SetByteArrayRegion(env, bytes, 0, size, b);
+	bytes = (*env)->NewByteArray(env, bsize);
+	(*env)->SetByteArrayRegion(env, bytes, 0, bsize, b);
 	
 	// Calls the method with bytes, expecting the return in newBytes
 	newBytes = (*env)->CallObjectMethod(env, obj, mid, bytes);
@@ -301,7 +301,7 @@ xsbBool interprolog_callback(CTXTdecl) {
 			c2p_int(CTXTc b[i], newHead);
 		i++;
 	}
-	mem_dealloc(b,size,INTERPROLOG_SPACE);
+	mem_dealloc(b,bsize,INTERPROLOG_SPACE);
 	c2p_nil(CTXTc newTail);
 	return 1;
 }
