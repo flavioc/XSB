@@ -449,6 +449,8 @@ static void delete_variant_table(CTXTdeclc BTNptr x) {
 	      }
 	    }
 	  } /* free answer trie */
+	  free_answer_list(pSF);
+	  FreeProducerSF(pSF);
 	} /* is leaf */
 	else 
 	  push_node(BTN_Child(node));

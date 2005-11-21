@@ -1511,6 +1511,9 @@ int builtin_call(CTXTdeclc byte number)
     case 1: /* current CP Stack size */
       ctop_int(CTXTc 2, (pb)tcpstack.high - (pb)breg);
       break;
+    case 2: /* value of delayreg */
+      ctop_int(CTXTc 2, (Integer)delayreg);
+      break;
     default: xsb_error("Undefined component of XWAM_STATE");
     }
     break;
