@@ -1052,6 +1052,8 @@ void *var_trie_lookup(CTXTdeclc void *branchRoot, xsbBool *wasFound,
  * in the last argument, then the variables in the term are copied into
  * it, with the 0th element containing the (unencoded) count.  The ith
  * encountered variable is placed in array element i.
+ * 
+ * Routine used in meta-predicates such as get_call()
  */
 
 void *variant_trie_lookup(CTXTdeclc void *trieRoot, int nTerms, CPtr termVector,

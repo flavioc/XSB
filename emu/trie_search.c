@@ -42,21 +42,23 @@
 #include "flags_xsb.h"
 
 /****************************************************************************
-
-    In XSB parlance, "search" routines look for something in an entity
-    and insert it if it doesn't already exist.
-
-    The following routines search different flavors of tries for sets
-    of terms using either variant or subsumptive match criteria.
-
-      TSTNptr subsumptive_tst_search(TSTNptr,int,CPtr,xsbBool,xsbBool *)
-      BTNptr  subsumptive_bt_search(BTNptr,int,CPtr,xsbBool *)
-      TSTNptr variant_tst_search(TSTNptr,int,CPtr,xsbBool,xsbBool *)
-      BTNptr  variant_bt_search(BTNptr,int,CPtr,xsbBool *)
-
-    They assume they are given a non-NULL trie pointer and accept a
-    term set as an integer count and an array of terms.
-
+*
+*   In XSB parlance, "search" routines look for something in an entity
+*   and insert it if it doesn't already exist.
+*
+*   The following routines search different flavors of tries for sets
+*   of terms using either variant or subsumptive match criteria.
+*
+*     TSTNptr subsumptive_tst_search(TSTNptr,int,CPtr,xsbBool,xsbBool *)
+*     BTNptr  subsumptive_bt_search(BTNptr,int,CPtr,xsbBool *)
+*     TSTNptr variant_tst_search(TSTNptr,int,CPtr,xsbBool,xsbBool *)
+*     BTNptr  variant_bt_search(BTNptr,int,CPtr,xsbBool *)
+*
+*   They assume they are given a non-NULL trie pointer and accept a
+*   term set as an integer count and an array of terms.
+*
+*   As of 11/05, the only one of these used is subsumptive_tst_search()
+*
 ****************************************************************************/
 
 
@@ -125,6 +127,8 @@ inline static TSTNptr tst_escape_search(TSTNptr tstRoot, xsbBool *isNew) {
  * node representing the given set of terms (if they were inserted) or
  * the discovered subsuming term set (otherwise).  A flag indicates to
  * the caller what the returned leaf represents.
+ * 
+ * This does not appear to be used (11/05)
  */
 
 

@@ -135,7 +135,7 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   /* The "-T hex" option of ld starts the text segment at location	*/
   /* hex. Specifying -T is the same as using the -Ttext option.	*/
   sprintf(buff, "/usr/bin/ld -N -A %s -T %x -o %s %s %s -lc",
-	  executable, (int)start, tfile, subfile, ld_option);
+	  executable_path_gl, (int)start, tfile, subfile, ld_option);
   system(buff);
   
   /* third step: check if the size of the buffer just allocated is	*/
@@ -154,7 +154,7 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
     mem_dealloc(start, buffsize,FOR_CODE_SPACE);
     start = mem_alloc(loadsize+BUFFEXTRA,FOR_CODE_SPACE);
     sprintf(buff, "/usr/bin/ld -N -A %s -T %x -o %s %s %s -lc",
-	    executable, (int)start, tfile, subfile, ld_option);
+	    executable_path_gl, (int)start, tfile, subfile, ld_option);
     system(buff);
     fd = open(tfile, O_RDONLY, 0);
     read(fd, &header, sizeof(struct exec));

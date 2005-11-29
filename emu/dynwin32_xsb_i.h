@@ -44,7 +44,7 @@
 
 #define BUFFEXTRA 1024
 
-extern char *xsb_config_file;
+extern char *xsb_config_file_gl;
 
 /*----------------------------------------------------------------------*/
 
@@ -107,7 +107,7 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
     basename_ptr = strrchr(sofilename, SLASH); // get \file.dll
     if(basename_ptr != NULL){
       basename_ptr = basename_ptr + 1;
-      xsb_bin_dir = create_bin_dll_path(xsb_config_file, basename_ptr,&dirlen);
+      xsb_bin_dir = create_bin_dll_path(xsb_config_file_gl, basename_ptr,&dirlen);
       if(( handle = LoadLibrary(xsb_bin_dir)) == 0 ){
 	if (( handle = LoadLibrary(basename_ptr)) == 0 ) {
 	  mem_dealloc(xsb_bin_dir,dirlen,FOR_CODE_SPACE);

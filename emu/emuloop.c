@@ -2182,9 +2182,9 @@ DllExport int call_conv xsb(CTXTdeclc int flag, int argc, char *argv[])
 	perform_IO_Redirect(CTXTc argc, argv);
 
 #ifdef SIMPLESCALAR
-     strcpy(executable,argv[0]);
+     strcpy(executable_path_gl,argv[0]);
 #else
-     if (executable[0] == '\0')
+     if (executable_path_gl[0] == '\0')
        xsb_executable_full_path(argv[0]);
 #endif
 

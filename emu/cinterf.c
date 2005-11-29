@@ -1212,7 +1212,7 @@ if (!xsb_initted_gl)
 	sprintf(executable1, "%s%cconfig%c%s%cbin%cxsb",
 	argv[0], SLASH, SLASH, FULL_CONFIG_NAME, SLASH, SLASH);
 	expfilename = expand_filename(executable1);
-	strcpy(executable, expfilename);
+	strcpy(executable_path_gl, expfilename);
 	mem_dealloc(expfilename,MAXPATHLEN,OTHER_SPACE);
 
 	if (0 == (rc = xsb(CTXTc 0,argc,argv)))     /* initialize xsb */

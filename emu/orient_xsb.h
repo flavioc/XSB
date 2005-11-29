@@ -29,5 +29,5 @@ extern void  set_install_dir(void);
 extern void  set_config_file(void);
 extern void  set_user_home(void);
 extern char *xsb_executable_full_path(char *);
-extern char  executable[];
+extern char  executable_path_gl[];
 

@@ -50,11 +50,11 @@
 #include "extensions_xsb.h"
 #include "memory_xsb.h"
 
-char executable[MAXPATHLEN] = {'\0'};	/* This is set to a real name below */
+char executable_path_gl[MAXPATHLEN] = {'\0'};	/* This is set to a real name below */
 
-char *install_dir; 			/* installation directory */
-char *xsb_config_file;     		/* XSB configuration file */
-char *user_home;     	     	     	/* the user $HOME dir or install dir,
+char *install_dir_gl; 			/* installation directory */
+char *xsb_config_file_gl;     		/* XSB configuration file */
+char *user_home_gl;    	     	     	/* the user $HOME dir or install dir,
 					   if $HOME is null */ 
 
 
@@ -65,8 +65,8 @@ static void check_create_dir(char *);
 
 extern void transform_cygwin_pathname(char *);
 
-char current_dir[MAXPATHLEN];
-char xsbinfo_dir[MAXPATHLEN];
+char current_dir_gl[MAXPATHLEN];
+char xsbinfo_dir_gl[MAXPATHLEN];
 
 
 void set_xsbinfo_dir () {
@@ -78,14 +78,14 @@ void set_xsbinfo_dir () {
   if (!fileinfo) {
     xsb_abort("No core memory to allocate stat structure.\n");
   }
-  sprintf(xsbinfo_dir, "%s%c.xsb", user_home, SLASH);
-  sprintf(old_xinitrc, "%s%c.xsbrc", user_home, SLASH);
-  sprintf(new_xinitrc, "%s%cxsbrc", xsbinfo_dir, SLASH);
-  sprintf(user_config_dir, "%s%cconfig", xsbinfo_dir, SLASH);
+  sprintf(xsbinfo_dir_gl, "%s%c.xsb", user_home_gl, SLASH);
+  sprintf(old_xinitrc, "%s%c.xsbrc", user_home_gl, SLASH);
+  sprintf(new_xinitrc, "%s%cxsbrc", xsbinfo_dir_gl, SLASH);
+  sprintf(user_config_dir, "%s%cconfig", xsbinfo_dir_gl, SLASH);
   sprintf(user_arch_dir, "%s%c%s", user_config_dir, SLASH, FULL_CONFIG_NAME);
 
   /* Create USER_HOME/.xsb directory, if it doesn't exist. */
-  check_create_dir(xsbinfo_dir);
+  check_create_dir(xsbinfo_dir_gl);
   check_create_dir(user_config_dir);
   check_create_dir(user_arch_dir);
   retcode = stat(old_xinitrc, fileinfo);
@@ -173,14 +173,14 @@ char *xsb_executable_full_path(char *myname)
 #endif
 
   if (is_absolute_filename(myname_augmented))
-    strcpy(executable, myname_augmented);
+    strcpy(executable_path_gl, myname_augmented);
   else {
-    getcwd(current_dir, MAXPATHLEN-1);
-    sprintf(executable, "%s%c%s", current_dir, SLASH, myname_augmented);
+    getcwd(current_dir_gl, MAXPATHLEN-1);
+    sprintf(executable_path_gl, "%s%c%s", current_dir_gl, SLASH, myname_augmented);
   }
 
   /* found executable by prepending cwd */
-  if (!stat(executable, &fileinfo)) return executable;
+  if (!stat(executable_path_gl, &fileinfo)) return executable_path_gl;
 
   /* Otherwise, search PATH environment var.
      This code is a modified "which" shell builtin */
@@ -199,18 +199,18 @@ char *xsb_executable_full_path(char *myname)
     /* Now `len' holds the length of the PATH component 
        we are currently looking at.
        `pathcounter' points to the end of this component. */
-    sprintf(executable, "%s%c%s", pathcounter - len, SLASH, myname_augmented);
+    sprintf(executable_path_gl, "%s%c%s", pathcounter - len, SLASH, myname_augmented);
 
     /* restore the separator and addvance the pathcounter */
     *pathcounter = save;
     if (*pathcounter) pathcounter++;
 
 #ifdef WIN_NT
-    found = (0 == access(executable, 02));	/* readable */
+    found = (0 == access(executable_path_gl, 02));	/* readable */
 #else
-    found = (0 == access(executable, 01));	/* executable */
+    found = (0 == access(executable_path_gl, 01));	/* executable */
 #endif
-    if (found) return executable;
+    if (found) return executable_path_gl;
   }
 
   /* XSB executable isn't found after searching PATH */
@@ -232,8 +232,8 @@ void set_install_dir() {
 
   /* strip 4 levels, since executable is always of this form:
      install_dir/config/<arch>/bin/xsb */
-  install_dir = strip_names_from_path(executable, 4);
-  if (install_dir == NULL) {
+  install_dir_gl = strip_names_from_path(executable_path_gl, 4);
+  if (install_dir_gl == NULL) {
     fprintf(stderr,
 	    "*************************************************************\n");
     fprintf(stderr, "PANIC!! Can't find the XSB installation directory.\n");
@@ -251,22 +251,22 @@ void set_config_file() {
 
   /* The config file is in the lib directory at the same 
      level as the xsb executable. */
-  xsb_config_file = strip_names_from_path(executable, 2);
-  sprintf(xsb_config_file+strlen(xsb_config_file),
+  xsb_config_file_gl = strip_names_from_path(executable_path_gl, 2);
+  sprintf(xsb_config_file_gl+strlen(xsb_config_file_gl),
 	  "%clib%cxsb_configuration%s", SLASH, SLASH,XSB_SRC_EXTENSION_STRING);
 
   /* Perform sanity checks: xsb_config_file must be in install_dir/config
      This is probably redundant */
-  if ( strncmp(install_dir, xsb_config_file, strlen(install_dir)) != 0 
-       || (strstr(xsb_config_file, "config") == NULL) ) {
+  if ( strncmp(install_dir_gl, xsb_config_file_gl, strlen(install_dir_gl)) != 0 
+       || (strstr(xsb_config_file_gl, "config") == NULL) ) {
     fprintf(stderr,
 	    "*************************************************************\n");
     fprintf(stderr,
 	    "PANIC!! The file configuration%s\n", XSB_SRC_EXTENSION_STRING);
     fprintf(stderr,
 	    "is not where it is expected: %s%cconfig%c%s%clib\n",
-	    install_dir, SLASH, SLASH, FULL_CONFIG_NAME, SLASH);
-    fprintf(stderr, "Perhaps you moved the XSB executable %s\n", executable);
+	    install_dir_gl, SLASH, SLASH, FULL_CONFIG_NAME, SLASH);
+    fprintf(stderr, "Perhaps you moved the XSB executable %s\n", executable_path_gl);
     fprintf(stderr, "away from its usual place?\n");
     fprintf(stderr,
 	    "*************************************************************\n");
@@ -274,7 +274,7 @@ void set_config_file() {
   }
 
   /* Check if configuration.P exists and is readable */
-  retcode = stat(xsb_config_file, &fileinfo);
+  retcode = stat(xsb_config_file_gl, &fileinfo);
 #ifdef WIN_NT
   if ( (retcode != 0) || !(S_IREAD & fileinfo.st_mode) ) {
 #else
@@ -282,7 +282,7 @@ void set_config_file() {
 #endif
     fprintf(stderr,
 	    "*************************************************************\n");
-    fprintf(stderr, "PANIC! XSB configuration file %s\n", xsb_config_file);
+    fprintf(stderr, "PANIC! XSB configuration file %s\n", xsb_config_file_gl);
     fprintf(stderr, "doesn't exist or is not readable by you.\n");
     fprintf(stderr,
 	    "*************************************************************\n");
@@ -295,10 +295,10 @@ void transform_cygwin_pathname(char*);
 #endif
 
 void set_user_home() {
-  user_home = (char *) getenv("HOME");
-  if ( user_home == NULL )
-    user_home = install_dir;
+  user_home_gl = (char *) getenv("HOME");
+  if ( user_home_gl == NULL )
+    user_home_gl = install_dir_gl;
 #ifdef WIN_NT
-  transform_cygwin_pathname(user_home);
+  transform_cygwin_pathname(user_home_gl);
 #endif
 }

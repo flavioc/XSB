@@ -141,9 +141,9 @@ extern double realtime_count_gl;
 extern void perproc_reset_stat(void), reset_stat_total(void); 
 
 /* these three are from orient_xsb.c */
-extern char *install_dir; 
-extern char *xsb_config_file; /* configuration.P */
-extern char *user_home; /* the user HOME dir or install dir, if HOME is null */
+extern char *install_dir_gl; 
+extern char *xsb_config_file_gl; /* configuration.P */
+extern char *user_home_gl; /* the user HOME dir or install dir, if HOME is null */
 
 /*==========================================================================*/
 
@@ -170,8 +170,8 @@ static void version_message(void)
   char licensemsg[MAXPATHLEN], configmsg[MAXPATHLEN];
   char *stripped_config_file;
 
-  sprintf(licensemsg, "%s%cetc%ccopying.msg", install_dir, SLASH, SLASH);
-  stripped_config_file = strip_names_from_path(xsb_config_file, 2);
+  sprintf(licensemsg, "%s%cetc%ccopying.msg", install_dir_gl, SLASH, SLASH);
+  stripped_config_file = strip_names_from_path(xsb_config_file_gl, 2);
   sprintf(configmsg, "%s%cbanner.msg", 
 	  stripped_config_file, SLASH);
 
@@ -186,7 +186,7 @@ static void help_message(void)
 {
   char helpmsg[MAXPATHLEN];
 
-  sprintf(helpmsg, "%s%cetc%chelp.msg", install_dir, SLASH, SLASH);
+  sprintf(helpmsg, "%s%cetc%chelp.msg", install_dir_gl, SLASH, SLASH);
   puts("");
   display_file(helpmsg);
 
@@ -621,8 +621,8 @@ char *init_para(CTXTdeclc int argc, char *argv[])
   /* Done with command line arguments */
 
   /* This is where we will be looking for the .xsb directory */
-  flags[USER_HOME] = (Cell) mem_alloc(strlen(user_home) + 1,OTHER_SPACE);
-  strcpy( (char *)flags[USER_HOME], user_home );
+  flags[USER_HOME] = (Cell) mem_alloc(strlen(user_home_gl) + 1,OTHER_SPACE);
+  strcpy( (char *)flags[USER_HOME], user_home_gl );
 
   /* install_dir is computed dynamically at system startup (in orient_xsb.c).
      Therefore, the entire directory tree can be moved --- only the relative
@@ -632,15 +632,15 @@ char *init_para(CTXTdeclc int argc, char *argv[])
      which would be cleaner.  However, this would mean rearranging
      main_xsb.c
   */ 
-  flags[INSTALL_DIR] = (Cell) mem_alloc(strlen(install_dir) + 1,OTHER_SPACE);   
-  strcpy( (char *)flags[INSTALL_DIR], install_dir );
+  flags[INSTALL_DIR] = (Cell) mem_alloc(strlen(install_dir_gl) + 1,OTHER_SPACE);   
+  strcpy( (char *)flags[INSTALL_DIR], install_dir_gl );
 
   /* loader uses CONFIG_NAME flag before xsb_configuration is loaded */
   flags[CONFIG_NAME] = (Cell) mem_alloc(strlen(CONFIGURATION) + 1,OTHER_SPACE);
   strcpy( (char *)flags[CONFIG_NAME], CONFIGURATION );
 
-  flags[CONFIG_FILE] = (Cell) mem_alloc(strlen(xsb_config_file) + 1,OTHER_SPACE);
-  strcpy( (char *)flags[CONFIG_FILE], xsb_config_file );
+  flags[CONFIG_FILE] = (Cell) mem_alloc(strlen(xsb_config_file_gl) + 1,OTHER_SPACE);
+  strcpy( (char *)flags[CONFIG_FILE], xsb_config_file_gl );
 
   /* the default for cmd_line_goal goal is "" */
   flags[CMD_LINE_GOAL] = (Cell) mem_alloc(strlen(cmd_line_goal) + 1,OTHER_SPACE);
@@ -653,7 +653,7 @@ char *init_para(CTXTdeclc int argc, char *argv[])
   if (xsb_mode == DEFAULT)
     xsb_mode = INTERPRETER;
 
-  strlen_instdir = strlen(install_dir);
+  strlen_instdir = strlen(install_dir_gl);
   strlen_initfile = strlen(boot_module)+XSB_OBJ_EXTENSION_LENGTH;
   strlen_2ndfile = strlen(cmd_loop_driver);
 
@@ -669,10 +669,10 @@ char *init_para(CTXTdeclc int argc, char *argv[])
     flags[CMD_LOOP_DRIVER] = (Cell)mem_alloc(strlen_instdir + strlen_2ndfile + 1,OTHER_SPACE);
     sprintf( (char *)flags[BOOT_MODULE],
 	     "%s%s%s",
-	     install_dir, boot_module, XSB_OBJ_EXTENSION_STRING );
+	     install_dir_gl, boot_module, XSB_OBJ_EXTENSION_STRING );
     sprintf( (char *)flags[CMD_LOOP_DRIVER],
 	     "%s%s",
-	     install_dir, cmd_loop_driver );
+	     install_dir_gl, cmd_loop_driver );
     break;
   case CUSTOM_BOOT_MODULE:
     /*
@@ -698,7 +698,7 @@ char *init_para(CTXTdeclc int argc, char *argv[])
     flags[CMD_LOOP_DRIVER ] = (Cell) mem_alloc(strlen_2ndfile + 1,OTHER_SPACE);
     sprintf( (char *)flags[BOOT_MODULE],
 	     "%s%s%s",
-	     install_dir, boot_module, XSB_OBJ_EXTENSION_STRING );
+	     install_dir_gl, boot_module, XSB_OBJ_EXTENSION_STRING );
     strcpy( (char *)flags[CMD_LOOP_DRIVER ], cmd_loop_driver );
     break;
   case DISASSEMBLE:

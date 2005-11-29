@@ -267,7 +267,7 @@ static int mark_cell(CPtr cell_ptr)
 
   if ((tag == XSB_REF) || (tag == XSB_REF1))
     { p = (CPtr)cell_val ;
-    if (p == cell_ptr) goto pop_more ;
+      if (p == cell_ptr) goto pop_more ;
     cell_ptr = p ;
     goto mark_more ;
     }
@@ -280,6 +280,16 @@ static int mark_cell(CPtr cell_ptr)
 } /* mark_cell */
 
 /*----------------------------------------------------------------------*/
+
+/* TLS: Overall, attvs are treated analogously to lists in the GC:
+   thus when an attv is encountered, its attribute list is also
+   traversed.  Note that when one attv is replaced by another in an
+   interrupt handler, it should be through a put_attr().  When this
+   happens a chain of attvs is created, so that starting out from some
+   cell or another, the old attvs (which may be needed in
+   backtracking) are marked since they are proximate to attvs.  Thus,
+   you dont need to set the attvs in the pre-image trail (as I
+   mistakenly thought), at least not for GC. */
 
 static int mark_root(Cell cell_val)
 {
@@ -485,6 +495,14 @@ inline static unsigned long mark_trail_section(CPtr begintr, CPtr endtr)
   return marked;
 }
 /*----------------------------------------------------------------------*/
+/* TLS: as I understand it, this should mark all WAM-register regions
+ * of choice points, as well as the substitution factors of tabled
+ * choice points.  It traverses the CP stack via the special cell
+ * prev-top which has noting to do with the previous breg.  The part
+ * of this code that checks first time and resets the register values
+ * seems a little weird -- I don't see why just takeing the youngest
+ * of breg/bfreg and traversing from there wouldn't amount to the same
+ * thing. */
 
 static int mark_query(CTXTdecl)
 {
@@ -507,7 +525,8 @@ restart:
 	{
 	  if (ls_marked(e - ls_top)) break ;
 	  ls_mark(e - ls_top) ;
-	  yvar = *(cp-2*sizeof(Cell)+3) - 1 ;
+	  /* TLS: get number of perm. vars from cpreg */
+	  yvar = *(cp-2*sizeof(Cell)+3) - 1 ;  
 	  total_marked += mark_region(e-yvar,e-2) ;
 	  i = (e-2) - ls_top ;
 	  while (yvar-- > 1) { ls_mark(i--); }
@@ -773,7 +792,6 @@ int mark_heap(CTXTdeclc int arity, int *marked_dregs)
     }
   }
 #endif
-
 
   marked += mark_query(CTXT);
 
