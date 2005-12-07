@@ -176,7 +176,9 @@ void init_system_mutexes( void )
 	for( i = LAST_REC_MUTEX + 1 ; i < MAX_SYS_MUTEXES ; i++ )
 		pthread_mutex_init( &sys_mut[i], &attr_std ) ;
 
+#ifdef MULTI_THREAD_RWL
 	rw_lock_init(&trie_rw_lock);
+#endif
 
 	pthread_mutex_init( &completing_mut, &attr_std );
 	pthread_cond_init( &completing_cond, NULL );

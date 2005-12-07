@@ -785,7 +785,7 @@ XSB_End_Instr()
 XSB_Start_Instr(trie_assert_inst,_trie_assert_inst)
   Psc psc_ptr;
   int i;
-#ifdef MULTI_THREAD
+#ifdef MULTI_THREAD_RWL
   CPtr tbreg;
 #ifdef SLG_GC
   CPtr old_cptop;
@@ -801,7 +801,7 @@ XSB_Start_Instr(trie_assert_inst,_trie_assert_inst)
     num_vars_in_var_regs = -1;
     for (i = get_arity(psc_ptr); i >= 1; i--) { pushreg(*(rreg+i)); }
     lpcreg = (byte *) Child(NodePtr);
-#ifdef MULTI_THREAD
+#ifdef MULTI_THREAD_RWL
 /* save choice point for trie_unlock instruction */
     save_find_locx(ereg);
     tbreg = top_of_cpstack;

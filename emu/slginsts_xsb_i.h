@@ -126,7 +126,7 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
   int grabbed = FALSE;
   th_context * waiting_for_thread;
 #endif
-#ifdef MULTI_THREAD
+#ifdef MULTI_THREAD_RWL
   CPtr tbreg;
 #ifdef SLG_GC
   CPtr old_cptop;
@@ -328,7 +328,7 @@ xsb_dbgmsg((LOG_DEBUG,"After variant call search AT: %x\n",answer_template));
       }
       delay_it = 1;
       lpcreg = (byte *)subg_ans_root_ptr(producer_sf);
-#ifdef MULTI_THREAD
+#ifdef MULTI_THREAD_RWL
 /* save choice point for trie_unlock instruction */
       save_find_locx(ereg);
       tbreg = top_of_cpstack;

@@ -23,7 +23,7 @@
 ** 
 */
 
-#ifdef MULTI_THREAD
+#ifdef MULTI_THREAD_RWL
 
 #ifdef WIN_NT
 #include "pthread.h"
@@ -71,5 +71,5 @@ void rw_unlock_write(rw_lock *l) ;
 #define TRIE_W_LOCK()
 #define	TRIE_W_UNLOCK()
 
-#endif /* MULTI_THREAD */
+#endif /* MULTI_THREAD_RWL */
 

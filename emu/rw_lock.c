@@ -31,7 +31,7 @@
 
 #include "xsb_config.h"
 
-#ifdef MULTI_THREAD
+#ifdef MULTI_THREAD_RWL
 
 #include "rw_lock.h"
 

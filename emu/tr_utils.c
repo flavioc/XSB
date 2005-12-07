@@ -1076,7 +1076,7 @@ int trie_interned(CTXTdecl)
   int RootIndex;
   int ret_val = FALSE;
   Cell Leafterm, trie_term;
-#ifdef MULTI_THREAD
+#ifdef MULTI_THREAD_RWL
    CPtr tbreg;
 #ifdef SLG_GC
    CPtr old_cptop;
@@ -1100,7 +1100,7 @@ int trie_interned(CTXTdecl)
       reg_arrayptr = reg_array -1;
       num_vars_in_var_regs = -1;
       pushreg(trie_term);
-#ifdef MULTI_THREAD
+#ifdef MULTI_THREAD_RWL
 /* save choice point for trie_unlock instruction */
        save_find_locx(ereg);
        tbreg = top_of_cpstack;
