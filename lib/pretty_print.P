@@ -30,6 +30,16 @@
 
 :- import numbervars/3 from num_vars.
 
+:- import (dynamic)/1 from assert.
+:- import nl/0 from standard.
+:- import writeln/1 from standard.
+:- import writeq/1 from standard.
+:- import tab/1 from standard.
+:- import put/1 from standard.
+:- import (\=)/2 from standard.
+:- import write/1 from standard.
+:- import copy_term/2 from basics.
+
 
 %:- import from lists.
 
