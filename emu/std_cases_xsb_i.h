@@ -149,15 +149,3 @@
     /* r3: ?sorted list of terms			*/
    return parsort(CTXT);
 
-  case GC_CLAUSES: {
-    switch (ptoc_int(CTXTc 1)) {
-      case GC_TABLED_PREDS: {
-	ctop_int(CTXTc 2, (Integer) gc_tabled_preds(CTXT));
-	return TRUE;
-      }
-      case GC_DYNAMIC: {
-	ctop_int(CTXTc 2, (Integer) gc_dynamic(CTXT));
-	return TRUE;
-      }
-    }
-  }

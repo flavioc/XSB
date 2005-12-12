@@ -30,4 +30,31 @@
 #define COPYING_GC      2
 #define INDIRECTION_SLIDE_GC   3
 
+#define GC_GC_HEAP		1
+#define GC_GC_STRINGS		2
+#define GC_GC_CLAUSES		4
+#define GC_GC_TABLED_PREDS	8
+
+/*--- The following are used for string-space collection ---------------*/
+
+#define mark_string_safe(tstr,msg)		\
+     do {char *str = (tstr);			\
+         Integer *pptr = ((Integer *)(str))-1;  \
+     if (!( *(pptr) & 7)) *(pptr) |= 1;		\
+     } while(0)    
+
+#define mark_string(tstr,msg) 				\
+  do {char *str = (tstr);				\
+      if (str && string_find_safe(str) == str) {	\
+         Integer *pptr = ((Integer *)(str))-1;		\
+         if (!( *(pptr) & 7)) *(pptr) |= 1;		\
+     } else if (str) 					\
+         printf("Not interned: %s: '%s',%p\n",msg,str,str); \
+  } while(0)
+
+#define mark_if_string(tcell,msg) 		\
+  do {Cell acell = (tcell);			\
+      if (isstring(acell)) 			\
+	mark_string(string_val(acell),msg);	\
+  } while(0)
 /*----------------------------------------------------------------------*/

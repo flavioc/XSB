@@ -667,7 +667,8 @@ XSB_Start_Instr(hash_opcode,_hash_opcode)
      *  instead pass in the header, allowing access to all needed fields,
      *  including the bucket array.
      */
-	  cell(--tbreg) = makestring(hash_header);
+	  //	  printf("makeaddr: tc_insts_xsb_i.h: %p\n",hash_header); //dsw!!!
+	  cell(--tbreg) = makeaddr(hash_header); /* BUT NOT A STRING */
 	  cell(--tbreg) = makeint(FIRST_HASH_NODE);
 	  save_choicepoint(tbreg,ereg,(byte *)&hash_handle_inst,breg);
 #ifdef SLG_GC

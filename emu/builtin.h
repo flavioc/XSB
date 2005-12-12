@@ -234,12 +234,6 @@
 #define KEYSORT			221
 #define PARSORT			222
 
-#define GC_CLAUSES              223
-
-/* TLS: cases for GC_CLAUSES */
-#define GC_TABLED_PREDS           0
-#define GC_DYNAMIC                1
-
 #define FINDALL_FREE    	229
 
 #define ORACLE_QUERY		230
@@ -268,7 +262,7 @@
 #define PRINT_ALL_STACKS        245
 #define EXP_HEAP                246
 #define MARK_HEAP               247
-#define GC_HEAP                 248
+#define GC_STUFF                248
 #define FINDALL_INIT		249
 #define FINDALL_ADD		250
 #define FINDALL_GET_SOLS	251

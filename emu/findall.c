@@ -1042,6 +1042,27 @@ int copy_term(CTXTdecl)
   return(unify(CTXTc arg2, to));
 } /* copy_term */
 
+void mark_findall_strings(CTXTdecl) {
+  int i;
+  CPtr chunk;
+  CPtr cell;
+
+  if (findall_solutions == 0) return;
+  for (i = 0; i < MAX_FINDALLS; i++) {
+    chunk = (findall_solutions+i)->first_chunk;
+    if ((findall_solutions+i)->tail != 0) {
+      while (chunk != (findall_solutions+i)->current_chunk) {
+	for (cell=chunk+1; cell<(chunk+FINDALL_CHUNCK_SIZE); cell++) {
+	  mark_if_string(*cell,"findall");
+	}
+	chunk = *(CPtr *)chunk;
+      }
+      for (cell=chunk+1; cell<(findall_solutions+i)->top_of_chunk; cell++) {
+	mark_if_string(*cell,"findall");
+      }
+    }
+  }
+}
 
 /* Copies a term from another thread's stack
  * Source thread hreg is used to make do_copy_term work properly

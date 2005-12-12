@@ -88,7 +88,7 @@ Java_com_xsb_interprolog_NativeEngine_put_1bytes
 	jbyte *bytes; char *argString;
 	
 	//printf("C:Entering put_bytes - %d mS",T0);
-	check_glstack_overflow(3, pcreg, (size+4)*8*sizeof(Cell)) ;
+	check_glstack_overflow(3, pcreg, (size+4)*2*sizeof(Cell)) ;  /* 2 was 8? dsw*/
 	
 	bytes = (*env)->GetByteArrayElements(env, b, 0);
 	

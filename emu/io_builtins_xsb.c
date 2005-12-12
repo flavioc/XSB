@@ -57,6 +57,7 @@
 #include "binding.h"
 #include "deref.h"
 #include "findall.h"
+#include "heap_defs_xsb.h"
 
 stream_record open_files[MAX_OPEN_FILES]; /* open file table, protected by MUTEX IO */
 
@@ -1443,7 +1444,7 @@ int xsb_intern_fileptr(FILE *fptr, char *context,char* name,char *strmode)
     return -1;
   } else {
     open_files[i].file_ptr = fptr;
-    open_files[i].file_name = name;
+    open_files[i].file_name = string_find(name,1);
     open_files[i].io_mode = mode;
   return i;
   }
@@ -1524,6 +1525,16 @@ int xsb_intern_file(char *context,char *addr, int *ioport,char *strmode,int open
 	xsb_warn("FILE_OPEN: File %s is a directory, cannot open!", addr);
 	fclose(fptr);
 	return -1;
+    }
+  }
+}
+
+void mark_open_filenames() {
+  int i;
+
+  for (i=MIN_USR_OPEN_FILE; i < MAX_OPEN_FILES; i++) {
+    if (open_files[i].file_ptr != NULL) {
+      mark_string(open_files[i].file_name,"Filename");
     }
   }
 }

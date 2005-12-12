@@ -46,7 +46,7 @@
   new_heap_functor(sreg, delay_psc);					\
   cell(sreg) = makeaddr(SUBGOAL); sreg++;				\
   cell(sreg) = makeaddr(NEG_DELAY); sreg++;				\
-  cell(sreg) = makeaddr(NEG_DELAY); sreg++;				\
+  cell(sreg) = makeaddr(NEG_DELAY); sreg++; /* NOT STRINGS */		\
   hreg = sreg;								\
   delayreg = (CPtr) new_delay_cons_cell;				\
 }

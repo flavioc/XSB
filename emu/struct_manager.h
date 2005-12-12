@@ -245,10 +245,10 @@ extern xsbBool smIsAllocatedStructRef(Structure_Manager, void *);
 #define SM_DeallocateStructList(SM,pHead,pTail) {	\
    void *pStruct = pHead;				\
    while (pStruct != pTail) {				\
-     *(((int *)pStruct)+1) = -1;			\
+     *(((int *)pStruct)+1) = FREE_TRIE_NODE_MARK;	\
      pStruct = *(void **)pStruct;			\
    }							\
-   *(((int *)pStruct)+1) = -1;				\
+   *(((int *)pStruct)+1) = FREE_TRIE_NODE_MARK;		\
    SYS_MUTEX_LOCK( MUTEX_SM ); 				\
    SMFL_NextFreeStruct(pTail) = SM_FreeList(SM);	\
    SM_FreeList(SM) = pHead;				\

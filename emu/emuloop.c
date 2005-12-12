@@ -1037,7 +1037,7 @@ contcase:     /* the main loop */
     if ((ereg - hreg) < (long)op2)
       {
 #endif
-        if (gc_heap(CTXTc op1)) { /* garbage collection potentially modifies hreg */
+        if (gc_heap(CTXTc op1,FALSE)) { /* garbage collection potentially modifies hreg */
 	  if ((ereg - hreg) < (long)op2) {
 	    if (pflags[STACK_REALLOC]) {
 	      if (glstack_realloc(CTXTc resize_stack(glstack.size,(op2*sizeof(Cell))),op1) != 0) {

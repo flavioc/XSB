@@ -64,6 +64,7 @@ extern Cell val_to_hash(Cell);
 extern int xsb_profiling_enabled;
 extern void add_prog_seg(Psc, byte *, long);
 extern void remove_prog_seg(byte *);
+PrRef clref_to_prref(ClRef clref);
 
 /*======================================================================*/
 /* dbgen_inst: Generate an instruction in the buffer.			*/
@@ -102,7 +103,7 @@ CPtr dynpredep_to_prortb(CTXTdeclc void *pred_ep) {
 }
 #endif
 
-static inline PrRef dynpredep_to_prref(CTXTdeclc void *pred_ep) {
+inline PrRef dynpredep_to_prref(CTXTdeclc void *pred_ep) {
 #ifdef MULTI_THREAD
   if (cell_opcode((CPtr)(pred_ep)) == switchonthread) {
     if (th->tid > (((struct DispBlk_t **)pred_ep)[1])->MaxThread) 
@@ -1110,7 +1111,7 @@ static void db_genmvs(CTXTdeclc struct instruction_q *inst_queue, RegStat Reg)
 /*		0: BC instruction: fail (if empty),			*/
 /*			jump and save breg (if nonempty)		*/
 /*		4: Addr of first Clref on ALL chain			*/
-/*		8: Addr of last Clref on ALL chainXSBENV/tests/		*/
+/*		8: Addr of last Clref on ALL chain			*/
 /*									*/
 /* PrRef's point to chain of clRef's (one of 2 types):			*/
 /* (the -8 location stores length of buff + flag indicating ClRef type	*/
@@ -1185,8 +1186,8 @@ typedef ClRef SOBRef ;
 
 #define MakeClRef(ptr,Type,NCells)\
 {	long sz = (((NCells)*sizeof(Cell)+sizeof(ClRefHdr) + 7) & ~0x7);\
-	(ptr) = (ClRef)mem_alloc(sz,ASSERT_SPACE);\
-	(ptr)->buflen = ((Type)&3)+(sz&~3);\
+	(ptr) = (ClRef)mem_calloc(sz,1,ASSERT_SPACE);\
+	(ptr)->buflen = ((Type)&3)+sz;\
 	(ptr)++;\
 }
 
@@ -1383,7 +1384,8 @@ xsbBool assert_buff_to_clref_p(CTXTdeclc prolog_term Head,
 
   MakeClRef( Clause,
 	     (NI>0) ? INDEXED_CL : UNINDEXED_CL,
-	     IC_CELLS(NI) + ((asrtBuff->Size+0xf)&~0x7)/sizeof(Cell) ) ;
+	     //	     IC_CELLS(NI) + ((asrtBuff->Size+0xf)&~0x7)/sizeof(Cell) ) ;
+	     IC_CELLS(NI) + ((asrtBuff->Size+0x7)&~0x7)/sizeof(Cell) ) ;
 
   if (xsb_profiling_enabled)
     add_prog_seg(get_str_psc(Head),(byte *)Clause,ClRefSize(Clause));
@@ -1727,11 +1729,13 @@ static void find_usable_index(prolog_term Head, ClRef *s,
 
   *Index = *ILevel = 0 ;
   for (i = 1; ClRefType(*s) == SOB_RECORD; i++ ) {
-    Ind = ((ClRefSOBArg(*s,1) << 8) | ClRefSOBArg(*s,2) ) << 8 |
-      ClRefSOBArg(*s,3) ;
-    if (hash_val(Ind,Head,1) >= 0) { /* found one */
-      *Index = Ind; *ILevel = i;
-      break ;
+    if (Head != (prolog_term)NULL) {
+      Ind = ((ClRefSOBArg(*s,1) << 8) | ClRefSOBArg(*s,2) ) << 8 |
+	ClRefSOBArg(*s,3) ;
+      if (hash_val(Ind,Head,1) >= 0) { /* found one */
+	*Index = Ind; *ILevel = i;
+	break ;
+      }
     }
     *s = (ClRef)ClRefFirstIndex(*s);
   }
@@ -1792,8 +1796,7 @@ static void find_usable_index(prolog_term Head, ClRef *s,
 	}							\
 }
 
-static ClRef first_clref( PrRef Pred, prolog_term Head,
-			  int *ILevel, int *Index )
+ClRef first_clref( PrRef Pred, prolog_term Head, int *ILevel, int *Index )
 {   SOBRef sob ;	/* working SOB */
     int curLevel ;  /* index depth */
 
@@ -1812,7 +1815,7 @@ static ClRef first_clref( PrRef Pred, prolog_term Head,
     }
 }
 
-static ClRef next_clref( PrRef Pred, ClRef Clause, prolog_term Head,
+ClRef next_clref( PrRef Pred, ClRef Clause, prolog_term Head,
 			 int *IndexLevel, int *Ind )
 {   SOBRef sob ;	/* working SOB */
     int numInds ;	/* number of indexes */
@@ -2266,6 +2269,32 @@ ClRef previous_clref(ClRef Clause) {
    return Clause;
 }
 
+CPtr get_ClRefEntryPoint(ClRef Clause) {
+  int numInds;
+  if( ClRefType(Clause) != INDEXED_CL )
+    return ClRefEntryPoint(Clause);
+  else {
+    numInds = ClRefNumInds(Clause) ;
+    return ClRefIEntryPoint(Clause,numInds) ;
+  }
+}
+
+ClRef db_get_clause_code_space(PrRef Pred, ClRef Clause, CPtr *CodeBegAddr, CPtr *CodeEndAddr) {
+  int IndexArg = 0;
+  int IndexLev = 0;
+
+  do {
+    if (Clause == NULL) Clause = first_clref(Pred,(prolog_term)NULL,&IndexLev,&IndexArg);
+    else Clause = next_clref(Pred,Clause,(prolog_term)NULL,&IndexLev,&IndexArg);
+  } while (Clause && !(ClRefNotRetracted(Clause)));
+
+  if (Clause != NULL) {
+    *CodeBegAddr = get_ClRefEntryPoint(Clause);
+    *CodeEndAddr = (CPtr)((pb)ClRefAddr(Clause) + ClRefSize(Clause));
+  }
+  return Clause;
+}
+
 /* db_get_last_clause returns the clref of the last (un-failed) clause
 in a predicate.  It fails if there are no clauses.  It should be
 extended to handle indexed predicates... */
@@ -2276,7 +2305,6 @@ xsbBool db_get_last_clause( CTXTdecl /*+(PrRef)Pred, -(ClRef)Clause,
   PrRef Pred = (PrRef)ptoc_int(CTXTc 1);
   ClRef Clause;
   CPtr EntryPoint = 0;
-  int numInds;
 
   Pred = dynpredep_to_prref(CTXTc Pred);
   if (!Pred) return FALSE;
@@ -2293,12 +2321,7 @@ xsbBool db_get_last_clause( CTXTdecl /*+(PrRef)Pred, -(ClRef)Clause,
   }
 
   if (Clause == (ClRef)Pred) return FALSE;
-  if (ClRefType(Clause) != INDEXED_CL) {
-    EntryPoint = ClRefEntryPoint(Clause);
-  } else {
-    numInds = ClRefNumInds(Clause);
-    EntryPoint = ClRefIEntryPoint(Clause,numInds);
-  }
+  EntryPoint = get_ClRefEntryPoint(Clause);
   ctop_int(CTXTc 2, (Integer)Clause);
   ctop_int(CTXTc 3, (Integer)ClRefType(Clause));
   ctop_int(CTXTc 4, (Integer)EntryPoint);
@@ -2326,7 +2349,7 @@ xsbBool db_get_last_clause( CTXTdecl /*+(PrRef)Pred, -(ClRef)Clause,
 xsbBool db_get_clause( CTXTdecl /*+CC, ?CI, ?CIL, +PredEP, +Head, +Failed, -Clause, -Type, -EntryPoint, -NewCI, -NewCIL */ )
 {
   PrRef Pred = (PrRef)ptoc_int(CTXTc 4);
-  int IndexLevel = 0, IndexArg = 0, nimInds ;
+  int IndexLevel = 0, IndexArg = 0;
   ClRef Clause ;
   prolog_term Head = reg_term(CTXTc 5);
   CPtr EntryPoint = 0;
@@ -2349,8 +2372,11 @@ xsbBool db_get_clause( CTXTdecl /*+CC, ?CI, ?CIL, +PredEP, +Head, +Failed, -Clau
     }
 
     Clause = (ClRef)ptoc_int(CTXTc 1);
-    if (Clause == 0)
-    {   Clause = first_clref( Pred, Head, &IndexLevel, &IndexArg ) ;
+    if (Clause == 0) {
+      Clause = first_clref( Pred, Head, &IndexLevel, &IndexArg ) ;
+      while (Clause && ClRefNotRetracted(Clause)==failed) {
+	Clause = next_clref( Pred, Clause, Head, &IndexLevel, &IndexArg );
+      }
     }
     else
       {	IndexLevel = ptoc_int(CTXTc 2);  /* which index is used, ith */
@@ -2368,12 +2394,7 @@ set_outputs:
       if( ClRefType(Clause) == SOB_RECORD ) {
 	    xsb_exit("Error in get clause");
       }
-	else if( ClRefType(Clause) != INDEXED_CL )
-	  { EntryPoint = ClRefEntryPoint(Clause) ;}
-	else /* ClRefType(Clause) == INDEXED_CL */
-	  { nimInds = ClRefNumInds(Clause) ;
-	    EntryPoint = ClRefIEntryPoint(Clause,nimInds) ;
-	  }
+      else EntryPoint = get_ClRefEntryPoint(Clause);
     }
     else
       EntryPoint = 0 ;
@@ -2566,6 +2587,34 @@ xsbBool db_remove_prref( CTXTdecl /* Psc */ )
     SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
 
   return TRUE ;
+}
+
+/* Given an sob clref, return the prref in which it occurs */
+PrRef sob_to_prref(ClRef clref) {
+  while (ClRefTryOpCode(clref) == dynretrymeelse) {
+    /* search backward, under (unsupported) assumption that it is 
+       more likely to be near the beginning; could look forward. */
+    clref = ClRefPrev(clref);
+  }
+  switch (ClRefTryOpCode(clref)) {
+  case dynnoop:
+  case noop:
+  case dyntrymeelse:
+  case trymeelse:
+    return (PrRef)ClRefPrev(clref);
+  case dyntrustmeelsefail:
+    return (PrRef)ClRefNext(clref);
+  }
+  return NULL;
+}
+
+/* Given a clref, return the prref in which it occurs */
+PrRef clref_to_prref(ClRef clref) {
+  if (ClRefType(clref) == UNINDEXED_CL) {
+    return sob_to_prref(clref);
+  } else if (ClRefType(clref) == INDEXED_CL) { /* indexed, use first index */
+    return sob_to_prref((SOBRef)IndRefNext(ClRefIndPtr(clref,1)));
+  } else return NULL;
 }
 
 /*----------------------------------------------------------------------*/

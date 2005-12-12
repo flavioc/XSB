@@ -23,6 +23,15 @@
 ** 
 */
 
+extern Structure_Manager smTableBTN;
+extern Structure_Manager smTSTN;
+extern Structure_Manager smAssertBTN;
+extern PrRef dynpredep_to_prref(CTXTdeclc void *pred_ep);
+extern ClRef db_get_clause_code_space(PrRef, ClRef, CPtr *, CPtr *);
+extern void mark_findall_strings(CTXTdecl);
+extern void mark_open_filenames();
+extern void mark_hash_table_strings(CTXTdecl);
+
 #ifdef INDIRECTION_SLIDE
 #define TO_BUFFER(ptr) \
 { \
@@ -214,7 +223,6 @@ inline static char * pr_tr_marked(CPtr cell_ptr)
 #define MAXS 3700
 #define push_to_mark(p) mark_stack[mark_top++] = p
 #define mark_overflow   (mark_top >= MAXS)
-
 static int mark_cell(CPtr cell_ptr)
 {
   CPtr p ;
@@ -271,6 +279,19 @@ static int mark_cell(CPtr cell_ptr)
     cell_ptr = p ;
     goto mark_more ;
     }
+
+#ifndef NO_STRING_GC
+#ifdef MULTI_THREAD
+  if (flags[NUM_THREADS] == 1)
+#endif
+    if (gc_strings) {
+      if (tag == XSB_STRING) {
+	char *astr = string_val(cell_val);
+	if (astr && (string_find_safe(astr) == astr))
+	  mark_string_safe(astr,"mark_cell");
+      }
+    }
+#endif /* ndef NO_STRING_GC */
 
  pop_more:
   if (mark_top--)
@@ -348,6 +369,9 @@ static int mark_root(Cell cell_val)
       cell_ptr = clref_val(cell_val) ;
       if (!points_into_heap(cell_ptr)) return(0) ;
       v = *cell_ptr ;
+#ifndef NO_STRING_GC
+      if (gc_strings) mark_if_string(v,"attv 1");
+#endif
       pointer_from_cell(v,&tag,&whereto) ;
       switch (tag) {
       case XSB_REF:
@@ -356,6 +380,9 @@ static int mark_root(Cell cell_val)
 	break ;
       }
       v = *(++cell_ptr) ;
+#ifndef NO_STRING_GC
+      if (gc_strings) mark_if_string(v,"attv 2");
+#endif
       pointer_from_cell(v,&tag,&whereto) ;
       switch (tag) {
       case XSB_REF:
@@ -367,6 +394,19 @@ static int mark_root(Cell cell_val)
       cell_ptr-- ; 
       m += mark_cell(cell_ptr) ;
       return(m) ;
+
+#ifndef NO_STRING_GC
+    case XSB_STRING:
+#ifdef MULTI_THREAD
+  if (flags[NUM_THREADS] == 1)
+#endif
+    if (gc_strings) {
+      char *sstr = string_val(cell_val);
+      if (sstr && (string_find_safe(sstr) == sstr))
+	mark_string_safe(sstr,"mark_root");
+      return(0);
+    }
+#endif /* ndef NO_STRING_GC */
 
     default : return(0) ;
     }
@@ -804,4 +844,171 @@ int mark_heap(CTXTdeclc int arity, int *marked_dregs)
 
   return marked ;
 } /* mark_heap */
+
+#ifndef NO_STRING_GC
+#define mark_trie_strings_for(SM,BType,pStruct,apStruct)	\
+  pBlock = SM_CurBlock(SM);					\
+  if (pBlock != NULL) {						\
+    int isusedblock, anyunusedblock = FALSE;			\
+    for (pStruct = (BType)SMBlk_FirstStruct(pBlock); 		\
+	 pStruct < (BType)SM_NextStruct(SM); 			\
+	 pStruct = (BType)SMBlk_NextStruct(pStruct,SM_StructSize(SM))) { \
+      if (isstring(BTN_Symbol(pStruct)) && (*(((Integer *)pStruct)+1) != FREE_TRIE_NODE_MARK)) {\
+        mark_string(string_val(BTN_Symbol(pStruct)),"trie 1");  \
+      }								\
+    }								\
+    pBlock = SMBlk_NextBlock(pBlock);				\
+    while (pBlock != NULL) {					\
+      isusedblock = FALSE;					\
+      for (pStruct = (BType)SMBlk_FirstStruct(pBlock);	 	\
+	   pStruct <= (BType)SMBlk_LastStruct(pBlock,SM_StructSize(SM),SM_StructsPerBlock(SM)); \
+	   pStruct = (BType)SMBlk_NextStruct(pStruct,SM_StructSize(SM))) { \
+        if (*(((Integer *)pStruct)+1) != FREE_TRIE_NODE_MARK) { \
+	  isusedblock = TRUE;					\
+	  if (isstring(BTN_Symbol(pStruct)))			\
+	    mark_string(string_val(BTN_Symbol(pStruct)),"trie 2");\
+	}							\
+      }								\
+      anyunusedblock |= !isusedblock;				\
+      if (!isusedblock) {					\
+        /*printf("%p in %p is an unused block\n",pBlock,SM);*/	\
+        for (pStruct = (BType)SMBlk_FirstStruct(pBlock);	\
+	     pStruct <= (BType)SMBlk_LastStruct(pBlock,SM_StructSize(SM),SM_StructsPerBlock(SM)); \
+	     pStruct = (BType)SMBlk_NextStruct(pStruct,SM_StructSize(SM))) { \
+          *(((Integer *)pStruct)+1) = FREE_TRIE_BLOCK_MARK;	\
+	}							\
+      }								\
+      pBlock = SMBlk_NextBlock(pBlock);				\
+    }								\
+    if (anyunusedblock) {					\
+      apStruct = (BType *)&SM_FreeList(SM);	       		\
+      while (*apStruct != NULL) {				\
+	if (*((Integer *)(*apStruct)+1) == FREE_TRIE_BLOCK_MARK)\
+	  *apStruct = *((void **)(*apStruct));			\
+	else apStruct = *(void **)apStruct;			\
+      }								\
+      apBlock = &(SM_CurBlock(SM));				\
+      while (*apBlock != NULL) {				\
+	if (*((Integer *)(*apBlock)+2) == FREE_TRIE_BLOCK_MARK) {\
+	  pBlock = *apBlock;					\
+	  *apBlock = *((void **)(*apBlock));			\
+	  mem_dealloc(pBlock,SM_NewBlockSize(SM),TABLE_SPACE);	\
+	} else apBlock = *((void **)(apBlock));			\
+      }								\
+    }								\
+  }
+
+
+void mark_trie_strings() {
+
+  BTNptr pBTNStruct, *apBTNStruct;
+  TSTNptr pTSTNStruct, *apTSTNStruct;
+  void *pBlock, **apBlock;
+
+  //  printf("marking trie strings\n");
+  mark_trie_strings_for(smTableBTN,BTNptr,pBTNStruct,apBTNStruct);
+  mark_trie_strings_for(smTSTN,TSTNptr,pTSTNStruct,apTSTNStruct);
+  mark_trie_strings_for(smAssertBTN,BTNptr,pBTNStruct,apBTNStruct);
+  //  printf("marked trie strings\n");
+}
+
+void mark_code_strings(int pflag, CPtr inst_addr, CPtr end_addr) {
+  int  current_opcode, oprand;
+
+  //  printf("buffer\n");
+  while (inst_addr<end_addr) {
+    current_opcode = cell_opcode(inst_addr);
+    //    printf("opcode: %x\n",current_opcode);
+    inst_addr ++;
+    for (oprand=1; oprand<=4; oprand++) {
+      switch (inst_table[current_opcode][oprand]) {
+      case A: case V: case R: case P: case PP: case PPP:
+      case PPR: case PRR: case RRR: case X:
+	break;
+      case S: case L: case N: case B: case F:
+      case I: case T:	  
+	inst_addr ++;
+	break;
+      case C:
+      case G:
+	if (pflag) printf("    %s\n",*(char **)inst_addr);
+	mark_string(*(char **)inst_addr,"code");
+	inst_addr ++;
+	break;
+      default:
+	break;
+      }  /* switch */
+    } /* for */
+  }
+}
+
+void mark_atom_and_code_strings(CTXTdecl) {
+  int i;
+  Pair pair_ptr, mod_pair_ptr;
+  PrRef prref;
+  ClRef clref;
+  CPtr code_beg, code_end;
+
+  //  printf("marking atom and code strings\n");
+  //  printf("marking atoms in usermod\n");
+  for (i = 0; i < symbol_table.size; i++) {
+    if (symbol_table.table[i] != NULL) {
+      for (pair_ptr = (Pair)symbol_table.table[i]; pair_ptr != NULL;
+	   pair_ptr = pair_next(pair_ptr)) {
+	char *string = get_name(pair_psc(pair_ptr));
+	mark_string(string,"usermod atom");
+	if (get_type(pair_psc(pair_ptr)) == T_DYNA) {
+	  //	  printf("mark dc for usermod:%s/%d\n",string,get_arity(pair_psc(pair_ptr)));
+	  prref = dynpredep_to_prref(CTXTc get_ep(pair_psc(pair_ptr))); // fix for multi-threading to handle dispatch for privates 
+	  clref = db_get_clause_code_space(prref,(ClRef)NULL,&code_beg,&code_end);
+	  while (clref) {
+	    mark_code_strings(0,code_beg,code_end);
+	    clref = db_get_clause_code_space(prref,clref,&code_beg,&code_end);
+	  }
+	}
+      }
+    }
+  }
+  for (mod_pair_ptr = (Pair)flags[MOD_LIST]; 
+       mod_pair_ptr != NULL; 
+       mod_pair_ptr = pair_next(mod_pair_ptr)) {
+    mark_string(get_name(pair_psc(mod_pair_ptr)),"mod");
+    pair_ptr = (Pair) get_data(pair_psc(mod_pair_ptr));
+    if ((Integer)pair_ptr != 1) { // not global mod 
+      while (pair_ptr != NULL) {
+	char *string = get_name(pair_psc(pair_ptr));
+	mark_string(string,"mod atom");
+	if (get_type(pair_psc(pair_ptr)) == T_DYNA) {
+	  //	  if (strcmp(get_name(pair_psc(pair_ptr)),"ipObjectSpec_T")==0) printf("mark dc for %s:%s/%d\n",get_name(pair_psc(mod_pair_ptr)),string,get_arity(pair_psc(pair_ptr)));
+	  prref = dynpredep_to_prref(CTXTc get_ep(pair_psc(pair_ptr)));
+	  clref = db_get_clause_code_space(prref,(ClRef)NULL,&code_beg,&code_end);
+	  while (clref) {
+	    //	    printf("  mark code from %s/%d(%s), %p\n", string, get_arity(pair_psc(pair_ptr)), get_name(pair_psc(mod_pair_ptr)), clref);
+	    mark_code_strings(0,code_beg,code_end);
+	    clref = db_get_clause_code_space(prref,clref,&code_beg,&code_end);
+	  }
+	}
+	pair_ptr = pair_next(pair_ptr);
+      }
+    }
+  }
+  //  printf("marked atom and code strings\n");
+}
+
+void mark_nonheap_strings(CTXTdecl) {
+  char *empty;
+
+  mark_string((char *)(ret_psc[0]),"ret"); /* "ret" necessary */
+  mark_string(nil_string,"[]"); /* necessary */
+  empty = string_find_safe("");
+  if (!empty) mark_string(empty,"empty");
+
+  mark_trie_strings();
+  mark_atom_and_code_strings(CTXT);
+  mark_findall_strings(CTXT);
+  mark_open_filenames();
+  mark_hash_table_strings(CTXT);
+
+}
+#endif /* ndef NO_STRING_GC */
 

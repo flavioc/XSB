@@ -161,7 +161,7 @@ extern void retrieve_prof_table();
 // Externs for assert/retract
 extern xsbBool assert_code_to_buff(CTXTdecl), assert_buff_to_clref(CTXTdecl);
 extern xsbBool gen_retract_all(CTXTdecl), db_retract0(CTXTdecl), 
-  db_get_clause(CTXTdecl), gc_clauses(CTXTdecl);
+  db_get_clause(CTXTdecl);
 extern xsbBool db_get_last_clause(CTXTdecl);
 extern xsbBool db_build_prref(CTXTdecl), db_remove_prref(CTXTdecl), 
 	       db_reclaim0(CTXTdecl), db_get_prref(CTXTdecl);
@@ -450,7 +450,7 @@ DllExport void call_conv ctop_string(CTXTdeclc int regnum, char *value)
 
   XSB_Deref(addr);
   if (isref(addr)) {
-    bind_string(vptr(addr), value);
+    bind_string(vptr(addr), string_find(value,1));  //?? did not intern before??
   }
   else
     xsb_abort("[CTOP_STRING] Wrong type of argument: %lux", addr);
@@ -899,8 +899,6 @@ void init_builtin_table(void)
   set_builtin_table(KEYSORT, "keysort");
   set_builtin_table(PARSORT, "parsort");
 
-  set_builtin_table(GC_CLAUSES, "gc_clauses");
-
   set_builtin_table(ORACLE_QUERY, "oracle_query");
   set_builtin_table(ODBC_EXEC_QUERY, "odbc_exec_query");
   set_builtin_table(SET_SCOPE_MARKER, "set_scope_marker");
@@ -919,7 +917,7 @@ void init_builtin_table(void)
   set_builtin_table(PRINT_REGS, "print_regs");
   set_builtin_table(PRINT_ALL_STACKS, "print_all_stacks");
   set_builtin_table(MARK_HEAP, "mark_heap");
-  set_builtin_table(GC_HEAP, "gc_heap");
+  set_builtin_table(GC_STUFF, "gc_stuff");
   set_builtin_table(FINDALL_INIT, "$$findall_init");
   set_builtin_table(FINDALL_ADD, "$$findall_add");
   set_builtin_table(FINDALL_GET_SOLS, "$$findall_get_solutions");
@@ -1588,7 +1586,7 @@ int builtin_call(CTXTdeclc byte number)
       switch (token->type) {
         case TK_ATOM : case TK_FUNC : case TK_STR : case TK_LIST :
         case TK_VAR : case TK_VVAR : case TK_VARFUNC : case TK_VVARFUNC :
-	  ctop_string(CTXTc 4, token->value);  // NOT INTERNED, CALLER MUST DO SO SOON!!
+	  ctop_string(CTXTc 4, string_find(token->value,1));  // NOW INTERNED, CALLER MUST DO SO SOON!!
 	  break;
         case TK_INT : case TK_INTFUNC :
 	  ctop_int(CTXTc 4, *(long *)(token->value));
@@ -2505,8 +2503,20 @@ case WRITE_OUT_PROFILE:
     mark_heap(CTXTc ptoc_int(CTXTc 1),&tmpval);
     return TRUE;
   }
-  case GC_HEAP: return(gc_heap(CTXTc 0)) ;
-    
+  case GC_STUFF: {
+    int gc = ptoc_int(CTXTc 1);
+    int ret_val = 0;
+    if (gc && GC_GC_STRINGS) {
+      gc &= ~GC_GC_HEAP;
+      ret_val |= gc_heap(CTXTc 2,TRUE);
+    }
+    if (gc && GC_GC_HEAP) ret_val |= gc_heap(CTXTc 2,FALSE);
+    if (gc && GC_GC_CLAUSES) ret_val |= gc_dynamic(CTXT);
+    if (gc && GC_GC_TABLED_PREDS) ret_val |= gc_tabled_preds(CTXT);
+
+    ctop_int(CTXTc 2, ret_val);
+    return TRUE;
+  }
   case FLOAT_OP:
   {
     char * operator = ptoc_string(CTXTc 1);

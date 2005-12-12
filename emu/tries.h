@@ -78,6 +78,9 @@
 #define TN_SetHashHdr(pTN,pTHT)		TN_Child(pTN) = (void *)(pTHT)
 #define TN_GetHashHdr(pTN)		TN_Child(pTN)
 
+#define FREE_TRIE_NODE_MARK -1
+#define FREE_TRIE_BLOCK_MARK -2
+
 /*===========================================================================*/
 
 /*

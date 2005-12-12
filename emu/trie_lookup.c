@@ -994,7 +994,7 @@ void *var_trie_lookup(CTXTdeclc void *branchRoot, xsbBool *wasFound,
 
   BTNptr parent;	/* Last node containing a matched symbol */
 
-  Cell symbol;		/* Trie representation of current heap symbol,
+  Cell symbol = 0;	/* Trie representation of current heap symbol,
 			   used for matching/inserting into a TSTN */
 
   int std_var_num;	/* Next available TrieVar index; for standardizing

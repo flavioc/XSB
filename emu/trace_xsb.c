@@ -171,15 +171,16 @@ void total_stat(CTXTdeclc double elapstime) {
 
 
   pspacetot = 0;
-  for (i=0; i<NUM_CATS_SPACE; i++) pspacetot += pspacesize[i];
+  for (i=0; i<NUM_CATS_SPACE; i++) 
+    if (i != TABLE_SPACE) pspacetot += pspacesize[i];
 
   total_alloc =
-    pspacetot  +  trieassert_alloc  +  tablespace_alloc  +
+    pspacetot  +  trieassert_alloc  +  pspacesize[TABLE_SPACE] +
     (pdl.size + glstack.size + tcpstack.size + complstack.size) * K +
     de_space_alloc + dl_space_alloc;
 
   total_used  =
-    pspacetot  +  trieassert_used  +  tablespace_used  +
+    pspacetot  +  trieassert_used  +  pspacesize[TABLE_SPACE]-(tablespace_alloc-tablespace_used) +
     (glstack.size * K - gl_avail) + (tcpstack.size * K - tc_avail) +
     de_space_used + dl_space_used;
 
@@ -191,8 +192,8 @@ void total_stat(CTXTdeclc double elapstime) {
 	 pspacetot + trieassert_alloc, pspacetot + trieassert_used,
 	 trieassert_alloc - trieassert_used);
   for (i=0; i<NUM_CATS_SPACE; i++) 
-    if (pspacesize[i] > 0)
-     printf("    %s                      %12ld\n",pspace_cat[i],pspacesize[i]);
+    if (pspacesize[i] > 0 && i != TABLE_SPACE)
+      printf("    %s                      %12ld\n",pspace_cat[i],pspacesize[i]);
 
   printf("  glob/loc space  %12ld bytes: %12ld in use, %12ld free\n",
 	 glstack.size * K, glstack.size * K - gl_avail, gl_avail);
@@ -215,7 +216,7 @@ void total_stat(CTXTdeclc double elapstime) {
 	 (unsigned long)complstack.size * K -
 	 ((unsigned long)COMPLSTACKBOTTOM - (unsigned long)top_of_complstk));
   printf("  SLG table space %12ld bytes: %12ld in use, %12ld free\n",
-	 tablespace_alloc,  tablespace_used,
+	 pspacesize[TABLE_SPACE],  pspacesize[TABLE_SPACE]-(tablespace_alloc-tablespace_used),
 	 tablespace_alloc - tablespace_used);
   printf("\n");
 

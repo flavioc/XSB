@@ -53,10 +53,11 @@
 
 /*----- The following functions are used in other parts of the system --*/
 
-extern int  gc_heap(CTXTdeclc int);
+extern int  gc_heap(CTXTdeclc int, int);
 extern int  mark_heap(CTXTdeclc int,int *);
 extern xsbBool glstack_ensure_space(CTXTdeclc int,int);
 extern xsbBool glstack_realloc(CTXTdeclc int,int);
+extern char *string_find_safe(char *str);
 
 extern void print_cp(CTXTdeclc int);
 extern void print_tr(CTXTdeclc int);

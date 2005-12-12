@@ -26,6 +26,7 @@
 #include "xsb_config.h"
 #include "xsb_debug.h"
 
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -199,7 +200,7 @@ void expand_string_table() {
   mem_dealloc((void *)string_table.table,string_table.size,STRING_SPACE);
   string_table.size = new_size;
   string_table.table = new_table;
-  /*printf("expanded string table to: %d\n",new_size);*/
+  //  printf("expanded string table to: %ld\n",new_size);
 }
 
 
@@ -309,3 +310,38 @@ void string_table_stats() {
  SYS_MUTEX_UNLOCK( MUTEX_STRING ) ;
 
 }
+
+void free_unused_strings() {
+  int i;
+  void *ptr, *prevptr;
+  int used = 0, unused = 0;
+
+  for (i = 0; i < string_table.size; i++) {
+    if (string_table.table[i] != NULL) {
+      prevptr = &string_table.table[i];
+      ptr = *(void **)prevptr;
+      while (ptr != NULL) {
+	if ((*(Integer *)ptr) & 1) {
+	  used++;
+	  (*(Integer *)ptr) &= ~1;
+	  prevptr = ptr;
+	  ptr = *(void **)ptr;
+	} else {
+	  unused++;
+	  //	  printf("unused: '%s'\n",(char *)ptr+4);
+	  *(void **)prevptr = *(void **)ptr;
+	  mem_dealloc(ptr,strlen(((char *)ptr)+4)+sizeof(void *)+1,STRING_SPACE);
+	  //	  *(((char *)ptr)+4) = '?';
+	  ptr = *(void **)prevptr;
+	  string_table.contains--;
+	  //	  ptr = *(void **)ptr;  // replace with above when have marked all
+	}
+      }
+    }
+  }
+  //  if (unused > 0) printf("%d",unused);
+  //  printf("string_table scanned. used=%d, unused=%d\n",used,unused);
+}
+
+
+  

@@ -35,7 +35,7 @@
 
 	heap garbage collection
 	-----------------------
-	Function gc_heap(arity) - 
+	Function gc_heap(arity,IfStringGC) - 
 	   To understand the usefulness logic, see paper:
 		B. Demoen and K. Sagonas.
 		Memory Management for Prolog with Tabling.
@@ -87,9 +87,7 @@ Todo:
 
 ****************************************************************************/
 /****************************************************************************
-Thoughts on string table garbage collection:
-
-Mark and collect.  
+String table garbage collection, by mark and collect.  
 
 First mark all strings in use.  A string Cell is a tagged pointer to a
 sequence of chars, word aligned.  The previous word is the link
@@ -101,19 +99,26 @@ string_find.
 Mark: 
 
 a) Piggyback on marking of heap gc to mark all strings accessible
-from stacks and trail.  
+from stacks and trail.
 
 b) Mark tries by running trie-node blocks rooted at smTableBTN,
-smTSTN, and smAssertBTN.  Change trie-node free to set 2nd word in
+smTSTN, and smAssertBTN.  Changed trie-node free to set 2nd word in
 trie node to distinctive pattern (-1), so know to skip those nodes.
-At the same time can free blocks all of whose nodes are free.  Must
-remove the freed records from the free chains.
+(NOT DONE: At the same time could free blocks all of whose nodes are free.  
+Mark 2nd work in freed nodes in to-be-freed blocks (-2?), and run free
+chain to remove them.  Then free the blocks.)
 
 c) Mark all strings in code by running atom-table to get entry points,
 including through private dispatch tables, and then scanning the code
 for instructions containing strings.
 
-d) Consider ways to deal with string pointers given to C programs in
+d) Mark all strings in findall buffers by running them.
+
+e) Mark strings that are used as filenames for open files.
+
+f) Mark strings used as hash-keys in hashtables.
+
+g) NOT DONE: Consider ways to deal with string pointers given to C programs in
 ptoc_string.
 
 Collect: run through the string table, freeing unmarked strings and
@@ -158,6 +163,8 @@ unmarking marked strings.
 #include "thread_xsb.h"	   /* for mutex definitions */
 #include "debug_xsb.h"
 #include "loader_xsb.h" /* for ZOOM_FACTOR, used in stack expansion */
+#include "struct_manager.h"
+#include "hash_xsb.h"
 /*=========================================================================*/
 
 /* this might belong somewhere else (or should be accessible to init.c),
@@ -188,6 +195,8 @@ void print_cpf_pred(CPtr cpf);
 #endif /* GC_PROFILE */
 
 extern void extend_enc_dec_as_nec(void *,void *);
+extern void free_unused_strings();
+extern void mark_nonheap_strings(CTXTdecl);
 
 /*=========================================================================*/
 
@@ -227,6 +236,43 @@ static int print_anyway = 0 ;
 #else
 #define print_on_gc 0
 #endif
+
+/* Whether to garbage collect strings on this heap gc or not. */
+int gc_strings = FALSE;
+
+static long last_string_space_size = 10000;
+static long last_assert_space_size = 10000;
+#define AUTO_STRING_GC_NTH 1
+
+/******* When to GC string space? *************/
+int should_gc_strings() {
+  static int till_forced_string_gc = 1;  /* string collect first time */
+
+  /* every AUTO_STRING_GC_NTH time that heap gc is done, regardless */
+  if (!(--till_forced_string_gc)) {
+    till_forced_string_gc = AUTO_STRING_GC_NTH;
+    return TRUE;
+  }
+  /* if already requested by someone else, do it. */
+  if (gc_strings) {
+    till_forced_string_gc = AUTO_STRING_GC_NTH;
+    return TRUE;
+  }
+  /* if string_space has doubled, but assert space hasn't, since last string gc */
+  if ((pspacesize[STRING_SPACE] > 2*last_string_space_size) &&
+      (pspacesize[ASSERT_SPACE] < 2*last_assert_space_size)) {
+    till_forced_string_gc = AUTO_STRING_GC_NTH;
+    return TRUE;
+  }
+  /* if assert space has shrunk alot */
+  if (pspacesize[ASSERT_SPACE] < last_assert_space_size/4 ||
+      (last_assert_space_size - pspacesize[ASSERT_SPACE]) > 1000000) {
+    till_forced_string_gc = AUTO_STRING_GC_NTH;
+    return TRUE;
+  }
+  return FALSE;
+}
+
 
 /* if SAFE_GC is defined, some more checks are made after gargage collection */
 /* #define SAFE_GC */
@@ -346,7 +392,7 @@ xsbBool glstack_realloc(CTXTdeclc int new_size, int arity)
   Cell   cell_val ;
 
   size_t new_size_in_bytes, new_size_in_cells ; /* what a mess ! */
-  long   expandtime ;
+  double   expandtime ;
 
   if (new_size <= glstack.size) return 0;
 
@@ -364,7 +410,7 @@ xsbBool glstack_realloc(CTXTdeclc int new_size, int arity)
   }
 #endif
 
-  expandtime = (long)(1000*cpu_time()) ;
+  expandtime = cpu_time();
 
   new_size_in_bytes = new_size*K ;
   new_size_in_cells = new_size_in_bytes/sizeof(Cell) ;
@@ -482,13 +528,13 @@ xsbBool glstack_realloc(CTXTdeclc int new_size, int arity)
   if (islist(delayreg))
     delayreg = (CPtr)makelist(clref_val(delayreg) + heap_offset);
 
-  expandtime = (long)(1000*cpu_time()) - expandtime;
+  expandtime = cpu_time() - expandtime;
 
   xsb_dbgmsg((LOG_REALLOC,"\tNew Bottom:\t%p\t\tNew Size: %ldK",
 	     glstack.low, glstack.size));
   xsb_dbgmsg((LOG_REALLOC,"\tNew Top:\t%p", glstack.high));
   xsb_dbgmsg((LOG_REALLOC,
-	     "Heap/Local Stack data area expansion - finished in %ld msecs\n",
+	     "Heap/Local Stack data area expansion - finished in %lf secs\n",
 	     expandtime));
 
   SYS_MUTEX_UNLOCK( MUTEX_STACKS ) ;
@@ -501,12 +547,13 @@ xsbBool glstack_realloc(CTXTdeclc int new_size, int arity)
 /* The main routine that performs garbage collection.                   */
 /*======================================================================*/
 
-int gc_heap(CTXTdeclc int arity)
+int gc_heap(CTXTdeclc int arity, int ifStringGC)
 {
 #ifdef GC
   CPtr p;
-  unsigned long  begin_marktime, end_marktime,
-    end_slidetime, end_copy_time;
+  double  begin_marktime, end_marktime,
+    end_slidetime, end_copy_time,
+    begin_stringtime, end_stringtime;
   int  marked = 0, marked_dregs = 0, i;
   int  start_heap_size;
   DECL_GC_PROFILE;
@@ -526,7 +573,7 @@ int gc_heap(CTXTdeclc int arity)
     
     GC_PROFILE_START_SUMMARY;
     
-    begin_marktime = (unsigned long) cpu_time();
+    begin_marktime = cpu_time();
     start_heap_size = hreg+1-(CPtr)glstack.low;
     
     /* make sure the top choice point heap pointer 
@@ -565,9 +612,11 @@ int gc_heap(CTXTdeclc int arity)
     }
 #endif
 
+    gc_strings = ifStringGC; /* default */
+    gc_strings = should_gc_strings();
     marked = mark_heap(CTXTc arity, &marked_dregs);
     
-    end_marktime = (unsigned long) cpu_time();
+    end_marktime = cpu_time();
     
     if (fragmentation_only) {
       /* fragmentation is expressed as ratio not-marked/total heap in use
@@ -609,7 +658,7 @@ int gc_heap(CTXTdeclc int arity)
         if (slide)
           hreg -= arity;
 	total_time_gc += (double) 
-	  (end_marktime-begin_marktime)*1000/CLOCKS_PER_SEC;
+	  (end_marktime-begin_marktime);
         goto free_marks; /* clean-up temp areas and get out of here... */
       }
 #endif
@@ -641,10 +690,10 @@ int gc_heap(CTXTdeclc int arity)
 	if (delayreg != NULL)
 	  delayreg = (CPtr)reg[arity--];
 
-	end_slidetime = (unsigned long) cpu_time();
+	end_slidetime = cpu_time();
 	
 	total_time_gc += (double) 
-	  (end_slidetime - begin_marktime)*1000/CLOCKS_PER_SEC;
+	  (end_slidetime - begin_marktime);
 	
 	GC_PROFILE_SLIDE_FINAL_SUMMARY;
       }
@@ -668,10 +717,10 @@ int gc_heap(CTXTdeclc int arity)
 #ifdef SLG_GC
 	hfreg = hreg;
 #endif
-	end_copy_time = (unsigned long) cpu_time();
+	end_copy_time = cpu_time();
 	
 	total_time_gc += (double) 
-	  (end_copy_time - begin_marktime)*1000/CLOCKS_PER_SEC;
+	  (end_copy_time - begin_marktime);
 	
 	GC_PROFILE_COPY_FINAL_SUMMARY;
       }
@@ -717,6 +766,28 @@ int gc_heap(CTXTdeclc int arity)
 #ifdef GC
  end:
   
+  /*************** GC STRING-TABLE (already marked from heap) *******************/
+#ifndef NO_STRING_GC
+#ifdef MULTI_THREAD
+  if (flags[NUM_THREADS] == 1) {
+#endif
+    if (gc_strings) {
+      //      long beg_string_space_size = pspacesize[STRING_SPACE];
+      begin_stringtime = cpu_time();
+      mark_nonheap_strings(CTXT);
+      free_unused_strings();
+      //      printf("String GC reclaimed: %d bytes\n",beg_string_space_size - pspacesize[STRING_SPACE]);
+      last_string_space_size = pspacesize[STRING_SPACE];
+      last_assert_space_size = pspacesize[ASSERT_SPACE];
+      gc_strings = FALSE;
+      end_stringtime = cpu_time();
+      total_time_gc += end_stringtime - begin_stringtime;
+    }
+#ifdef MULTI_THREAD
+  }
+#endif
+#endif /* ndef NO_STRING_GC */
+
   GC_PROFILE_POST_REPORT;
   
 #endif /* GC */
@@ -731,7 +802,7 @@ int gc_heap(CTXTdeclc int arity)
 
 xsbBool glstack_ensure_space(CTXTdeclc int extra, int arity) {
   if (pflags[GARBAGE_COLLECT] != NO_GC && arity < 255) {
-    gc_heap(CTXTc arity);
+    gc_heap(CTXTc arity,FALSE);
   }
   if ((pb)top_of_localstk < (pb)top_of_heap + OVERFLOW_MARGIN + extra) {
     return glstack_realloc(CTXTc resize_stack(glstack.size,extra+OVERFLOW_MARGIN),arity);

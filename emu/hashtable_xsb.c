@@ -42,6 +42,7 @@
 #include "debug_xsb.h"
 #include "flags_xsb.h"
 #include "memory_xsb.h"
+#include "heap_xsb.h"
 
 /*
   A simple hashtable.
@@ -184,3 +185,32 @@ void show_table_state(xsbHashTable *table)
   }
 }
 
+#ifndef MULTI_THREAD
+// only handles the one hashtable.
+extern xsbHashTable bt_storage_hash_table;
+#endif
+
+void mark_hash_table_strings(CTXTdecl) {
+  xsbBucket *bucket;
+  int i;
+  xsbHashTable *table;
+
+  table = &bt_storage_hash_table;
+  if (table->initted==TRUE) {
+    for (i=0; i < table->length; i++) {
+      bucket = get_top_bucket(table,i);
+      if (!is_free_bucket(bucket)) {
+	if (bucket->name && isstring(bucket->name)) {
+	  mark_string(string_val(bucket->name),"hashtable");
+	}
+	bucket = bucket->next;
+	while (bucket != NULL) {
+	  if (bucket->name && isstring(bucket->name)) {
+	    mark_string(string_val(bucket->name),"hashtable-b");
+	  }
+	  bucket = bucket->next;
+	}
+      }
+    }
+  }
+}
