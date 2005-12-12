@@ -125,6 +125,16 @@
        step 3: Free the xsbTimeout object when appropriate.
 */
 
+/* TLS comment: the implementation differs depending on whether XSB is
+ * multi-threaded, single threaded UNIX or single-threaded Windows.
+ * In the mt case, a timed pthread is created and detached, and a
+ * timed condition variable is set.  The timed condition variable is
+ * responsible for waking up the calling thread, which then checks to
+ * see whether the call has timed out, or has succeeded.  In the
+ * single-thread case of UNIX, an alarm and SIGALRM signal is used;
+ * In the single-thread case of Windows, thread messaging is used.
+ */
+
 #ifdef MULTI_THREAD
 
 void init_machine(CTXTdecl);
@@ -144,12 +154,13 @@ sigjmp_buf xsb_timer_env;
 #ifdef MULTI_THREAD
 int op_timed_out(CTXTdeclc xsbTimeout *timeout)
 {
-  struct timespec wakeup_time;
+  struct timespec wakeup_time;                            // time.h
   int rc;
 
   wakeup_time.tv_sec = time(NULL) + (int)pflags[SYS_TIMER];
   pthread_mutex_lock(&timeout->timeout_info.mutex);
-  rc = pthread_cond_timedwait(&timeout->timeout_info.condition, &timeout->timeout_info.mutex, &wakeup_time);
+  rc = pthread_cond_timedwait(&timeout->timeout_info.condition, 
+			      &timeout->timeout_info.mutex, &wakeup_time);
   pthread_mutex_unlock(&timeout->timeout_info.mutex);
   if (rc != 0) {
     switch(rc) {
@@ -165,7 +176,7 @@ int op_timed_out(CTXTdeclc xsbTimeout *timeout)
       xsb_bug("pthread_cond_timedwait returned an unexpected value (%d)\n", rc);      
     }
   }
-  TURNOFFALARM;
+  TURNOFFALARM;  // mt-noop(?)
   switch (timeout->timeout_info.exitFlag) {
   case STILL_WAITING: /* The call timed out */
     PTHREAD_CANCEL(timeout->timeout_info.timedThread);
@@ -250,6 +261,8 @@ int make_timed_call(CTXTdeclc xsbTimeout *pptr, void (*fptr)(xsbTimeout *))
 #define TIMED_THREAD_CREATE_ARG &pptr->timeout_info.timedThread
 #endif
   pptr->timeout_info.th=th;
+  // below, fptr is pointer to start routine, pptr is pointer to arg-array.
+  // TIMED_THREAD_CREATE_ARG is a cell of timeout_info.
   if (pthread_create(TIMED_THREAD_CREATE_ARG, NULL, fptr, pptr)) {
     xsb_error("SOCKET_REQUEST: Can't create concurrent timer thread\n");
     return TIMER_SETUP_ERR;

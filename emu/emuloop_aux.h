@@ -64,11 +64,8 @@
 } 
 #endif
 /*----------------------------------------------------------------------*/
-#ifdef PROFILE
-#define SHARING_PROFILE
-#endif
 
-#ifdef SHARING_PROFILE
+#if defined(PROFILE) && !defined(MULTI_THREAD)
 #define RESTORE_SUB                                                       \
 {                                                                         \
   CPtr tbreg;                                                             \

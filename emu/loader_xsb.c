@@ -111,9 +111,13 @@ extern void delete_predicate_table(CTXTdeclc TIFptr);
                    
 
 /* === local declarations =============================================	*/
+/* TLS: I think that l is the length of the indextab bucket chain when
+   the hrec is part of the indextab array.  Otherwise, it is the
+   pointer to the ep of the clause.  The link is the pointer to the
+   next hrec in the bucket chain.  If last, link points to itself */
 
 struct hrec {
-  long l;
+  long l;       
   CPtr link;
 } ;
 
@@ -128,8 +132,8 @@ struct hrec {
 
 Psc global_mod;	/* points to "global", whose ep is globallist */
 
+// First and last tifs / dispatch blocks.
 struct tif_list  tif_list = {NULL, NULL};
-
 struct TDispBlkHdr_t tdispblkhdr = {NULL, NULL};
 
 /* === working variables ==============================================	*/
@@ -207,6 +211,10 @@ inline static void inserth(CPtr label, struct hrec *bucket)
 
 /*----------------------------------------------------------------------*/
 
+/* this generates the index table, an array of pointers to hrecs (sort
+   of, the typing is a little unclear).  Each bucket is a list of
+   hrecs. */
+
 static int get_index_tab(FILE *fd, int clause_no)
 {
   long hashval, size, j;
@@ -276,6 +284,9 @@ inline static pindex new_index_seg(int no_cells)
 
 /*----------------------------------------------------------------------*/
 
+/* Once the indextab is set up (via get_index_tab()) traverse it to
+   set up the try/retry/trust instructions using the l pointers */
+
 static void gen_index(xsbBool tabled, int clause_no, CPtr sob_arg_p, byte arity)
 {
   pindex new_i;
@@ -332,6 +343,7 @@ static void gen_index(xsbBool tabled, int clause_no, CPtr sob_arg_p, byte arity)
 *  on the symbol table array which is assigned values by load_sms.	*
 *  The routine assumes the current length 8/18/84 of byte code		*
 *  intructions when reading from the byte code file.			*
+*  cf. inst_xsb.h for meaning of opcode types.
 *                                                                       *
 ************************************************************************/
 
@@ -359,43 +371,43 @@ static int load_text(FILE *fd, int seg_num, int text_bytes, int *current_tab)
       case PRR:
       case RRR:
 	break;
-      case S:
+      case S:                         // structure
 	get_obj_word_bb(inst_addr);
 	st_ptrpsc(inst_addr);
 	inst_addr ++;
 	break;
-      case C:
+      case C:                         // constant
 	get_obj_word_bb(inst_addr);
 	st_pscname(inst_addr);
 	inst_addr ++;
 	break;
-      case L:
+      case L:                         // label
 	get_obj_word_bbsig_notag(inst_addr);
 	*(CPtr *)inst_addr = reloc_addr((Integer)cell(inst_addr),
 					seg_text(current_seg));
 	inst_addr ++;
 	break;
-      case G:
+      case G:                        // TLS: dont think this is used???
 	get_obj_word_bb(inst_addr);
 	st_pscname(inst_addr);
 	inst_addr ++;
 	break;
-      case N:
+      case N:                       // number
 	get_obj_word_bbsig_notag(inst_addr);
 	inst_addr ++;
 	break;
-      case B:
+      case B:                       // boxed integer
 	get_obj_word_bbsig(inst_addr);
 	inst_addr ++;
 	break;
-      case F:
+      case F:                       // float
     get_obj_word(inst_addr) ; 
     fix_bb4(inst_addr) ;
     // and returning the new float, as a cell
     *(Cell *)(inst_addr) = makefloat(*(float *)inst_addr);
 	inst_addr ++;
 	break;
-      case I:
+      case I:                      // index of sob
 	get_obj_word_bb(inst_addr);
 	if (oprand==2) {	/* second operand of switchonbound */
 	  if (cell(inst_addr) >= (unsigned long)(NUM_INDEX_BLKS*num_index_reloc)) {
@@ -414,9 +426,9 @@ static int load_text(FILE *fd, int seg_num, int text_bytes, int *current_tab)
 	  cell(inst_addr) = hsize(cell(inst_addr));
 	inst_addr ++;
 	break;
-      case X:
+      case X:                 // arg not used
 	break;
-      case T:	  
+      case T:	             // tip ptr
 	*current_tab = 1;	/* flag for load index */
 	get_obj_word(&tab_config_hold);          /* space holder */
 	cell(inst_addr) = (Cell)NULL; /* TIFptr will be set later when know PSC */

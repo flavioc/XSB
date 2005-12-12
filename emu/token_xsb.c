@@ -576,7 +576,7 @@ START:
                     if (c != '_') *s++ = c;
                     c = GetC(card,instr);
                 } while (InType(c) <= BREAK);
-                if (c == intab.radix) { 
+                if (c == intab.radix) {  
                     *s = 0;
                     for (d = 0, s = strbuff; (c = *s++);) {
 		      d = d*10-'0'+c;}
@@ -598,7 +598,7 @@ START:
 			 3) double quote char
 			 4) back quote char
 
-			 We handle 3,4, do not handle 2, and handle (I
+			 We handle 2,3,4, and handle (I
 			 think) all the cases for 1 *except*
 
 			 meta-escape sequence
@@ -640,7 +640,7 @@ START:
 			  return token;
 			}
 		      }
-		      else {
+		      else {    // 0'<char>
                         sprintf(strbuff, "%d", d);
                         d = GetC(card,instr);
 			rad_int = atoi(strbuff);

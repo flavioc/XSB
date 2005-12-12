@@ -3,23 +3,23 @@
 
 Coding Conventions: 
 
-       Global Variables: Because gloabl variables may need concurrency
+       Global Variables: Because global variables may need concurrency
        control to ensure thread safety, its important to keep track of
        their use in XSB.  (This can be done by the gdb "info
        variables" command).  Currently, when XSB is compiled for
-       multh-threading there are about 200 of these.  These global
+       multh-threading there are over 100 of these.  These global
        variables represent process-level information and may either be
        changeable, or constant-like (not changeable after an
        initialization).
 
        Changeable global variables are usually protected by mutexes or
-       some other concurrency control.  Constants, however are
-       perfectly safe for multi-threading.  However, when updating XSB
-       for new code, it is necessesary to ensure that all global
-       variables are "accounted for" -- either are constants, are
-       controlled by mutexes, or are safe (e.g. global counters).  In
-       order to aid this process, please use these conventions for
-       global variables.  
+       some other concurrency control.  Constant-like variables, on
+       the other hand are perfectly safe for multi-threading.
+       However, when updating XSB for new code, it is necessesary to
+       ensure that all global variables are "accounted for" -- either
+       are constants, are controlled by mutexes, or are safe
+       (e.g. global counters).  In order to aid this process, please
+       use these conventions for global variables.
 
        Constant-like variables:
        
@@ -30,3 +30,56 @@ Coding Conventions:
 		-- an instruction byte-code, give it the form xxx_inst
 		-- a constant-like array, give it the form xxx_table.
 
+       Other constant-like variables: xxx_glc
+
+Other global varibles that I have checked out but have not changed to
+follow these conventions:
+
+      File io_builtins_xsb.c
+
+      File loader_xsb.c
+
+      File slgdelay.c
+
+      File socket_xsb.c
+      	   static u_long block_false -- _glc
+	   static u_long block_true -- _glc
+	   static struct connection_t connections[50] -- controlled by MUTEX_SOCKETS
+
+      File string_xsb.c
+
+      File subp.c
+      	   void (*xsb_default_segfault_handler)() -- _glc
+
+      File system_xsb.c
+      
+      File table_stats.c
+
+      File tables.c: 
+      	   Structure_Manager smALN -- controlled by mutex
+	   Structure_Manager smConsSF -- controlled by mutex
+	   Structure_Manager smProdSF -- controlled by mutex
+	   Structure_Manager smVarSF  -- controlled by mutex
+
+      File thread_xsb.c
+
+      File token_xsb.c: 
+
+      File tries.c: 
+
+      File tr_utils.c
+
+      File trace_xsb.c: 
+      
+      File tst_utils.c:
+      	   char *NodeTypeStrings[9] -- _table
+	   char *TrieTypeStrings[7] -- _table
+
+      File varstring.c:
+      	   struct varstr_ops VarStrOps -- _table
+
+      File ubi_BinTree.c:
+      	   static char ModuleID[79] -- _table
+
+      File ubi_SplayTree.c:
+      	   static char ModuleID[83] -- _table

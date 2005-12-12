@@ -2606,8 +2606,13 @@ case WRITE_OUT_PROFILE:
     case FINDALL_GET_SOLS: return(findall_get_solutions(CTXT)) ;
 
 #ifdef HAVE_SOCKET
-  case SOCKET_REQUEST:
-    return xsb_socket_request(CTXT);
+    case SOCKET_REQUEST: {
+      xsbBool xsb_socket_request_return;
+      SYS_MUTEX_LOCK( MUTEX_SOCKETS ) ;
+      xsb_socket_request_return = xsb_socket_request(CTXT);
+      SYS_MUTEX_UNLOCK( MUTEX_SOCKETS ) ;
+      return xsb_socket_request_return;
+    }
 #endif /* HAVE_SOCKET */	    
 
 #ifdef WIN_NT
