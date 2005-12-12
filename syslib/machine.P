@@ -35,6 +35,7 @@
 #include "flag_defs_xsb.h"
 #include "syscall_xsb.h"
 #include "psc_defs.h"
+#include "heap_defs_xsb.h"
 
 /*======================================================================*/
 /* This file contains definitions for predicates implemented by the	*/
@@ -329,8 +330,10 @@ print_regs :- print_regs.
 print_all_stacks :- print_all_stacks.
 expand_heap :- expand_heap.
 mark_heap(X) :- mark_heap(X).
-gc_heap :- gc_heap.
-gc_clauses:- '_$builtin'(GC_CLAUSES).
+gc_stuff(_X,_Y) :- '_$builtin'(GC_STUFF).
+gc_heap :- gc_stuff(GC_GC_HEAP,_).
+gc_clauses:- gc_stuff(GC_GC_CLAUSES,_).
+%%gc_all :- T is GC_GC_STRINGS+GC_GC_CLAUSES+GCGC_TABLED_PREDS, gc_stuff(T,_).
 
 '$$findall_init'(_I,_C) :- '$$findall_init'(_I,_C).
 '$$findall_add'(_T,_I,_C) :- '$$findall_add'(_T,_I,_C).

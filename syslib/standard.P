@@ -37,6 +37,7 @@
 #include "psc_defs.h"
 #include "builtin.h"
 #include "io_defs_xsb.h"
+#include "heap_defs_xsb.h"
 
 :- import (:-)/2 from usermod.
 
@@ -1316,10 +1317,10 @@ set_timer(Seconds) :- stat_set_flag(SYS_TIMER, Seconds).
 /* ================ Garbage Collecting Shared Data/Code ===================*/
 
 gc_tables(Number):- 
-	gc_clauses(GC_TABLED_PREDS,Number).
+	gc_stuff(GC_GC_TABLED_PREDS,Number).
 
 gc_dynamic(Number):- 
-	gc_clauses(GC_DYNAMIC,Number).
+	gc_stuff(GC_GC_CLAUSES,Number).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%

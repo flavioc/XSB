@@ -170,11 +170,11 @@ load_library_directories :-
 	%% Construct site init file name
 	xsb_configuration(site_dir, SiteDir),
 	local_fmt_write_string(SiteFileName,'%s%ssiteinitrc', f(SiteDir,Slash)),
-	str_cat(SiteFileName, XSB_SRC_EXTENSION_ATOM, SiteFileNameP),
-	str_cat(SiteFileName, XSB_OBJ_EXTENSION_ATOM, SiteFileNameO),
+%%	str_cat(SiteFileName, XSB_SRC_EXTENSION_ATOM, SiteFileNameP),
+%%	str_cat(SiteFileName, XSB_OBJ_EXTENSION_ATOM, SiteFileNameO),
 	%% Site init file isn't mandatory
-	( (machine_file_exists(SiteFileNameP)
-	   ; machine_file_exists(SiteFileNameO)) ->
+	( (machine_file_exists([SiteFileName,XSB_SRC_EXTENSION_ATOM])
+	   ; machine_file_exists([SiteFileName,XSB_OBJ_EXTENSION_ATOM])) ->
 		reconsult(SiteFileName)
 	        ; true
 	),
@@ -182,11 +182,11 @@ load_library_directories :-
 	%% Construct user''s .xsb/xsbrc.P
 	xsb_configuration(user_home, HomeDir),
 	local_fmt_write_string(UsrFileN, '%s%s.xsb%sxsbrc', f(HomeDir,Slash,Slash)),
-	str_cat(UsrFileN, XSB_SRC_EXTENSION_ATOM, UserFileNameP),
-	str_cat(UsrFileN, XSB_OBJ_EXTENSION_ATOM, UserFileNameO),
+%%	str_cat(UsrFileN, XSB_SRC_EXTENSION_ATOM, UserFileNameP),
+%%	str_cat(UsrFileN, XSB_OBJ_EXTENSION_ATOM, UserFileNameO),
 	%% User init file isn't mandatory
-	( (machine_file_exists(UserFileNameP)
-	   ; machine_file_exists(UserFileNameO)) ->
+	( (machine_file_exists([UsrFileN, XSB_SRC_EXTENSION_ATOM])
+	   ; machine_file_exists([UsrFileN, XSB_OBJ_EXTENSION_ATOM])) ->
 		reconsult(UsrFileN)
 		; true
         ).

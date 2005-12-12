@@ -139,14 +139,24 @@ process_query1(X, []) :-	%% no printable variables appeared in the input
 	call_query(X),
 	close_open_tables,
 	!,
-	file_nl(STDFDBK), file_write(STDFDBK, yes), file_nl(STDFDBK),
+	xwam_state(2,DelayReg),
+	(DelayReg =:= 0
+	 ->	Ans = yes
+	 ;	Ans = undefined
+	),
+	file_nl(STDFDBK), file_write(STDFDBK, Ans), file_nl(STDFDBK),
 	fail.
 process_query1(X, Vars) :- 
 	prompt(MorePrompt,MorePrompt,'_$more_prompt'(_)),
 	call_query(X),
+	xwam_state(2,DelayReg),
 	stat_flag(LETTER_VARS, LetterVars),
 	( LetterVars =:= 0 -> print_answer(Vars)
 	; ( numbervars(Vars), print_answer(Vars), fail ; true )
+	),
+	(DelayReg =:= 0
+	 ->	true
+	 ;	file_write(STDFDBK, ' undefined')
 	),
 	file_write(STDFDBK, MorePrompt),
 	file_flush(STDFDBK, _),

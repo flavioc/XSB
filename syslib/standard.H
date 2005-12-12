@@ -115,7 +115,7 @@
 :- import windows_os_loader/0 from loader.
 
  :- import call0/1, conname/2,
-          expand_filename/2, gc_clauses/2,is_charlist/1,
+          expand_filename/2, gc_stuff/2,is_charlist/1,
           machine_file_exists/1, 
 	  psc_arity/2, psc_import/3, psc_insert/4,
 	  psc_name/2, psc_type/2,

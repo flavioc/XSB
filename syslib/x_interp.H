@@ -43,7 +43,8 @@
           intern_string/2, is_xwammode/1, 
           psc_prop/2, psc_set_prop/2, psc_set_type/2, 
 	  stat_flag/2, stat_set_flag/2,
-	  slash/1, term_psc/2, trimcore/0
+	  slash/1, term_psc/2, trimcore/0,
+	  xwam_state/2
      from machine.
 :- import file_open/3, file_close/1, file_get/2, fmt_write_string/3,
           file_flush/2, /*ioport2iostream/2,*/

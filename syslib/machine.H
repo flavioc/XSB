@@ -143,6 +143,7 @@
    gc_clauses/0,
 	print_ls/0, print_tr/0, print_heap/2, print_cp/0, print_regs/0,
 	print_all_stacks/0, expand_heap/0, mark_heap/1, gc_heap/0,
+	gc_stuff/2,
 	'$$findall_init'/2,
 	'$$findall_add'/3,
 	'$$findall_get_solutions'/4,

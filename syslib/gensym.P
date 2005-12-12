@@ -45,7 +45,7 @@ conlength(Con, Length) :-
 	conname(Con, Name), str_len(Name, Len), Length = Len.
 
 /*----gennum------------------------------------------------------------*/
-
+:- conset(gennum_val,0).
 gennum(N) :- conget(gennum_val, O), N is O + 1, conset(gennum_val, N).
 gennum(Obj,N) :-
 	nonvar(Obj), conget(Obj, O), N is O + 1, conset(Obj, N).
