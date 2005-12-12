@@ -496,10 +496,10 @@ of the permanent space:
 
 \begin{enumerate}
 \item  Program segments, see Figure \ref{f:programseg};
-\item  Symbol table entries: each PSC record takes 12 bytes,
+\item  Symbol table entries: each PSC record takes 24 bytes,
    and each PSC pair takes 8 bytes (see page \pageref{pg:symtab}).
 \item  String tables: each string takes the length of string bytes
-   plus 1 byte null end plus 4 bytes chaining.
+   plus 1 byte null end plus 4 bytes chaining (rounded up to 8 byte boundary)
 \item  Space allocated by system with {\tt buff\_alloc} at the Prolog level,
    for the following purposes:
    \begin{enumerate}
@@ -1289,14 +1289,6 @@ whose value is the initial address of the buffer.
 When a buffer is allocated,
 the first word of the buffer stores the size of the buffer. 
 It can be overwritten if you wish.
-
-
-
-
-
-
-
-
 
 
 \section{System Libraries} \label{sec:libs}
