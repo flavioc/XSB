@@ -52,7 +52,8 @@ follow these conventions:
       	   void (*xsb_default_segfault_handler)() -- _glc
 
       File system_xsb.c
-      
+      	     static struct proc_table_t xsb_process_table -- controlled by MUTEX_SYS_SYSTEM
+    
       File table_stats.c
 
       File tables.c: 

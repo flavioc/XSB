@@ -46,6 +46,7 @@
 #define MUTEX_FLAGS		5
 #define MUTEX_LOAD_UNDEF	6	/* Must be recursive */
 #define MUTEX_DELAY		7
+#define MUTEX_SYS_SYSTEM	8      /* recursive prob. not necess */
 
 /* Non-recursive */
 #define MUTEX_STRING		15
