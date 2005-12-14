@@ -102,34 +102,34 @@ told :-    stat_flag(CURRENT_OUTPUT, Str),
 
 % TLS considering user, userin, userout, user_in and user_out as aliases.
 
-open(File,Mode,Stream) :- open(File,Mode,0,Stream).
+open(File,Mode,Stream) :- 'open aux'(File,Mode,0,Stream).
 
-open(File,_,_,_):-
+'open aux'(File,_,_,_):-
 	var(File), !, 
 	instantiation_error(open/3,1,bound).
-open(user,read,_,STDIN):-!,
+'open aux'(user,read,_,STDIN):-!,
 	stat_set_flag(CURRENT_INPUT, STDIN).
-open(userin,read,_,STDIN):-!,
+'open aux'(userin,read,_,STDIN):-!,
 	stat_set_flag(CURRENT_INPUT, STDIN).
-open(user_in,read,_,STDIN):-!,   % ISO
+'open aux'(user_in,read,_,STDIN):-!,   % ISO
 	stat_set_flag(CURRENT_INPUT, STDIN).
-open(user_input,read,_,STDIN):-!,   % ISO
+'open aux'(user_input,read,_,STDIN):-!,   % ISO
 	stat_set_flag(CURRENT_INPUT, STDIN).
-open(user,write,_,STDOUT):-!,
+'open aux'(user,write,_,STDOUT):-!,
 	stat_set_flag(CURRENT_OUTPUT, STDOUT).
-open(userout,write,_,STDOUT):-!,
+'open aux'(userout,write,_,STDOUT):-!,
 	stat_set_flag(CURRENT_OUTPUT, STDOUT).
-open(user_out,write,_,STDOUT):-!,  % ISO
+'open aux'(user_out,write,_,STDOUT):-!,  % ISO
 	stat_set_flag(CURRENT_OUTPUT, STDOUT).
-open(user_output,write,_,STDOUT):-!,  % ISO
+'open aux'(user_output,write,_,STDOUT):-!,  % ISO
 	stat_set_flag(CURRENT_OUTPUT, STDOUT).
-open(pipe(FileDescr),Mode,_,Stream):- !,
+'open aux'(pipe(FileDescr),Mode,_,Stream):- !,
 	file_translate(Mode,M),
 	fd2iostream(FileDescr,M,Stream),
 	(Stream < 0 -> 
 	    permission_error(open,file,FileDescr,open/3)
 	 ;  true).
-open(atom(Atom),Mode,_,Stream):- !,
+'open aux'(atom(Atom),Mode,_,Stream):- !,
 	(Mode == read -> 
 	    true
 	 ;  domain_error(read,Mode,open/3,2) ),
@@ -137,16 +137,16 @@ open(atom(Atom),Mode,_,Stream):- !,
 	 (Stream = -1000 -> 
 	    permission_error(open,file,atom/1,open/3)
 	 ;  true).
-open(file(File),Mode,New,Stream):- !,
-	open(File,Mode,New,Stream).
-open(File,Mode,New,Stream):- 
+'open aux'(file(File),Mode,New,Stream):- !,
+	'open aux'(File,Mode,New,Stream).
+'open aux'(File,Mode,New,Stream):- 
 	atom(File),!,
 	file_translate(Mode,M),
 	file_open(File, M, New, Stream),
 	(Stream < 0 -> 
 	    permission_error(open,file,File,open/3)
 	 ;  true).
-open(SrcSnk,_,_,_):- 
+'open aux'(SrcSnk,_,_,_):- 
 	domain_error(source_or_sink,SrcSnk,open/3,1).
 
 file_translate(read,r):- !.
@@ -162,7 +162,7 @@ file_translate(Mode,_):-
 open(F,Mode,Stream,Options):-
 	examine_open_options(Options,Aliases,_Eof),
 	open(F,Mode,Stream),
-	writeln(open(F,Mode,Stream)),
+	%% writeln(open(F,Mode,Stream)),
 	add_aliases(Aliases,Stream).
 
 examine_open_options([],[],[]).
