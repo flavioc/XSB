@@ -67,7 +67,7 @@ see(Integer):-
 	set_input(Integer).
 see(File) :- 
 	check_atom(File,see/1,1),
-	open(File,read,0,Str),
+	open(File,read,Str),
 	set_input(Str).
 
 seeing(Str) :- stat_flag(CURRENT_INPUT, Str).
@@ -87,7 +87,7 @@ tell(Integer):-
 	set_output(Integer).
 tell(File) :- 
 	check_atom(File,tell/1,1),
-	open(File,write,0,Str),
+	open(File,write,Str),
 	set_output(Str).
 
 telling(Str) :- stat_flag(CURRENT_OUTPUT, Str).
