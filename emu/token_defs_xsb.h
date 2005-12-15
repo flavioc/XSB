@@ -65,9 +65,9 @@
 #define PUNCT    6              /* (),[]|{}% */
 #define ATMQT    7              /* ' (atom quote) */
 #define LISQT    8              /* " (list quote) */
-#define STRQT    9              /* $ (string quote) */
-#define CHRQT   10              /* ` (character quote, maybe) */
-#define TILDE   11              /* ~ (like character quote but buggy) */
+#define STRQT    9              /* $ (string quote), not used, now $ is SIGN */
+#define CHRQT   10              /* ` (character quote, maybe), not used, now ` is SIGN */
+#define TILDE   11              /* ~ (like character quote but buggy), not used, now SIGN */
 #define SPACE   12              /* layout and control chars */
 #define EOLN    13              /* line terminators ^J ^L */
 #define REALO   14              /* floating point number */

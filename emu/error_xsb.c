@@ -468,7 +468,7 @@ DllExport void call_conv xsb_dbgmsg1(int log_level, char *description, ...)
     va_start(args, description);
     vfprintf(stddbg, description, args);
     va_end(args);
-    fprintf(stddbg, "\n");
+    //    fprintf(stddbg, "\n");
   }
 }
 #endif

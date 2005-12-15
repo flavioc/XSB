@@ -428,7 +428,7 @@ struct flatten_q {
 };
 
 
-#define INST_QUEUE_SIZE	4096 /* was 1024 (which was too low) 16384 too high for default java stack*/
+#define INST_QUEUE_SIZE	512 /* was 1024 */
 
 struct instruction {
 	Cell opcode;
@@ -439,6 +439,7 @@ struct instruction {
 struct instruction_q {
   int inst_queue_top;
   int inst_queue_bottom;
+  int inst_queue_added;
   struct instruction inst_queue[INST_QUEUE_SIZE];
 };
 
@@ -507,7 +508,7 @@ static int flatten_stack_size(struct flatten_q *flatten_stackq)
     return flatten_stackq->flatten_stack_top;
 }
 
-static void flatten_stack_push(CTXTdeclc struct flatten_q *flatten_stackq,
+static void flatten_stack_push(struct flatten_q *flatten_stackq,
 			       int argno, Cell term)
 {
     flatten_stackq->flatten_stack[flatten_stackq->flatten_stack_top]._reg = argno;
@@ -527,8 +528,7 @@ static void flatten_stack_pop(struct flatten_q *flatten_stackq,
 
 static void inst_queue_init(struct instruction_q *inst_queue)
 {
-    inst_queue->inst_queue_top = 0;
-    inst_queue->inst_queue_bottom = 0;
+    inst_queue->inst_queue_top = inst_queue->inst_queue_bottom = 10;
 }
 
 static int inst_queue_empty(struct instruction_q *inst_queue)
@@ -536,20 +536,21 @@ static int inst_queue_empty(struct instruction_q *inst_queue)
     return (inst_queue->inst_queue_top == inst_queue->inst_queue_bottom);
 }
 
-static void inst_queue_push(CTXTdeclc struct instruction_q *inst_queue,
+static void inst_queue_push(struct instruction_q *inst_queue,
 			    Cell opcode, Cell arg1, Cell arg2)
 {
     inst_queue->inst_queue[inst_queue->inst_queue_top].opcode = opcode;
     inst_queue->inst_queue[inst_queue->inst_queue_top].arg1 = arg1;
     inst_queue->inst_queue[inst_queue->inst_queue_top].arg2 = arg2;
-    inst_queue->inst_queue_top++;
-    if (inst_queue->inst_queue_top >= INST_QUEUE_SIZE)
+    inst_queue->inst_queue_top = (inst_queue->inst_queue_top+1) % INST_QUEUE_SIZE;
+    if (inst_queue->inst_queue_top == inst_queue->inst_queue_bottom)
       xsb_abort("instruction queue overflow in assert");
 }
 
 static void inst_queue_pop(struct instruction_q *inst_queue,
 			   Cell *opcodep, Cell *arg1p, Cell *arg2p)
 {
+    if (inst_queue->inst_queue_top == 0) inst_queue->inst_queue_top = INST_QUEUE_SIZE;
     inst_queue->inst_queue_top--;
     *opcodep = inst_queue->inst_queue[inst_queue->inst_queue_top].opcode;
     *arg1p = inst_queue->inst_queue[inst_queue->inst_queue_top].arg1;
@@ -562,7 +563,29 @@ static void inst_queue_rem(struct instruction_q *inst_queue,
     *opcodep = inst_queue->inst_queue[inst_queue->inst_queue_bottom].opcode;
     *arg1p = inst_queue->inst_queue[inst_queue->inst_queue_bottom].arg1;
     *arg2p = inst_queue->inst_queue[inst_queue->inst_queue_bottom].arg2;
-    inst_queue->inst_queue_bottom++;
+    inst_queue->inst_queue_bottom = (inst_queue->inst_queue_bottom+1) % INST_QUEUE_SIZE;
+}
+
+static void inst_queue_add(struct instruction_q *inst_queue,
+			   Cell opcodep, Cell arg1p, Cell arg2p)
+{
+    if (inst_queue->inst_queue_bottom == 0) inst_queue->inst_queue_bottom = INST_QUEUE_SIZE;
+    inst_queue->inst_queue_bottom--;
+    if (inst_queue->inst_queue_top == inst_queue->inst_queue_bottom)
+      xsb_abort("instruction queue overflow in assert");
+    inst_queue->inst_queue[inst_queue->inst_queue_bottom].opcode = opcodep;
+    inst_queue->inst_queue[inst_queue->inst_queue_bottom].arg1 = arg1p;
+    inst_queue->inst_queue[inst_queue->inst_queue_bottom].arg2 = arg2p;
+    inst_queue->inst_queue_added++;
+}
+
+static void inst_queue_rotate(struct instruction_q *inst_queue) {
+  prolog_term T0, T1;
+  Cell Argno;
+  while (inst_queue->inst_queue_added--) {
+    inst_queue_rem(inst_queue,&Argno,&T0,&T1);
+    inst_queue_push(inst_queue,Argno,T0,T1);
+  }
 }
 
 /*typedef int *RegStat;*/
@@ -703,6 +726,7 @@ int assert_code_to_buff_p(CTXTdeclc prolog_term Clause)
   Loc_size = *asrtBuff->Loc - sizeof(Cell);
   if (has_body) reg_init(Reg,xsb_max(Arity,(int)get_arity(get_str_psc(Body))));
   else reg_init(Reg,Arity);
+  inst_queue_init(inst_queue);
   for (Argno = 1; Argno <= Arity; Argno++) {
     db_gentopinst(CTXTc p2p_arg(Head,Argno),Argno,Reg);
   }
@@ -744,7 +768,7 @@ static void db_gentopinst(CTXTdeclc prolog_term T0, int Argno, RegStat Reg)
     dbgen_instB_pvv(gettval, Rt, Argno);	/* gettval */
   } else {
     inst_queue_init(inst_queue);
-    inst_queue_push(CTXTc inst_queue, Argno, T0, 0);
+    inst_queue_push(inst_queue, Argno, T0, 0);
     if (isattv(T0)) {
       T0 = p2p_arg(T0, 0);		/* the VAR part of the attv */
       c2p_functor(CTXTc "$assertVAR", 1, T0);
@@ -785,15 +809,19 @@ static void db_genterms(CTXTdeclc struct instruction_q *inst_queue,
       } else {
 	dbgen_instB_ppv(getlist, Argno);    /* getlist */
 	reg_release(Reg,Argno);
+	inst_queue->inst_queue_added = 0;
 	db_geninst(CTXTc p2p_car(T0), Reg, inst_queue);
 	db_geninst(CTXTc p2p_cdr(T0), Reg, inst_queue);
+	inst_queue_rotate(inst_queue);
       }
     } else if (isconstr(T0)) {
       dbgen_instB_ppvw(getstr, Argno, get_str_psc(T0));   /* getstr */
       reg_release(Reg,Argno);
+      inst_queue->inst_queue_added = 0;
       for (Argno=1; Argno <= (int)get_arity(get_str_psc(T0)); Argno++) {
 	db_geninst(CTXTc p2p_arg(T0,Argno), Reg, inst_queue);
       }
+      inst_queue_rotate(inst_queue);
     }
     else { /* is_attv(T0) */
       T1 = cell(clref_val(T0) + 1);	/* the ATTR part of the attv */
@@ -838,7 +866,7 @@ static void db_geninst(CTXTdeclc prolog_term Sub, RegStat Reg,
     Rt = reg_get(CTXTc Reg, RVAR);
     dbgen_instB_ppv(unitvar, Rt);
     Reg->RegArrayInit[Rt] = 1;  /* reg is inited */
-    inst_queue_push(CTXTc inst_queue, Rt, Sub, 0);
+    inst_queue_add(inst_queue, Rt, Sub, 0);
 
     Sub = p2p_arg(Sub, 0);		/* the VAR part of the attv */
     c2p_functor(CTXTc "$assertVAR", 1, Sub);
@@ -848,7 +876,7 @@ static void db_geninst(CTXTdeclc prolog_term Sub, RegStat Reg,
     Rt = reg_get(CTXTc Reg, TVAR);
     dbgen_instB_ppv(unitvar, Rt);
     Reg->RegArrayInit[Rt] = 1;  /* reg is inited */
-    inst_queue_push(CTXTc inst_queue, Rt, Sub, 0);
+    inst_queue_add(inst_queue, Rt, Sub, 0);
   }
 }
 
@@ -867,28 +895,28 @@ static void db_genaput(CTXTdeclc prolog_term T0, int Argno,
     c2p_int(CTXTc Rt, T0);  /* used to be TempVar???? */
     dbgen_instB_pvv(puttvar, Rt, Rt);
     Reg->RegArrayInit[Rt] = 1;  /* reg is inited */
-    inst_queue_push(CTXTc inst_queue, movreg, Rt, Argno);
+    inst_queue_push(inst_queue, movreg, Rt, Argno);
   } else if ((Rt = is_frozen_var(T0))) {
-    inst_queue_push(CTXTc inst_queue, movreg, Rt, Argno);
+    inst_queue_push(inst_queue, movreg, Rt, Argno);
   } else if (isinteger(T0)) {
-    inst_queue_push(CTXTc inst_queue, putnumcon, T0, Argno);
+    inst_queue_push(inst_queue, putnumcon, T0, Argno);
   } else if (isfloat(T0)) {
-    inst_queue_push(CTXTc inst_queue, putnumcon, makeint(p2c_float_as_int(T0)), 
+    inst_queue_push(inst_queue, putnumcon, makeint(p2c_float_as_int(T0)), 
 		    Argno);
   } else if (isnil(T0)) {
-    inst_queue_push(CTXTc inst_queue, putnil, 0, Argno);
+    inst_queue_push(inst_queue, putnil, 0, Argno);
   } else if (isstring(T0)) {
     if (!strcmp(string_val(T0),"$assertAVAR")) {
       Rt = reg_get(CTXTc Reg, RVAR);
       dbgen_instB_pvv(puttvar, Rt, Rt);
       Reg->RegArrayInit[Rt] = 1;  /* reg is inited */
-      inst_queue_push(CTXTc inst_queue, movreg, Rt, Argno);
-    } else inst_queue_push(CTXTc inst_queue, putcon, (Cell)p2c_string(T0), Argno);
+      inst_queue_push(inst_queue, movreg, Rt, Argno);
+    } else inst_queue_push(inst_queue, putcon, (Cell)p2c_string(T0), Argno);
   } else if (isattv(T0)) {
     prolog_term T1;
     
     Rt = reg_get(CTXTc Reg, RVAR);
-    inst_queue_push(CTXTc inst_queue, movreg, Rt, Argno);
+    inst_queue_push(inst_queue, movreg, Rt, Argno);
     flatten_stack_init(flatten_stackq);
 
     T1 = p2p_arg(T0, 0);		/* the VAR part of the attv */
@@ -900,7 +928,7 @@ static void db_genaput(CTXTdeclc prolog_term T0, int Argno,
     db_putterm(CTXTc Rt,T0,Reg,flatten_stackq);    
   } else {  /* structure */
     Rt = reg_get(CTXTc Reg, TVAR);
-    inst_queue_push(CTXTc inst_queue, movreg, Rt, Argno);
+    inst_queue_push(inst_queue, movreg, Rt, Argno);
     flatten_stack_init(flatten_stackq);
     db_putterm(CTXTc Rt,T0,Reg,flatten_stackq);
   }
@@ -971,27 +999,27 @@ static void db_bldsubs(CTXTdeclc prolog_term Sub, RegStat Reg,
   
   if (isstring(Sub)) {
     if (!strcmp(string_val(Sub),"$assertAVAR"))
-      flatten_stack_push(CTXTc flatten_stackq, bldavar, 0);
-    else flatten_stack_push(CTXTc flatten_stackq,bldcon,(Cell)string_val(Sub)); /* bldcon */
+      flatten_stack_push(flatten_stackq, bldavar, 0);
+    else flatten_stack_push(flatten_stackq,bldcon,(Cell)string_val(Sub)); /* bldcon */
   } else if (isinteger(Sub)) {               /* bldnumcon(Sub) */
-    flatten_stack_push(CTXTc flatten_stackq, bldnumcon, Sub);
+    flatten_stack_push(flatten_stackq, bldnumcon, Sub);
   } else if (isfloat(Sub)) {             /* bldfloat(Sub) */
-    flatten_stack_push(CTXTc flatten_stackq, bldfloat, Sub);
+    flatten_stack_push(flatten_stackq, bldfloat, Sub);
   } else if (isref(Sub)) {
     c2p_functor(CTXTc "$assertVAR", 1, Sub);
     Sub = p2p_arg(Sub, 1);
     Rt = reg_get(CTXTc Reg, RVAR);
     c2p_int(CTXTc Rt, Sub);
-    flatten_stack_push(CTXTc flatten_stackq, bldtvar, Rt);    /* bldtvar(Ri) */
+    flatten_stack_push(flatten_stackq, bldtvar, Rt);    /* bldtvar(Ri) */
   } else if (isnil(Sub)) {
-    flatten_stack_push(CTXTc flatten_stackq, bldnil, 0);      /* bldnil */
+    flatten_stack_push(flatten_stackq, bldnil, 0);      /* bldnil */
   } else if ((Rt = is_frozen_var(Sub))) {
-    flatten_stack_push(CTXTc flatten_stackq, bldtvar, Rt);
+    flatten_stack_push(flatten_stackq, bldtvar, Rt);
   } else if (isattv(Sub)) {
     prolog_term T1;
 
     Rt = reg_get(CTXTc Reg, RVAR);
-    flatten_stack_push(CTXTc flatten_stackq, bldtvar, Rt);
+    flatten_stack_push(flatten_stackq, bldtvar, Rt);
 
     T1 = p2p_arg(Sub, 0);	/* the VAR part of the attv */
     c2p_functor(CTXTc "$assertVAR", 1, T1);
@@ -1003,7 +1031,7 @@ static void db_bldsubs(CTXTdeclc prolog_term Sub, RegStat Reg,
     db_putterm(CTXTc Rt, Sub, Reg, flatten_stackq);
   } else {
     Rt = reg_get(CTXTc Reg, TVAR);
-    flatten_stack_push(CTXTc flatten_stackq, bldtvar, Rt);
+    flatten_stack_push(flatten_stackq, bldtvar, Rt);
     db_putterm(CTXTc Rt,Sub,Reg,flatten_stackq);
   }
 }
@@ -1052,13 +1080,13 @@ static void db_genmvs(CTXTdeclc struct instruction_q *inst_queue, RegStat Reg)
     case putnil:
       if (target_is_not_source(inst_queue,T0))
 	{dbgen_instB_ppv(Opcode, T0);}
-      else inst_queue_push(CTXTc inst_queue, Opcode, Arg, T0);
+      else inst_queue_push(inst_queue, Opcode, Arg, T0);
       break;
     case putcon:
     case putnumcon:
       if (target_is_not_source(inst_queue,T0))
 	{dbgen_instB_ppvw(Opcode, T0, Arg);}
-      else inst_queue_push(CTXTc inst_queue, Opcode, Arg, T0);
+      else inst_queue_push(inst_queue, Opcode, Arg, T0);
       break;
     case movreg:
       if (Arg==T0) break;
@@ -1066,14 +1094,14 @@ static void db_genmvs(CTXTdeclc struct instruction_q *inst_queue, RegStat Reg)
 	dbgen_instB_pvv(movreg, Arg, T0); /* movreg */
 	reg_release(Reg,Arg);
       } else if (source_is_not_target(inst_queue,Arg)) /* assume target is source */
-	inst_queue_push(CTXTc inst_queue, movreg, Arg, T0);
+	inst_queue_push(inst_queue, movreg, Arg, T0);
       /* delay the instruction at the end */
       /* else if (Arg>T0) dbgen_instB_pvv(movreg,Arg,T0); movreg */
       else {
 	R0 = reg_get(CTXTc Reg, TVAR);
 	dbgen_instB_pvv(movreg, Arg, R0); /* movreg */
 	reg_release(Reg,Arg);
-	inst_queue_push(CTXTc inst_queue, movreg, R0, T0);
+	inst_queue_push(inst_queue, movreg, R0, T0);
 	/* dbgen_instB_pvv(movreg, R0, T0); */ /* movreg */
       }
       break;

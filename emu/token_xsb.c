@@ -93,7 +93,7 @@ struct CHARS intab =   /* Special character table */
         '/',                  /* endcom: in-line comments */
         '\'',                 /* radix : radix separator */
         '.',                  /* dpoint: decimal point */
-        -1, /*'\\',*/         /* escape: string escape character */
+        '\\',		      /* escape: string escape character */
         '.',                  /* termin: ends clause, sign or solo */
     {
         EOFCH,                /* really the -1th element of the table: */
@@ -191,21 +191,21 @@ char digval[AlphabetSize+1] =
     /*  8       9       :       ;       <       =       >       ?       */
         8,      9,      99,     99,     99,     99,     99,     99,
     /*  @       A       B       C       D       E       F       G       */
-        99,     10,     11,     12,     13,     14,     15,     99,
+        99,     10,     11,     12,     13,     14,     15,     16,
     /*  H       I       J       K       L       M       N       O       */
-        99,     99,     99,     99,     99,     99,     99,     99,
+        17,     18,     19,     20,     21,     22,     23,     24,
     /*  P       Q       R       S       T       U       V       W       */
-        99,     99,     99,     99,     99,     99,     99,     99,
+        25,     26,     27,     28,     29,     30,     31,     32,
     /*  X       Y       Z       [       \       ]       ^       _       */
-        99,     99,     99,     99,     99,     99,     99,     0,  /*NB*/
+        33,     34,     35,     99,     99,     99,     99,     0,  /*NB*/
     /*  `       a       b       c       d       e       f       g       */
-        99,     10,     11,     12,     13,     14,     15,     99,
+        99,     10,     11,     12,     13,     14,     15,     16,
     /*  h       i       j       k       l       m       n       o       */
-        99,     99,     99,     99,     99,     99,     99,     99,
+        17,     18,     19,     20,     21,     22,     23,     24,
     /*  p       q       r       s       t       u       v       w       */
-        99,     99,     99,     99,     99,     99,     99,     99,
+        25,     26,     27,     28,     29,     30,     31,     32,
     /*  x       y       z       {       |       }       ~       ^?      */
-        99,     99,     99,     99,     99,     99,     99,     99,
+        33,     34,     35,     99,     99,     99,     99,     99,
     /*  128     129     130     131     132     133     134     135     */
         99,     99,     99,     99,     99,     99,     99,     99,
     /*  136     137     138     139     140     141     142     143     */
@@ -351,7 +351,7 @@ static int read_character(CTXTdeclc register FILE *card,
         c = GetC(card,instr);
 BACK:   if (c < 0) {
           if (c == EOF) /* to mostly handle cygwin stdio.h bug ... */
-READ_ERROR:      if (q < 0) {
+READ_ERROR: if (q < 0) {
                 SyntaxError("end of file in character constant");
 		return -2;		/* encounters EOF */
             } else {
@@ -377,33 +377,23 @@ READ_ERROR:      if (q < 0) {
             case EOF:
 		clearerr(card);
                 goto READ_ERROR;
-            case 'n': case 'N':         /* newline */
-                return 10;
-            case 't': case 'T':         /* tab */
-                return  9;
-            case 'r': case 'R':         /* reeturn */
-                return 13;
-            case 'v': case 'V':         /* vertical tab */
-                return 11;
-            case 'b': case 'B':         /* backspace */
-                return  8;
-            case 'f': case 'F':         /* formfeed */
-                return 12;
-            case 'e': case 'E':         /* escape */
-                return 27;
-            case 'd': case 'D':         /* delete */
-                return 127;
-            case 's': case 'S':         /* space */
-                return 32;
             case 'a': case 'A':         /* alarm */
-                return  7;
-            case '^':                   /* control */
-                c = GetC(card,instr);
-                if (c < 0) goto READ_ERROR;
-                return c == '?' ? 127 : c&31;
-            case 'c': case 'C':         /* continuation */
-                while (IsLayout(c = GetC(card,instr))) ;
+                return  '\a';
+            case 'b': case 'B':         /* backspace */
+                return  '\b';
+            case 'f': case 'F':         /* formfeed */
+                return '\b';
+            case '\n':		        /* seeing a newline */
+                while (IsLayout(c = GetC(card,instr)));
                 goto BACK;
+            case 'n': case 'N':         /* newline */
+	        return '\n';
+            case 'r': case 'R':         /* return */
+                return '\r';
+            case 't': case 'T':         /* tab */
+                return  '\t';
+            case 'v': case 'V':         /* vertical tab */
+                return '\v';
             case 'x': case 'X':         /* hexadecimal */
                 {   int i, n;
                     for (n = 0, i = 2; --i >= 0; n = (n<<4) + DigVal(c))
@@ -413,13 +403,6 @@ READ_ERROR:      if (q < 0) {
                             break;
                         }
                     return n & 255;
-                }
-            case 'o': case 'O':         /* octal */
-                c = GetC(card,instr);
-                if (DigVal(c) >= 8) {
-                    if (c < 0) goto READ_ERROR;
-                    (void) unGetC(c, card, instr);
-                    return 0;
                 }
             case '0': case '1': case '2': case '3':
             case '4': case '5': case '6': case '7':
@@ -432,15 +415,20 @@ READ_ERROR:      if (q < 0) {
                         }
                     return n & 255;
                 }
-            default:
-                if (!IsLayout(c)) return c;
-                c = GetC(card,instr);
-                goto BACK;
+	    case '\\':			/* backslash */
+	        return '\\';
+// Don't include ISO's single quote escape; it breaks '/\', which is (commonly?) used in XSB
+//	    case '\'':			/* single quote */
+//	        return '\'';
+	    case '"':			/* double quote */
+	        return '"';
+	    case '`':			/* back quote */
+	        return '`';
+	    default:			/* return the \, not an escape */
+	      (void) unGetC(c, card, instr);
+	      return '\\';
         }
     }
- 
- 
- 
  
 /*  com0plain(card, instr, endeol)
     These comments have the form
@@ -506,7 +494,7 @@ static int com2plain(register FILE *card,	/* source file */
 {
         register int c;
         register int state;
- 
+
         for (state = 0; (c = GetC(card,instr)) >= 0; ) {
             if (c == endcom && state) break;
             state = c == astcom;
@@ -579,78 +567,27 @@ START:
                 if (c == intab.radix) {  
                     *s = 0;
                     for (d = 0, s = strbuff; (c = *s++);) {
-		      d = d*10-'0'+c;}
-                        if (d == 1 || d > 36) {
-				SyntaxError(badradix);
-				token->type = TK_ERROR;
-				return token;
-                        }
+		      d = d*10-'0'+c;
+		    }
+		    if (d == 1 || d > 36) {
+		      SyntaxError(badradix);
+		      token->type = TK_ERROR;
+		      return token;
+		    }
                     if (d == 0) {
 		      /*  0'c['] is a character code  */
 		      d = read_character(CTXTc card, instr, -1);
-		      /* TLS: changed to handle some of the important cases
-			 of character code constants, sec 6.4.4 of ISO.
-			 Here is what it does and doesnt do: 
-			 A character code constant is 0' followed by 
-			 a number of possible items.  
-			 1) non quote char
-			 2) single quote char ',' single quote char
-			 3) double quote char
-			 4) back quote char
-
-			 We handle 2,3,4, and handle (I
-			 think) all the cases for 1 *except*
-
-			 meta-escape sequence
-			 octal escape sequence
-			 hexadecimal escape sequence
-
-			 and partially handle control escape
-			 sequences, which is what got me into this in
-			 the first place.  For these last, my change
-			 is somewhat kludgy, and I am open to
-			 suggestions about what library function to
-			 use to convert, e.g.  \n to 10.  
-			 
-			 If someone can tell me a better way to do
-			 this, then we still need to add \a, \b, \f,
-			 \r, \v for ISO.  */
-
-		      if (d == '\\') {
-			d = GetC(card,instr);
-			if (d == 'n') {
-			  rad_int = 10; 
-			  token->value = (char *)(&rad_int);
-			  token->nextch = GetC(card,instr);
-			  token->type = TK_INT;
-			  return token;
-			} 
-			if (d == 't') {
-			  rad_int = 9;  
-			  token->value = (char *)(&rad_int);
-			  token->nextch = GetC(card,instr);
-			  token->type = TK_INT;
-			  return token;
-			} 
-			if (d == ' ') {
-			  rad_int = 47;  /* handle 0'\ */
-			  token->value = (char *)(&rad_int);
-			  token->nextch = GetC(card,instr);
-			  token->type = TK_INT;
-			  return token;
-			}
-		      }
-		      else {    // 0'<char>
-                        sprintf(strbuff, "%d", d);
-                        d = GetC(card,instr);
-			rad_int = atoi(strbuff);
-                        token->nextch = d == intab.radix ? GetC(card,instr):d;
-			token->value = (char *)(&rad_int);
-			token->type = TK_INT;
-                        return token;
-		      }
-                    }
-                    while (c = GetC(card,instr), DigVal(c) < 99)
+		      //		      sprintf(strbuff, "%d", d);
+		      rad_int = d;
+		      d = GetC(card,instr);
+		      //		      rad_int = atoi(strbuff);
+		      token->nextch = d == intab.radix ? GetC(card,instr):d;
+		      token->value = (char *)(&rad_int);
+		      token->type = TK_INT;
+		      return token;
+		    }
+		    /* handle non-0 radix */
+NONZERO_RADIX:      while (c = GetC(card,instr), DigVal(c) < d)
                         if (c != '_') {
 			    oldv = newv;
 			    newv = newv*d + DigVal(c);
@@ -721,16 +658,17 @@ LAB_DECIMAL:                *s++ = '.';
                     }
 		}
 		else {
-		  if (c == 'b' || c == 'x' || c == 'o' ) {
-		    SyntaxError("ISO binary/hex/octal integer constants not yet implemented"); 
-		    do {
-		      if (d != '_') *s++ = d;
-		      d = GetC(card,instr);
-		    } while (InType(d) <= BREAK);
-		    token->type = TK_ERROR;
-		    return token;
+		  if (c == 'b') {
+		    d = 2;
+		    goto NONZERO_RADIX;
+		  } else if (c == 'o') {
+		    d = 8;
+		    goto NONZERO_RADIX;
+		  } else if (c == 'x') {
+		    d = 16;
+		    goto NONZERO_RADIX;
 		  }
-		};
+		}
                 *s = 0;
 		rad_int = atoi(strbuff);
 		token->nextch = c;
