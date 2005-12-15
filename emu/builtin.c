@@ -1595,10 +1595,7 @@ int builtin_call(CTXTdeclc byte number)
 	  ctop_int(CTXTc 4, *(long *)(token->value));
 	  break;
         case TK_REAL : case TK_REALFUNC : 
-	  {
-          Float float_temp =  (Float)(*(double *)(token->value));
-          ctop_float(CTXTc 4, float_temp);
-	  }
+	  ctop_float(CTXTc 4, *(double *)(token->value));
 	  break;
         case TK_PUNC : case TK_HPUNC :
 	  ctop_int(CTXTc 4, *(token->value)); break;

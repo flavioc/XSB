@@ -63,7 +63,8 @@
 #define DigVal(c)       (digval+1)[c]
 
 #ifdef BITS64
-#define MY_MAXINT ((long)0x07fffffffffffff)
+#define MY_MAXINT ((long)0x7fffffffffffff)
+#define MY_MAXINT ((long)0x7fffffffffffffff)
 #else
 #define MY_MAXINT ((int)0x7fffffff)	/* Modified by Kostis */
 #endif
@@ -353,12 +354,12 @@ BACK:   if (c < 0) {
           if (c == EOF) /* to mostly handle cygwin stdio.h bug ... */
 READ_ERROR: if (q < 0) {
                 SyntaxError("end of file in character constant");
-		return -2;		/* encounters EOF */
+		//		return -2;		/* encounters EOF */
             } else {
                 char message[80];
                 sprintf(message, "end of file in %cquoted%c constant", q, q);
                 SyntaxError(message);
-		return -2;		/* encounters EOF */
+		//		return -2;		/* encounters EOF */
             }
           else c = c & 0xff;  /* in which getc returns "signed" char? */
         }
@@ -377,24 +378,24 @@ READ_ERROR: if (q < 0) {
             case EOF:
 		clearerr(card);
                 goto READ_ERROR;
-            case 'a': case 'A':         /* alarm */
+	    case 'a':		        /* alarm */
                 return  '\a';
-            case 'b': case 'B':         /* backspace */
+            case 'b':		        /* backspace */
                 return  '\b';
-            case 'f': case 'F':         /* formfeed */
+            case 'f':		        /* formfeed */
                 return '\b';
             case '\n':		        /* seeing a newline */
                 while (IsLayout(c = GetC(card,instr)));
                 goto BACK;
-            case 'n': case 'N':         /* newline */
+            case 'n':		        /* newline */
 	        return '\n';
-            case 'r': case 'R':         /* return */
+            case 'r':		        /* return */
                 return '\r';
-            case 't': case 'T':         /* tab */
+            case 't':		        /* tab */
                 return  '\t';
-            case 'v': case 'V':         /* vertical tab */
+            case 'v': 		        /* vertical tab */
                 return '\v';
-            case 'x': case 'X':         /* hexadecimal */
+            case 'x':		        /* hexadecimal */
                 {   int i, n;
                     for (n = 0, i = 2; --i >= 0; n = (n<<4) + DigVal(c))
                         if (DigVal(c = GetC(card,instr)) >= 16) {
@@ -571,8 +572,8 @@ START:
 		    }
 		    if (d == 1 || d > 36) {
 		      SyntaxError(badradix);
-		      token->type = TK_ERROR;
-		      return token;
+		      //		      token->type = TK_ERROR;
+		      //		      return token;
 		    }
                     if (d == 0) {
 		      /*  0'c['] is a character code  */
@@ -592,7 +593,7 @@ NONZERO_RADIX:      while (c = GetC(card,instr), DigVal(c) < d)
 			    oldv = newv;
 			    newv = newv*d + DigVal(c);
 			    if (newv < oldv || newv > MY_MAXINT) {
-				xsb_error("Overflow in radix notation");
+				xsb_error("Overflow in radix notation, returning float");
 			        double_v = oldv*1.0*d + DigVal(c);
 				while (c = GetC(card,instr), DigVal(c) < 99)
                         	    if (c != '_') 
@@ -634,8 +635,8 @@ LAB_DECIMAL:                *s++ = '.';
                             else if (d == '+') d = GetC(card,instr);
                             if (InType(d) > BREAK) {
 				SyntaxError(badexpt);
-				token->type = TK_ERROR;
-				return token;
+				//				token->type = TK_ERROR;
+				//				return token;
 			    }
                             do {
                                 if (d != '_') *s++ = d;
@@ -657,21 +658,36 @@ LAB_DECIMAL:                *s++ = '.';
                         /* c has not changed */
                     }
 		}
-		else {
-		  if (c == 'b') {
-		    d = 2;
-		    goto NONZERO_RADIX;
-		  } else if (c == 'o') {
-		    d = 8;
-		    goto NONZERO_RADIX;
-		  } else if (c == 'x') {
-		    d = 16;
-		    goto NONZERO_RADIX;
+		else if (c == 'b' || c == 'o' || c == 'x') {
+		  int oc = c;
+		  *s = 0;
+		  for (d = 0, s = strbuff; (oc = *s++);)
+		    d = d*10-'0'+oc;
+		  if (d == 0) {
+		    if (c == 'b') d = 2;
+		    else if (c == 'o') d = 8;
+		    else /*if (c == 'x')*/ d = 16;
+		  } else {
+		    token->nextch = c;
+		    rad_int = d;
+		    token->value = (char *)(&rad_int);
+		    token->type = TK_INT;
+		    return token;
+		  }
+		  goto NONZERO_RADIX;
+		}
+		token->nextch = c;
+                *s = 0;
+		for (rad_int = 0, s = strbuff; (c = *s++);) {
+		  d = rad_int;
+		  rad_int = rad_int*10-'0'+c;
+		  if (rad_int < d || rad_int > MY_MAXINT) {
+		    xsb_error("Overflow in integer, returning MAX_INT");
+		    rad_int = MY_MAXINT;
+		    break;
 		  }
 		}
-                *s = 0;
-		rad_int = atoi(strbuff);
-		token->nextch = c;
+		  //		rad_int = atoi(strbuff);
 		token->value = (char *)(&rad_int);
 		if (c == '(')	/* Modified for HiLog */
 			token->type = TK_INTFUNC;
@@ -744,8 +760,8 @@ SYMBOL:         if (c == '(') {
                 if (c == intab.begcom && d == intab.astcom) {
 ASTCOM:             if (com2plain(card, instr, d, intab.endcom)) {
 			SyntaxError(eofinrem);
-			token->type = TK_ERROR;
-			return token;
+			//			token->type = TK_ERROR;
+			//			return token;
 		    }
                     c = GetC(card,instr);
                     goto START;
