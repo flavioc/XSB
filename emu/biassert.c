@@ -103,7 +103,7 @@ CPtr dynpredep_to_prortb(CTXTdeclc void *pred_ep) {
 }
 #endif
 
-inline PrRef dynpredep_to_prref(CTXTdeclc void *pred_ep) {
+PrRef dynpredep_to_prref(CTXTdeclc void *pred_ep) {
 #ifdef MULTI_THREAD
   if (cell_opcode((CPtr)(pred_ep)) == switchonthread) {
     if (th->tid > (((struct DispBlk_t **)pred_ep)[1])->MaxThread) 
