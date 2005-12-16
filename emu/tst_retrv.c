@@ -92,12 +92,19 @@ static CPtr orig_ebreg;
    hbreg = orig_hbreg;			\
    ebreg = orig_ebreg
 
-
-/*
- *  Create a binding and trail it.
- */
-#define Bind_and_Trail(Addr, Val)	pushtrail0(Addr, Val)
-
+/* TLS: 12/05.  There was an bug in the routine
+   tst_collect_relevant_answers().  This routine used Bind_and_Trail
+   or Bind_and_Conditionally Trail (see old copies below) to bind trie
+   symbols to variables in the answer template (substitution factor).
+   For some reason these macros trailed, but did not actually bind.
+   This meant that answers were occasionlly being returned to subsumed
+   calls that didn't actually unify with these calls.  It didn't seem
+   to happen often -- only when an subsumed call S_d has a
+   variable/variable binding that a subsuming call S_g does not have
+   AND S_d and S_g are in the same SCC.  Apparently we have not often
+   encountered both of these cases at the same time (or tested for
+   them).
+*/
 /*
  *  Create a binding and conditionally trail it.  TrieVarBindings[] cells
  *  are always trailed, while those in the WAM stacks are trailed based on
@@ -106,9 +113,31 @@ static CPtr orig_ebreg;
  *  built on the heap for binding.  Therefore, this condition serves as in
  *  the WAM.
  */
-#define Bind_and_Conditionally_Trail(Addr, Val)		\
+
+#define Trie_bind_copy(Addr,Val)		\
+  Trie_Conditionally_Trail(Addr,Val);		\
+  *(Addr) = Val
+
+#define Trie_Conditionally_Trail(Addr, Val)		\
    if ( IsUnboundTrieVar(Addr) || conditional(Addr) )	\
      { pushtrail0(Addr, Val) }
+
+#define Bind_and_Conditionally_Trail(Addr, Val)	Trie_bind_copy(Addr,Val) \
+
+/*
+ *  Create a binding and trail it.
+ */
+#define Bind_and_Trail(Addr, Val)	pushtrail0(Addr, Val)	\
+  *(Addr) = Val
+
+/*******************************************
+OLD VERSIONS
+ * #define Bind_and_Trail(Addr, Val)	pushtrail0(Addr, Val)
+
+ * #define Bind_and_Conditionally_Trail(Addr, Val)	\
+ *  if ( IsUnboundTrieVar(Addr) || conditional(Addr) )	\
+ *    { pushtrail0(Addr, Val) }
+ *******************************************/
 
 
 #define Sys_Trail_Unwind(UnwindBase)      table_undo_bindings(UnwindBase)
@@ -559,7 +588,9 @@ static void tstCollectionError(CTXTdeclc char *string, xsbBool cleanup_needed) {
    case XSB_INT:							   \
    case XSB_FLOAT:							   \
    case XSB_STRING:							   \
-     Bind_and_Conditionally_Trail((CPtr)Subterm,symbol);		   \
+     /*     printf("before %x %x \n",(CPtr)Subterm,symbol);	*/	\
+     Trie_bind_copy((CPtr)Subterm,symbol);				\
+     /*     printf("after %x\n",*(CPtr)Subterm);		*/	\
      break;								   \
 									   \
    case XSB_STRUCT:							   \
@@ -581,7 +612,7 @@ static void tstCollectionError(CTXTdeclc char *string, xsbBool cleanup_needed) {
 									   \
        symbolPsc = (Psc)cs_val(symbol);					   \
        arity = get_arity(symbolPsc);					   \
-       Bind_and_Conditionally_Trail((CPtr)Subterm,(Cell)hreg);		   \
+       Trie_bind_copy((CPtr)Subterm,(Cell)hreg);			\
        bld_cs(hreg, hreg + 1);						   \
        bld_functor(++hreg, symbolPsc);					   \
        for (heap_var_ptr = hreg + arity, i = 0;				   \
@@ -596,8 +627,8 @@ static void tstCollectionError(CTXTdeclc char *string, xsbBool cleanup_needed) {
        /*								   \
 	* We have a TrieVar bound to a heap-resident STRUCT.		   \
 	*/								   \
-       Bind_and_Conditionally_Trail((CPtr)Subterm,symbol);		   \
-     }									   \
+       Trie_bind_copy((CPtr)Subterm,symbol);				\
+     }									\
      break;								   \
 									   \
    case XSB_LIST:							   \
@@ -608,7 +639,7 @@ static void tstCollectionError(CTXTdeclc char *string, xsbBool cleanup_needed) {
 	* subterm variable to it.  Then use this algorithm to find	   \
 	* bindings for the unbound variables X1 & X2 in the trie.	   \
 	*/								   \
-       Bind_and_Conditionally_Trail((CPtr)Subterm,(Cell)hreg);		   \
+       Trie_bind_copy((CPtr)Subterm,(Cell)hreg);				\
        bld_list(hreg, hreg + 1);					   \
        hreg = hreg + 3;							   \
        bld_free(hreg - 1);						   \
@@ -620,7 +651,7 @@ static void tstCollectionError(CTXTdeclc char *string, xsbBool cleanup_needed) {
        /*								   \
 	* We have a TrieVar bound to a heap-resident LIST.		   \
 	*/								   \
-       Bind_and_Conditionally_Trail((CPtr)Subterm,symbol);		   \
+       Trie_bind_copy((CPtr)Subterm,symbol);				\
      }									   \
      break;								   \
 									   \
@@ -681,6 +712,9 @@ static void tstCollectionError(CTXTdeclc char *string, xsbBool cleanup_needed) {
 ALNptr tst_collect_relevant_answers(CTXTdeclc TSTNptr tstRoot, TimeStamp ts,
 				    int numTerms, CPtr termsRev) {
 
+  /* numTerms -- size of Answer Template */
+  /* termsRev -- Answer template (on heap) */
+
   ALNptr tstAnswerList;  /* for collecting leaves to be returned */
 
   TSTNptr cur_chain;     /* main ptr for stepping through siblings; under
@@ -706,7 +740,7 @@ ALNptr tst_collect_relevant_answers(CTXTdeclc TSTNptr tstRoot, TimeStamp ts,
   /* Initialize data structures
      -------------------------- */
   TermStack_ResetTOS;
-  TermStack_PushHighToLowVector(termsRev,numTerms);
+  TermStack_PushHighToLowVector(termsRev,numTerms);  /* AnsTempl -> TermStack */
   TermStackLog_ResetTOS;
   tstCPStack.top = tstCPStack.base;
   trail_base = top_of_trail;
@@ -722,7 +756,6 @@ ALNptr tst_collect_relevant_answers(CTXTdeclc TSTNptr tstRoot, TimeStamp ts,
      --------------------------- */
 
  While_TSnotEmpty:
-
   while ( ! TermStack_IsEmpty ) {
     TermStack_Pop(subterm);
     XSB_Deref(subterm);
@@ -898,8 +931,10 @@ ALNptr tst_collect_relevant_answers(CTXTdeclc TSTNptr tstRoot, TimeStamp ts,
 	    "(* Note: this template may be partially instantiated *)\n"));
     fprintf(stdwarn, "Attempting to continue...\n");
   }
-  else
+  else {
+    //    printf("ans   ");printTriePath(stderr,parentTSTN,NO);printf("\n");
     ALN_InsertAnswer(tstAnswerList, parentTSTN);
+  }
   if ( CPStack_IsEmpty ) {
     Sys_Trail_Unwind(trail_base);
     Restore_WAM_Registers;
