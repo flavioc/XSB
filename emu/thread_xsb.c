@@ -479,7 +479,7 @@ xsbBool mt_random_request( CTXTdecl )
 	//	printf("int %x scale %x s1 %d ex %x\n", interval,scale,scale,16);
 	rval = RANDOM_CALL(); 
 	//	printf("rval %x \n",rval);
-	ctop_int(CTXTc 3,floor(rval / interval));
+	ctop_int(CTXTc 3,(Integer)floor(rval / interval));
 	break;
       }
 

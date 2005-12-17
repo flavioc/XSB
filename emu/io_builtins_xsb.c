@@ -202,7 +202,7 @@ xsbBool fmt_write(CTXTdecl)
   prolog_term ValTerm, Arg, Fmt_term;
   int i, Arity=0;
   long int_arg;     	     	     	      /* holder for int args         */
-  float float_arg;    	     	     	      /* holder for float args       */
+  double float_arg;    	     	     	      /* holder for float args       */
   struct fmt_spec *current_fmt_spec = (struct fmt_spec *)mem_alloc(sizeof(struct fmt_spec),LEAK_SPACE);
   int width=0, precision=0;    	     	      /* these are used in conjunction
 						 with the *.* format         */
@@ -352,7 +352,7 @@ xsbBool fmt_write_string(CTXTdecl)
   prolog_term ValTerm, Arg, Fmt_term;
   int i, Arity;
   long int_arg;     	     	     	    /* holder for int args     	    */
-  float float_arg;     	     	     	    /* holder for float args   	    */
+  double float_arg;    	     	     	    /* holder for float args   	    */
   struct fmt_spec *current_fmt_spec = (struct fmt_spec *)mem_alloc(sizeof(struct fmt_spec),LEAK_SPACE);
   int width=0, precision=0;      	    /* these are used in conjunction
 					       with the *.* format     	    */
@@ -1000,7 +1000,7 @@ int read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_locati
 		  } else if (token->type == TK_REAL) {
 			opstk[optop-1].typ = TK_REAL;
 			float_temp = (Float) *(double *)(token->value);
-			opstk[optop-1].op = makefloat(-float_temp);
+			opstk[optop-1].op = makefloat((float)-float_temp); // lose precision
 		  } else return read_can_error(CTXTc filep,instr,prevchar,prologvar,findall_chunk_index);
 		} else return read_can_error(CTXTc filep,instr,prevchar,prologvar,findall_chunk_index);
       }
@@ -1084,8 +1084,8 @@ int read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_locati
       case TK_REAL:
 	        if (optop >= opstk_size) expand_opstk;
 		opstk[optop].typ = TK_REAL;
-		float_temp = (float) *(double *)(token->value);
-		opstk[optop].op = makefloat(float_temp);
+		float_temp = (Float)* (double *)(token->value);
+		opstk[optop].op = makefloat((float)float_temp); // lose precision
 		optop++;
 		postopreq = TRUE;
 		break;
@@ -1707,7 +1707,7 @@ void call_conv write_canonical_term_rec(CTXTdeclc Cell prologterm, int letter_fl
 	ival = int_val(tempi);
 	letter = ival % 26;
 	ival = ival / 26;
-	XSB_StrAppendC(wcan_string,letter+'A');
+	XSB_StrAppendC(wcan_string,(char)(letter+'A'));
 	if (ival != 0) {
 	  sprintf(wcan_buff->string,"%d",ival);
 	  XSB_StrAppendV(wcan_string,wcan_buff);

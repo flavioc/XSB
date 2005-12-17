@@ -95,7 +95,7 @@ Java_com_xsb_interprolog_NativeEngine_put_1bytes
 	//T1 = clock() - T0;
 	//printf("C:got bytes array - %d mS",T1);
 	
-	argString = (*env)->GetStringUTFChars(env, jStr, 0);
+	argString = (char *)((*env)->GetStringUTFChars(env, jStr, 0));
 	c2p_functor(CTXTc argString, args, reg_term(CTXTc 1));
 	c2p_list(CTXTc p2p_arg(reg_term(CTXTc 1),1));
 	if (args == 3) {
@@ -152,7 +152,7 @@ JNIEXPORT jint JNICALL
 Java_com_xsb_interprolog_NativeEngine_xsb_1command_1string
 (JNIEnv *env, jobject obj, jstring jCommandString) {
 	int rcode;
-	char *CommandString = (*env)->GetStringUTFChars(env, jCommandString, 0);
+	char *CommandString = (char *)((*env)->GetStringUTFChars(env, jCommandString, 0));
 	theEnv = env;
 	theObj = obj;
 	rcode=xsb_command_string(CTXTc CommandString);
@@ -166,7 +166,7 @@ Java_com_xsb_interprolog_NativeEngine_xsb_1init_1internal
 	int rcode;
 	int myargc=2;
 	char * myargv[2];
-	char *XSBPath = (*env)->GetStringUTFChars(env, jXSBPath, 0);
+	char *XSBPath = (char *)((*env)->GetStringUTFChars(env, jXSBPath, 0));
 
 #ifdef MULTI_THREAD
      th = mem_alloc( sizeof( th_context ),THREAD_SPACE ) ;
@@ -195,7 +195,7 @@ Java_com_xsb_interprolog_NativeEngine_xsb_1init_1internal_1arg
 	myargc = (*env)->GetArrayLength(env, jXSBParameters) + 2;
        	myargv = (char **) mem_alloc(myargc * sizeof(char *),INTERPROLOG_SPACE);
 
-	XSBPath = (*env)->GetStringUTFChars(env, jXSBPath, 0);
+	XSBPath = (char *)((*env)->GetStringUTFChars(env, jXSBPath, 0));
 	if (debug==JNI_TRUE) printf("Entering Java_com_xsb_interprolog_NativeEngine_xsb_1init_1internal\n");
 	myargv[0] = XSBPath;
 	myargv[1] = "-n";
@@ -203,7 +203,7 @@ Java_com_xsb_interprolog_NativeEngine_xsb_1init_1internal_1arg
 	parameters = (jstring *) mem_alloc((myargc - 2) * sizeof(jstring *),INTERPROLOG_SPACE);
 	for (i=0; i < myargc-2; i++) {
           parameters[i] = (jstring)(*env)->GetObjectArrayElement(env, jXSBParameters, i);
-	  myargv[i + 2] = (*env)->GetStringUTFChars(env, parameters[i], 0);
+	  myargv[i + 2] = (char *)((*env)->GetStringUTFChars(env, parameters[i], 0));
 	}
 #ifdef MULTI_THREAD
      th = mem_alloc( sizeof( th_context ),THREAD_SPACE ) ;

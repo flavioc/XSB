@@ -1384,7 +1384,7 @@ xsbBool assert_buff_to_clref(CTXTdecl /*Head,Arity,Prref,AZ,Indexes,HashTabSize,
 {
   ClRef Clref;
   assert_buff_to_clref_p(CTXTc reg_term(CTXTc 1),
-			 ptoc_int(CTXTc 2),
+			 (byte)ptoc_int(CTXTc 2),
 			 (PrRef)ptoc_int(CTXTc 3),
 			 ptoc_int(CTXTc 4),
 			 reg_term(CTXTc 5),

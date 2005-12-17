@@ -312,7 +312,7 @@ void string_table_stats() {
 }
 
 void free_unused_strings() {
-  int i;
+  unsigned long i;
   void *ptr, *prevptr;
   int used = 0, unused = 0;
 

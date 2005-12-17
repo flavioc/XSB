@@ -943,7 +943,7 @@ void mark_code_strings(int pflag, CPtr inst_addr, CPtr end_addr) {
 }
 
 void mark_atom_and_code_strings(CTXTdecl) {
-  int i;
+  unsigned long i;
   Pair pair_ptr, mod_pair_ptr;
   PrRef prref;
   ClRef clref;

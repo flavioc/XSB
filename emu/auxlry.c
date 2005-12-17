@@ -55,7 +55,7 @@ extern int syscall();
 
 double cpu_time(void)
 {
-  float time_sec;
+  double time_sec;
 
 #if defined(WIN_NT)
 #ifndef _MSC_VER
@@ -90,10 +90,10 @@ double cpu_time(void)
     stime = lkernel / 1.0e7;
     utime = luser / 1.0e7;
 
-    time_sec = (float) stime + utime;
+    time_sec =  stime + utime;
 
   } else {
-    time_sec = ((float) clock() / CLOCKS_PER_SEC);
+    time_sec = ( clock() / CLOCKS_PER_SEC);
   }
 
 #else

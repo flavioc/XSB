@@ -290,7 +290,7 @@ extern inline Float make_float_from_ints(UInteger, UInteger);
      ?int_val(dcell)         \
      :(isboxedinteger(dcell) \
        ?boxedint_val(dcell)  \
-       :0x80000000))
+       :(Integer)0x80000000))
 
 
 #ifndef FAST_FLOATS
