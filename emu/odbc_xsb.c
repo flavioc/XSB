@@ -63,7 +63,7 @@
 #include "varstring_xsb.h"
 #include "thread_xsb.h"
 
-#define MAXCURSORNUM                    25
+#define MAXCURSORNUM                    200
 #define MAXVARSTRLEN                    65000
 #define MAXI(a,b)                       ((a)>(b)?(a):(b))
 
@@ -813,9 +813,7 @@ void SetBindVal(CTXTdecl)
 	if (cur->BindTypes[j] < 2) free((void *)cur->BindList[j]);
 	cur->BindList[j] = (UCHAR *)malloc(sizeof(int));
 	cur->BindTypes[j] = 0;
-	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT,
-			      SQL_C_SLONG, SQL_INTEGER,
-			      0, 0, (int *)(cur->BindList[j]), 0, NULL);
+	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_SLONG, SQL_INTEGER, 0, 0, (int *)(cur->BindList[j]), 0, NULL);
 	if (rc != SQL_SUCCESS) {
 	  ctop_int(CTXTc 5,PrintErrorMsg(cur));
 	  SetCursorClose(cur);
@@ -829,9 +827,7 @@ void SetBindVal(CTXTdecl)
 	if (cur->BindTypes[j] < 2) free((void *)cur->BindList[j]);
 	cur->BindList[j] = (UCHAR *)malloc(sizeof(float));
 	cur->BindTypes[j] = 1;
-	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT,
-			      SQL_C_FLOAT, SQL_FLOAT,
-			      0, 0, (float *)(cur->BindList[j]), 0, NULL);
+	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_FLOAT, SQL_FLOAT, 0, 0, (float *)(cur->BindList[j]), 0, NULL);
 	if (rc != SQL_SUCCESS) {
 	  ctop_int(CTXTc 5,PrintErrorMsg(cur));
 	  SetCursorClose(cur);
@@ -928,10 +924,10 @@ void SetBindVal(CTXTdecl)
 /*-----------------------------------------------------------------------------*/
 void Parse(CTXTdecl)
 {
-  int j;
-  struct Cursor *cur = (struct Cursor *)ptoc_int(CTXTc 2);
-  RETCODE rc;
-
+int j;
+struct Cursor *cur = (struct Cursor *)ptoc_int(CTXTc 2);
+RETCODE rc;
+SQLINTEGER len = 0; 
   if (cur->Status == 2) { /* reusing opened cursor*/
     rc = SQLFreeStmt(cur->hstmt,SQL_CLOSE);
     if ((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO)) {
@@ -941,53 +937,54 @@ void Parse(CTXTdecl)
     }
     /* reset just char and null vars, since they store addr of chars*/
     for (j = 0; j < cur->NumBindVars; j++) {
-      switch (cur->BindTypes[j]) {
-      case 2:
-	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR,
-			      SQL_CHAR, strlen((char *)cur->BindList[j]) + 1, 0,(char *) cur->BindList[j], 0, &SQL_NTSval);
-	break;
-      case 3:
-	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR,
-			      SQL_CHAR, 0, 0,NULL, 0, &SQL_NULL_DATAval);
-	break;
-      }
+      switch (cur->BindTypes[j])
+		{
+		case 2:
+			len = strlen((char *)cur->BindList[j]) + 1;
+			rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,(char *) cur->BindList[j], len, &len);
+			break;
+		case 3:
+			rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,NULL, 0, &SQL_NULL_DATAval);
+			break;
+		}
     }
   } else {
-    if (SQLPrepare(cur->hstmt, cur->Sql, SQL_NTS) != SQL_SUCCESS) {
-      ctop_int(CTXTc 3,PrintErrorMsg(cur));
-      SetCursorClose(cur);
-      return;
-    }
+    if (SQL_SUCCESS != (rc = SQLPrepare(cur->hstmt, cur->Sql, SQL_NTS)))
+		{
+		ctop_int(CTXTc 3,PrintErrorMsg(cur));
+		SetCursorClose(cur);
+		return;
+		}
+
 
     /* set the bind variables*/
     for (j = 0; j < cur->NumBindVars; j++) {
-      switch (cur->BindTypes[j]) {
-      case 0:
-	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_SLONG, SQL_INTEGER,
-			 0, 0, (int *)(cur->BindList[j]), 0, NULL);
-	break;
-      case 1:
-	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_FLOAT, SQL_FLOAT,
-			 0, 0, (float *)cur->BindList[j], 0, NULL);
-	break;
-      case 2:
-	/* we're sloppy here.  it's ok for us to use the default values*/
-	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR,
-			      SQL_CHAR, strlen((char *)cur->BindList[j]) + 1, 0,(char *)cur->BindList[j], 0, &SQL_NTSval);
-	break;
-      case 3:
-	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR,
-			      SQL_CHAR, 0, 0,NULL, 0, &SQL_NULL_DATAval);
-	break;
-      default:
-	xsb_abort("[ODBC] illegal BindVal");
-	rc = 0;
-      }
-      if (rc != SQL_SUCCESS) {
-	ctop_int(CTXTc 3,PrintErrorMsg(cur));
-	SetCursorClose(cur);
-	return;
-      }
+      switch (cur->BindTypes[j])
+		{
+		case 0:
+			rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_SLONG, SQL_INTEGER, 0, 0, (int *)(cur->BindList[j]), 0, NULL);
+			break;
+		case 1:
+			rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_FLOAT, SQL_FLOAT, 0, 0, (float *)cur->BindList[j], 0, NULL);
+			break;
+		case 2:
+			/* we're sloppy here.  it's ok for us to use the default values*/
+			len = strlen((char *)cur->BindList[j]) + 1;		
+			rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,(char *)cur->BindList[j], len, &len);
+			break;
+		case 3:
+			rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,NULL, 0, &SQL_NULL_DATAval);
+			break;
+		default:
+			xsb_abort("[ODBC] illegal BindVal");
+			rc = 0;
+		}
+      if (rc != SQL_SUCCESS)
+		{
+		ctop_int(CTXTc 3,PrintErrorMsg(cur));
+		SetCursorClose(cur);
+		return;
+		}
     }
   }
   /* submit it for execution*/
