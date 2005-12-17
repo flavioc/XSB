@@ -69,7 +69,7 @@
 
 static Psc     nullFctPsc = NULL;
 /* static int      numberOfCursors = 0; */
-static long      SQL_NTSval = SQL_NTS;
+/*static long      SQL_NTSval = SQL_NTS;*/
 static long      SQL_NULL_DATAval = SQL_NULL_DATA;
 
 static HENV henv = NULL;
