@@ -1116,6 +1116,7 @@ statistics(X) :-
 check_statistics_input(X,X):- integer(X),!.
 check_statistics_input(reset,0):-!.
 check_statistics_input(table,2):- !.
+check_statistics_input(mutex,4):- !.
 check_statistics_input(atom,8):- !.
 check_statistics_input(X,_):-
 	domain_error(statisticsInputDomain,X,statistics/1,1).
