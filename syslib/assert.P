@@ -607,10 +607,10 @@ check_clause(Head) :-
 	    (	functor(Head, F, A),
 		standard_symbol(F, A, _Prop),
 		\+ standard_dynamic_symbol(F, A)
-	    ->	permission_error(access,builtin,F/A,clause/1)
+	    ->	permission_error(access,builtin,F/A,clause/2)
 	    ;	true
 	    )
-	  ; type_error(callable,Head,clause/1,1)
+	  ; type_error(callable,Head,clause/2,1)
 	).
 
 /*======================================================================*/
