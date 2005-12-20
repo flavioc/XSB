@@ -24,9 +24,12 @@
 
 
 :- export subsumes_chk/2, variant/2, subsumes/2.
+:- export mysubsumes_chk/2.
 
 :- import numbervars/1 from num_vars.
-:- import conset/2, conget/2 from gensym.
+%%:- import conset/2, conget/2 from gensym.
 :- import term_psc/2, psc_arity/2, term_arg/3, term_type/2
      from machine.
+:- import get_attributes/2,attv_unify/2 from machine.
+%%:- import functor/3, arg/3 from standard.
 
