@@ -93,9 +93,10 @@ proved(neg(G), TV, DFS, _LastNeg, Ancs, (neg(G), TV, (G, TV1, Child, nil), _Sibl
 	toggle_tv(TV1, TV), !,
 	proved(G, TV1, NDFS, DFS, NAncs, (G, TV1, Child, _), T).
 
+% TLS 12/05 close_open_table -> close_open_tables
 proved(leaf(G), TV, _DFS, _LastNeg, _Ancs, (leaf(G), TV, nil, _sibling), _) :- 
 	(TV = true -> call(G)
-		    ; \+((call(G), close_open_table, !))
+		    ; \+((call(G), close_open_tables, !))
 	).
 
 proved(G, TV, DFS, LastNeg, Ancs, Root, T) :- 
