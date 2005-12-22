@@ -50,17 +50,53 @@ typedef pthread_t pthread_t_p;
 #define PTHREAD_CANCEL(a) pthread_cancel(a);
 #endif
 
-extern pthread_mutex_t sys_mut[] ;
+typedef struct Mutex_Frame {
+  pthread_mutex_t th_mutex; 
+  int num_locks;
+  int owner;
+} MutexFrame;
+
+MutexFrame sys_mut[MAX_SYS_MUTEXES];
+
+#define MUTARRAY_MUTEX(i) &(sys_mut[(i)].th_mutex)
+#define MUTARRAY_NUMLOCKS(i) sys_mut[(i)].num_locks
+#define MUTARRAY_OWNER(i) sys_mut[(i)].owner
+
+extern void print_mutex_use(void);
+extern void release_held_mutexes(CTXTdecl);
 
 extern pthread_mutex_t completing_mut;
 extern pthread_cond_t completing_cond;
 
-#define SYS_MUTEX_LOCK( M ) ( pthread_mutex_lock( &sys_mut[(M)] ) )
-#define SYS_MUTEX_UNLOCK( M ) ( pthread_mutex_unlock( &sys_mut[(M)] ) )
+#define PROFILE_MUTEXES 1
+#ifdef PROFILE_MUTEXES
+
+#define SYS_MUTEX_LOCK( M )   {pthread_mutex_lock(MUTARRAY_MUTEX(M));	      \
+                               MUTARRAY_OWNER(M) = xsb_thread_id;	      \
+                               MUTARRAY_NUMLOCKS(M)++; }
+
+#define SYS_MUTEX_LOCK_NOERROR( M )   {pthread_mutex_lock(MUTARRAY_MUTEX(M));	      \
+                                       MUTARRAY_NUMLOCKS(M)++; }
+#else
+
+#define SYS_MUTEX_LOCK( M )   {pthread_mutex_lock( MUTARRAY_MUTEX(M));	      \
+                               MUTARRAY_OWNER(M) = xsb_thread_id; }
+
+#define SYS_MUTEX_LOCK_NOERROR( M )   {pthread_mutex_lock(MUTARRAY_MUTEX(M)); }
+
+#endif /* PROFILE_MUTEXES */
+
+#define SYS_MUTEX_UNLOCK( M )   {pthread_mutex_unlock( MUTARRAY_MUTEX(M) );        \
+                                 MUTARRAY_OWNER(M) = -1; }
+
+#define SYS_MUTEX_UNLOCK_NOERROR( M )   {pthread_mutex_unlock( MUTARRAY_MUTEX(M) );        \
+                                         MUTARRAY_OWNER(M) = -1; }
 #else
 #define SYS_MUTEX_LOCK( M ) 
+#define SYS_MUTEX_LOCK_NOERROR( M ) 
 #define SYS_MUTEX_UNLOCK( M )
-#endif
+#define SYS_MUTEX_UNLOCK_NOERROR( M )
+#endif /* MULTI_THREAD */
 
 #ifdef MULTI_THREAD
 void init_system_mutexes( void ) ;

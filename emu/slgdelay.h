@@ -225,13 +225,19 @@ extern xsbBool neg_delay;
  * Procedures used in other parts of the system.
  */
 
+/* TLS: because of include dependencies (context -> macro_xsb ->
+   slgdelay), context.h cannot be included until the code is
+   refactored.  Therefore, the CTXT-style declarations cannot yet be
+   used. */
+
 extern xsbBool answer_is_junk(CPtr);
-extern void abolish_wfs_space(void);
 #ifndef MULTI_THREAD
+extern void abolish_wfs_space(void);
 extern void simplify_neg_fails(VariantSF);
 extern void do_delay_stuff(NODEptr, VariantSF, xsbBool);
 #else
 struct th_context;
+extern void abolish_wfs_space(struct th_context *);
 extern void simplify_neg_fails(struct th_context *, VariantSF);
 extern void do_delay_stuff(struct th_context *, NODEptr, VariantSF, xsbBool);
 #endif
@@ -245,6 +251,7 @@ extern void simplify_pos_unsupported(NODEptr);
 extern void simplify_pos_unsupported(struct th_context *, NODEptr);
 #endif
 extern void release_all_dls(ASI);
+
 
 /*---------------------- end of file slgdelay.h ------------------------*/
 

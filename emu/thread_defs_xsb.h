@@ -1,3 +1,30 @@
+/* File:      thread_defs_xsb.h
+** Author(s): Marques
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+*/
+
+
+#ifndef __THREAD_DEFS_XSB_H__
+
+#define __THREAD_DEFS_XSB_H__
+
  
 /* THREAD PRIMITIVES */
 
@@ -35,8 +62,9 @@
 #define MAX_SYS_MUTEXES		40
 
 /* Be sure to update this if you add a recusive mutex */
-#define LAST_REC_MUTEX		7
+#define LAST_REC_MUTEX		8
 
+/* If you add a mutex, also update mutex_names[] in thread_xsb.c */
 /* first mutexes are recursive */
 #define MUTEX_DYNAMIC		0
 #define MUTEX_IO		1	/* Must be recursive */
@@ -70,9 +98,10 @@
 #define MUTEX_USER8		38
 #define MUTEX_USER9		39
 
-
 /* Used for random number generation in testing modules */
 
 #define INIT_MT_RANDOM          0
 #define MT_RANDOM               1
 #define MT_RANDOM_INTERVAL      2
+
+#endif /* __THREAD_DEFS_XSB_H__ */

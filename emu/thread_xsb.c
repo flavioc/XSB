@@ -74,7 +74,9 @@ extern void thread_free_dyn_blks(CTXTdecl);
 extern void thread_free_tab_blks(CTXTdecl);
 extern void delete_predicate_table(CTXTdeclc TIFptr);
 
-pthread_mutex_t sys_mut[MAX_SYS_MUTEXES] ;
+// pthread_mutex_t sys_mut[MAX_SYS_MUTEXES] ;
+
+MutexFrame sys_mut[MAX_SYS_MUTEXES] ;
 
 pthread_mutex_t th_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -102,6 +104,8 @@ static int th_find( pthread_t_p tid )
 	return -1 ;
 }
 
+/* On normal termination, returns xsb_thread_id for a (usu. newly
+   created) thread */
 static int th_new( pthread_t_p t, th_context *ctxt )
 {
 	xsb_thread_t *pos ;
@@ -170,11 +174,14 @@ void init_system_mutexes( void )
 
 	pthread_mutexattr_init( &attr_std ) ;
 
-	for( i = 0; i <=  LAST_REC_MUTEX ; i++ )
-		pthread_mutex_init( &sys_mut[i], &attr_rec ) ;
-
-	for( i = LAST_REC_MUTEX + 1 ; i < MAX_SYS_MUTEXES ; i++ )
-		pthread_mutex_init( &sys_mut[i], &attr_std ) ;
+	for( i = 0; i <=  LAST_REC_MUTEX ; i++ ) {
+	  pthread_mutex_init( MUTARRAY_MUTEX(i), &attr_rec ) ;
+	  MUTARRAY_OWNER(i) = -1;
+	}
+	for( i = LAST_REC_MUTEX + 1 ; i < MAX_SYS_MUTEXES ; i++ ) {
+	  pthread_mutex_init( MUTARRAY_MUTEX(i), &attr_std ) ;
+	  MUTARRAY_OWNER(i) = -1;
+	}
 
 #ifdef MULTI_THREAD_RWL
 	rw_lock_init(&trie_rw_lock);
@@ -215,30 +222,30 @@ static int xsb_thread_create(th_context *th)
 {
 	int rc ;
 	Cell goal ;
-	th_context *new_th ;
+	th_context *new_th_ctxt ;
 	pthread_t_p thr ;
 	Integer id ;
 
 	goal = ptoc_tag(th, 2) ;
-	new_th = mem_alloc(sizeof(th_context),THREAD_SPACE) ;
+	new_th_ctxt = mem_alloc(sizeof(th_context),THREAD_SPACE) ;
 
-	copy_pflags(new_th, th) ;
-	init_machine(new_th) ;
-	new_th->_reg[1] = copy_term_from_thread(new_th, th, goal) ;
+	copy_pflags(new_th_ctxt, th) ;
+	init_machine(new_th_ctxt) ;
+	new_th_ctxt->_reg[1] = copy_term_from_thread(new_th_ctxt, th, goal) ;
 
 	flags[NUM_THREADS]++ ;
 
 #ifdef WIN_NT
 	thr = mem_alloc(sizeof(pthread_t),THREAD_SPACE);
-	rc = pthread_create( thr, NULL, &xsb_thread_run, (void *)new_th ) ;
+	rc = pthread_create( thr, NULL, &xsb_thread_run, (void *)new_th_ctxt ) ;
 #else
-	rc = pthread_create( &thr, NULL, &xsb_thread_run, (void *)new_th ) ;
+	rc = pthread_create( &thr, NULL, &xsb_thread_run, (void *)new_th_ctxt ) ;
 #endif
 
 /* This repetition of the call to th_new is need for concurrency reasons */
 	pthread_mutex_lock( &th_mutex );
-	id = th_new( thr, new_th ) ;
-	pthread_mutex_unlock( &th_mutex );
+	id = th_new( thr, new_th_ctxt ) ;
+       	pthread_mutex_unlock( &th_mutex );
 
 	ctop_int( th, 3, id ) ;
 	return rc ;
@@ -250,6 +257,23 @@ th_context *find_context( int id )
 		return th_vec[id].ctxt;
 	else
 		return NULL;
+}
+
+void release_held_mutexes(CTXTdecl) {
+  int i;
+
+  //  printf("releasing held mutexes\n");
+  for( i = 0; i <=  LAST_REC_MUTEX ; i++ ) {
+    if ( MUTARRAY_OWNER(i) == xsb_thread_id) {
+      pthread_mutex_unlock( MUTARRAY_MUTEX(i)) ;
+    }
+  }
+  for( i = LAST_REC_MUTEX + 1 ; i < MAX_SYS_MUTEXES ; i++ ) {
+    if ( MUTARRAY_OWNER(i) == xsb_thread_id) {
+      pthread_mutex_unlock( MUTARRAY_MUTEX(i)) ;
+    }
+    pthread_mutex_unlock( MUTARRAY_MUTEX(i)) ;
+  }
 }
 
 #endif /* MULTI_THREAD */
@@ -288,6 +312,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 
 		case XSB_THREAD_EXIT:
 			rval = ptoc_int(CTXTc 2 ) ;
+			release_held_mutexes(CTXT);
 			cleanup_machine(CTXT) ;
 			thread_free_dyn_blks(CTXT);    /* biassert.c */
 			thread_free_tab_blks(CTXT);    /* loader_xsb.c */
@@ -399,7 +424,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 #ifdef DEBUG_MUTEXES
 			fprintf( stddbg, "S LOCK(%ld)\n", (long)id ) ;
 #endif
-			rc = pthread_mutex_lock( &sys_mut[id] ) ;
+			rc = pthread_mutex_lock( MUTARRAY_MUTEX(id) ) ;
 #ifdef DEBUG_MUTEXES
 			fprintf( stddbg, "RC=%ld\n", (long)rc ) ;
 #endif
@@ -409,7 +434,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 #ifdef DEBUG_MUTEXES
 			fprintf( stddbg, "S UNLOCK(%ld)\n", (long)id ) ;
 #endif
-			rc = pthread_mutex_unlock( &sys_mut[id] ) ;
+			rc = pthread_mutex_unlock( MUTARRAY_MUTEX(id) ) ;
 #ifdef DEBUG_MUTEXES
 			fprintf( stddbg, "RC=%ld\n", (long)rc ) ;
 #endif
@@ -489,3 +514,32 @@ xsbBool mt_random_request( CTXTdecl )
   return TRUE ;
 }
 
+#ifdef PROFILE_MUTEXES
+char *mutex_names[] = {
+"mutex_dynamic","mutex_io","mutex_table","mutex_trie","mutex_symbol",
+"mutex_flags"," mutex_load_undef","mutex_delay","mutex_sys_system","unused",
+"unused","unused","unused","unused","unused",
+"mutex_string","mutex_atom_buf","mutex_sm","mutex_stacks","mutex_sockets",
+"mutex_mem","mutex_odbc","mutex_gentag","unused","unused",
+"unused","unused","unused","unused","unused",
+"mutex_console","mutex_user1","mutex_user2","mutex_user3","mutex_user4",
+"mutex_user5","mutex_user6","mutex_user7","mutex_user9","mutex_user9"};
+
+void print_mutex_use() {
+  int i;
+
+  printf("Mutexes used since last statistics:\n");
+  for (i = 0; i < MAX_SYS_MUTEXES; i++) {
+    if (sys_mut[i].num_locks > 0) 
+      printf("Mutex %s (%d): %d\n",mutex_names[i],i,sys_mut[i].num_locks);
+  }
+  for (i = 0; i < MAX_SYS_MUTEXES; i++) {
+    sys_mut[i].num_locks = 0;
+  }
+}
+
+#else
+void print_mutex_use() {
+  xsb_abort("This engine is not configured for mutex profiling.");
+}
+#endif

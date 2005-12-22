@@ -35,7 +35,7 @@ extern Cell build_ret_term(CTXTdeclc int, Cell[]);
 extern void construct_answer_template(CTXTdeclc Cell, SubProdSF, Cell[]);
 extern void breg_retskel(CTXTdecl);
 extern void delete_predicate_table(CTXTdeclc TIFptr);
-extern void reclaim_del_ret_list(VariantSF);
+extern void reclaim_del_ret_list(CTXTdeclc VariantSF);
 extern void delete_return(CTXTdeclc BTNptr, VariantSF);
 extern void init_newtrie(CTXTdecl);
 extern void delete_branch(CTXTdeclc BTNptr, BTNptr *);

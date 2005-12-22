@@ -726,11 +726,11 @@ extern Structure_Manager *smBTHT;
 #define TSTNs_PER_BLOCK    K
 extern Structure_Manager smTSTN;
 
-extern TSTNptr new_tstn(int TrieType, int NodeType, Cell Symbol,
+extern TSTNptr new_tstn(CTXTdeclc int TrieType, int NodeType, Cell Symbol,
 			TSTNptr Parent, TSTNptr Sibling);
 
 #define New_TSTN(TSTN,TrieType,NodeType,Symbol,Parent,Sibling)	\
-   TSTN = new_tstn(TrieType,NodeType,Symbol,Parent,Sibling)
+   TSTN = new_tstn(CTXTc TrieType,NodeType,Symbol,Parent,Sibling)
 
 #define CreateEscapeTSTN(pTSTN,TrieType,Parent) {			\
    New_TSTN(pTSTN,TrieType,LEAF_NT,ESCAPE_NODE_SYMBOL,Parent,NULL);	\

@@ -154,7 +154,7 @@ static PNDE current_pnde_block_top_gl = NULL; /* the top of current PNDE block*/
 /*
  * The following functions are used for statistics.  If changing their
  * usage pattern, make sure you adjust the mutexes.  (MUTEX_DELAY is
- * non-recursive.) 
+ * non-recursive.)   Use of NOERROR mutexes is ok here.
  */
 
 unsigned long allocated_de_space(int * num_blocks)
@@ -163,13 +163,13 @@ unsigned long allocated_de_space(int * num_blocks)
   char *t = current_de_block_gl;
 
   *num_blocks = 0;
-  SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
+  SYS_MUTEX_LOCK_NOERROR( MUTEX_DELAY ) ;
   while (t) {
     (*num_blocks)++;
     size =+ (de_block_size_glc + sizeof(Cell));
     t = *(char **)t;
   }
-  SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
+  SYS_MUTEX_UNLOCK_NOERROR( MUTEX_DELAY ) ;
   return size;
 }
 
@@ -179,12 +179,12 @@ static int released_de_num(void)
   DE p;
 
   p = released_des_gl;
-  SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
+  SYS_MUTEX_LOCK_NOERROR( MUTEX_DELAY ) ;
   while (p != NULL) {
     i++;
     p = de_next(p);
   }
-  SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
+  SYS_MUTEX_UNLOCK_NOERROR( MUTEX_DELAY ) ;
   return(i);
 }
 
@@ -202,13 +202,13 @@ unsigned long allocated_dl_space(int * num_blocks)
   char *t = current_dl_block_gl;
 
   *num_blocks = 0;
-  SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
+  SYS_MUTEX_LOCK_NOERROR( MUTEX_DELAY ) ;
   while (t) {
     (*num_blocks)++;
     size =+ (dl_block_size_glc + sizeof(Cell));
     t = *(char **)t;
   }
-  SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
+  SYS_MUTEX_UNLOCK_NOERROR( MUTEX_DELAY ) ;
   return size;
 }
 
@@ -218,12 +218,12 @@ static int released_dl_num(void)
   DL p;
 
   p = released_dls_gl;
-  SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
+  SYS_MUTEX_LOCK_NOERROR( MUTEX_DELAY ) ;
   while (p != NULL) {
     i++;
     p = dl_next(p);
   }
-  SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
+  SYS_MUTEX_UNLOCK_NOERROR( MUTEX_DELAY ) ;
   return(i);
 }
 
@@ -839,7 +839,7 @@ void simplify_pos_unsupported(CTXTdeclc NODEptr as_leaf)
   } /* while */
 }
 
-void abolish_wfs_space(void)
+void abolish_wfs_space(CTXTdecl)
 {
   char *last_block;
 

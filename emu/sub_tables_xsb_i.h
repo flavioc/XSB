@@ -331,7 +331,7 @@ inline static  void subsumptive_call_search(CTXTdeclc TabledCallInfo *callStruct
  * where `n' is the number of terms in an answer.
  */
 
-inline static  void *newAnswerSet(int n, TSTNptr Parent) {
+inline static  void *newAnswerSet(CTXTdeclc int n, TSTNptr Parent) {
 
   TSTNptr root;
   Cell symbol;
@@ -340,7 +340,7 @@ inline static  void *newAnswerSet(int n, TSTNptr Parent) {
     symbol = EncodeTriePSC(get_ret_psc(n));
   else
     symbol = EncodeTrieConstant(makestring(get_ret_string()));
-  New_TSTN( root, TS_ANSWER_TRIE_TT, TRIE_ROOT_NT, symbol, Parent, NULL );
+  New_TSTN(CTXTc root, TS_ANSWER_TRIE_TT, TRIE_ROOT_NT, symbol, Parent, NULL );
   TSTN_TimeStamp(root) = EMPTY_TST_TIMESTAMP;
   return root;
 }
@@ -361,7 +361,7 @@ TSTNptr subsumptive_answer_search(CTXTdeclc SubProdSF sf, int nTerms,
 
   NumSubOps_AnswerCheckInsert++;
   if ( IsNULL(subg_ans_root_ptr(sf)) )
-    subg_ans_root_ptr(sf) = newAnswerSet(nTerms, (TSTNptr) sf);
+    subg_ans_root_ptr(sf) = newAnswerSet(CTXTc nTerms, (TSTNptr) sf);
   root = (TSTNptr)subg_ans_root_ptr(sf);
   tstn = subsumptive_tst_search( CTXTc root, nTerms, answerVector,
 				 ProducerSubsumesSubgoals(sf), isNew );

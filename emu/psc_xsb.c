@@ -60,6 +60,9 @@ extern Psc synint_proc(Psc, int);
  *           | Ptr_to_Next | String ... |
  *           +--------------------------+
  */
+/* TLS: use of NOERROR mutexes is ok (12/05) but if we put in error
+   checking in mem_xxxoc() functions, we'll need to adjust these
+   mutexes. */
 
 #define CHAR_PTR_SIZE  sizeof(char *)
 
@@ -67,7 +70,7 @@ char *string_find(char *str, int insert) {
 
   char **ptr, *str0;
 
-  SYS_MUTEX_LOCK( MUTEX_STRING ) ;
+  SYS_MUTEX_LOCK_NOERROR( MUTEX_STRING ) ;
   ptr = (char **)string_table.table + hash(str, 0, string_table.size);
   while (*ptr) {
     str0 = *ptr + CHAR_PTR_SIZE;
@@ -88,7 +91,7 @@ char *string_find(char *str, int insert) {
     str0 = NULL ;
 
 exit_string_find:
-  SYS_MUTEX_UNLOCK( MUTEX_STRING ) ;
+  SYS_MUTEX_UNLOCK_NOERROR( MUTEX_STRING ) ;
   return str0;
 }
 
@@ -267,7 +270,7 @@ static Pair search(int arity, char *name, Pair *search_ptr)
 static Pair insert0(char *name, byte arity, Pair *search_ptr, int *is_new)
 {
     Pair pair;
-
+    
     pair = search(arity, name, search_ptr);
     if (pair==NULL) {
       *is_new = 1;
@@ -285,7 +288,7 @@ Pair insert(char *name, byte arity, Psc mod_psc, int *is_new)
 {
     Pair *search_ptr, temp;
 
-    SYS_MUTEX_LOCK( MUTEX_SYMBOL ) ;
+    SYS_MUTEX_LOCK_NOERROR( MUTEX_SYMBOL ) ;
 
     if (is_globalmod(mod_psc)) {
       search_ptr = (Pair *)(symbol_table.table +
@@ -298,7 +301,7 @@ Pair insert(char *name, byte arity, Psc mod_psc, int *is_new)
       search_ptr = (Pair *)&(get_data(mod_psc));
       temp = insert0(name, arity, search_ptr, is_new);
     }
-    SYS_MUTEX_UNLOCK( MUTEX_SYMBOL ) ;
+    SYS_MUTEX_UNLOCK_NOERROR( MUTEX_SYMBOL ) ;
     return temp ;
 } /* insert */
 
@@ -310,14 +313,14 @@ Pair insert_module(int type, char *name)
     Pair new_pair;
     int is_new;
 
-    SYS_MUTEX_LOCK( MUTEX_SYMBOL ) ;
+    SYS_MUTEX_LOCK_NOERROR( MUTEX_SYMBOL ) ;
     new_pair = insert0(name, 0, (Pair *)&flags[MOD_LIST], &is_new);
     if (is_new) {
 	set_type(new_pair->psc_ptr, type);
     } else {	/* set loading bit: T_MODU - loaded; 0 - unloaded */
       set_type(new_pair->psc_ptr, get_type(new_pair->psc_ptr) | type);
     }
-    SYS_MUTEX_UNLOCK( MUTEX_SYMBOL ) ;
+    SYS_MUTEX_UNLOCK_NOERROR( MUTEX_SYMBOL ) ;
     return new_pair;
 } /* insert_module */
 
@@ -340,7 +343,7 @@ Pair link_sym(Psc psc, Psc mod_psc)
     char *name, message[120];
     byte arity, global_flag, type;
 
-    SYS_MUTEX_LOCK( MUTEX_SYMBOL ) ;
+    SYS_MUTEX_LOCK_NOERROR( MUTEX_SYMBOL ) ;
     name = get_name(psc);
     arity = get_arity(psc);
     if ( (global_flag = is_globalmod(mod_psc)) )
@@ -375,7 +378,7 @@ Pair link_sym(Psc psc, Psc mod_psc)
       if (global_flag)
 	symbol_table_increment_and_check_for_overflow;
     }
-    SYS_MUTEX_UNLOCK( MUTEX_SYMBOL ) ;
+    SYS_MUTEX_UNLOCK_NOERROR( MUTEX_SYMBOL ) ;
     return found_pair;
 } /* link_sym */
 

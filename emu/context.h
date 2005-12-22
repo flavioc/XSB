@@ -126,7 +126,7 @@ struct th_context
 {
 /* System & user Flags */
 
-int _call_intercept ;
+  int _call_intercept ;
 
 /* The SLG-WAM data regions
    ------------------------ */
@@ -342,9 +342,13 @@ pthread_cond_t cond_var ;
 #endif
 
 Cell _attv_interrupts[20480][2];
+  
 } ;
 
 typedef struct th_context th_context ;
+
+
+#define xsb_thread_id           (th -> tid)
 
 #define call_intercept		(th->_call_intercept)
 

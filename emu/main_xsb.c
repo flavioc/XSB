@@ -42,6 +42,7 @@
 /* wind2unix.h must be included after sys/stat.h */
 #include "wind2unix.h"
 
+#include "context.h"
 #include "emuloop.h"
 
 #ifdef HAVE_SOCKET
@@ -53,7 +54,7 @@
 
 #include "orient_xsb.h"
 #include "basicdefs.h"
-#include "context.h"
+
 int main(int argc, char *argv[])
 { 
 #ifdef MULTI_THREAD

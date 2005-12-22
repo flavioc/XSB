@@ -211,14 +211,14 @@ void expand_string_table() {
  *   - buckets which are most full
  */
 
-void symbol_table_stats() {
+void symbol_table_stats(CTXTdecl) {
 
   unsigned long   i, symbols, bucket_contains, used_buckets, unused_buckets,
                   fullest_bucket_size, fullest_bucket_num, last_index;
   int first_index;
   Pair pair_ptr;
 
- SYS_MUTEX_LOCK( MUTEX_SYMBOL ) ;
+  SYS_MUTEX_LOCK( MUTEX_SYMBOL ) ;
 
   symbols = used_buckets = unused_buckets = last_index = 0;
   fullest_bucket_size = fullest_bucket_num = 0;
@@ -262,7 +262,7 @@ void symbol_table_stats() {
 }  
 
 
-void string_table_stats() {
+void string_table_stats(CTXTdecl) {
 
   unsigned long   i, strings, bucket_contains, used_buckets, unused_buckets,
                   fullest_bucket_size, fullest_bucket_num, last_index;

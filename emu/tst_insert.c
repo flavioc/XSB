@@ -88,7 +88,7 @@
  * is where this new entry belongs.
  */
 
-inline static  TSINptr tsiHeadInsert(TSTHTptr ht, TSTNptr tstn) {
+inline static  TSINptr tsiHeadInsert(CTXTdeclc TSTHTptr ht, TSTNptr tstn) {
 
   TSINptr pTSIN;
 
@@ -115,7 +115,7 @@ inline static  TSINptr tsiHeadInsert(TSTHTptr ht, TSTNptr tstn) {
  *  guaranteed to coincide with time stamp order.
  */
 
-inline static  TSINptr tsiOrderedInsert(TSTHTptr ht, TSTNptr tstn) {
+inline static  TSINptr tsiOrderedInsert(CTXTdeclc TSTHTptr ht, TSTNptr tstn) {
 
   TSINptr nextTSIN;     /* Steps thru each TSIN inspecting time stamp */
   TSINptr newTSIN;      /* To be inserted after nextTSIN */
@@ -162,7 +162,7 @@ inline static  TSINptr tsiOrderedInsert(TSTHTptr ht, TSTNptr tstn) {
  * free list for later reuse.
  */
 
-void tsiRemoveEntry(TSTHTptr ht, TSINptr tsin) {
+void tsiRemoveEntry(CTXTdeclc TSTHTptr ht, TSINptr tsin) {
 
   /* Splice out the TSIN from the Index
      ---------------------------------- */
@@ -225,7 +225,7 @@ inline static  void tsiPromoteEntry(TSTNptr tstn, TimeStamp ts) {
  * TSIs are created only once a properly subsumed subgoal is issued.
  */
 
-void tstCreateTSIs(TSTNptr pTST) {
+void tstCreateTSIs(CTXTdeclc TSTNptr pTST) {
 
   TSTNptr *pBucket, tstn;
   TSTHTptr ht;
@@ -247,7 +247,7 @@ void tstCreateTSIs(TSTNptr pTST) {
       for ( tstn = *pBucket;  IsNonNULL(tstn);  tstn = TSTN_Sibling(tstn) )
 
 	/*** Create a TSIN for each symbol (TSTN) ***/
-	TSTN_SetTSIN(tstn,tsiOrderedInsert(ht,tstn));
+	TSTN_SetTSIN(tstn,tsiOrderedInsert(CTXTc ht,tstn));
   }
 }
 
@@ -271,7 +271,7 @@ void tstCreateTSIs(TSTNptr pTST) {
  */
 
 inline static
-void tstnHashifyChildren(TSTNptr parent, TSTNptr root, xsbBool createTSI) {
+void tstnHashifyChildren(CTXTdeclc TSTNptr parent, TSTNptr root, xsbBool createTSI) {
 
   TSTNptr children;           /* child list of the parent */
   TSTNptr tstn;               /* current child for processing */
@@ -290,7 +290,7 @@ void tstnHashifyChildren(TSTNptr parent, TSTNptr root, xsbBool createTSI) {
     TrieHT_InsertNode(tablebase, hashseed, tstn);
     MakeHashedNode(tstn);
     if ( createTSI )
-      TSTN_SetTSIN(tstn, tsiOrderedInsert(ht, tstn));
+      TSTN_SetTSIN(tstn, tsiOrderedInsert(CTXTc ht, tstn));
   }
 }
 
@@ -311,7 +311,7 @@ void tstnHashifyChildren(TSTNptr parent, TSTNptr root, xsbBool createTSI) {
  */
 
 inline static
-TSTNptr tstnAddSymbol(TSTNptr parent, Cell symbol, int trieType) {
+TSTNptr tstnAddSymbol(CTXTdeclc TSTNptr parent, Cell symbol, int trieType) {
 
   TSTNptr newTSTN;
 
@@ -342,7 +342,7 @@ BTNptr btnAddSymbol(CTXTdeclc BTNptr parent, Cell symbol, int trieType) {
  */
 
 inline static
-TSTNptr tstnInsertSymbol(TSTNptr parent, Cell symbol, int trieType,
+TSTNptr tstnInsertSymbol(CTXTdeclc TSTNptr parent, Cell symbol, int trieType,
 			 TSTNptr root, xsbBool createTSI) {
 
   TSTNptr tstn, chain;
@@ -358,7 +358,7 @@ TSTNptr tstnInsertSymbol(TSTNptr parent, Cell symbol, int trieType,
     chain = TSTN_Sibling(chain);
   }
   if ( IsLongSiblingChain(chain_length) )
-    tstnHashifyChildren(parent,root,createTSI);
+    tstnHashifyChildren(CTXTc parent,root,createTSI);
   return tstn;
 }
 
@@ -394,7 +394,7 @@ BTNptr btnInsertSymbol(CTXTdeclc BTNptr parent, Cell symbol, int trieType) {
  */
 
 inline static
-TSTNptr tsthtInsertSymbol(TSTNptr parent, Cell symbol, int trieType,
+TSTNptr tsthtInsertSymbol(CTXTdeclc TSTNptr parent, Cell symbol, int trieType,
 			  xsbBool maintainsTSI) {
 
   TSTHTptr ht;
@@ -409,7 +409,7 @@ TSTNptr tsthtInsertSymbol(TSTNptr parent, Cell symbol, int trieType,
   *bucket = tstn;
   TSTHT_NumContents(ht)++;
   if ( maintainsTSI )
-    TSTN_SetTSIN(tstn, tsiHeadInsert(ht,tstn));
+    TSTN_SetTSIN(tstn, tsiHeadInsert(CTXTc ht,tstn));
   chain_length = 1;
   while ( IsNonNULL(chain) ) {
     chain_length++;
@@ -549,18 +549,18 @@ TSTNptr tst_insert(CTXTdeclc TSTNptr tstRoot, TSTNptr lastMatch, Cell firstSymbo
     ProcessNextSubtermFromTrieStacks(symbol,std_var_num);
 
   if ( IsNULL(TSTN_Child(lastMatch)) )
-    lastMatch = tstnAddSymbol(lastMatch,symbol,trieType);
+    lastMatch = tstnAddSymbol(CTXTc lastMatch,symbol,trieType);
   else if ( IsHashHeader(TSTN_Child(lastMatch)) )
-    lastMatch = tsthtInsertSymbol(lastMatch,symbol,trieType,maintainTSI);
+    lastMatch = tsthtInsertSymbol(CTXTc lastMatch,symbol,trieType,maintainTSI);
   else
-    lastMatch = tstnInsertSymbol(lastMatch,symbol,trieType,tstRoot,
+    lastMatch = tstnInsertSymbol(CTXTc lastMatch,symbol,trieType,tstRoot,
 				 maintainTSI);
 
   /* Insert remaining symbols
      ------------------------ */
   while ( ! TermStack_IsEmpty ) {
     ProcessNextSubtermFromTrieStacks(symbol,std_var_num);
-    lastMatch = tstnAddSymbol(lastMatch,symbol,trieType);
+    lastMatch = tstnAddSymbol(CTXTc lastMatch,symbol,trieType);
   }
   update_timestamps(lastMatch,tstRoot,maintainTSI);
   MakeLeafNode(lastMatch);

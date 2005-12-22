@@ -44,35 +44,35 @@ extern BTHTptr hhadded;
 /* Freeing Individual Structures
    ----------------------------- */
 
-static void free_btn(BTNptr btn) {
+static void free_btn(CTXTdeclc BTNptr btn) {
   SM_DeallocateStruct(smTableBTN,btn);
 }
 
-static void free_btht(BTHTptr btht) {
+static void free_btht(CTXTdeclc BTHTptr btht) {
   TrieHT_RemoveFromAllocList(smTableBTHT,btht);
   SM_DeallocateStruct(smTableBTHT,btht);
 }
 
-static void free_tstn(TSTNptr tstn) {
+static void free_tstn(CTXTdeclc TSTNptr tstn) {
   SM_DeallocateStruct(smTSTN,tstn);
 }
 
-static void free_tstht(TSTHTptr tstht) {
+static void free_tstht(CTXTdeclc TSTHTptr tstht) {
   TrieHT_RemoveFromAllocList(smTSTHT,tstht);
   SM_DeallocateStruct(smTSTHT,tstht);
 }
 
-static void free_tsi(TSTHTptr tstht) {
+static void free_tsi(CTXTdeclc TSTHTptr tstht) {
   if ( IsNonNULL(TSTHT_IndexHead(tstht)) )
     SM_DeallocateStructList(smTSIN,TSTHT_IndexTail(tstht),
 			    TSTHT_IndexHead(tstht));
 }
 
-static void free_producer_sf(VariantSF sf) {
+static void free_producer_sf(CTXTdeclc VariantSF sf) {
   FreeProducerSF(sf);
 }
 
-static void free_consumer_sf(VariantSF sf) {
+static void free_consumer_sf(CTXTdeclc VariantSF sf) {
   SM_DeallocateStruct(smConsSF,sf);
 }
 
@@ -80,7 +80,7 @@ static void free_consumer_sf(VariantSF sf) {
  * Answer List of a Consumer may already be completely deallocated, even
  * the dummy node.
  */
-static void free_al(VariantSF sf) {
+static void free_al(CTXTdeclc VariantSF sf) {
   if ( IsNonNULL(subg_ans_list_ptr(sf)) )
     free_answer_list(sf);
 }
@@ -89,23 +89,23 @@ static void free_al(VariantSF sf) {
 /* Deleting Structures with Substructures
    -------------------------------------- */
 
-static void delete_btht(BTHTptr btht) {
+static void delete_btht(CTXTdeclc BTHTptr btht) {
   mem_dealloc(BTHT_BucketArray(btht),BTHT_NumBuckets(btht)*sizeof(void *),TABLE_SPACE);
-  free_btht(btht);
+  free_btht(CTXTc btht);
 }
 
-static void delete_tstht(TSTHTptr tstht) {
+static void delete_tstht(CTXTdeclc TSTHTptr tstht) {
   mem_dealloc(BTHT_BucketArray(tstht),BTHT_NumBuckets(tstht)*sizeof(void *),TABLE_SPACE);
-  free_tsi(tstht);
-  free_tstht(tstht);
+  free_tsi(CTXTc tstht);
+  free_tstht(CTXTc tstht);
 }
 
-static void delete_sf(VariantSF sf) {
-  free_al(sf);
+static void delete_sf(CTXTdeclc VariantSF sf) {
+  free_al(CTXTc sf);
   if ( IsProducingSubgoal(sf) )
-    free_producer_sf(sf);
+    free_producer_sf(CTXTc sf);
   else
-    free_consumer_sf(sf);
+    free_consumer_sf(CTXTc sf);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -115,7 +115,7 @@ static void delete_sf(VariantSF sf) {
  *  its children.
  */
 
-static void delete_tst_answer_set(TSTNptr root) {
+static void delete_tst_answer_set(CTXTdeclc TSTNptr root) {
 
   TSTNptr current, sibling;
   TSTHTptr hash_hdr;
@@ -137,17 +137,17 @@ static void delete_tst_answer_set(TSTNptr root) {
       for ( current = TSTHT_BucketArray(hash_hdr)[i];
 	    IsNonNULL(current);  current = sibling ) {
 	sibling = TSTN_Sibling(current);
-	delete_tst_answer_set(current);
+	delete_tst_answer_set(CTXTc current);
       }
-    delete_tstht(hash_hdr);
+    delete_tstht(CTXTc hash_hdr);
   }
   else if ( ! IsLeafNode(root) )
     for ( current = TSTN_Child(root);  IsNonNULL(current);
 	  current = sibling ) {
       sibling = TSTN_Sibling(current);
-      delete_tst_answer_set(current);
+      delete_tst_answer_set(CTXTc current);
     }
-  free_tstn(root);
+  free_tstn(CTXTc root);
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -156,7 +156,7 @@ static void delete_tst_answer_set(TSTNptr root) {
  *  Delete the given Call Table node and recursively all of its children.
  */
 
-void delete_call_index(BTNptr root) {
+void delete_call_index(CTXTdeclc BTNptr root) {
 
   BTNptr current, sibling;
   BTHTptr hash_hdr;
@@ -173,23 +173,23 @@ void delete_call_index(BTNptr root) {
 	for ( current = BTHT_BucketArray(hash_hdr)[i];
 	      IsNonNULL(current);  current = sibling ) {
 	  sibling = BTN_Sibling(current);
-	  delete_call_index(current);
+	  delete_call_index(CTXTc current);
 	}
-      delete_btht(hash_hdr);
+      delete_btht(CTXTc hash_hdr);
     }
     else 
       for ( current = BTN_Child(root);  IsNonNULL(current);
 	    current = sibling ) {
 	sibling = BTN_Sibling(current);
-	delete_call_index(current);
+	delete_call_index(CTXTc current);
       }
   }
-  free_btn(root);
+  free_btn(CTXTc root);
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-void delete_subsumptive_table(TIFptr tif) {
+void delete_subsumptive_table(CTXTdeclc TIFptr tif) {
 
   SubProdSF cur_prod, next_prod;
   SubConsSF cur_cons, next_cons;
@@ -199,11 +199,11 @@ void delete_subsumptive_table(TIFptr tif) {
     for ( cur_cons = subg_consumers(cur_prod);
 	  IsNonNULL(cur_cons);  cur_cons = next_cons ) {
       next_cons = conssf_consumers(cur_cons);
-      delete_sf((VariantSF)cur_cons);
+      delete_sf(CTXTc (VariantSF)cur_cons);
     }
     next_prod = (SubProdSF)subg_next_subgoal(cur_prod);
-    delete_tst_answer_set((TSTNptr)subg_ans_root_ptr(cur_prod));
-    delete_sf((VariantSF)cur_prod);
+    delete_tst_answer_set(CTXTc (TSTNptr)subg_ans_root_ptr(cur_prod));
+    delete_sf(CTXTc (VariantSF)cur_prod);
   }
-  delete_call_index(TIF_CallTrie(tif));
+  delete_call_index(CTXTc TIF_CallTrie(tif));
 }

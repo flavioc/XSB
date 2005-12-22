@@ -104,6 +104,14 @@ static CPtr gAnsTmplt;      /* ... using this template */
 static int gSizeTmplt;      /* ... of this size */
 #endif
 
+// TLS: temporary 12/05
+static void debug_answer_consumption(CTXTdecl) {
+  printf("-----------------------------\n");
+  printTriePath(stderr,gAnsLeaf,NO);
+  fprintf(stderr,"\nwith ");
+  printAnswerTemplate(stderr,gAnsTmplt,gSizeTmplt);
+ }
+
 static void consumption_error(CTXTdeclc char *string) {
 
   char *abort_string;
@@ -390,7 +398,6 @@ void consume_subsumptive_answer(CTXTdeclc BTNptr pAnsLeaf, int sizeTmplt,
 				CPtr pAnsTmplt) {
 
   Cell subterm, symbol, sym_orig_tag;
-
 
   /* Set globals for error reporting
      ------------------------------- */

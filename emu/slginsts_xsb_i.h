@@ -563,6 +563,9 @@ XSB_Start_Instr(answer_return,_answer_return)
     get_var_and_attv_nums(template_size, attv_num, tmp);
     answer_template--;
 
+    //    printf("answer_template %x size %d\n",answer_template,template_size);
+    //    sfPrintGoal(CTXTdeclc stddbg, consumer_sf, FALSE);
+
     table_consume_answer(CTXTc next_answer,template_size,attv_num,answer_template,
 			 subg_tif_ptr(consumer_sf));
 

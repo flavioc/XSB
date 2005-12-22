@@ -71,14 +71,14 @@ void inline extend_enc_dec_as_nec(void *lptr, void *hptr) {
     unsigned long hnibble = (unsigned long)hptr >> 28;
     for (nibble = lnibble; nibble <= hnibble; nibble++) {
       if (enc[nibble] == -1) {
-	SYS_MUTEX_LOCK(MUTEX_GENTAG);
+	SYS_MUTEX_LOCK_NOERROR(MUTEX_GENTAG);
 	if (enc[nibble] == -1) { /* be sure not changed since test */
 	  enc[nibble] = next_free_code << 28;
 	  dec[next_free_code] = nibble << 28;
 	  // printf("recoding %lx to %lx\n",nibble,next_free_code);
 	  next_free_code++;
 	}
-	SYS_MUTEX_UNLOCK(MUTEX_GENTAG);
+	SYS_MUTEX_UNLOCK_NOERROR(MUTEX_GENTAG);
       }
     }
 }
@@ -86,38 +86,43 @@ void inline extend_enc_dec_as_nec(void *lptr, void *hptr) {
 
 /* === alloc permanent memory ============================================== */
 
+/* TLS: NOERROR locking done in mem_xxxoc() will not cause concurrency
+   problems -- we just need to check for null ptr values and possibly
+   abort after unlocking (when we check -- we're sometimes a little
+   sloppy). */
+
 void *mem_alloc(unsigned long size, int category)
 {
     byte * ptr;
 
     size = (size+7) & ~0x7 ;	      /* round to 8 */
-    SYS_MUTEX_LOCK(MUTEX_MEM);
+    SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
     pspacesize[category] += size;
     ptr = (byte *) malloc(size);
 #if defined(GENERAL_TAGGING)
     //    printf("mem_alloc %x %x\n",ptr,ptr+size);
     extend_enc_dec_as_nec(ptr,ptr+size);
 #endif
-    SYS_MUTEX_UNLOCK(MUTEX_MEM);
+    SYS_MUTEX_UNLOCK_NOERROR(MUTEX_MEM);
     return ptr;
 }
 
 
-/* === calloc permanent memory ============================================= */
+/* === calloc permanent me!!mory ============================================= */
 
 void *mem_calloc(unsigned long size, unsigned long occs, int category)
 {
     byte * ptr;
     unsigned long length = (size*occs+7) & ~0x7;
 
-    SYS_MUTEX_LOCK(MUTEX_MEM);
+    SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
     pspacesize[category] += length;
     ptr = (byte *) calloc(size,occs);
 #if defined(GENERAL_TAGGING)
     //    printf("mem_calloc %x %x\n",ptr,ptr+length);
     extend_enc_dec_as_nec(ptr,ptr+length);
 #endif
-    SYS_MUTEX_UNLOCK(MUTEX_MEM);
+    SYS_MUTEX_UNLOCK_NOERROR(MUTEX_MEM);
     return ptr;
 }
 
@@ -128,13 +133,13 @@ void *mem_realloc(void *addr, unsigned long oldsize, unsigned long newsize, int 
 {
     newsize = (newsize+7) & ~0x7 ;	      /* round to 8 */
     oldsize = (oldsize+7) & ~0x7 ;	      /* round to 8 */
-    SYS_MUTEX_LOCK(MUTEX_MEM);
+    SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
     pspacesize[category] = pspacesize[category] - oldsize + newsize;
     addr = (byte *) realloc(addr,newsize);
 #if defined(GENERAL_TAGGING)
     extend_enc_dec_as_nec(addr,addr+newsize);
 #endif
-    SYS_MUTEX_UNLOCK(MUTEX_MEM);
+    SYS_MUTEX_UNLOCK_NOERROR(MUTEX_MEM);
     return addr;
 }
 
@@ -144,10 +149,10 @@ void *mem_realloc(void *addr, unsigned long oldsize, unsigned long newsize, int 
 void mem_dealloc(void *addr, unsigned long size, int category)
 {
     size = (size+7) & ~0x7 ;	      /* round to 8 */
-    SYS_MUTEX_LOCK(MUTEX_MEM);
+    SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
     pspacesize[category] -= size;
     free(addr);
-    SYS_MUTEX_UNLOCK(MUTEX_MEM);
+    SYS_MUTEX_UNLOCK_NOERROR(MUTEX_MEM);
 }
 
 

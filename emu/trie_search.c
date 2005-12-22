@@ -99,7 +99,7 @@ BTNptr bt_escape_search(CTXTdeclc BTNptr btRoot, xsbBool *isNew) {
 
 /*-------------------------------------------------------------------------*/
 
-inline static TSTNptr tst_escape_search(TSTNptr tstRoot, xsbBool *isNew) {
+inline static TSTNptr tst_escape_search(CTXTdeclc TSTNptr tstRoot, xsbBool *isNew) {
 
   TSTNptr tstn;
 
@@ -229,7 +229,7 @@ TSTNptr subsumptive_tst_search(CTXTdeclc TSTNptr tstRoot, int nTerms, CPtr termV
     Trail_Unwind_All;
   }
   else
-    tstn = tst_escape_search(tstRoot,isNew);
+    tstn = tst_escape_search(CTXTc tstRoot,isNew);
   return tstn;
 }
 
@@ -320,7 +320,7 @@ TSTNptr variant_tst_search(CTXTdeclc TSTNptr tstRoot, int nTerms, CPtr termVecto
     Trail_Unwind_All;
   }
   else
-    tstn = tst_escape_search(tstRoot,isNew);
+    tstn = tst_escape_search(CTXTc tstRoot,isNew);
   return tstn;
 }
 

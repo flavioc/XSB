@@ -39,7 +39,7 @@ void	table_call_search(CTXTdeclc TabledCallInfo *, CallLookupResults *);
 BTNptr	table_answer_search(CTXTdeclc VariantSF, int, int, CPtr, xsbBool *);
 void	table_consume_answer(CTXTdeclc BTNptr, int, int, CPtr, TIFptr);
 ALNptr	table_identify_relevant_answers(CTXTdeclc SubProdSF, SubConsSF, CPtr);
-void	table_complete_entry(VariantSF);
+void	table_complete_entry(CTXTdeclc VariantSF);
 
 void	release_all_tabling_resources(void);
 
@@ -63,6 +63,7 @@ void	release_all_tabling_resources(void);
 									\
    if ( IsNULL(NewAnswerContinuation) && IsProperlySubsumed(Consumer) )	\
      if ( MoreAnswersAreAvailable(Consumer,Producer) ) {		\
+       /* printf("make ans list for :"); sfPrintGoal(CTXTdeclc stddbg, Consumer, FALSE); */  \
        PreIdentificationOp;						\
        NewAnswerContinuation =						\
 	 table_identify_relevant_answers(CTXTc Producer, Consumer,	\

@@ -260,7 +260,7 @@ BTNptr new_btn(CTXTdeclc int trie_t, int node_t, Cell symbol, BTNptr parent,
 
 /*-------------------------------------------------------------------------*/
 
-TSTNptr new_tstn(int trie_t, int node_t, Cell symbol, TSTNptr parent,
+TSTNptr new_tstn(CTXTdeclc int trie_t, int node_t, Cell symbol, TSTNptr parent,
 		TSTNptr sibling) {
 
   void * tstn;
@@ -1980,7 +1980,7 @@ Cell get_lastnode_cs_retskel(CTXTdeclc Cell callTerm) {
 /* creates an empty (dummy) answer.					*/
 /*----------------------------------------------------------------------*/
 
-ALNptr empty_return(void)
+ALNptr empty_return(CTXTdecl)
 {
     ALNptr i;
   

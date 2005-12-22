@@ -297,6 +297,7 @@ ALNptr table_identify_relevant_answers(CTXTdeclc SubProdSF prodSF, SubConsSF con
 
   int size;
   TimeStamp ts;         /* for selecting answers from subsumer's AnsTbl */
+
   TSTNptr tstRoot;      /* TS answer trie root of subsumer */
   ALNptr answers;
 
@@ -309,6 +310,7 @@ ALNptr table_identify_relevant_answers(CTXTdeclc SubProdSF prodSF, SubConsSF con
 #endif
   size = int_val(*templ);
   templ--;  /* all templates on the heap, now --lfcastro */
+  //  printf("\n"); printAnswerTemplate(stderr,templ,size);
   ts = conssf_timestamp(consSF);
   tstRoot = (TSTNptr)subg_ans_root_ptr(prodSF);
   NumSubOps_IdentifyRelevantAnswers++;
@@ -352,7 +354,7 @@ ALNptr table_identify_relevant_answers(CTXTdeclc SubProdSF prodSF, SubConsSF con
  *  contains the only reference to this function.
  */
 
-void table_complete_entry(VariantSF producerSF) {
+void table_complete_entry(CTXTdeclc VariantSF producerSF) {
 
   SubConsSF pSF;
   ALNptr pRealAnsList, pALN, tag;

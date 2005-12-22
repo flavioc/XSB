@@ -535,8 +535,13 @@ typedef struct SubsumedConsumerSubgoalFrame {
  }
 
 
+#ifndef MULTI_THREAD
 extern ALNptr empty_return(void);
-
+#define empty_return_handle() empty_return()
+#else
+extern ALNptr empty_return(struct th_context *);
+#define empty_return_handle() empty_return(th)
+#endif
 
 /* Appending to the Answer List of a SF
    ------------------------------------ */
@@ -612,7 +617,7 @@ extern struct Structure_Manager smConsSF;
    subg_dll_add_sf(pNewSF,TIF_Subgoals(TableInfo),TIF_Subgoals(TableInfo)); \
    subg_leaf_ptr(pNewSF) = Leaf;					    \
    CallTrieLeaf_SetSF(Leaf,pNewSF);					    \
-   subg_ans_list_ptr(pNewSF) = empty_return();				    \
+   subg_ans_list_ptr(pNewSF) = empty_return_handle();			    \
    subg_compl_stack_ptr(pNewSF) = openreg - COMPLFRAMESIZE;		    \
    SF = (VariantSF)pNewSF;						    \
 }
@@ -644,7 +649,13 @@ extern struct Structure_Manager smConsSF;
  *  structures.
  */
 
+#ifndef MULTI_THREAD
 void tstCreateTSIs(TSTNptr);
+#define     tstCreateTSIs_handle(Producer) tstCreateTSIs(Producer) 
+#else
+void tstCreateTSIs(struct th_context *,TSTNptr);
+#define     tstCreateTSIs_handle(Producer) tstCreateTSIs(th,Producer) 
+#endif
 
 #define NewSubConsSF(SF,Leaf,TableInfo,Producer) {		\
 								\
@@ -658,8 +669,8 @@ void tstCreateTSIs(TSTNptr);
    CallTrieLeaf_SetSF(Leaf,pNewSF);				\
    conssf_producer(pNewSF) = (SubProdSF)Producer;		\
    if ( ! ProducerSubsumesSubgoals(Producer) )			\
-     tstCreateTSIs((TSTNptr)subg_ans_root_ptr(Producer));	\
-   subg_ans_list_ptr(pNewSF) = empty_return();			\
+     tstCreateTSIs_handle((TSTNptr)subg_ans_root_ptr(Producer));		\
+   subg_ans_list_ptr(pNewSF) = empty_return_handle();				\
    conssf_timestamp(pNewSF) = CONSUMER_SF_INITIAL_TS;		\
    conssf_consumers(pNewSF) = subg_consumers(Producer);		\
    subg_consumers(Producer) = (SubConsSF)pNewSF;		\
@@ -730,11 +741,18 @@ void tstCreateTSIs(TSTNptr);
 #define is_completed(SUBG_PTR)		subg_is_complete(SUBG_PTR)
 
 #define structs_are_reclaimed(SUBG_PTR) subg_is_reclaimed(SUBG_PTR)
-   
+
+#ifndef MULTI_THREAD   
 #define mark_as_completed(SUBG_PTR) {		\
           subg_is_complete(SUBG_PTR) = TRUE;	\
           reclaim_del_ret_list(SUBG_PTR);	\
         }
+#else
+#define mark_as_completed(SUBG_PTR) {		\
+          subg_is_complete(SUBG_PTR) = TRUE;	\
+          reclaim_del_ret_list(th, SUBG_PTR);	\
+        }
+#endif
 
 #define subgoal_space_has_been_reclaimed(SUBG_PTR,CS_FRAME) \
         (SUBG_PTR != compl_subgoal_ptr(CS_FRAME))
@@ -753,12 +771,21 @@ void tstCreateTSIs(TSTNptr);
 /* A new Subgoal Frame flag prevents multiple calls.	- Ernie		*/
 /*----------------------------------------------------------------------*/
 
+#ifndef MULTI_THREAD
 #define reclaim_incomplete_table_structs(SUBG_PTR) {	\
    if ( ! structs_are_reclaimed(SUBG_PTR) ) {		\
      table_complete_entry(SUBG_PTR);			\
      structs_are_reclaimed(SUBG_PTR) = TRUE;		\
    }							\
  }
+#else
+#define reclaim_incomplete_table_structs(SUBG_PTR) {	\
+   if ( ! structs_are_reclaimed(SUBG_PTR) ) {		\
+     table_complete_entry(th, SUBG_PTR);			\
+     structs_are_reclaimed(SUBG_PTR) = TRUE;		\
+   }							\
+ }
+#endif
 
 /*----------------------------------------------------------------------*/
 #ifdef DEMAND

@@ -223,7 +223,7 @@ void total_stat(CTXTdeclc double elapstime) {
 /* TLS: Max stack stuff is probably not real useful with multiple
    threads -- to even get it to work correcly you'd have to use locks.
 */
-#ifndef MT_ENGINE
+#ifndef MULTI_THREAD
   if (flags[TRACE_STA]) {
     /* Report Maximum Usages
        --------------------- */
@@ -276,7 +276,8 @@ void total_stat(CTXTdeclc double elapstime) {
 
 #ifdef MULTI_THREAD
 
-  /*  print_mutex_use();*/
+  printf("%d active user thread%s.\n",flags[NUM_THREADS],
+	 (flags[NUM_THREADS]>1?"s":""));
 
 #endif
 

@@ -470,7 +470,7 @@ void delete_predicate_table(CTXTdeclc TIFptr tif) {
     if ( IsVariantPredicate(tif) )
       delete_variant_table(CTXTc TIF_CallTrie(tif));
     else
-      delete_subsumptive_table(tif);
+      delete_subsumptive_table(CTXTc tif);
     TIF_CallTrie(tif) = NULL;
     TIF_Subgoals(tif) = NULL;
   }
@@ -908,7 +908,7 @@ void delete_return(CTXTdeclc BTNptr l, VariantSF sg_frame)
  * completion stack), and reclaim the leaves and corresponding branches
  *----------------------------------------------------------------------*/
 
-void  reclaim_del_ret_list(VariantSF sg_frame) {
+void  reclaim_del_ret_list(CTXTdeclc VariantSF sg_frame) {
   ALNptr x,y;
   
   x = compl_del_ret_list(subg_compl_stack_ptr(sg_frame));
