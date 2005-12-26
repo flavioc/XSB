@@ -1,4 +1,3 @@
-
 /* File:      error_xsb.c
 ** Author(s): Sagonas, Demoen
 ** Contact:   xsb-contact@cs.sunysb.edu
@@ -232,6 +231,26 @@ void call_conv xsb_permission_error(CTXTdeclc
 /**************/
 
 // representation_error
+
+/**************/
+
+/* TLS: handling this case specially: if we're out of memory, then the
+ *  usual throw mechanism, which requires the throw ball to be
+ *  asserted won't work (without a rewrite) -- thus in the sequential
+ *  engine we longjump directly back to the main interpreter level.
+ *  In the MT case, it would be nice to do something similar, and
+ *  perhaps when I understand thread cancellation policies better, we
+ *  will :-) */
+
+void call_conv xsb_memory_error(void) 
+{
+#ifndef MULTI_THREAD
+  printf("++Error[XSB/Runtime]: [Resource] Out of memory");
+  longjmp(xsb_abort_fallback_environment, (Integer) &fail_inst);
+#else
+  xsb_exit("++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory");
+#endif
+}			       
 
 /**************/
 

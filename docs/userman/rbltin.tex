@@ -452,7 +452,11 @@ facts can be read and asserted into memory in under a minute, making
 XSB suitable for certain kinds of in-memory database
 operations~\footnote{In \version{}, loading code dynamically can also
 be useful when the clauses contain atoms whose length is more than 255
-that cannot be handled by the XSB compiler.}.
+that cannot be handled by the XSB compiler.}.  
+
+Each of the predicates in this section allow loading from files with
+proper prolog extensions, and makes use of the XSB library paths.  See
+Sections~\ref{LibPath} and~\ref{sec:filenames} for details.
 
 \begin{description}
 \ouritem{load\_dyn(+FileName)}

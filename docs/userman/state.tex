@@ -432,6 +432,12 @@ module {\tt "usermod"} may be enumerated using:
 	{\tt tabled}	& 
 		The predicate has been declared tabled. \\ \hline
 	\hline
+	{\tt shared}	& 
+		The predicate has been declared shared in the \\
+        &       multi-threaded engine.  This means that any dynamic \\
+        &       code or tables for this predicate will be shared among \\
+        &       threads, but it does not affect static, non-tabled code. \\ \hline
+	\hline
 	{\tt xsb\_standard\_pred}	& 
 		The predicate symbol has the same Functor and Arity as  \\
 	&	one of XSB's standard predicates, and is available to \\
@@ -825,55 +831,66 @@ used to report various degrees of abnormality.
 \verb|indirection| indicating that the indirect-sliding garbage
 collector will be used.
  
-\ouritem{cputime(-CPU\_Time)}\index{\texttt{cputime/1}}
-    Returns the {\tt CPU\_Time} at the time of the call in seconds.
-    The difference between results of successive calls to this
-    predicate can measure the time spent in specific predicates.
+\ouritem{cputime(-CPU\_Time)}\index{\texttt{cputime/1}} 
+%
+Returns the (process-level) {\tt CPU\_Time} at the time of the call in
+seconds.  The difference between results of successive calls to this
+predicate can measure the time spent in specific predicates.  Note
+that in the multi-threaded engine, {cputime/1} measures the time for
+all threads.
 
 \ouritem{walltime(-Time)}\index{\texttt{cputime/1}}
-    Returns the \texttt{Time}, in seconds, since execution started, or
-    since the last call to \texttt{statistics(0)}. 
+%
+Returns the \texttt{Time}, in seconds, since execution started, or
+since the last call to \texttt{statistics(0)} by any thread.
 
-\ouritem{statistics}\index{\texttt{statistics/0}} Prints on the current
-    output stream: 
+\ouritem{statistics}\index{\texttt{statistics/0}} 
+%
+Displays usage information on the current output stream, including: 
 \begin{itemize} 
 \item Information about allocation of memory  containing the 
 \begin{itemize} 
 \item Global stack (heap) and local (environment) stack (see e.g.
-\cite{AitK90}). Memory for these two WAM stacks is allocated as a
-single unit so that each stack grows together; information is provided
-on the current allocation for the stacks as well as on the stack sizes
-themselves.  (See Section~\ref{sec:EmuOptions} for the memory
-re-allocation algorithm).  For maximum space used by each of these
-stacks, use the {\tt '-s'} command-line option.
+  \cite{AitK90}) for the calling thread. Memory for these two WAM
+  stacks is allocated as a single unit so that each stack grows
+  together; information is provided on the current allocation for the
+  stacks as well as on the stack sizes themselves.  (See
+  Section~\ref{sec:EmuOptions} for the memory re-allocation
+  algorithm).  For maximum space used by each of these stacks in XSB's
+  single-threaded configuration, use the {\tt '-s'} command-line
+  option.
 %
-\item Trail and choice point stack (see e.g. \cite{AitK90}).  Memory
-for these two WAM stacks is allocated as a single unit so that each
-stack grows together; information is provided on the current
-allocation for the stacks as well as on the stack sizes themselves.
-The (re-)allocation follows the algorithm sketched in
-Section~\ref{sec:EmuOptions}).  (See Section~\ref{sec:EmuOptions} for
-the memory re-allocation algorithm).  For maximum space used by each
-of these stacks, use the {\tt '-s'} command-line option.
-% TLS: this had been taken out a version or two ago.
-%         \item SLG subgoal space (tablestack)
-\item SLG unification stack.  This stack is used as a space to copy
-terms from the execution stacks into table space, or back out.  This
-stack will not be reallocated unless extremely large terms are tabled.
+\item Trail and choice point stack (see e.g. \cite{AitK90}) for the
+  calling thread.  Memory for these two WAM stacks is allocated as a
+  single unit so that each stack grows together; information is
+  provided on the current allocation for the stacks as well as on the
+  stack sizes themselves.  The (re-)allocation follows the algorithm
+  sketched in Section~\ref{sec:EmuOptions}).  (See
+  Section~\ref{sec:EmuOptions} for the memory re-allocation
+  algorithm).  For maximum space used by each of these stacks in XSB's
+  single-threaded configuration, use the {\tt '-s'} command-line
+  option.
 %
-\item SLG completion stack.  The completion stack is used to perform
-incremental completion for sets of mutually dependant tabled
-subgoals.  One completion stack frame is allocated per tabled subgoal
-\cite{SaSw98} but the size of these frames is version-dependent.
+\item SLG unification stack for the calling thread This stack is used
+  as a space to copy terms from the execution stacks into table space,
+  or back out.  This stack will not be reallocated unless extremely
+  large terms are tabled.
+%
+\item SLG completion stack for the calling thread.  The completion
+  stack is used to perform incremental completion for sets of mutually
+  dependant tabled subgoals.  One completion stack frame is allocated
+  per tabled subgoal \cite{SaSw98} but the size of these frames is
+  version-dependent.
 %
 \item the space occupied by subgoal and answer tables (in the form of
-tries) \cite{RRSSW98}.
+  tries) \cite{RRSSW98}.  In the multi-threaded configuration this
+  includes all private and shared tables.
 \end{itemize}
 \item Information about the number of tabling operations performed in
-the session.  Note that the statistics are divided up between calls to
-predicates that use variant tabling and those that use (call)
-subsumptive tabling (see Section \ref{sec:TablingStrategies} and
-\cite{TST99}).
+  the session by any thread.  Note that the statistics are divided up
+  between calls to predicates that use variant tabling and those that
+  use (call) subsumptive tabling (see Section
+  \ref{sec:TablingStrategies} and \cite{TST99}).
 \begin{itemize}
 \item Call Subsumption Subgoal Operations.  For predicates that use
 subsumptive tabling, the total number of subsumptive subgoal calls is
@@ -903,17 +920,18 @@ number of redundant answers derived.
 \end{itemize}
 %
 \item Garbage Collection Information.  Time spent garbage collecting
-and number of heap cells collected.
+  by all threads and number of heap cells collected.
 
 \item Information about process CPU and clock time.
     \end{itemize}
 
-As mentioned above, if the emulator is invoked with the {\tt '-s'}
-    option (see Section~\ref{sec:EmuOptions}), additional information
-    is printed out about maximum use of each execution stack and table
-    space.  However, the {\tt '-s'} option can substantially slow down
-    the emulator so benchmarks of time should be performed separately
-    from benchmarks of space.
+As mentioned above, if XSB is configured with the single-threaded
+engine and is invoked with the {\tt '-s'} option (see
+Section~\ref{sec:EmuOptions}), additional information is printed out
+about maximum use of each execution stack and table space.  However,
+the {\tt '-s'} option can substantially slow down the emulator so
+benchmarks of time should be performed separately from benchmarks of
+space.
 
 {\bf Example}: The following printout shows how the {\tt statistics/0}
 output looks if it is invoked with the {\tt '-s'} option (without it

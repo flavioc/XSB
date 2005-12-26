@@ -117,7 +117,8 @@ XSB~\footnote{Other types of files may be associated with foreign code
 --- see Volume 2.}.
 \begin{itemize}
 \item A single {\it source} file, whose name is the {\em base file name} plus 
-      the an extension suffix ``{\tt .P}'' or if a {\tt .P} file cannot be found , {\tt .pl}.  
+      the an extension suffix ``{\tt .P}'' or if a {\tt .P} file
+      cannot be found , {\tt .pl}.   
 \item An {\it object (byte-code)} file, whose name consists of the
 base file name plus the suffix ``{\tt .xwam}''.
 \item An optional {\it header} file, whose name is the base file name plus 
@@ -935,7 +936,8 @@ where $option_i$ is one of the options described in
 Section~\ref{sec:CompilerOptions}.
 
 The source file name corresponding to a given module is obtained by 
-concatenating a directory prefix and the extension {\tt .P} (or {\tt .c}) 
+concatenating a directory prefix and the extension {\tt .P} (or other
+filenames, see Section~\ref{sec:filenames}) 
 to the module name.  The directory prefix must be in the
 dynamic loader path (see Section~\ref{LibPath}).
 Note that these directories are searched in a predetermined
@@ -944,9 +946,9 @@ appears in more than one of the directories searched, the compiler
 will compile the first one it encounters.  In such a case, the user can 
 override the search order by providing an absolute path name.
 
-If {\tt File} contains no extension, an attempt is made to compile the 
-file {\tt File.P} (or {\tt File.c}) before trying compiling the file 
-with name {\tt File}.  
+If {\tt File} contains no extension, an attempt is made to compile the
+file {\tt File.P} (or other extensions) before trying compiling the
+file with name {\tt File}.
 
 We recommend use of the extension {\tt .P} for Prolog source file to
 avoid ambiguity.  Optionally, users can also provide a header file for

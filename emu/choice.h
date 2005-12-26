@@ -354,9 +354,9 @@ typedef struct compl_susp_frame {
 #endif
 
 /*
-#define is_compl_susp_frame(b)				\
-    ((cp_pcreg(b) == (byte *) &resume_compl_suspension_inst) ||	\
-    (cp_pcreg(b) == (byte *) &resume_compl_suspension_inst2))
+| #define is_compl_susp_frame(b)				\
+|     ((cp_pcreg(b) == (byte *) &resume_compl_suspension_inst) ||	\
+|    (cp_pcreg(b) == (byte *) &resume_compl_suspension_inst2))
 */
 
 #define is_compl_susp_frame(b)				\

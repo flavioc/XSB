@@ -46,21 +46,32 @@ call-variance or call-subsumption is used (cf. \cite{TST99}).
 
 \subsubsection*{Answers, Returns, and Templates}
 
-Given a table entry $(S,\cA,Status)$, each answer in $\cA$ is
-maintained in XSB as an {\em answer substitution}, that is a
-substitution to the variables of $S$\@.  The table inspection
-predicates allow access to answer substitutions through a family of
-terms whose principle functors are \retn, where \code{n} is the number
-of distinct variables in the producer subgoal.  The order of arguments
-in \retn{} corresponds to the order of distinct variables in a
-left-to-right traversal of $S$.
+\index{answer substitution}
+\index{substitution factor}
+%
+Given a table entry $(S,\cA,Status)$, the set of variables in $S$ is
+sometimes called the {\em substitution factor} of $S$.  The order of
+arguments in the substitution factor corresponds to the order of
+distinct variables in a left-to-right traversal of $S$.  Each answer
+in $\cA$ substitutes values for the variables in the substitution
+factor of $S$; this substitution is sometimes called an answer
+substitution.  The table inspection predicates allow access to
+substition factors and answer substitutions through a family of terms
+whose principle functors are \retn, where \code{n} is the size of the
+substitution factor.
 
 \begin{example}
 Let $S =$ \code{p(X,f(Y))} be a producer subgoal (or simply, a subgoal
-if call-variance is used) and $\alpha =$ \code{\{X=a,Y=b\}} be an
-answer substitution.  The representation of $\alpha$ as a return is
-\code{ret(a,b)} and the application of bindings in that return to $S$
-yields the answer \code{p(a,f(b))}.\fillBox
+if call-variance is used).  Using the \retn notation, the substution
+factor can be depicted as \code{ret(X,Y)}, while the answer
+substitution \code{\{X=a,Y=b\}} is depicted as \code{ret(a,b)}.  Note
+that the application of the answer substitution to the producer
+subgoal yields the answer \code{p(a,f(b))}.
+
+To take a slightly more complex example, consider the subgoal
+\code{q(X)} where {\tt X} is an attributed variable whose attribute is
+\code{f(Z,Y,Y)}.  In this case the substitution factor is
+\code{ret(X,Z,Y)}.\fillBox
 \end{example}
 
 In a similar manner, XSB maintains substitutions between producer

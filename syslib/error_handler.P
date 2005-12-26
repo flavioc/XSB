@@ -49,6 +49,8 @@ default_error_handler(Error) :-
 	%%reset_undef_pred_handlers, 
 	fail.
 
+/* Below, representation errors (usually mallocs returning null ptrs)
+ * are handled seperately, by writing out message in C */
 default_sys_error_handler(error(Error,Msg,Backtrace)) :-
 	% here is where we may do something abt backtraces.
 	xsb_flag(backtrace_on_error,BT),
@@ -60,7 +62,7 @@ default_sys_error_handler(error(Error,Msg)) :-
 	get_sys_error_description(error(Error,Msg),NewMsg),
 	messageln(NewMsg,STDERR).
 default_sys_error_handler(X) :-
-	messageln(('Unhandled Exception: ',X),STDERR).
+	messageln(('++Error[XSB/Runtime] Unhandled Exception: ',X),STDERR).
 
 % get_sys_error_description/3
 get_sys_error_description(error(Error,Msg,Backtrace), 
@@ -72,11 +74,11 @@ get_sys_error_description(error(Error,Msg), ExceptionDescription, []) :-
 
 % get_sys_error_description/2
 % This needs to handle either comma lists or lists as input -- just as message/[1,2]
-get_sys_error_description(error(calculation_error(Flag),Msg), ExceptionDesc) :- 
-	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Calculation (',Flag,')] ', Msg).
 get_sys_error_description(error(domain_error(Valid_type,Culprit),Msg), ExceptionDesc) :-
 	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Domain (',Culprit,' not in domain ',
 	                          Valid_type,')] ', Msg).
+get_sys_error_description(error(evaluation_error(Flag),Msg), ExceptionDesc) :- 
+	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Evaluation (',Flag,')] ', Msg).
 get_sys_error_description(error(existence_error(Obj_type,Culprit),Msg), ExceptionDesc):-
 	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Existence (No ',Obj_type,
 	                          ' ',Culprit,' exists)] ', Msg).
@@ -89,8 +91,13 @@ get_sys_error_description(error(permission_error(Op,Obj_type,Culprit),Msg),
 	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Permission (Operation) ',
 		     Op,' on ',Obj_type,': ',Culprit,'] ', Msg).
 get_sys_error_description(error(representation_error(Flag),Msg), ExceptionDesc) :- 
-	ExceptionDesc = 
-                          ('++Error[XSB/Runtime/P]: [Representation (',Flag,')] ', Msg) .
+	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Representation (',Flag,')] ', Msg) .
+get_sys_error_description(error(resource_error(Flag),Msg), ExceptionDesc) :- 
+	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Resource (',Flag,')] ', Msg) .
+get_sys_error_description(error(syntax_error,Msg), ExceptionDesc) :- 
+	ExceptionDesc =   ('++Error[XSB/Runtime/P]: [Syntax] ', Msg) .
+get_sys_error_description(error(system_error,Msg), ExceptionDesc) :- 
+	ExceptionDesc =   ('++Error[XSB/Runtime/P]: [System] ', Msg) .
 get_sys_error_description(error(table_error,Msg), ExceptionDesc) :-
 	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Table] ',Msg).
 get_sys_error_description(error(type_error(Valid_type,Culprit),Msg), ExceptionDesc) :-
@@ -174,11 +181,6 @@ print_mod_pred_arity_list([Psc|Pscs]) :-
 
 % ISO-compatable (and other) convenience predicates
 
-calculation_error(Flag,Predicate,Arg):- 
-	xsb_backtrace(Bt),
-	throw(error(calculation_error(Flag),
-	                             (' in arg ',Arg,' of predicate ',Predicate),Bt)).
-%------
 domain_error(Valid_type,Culprit,Predicate,Arg):- 
 	xsb_backtrace(Bt),
 	throw(error(domain_error(Valid_type,Culprit),
@@ -186,7 +188,12 @@ domain_error(Valid_type,Culprit,Predicate,Arg):-
 domain_error(Valid_type,Culprit,Predicate,Arg,Msg):- 
 	xsb_backtrace(Bt),
 	throw(error(domain_error(Valid_type,Culprit),
-                            (' in arg ',Arg,' of predicate ',Predicate, '(',Msg,')'),Bt)).
+                           (' in arg ',Arg,' of predicate ',Predicate, '(',Msg,')'),Bt)).
+%------
+evaluation_error(Flag,Predicate,Arg):- 
+	xsb_backtrace(Bt),
+	throw(error(evaluation_error(Flag),
+	                             (' in arg ',Arg,' of predicate ',Predicate),Bt)).
 %------
 existence_error(Object_type,Culprit,Predicate,Arg):- 
 	xsb_backtrace(Bt),
@@ -215,6 +222,20 @@ permission_error(Op,Obj_type,Culprit,Predicate):-
 representation_error(Flag,Predicate,Arg):- 
 	xsb_backtrace(Bt),
 	throw(error(representation_error(Flag),
+	                             (' in arg ',Arg,' of predicate ',Predicate),Bt)).
+%------
+resource_error(Flag,Predicate):- 
+	xsb_backtrace(Bt),
+	throw(error(resource_error(Flag),
+	                             (' in predicate ',Predicate),Bt)).
+%------
+syntax_error(Message):- 
+	xsb_backtrace(Bt),
+	throw(error(syntax_error,Message,Bt)).
+%------
+system_error(Flag,Predicate,Arg):- 
+	xsb_backtrace(Bt),
+	throw(error(system_error(Flag),
 	                             (' in arg ',Arg,' of predicate ',Predicate),Bt)).
 %------
 table_error(Message):- 

@@ -3226,16 +3226,16 @@ powerful aggregation facility as discussed in Section
 \ref{tabling_aggregate_predicates}.
 
 \begin{description}
-\ouritem{setof(?X, +Goal, ?Set)}\index{\texttt{setof/3}}
+\ouritem{setof(?Template, +Goal, ?Set)}\index{\texttt{setof/3}}
     This predicate may be read as ``{\tt Set} is the set of all instances 
-    of {\tt X} such that {\tt Goal} is provable''.
+    of {\tt Template} such that {\tt Goal} is provable''.
     If~{\tt Goal} is not provable, {\tt setof/3} fails.
     The term {\tt Goal} specifies a goal or goals as in {\tt call(Goal)}.
     {\tt Set} is a set of terms represented as a list of those terms,
     without duplicates, in the standard order for terms 
     (see Section~\ref{Comparison}).
     If there are uninstantiated variables in {\tt Goal} which do not also 
-    appear in {\tt X}, then a call to this evaluable predicate may backtrack,
+    appear in {\tt Template}, then a call to this evaluable predicate may backtrack,
     generating alternative values for~{\tt Set} corresponding to different
     instantiations of the free variables of~{\tt Goal}.
     Variables occurring in {\tt Goal} will not be treated as free if they 
@@ -3250,25 +3250,109 @@ powerful aggregation facility as discussed in Section
     Exceptions: Same as predicate {\tt call/1}
 		(see Section~\ref{meta_predicates}).
 
-\ouritem{bagof(?X, +Goal, ?Bag)} \index{\texttt{bagof/3}}
-    This predicate has the same semantics as {\tt setof/3} except that the 
-    third argument returns an unordered list that may contain duplicates.
+Example: Consider the following predicate: 
+%
+\begin{verbatim}
+    p(red,high,1).
+    p(green,low,2).
+    p(blue,high,3).
+    p(black,low,4).
+    p(black,high,5).
+\end{verbatim}
+%
+The goal \verb|?- setof(Color,Height^Val^p(Color,Height,Val),List)|
+returns a single solution:
+\begin{verbatim}
+    Color = _h73
+    Height = _h87
+    Val = _h101
+    L = [black,blue,green,red]
+\end{verbatim}
+
+If {\tt Height} is removed from the sequence of existential variables, so
+that the goal becomes:\\
+\verb|?- setof(Color,Val^p(Color,Height,Val),List)}|, the first solution is:
+\begin{verbatim}
+    Color = _h73
+    Val = _h87
+    Height = high
+    L = [black,blue,red];
+\end{verbatim}
+%
+upon backtracking, a second solution is produced: 
+%
+\begin{verbatim}
+    Color = _h73
+    Val = _h87
+    Height = low
+    L = [black,green]
+\end{verbatim}
+
+\ouritem{bagof(?Template, +Goal, ?Bag)} \index{\texttt{bagof/3}} This
+predicate has the same semantics as {\tt setof/3} except that the
+third argument returns an unsorted list that may contain duplicates.
+
+Exceptions: Same as predicate {\tt call/1} (see
+Section~\ref{meta_predicates}).
+
+Example: 
+%
+For the predicate {\tt p/3} in the example for {\tt setof/3}, the
+goal\\ 
+\verb|?- bagof(Color,Height^Val^p(Color,Height,Val),L)| returns
+the single solution:
+\begin{verbatim}
+    Color = _h73
+    Height = _h87
+    Val = _h101
+    L = [red,green,blue,black,black];
+\end{verbatim}
+If {\tt Height} is removed from the sequence of existential variables, so
+that the goal becomes: 
+\verb|?- bagof(Color,Val^p(Color,Height,Val),List)|, the first solution is:
+\begin{verbatim}
+    Color = _h73
+    Val = _h87
+    Height = high
+    L = [red,blue,black];
+\end{verbatim}
+%
+upon backtracking, a second solution is produced: 
+%
+\begin{verbatim}
+    Color = _h73
+    Val = _h87
+    Height = low
+    L = [green,black];
+\end{verbatim}
+
+
+\ouritem{findall(?Template, +Goal, ?List)} \index{\texttt{findall/3}}
+Similar to predicate {\tt bagof/3}, except that variables in {\tt
+  Goal} that do not occur in {\tt Template} are treated as
+existential, and alternative lists are not returned for different
+bindings of such variables.  Note that this means that {\tt Goal}
+should not contain existential variables.  This makes {\tt findall/3}
+deterministic (non-backtrackable).  Unlike {\tt setof/3} and {\tt
+  bagof/3}, if {\tt Goal} is unsatisfiable, {\tt findall/3} succeeds
+binding {\tt List} to the empty list.
 
     Exceptions: Same as predicate {\tt call/1}
 		(see Section~\ref{meta_predicates}).
 
-\ouritem{findall(?X, +Goal, ?List)} \index{\texttt{findall/3}}
-    Similar to predicate {\tt bagof/3}, except that variables in {\tt Goal}
-    that do not occur in {\tt X} are treated as existential, and alternative
-    lists are not returned for different bindings of such variables.  This
-    makes {\tt findall/3} deterministic (non-backtrackable).  Unlike
-    {\tt setof/3} and {\tt bagof/3}, if {\tt Goal} is unsatisfiable,
-    {\tt findall/3} succeeds binding {\tt List} to the empty list.
+Example: 
+%
+For the predicate {\tt p/3} in the example for {\tt setof/3}, the goal \\
+{\tt findall(Color,p(Color,Height,Val),L)} returns a single solution: 
+%
+\begin{verbatim}
+    Color = _h73
+    Height = _h107
+    Val = _h121
+    F = [red,green,blue,black,black]
+\end{verbatim}
 
-    Exceptions: Same as predicate {\tt call/1}
-		(see Section~\ref{meta_predicates}).
-
-\ournewitem{tfindall(?X, +Goal, ?List)}{Tabling}
+\ournewitem{tfindall(?Template, +Goal, ?List)}{Tabling}
 \index{\texttt{tfindall/3}}
 %\predindex{tfindall/3~(L)}
 \label{tfindall/3}
@@ -3278,7 +3362,7 @@ powerful aggregation facility as discussed in Section
     Section~\ref{tabling_aggregate_predicates} if possible}.
 
     Like {\tt findall/3}, {\tt tfindall/3} treats all variables in
-    {\tt Goal} that do not occur in {\tt X} as existential.  However,
+    {\tt Goal} that do not occur in {\tt Template} as existential.  However,
     in {\tt tfindall/3}, the {\tt Goal} must be a call to a single
     tabled predicate.
 	

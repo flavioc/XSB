@@ -49,23 +49,22 @@ errors can be caught.
 \begin{small}
 \begin{verbatim}
 :- import error_writeln/1 from standard.
+:- import type_error/4 from error_handler.
 
 userdiv(X,Ans):- 
         catch(userdiv1(X,Ans),mydiv1(Y),handleUserdiv(Y,X)).
 
 userdiv1(X,Ans):- 
-        (number(X) -> true; throw(mydiv1(error1))),
+        (number(X) -> true; type_error(number,X,userdiv1/2,1)),
         write('Enter a number: '),read(Y),
-        (number(Y) -> true ; throw(mydiv1(error2(Y)))),
-        (Y < 0 -> throw(mydiv1(error3(Y))); true),
+        (number(Y) -> true ; throw(mydiv1(error1(Y)))),
+        (Y < 0 -> throw(mydiv1(error2(Y))); true),
         (Y =:= 0 -> throw(error(zerodivision,userdiv/1)); true),
         Ans is X/Y.
 
-handleUserdiv(error1,X):- 
-        error_writeln(['userdiv/1 called with non-numeric numerator: ',X]),fail.
-handleUserdiv(error2(Y),_X):- 
+handleUserdiv(error1(Y),_X):- 
         error_writeln(['a non-numeric denominator was entered in userdiv/1: ',Y]),fail.
-handleUserdiv(error3(Y),_X):- 
+handleUserdiv(error2(Y),_X):- 
         error_writeln(['a negative denominator was entered in userdiv/1: ',Y]),fail.
 \end{verbatim}
 \end{small}
@@ -80,7 +79,19 @@ below.
 \begin{small}
 \begin{verbatim}
 | ?- userdiv(p(1),F).
-userdiv/1 called with non-numeric numerator: p(1)
+++Error[XSB/Runtime/P]: [Type (p(1) in place of number)]  in arg 1 of predicate userdiv1/2
+Forward Continuation...
+... machine:xsb_backtrace/1
+... error_handler:type_error/4
+... standard:call/1
+... x_interp:_$call/1
+... x_interp:call_query/1
+... standard:call/1
+... standard:catch/3
+... x_interp:interpreter/0
+... loader:ll_code_call/3
+... standard:call/1
+... standard:catch/3
 
 no
 | ?- userdiv(3,F).
@@ -115,24 +126,36 @@ Aborting...
 \end{small}
 
 \noindent
-By examining the program above, it can be seen that if {\tt 0} is
-entered, an error term of the form {\tt error(zerodivision,userdiv/1)}
-is thrown, and that this term does not unify with the second argument
-of the {\tt catch/3} literal in the body of {\tt userdiv/1}.  The
-error is instead caught by XSB's default system error handler which
-prints out the above message and aborts to the top level of the
-interpreter.  XSB's default system error handler does recognize
-certain error formats (see Section \ref{}), and even if it doesn't an
-error message like the one above may be adequate in many situations.
-On the other hand, there may be times when an application would like
-special default handling: perhaps the application calls XSB from C, so
-that aborts are not practical.  Alternately, perhaps XSB is being
-called from a graphical user interface via Interprolog~\cite{Cale01}
-or some other interface, and in addition to a special abort handling,
-one would like to display an error window.  In these cases it is
+By examining the program above, it can be seen that if {\tt p(1)} is
+entered, the predicate {\tt type\_error/3} is called.  {\tt
+  type\_error/3} is an XSB mechanism to throw an ISO-style type error
+from Prolog.  Such an error is known to the default system error
+handler which prints out a message along with a {\em backtrace} that
+indicates the calling context in which the error arose (see
+Section~\ref{sec:backtrace}).  Alternately, in the second case, when
+{\tt -1} is entered, the error term {\tt mydiv1(error2(-1))} is thown,
+which is caught within {\tt userdiv/2} and handled by {\tt
+  handleUserdiv/2}.  Finally, when {\tt 0} is entered for the
+denomonator, an error term of the form {\tt
+  error(zerodivision,userdiv/1)} is thrown, and that this term does
+not unify with the second argument of the {\tt catch/3} literal in the
+body of {\tt userdiv/1}, or with a known ISO error.  The error is
+instead caught by XSB's default system error handler which prints an
+uncaught exception message and aborts to the top level of the
+interpreter.  
+
+XSB's default system error handler recognizes certain error formats
+(see Section \ref{sec:iso-errors}), and handles the rest as uncaught
+exceptions, and takes actions that are often appropriate.  On the
+other hand, there may be times when an application would like special
+default handling: perhaps the application calls XSB from C, so that
+aborts are not practical.  Alternately, perhaps XSB is being called
+from a graphical user interface via Interprolog~\cite{Cale01} or some
+other interface, and in addition to a special abort handling, one
+would like to display an error window.  In these cases it is
 convenient to make use of the dynamic predicate {\tt
-default\_user\_error\_handler/1}.  {\tt
-default\_user\_error\_handler/1} is called immediately before the
+  default\_user\_error\_handler/1}.  {\tt
+  default\_user\_error\_handler/1} is called immediately before the
 default system error handler, and after it is ascertained that no
 catcher for an error term is available via a {\tt catch/3} ancestor.
 
@@ -160,7 +183,8 @@ to {\tt throw/1} and the matching {\tt catch/3} that serves as its
 ancestor.  However, if this process encounters a choice point for an
 incomplete table, execution is aborted to the top user level.
 
-\section{Representations of ISO Errors}
+\section{Representations of ISO Errors} \label{sec:iso-errors}
+\index{ISO!errors}
 
 All exceptions that occur during the execution of an XSB program can
 be caught.  However, by structuring error terms in a consistent
@@ -175,48 +199,207 @@ system predicates are in the process of being updated to handle these
 errors.}.  Below, in Section~\ref{} we provide convenience predicates
 for throwing various ISO errors and performing various error checks.
 
+In the following predicates, {\tt Msg} is either a list of HiLog terms
+or a comma-list of HiLog terms.  Each of the {\tt error/2} terms below
+can also be represented as {\tt error/3} terms, where the third
+arugment is instantiated to the representation of a backtrace.
+
 \begin{description}
-\item[error(instantiation\_error,Msg)] is the format of an ISO
-instantiation error.  
+\item [error(domain\_error(Valid\_type,Culprit),Msg)] is the format of
+  an ISO type error, where {\tt Valid\_type} is the domain expected
+  and {\tt Culprit} is the term observed.  Unlike types, domains can
+  be user-defined.
 %
-\item[error(type\_error(Valid\_type,Culprit,Msg)] is the format of an ISO
-type error, where {\tt Valid\_type} is the type expected and {\tt
-Culprit} is the term observed.  This should be used for checks of
-Prolog types only (i.e. integers, floats, atoms, etc.)
+\item[error(evaluation\_error(Flag),Msg)] is the format of an ISO
+  evaluation error (e.g. overflow or underflow), and {\tt Flag} is the
+  type of evaluation error encountered.
 %
-\item [error(domain\_error(Valid\_type,Culprit,Msg)] is the format of an ISO
-type error, where {\tt Valid\_type} is the domain expected and {\tt
-Culprit} is the term observed.  Unlike types, domains can be
-user-defined.
+\item [error(existence\_error(Type,Culprit),Msg)] is the format of an
+  ISO type error, where {\tt Type} is the type of a resource and {\tt
+    Culprit} is the term observed.
 %
-\item [error(existence\_error(Type,Culprit,Msg)] is the format of an ISO
-type error, where {\tt Type} is the type of a resource and {\tt
-Culprit} is the term observed.  
+\item[error(instantiation\_error,Msg))] is the format of an ISO
+  instantiation error.
 %
-\item [error(undefined\_predicate(Name,Arity,Module)] is the format of
-an ISO undefined predicate error, for the call to {\tt Name/Arity} in
-{\tt Module}.
+\item [error(permission\_error(Op,Obj\_type,Culprit).Msg)] is the format of
+  an ISO permission error, for an operation {\tt Op} applied to an
+  object of type {\tt Obj\_type}, where {\tt Culprit} was observed.
 %
-\item [error(permission\_error(Op,Obj\_type,Culprit)] is the format of
-an ISO permission error, for an operation {\tt Op} applied to an
-object of type {\tt Obj\_type}, where {\tt Culprit} was observed.
+\item[error(representation\_error(Flag).Msg)] is the format of an ISO
+  representation error (e.g. the maximum arity of a predicate has been
+  exceeded), and {\tt Flag} is the type of representation error
+  encountered.
+%
+\item[error(resource\_error(Flag).Msg)] is the format of an ISO
+  resource error (e.g. too many files are opened), and {\tt Flag} is
+  the type of resource error encountered.
+%
+\item[error(syntax\_error,Msg)] is the format of an ISO syntax error.
+%
+\item[error(system\_error(Flag),Msg)] is the format of an ISO system error,
+  and {\tt Flag} is the type of system error encountered.
+%
+\item[error(type\_error(Valid\_type,Culprit),Msg)] is the format of an
+  ISO type error, where {\tt Valid\_type} is the type expected and
+  {\tt Culprit} is the term observed.  This should be used for checks
+  of Prolog types only (i.e. integers, floats, atoms, etc.)
 %
 \end{description}
 
-%---------------------------------------------------------------------------------------------
-\section{Error Handling Predicates}
-
+In addition, XSB's engine also makes use of two other types of errors.
+%
 \begin{description}
-\ouritem{throw(ErrorTerm)}\index{\texttt{throw/1}} 
+\item[error(table\_error,Msg)] is the format of an error arising when using
+  XSB's tabling mechanism.
+%
+\item[error(misc\_error,Msg)] is the format of an error that is not
+  otherwise classified.
+%
+\end{description}
+
+In \version{} of XSB, errors for ISO predicates are not always ISO
+compliant.  First, when XSB determines it is out of avalable memory,
+recovering from such an error may be difficult at best.  Accordingly
+the computation is aborted in the sequential engine, or XSB exits in
+the multi-threaded engine.  Second, errors in XSB code sometimes arise
+as miscellaneous errors rather than as a designated ISO-error type.
+We are, however, in the process of reclassifying errors to their ISO
+types.
+
+%---------------------------------------------------------------------------------------
+\section{Predicates to Throw and Handle Errors}
+
+\subsection{Predicates to Throw Errors}
+
+XSB provides a variety of predicates that throw errors.  Those likely
+to be of interest to users are:
+\begin{description}
+\ouritem{throw(+ErrorTerm)}\index{\texttt{throw/1}} 
+%
 Throws the error {\tt ErrorTerm}.  Execution traverses up the choice
 point stack until a goal of the form {\tt catch(Goal,Term,Handler)} is
 found such that {\tt Term} unifies with {\tt ErrorTerm}.  In this
 case, {\tt Handler} is called.  If no catcher is found, the system
 looks for a clause of {\tt default\_user\_error\_handler(Term)} such
 that {\tt Term} unifies with {\tt ErrorTerm}.  Finally, if no such
-clause is found the default system error handler is called.
+clause is found the default system error handler is called.  {\tt
+  throw/1} is most useful in conjunction with specialized handlers for
+new types of errors not already supported in XSB.
 %
-\ouritem{catch(Goal,CatchTerm,Handler)} \index{\texttt{catch/3}} 
+\ournewitem{domain\_error(+Valid\_type,-Culprit,+Predicate,+Arg)}{error\_handler}
+\index{\texttt{domain\_error/4}} 
+Throws a domain error.  Using the default system error handler, an
+example (with {\tt backtrace\_on\_error} set to off) is {\small
+\begin{verbatim}
+domain_error(posInt,-1,checkPosInt/3,3).
+++Error[XSB/Runtime/P]: [Domain (-1 not in domain posInt)] in arg 3 of predicate checkPosInt/3
+\end{verbatim} }
+%
+\ournewitem{evaluation\_error(+Flag,+Predicate,+Arg)}{error\_handler}
+\index{\texttt{evaluation\_error/3}} 
+Throws an evaluation error.  Using the default system error handler, an
+example (with {\tt backtrace\_on\_error} set to off) is {\small
+\begin{verbatim}
+evaluation_error(zero_divisor,unidiv/1,2).
+++Error[XSB/Runtime/P]: [Evaluation (zero_divisor)] in arg 2 of predicate unidiv/2
+\end{verbatim} }
+%
+\ournewitem{existence\_error(+Object\_type,?Culprit,+Predicate,+Arg)}{error\_handler}
+\index{\texttt{existence\_error/4}}
+Throws an existence error.  Using the default system error
+handler, an example (with {\tt backtrace\_on\_error} set to off) is 
+{\small 
+\begin{verbatim}
+existence_error(file,'myfile.P','load_intensional_rules/2',2).
+++Error[XSB/Runtime/P]: [Existence (No file myfile.P exists)]  in arg 2 of predicate load_intensional_rules/2
+\end{verbatim}
+}
+%
+\ournewitem{instantiation\_error(+Predicate,+Arg,+State)}{error\_handler}
+\index{\texttt{instantiation\_error/4}}
+Throws an instantiation error.  Using the default system error
+handler, an example (with {\tt backtrace\_on\_error} set to off) is 
+{\small 
+\begin{verbatim}
+?- instantiation_error(foo/1,1,nonvar).
+++Error[XSB/Runtime/P]: [Instantiation]  in arg 1 of predicate foo/1: must be nonvar
+\end{verbatim}
+}
+%
+\ournewitem{permission\_error(+Op,+Obj\_type,?Culprit,+Predicate)}{error\_handler}
+\index{\texttt{permission\_error/4}}
+Throws a permission error.  Using the default system error
+handler, an example (with {\tt backtrace\_on\_error} set to off) is 
+{\small 
+\begin{verbatim}
+| ?- permission_error(write,file,'myfile.P',foo/1).
+++Error[XSB/Runtime/P]: [Permission (Operation) write on file: myfile.P]  in foo/1
+\end{verbatim}
+}
+%
+\ournewitem{representation\_error(+Flag,+Predicate,+Arg)}{error\_handler}
+\index{\texttt{representation\_error/3}} 
+Throws a representation error.  Using the default system error handler, an
+example (with {\tt backtrace\_on\_error} set to off) is {\small
+\begin{verbatim}
+representation_error(max_arity,assert/1,1).
+++Error[XSB/Runtime/P]: [Representation (max_arity)] in arg 1 of predicate assert/1
+\end{verbatim} }
+%
+\ournewitem{resource\_error(+Flag,+Predicate)}{error\_handler}
+\index{\texttt{resource\_error/3}} 
+Throws a resource error.  Using the default system error handler, an
+example (with {\tt backtrace\_on\_error} set to off) is {\small
+\begin{verbatim}
+resource_error(open_files,open/3)
+++Error[XSB/Runtime/P]: [Resource (open_files)] in predicate open/3
+\end{verbatim} }
+%
+\ournewitem{type\_error(+Valid\_type,-Culprit,+Predicate,+Arg)}{error\_handler}
+\index{\texttt{type\_error/4}}
+Throws a type error.  Using the default system error
+handler, an example (with {\tt backtrace\_on\_error} set to off) is 
+{\small 
+\begin{verbatim}
+| ?- type_error(atom,f(1),foo/1,1).
+++Error[XSB/Runtime/P]: [Type (f(1) in place of atom)]  in arg 1 of predicate foo/1
+\end{verbatim}
+}
+%
+\ournewitem{misc\_error(+Message)}{error\_handler}
+\index{\texttt{misc\_error/3}} Throws a miscellaneous error that will
+be caught by the default system handler.  For good programming
+practice miscellaneous errors should only be thrown when the cases
+above are not applicable, and the type of error is not of interest for
+structured error handling.  Such situations occur can occur for
+instance in debugging, during program development, or in small-special
+purpose programs.  Note that this {\tt misc\_error/2} replaces the
+obsolecent {\tt abort/1} and {\tt abort/2}.
+%
+\end{description}
+%
+% \ouritem{abort}\index{\texttt{abort/0}}
+% Abandons the current execution and returns to the top level.  This
+%     predicate should normally normally be used: 
+% \begin{itemize} 
+%\item when a non-ISO exception has occurred and the user wishes to
+%abort the computation to the top-level of the interpreter.  
+%
+%\item {\em and} the type of the error is not of interest for
+%structuring error handling.
+%\end{itemize}
+%
+%Such situations occur can occur for instance in debugging, during
+%program development, or in small-special purpose programs.
+%
+% \ouritem{abort(+Message)}\index{\texttt{abort/1}} \index{\texttt{STDERR}}
+%    Acts as {\tt abort/0} but sents {\tt Message} to {\tt STDERR}
+%    before aborting.
+
+\subsection{Predicates to Handle Errors}
+
+\begin{description}
+\ouritem{catch(?Goal,?CatchTerm,+Handler)} \index{\texttt{catch/3}} 
 Calls {\tt Goal}, and sets up information so that future throws will
 be able to access {\tt CatchTerm} under the mechanism mentioned
 above. {\tt catch/3} does not attempt to clean up system level
@@ -224,42 +407,17 @@ resources.   Thus, it is left up to the handler to close open tables
 (via {\tt close\_open\_tables/0}, close any open files, reset current
 input and output, and so on.
 %
-\ouritem{default\_user\_error\_handler(CatchTerm)}
-\index{\texttt{default\_user\_error\_handler/1}}
-Handles any error terms that unify with {\tt CatchTerm} that are not
-caught by invocations of {\tt catch/3}.  This predicate {\em does}
-close open tables, but does not attempt to clean up other system level
-resources, which is left to the handler.
+\ouritem{default\_user\_error\_handler(?CatchTerm)}
+\index{\texttt{default\_user\_error\_handler/1}} Handles any error
+terms that unify with {\tt CatchTerm} that are not caught by
+invocations of {\tt catch/3}.  This predicate {\em does} close open
+tables and release mutexes held by the calling thread, but does not
+attempt to clean up other system level resources, which is left to the
+handler.
 %
-\ouritem{abort}\index{\texttt{abort/0}}
-    Abandons the current execution and returns to the top level.  This
-    predicate should normally normally be used: 
- \begin{itemize} 
-\item when a non-ISO exception has occurred and the user wishes to
-abort the computation to the top-level of the interpreter.  
-%
-\item {\em and} the type of the error is not of interest for
-structuring error handling.
-\end{itemize}
-
-Such situations occur can occur for instance in debugging, during
-program development, or in small-special purpose programs.
-    Aborting closes all incomplete tables (those which may not have a 
-    complete set of answers).  Closed tables are unaffected, even if 
-    the tables were created during the aborted computation.
-
-{\tt abort/0} is implemented by throwing the term {\tt
-'\_\$abort\_ball'/0}.  Implementations that wish to override the
-default behavior of {\tt abort/0} must call a top-level goal via {\tt
-catch/1} and ensure that {\tt '\_\$abort\_ball'/0} is handled.
-
-\ouritem{abort(+Message)}\index{\texttt{abort/1}} \index{\texttt{STDERR}}
-    Acts as {\tt abort/0} but sents {\tt Message} to {\tt STDERR}
-    before aborting.
-
-\ournewitem{error\_write(Message)}{standard}\index{\texttt{error\_write/1}}
+\ournewitem{error\_write(?Message)}{standard}\index{\texttt{error\_write/1}}
 \vspace{-0.3in}
-\ournewitem{error\_writeln(Message)}{standard}\index{\texttt{error\_writeln/1}}
+\ournewitem{error\_writeln(?Message)}{standard}\index{\texttt{error\_writeln/1}}
 
 Utility routines for user-defined error catching.  These predicates
 output {\tt Message} to XSB's {\tt STDERR} stream, rather than to
@@ -274,109 +432,53 @@ standard}.
 Removes table data structures for all incomplete tables, but does not
 affect any incomplete tables.  In \version{} this predicate should
 only be used to handle exceptions in {\tt
-default\_user\_error\_handler/1}.
+  default\_user\_error\_handler/1}.  In addition, for the
+multi-threaded engine, this predicate unlocks any system mutexes held
+by the thread calling this predicate.
 
 \end{description}
 
+%----------------------------------------------------------------------------
 \section{Convenience Predicates}
 
-The following convenience predicates are provided to either throw an
-ISO error, or to make a commonly used check and throw an ISO error if
-the check is not satisfied.  All these predicates must be imported
-from the module {\tt error\_handler}.
+The following convenience predicates are provided to make a commonly
+used check and throw an ISO error if the check is not satisfied.  All
+these predicates must be imported from the module {\tt
+  error\_handler}.
 
 \begin{description}
-\ournewitem{instantiation\_error(Predicate,Arg,State)}{error\_handler}
-\index{\texttt{instantiation\_error/4}}
-Throws an instantiation error.  Using the default system error
-handler, an example is 
-{\small 
-\begin{verbatim}
-?- instantiation_error(foo/1,1,nonvar).
-++Error[XSB/Runtime/P]: [Instantiation]  in arg 1 of predicate foo/1: must be nonvar
-Aborting...
-\end{verbatim}
-}
-
-\ournewitem{type\_error(Valid\_type,Culprit,Predicate,Arg)}{error\_handler}
-\index{\texttt{type\_error/4}}
-Throws a type error.  Using the default system error
-handler, an example is 
-{\small 
-\begin{verbatim}
-| ?- type_error(atom,f(1),foo/1,1).
-++Error[XSB/Runtime/P]: [Type (f(1) in place of atom)]  in arg 1 of predicate foo/1
-Aborting...
-\end{verbatim}
-}
-
-\ournewitem{domain\_error(Valid\_type,Culprit,Predicate,Arg)}{error\_handler}
-\index{\texttt{domain\_error/4}}
-Throws a domain error.  Using the default system error
-handler, an example is 
-{\small 
-\begin{verbatim}
-domain_error(positive_integer,-1,cdfCheckPosint,3).
-++Error[XSB/Runtime/P]: [Domain (-1 not in domain positive_integer)]  in arg 3 of predicate cdfCheckPosint
-Aborting...
-\end{verbatim}
-}
-
-\ournewitem{existence\_error(Object\_type,Culprit,Predicate,Arg)}{error\_handler}
-\index{\texttt{existence\_error/4}}
-Throws an existence error.  Using the default system error
-handler, an example is 
-{\small 
-\begin{verbatim}
-existence_error(file,'myfile.P','load_intensional_rules/2',2).
-++Error[XSB/Runtime/P]: [Existence (No file myfile.P exists)]  in arg 2 of predicate load_intensional_rules/2
-\end{verbatim}
-}
-
-\ournewitem{permission\_error(Op,Obj\_type,Culprit,Predicate)}{error\_handler}
-\index{\texttt{permission\_error/4}}
-Throws a permission error.  Using the default system error
-handler, an example is 
-{\small 
-\begin{verbatim}
-| ?- permission_error(write,file,'myfile.P',foo/1).
-++Error[XSB/Runtime/P]: [Permission (Operation) write on file: myfile.P]  in foo/1
-Aborting...
-\end{verbatim}
-}
-
-\ournewitem{check\_atom(Term,Predicate,Arg)}{error\_handler}
+\ournewitem{check\_atom(?Term,+Predicate,+Arg)}{error\_handler}
 \index{\texttt{check\_atom/3}}
 Checks that {\tt Term} is an atom.  If so, the predicate succeeds;
 if not it throws a type error.
 
-\ournewitem{check\_ground(Term,Predicate,Arg)}{error\_handler}
+\ournewitem{check\_ground(?Term,+Predicate,+Arg)}{error\_handler}
 \index{\texttt{check\_ground/3}}
 Checks that {\tt Term} is ground.  If so, the predicate succeeds;
 if not it throws an instantiation error.
 
-\ournewitem{check\_integer(Term,Predicate,Arg)}{error\_handler}
+\ournewitem{check\_integer(?Term,+Predicate,+Arg)}{error\_handler}
 \index{\texttt{check\_integern/3}}
 Checks that {\tt Term} is an integer.  If so, the predicate succeeds;
 if not it throws a type error.
 
-\ournewitem{check\_nonvar(Term,Predicate,Arg)}{error\_handler}
+\ournewitem{check\_nonvar(?Term,+Predicate,+Arg)}{error\_handler}
 \index{\texttt{check\_nonvar/3}}
 Checks that {\tt Term} is not a variable.  If not, the predicate succeeds;
 if {\tt Term} is a variable,  it throws an instantiation error.
 
-\ournewitem{check\_var(Term,Predicate,Arg)}{error\_handler}
+\ournewitem{check\_var(?Term,+Predicate,+Arg)}{error\_handler}
 \index{\texttt{check\_var/3}}
 Checks that {\tt Term} is a variable.  If so, the predicate succeeds;
 if not it throws an instantiation error.
 
-\ournewitem{check\_nonvar\_list(Term,Predicate,Arg)}{error\_handler}
+\ournewitem{check\_nonvar\_list(?Term,+Predicate,+Arg)}{error\_handler}
 \index{\texttt{check\_nonvar\_list/3}}
 Checks that {\tt Term} is a list, each of whose elements is ground.
 If so, the predicate succeeds; if not it throws an instantiation
 error.
 	    
-\ournewitem{check\_stream(Stream,Predicate,Arg)}{error\_handler}
+\ournewitem{check\_stream(?Stream,+Predicate,+Arg)}{error\_handler}
 \index{\texttt{check\_stream/3}}
 Checks that {\tt Stream} is a stream.  If so, the predicate succeeds;
 if not it throws an instantiation error~\footnote{The representation
@@ -384,3 +486,31 @@ of streams in XSB is subject to change.}.
 
 \end{description}
 
+%----------------------------------------------------------------------------
+\section{Backtraces}
+
+Displaying a backtrace in addition to an error message can greatly
+expedite debugging.  For XSB's default error handler, backtraces are
+printed out by default, a behavior that can be overridden for a given
+thread by the command: {\tt set\_xsb\_flag(backtrace\_on\_error,off)},
+For users who write their own error handlers, the following predicates
+can be used to manipulate backtraces.
+
+\begin{description}
+\ournewitem{xsb\_backtrace(-Backtrace)}{error\_handler}
+\index{\texttt{xsb\_backtrace/1}}
+Upon success {\tt Backtrace} is bound to a structure indicating the
+forward continuations for a point of execution.  This structure should
+be treated as opaque, and manipulated by one of the predicates below.
+%
+\ournewitem{get\_backtrace\_list(+Backtrace,-PredicateList)}{error\_handler}
+\index{\texttt{get\_backtrace\_list/2}}
+Given a backtrace structure, this predicate produces a list of
+predicate identifiers or the form {\tt Module:Predicate/Arity}.  This
+list can be manipulated as desired by error handling routines.
+%
+\ournewitem{print\_backtrace(+Backtrace)}{error\_handler}
+\index{\texttt{print\_backtrace/1}}
+ This predicate, which is used by XSB's default error handler, prints
+ a backtrace structure to {\tt STDMSG}.
+\end{description}
