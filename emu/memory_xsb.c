@@ -104,10 +104,10 @@ void *mem_alloc(unsigned long size, int category)
     extend_enc_dec_as_nec(ptr,ptr+size);
 #endif
     SYS_MUTEX_UNLOCK_NOERROR(MUTEX_MEM);
-    if (ptr == NULL)
+    if (ptr == NULL) {
       xsb_memory_error();
-    else 
-      return ptr;
+    }
+    return ptr;
 }
 
 
@@ -126,10 +126,10 @@ void *mem_calloc(unsigned long size, unsigned long occs, int category)
     extend_enc_dec_as_nec(ptr,ptr+length);
 #endif
     SYS_MUTEX_UNLOCK_NOERROR(MUTEX_MEM);
-    if (ptr == NULL)
+    if (ptr == NULL) {
       xsb_memory_error();
-    else 
-      return ptr;
+    }
+    return ptr;
 }
 
 
@@ -146,10 +146,10 @@ void *mem_realloc(void *addr, unsigned long oldsize, unsigned long newsize, int 
     extend_enc_dec_as_nec(addr,addr+newsize);
 #endif
     SYS_MUTEX_UNLOCK_NOERROR(MUTEX_MEM);
-    if (addr == NULL)
+    if (addr == NULL) {
       xsb_memory_error();
-    else 
-      return addr;
+    }
+    return addr;
 }
 
 
