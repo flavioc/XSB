@@ -2729,6 +2729,7 @@ case WRITE_OUT_PROFILE:
   }
 
   case THREAD_REQUEST: {
+
     return xsb_thread_request(CTXT) ;
   }
 

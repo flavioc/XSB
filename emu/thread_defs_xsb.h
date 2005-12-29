@@ -46,6 +46,8 @@
 #define XSB_ENSURE_ONE_THREAD	13
 #define XSB_THREAD_YIELD	14
 
+#define XSB_SHOW_MUTEXES        15
+
 #define MAX_THREADS		1024
 
 

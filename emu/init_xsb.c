@@ -720,34 +720,17 @@ char *init_para(CTXTdeclc int argc, char *argv[])
 
   return ( (char *) flags[BOOT_MODULE] );
 
-}
+} /* init_para() */
 
 /*==========================================================================*/
-
-/* Initialize Memory Regions and Related Variables.  Done whenever
-   threads are initialized.
-   ----------------------------------------------- */
-void init_machine(CTXTdecl)
-{
-  void tstInitDataStructs(CTXTdecl);
-  /* set special SLG_WAM instruction addresses */
-  /* these need only be done on process initialization, but there's a core-dump
-     if you move them to init_machine() */
-
-  cell_opcode(&answer_return_inst) = answer_return;
-  cell_opcode(&resume_compl_suspension_inst) = resume_compl_suspension;
-  //  cell_opcode(&resume_compl_suspension_inst2) = resume_compl_suspension;
-  cell_opcode(&check_complete_inst) = check_complete;
-  cell_opcode(&hash_handle_inst) = hash_handle;
-  cell_opcode(&fail_inst) = fail;
-  cell_opcode(&dynfail_inst) = dynfail;
-  cell_opcode(&trie_fail_unlock_inst) = trie_fail_unlock;
-  cell_opcode(&halt_inst) = halt;
-  cell_opcode(&proceed_inst) = proceed;         /* returned by load_obj */
-
-  init_newtrie(CTXT);
-
 #ifdef MULTI_THREAD
+/* To be called each time a thread is created: initializes
+ * thread-private memory areas that are cleaned up in
+ * cleanup_thread_structures() */
+
+void init_thread_structures(CTXTdecl)
+{
+
   interrupt_reg = &interrupt_counter;
 
   asynint_code = 0;
@@ -801,7 +784,6 @@ void init_machine(CTXTdecl)
 /* This is here just for the first thread - others initialize its xsb tid
    on xsb_thread_run - the first thread has always tid = 0 */
   th->tid = 0 ;
-#endif
 #ifdef SHARED_COMPL_TABLES
   th->waiting_for_thread = NULL ;
 #endif
@@ -809,6 +791,63 @@ void init_machine(CTXTdecl)
   pthread_cond_init( &th->cond_var, NULL );
   th->completing = FALSE;
   th->last_ans = 1;
+#endif
+}
+
+void cleanup_thread_structures(CTXTdecl)
+{
+  free(glstack.low) ;
+  free(tcpstack.low) ;
+  free(complstack.low) ;
+  free(pdl.low) ;
+
+  /* these are allocated in init_thread_structures() */
+  mem_dealloc(LSBuff,sizeof(VarString *)*MAXSBUFFS,OTHER_SPACE);
+  mem_dealloc(rc_vars,MAXVAR*sizeof(struct vartype),OTHER_SPACE);
+  mem_dealloc(token,sizeof(struct token_t),OTHER_SPACE); 
+  mem_dealloc(a_tstCCPStack,sizeof(struct tstCCPStack_t),OTHER_SPACE);
+  mem_dealloc(a_variant_cont,sizeof(struct VariantContinuation),OTHER_SPACE);
+  mem_dealloc(a_tstCPStack,sizeof(struct tstCPStack_t),OTHER_SPACE);
+  mem_dealloc(asrtBuff,sizeof(struct asrtBuff_t),OTHER_SPACE);
+  mem_dealloc(last_answer,sizeof(VarString),OTHER_SPACE);
+
+  mem_dealloc(tsgLBuff1,sizeof(VarString),OTHER_SPACE);
+  mem_dealloc(tsgLBuff2,sizeof(VarString),OTHER_SPACE);
+  mem_dealloc(tsgSBuff1,sizeof(VarString),OTHER_SPACE);
+  mem_dealloc(tsgSBuff2,sizeof(VarString),OTHER_SPACE);
+
+  free_trie_aux_areas(CTXT) ;
+
+
+}
+#endif /* MULTI_THREAD */
+
+/*==========================================================================*/
+/* Initialize Memory Regions and Related Variables.  Done whenever
+   threads are initialized.
+   ----------------------------------------------- */
+void init_machine(CTXTdecl)
+{
+  void tstInitDataStructs(CTXTdecl);
+  /* set special SLG_WAM instruction addresses */
+  /* these need only be done on process initialization, but there's a core-dump
+     if you move them to init_machine() */
+
+  cell_opcode(&answer_return_inst) = answer_return;
+  cell_opcode(&resume_compl_suspension_inst) = resume_compl_suspension;
+  //  cell_opcode(&resume_compl_suspension_inst2) = resume_compl_suspension;
+  cell_opcode(&check_complete_inst) = check_complete;
+  cell_opcode(&hash_handle_inst) = hash_handle;
+  cell_opcode(&fail_inst) = fail;
+  cell_opcode(&dynfail_inst) = dynfail;
+  cell_opcode(&trie_fail_unlock_inst) = trie_fail_unlock;
+  cell_opcode(&halt_inst) = halt;
+  cell_opcode(&proceed_inst) = proceed;         /* returned by load_obj */
+
+  init_newtrie(CTXT);
+
+#ifdef MULTI_THREAD
+  init_thread_structures(CTXT);
 #endif
 
   tsgLBuff1 = (VarString *)mem_alloc(sizeof(VarString),OTHER_SPACE);
@@ -927,17 +966,7 @@ void init_machine(CTXTdecl)
   num_vars_in_var_regs = -1;
   init_trie_aux_areas(CTXT);
   tstInitDataStructs(CTXT);
-}
-
-void cleanup_machine(CTXTdecl)
-{
-	free(glstack.low) ;
-	free(tcpstack.low) ;
-	free(complstack.low) ;
-	free(pdl.low) ;
-
-	free_trie_aux_areas(CTXT) ;
-}
+} /* init_machine() */
 
 Psc make_code_psc_rec(char *name, int arity, Psc mod_psc) {
   Pair temp;
