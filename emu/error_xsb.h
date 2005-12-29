@@ -117,7 +117,7 @@ void call_conv xsb_permission_error(CTXTdeclc char *,char *, int, char *,int) ;
 void call_conv xsb_table_error(CTXTdeclc char *) ;
 void call_conv xsb_type_error(CTXTdeclc char *,Cell , char *,int, int) ;
 
-extern void xsb_memory_error(void);
+extern void call_conv xsb_memory_error(void);
 
 /* should include these from whereever they are.... split out from biassert **/
 typedef struct
