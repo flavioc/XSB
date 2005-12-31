@@ -540,7 +540,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 	
 	ctop_int( CTXTc 5, 0 ) ;
 	return TRUE ;
-#endif
+#endif /* MULTI_THREAD */
 }
 
 xsbBool mt_random_request( CTXTdecl )

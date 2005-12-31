@@ -76,6 +76,18 @@ static void strclose(int i)
   }
 }
 
+#ifdef MULTI_THREAD
+#define XSB_STREAM_LOCK(index) { \
+    pthread_mutex_lock(OPENFILES_MUTEX(index)); \
+}
+#define XSB_STREAM_UNLOCK(index) { \
+    pthread_mutex_unlock(OPENFILES_MUTEX(index)); \
+}
+#else
+#define XSB_STREAM_LOCK(index) 
+#define XSB_STREAM_UNLOCK(index) 
+#endif
+
 /* TLS: these are ports, rather than file descriptors, therefore using
    the Prolog defines.  Should they be moved into a different .h file? 
 */
@@ -84,6 +96,8 @@ static void strclose(int i)
 #define STDOUT 1
 
 /* file_flush, file_pos, file_truncate, file_seek */
+/* Best to put locks AFTER SET_FILEPTR to avoid problems with mutexes
+   (they should be unlocked via error_handler, but ...) */
 inline static xsbBool file_function(CTXTdecl)
 {
   FILE *fptr;
@@ -98,8 +112,11 @@ inline static xsbBool file_function(CTXTdecl)
   switch (ptoc_int(CTXTc 1)) {
   case FILE_FLUSH: /* file_function(0,+IOport,-Ret,_,_) */
     /* ptoc_int(CTXTc 2) is XSB I/O port */
-    SET_FILEPTR(fptr, ptoc_int(CTXTc 2));   
+    io_port = ptoc_int(CTXTc 2);
+    SET_FILEPTR(fptr, io_port);   
+    XSB_STREAM_LOCK(io_port);
     value = fflush(fptr);
+    XSB_STREAM_UNLOCK(io_port);
     ctop_int(CTXTc 3, (int) value);
     break;
   case FILE_SEEK: /* file_function(1,+IOport, +Offset, +Place, -Ret) */
@@ -107,6 +124,7 @@ inline static xsbBool file_function(CTXTdecl)
     if (io_port < 0) {
       if (ptoc_int(CTXTc 4) != 0) 
 	xsb_permission_error(CTXTc "file_seek","atom",ptoc_int(CTXTc 4),"file_seek",1); 
+      XSB_STREAM_LOCK(io_port);
       sfptr = iostrs[iostrdecode(io_port)];
       value = ptoc_int(CTXTc 3);
       length = sfptr->strcnt + sfptr->strptr - sfptr->strbase ;
@@ -115,49 +133,59 @@ inline static xsbBool file_function(CTXTdecl)
 	sfptr->strptr = sfptr->strbase + value;
 	sfptr->strcnt = length - value;
 	ctop_int(CTXTc 5, 0);
-	/*	printf("base %x cur %x cnt %d\n",
-		sfptr->strbase,sfptr->strptr,sfptr->strcnt);*/
       }
       else ctop_int(CTXTc 5,-1);
+      XSB_STREAM_UNLOCK(io_port);
     }
     else {
       SET_FILEPTR(fptr, io_port);
+      XSB_STREAM_LOCK(io_port);
       value = fseek(fptr, (long) ptoc_int(CTXTc 3), ptoc_int(CTXTc 4));
+      XSB_STREAM_UNLOCK(io_port);
       ctop_int(CTXTc 5, (int) value);
     }
     break;
   case FILE_TRUNCATE: /* file_function(2,+IOport,+Length,-Ret,_) */
     size = ptoc_int(CTXTc 3);
-    SET_FILEPTR(fptr, ptoc_int(CTXTc 2));
+    io_port = ptoc_int(CTXTc 2);
+    SET_FILEPTR(fptr, io_port);
+    XSB_STREAM_LOCK(io_port);
 #ifndef WIN_NT
     fseek(fptr, (long) size, 0);
     value = ftruncate( fileno(fptr), (off_t) size);
     ctop_int(CTXTc 4, (int) value);
 #else
-    //    xsb_warn("FILE_TRUNCATE: operation not supported under Windows.");
     ctop_int(CTXTc 4, (int) _chsize(fileno(fptr), size));
 #endif
+    XSB_STREAM_UNLOCK(io_port);
     break;
   case FILE_POS: /* file_function(3, +IOport, -Pos) */
     io_port = ptoc_int(CTXTc 2); 
     term = ptoc_tag(CTXTc 3);
     if (io_port >= 0) {
       SET_FILEPTR(fptr, io_port);
-      if (isnonvar(term))
+      XSB_STREAM_LOCK(io_port);
+      if (isnonvar(term)) {
+	XSB_STREAM_UNLOCK(io_port);
 	return ptoc_int(CTXTc 3) == ftell(fptr);
+      }
       else
 	ctop_int(CTXTc 3, ftell(fptr));
     } else { /* reading from string */
+      XSB_STREAM_LOCK(io_port);
       sfptr = strfileptr(io_port);
       if (sfptr->strcnt == EOF) 
 	offset = EOF;
       else 
 	offset = sfptr->strptr - sfptr->strbase;
-      if (isnonvar(term))
+      if (isnonvar(term)) {
+	XSB_STREAM_UNLOCK(io_port);
 	return ptoc_int(CTXTc 3) == offset;
+      }
       else
 	ctop_int(CTXTc 3, offset);
     }
+    XSB_STREAM_UNLOCK(io_port);
     break;
   case XSB_FILE_OPEN: {
     /* file_function(4, +FileName, +Mode, -IOport) TLS: changing modes
@@ -169,6 +197,8 @@ inline static xsbBool file_function(CTXTdecl)
 
     tmpstr = ptoc_longstring(CTXTc 2);
     pterm = reg_term(CTXTc 3);
+
+    SYS_MUTEX_LOCK( MUTEX_IO );
 
     if (isstring(pterm)) {
       strcpy(string_mode,string_val(pterm));
@@ -206,6 +236,7 @@ inline static xsbBool file_function(CTXTdecl)
       default: mode = -1;
       }
     } else {
+      SYS_MUTEX_UNLOCK( MUTEX_IO );
       xsb_abort("[FILE_OPEN] File opening mode must be an atom.");
       mode = -1;
     }
@@ -224,31 +255,32 @@ inline static xsbBool file_function(CTXTdecl)
 	ctop_int(CTXTc 5, (Integer)fptr);
       else 
 	ctop_int(CTXTc 5, -1000);
+      SYS_MUTEX_UNLOCK( MUTEX_IO );
       return TRUE;
     case OSTRINGW:
       xsb_abort("[FILE_OPEN] Output to strings has not been implemented yet");
       ctop_int(CTXTc 5, -1000);
+      SYS_MUTEX_UNLOCK( MUTEX_IO );
       return TRUE;
     default:
       xsb_warn("FILE_OPEN: Invalid open file mode");
       ctop_int(CTXTc 5, -1000);
+      SYS_MUTEX_UNLOCK( MUTEX_IO );
       return TRUE;
     }
     
     /* we reach here only if the mode is OREAD,OWRITE,OAPPEND */
     addr = expand_filename(tmpstr);
 
-    /*    printf("xsb_intern_file addr %s,string_mode %s\n",addr,string_mode); */
-
     opennew = ptoc_int(CTXTc 4);
     if (!xsb_intern_file("FILE_OPEN",addr, &ioport,strmode,opennew)) {
-      //printf("Open file %s, port %d (%d)\n",addr,ioport,opennew);
       open_files[ioport].stream_type = str_type;
       ctop_int(CTXTc 5,ioport);
     }
     else ctop_int(CTXTc 5,-1);
     mem_dealloc(addr,MAXPATHLEN,OTHER_SPACE);
 
+    SYS_MUTEX_UNLOCK( MUTEX_IO );
     break;
   }
     /* TLS: handling the case in which we are closing a flag that
@@ -258,12 +290,19 @@ inline static xsbBool file_function(CTXTdecl)
     {
       int rtrn; 
       io_port = ptoc_int(CTXTc 2);
-      if (io_port < 0) strclose(io_port);
+      if (io_port < 0) {
+	XSB_STREAM_LOCK(io_port);
+	strclose(io_port);
+	XSB_STREAM_UNLOCK(io_port);
+      }
       else {
 	SET_FILEPTR(fptr, io_port);
+	XSB_STREAM_LOCK(io_port);
 	if ((rtrn = fclose(fptr))) {
-	  if (ptoc_int(CTXTc 3) == NOFORCE_FILE_CLOSE)
-	    {xsb_permission_error(CTXTc "fclose","file",rtrn,"file_close",1); }
+	  if (ptoc_int(CTXTc 3) == NOFORCE_FILE_CLOSE) {
+	    XSB_STREAM_UNLOCK(io_port);
+	    xsb_permission_error(CTXTc "fclose","file",rtrn,"file_close",1); 
+	  }
 	}
 	open_files[io_port].file_ptr = NULL;
 	open_files[io_port].file_name = NULL;
@@ -273,42 +312,49 @@ inline static xsbBool file_function(CTXTdecl)
 	  { pflags[CURRENT_INPUT] = STDIN;}
 	if (pflags[CURRENT_OUTPUT] == (Cell) io_port) 
 	  { pflags[CURRENT_OUTPUT] = STDOUT;}
-	//printf("Close port %d\n",io_port);
       }
-    break;
+      XSB_STREAM_UNLOCK(io_port);
+      break;
     }
   case FILE_GET:	/* file_function(6, +IOport, -IntVal) */
     io_port = ptoc_int(CTXTc 2);
     if ((io_port < 0) && (io_port >= -MAXIOSTRS)) {
+      XSB_STREAM_LOCK(io_port);
       sfptr = strfileptr(io_port);
       ctop_int(CTXTc 3, strgetc(sfptr));
     } else {
       SET_FILEPTR(fptr, io_port);
+      XSB_STREAM_LOCK(io_port);
       ctop_int(CTXTc 3, getc(fptr));
     }
+    XSB_STREAM_UNLOCK(io_port);
     break;
   case FILE_PUT:   /* file_function(7, +IOport, +IntVal) */
-    /* ptoc_int(CTXTc 2) is XSB I/O port */
     io_port = ptoc_int(CTXTc 2);
     SET_FILEPTR(fptr, io_port);
+    XSB_STREAM_LOCK(io_port);
     /* ptoc_int(CTXTc 3) is char to write */
     value = ptoc_int(CTXTc 3);
     putc(value, fptr);
 #ifdef WIN_NT
     if (io_port==2 && value=='\n') fflush(fptr); /* hack for Java interface */
 #endif
+    XSB_STREAM_UNLOCK(io_port);
     break;
   case FILE_GETBUF:
     /* file_function(8, +IOport, +ByteCount (int), -String, -BytesRead)
        Read ByteCount bytes from IOport into String starting 
        at position Offset. */
     size = ptoc_int(CTXTc 3);
-    SET_FILEPTR(fptr, ptoc_int(CTXTc 2));
+    io_port = ptoc_int(CTXTc 2);
+    SET_FILEPTR(fptr, io_port);
+    XSB_STREAM_LOCK(io_port);
     XSB_StrSet(&VarBuf,"");
     XSB_StrEnsureSize(&VarBuf,size);
     value = fread(VarBuf.string, 1, size, fptr);
     VarBuf.length = value;
     XSB_StrNullTerminate(&VarBuf);
+    XSB_STREAM_UNLOCK(io_port);
     ctop_string(CTXTc 4, string_find(VarBuf.string,1));
     ctop_int(CTXTc 5, value);
     break;
@@ -331,8 +377,11 @@ inline static xsbBool file_function(CTXTdecl)
     offset = ptoc_int(CTXTc 5);
     length = strlen(addr);
     size = ( size < length - offset ? size : length - offset);
-    SET_FILEPTR(fptr, ptoc_int(CTXTc 2));
+    io_port = ptoc_int(CTXTc 2);
+    SET_FILEPTR(fptr, io_port);
+    XSB_STREAM_LOCK(io_port);
     value = fwrite(addr+offset, 1, size, fptr);
+    XSB_STREAM_UNLOCK(io_port);
     ctop_int(CTXTc 6, value);
     break;
   case FILE_READ_LINE: {
@@ -344,7 +393,9 @@ inline static xsbBool file_function(CTXTdecl)
     int break_loop = FALSE;
     int eof=FALSE;
 
-    SET_FILEPTR(fptr, ptoc_int(CTXTc 2));
+    io_port = ptoc_int(CTXTc 2);
+    SET_FILEPTR(fptr, io_port);
+    XSB_STREAM_LOCK(io_port);
     XSB_StrSet(&VarBuf,"");
 
     do {
@@ -359,6 +410,7 @@ inline static xsbBool file_function(CTXTdecl)
     
     ctop_string(CTXTc 3, string_find(VarBuf.string,1));
     
+    XSB_STREAM_UNLOCK(io_port);
     /* this complex cond takes care of incomplete lines: lines that end with
        end of file and not with end-of-line. */
     if ((VarBuf.length>0) || (!eof))
@@ -366,6 +418,7 @@ inline static xsbBool file_function(CTXTdecl)
     else
       return FALSE;
   }
+    /* TLS: wondering about xsb_exit below -- maybe abort? */
   case FILE_READ_LINE_LIST: {
     /* Works like FILE_READ_LINE but returns a list of codes
     ** Invoke: file_function(FILE_READ_LINE, +File, -List). Returns
@@ -380,7 +433,9 @@ inline static xsbBool file_function(CTXTdecl)
     CPtr top = NULL;
     int i;
 
-    SET_FILEPTR(fptr, ptoc_int(CTXTc 2));
+    io_port = ptoc_int(CTXTc 2);
+    SET_FILEPTR(fptr, io_port);
+    XSB_STREAM_LOCK(io_port);
 
     line_buff_disp = 0;
     do {
@@ -418,6 +473,7 @@ inline static xsbBool file_function(CTXTdecl)
     /* this complex cond takes care of incomplete lines: lines that end with
        end of file and not with end-of-line. */
     //    if ((line_buff_disp>0) || (c != EOF))
+    XSB_STREAM_UNLOCK(io_port);
     if (line_buff_disp>0)
       return TRUE;
     else
@@ -433,13 +489,16 @@ inline static xsbBool file_function(CTXTdecl)
     else if (isstring(pterm))
       addr = string_val(pterm);
     else {
-      xsb_abort("[FILE_WRITE_LINE] Output arg must be an atom or a char list");
+      xsb_abort("[FILE_WRITE_LINE] Outmput arg must be an atom or a char list");
       addr = NULL;
     }
     offset = ptoc_int(CTXTc 4);
     size = strlen(addr)-offset;
-    SET_FILEPTR(fptr, ptoc_int(CTXTc 2));
+    io_port = ptoc_int(CTXTc 2);
+    SET_FILEPTR(fptr, io_port);
+    XSB_STREAM_LOCK(io_port);
     fwrite(addr+offset, 1, size, fptr);
+    XSB_STREAM_UNLOCK(io_port);
     break;
 
   case FILE_REOPEN: 
@@ -491,9 +550,12 @@ inline static xsbBool file_function(CTXTdecl)
     
     /* we reach here only if the mode is OREAD,OWRITE,OAPPEND */
     addr = expand_filename(tmpstr);
-    SET_FILEPTR(fptr, ptoc_int(CTXTc 4));
+    io_port = ptoc_int(CTXTc 4);
+    SET_FILEPTR(fptr, io_port);
+    XSB_STREAM_LOCK(io_port);
     fflush(fptr);
     fptr = freopen(addr, string_val(pterm), fptr);
+    XSB_STREAM_UNLOCK(io_port);
 
     if (fptr) {
       struct stat stat_buff;
@@ -526,11 +588,13 @@ inline static xsbBool file_function(CTXTdecl)
     prolog_term dest_fptr_term;
 
     src_xsb_fileno = ptoc_int(CTXTc 2);
+    dest_fptr_term = reg_term(CTXTc 3);
+    XSB_STREAM_LOCK(src_xsb_fileno);
+    XSB_STREAM_LOCK(int_val(dest_fptr_term));
     SET_FILEPTR(src_fptr, src_xsb_fileno);
     fflush(src_fptr);
     src_fd = fileno(src_fptr);
 
-    dest_fptr_term = reg_term(CTXTc 3);
     if (isnonvar(dest_fptr_term)) {
       /* assume the user wants dup2-like functionality */
       SET_FILEPTR(dest_fptr, int_val(dest_fptr_term));
@@ -602,6 +666,8 @@ inline static xsbBool file_function(CTXTdecl)
     }
     ctop_int(CTXTc 4, errcode);
 
+    XSB_STREAM_UNLOCK(int_val(dest_fptr_term));
+    XSB_STREAM_UNLOCK(src_xsb_fileno);
     break;
   }
 
@@ -656,13 +722,16 @@ inline static xsbBool file_function(CTXTdecl)
 
     fptr = fdopen(pipe_fd, mode);
 
+    SYS_MUTEX_LOCK( MUTEX_IO );
     /* xsb_intern_file will return -1, if fdopen fails */
     i = xsb_intern_fileptr(fptr, "FD2IOPORT","created from fd",mode);
     ctop_int(CTXTc 3, i);
     open_files[i].stream_type = PIPE_STREAM;
+    SYS_MUTEX_UNLOCK( MUTEX_IO );
     break;
   }
     
+    /* TLS: relying on thread-safety of library -- no mutex here */
   case FILE_CLEARERR: { /* file_function(16, +IOport) */
     io_port = ptoc_int(CTXTc 2);
     if ((io_port < 0) && (io_port >= -MAXIOSTRS)) {
@@ -677,17 +746,20 @@ inline static xsbBool file_function(CTXTdecl)
   case TMPFILE_OPEN: {
     /* file_function(17, -IOport)
        Opens a temp file in r/w mode and returns its IO port */
-    if ((fptr = tmpfile()))
+    SYS_MUTEX_LOCK( MUTEX_IO );
+    if ((fptr = tmpfile())) 
       ctop_int(CTXTc 2, xsb_intern_fileptr(fptr, "TMPFILE_OPEN",
 					 "TMPFILE","wb+"));
     else
       ctop_int(CTXTc 2, -1);
+    SYS_MUTEX_UNLOCK( MUTEX_IO );
     break;
   }
     
   case STREAM_PROPERTY: {
     int stream;
     stream = ptoc_int(CTXTc 2);
+    XSB_STREAM_LOCK(stream);
     switch (ptoc_int(CTXTc 3)) {
 
       /* Type, Repos, eof_actions are all currently functions of class */
@@ -718,6 +790,7 @@ inline static xsbBool file_function(CTXTdecl)
       break;
     }
     }
+    XSB_STREAM_UNLOCK(stream);
     break;
   }
 
@@ -726,25 +799,33 @@ inline static xsbBool file_function(CTXTdecl)
     char iomode;
 
     stream = ptoc_int(CTXTc 2);
+    XSB_STREAM_LOCK(stream);
     if (stream >= MAX_OPEN_FILES)
 	return FALSE;
     if ((stream < 0) && (stream >= -MAXIOSTRS)) {
       /* port for reading from string */
       sfptr = strfileptr(stream);
-      if (sfptr == NULL)
+      XSB_STREAM_UNLOCK(stream);
+      if (sfptr == NULL) {
 	return FALSE;
+      }
       else {
 	ctop_int(CTXTc 3,READ_MODE);
 	return TRUE;
       }
     }
-    if (stream < -MAXIOSTRS)
+    if (stream < -MAXIOSTRS) {
+      XSB_STREAM_UNLOCK(stream);
       return FALSE;
+    }
     fptr = fileptr(stream); \
-    if ((fptr==NULL) && (stream != 0))
-	return FALSE;
+    if ((fptr==NULL) && (stream != 0)) {
+      XSB_STREAM_UNLOCK(stream);
+      return FALSE;
+    }
     else {
 	iomode = open_files[stream].io_mode; 
+	XSB_STREAM_UNLOCK(stream);
 	if (iomode == 'r' || iomode == 's') {
 	  ctop_int(CTXTc 3,READ_MODE);
 	} else ctop_int(CTXTc 3,WRITE_MODE);
@@ -772,12 +853,26 @@ inline static xsbBool file_function(CTXTdecl)
   case FILE_END_OF_FILE: {
 
     io_port = ptoc_int(CTXTc 2);
+    XSB_STREAM_LOCK(io_port);
     if (io_port < 0) {
       sfptr = strfileptr(io_port);
-      return  (sfptr->strcnt == EOF);
+      XSB_STREAM_UNLOCK(io_port);
+      if (sfptr->strcnt == EOF) {
+	XSB_STREAM_UNLOCK(io_port);
+	return TRUE;
+      } else {
+	XSB_STREAM_UNLOCK(io_port);
+	return FALSE;
+      }
     }
     else {
-      return (feof(open_files[ptoc_int(CTXTc 2)].file_ptr) != 0);
+      if (feof(open_files[ptoc_int(CTXTc 2)].file_ptr) != 0) {
+	XSB_STREAM_UNLOCK(io_port);
+	return TRUE;
+      } else {
+	XSB_STREAM_UNLOCK(io_port);
+	return FALSE;
+      }
     }
   }
 
@@ -785,6 +880,7 @@ inline static xsbBool file_function(CTXTdecl)
     int bufchar;
 
     io_port = ptoc_int(CTXTc 2);
+    XSB_STREAM_LOCK(io_port);
     if ((io_port < 0) && (io_port >= -MAXIOSTRS)) {
       sfptr = strfileptr(io_port);
       ctop_int(CTXTc 3, strgetc(sfptr));
@@ -795,6 +891,25 @@ inline static xsbBool file_function(CTXTdecl)
       if (bufchar >= 0) 
 	ungetc(bufchar, fptr);
     }
+    XSB_STREAM_UNLOCK(io_port);
+    break;
+  }
+
+  case XSB_STREAM_LOCK_B: {
+#ifdef MULTI_THREAD
+    XSB_STREAM_LOCK(ptoc_int(CTXTc 2));
+#else
+    return TRUE;
+#endif
+    break;
+  }
+
+  case XSB_STREAM_UNLOCK_B: {
+#ifdef MULTI_THREAD
+    XSB_STREAM_UNLOCK(ptoc_int(CTXTc 2));
+#else
+    return TRUE;
+#endif
     break;
   }
 

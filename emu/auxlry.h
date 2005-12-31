@@ -69,6 +69,7 @@ extern char *xsb_segfault_message;
     if ((stream==NULL) && (xsb_filedes != 0)) \
 	xsb_abort("Invalid file descriptor %d in I/O predicate", xsb_filedes);
 
+extern void gdb_dummy(void);
+
 #endif /* __AUXLRY_H__ */
 
-extern void gdb_duymmy(void);

@@ -50,6 +50,8 @@
 #define PRINT_OPENFILES 21
 #define FILE_END_OF_FILE 22
 #define FILE_PEEK 23
+#define XSB_STREAM_LOCK_B 24
+#define XSB_STREAM_UNLOCK_B 25
 
 /* This sequence is for stream properties */
 #define STREAM_FILE_NAME              0

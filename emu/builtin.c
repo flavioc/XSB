@@ -1192,9 +1192,9 @@ int builtin_call(CTXTdeclc byte number)
 
   case FILE_FUNCTION:  /* file_open/close/put/get/truncate/seek/pos */
   { int tmp ;
-    SYS_MUTEX_LOCK( MUTEX_IO );
+    //    SYS_MUTEX_LOCK( MUTEX_IO );
     tmp = file_function(CTXT);
-    SYS_MUTEX_UNLOCK( MUTEX_IO );
+    //    SYS_MUTEX_UNLOCK( MUTEX_IO );
     return tmp;
   }
  
@@ -1568,6 +1568,10 @@ int builtin_call(CTXTdeclc byte number)
     break;
   }
 
+    /* TLS: No MUTEX in FILE_GETTOKEN.  Its assumed that this is
+       called from some other predicate with a stream lock, such as
+       file_read. */
+
   case FILE_GETTOKEN: {    /* R1: +File, R2: +PrevCh, R3: -Type; */
                                 /* R4: -Value, R5: -NextCh */
 
@@ -1605,11 +1609,14 @@ int builtin_call(CTXTdeclc byte number)
     }
     break;
   }
+    /* TLS: No MUTEX in FILE_PUTTOKEN.  Its assumed that this is
+       called from some other predicate with a stream lock, such as
+       file_write. */
+
   case FILE_PUTTOKEN: {	/* R1: +File, R2: +Type, R3: +Value; */
-    //printf("\nPUTTOKEN ENTERED!\n");
     FILE* fptr;
     int tmpval = ptoc_int(CTXTc 1);
-    SYS_MUTEX_LOCK(MUTEX_IO);
+    //    SYS_MUTEX_LOCK(MUTEX_IO);
     SET_FILEPTR(fptr,tmpval);
     switch (ptoc_int(CTXTc 2)) {
     case XSB_FREE   : {
@@ -1649,7 +1656,7 @@ int builtin_call(CTXTdeclc byte number)
     default : printf("flg: %ld\n",(long)ptoc_int(CTXTc 2));
       xsb_abort("[FILE_PUTTOKEN] Unknown token type %d");
     }
-    SYS_MUTEX_UNLOCK(MUTEX_IO);
+    //    SYS_MUTEX_UNLOCK(MUTEX_IO);
     break;
   }
   case PSC_INSERTMOD: { /* R1: +String, Module name */
