@@ -1055,6 +1055,14 @@ void init_symbols(void)
   ret_psc[0] = (Psc) string_find("ret", 1);
   for (i = 1; i < MAX_ARITY; i++) ret_psc[i] = NULL;
 
+  /* Finally, eagerly insert pscs used for resource errors.  This way,
+     we don't have to worry abt the symbol table growing when we're
+     thowing a memory error. */
+  temp = (Pair)insert("$$exception_ball", (byte)2, 
+					pair_psc(insert_module(0,"standard")), 
+		      &new_indicator);
+  temp = (Pair) insert("error",3,global_mod,&new_indicator);
+  temp = (Pair) insert("resource_error",1,global_mod,&new_indicator);
 }
 
 /*==========================================================================*/

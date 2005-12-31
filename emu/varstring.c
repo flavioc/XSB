@@ -378,14 +378,15 @@ static void vs_adjust_size(VarString *vstr, int minsize)
 
   newsize = (minsize/vstr->increment +1) * (vstr->increment);
 
-  if (NULL == (vstr->string = (char *)mem_realloc(vstr->string, vstr->size, newsize,OTHER_SPACE))) {
+  if (NULL == (vstr->string = (char *)mem_realloc_nocheck(vstr->string, vstr->size, 
+							  newsize,OTHER_SPACE))) {
 #ifdef DEBUG_VARSTRING
     fprintf(stderr, "No room to expand a variable-length string\n");
     return;
 #else
     vstr->size        = 0;
     vstr->length      = 0;
-    xsb_abort("No room to expand a variable-length string");
+    xsb_memory_error("memory","No room to expand a variable-length string");
 #endif
   }
 

@@ -146,8 +146,10 @@ extern long pspacesize[NUM_CATS_SPACE];
 /* Memory Function Prototypes
    -------------------------- */
 extern void *mem_alloc(unsigned long, int);
+extern void *mem_alloc_nocheck(unsigned long, int);
 extern void *mem_calloc(unsigned long, unsigned long, int);
 extern void *mem_realloc(void *, unsigned long, unsigned long, int);
+extern void *mem_realloc_nocheck(void *, unsigned long, unsigned long, int);
 extern void mem_dealloc(void *, unsigned long, int);
 #ifndef MULTI_THREAD
 extern void tcpstack_realloc(long);

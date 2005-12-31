@@ -98,27 +98,48 @@ void *mem_alloc(unsigned long size, int category)
     size = (size+7) & ~0x7 ;	      /* round to 8 */
     SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
     pspacesize[category] += size;
+
     ptr = (byte *) malloc(size);
+
 #if defined(GENERAL_TAGGING)
     //    printf("mem_alloc %x %x\n",ptr,ptr+size);
     extend_enc_dec_as_nec(ptr,ptr+size);
 #endif
     SYS_MUTEX_UNLOCK_NOERROR(MUTEX_MEM);
     if (ptr == NULL && size > 0) {
-      xsb_memory_error();
+      xsb_memory_error("memory","mem_alloc()");
     }
     return ptr;
 }
 
 
-/* === calloc permanent me!!mory ============================================= */
+/* TLS: does not check returns -- for use in error messages and
+   throw */
+void *mem_alloc_nocheck(unsigned long size, int category)
+{
+    byte * ptr;
+
+    size = (size+7) & ~0x7 ;	      /* round to 8 */
+    SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
+    pspacesize[category] += size;
+    ptr = (byte *) malloc(size);
+#if defined(GENERAL_TAGGING)
+    //    printf("mem_alloc %x %x\n",ptr,ptr+size);
+    extend_enc_dec_as_nec(ptr,ptr+size);
+#endif
+    SYS_MUTEX_UNLOCK_NOERROR(MUTEX_MEM);
+    return ptr;
+}
+
+
+/* === calloc permanent memory ============================================= */
 
 void *mem_calloc(unsigned long size, unsigned long occs, int category)
 {
     byte * ptr;
     unsigned long length = (size*occs+7) & ~0x7;
 
-    SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
+   SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
     pspacesize[category] += length;
     ptr = (byte *) calloc(size,occs);
 #if defined(GENERAL_TAGGING)
@@ -127,7 +148,7 @@ void *mem_calloc(unsigned long size, unsigned long occs, int category)
 #endif
     SYS_MUTEX_UNLOCK_NOERROR(MUTEX_MEM);
     if (ptr == NULL && size > 0 && occs > 0) {
-      xsb_memory_error();
+      xsb_memory_error("memory","mem_calloc()");
     }
     return ptr;
 }
@@ -147,8 +168,22 @@ void *mem_realloc(void *addr, unsigned long oldsize, unsigned long newsize, int 
 #endif
     SYS_MUTEX_UNLOCK_NOERROR(MUTEX_MEM);
     if (addr == NULL && newsize > 0) {
-      xsb_memory_error();
+      xsb_memory_error("memory","mem_realloc()");
     }
+    return addr;
+}
+
+void *mem_realloc_nocheck(void *addr, unsigned long oldsize, unsigned long newsize, int category)
+{
+    newsize = (newsize+7) & ~0x7 ;	      /* round to 8 */
+    oldsize = (oldsize+7) & ~0x7 ;	      /* round to 8 */
+    SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
+    pspacesize[category] = pspacesize[category] - oldsize + newsize;
+    addr = (byte *) realloc(addr,newsize);
+#if defined(GENERAL_TAGGING)
+    extend_enc_dec_as_nec(addr,addr+newsize);
+#endif
+    SYS_MUTEX_UNLOCK_NOERROR(MUTEX_MEM);
     return addr;
 }
 

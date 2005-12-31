@@ -123,6 +123,8 @@
 
 #include "thread_xsb.h"
 
+int mem_flag;
+
 /*======================================================================*/
 extern void delete_variant_sf_and_answers(CTXTdeclc VariantSF pSF);
 extern int abolish_table_pred_cps_check(CTXTdeclc Psc psc);
@@ -1905,6 +1907,7 @@ int builtin_call(CTXTdeclc byte number)
   }
 
   case IS_XWAMMODE:     /* R1: -int flag for xwammode */  
+
     if (xwammode) ctop_int(CTXTc 1,1);
     else ctop_int(CTXTc 1,0);
     break;

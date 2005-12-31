@@ -2465,10 +2465,14 @@ xsbBool db_retract0( CTXTdecl /* ClRef, retract_nr */ )
 
 #define MAXTHREAD 100
 
+/* TLS: changed mem_alloc to nocheck as xsb_throw() depends on this
+   predicate.  So if we're out of memory here, we're sunk. */
+
 static inline void allocate_prref_tab(CTXTdeclc Psc psc, PrRef *prref, pb *new_ep) {
   int Loc;
 
-  if (!(*prref = (PrRef)mem_alloc(sizeof(PrRefData),ASSERT_SPACE))) xsb_exit("No space for a PrRef\n");
+  if (!(*prref = (PrRef)mem_alloc_nocheck(sizeof(PrRefData),ASSERT_SPACE))) 
+    xsb_exit("++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory (PrRef)");
   //  fprintf(stdout,"build_prref: %s/%d, shared=%d, prref=%p\n",get_name(psc),get_arity(psc),get_shared(psc),prref);
 
   if (xsb_profiling_enabled)
@@ -2482,7 +2486,10 @@ static inline void allocate_prref_tab(CTXTdeclc Psc psc, PrRef *prref, pb *new_e
       TIFptr tip;
       CPtr tp;
       New_TIF(tip,psc);
-      tp  = (CPtr)mem_alloc(FIXED_BLOCK_SIZE_FOR_TABLED_PRED,ASSERT_SPACE) ;
+      tp  = (CPtr)mem_alloc_nocheck(FIXED_BLOCK_SIZE_FOR_TABLED_PRED,ASSERT_SPACE) ;
+      if (tp == NULL) {
+	xsb_exit("++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory (PrRef)");
+      }
       Loc = 0 ;
       dbgen_inst_ppvww(tabletrysingle,get_arity(psc),(tp+3),tip,tp,&Loc) ;
       dbgen_inst_pvv(allocate_gc,3,3,tp,&Loc) ;

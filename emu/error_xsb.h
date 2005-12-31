@@ -114,10 +114,12 @@ int unwind_stack(CTXTdecl);
 void call_conv xsb_domain_error(CTXTdeclc char *, Cell, char *, int, int) ;
 void call_conv xsb_instantiation_error(CTXTdeclc char *, int, int, char *) ;
 void call_conv xsb_permission_error(CTXTdeclc char *,char *, int, char *,int) ;
+void call_conv xsb_resource_error(CTXTdeclc char *,char *, int, int) ;
+void call_conv xsb_resource_error_nopred(CTXTdeclc char *,char *) ;
 void call_conv xsb_table_error(CTXTdeclc char *) ;
 void call_conv xsb_type_error(CTXTdeclc char *,Cell , char *,int, int) ;
 
-extern void call_conv xsb_memory_error(void);
+extern void call_conv xsb_memory_error(char *, char *);
 
 /* should include these from whereever they are.... split out from biassert **/
 typedef struct

@@ -79,7 +79,8 @@ static char *err_msg_table[] = {
 extern void print_cp_backtrace();
 #endif
 
-/* TLS: now frees Ball, which was assumed to be malloced */
+/* TLS: now frees Ball, which was assumed to be malloced.  Use
+   mem_alloc_nocheck to avoid problems when thowing a memory error. */
 DllExport void call_conv xsb_throw(CTXTdeclc prolog_term Ball, unsigned long Ball_len)
 {
   Psc exceptballpsc;
@@ -91,8 +92,10 @@ DllExport void call_conv xsb_throw(CTXTdeclc prolog_term Ball, unsigned long Bal
   Cell *space_for_ball_assert;
   unsigned long space_for_ball_assert_len = 3*sizeof(Cell);
 
-  space_for_ball_assert = (Cell *) mem_alloc(space_for_ball_assert_len,LEAK_SPACE);
-  if (!space_for_ball_assert) xsb_exit("out of memory in xsb_throw!");
+  space_for_ball_assert = (Cell *) mem_alloc_nocheck(space_for_ball_assert_len,
+						     LEAK_SPACE);
+  if (!space_for_ball_assert) 
+    xsb_exit("++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory");
 
   exceptballpsc = pair_psc((Pair)insert("$$exception_ball", (byte)2, 
 					pair_psc(insert_module(0,"standard")), 
@@ -234,23 +237,123 @@ void call_conv xsb_permission_error(CTXTdeclc
 
 /**************/
 
-/* TLS: handling this case specially: if we're out of memory, then the
- *  usual throw mechanism, which requires the throw ball to be
- *  asserted won't work (without a rewrite) -- thus in the sequential
- *  engine we longjump directly back to the main interpreter level.
- *  In the MT case, it would be nice to do something similar, and
- *  perhaps when I understand thread cancellation policies better, we
- *  will :-) */
+#define MsgBuf (*tsgSBuff1)
+#define FlagBuf (*tsgSBuff2)
 
-void call_conv xsb_memory_error(void) 
+/* Memory errors are resource errors: therefore we have to be careful
+   when handling the memory for throwing the error itself.
+   Accordingly, varstrings are used rather than string finds to avoid
+   possible overflow of string table, and there is a malloc and
+   immediate free to make sure we'll have enough for messages to throw
+   the error.  Similarly, mem_alloc_nocheck() is used to avoid
+   problems in allocating memory for ball.*/
+
+void call_conv xsb_resource_error(CTXTdeclc char *resource,
+					char *predicate,int arity, int arg) 
 {
-#ifndef MULTI_THREAD
-  printf("++Error[XSB/Runtime]: [Resource] Out of memory");
-  longjmp(xsb_abort_fallback_environment, (Integer) &fail_inst);
+  printf("in resource error\n");
+  prolog_term ball_to_throw;
+  int isnew;
+  Cell *tptr; char message[255];
+  unsigned long ball_len = 10*sizeof(Cell);
+
+  tptr = (Cell *) malloc(1000);
+  if (!tptr) 
+    xsb_exit("++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory");
+  else free(tptr);
+
+  sprintf(message,"in arg %d of predicate %s/%d)",arg,predicate,arity);
+  XSB_StrSet(&MsgBuf,message);
+  XSB_StrSet(&FlagBuf,resource);
+
+  tptr =   (Cell *) mem_alloc_nocheck(ball_len,LEAK_SPACE);
+  if (!tptr) 
+    xsb_exit("++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory");
+
+  ball_to_throw = makecs(tptr);
+  bld_functor(tptr, pair_psc(insert("error",3,
+				    (Psc)flags[CURRENT_MODULE],&isnew)));
+  tptr++;
+  bld_cs(tptr,(Cell) (tptr+3));
+  tptr++;
+  //  bld_string(tptr,string_find(message,1));
+  bld_string(tptr,MsgBuf.string);
+  tptr++;
+  bld_copy(tptr,build_xsb_backtrace(CTXT));
+  tptr++;
+  bld_functor(tptr, pair_psc(insert("resource_error",1,
+				    (Psc)flags[CURRENT_MODULE],&isnew)));
+  tptr++;
+
+  bld_string(tptr,FlagBuf.string);
+
+  xsb_throw(CTXTc ball_to_throw, ball_len);
+
+}
+
+/* TLS: exiting in MT engine because I haven't yet put contexts into
+   mem_xxxocs.  And, I'm not sure whether this is a good idea. */
+
+#ifdef MULTI_THREAD
+void call_conv xsb_memory_error(char *resource,char *message)
+{
+  char exit_message[255];
+
+  sprintf(exit_message,
+	  "++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory (%s)",
+	  message);
+  xsb_exit(exit_message);
+}
 #else
-  xsb_exit("++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory");
+void call_conv xsb_memory_error(char *resource,char *message) {
+  xsb_resource_error_nopred(CTXTdeclc resource,message);
+}
 #endif
-}			       
+
+/* Like xsb_resource_error(), but does not include predicate and
+   argument information. */
+void call_conv xsb_resource_error_nopred(CTXTdeclc char *resource,char *message)
+{
+  prolog_term ball_to_throw;
+  int isnew;
+  Cell *tptr; 
+  unsigned long ball_len = 10*sizeof(Cell);
+
+  tptr = (Cell *) malloc(1000);
+  if (!tptr) 
+    xsb_exit("++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory");
+  else free(tptr);
+
+  XSB_StrSet(&MsgBuf,message);
+  XSB_StrSet(&FlagBuf,resource);
+
+  tptr =   (Cell *) mem_alloc_nocheck(ball_len,LEAK_SPACE);
+  if (!tptr) 
+    xsb_exit("++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory");
+
+  ball_to_throw = makecs(tptr);
+  bld_functor(tptr, pair_psc(insert("error",3,
+				    (Psc)flags[CURRENT_MODULE],&isnew)));
+  tptr++;
+  bld_cs(tptr,(Cell) (tptr+3));
+  tptr++;
+  //  bld_string(tptr,string_find(message,1));
+  bld_string(tptr,MsgBuf.string);
+  tptr++;
+  bld_copy(tptr,nil_string);
+  tptr++;
+  bld_functor(tptr, pair_psc(insert("resource_error",1,
+				    (Psc)flags[CURRENT_MODULE],&isnew)));
+  tptr++;
+
+  bld_string(tptr,FlagBuf.string);
+
+  xsb_throw(CTXTc ball_to_throw, ball_len);
+
+}
+
+#undef MsgBuf
+#undef FlagBuf
 
 /**************/
 
