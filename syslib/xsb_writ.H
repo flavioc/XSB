@@ -45,5 +45,6 @@
 
 :- import conget/2, conset/2 from gensym.
 
-:- import xsb_sys_mutex_lock/1, xsb_sys_mutex_unlock/1 from thread.
+%:- import xsb_sys_mutex_lock/1, xsb_sys_mutex_unlock/1 from thread.
+:- import xsb_stream_lock/1, xsb_stream_unlock/1 from file_io.
 /* ------------------- end of file file_write.H ----------------------- */

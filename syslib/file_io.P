@@ -31,7 +31,6 @@
 #include "psc_defs.h"
 #include "builtin.h"
 
-
 	       /********************************/
 	       /*  Formatted I/O    	       */
 	       /********************************/
@@ -88,6 +87,10 @@ file_clearerr(IOport) :-
 	file_function(FILE_CLEARERR, IOport, _).
 tmpfile_open(IOport) :-
 	file_function(TMPFILE_OPEN, IOport, _).
+xsb_stream_lock(IOport):- 
+	file_function(XSB_STREAM_LOCK_B, IOport, _).
+xsb_stream_unlock(IOport):- 
+	file_function(XSB_STREAM_UNLOCK_B, IOport, _).
 
 preserve_numeric_calls(0,r):- !.
 preserve_numeric_calls(1,w):- !.

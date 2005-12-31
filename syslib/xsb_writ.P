@@ -31,33 +31,42 @@
 #include "flag_defs_xsb.h"
 #include "thread_defs_xsb.h"
 
+/* TLS: Note that file_puttoken is NOT locked, so locking must appear
+   around it.  This is to avoid the need for recursive mutexes. */
 
 		/**************************/
 		/*	file_nl/1	  */
 		/**************************/
 
-file_nl(File) :- xsb_sys_mutex_lock(MUTEX_IO),
+% TLS: removed mutex as file_put is locked via file_function.
+file_nl(File) :- %xsb_sys_mutex_lock(MUTEX_IO),
 		(windows_os_loader
 		 ->  file_put(File, CH_RETURN), file_put(File, CH_NEWLINE)
 		 ;   file_put(File, CH_NEWLINE)
-		 ),
-		xsb_sys_mutex_unlock(MUTEX_IO).
+		 ).
+%		xsb_sys_mutex_unlock(MUTEX_IO).
 
 
 		/**************************/
 		/*	file_write/2	  */
 		/**************************/
 
-file_write(File, Term) :- xsb_sys_mutex_lock(MUTEX_IO),
-			  l_write(File, Term, 999), 
-			  xsb_sys_mutex_unlock(MUTEX_IO), 
-			  fail.
+file_write(File, Term) :- 
+	xsb_stream_lock(File),
+%	xsb_sys_mutex_lock(MUTEX_IO),
+	l_write(File, Term, 999), 
+%	xsb_sys_mutex_unlock(MUTEX_IO), 
+	xsb_stream_unlock(File),
+	fail.
 file_write(_, _).
 
-file_write0(File, Term) :- xsb_sys_mutex_lock(MUTEX_IO),
-			   l_write(File, Term, 999), 
-			   xsb_sys_mutex_unlock(MUTEX_IO),
-                           fail.
+file_write0(File, Term) :- 
+	xsb_stream_lock(File),
+%	xsb_sys_mutex_lock(MUTEX_IO),
+	l_write(File, Term, 999), 
+%	xsb_sys_mutex_unlock(MUTEX_IO),
+	xsb_stream_unlock(File),
+	fail.
 file_write0(_, _).
 
     	    	/**********************************/
@@ -66,17 +75,33 @@ file_write0(_, _).
 
 write_int(Num) :- 
 	stat_flag(CURRENT_OUTPUT, File),
-	file_puttoken(File, TK_INT_0, Num).
-
+	xsb_stream_lock(File),
+%	xsb_sys_mutex_lock(MUTEX_IO),
+	file_puttoken(File, TK_INT_0, Num),
+%	xsb_sys_mutex_unlock(MUTEX_IO).
+	xsb_stream_unlock(File).
+	
 write_int(Str,Num) :-
-	file_puttoken(Str,TK_INT_0,Num).
+	xsb_stream_lock(Str),
+%	xsb_sys_mutex_lock(MUTEX_IO),
+	file_puttoken(Str,TK_INT_0,Num),
+%	xsb_sys_mutex_unlock(MUTEX_IO).
+	xsb_stream_unlock(Str).
 
 write_float(Num) :- 
 	stat_flag(CURRENT_OUTPUT, File),
-	file_puttoken(File, TK_FLOAT_0, Num).
+	xsb_stream_lock(File),
+%	xsb_sys_mutex_lock(MUTEX_IO),
+	file_puttoken(File, TK_FLOAT_0, Num),
+%	xsb_sys_mutex_unlock(MUTEX_IO).
+	xsb_stream_unlock(File).
 
 write_float(Str,Num) :-
-	file_puttoken(Str,TK_FLOAT_0,Num).
+	xsb_stream_lock(Str),
+%	xsb_sys_mutex_lock(MUTEX_IO),
+	file_puttoken(Str,TK_FLOAT_0,Num),
+%	xsb_sys_mutex_unlock(MUTEX_IO).
+	xsb_stream_unlock(Str).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -285,10 +310,12 @@ l_writetail(File, X, D) :-
 		/**********************************/
 
 file_write_prolog(File, Term) :- 
-		xsb_sys_mutex_lock(MUTEX_IO),
-		l_write_prolog(File, Term, 999), 
-		xsb_sys_mutex_unlock(MUTEX_IO),
-		fail.
+	xsb_stream_lock(File),
+%	xsb_sys_mutex_lock(MUTEX_IO),
+	l_write_prolog(File, Term, 999), 
+%	xsb_sys_mutex_unlock(MUTEX_IO),
+	xsb_stream_unlock(File),
+	fail.
 file_write_prolog(_, _).
 
 
@@ -452,10 +479,12 @@ l_writetail_prolog(File, X) :-
 		/*********************************/
 
 file_write_quoted(File, Term) :- 
-		xsb_sys_mutex_lock(MUTEX_IO),
-		l_write_quoted(File, Term, 999), 
-		xsb_sys_mutex_unlock(MUTEX_IO),
-		fail.
+	xsb_stream_lock(File),
+%	xsb_sys_mutex_lock(MUTEX_IO),
+	l_write_quoted(File, Term, 999), 
+%	xsb_sys_mutex_unlock(MUTEX_IO),
+	xsb_stream_unlock(File),
+	fail.
 file_write_quoted(_, _).
 
 
@@ -625,14 +654,18 @@ l_writetail_quoted(File, X) :-
 		/*************************************/
 
 file_write_canonical(File,Term) :-
-	file_puttoken(File,TK_TERM,Term).
+	xsb_stream_lock(File),
+	file_puttoken(File,TK_TERM,Term),
+	xsb_stream_unlock(File).
 
 /******************** Leave in Prolog for awhile, till secure
 file_write_canonical(File, Term) :- 
-		xsb_sys_mutex_lock(MUTEX_IO),
-		l_write_canonical(File, Term), 
-		xsb_sys_mutex_unlock(MUTEX_IO),
-		fail.
+	xsb_stream_lock(File),
+%	xsb_sys_mutex_lock(MUTEX_IO),
+	l_write_canonical(File, Term), 
+%	xsb_sys_mutex_unlock(MUTEX_IO),
+	xsb_stream_lock(File),
+	fail.
 file_write_canonical(_, _).
 
 l_write_canonical(File, Var) :-
@@ -718,7 +751,11 @@ write_canonical_lettervar(T) :-
 	file_write_canonical_lettervar(File,T).
 
 file_write_canonical_lettervar(File,Term) :-
-	file_puttoken(File,TK_TERML,Term).
+	xsb_stream_lock(File),
+%        xsb_sys_mutex_lock(MUTEX_IO),
+	file_puttoken(File,TK_TERML,Term),
+	xsb_stream_unlock(File).
+%        xsb_sys_mutex_unlock(MUTEX_IO).
 
 end_of_file.
 
