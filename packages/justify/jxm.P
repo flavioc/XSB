@@ -4,11 +4,12 @@
  * the argments also change.
  */
 
-:- dynamic just_tabled_pred/2, just_inited/1.
+:- dynamic true_tabled_evid_store/2, justify_tabled_pred/2.
 
 :- import append/3, length/2, ith/3 from basics.
 :- import xsb_configuration/2 from xsb_configuration.
 :- import slash/1 from machine.
+:- import trie_assert/1 from tables.
 
 jxm_(FileName) :-
     load_dyn(FileName),
@@ -21,77 +22,19 @@ jxm_(FileName) :-
 	str_cat(FileName, '.P', PgmFile)),
     str_cat(Base, '_jxm.P', TxmFile),
     tell(TxmFile),
-    txm_nonjust_preds(PgmFile),
-    write_init,
     findall(Pred, justify_pred(Pred), Preds),
+    write_prologue,
+    txm_nonjust_preds(PgmFile),
+    write_init(Preds),
     !,
     txm_just_preds(Preds),
     told.
 
-write_init :-
-    write(':- assert(library_directory('),
-    xsb_configuration(install_dir, ID),
-    slash(SL),
-    fmt_write_string(JustDir, '%s%spackages%sjustify', args(ID, SL, SL)),
-    write_term(JustDir, [quoted(true)]),
-%    write_term('/home/giri/projects/just',[quoted(true)]),
-    writeln(')).'),
-    
-    writeln(':- [justify].'),
-    writeln(':- dynamic just_tabled_pred/2.'),
-    writeln(':- import trie_assert/1 from tables.'),
-    nl,
-    writeln('just_init :-'),
-    writeln('(clause(just_inited(true), true) ->'),
-    writeln('true ; just_init_tabled_preds, assert(just_inited(true))).'),
-    findall((Name, Arity), clause('just_tabled_pred'(Name, Arity), true),
-	    TabPreds),
-    writeln('just_init_tabled_preds :-'),
-    write_just_tabled_preds(TabPreds),
-    nl.
-
-write_just_tabled_preds([]) :- write('true'), writeln('.').
-write_just_tabled_preds([(Name,Arity)|TabPreds]) :-
-    write(trie_assert(just_tabled_pred(Name, Arity))),
-    writeln(','),
-    write_just_tabled_preds(TabPreds).
-
-txm_nonjust_preds(File) :-
-    see(File),
-    repeat,
-    read(Rule),
-%	 write(userout, 'Transforming rule '),
-%	 write(userout, Rule), writeln(userout, ' ...'),
-    (Rule == end_of_file
-     ->	    
-	true
-     ;
-	(Rule = ':-'(table(Name/Arity))
-	 ->	
-	    write(Rule), writeln('.'),
-	    trie_assert(just_tabled_pred(Name, Arity))
-	 ;
-	    (Rule = ':-'(Head, Body)
-	     ->	    
-		(need_justification(Head)
-		 ->	
-			% they will be transformed later
-		    true
-		 ;
-%			 write(userout, 'Transforming predicate '),
-%			 write(userout, Head), writeln(userout, ' ...'),
-		    txm_nojust_pred(Head, Body))
-	     ;
-		write_canonical(Rule), writeln('.'))),
-	fail),
-    nl,
-    seen.
-
 just_true_(P, E) :-
     just_init,
     functor(P, Name, Arity),
-    need_justification(P),
-    (is_tabled_pred(Name, Arity)
+    justify_pred(P),
+    (justify_tabled_pred(Name, Arity)
      ->	    
 	P =.. [Name | Args],
 	txm_true_tabled_name(Name, TxmName),
@@ -108,12 +51,79 @@ just_true_(P, E) :-
 just_false_(P, E) :-
     just_init,
     functor(P, Name, _),
-    need_justification(P),
+    justify_pred(P),
     txm_false_name(Name, TxmName),
     P =.. [Name | Args],
     append(Args, [E], TxmArgs),
     TxmP =.. [TxmName | TxmArgs],
     call(TxmP).
+
+write_prologue :-
+    write(':- assert(library_directory('),
+    xsb_configuration(install_dir, ID),
+    slash(SL),
+    fmt_write_string(JustDir, '%s%spackages%sjustify', args(ID, SL, SL)),
+    write_term(JustDir, [quoted(true)]),
+    writeln(')).'),
+    
+    writeln(':- [justify].'),
+    writeln(':- [evid].'),
+    writeln(':- import trie_assert/1 from tables.'),
+    nl.
+
+write_just_preds([]).
+write_just_preds([P | Ps]) :-
+    write(trie_assert(justify_pred(P))),
+    writeln(','),
+    write_just_preds(Ps).
+
+write_just_tabled_preds([]).
+write_just_tabled_preds([(Name,Arity)|TabPreds]) :-
+    write(trie_assert(justify_tabled_pred(Name, Arity))),
+    writeln(','),
+    write_just_tabled_preds(TabPreds).
+
+write_init(Just_preds) :-
+    findall((Name, Arity), clause(justify_tabled_pred(Name, Arity), true),
+	    TabPreds),
+    writeln('justify_init_preds :-'),
+    write_just_preds(Just_preds),
+    write_just_tabled_preds(TabPreds),
+    write('true'), writeln('.'),
+    nl.
+
+txm_nonjust_preds(File) :-
+    see(File),
+    repeat,
+    read(Rule),
+%	 write(userout, 'Transforming rule '),
+%	 write(userout, Rule), writeln(userout, ' ...'),
+    (Rule == end_of_file
+     ->	    
+	true
+     ;
+	(Rule = justify_pred(_)
+	 ->
+	    true
+	 ;
+	    (Rule = ':-'(table(Name/Arity))
+	     ->	    
+		write(Rule), writeln('.'),
+		trie_assert(justify_tabled_pred(Name, Arity))
+	     ;
+		(Rule = ':-'(Head, Body)
+		 ->	
+		    (justify_pred(Head)
+		     ->	    
+			% they will be transformed later
+			true
+		     ;
+			txm_nojust_pred(Head, Body))
+		 ;
+		    write_canonical(Rule), writeln('.')))),
+	fail),
+    nl,
+    seen.
 
 txm_just_preds([]).
 txm_just_preds([Pred|Preds]) :-
@@ -134,8 +144,8 @@ txm_just_preds([Pred|Preds]) :-
  */
 txm_just_pred(Name, Arity, Rules) :-
     write(userout, 'Transforming '), write(userout, Name),
-    writeln(userout, '...'),
-    (is_tabled_pred(Name, Arity)
+    writeln(userout, ' ...'),
+    (justify_tabled_pred(Name, Arity)
      ->	    
 	Pred_true = pred(Name, Arity, Rules, tabled, true),
 	Pred_false = pred(Name, Arity, Rules, tabled, false)
@@ -156,8 +166,7 @@ pred_name(pred(Name, _Arity, _Rules, _tabled, _true), Name).
 pred_arity(pred(_Name, Arity, _Rules, _tabled, _true), Arity).
 
 txm_true_tabled_name(Name, TxmName) :-
-	 TxmName = Name.
-%    str_cat(Name, '_t', TxmName).
+    TxmName = Name.
     
 txm_true_nontabled_name(Name, TxmName) :-
     str_cat(Name, '_t', TxmName).
@@ -166,28 +175,19 @@ txm_false_name(Name, TxmName) :-
     str_cat(Name, '_f', TxmName).
     
 txm_true_name(Name, Arity, TxmName) :-
-    (just_tabled_pred(Name, Arity)
+    (is_tabled_pred_arity(Name, Arity)
      ->		
 	txm_true_tabled_name(Name, TxmName)
      ;
 	txm_true_nontabled_name(Name, TxmName)).
 
-is_tabled_pred(Name, Arity) :-
-    just_tabled_pred(Name, Arity).
-
-need_justification(Pred) :-
-    justify_pred(Pred).
-
-/*
-write_pred(Head, Body) :-
-	 assert((Head :- Body)).
-*/
+is_tabled_pred_arity(Name, Arity) :-
+    justify_tabled_pred(Name, Arity).
 
 write_pred(Head, Body) :-
-	 Pred = (Head ':-' Body),
-	 write_canonical(Pred),
+    Pred = (Head ':-' Body),
+    write_canonical(Pred),
     writeln('.').
-
 
 /*
  * convert between term of the form (L1,L2, ..., Ln) and list
@@ -203,7 +203,6 @@ list_to_term1([E], E) :- !.
 list_to_term1([E|Es], T) :- !,
     list_to_term1(Es, Ts),
     T =.. [',', E, Ts].
-
 
 /*
  * Transformation rules for true literals
@@ -255,7 +254,6 @@ txm_true_nontabled_head(Pred, Head, TxmHead, Evid) :-
     txm_true_nontabled_name(Name, TxmName),
     Head =.. [_ | Args],
     append(Args, [Evid], TxmArgs),
-%	writeln(userout, ' At evid 2'),
     TxmHead =.. [TxmName | TxmArgs].
 
 /*
@@ -268,14 +266,14 @@ txm_true_body(Pred, Head, Body, TxmBody, Evid) :-
     TxmBody = (TxmBody1, EvidStmt).
 
 txm_nojust_true_body(Body, TxmBody) :-
-	 txm_true_clause(Body, TxmBody, _).
+    txm_true_clause(Body, TxmBody, _).
 
 /*
  * generate a statment that adds evidence of true predicate
  */
 true_evid_stmt_pred(Pred, Head, EvidList, Evid, EvidStmt) :-
     (is_tabled_pred(Pred)
-     ->		
+     ->	    
 	EvidList = Evid,
 	EvidStmt =.. [true_tabled_store, Head, Evid]
      ;
@@ -308,7 +306,7 @@ txm_true_clause(sk_not(C), TC, Evid) :- !,
 
 txm_true_clause(tnot(C), TC, Evid) :- !,
     TC = (copy_term(C, C1), tnot(C1)),
-    Evid = [(C1, '_$ref'(tnot))].
+    Evid = [(tnot(C1), '_$ref'(tnot))].
 
 txm_true_clause((Cond -> S1 ; S2), TC, Evid) :- !,
     txm_true_clause(Cond, TxmCondT, EvidCT),
@@ -316,18 +314,14 @@ txm_true_clause((Cond -> S1 ; S2), TC, Evid) :- !,
     txm_true_clause(S1, TxmS1, EvidS1),
     txm_true_clause(S2, TxmS2, EvidS2),
     append(EvidCT, EvidS1, EvidTrue),
-%	 writeln(userout, 'At arrow 4'),
     append(EvidCF, EvidS2, EvidFalse),
-%	 writeln(userout, ' At arrow 3'),
     TC = (TxmCondT -> (TxmS1, Evid = EvidTrue)
 	  ; (TxmCondF, TxmS2, Evid = EvidFalse)).
 
 txm_true_clause((Cond -> S1), TC, Evid) :- !,
     txm_true_clause(Cond, TxmCond, EvidC),
     txm_true_clause(S1, TxmS1, EvidS1),
-%	writeln(userout, 'At arrow 1'),
     append(EvidC, EvidS1, Evid),
-%	writeln(userout, 'At arrow 2'),
     TC = (TxmCond -> TxmS1).
 
 txm_true_clause((C1;C2), TC, Evid) :- !,
@@ -338,11 +332,8 @@ txm_true_clause((C1;C2), TC, Evid) :- !,
 txm_true_clause((C1,C2), TC, Evid) :- !,
     txm_true_clause(C1, TC1, EvidC1),
     txm_true_clause(C2, TC2, EvidC2),
-%	writeln(userout, 'At sep 1'),
     append(EvidC1, EvidC2, Evid),
-%	writeln(userout, 'At sep 1'),
     TC = (TC1, TC2).
-
 
 txm_true_clause(call(C), TC, Evid) :- !,
     (var(C)
@@ -355,7 +346,7 @@ txm_true_clause(call(C), TC, Evid) :- !,
 
 txm_true_clause(forall(V, A, C), TC, Evid) :- !,
     txm_true_clause(A, TxmA, AE),
-    (need_justification(forall(V, A, C))
+    (justify_pred(forall(V, A, C))
      ->	    
 	txm_true_name(forall, 3, TxmName),
 	TC =.. [TxmName, V, (TxmA,AE), C, E],
@@ -366,9 +357,9 @@ txm_true_clause(forall(V, A, C), TC, Evid) :- !,
 
 txm_true_clause(C, TC, Evid) :- !,
     functor(C, Name, Arity),
-    (need_justification(C)
+    (justify_pred(C)
      ->	    
-	(is_tabled_pred(Name, Arity)
+	(is_tabled_pred_arity(Name, Arity)
 	 ->	
 	    C =.. [Name | ArgsList],
 	    txm_true_tabled_name(Name, TxmName),
@@ -377,9 +368,7 @@ txm_true_clause(C, TC, Evid) :- !,
 	 ;
 	    C =.. [Name | ArgsList],
 	    txm_true_nontabled_name(Name, TxmName),
-%			  writeln(userout, 'At tc 2'),
 	    append(ArgsList, [E], TxmArgsList),
-%			  writeln(userout, 'At tc 2'),
 	    TC =.. [TxmName | TxmArgsList],
 	    Evid = [(C, E)])
      ;
@@ -451,8 +440,8 @@ gen_neg_preds([Lit|Lits], Xs, [E|Es], [(Head,_)|Rules]) :-
     list_to_term(Ts, TTs),
     XT = (XTs = TTs),
     XTE1 =.. [not, XT],
-    % XTE2 =.. [=, E, [(XTE1, none)]],
-    XTE2 =.. [=, E, []],
+    XTE2 =.. [=, E, [(XTE1, [])]],
+%    XTE2 =.. [=, E, []],
     XTE = (XTE1, XTE2),
     write_pred(Lit, XTE),
     gen_neg_preds(Lits, Xs, Es, Rules).
@@ -499,7 +488,7 @@ txm_false_clause(C, TC, Evid) :-
     Evid = [(call(not C), E)].
 txm_false_clause(tnot(C), TC, Evid) :- !,
     functor(C, Name, Arity),
-    (is_tabled_pred(Name, Arity)
+    (is_tabled_pred_arity(Name, Arity)
      ->	    
 	txm_true_clause(C, CC, E),
 	TC = (copy_term(term(CC,E), term(C1,Evid)), C1)
@@ -508,7 +497,7 @@ txm_false_clause(tnot(C), TC, Evid) :- !,
 
 txm_false_clause(sk_not(C), TC, Evid) :- !,
     functor(C, Name, Arity),
-    (is_tabled_pred(Name, Arity)
+    (is_tabled_pred_arity(Name, Arity)
      ->	    
 	txm_true_clause(C, CC, E),
 	TC = (copy_term(term(CC,E), term(C1,Evid)), C1)
@@ -559,7 +548,7 @@ txm_false_clause(call(C), TC, Evid) :- !,
 
 txm_false_clause(forall(V, A, C), TC, Evid) :- !,
     txm_true_clause(A, TxmA, AE),
-    (need_justification(forall(V, A, C))
+    (justify_pred(forall(V, A, C))
      ->	    
 	txm_false_name(forall, TxmName),
 	TC =.. [TxmName, V, (TxmA,AE), C, E],
@@ -567,14 +556,14 @@ txm_false_clause(forall(V, A, C), TC, Evid) :- !,
      ;
 	TN =.. [forall, V, TxmA, C],
 	TC =.. [not, TN],
-	Evid = []).
+	Evid = [TC]).
 
 txm_false_clause(C, NC, Evid) :-
     nonvar(C),
     functor(C, Name, Arity), !,
-    (need_justification(C)
+    (justify_pred(C)
      ->	    
-	(is_tabled_pred(Name, Arity)
+	(is_tabled_pred_arity(Name, Arity)
 	 ->	
 	    NC =.. [sk_not, C],
 	    Evid = [(tnot(C), '_$ref'(sk_not))]
@@ -585,7 +574,7 @@ txm_false_clause(C, NC, Evid) :-
 	    Evid = [(not(C), E)],
 	    NC =.. [TxmName | TxmArgsList])
      ;
-	(is_tabled_pred(Name, Arity)
+	(is_tabled_pred_arity(Name, Arity)
 	 ->	
 	    NC =.. [tnot, C],
 	    Evid = []

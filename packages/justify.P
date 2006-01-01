@@ -15,8 +15,6 @@
 
 :- import jxm_/1, just_true_/2, just_false_/2 from jxm.
 
-:- import just_init/0 from usermod.
-
 jxm(File) :-
     jxm_(File).
 
