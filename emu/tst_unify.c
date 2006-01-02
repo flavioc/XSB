@@ -104,13 +104,14 @@ static CPtr gAnsTmplt;      /* ... using this template */
 static int gSizeTmplt;      /* ... of this size */
 #endif
 
-// TLS: temporary 12/05
+/* TLS: temporary 12/05
 static void debug_answer_consumption(CTXTdecl) {
   printf("-----------------------------\n");
   printTriePath(stderr,gAnsLeaf,NO);
   fprintf(stderr,"\nwith ");
   printAnswerTemplate(stderr,gAnsTmplt,gSizeTmplt);
  }
+*****/
 
 static void consumption_error(CTXTdeclc char *string) {
 
