@@ -1600,8 +1600,15 @@ void double_quotes(char *string, char *new_string)
       new_string[nctr] = '\'';
       nctr++;
     } else if (string[ctr] == '\\') {
-      new_string[nctr] = '\\';
-      nctr++;
+      char ch = string[ctr+1];
+      if (ch == 'a' || ch == 'b' || ch == 'f' || ch == 'n' || 
+	  ch == 'r' || ch == 't' || ch == 'v' || ch == 'x' || 
+	  ch == '0' || ch == '1' || ch == '2' || ch == '3' || 
+	  ch == '4' || ch == '5' || ch == '6' || ch == '7' || 
+	  ch == '\\' || ch == '"' || ch == '`') {
+        new_string[nctr] = '\\';
+        nctr++;
+      }
     }
     new_string[nctr] = string[ctr];
     nctr++; ctr++;
