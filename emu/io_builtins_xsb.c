@@ -1599,6 +1599,9 @@ void double_quotes(char *string, char *new_string)
     if (string[ctr] == '\'') {
       new_string[nctr] = '\'';
       nctr++;
+    } else if (string[ctr] == '\\') {
+      new_string[nctr] = '\\';
+      nctr++;
     }
     new_string[nctr] = string[ctr];
     nctr++; ctr++;
