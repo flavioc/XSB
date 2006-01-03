@@ -146,15 +146,21 @@ asm_genindex(OStr, IndexCode, LabelTab) :-
 	fail.		% reclaim space
 asm_genindex(_, _, _).
 
+:- index asm_proc_index/3-2.
 asm_proc_index(OStr, cases(_Label,Arity,Num,OrderNum), _) :-
-	asm_genindex_inst(OStr, cases(Arity,OrderNum,Num), _), !.
+	asm_genindex_inst(OStr, cases(Arity,OrderNum,Num), _).
 asm_proc_index(OStr, arglabel(T,Val,L), LabelTab) :-
-	( T = c, sym_offset(Val, Nval), Inst = arglabel(T,Nval,L)
-	; T = s, sym_offset(Val, Nval), Inst = arglabel(T,Nval,L)
-	; T = i, Inst = arglabel(T,Val,L)
-	; Inst = arglabel(T,L)
+	(T == c
+	 ->	sym_offset(Val, Nval), Inst = arglabel(T,Nval,L)
+	 ; T == s
+	 ->	sym_offset(Val, Nval), Inst = arglabel(T,Nval,L)
+	 ; T == i
+	 ->	Inst = arglabel(T,Val,L)
+	 ; T == f
+	 ->	Inst = arglabel(T,Val,L)
+	 ;	Inst = arglabel(T,L)
 	), 
-	asm_genindex_inst(OStr, Inst, LabelTab), !.
+	asm_genindex_inst(OStr, Inst, LabelTab).
 
 asm_genindex_inst(OStr, Inst, LabelTab) :-
 	asm_inst(Inst, _Len, Opcode, Args),
