@@ -209,7 +209,8 @@ file_exists_here_or_configbin(C_Obj,CC_Obj) :-
 
 search_module(FileName, Dir, Mod, Ext, Base, Obj) :-
 	almost_search_module(FileName, D, Mod, E, B),
-	( D == '', FileName == Mod -> % only a module name was given
+	( D == '', (FileName == Mod ; E == XSB_SRC_EXTENSION_ATOM_SANS_DOT)
+	 ->	% only a module name was given
 	    real_search_module(Mod, Dir, Base, Ext)
 	; Dir = D, Ext = E, Base = B
 	),
