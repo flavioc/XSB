@@ -580,7 +580,13 @@ xsbBool almost_search_module(CTXTdeclc char *filename)
       if (! extension) return FALSE; /* file was not found */
       extension = string_find(extension,1);
     } else {
-      if (stat(fullname, &fileinfo)) return FALSE; /* file not found */
+      if (stat(fullname, &fileinfo) && !strcmp(dir,"")) {
+	/* file not found, so let search through dirs try to find it */ 
+	ctop_string(CTXTc 2, dir);
+	ctop_string(CTXTc 3, basename);
+	ctop_string(CTXTc 4, extension);
+	return TRUE;
+      }
     }
     if (! strcmp(dir, "")) {
       char dot_dir[MAXPATHLEN];
