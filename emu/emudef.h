@@ -184,10 +184,10 @@ unsigned long dec[8] = {0xffffffff,0xffffffff,0xffffffff,0xffffffff,
   XSB_Deref(OP1);      							\
   if (isref(OP1)) {							\
     /* op1 is FREE */							\
-    bind_float_tagged(vptr(OP1), OP2);					\
+    bind_float_tagged(vptr(OP1), makefloat(OP2));			\
   }									\
   else if (isofloat(OP1)) {						\
-    if ( (float)ofloat_val(OP1) == float_val(OP2)) {			\
+    if ( (float)ofloat_val(OP1) == OP2) {				\
       XSB_Next_Instr();							\
     }									\
     else Fail1;								\
@@ -195,8 +195,8 @@ unsigned long dec[8] = {0xffffffff,0xffffffff,0xffffffff,0xffffffff,
   else if (isattv(OP1)) {						\
     xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_float, interrupt needed\n"));	\
     /* add_interrupt(OP1, OP2); */				        \
-    add_interrupt(CTXTc cell(((CPtr)dec_addr(op1) + 1)),OP2); 		\
-    bind_float_tagged((CPtr)dec_addr(op1), OP2);			\
+    add_interrupt(CTXTc cell(((CPtr)dec_addr(op1) + 1)),makefloat(OP2)); \
+    bind_float_tagged((CPtr)dec_addr(op1), makefloat(OP2));		\
   }									\
   else Fail1;	/* op1 is INT, STRING, STRUCT, or LIST */ 
 
@@ -206,10 +206,10 @@ unsigned long dec[8] = {0xffffffff,0xffffffff,0xffffffff,0xffffffff,
   XSB_Deref(OP1);      							\
   if (isref(OP1)) {							\
     /* op1 is FREE */							\
-    bind_boxedfloat(vptr(OP1), float_val(OP2));				\
+      bind_boxedfloat(vptr(OP1), OP2);					\
   }									\
   else if (isofloat(OP1)) {						\
-    if ( (float)ofloat_val(OP1) == float_val(OP2)) {			\
+    if ( (float)ofloat_val(OP1) == OP2) {				\
       XSB_Next_Instr();							\
     }									\
     else Fail1;								\
@@ -217,8 +217,8 @@ unsigned long dec[8] = {0xffffffff,0xffffffff,0xffffffff,0xffffffff,
   else if (isattv(OP1)) {						\
     xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_float, interrupt needed\n"));	\
     /* add_interrupt(OP1, OP2); */				        \
-    add_interrupt(CTXTc cell(((CPtr)dec_addr(op1) + 1)),OP2); 		\
-    bind_boxedfloat((CPtr)dec_addr(op1), float_val(OP2));		\
+    add_interrupt(CTXTc cell(((CPtr)dec_addr(op1) + 1)),makefloat(OP2)); \
+    bind_boxedfloat((CPtr)dec_addr(op1), OP2);				\
   }									\
   else Fail1;	/* op1 is INT, STRING, STRUCT, or LIST */ 
 

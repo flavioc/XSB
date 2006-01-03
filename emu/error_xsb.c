@@ -251,7 +251,6 @@ void call_conv xsb_permission_error(CTXTdeclc
 void call_conv xsb_resource_error(CTXTdeclc char *resource,
 					char *predicate,int arity, int arg) 
 {
-  printf("in resource error\n");
   prolog_term ball_to_throw;
   int isnew;
   Cell *tptr; char message[255];

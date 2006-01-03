@@ -211,6 +211,12 @@ inline static void inserth(CPtr label, struct hrec *bucket)
 
 /*----------------------------------------------------------------------*/
 
+Integer float_val_to_hash(Float Flt) {
+  //  Float Fltval = Flt;
+  return ((ID_BOXED_FLOAT << BOX_ID_OFFSET ) | (FLOAT_HIGH_16_BITS(Flt))) ^
+    FLOAT_MIDDLE_24_BITS(Flt) ^ FLOAT_LOW_24_BITS(Flt);
+}
+
 /* this generates the index table, an array of pointers to hrecs (sort
    of, the typing is a little unclear).  Each bucket is a list of
    hrecs. */
@@ -236,30 +242,44 @@ static int get_index_tab(FILE *fd, int clause_no)
     get_obj_byte(&type);
     switch (type) {
     case 'i': get_obj_word_bbsig_notag(&ival);
-      val = (Cell) ival; 
+      hashval = ihash((Cell) ival, size); 
       count += 9;
       break;
-    case 'l': val = (Cell)(list_pscPair); 
+    case 'f': 
+      get_obj_word_bbsig_notag(&ival);
+      //      printf("sfloat: %f, %x\n",(*(float *)(&ival)), (*(Integer *)(&ival)) );
+      val = float_val_to_hash(*(float *)(&ival));
+      hashval = ihash((Cell) val, size); 
+      hashval = ihash((Cell) val, size); 
+      count += 9;
+      break;
+    case 'l': 
+      hashval = ihash((Cell)(list_pscPair), size); 
       count += 5;
       break;
-    case 'n': val = 0;
+    case 'n': 
+      hashval = ihash((Cell) 0, size);
       count += 5;
       break;
     case 'c': get_obj_word_bb(&ival);
       count += 9;
       val = (Cell)ival ;
       st_pscname(&val);
+      hashval = ihash(val, size) ;
       break;
     case 's': get_obj_word_bb(&ival);
       count += 9;
       val = (Cell)ival ;
       st_ptrpsc(&val);
+      hashval = ihash(val, size) ;
       break; 
+    default:
+      hashval = 0;
+      xsb_exit("illegal format");
     }
 
     get_obj_word_bbsig_notag(&label);
     label = reloc_addr((Integer)label, seg_text(current_seg));
-    hashval = ihash(val, size);
     inserth(label, &indextab[hashval]);
   }
   return count;
@@ -392,19 +412,12 @@ static int load_text(FILE *fd, int seg_num, int text_bytes, int *current_tab)
 	st_pscname(inst_addr);
 	inst_addr ++;
 	break;
-      case N:                       // number
+      case N: case F:                      // number, float, leave bit pattern
 	get_obj_word_bbsig_notag(inst_addr);
 	inst_addr ++;
 	break;
       case B:                       // boxed integer
 	get_obj_word_bbsig(inst_addr);
-	inst_addr ++;
-	break;
-      case F:                       // float
-    get_obj_word(inst_addr) ; 
-    fix_bb4(inst_addr) ;
-    // and returning the new float, as a cell
-    *(Cell *)(inst_addr) = makefloat(*(float *)inst_addr);
 	inst_addr ++;
 	break;
       case I:                      // index of sob

@@ -166,7 +166,9 @@ void log_rec(CTXTdeclc Psc psc, char *ctype) {
 #ifdef INSN_BLOCKS
 
 #define Def1op          register Cell op1;
+#define Def1fop         register float fop2;
 #define Def2ops         register Cell op1, op2;
+#define Def2fops        register Cell op1; register float fop2;
 #define Def3ops         register Cell op1,op2; register CPtr op3;
 #define DefOps13        register Cell op1; register CPtr op3;
 
@@ -175,11 +177,13 @@ void log_rec(CTXTdeclc Psc psc, char *ctype) {
 #else
 
 #define Def1op
+#define Def1fop
 #define Def2ops
+#define Def2fops
 #define Def3ops
 #define DefOps13
 
-#define DefGlobOps register Cell op1,op2; register CPtr op3;
+#define DefGlobOps register Cell op1,op2; register CPtr op3; float fop2;
 
 #endif
 
@@ -248,13 +252,14 @@ static void *instr_addr_table[256];
 #define get_xxxn        (*(CPtr)(lpcreg+sizeof(Cell)))
 #define get_xxxg        (*(CPtr)(lpcreg+sizeof(Cell)))
 #define get_xxxi        (*(CPtr)(lpcreg+sizeof(Cell)))
-#define get_xxxf        (*(CPtr)(lpcreg+sizeof(Cell)))
+#define get_xxxf        (*(float *)(lpcreg+sizeof(Cell)))
 
 #define get_xxxxi       (*(CPtr)(lpcreg+sizeof(Cell)*2))
 #define get_xxxxl       (*(CPtr)(lpcreg+sizeof(Cell)*2))
 
 #define Op1(Expr)       op1 = (Cell)Expr
 #define Op2(Expr)       op2 = (Cell)Expr
+#define Op2f(Expr)      fop2 = (float)Expr
 #define Op3(Expr)       op3 = (CPtr)Expr
 
 #define Register(Expr)  (cell(Expr))
@@ -631,11 +636,11 @@ contcase:     /* the main loop */
 
   XSB_Start_Instr(getfloat,_getfloat) /* PPR-F */
     //printf("\nGETFLOAT ENTERED!\n");
-    Def2ops
+    Def2fops
     Op1(Register(get_xxr));
-    Op2(get_xxxn);
+    Op2f(get_xxxf);
     ADVANCE_PC(size_xxxX);
-    nunify_with_float_get(op1,op2);
+    nunify_with_float_get(op1,fop2);
     //printf("\nGETFLOAT LEFT!\n");
   XSB_End_Instr()
 
@@ -650,12 +655,12 @@ contcase:     /* the main loop */
 
   XSB_Start_Instr(putfloat,_putfloat) /* PPR-F */
     //printf("\nPUTFLOAT ENTERED!\n");
-    Def2ops
+    Def2fops
     Op1(get_xxr);
-    Op2(get_xxxn);
+    Op2f(get_xxxf);
     ADVANCE_PC(size_xxxX);
-    //    bld_float_tagged((CPtr)op1, op2);
-    bld_boxedfloat(CTXTc (CPtr)op1, float_val(op2));
+    //    bld_float_tagged((CPtr)op1, fop2);
+    bld_boxedfloat(CTXTc (CPtr)op1, fop2);
     //printf("\nPUTFLOAT DONE!\n");
   XSB_End_Instr()
 
@@ -838,15 +843,15 @@ contcase:     /* the main loop */
 
   XSB_Start_Instr(unifloat,_unifloat) /* PPPF */
     //printf("UNIFLOAT ENTERED\n");
-    Def2ops
-    Op2(get_xxxf); /* num in op2 */
+    Def2fops
+    Op2f(get_xxxf); /* num in fop2 */
     ADVANCE_PC(size_xxxX);
     if (flag) {	/* if (flag == WRITE) */
-      new_heap_float(hreg, op2);
+      new_heap_float(hreg, makefloat(fop2));
     }
-    else {  /* op2 set */
+    else {  /* fop2 set */
       op1 = cell(sreg++);
-      nunify_with_float(op1,op2);
+      nunify_with_float(op1,fop2);
     }
     //printf("UNIFLOAT LEFT\n");
   XSB_End_Instr()
@@ -860,10 +865,10 @@ contcase:     /* the main loop */
 
   XSB_Start_Instr(bldfloat,_bldfloat) /* PPP-F */
     //printf("BLDFLOAT ENTERED\n");
-    Def1op
-    Op1(get_xxxf); /* num to op2 */
+    Def1fop
+    Op2f(get_xxxf); /* num to fop2 */
     ADVANCE_PC(size_xxxX);
-    new_heap_float(hreg, op1);
+    new_heap_float(hreg, makefloat(fop2));
     //printf("BLDFLOAT LEFT\n");
   XSB_End_Instr()
 
