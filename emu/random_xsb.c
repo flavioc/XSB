@@ -63,8 +63,8 @@ struct random_seeds_t *init_random_seeds() {
   seeds->IY = 21877;
   seeds->IZ = 7943;
   seeds->TX = 1.0/30269.0;
-  seeds->TX = 1.0/30307.0;
-  seeds->TX = 1.0/30323.0;
+  seeds->TY = 1.0/30307.0;
+  seeds->TZ = 1.0/30323.0;
   return seeds;
 }
 
