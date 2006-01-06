@@ -510,6 +510,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 	    if (sys_mut[i].owner > 0) 
 	      printf("Mutex %s (%d): %d\n",mutex_names[i],i,sys_mut[i].owner);
 	  }
+	  rc = 0;
 	  break;
 
 	default:
