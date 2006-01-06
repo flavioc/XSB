@@ -276,7 +276,7 @@ void total_stat(CTXTdeclc double elapstime) {
 
 #ifdef MULTI_THREAD
 
-  printf("%d active user thread%s.\n",flags[NUM_THREADS],
+  printf("%ld active user thread%s.\n",flags[NUM_THREADS],
 	 (flags[NUM_THREADS]>1?"s":""));
 
 #endif
