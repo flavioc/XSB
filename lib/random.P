@@ -109,21 +109,56 @@ strip_keys([_R-K|Lin], [K|Lout]) :-
 % the range of [1..N].  The result is in reversed order, with the
 % largest element at the beginning.
 %-----------------------------------------------------------------------
+:- import reverse/2 from basics.
 randset(K, N, L) :-
 	K >= 0, K =< N,
-	randset1(K, N, L).
+	(16*N < K*K
+	 ->	randset1(K, N, L) % use O(N) method
+	 ;	randset2(K,N,[],L1), % use O(K^2) method
+		reverse(L1,L)
+	).
 
-randset1(0, _, []) :- !.
-randset1(K, N, [N|Ls]) :-
-	random(X),
-	X < K / N, !,
-	K1 is K - 1,
-	N1 is N - 1,
-	randset1(K1, N1, Ls).
-randset1(K, N, Ls) :-
-	N1 is N - 1,
-	randset1(K, N1, Ls).
+:- export randseto/3, randsetn/3.
+:- import cputime/1, writeln/1 from standard.
+randseto(K,N,L) :- cputime(T0),randset1(K,N,L),cputime(T1),T is T1-T0,writeln(cputime=T).
+randsetn(K,N,L) :- cputime(T0),randset2(K,N,[],L1),reverse(L1,L),cputime(T1),T is T1-T0,writeln(cputime=T).
 
+randset1(K,N,L) :-
+	(K =< 0
+	 ->	L = []
+	 ;	random(X),
+		(X < K/N
+		 ->	K1 is K-1,
+			N1 is N-1,
+			L = [N|Ls],
+			randset1(K1,N1,Ls)
+		 ;	N1 is N-1,
+			randset1(K,N1,L)
+		)
+	).
+
+randset2(K,N,L0,L) :-
+	(K =< 0
+	 ->	L = L0
+	 ;	random(X),
+		J is floor(X * N) + 1,
+		insert_rand(J,L0,L1),
+		K1 is K-1,
+		N1 is N-1,
+		randset2(K1,N1,L1,L)
+	).
+
+insert_rand(J,L1,L) :-
+	(L1 = [I|L0]
+	 ->	(J >= I
+		 ->	J1 is J + 1,
+			L = [I|L2],
+			insert_rand(J1,L0,L2)
+		 ;	L = [J|L1]
+		)
+	 ;	L = [J]
+	).
+	 
 %-----------------------------------------------------------------------
 % The builtin predicate
 %-----------------------------------------------------------------------
