@@ -111,7 +111,7 @@ typedef struct {
 
 /* Collection Routines
    ------------------- */
-NodeStats subgoal_statistics(Structure_Manager *);
+NodeStats subgoal_statistics(CTXTdeclc Structure_Manager *);
 NodeStats node_statistics(Structure_Manager *);
 HashStats hash_statistics(Structure_Manager *);
 
@@ -139,7 +139,7 @@ HashStats hash_statistics(Structure_Manager *);
 
 /* Printing Routines
    ----------------- */
-void print_detailed_tablespace_stats(void);
+void print_detailed_tablespace_stats(CTXTdecl);
 
 /*-------------------------------------------------------------------------*/
 
@@ -154,7 +154,7 @@ void reset_maximum_tablespace_stats(void);
 
 /* Poll Current Usage for New Maximum
    ---------------------------------- */
-void compute_maximum_tablespace_stats(void);
+void compute_maximum_tablespace_stats(CTXTdecl);
 void update_maximum_tablespace_stats(NodeStats *btn, HashStats *btht,
 				     NodeStats *varsf, NodeStats *prodsf,
 				     NodeStats *conssf, NodeStats *aln,

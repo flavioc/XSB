@@ -120,6 +120,18 @@ typedef struct InstructionPlusTypeFrame {
 extern char *trie_node_type_table[9];
 extern char *trie_trie_type_table[6];
 
+/* Information for initializing dynamic trie structure managers */
+
+#define  BTN_NAME       0
+#define  BTHT_NAME      1
+#define  PRODSF_NAME    2
+#define  CONSSF_NAME    3
+#define  TSTNSF_NAME    4
+#define  TSINSF_NAME    5
+#define  TSTHT_NAME     6
+
+extern char *TrieSMNameTable[7];
+
 /*===========================================================================*/
 
 /*

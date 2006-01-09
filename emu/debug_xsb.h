@@ -92,10 +92,11 @@ typedef struct subgoal_frame *VariantSF;
    if (LOG_LEVEL <= cur_log_level)                    \
       dsPrint(DS,COMMENT)
 
-/* in struct_manager.c */
+
 #define dbg_smPrint(LOG_LEVEL,SM_RECORD,STRING)       \
    if (LOG_LEVEL <= cur_log_level)                    \
       smPrint(SM_RECORD,STRING)
+
 
 /* in tst_utils.c */
 #define dbg_printTriePathType(LOG_LEVEL,FP,TYPE,LEAF) \
@@ -123,5 +124,6 @@ extern void printterm(FILE *, Cell, int);
 #define dbg_printTriePathType(L,F,T,LF)
 #define dbg_printTrieNode(L,F,P)
 #define dbg_printAnswerTemplate(L,F,P,S)
+
 #endif
 #endif /* __DEBUG_XSB_H__ */

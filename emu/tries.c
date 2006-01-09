@@ -182,19 +182,16 @@ static int AnsVarCtr;
  *          T R I E   S T R U C T U R E   M A N A G E M E N T
  *          =================================================
  */
+char *TrieSMNameTable[] = {"Basic Trie Node (Private)",
+		   "Basic Trie Hash Table (Private)"};
 
 /* For Call and Answer Tries
    ------------------------- */
+
 Structure_Manager smTableBTN  = SM_InitDecl(BasicTrieNode, BTNs_PER_BLOCK,
 					    "Basic Trie Node");
 Structure_Manager smTableBTHT = SM_InitDecl(BasicTrieHT, BTHTs_PER_BLOCK,
 					    "Basic Trie Hash Table");
-Structure_Manager smTSTN      = SM_InitDecl(TS_TrieNode, TSTNs_PER_BLOCK,
-					    "Time-Stamped Trie Node");
-Structure_Manager smTSTHT     = SM_InitDecl(TST_HashTable, TSTHTs_PER_BLOCK,
-					    "Time-Stamped Trie Hash Table");
-Structure_Manager smTSIN      = SM_InitDecl(TS_IndexNode, TSINs_PER_BLOCK,
-					    "Time-Stamp Indexing Node");
 
 /* For Assert & Intern Tries
    ------------------------- */
@@ -205,10 +202,23 @@ Structure_Manager smAssertBTHT = SM_InitDecl(BasicTrieHT, BTHTs_PER_BLOCK,
 
 /* Maintains Current Structure Space
    --------------------------------- */
+
+/* MT engine uses both shared and private structure managers,
+   sequential engine doesn't. Thus*/
+
 #ifndef MULTI_THREAD
+Structure_Manager smTSTN      = SM_InitDecl(TS_TrieNode, TSTNs_PER_BLOCK,
+					    "Time-Stamped Trie Node");
+Structure_Manager smTSTHT     = SM_InitDecl(TST_HashTable, TSTHTs_PER_BLOCK,
+					    "Time-Stamped Trie Hash Table");
+Structure_Manager smTSIN      = SM_InitDecl(TS_IndexNode, TSINs_PER_BLOCK,
+					    "Time-Stamp Indexing Node");
+
 Structure_Manager *smBTN = &smTableBTN;
 Structure_Manager *smBTHT = &smTableBTHT;
+
 #endif
+
 
 /*----------------------------------------------------------------------*/
 
@@ -216,8 +226,12 @@ void init_trie_aux_areas(CTXTdecl)
 {
   int i;
 
+  /* TLS: commented these out to catch private/shared bugs more
+     quickly */
+#ifndef MULTI_THREAD
   smBTN = &smTableBTN;
   smBTHT = &smTableBTHT;
+#endif
 
   addr_stack_size = 0;
   Addr_Stack = NULL;
@@ -253,7 +267,15 @@ BTNptr new_btn(CTXTdeclc int trie_t, int node_t, Cell symbol, BTNptr parent,
 
   void *btn;
 
+#ifdef MULTI_THREAD  
+  if (threads_current_sm == PRIVATE_SM) {
+    SM_AllocateStruct(*smBTN,btn);
+  } else {
+    SM_AllocateSharedStruct(*smBTN,btn);
+    }
+#else
   SM_AllocateStruct(*smBTN,btn);
+#endif
   TN_Init(((BTNptr)btn),trie_t,node_t,symbol,parent,sibling);
   return (BTNptr)btn;
 }
@@ -1544,6 +1566,7 @@ static void remove_calls_and_returns(CTXTdeclc VariantSF CallStrPtr)
 
   /* Delete the call entry
      --------------------- */
+  SET_TRIE_ALLOCATION_TYPE_SF(CallStrPtr);
   delete_branch(CTXTc subg_leaf_ptr(CallStrPtr),
 		&TIF_CallTrie(subg_tif_ptr(CallStrPtr)));
 

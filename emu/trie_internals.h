@@ -374,6 +374,7 @@ enum Types_of_Trie_Nodes {
 #ifndef MULTI_THREAD
 extern Cell VarEnumerator[];
 extern Cell TrieVarBindings[];
+
 #endif
 
 #define NEW_TRIEVAR_TAG		0x10000
@@ -587,8 +588,11 @@ extern void  hashify_children(CTXTdeclc BTNptr, int);
 #define BTNs_PER_BLOCK   2*K
 extern Structure_Manager smTableBTN;
 extern Structure_Manager smAssertBTN;
+
 #ifndef MULTI_THREAD
 extern Structure_Manager *smBTN;
+extern Structure_Manager smTSIN;
+extern Structure_Manager smTSTHT;
 #endif
 
 extern BTNptr new_btn(CTXTdeclc int TrieType, int NodeType, Cell Symbol,
@@ -634,10 +638,27 @@ typedef struct Basic_Trie_HashTable {
 
 /* General Header Management
    ------------------------- */
+
+/* TLS: Lock once (if needed), as we need to allocate, add buckets to
+   alloc_list, etc. */
+
+#ifdef MULTI_THREAD  
 #define _New_TrieHT(SM,THT,TrieType) {					\
+    if (threads_current_sm == PRIVATE_SM) {				\
+      _New_TrieHT_Sub(SM,THT,TrieType);					\
+    } else {								\
+      SYS_MUTEX_LOCK( MUTEX_SM );					\
+      _New_TrieHT_Sub(SM,THT,TrieType);					\
+      SYS_MUTEX_UNLOCK( MUTEX_SM );					\
+    }									\
+}
+#else
+#define _New_TrieHT(SM,THT,TrieType)  _New_TrieHT_Sub(SM,THT,TrieType) 
+#endif
+
+#define _New_TrieHT_Sub(SM,THT,TrieType) {				\
 									\
    void * btht;								\
-									\
    SM_AllocateStruct(SM,btht);						\
    BTHT_Instr(((BTHTptr)btht)) = hash_opcode;				\
    BTHT_Status(((BTHTptr)btht)) = VALID_NODE_STATUS;			\
@@ -653,6 +674,10 @@ typedef struct Basic_Trie_HashTable {
      SM_DeallocateStruct(SM,((BTHTptr)btht));				\
      xsb_abort("No room to allocate buckets for tabling hash table");	\
    }									\
+   /*   printf("allocating hash for %s (%d): %x\n",SM_StructName(SM),xsb_thread_id,btht); \
+   for ( pBTHT = (BTHTptr)SM_AllocList(SM);  IsNonNULL(pBTHT);	\
+	 pBTHT = (BTHTptr)BTHT_NextBTHT(pBTHT) ) 			\
+	 printf("     hash allocation chain%x\n",pBTHT);	*/	\
    THT = btht;								\
 }
 
@@ -674,8 +699,10 @@ extern void expand_trie_ht(BTHTptr);
    BTHTptr pBTHT;						\
 								\
    for ( pBTHT = (BTHTptr)SM_AllocList(SM);  IsNonNULL(pBTHT);	\
-	 pBTHT = (BTHTptr)BTHT_NextBTHT(pBTHT) )		\
+	 pBTHT = (BTHTptr)BTHT_NextBTHT(pBTHT) ) {			\
+     /*     printf("freeing table for thread %d: %x\n",xsb_thread_id,pBTHT); */ \
      mem_dealloc(BTHT_BucketArray(pBTHT),BTHT_NumBuckets(pBTHT)*sizeof(void *),TABLE_SPACE); \
+   }									\
  }
 
 /* Allocating Headers
@@ -724,7 +751,10 @@ extern Structure_Manager *smBTHT;
 /* Allocating New TSTNs
    -------------------- */
 #define TSTNs_PER_BLOCK    K
+
+#ifndef MULTI_THREAD
 extern Structure_Manager smTSTN;
+#endif
 
 extern TSTNptr new_tstn(CTXTdeclc int TrieType, int NodeType, Cell Symbol,
 			TSTNptr Parent, TSTNptr Sibling);
@@ -790,8 +820,6 @@ typedef struct TimeStamp_Index_Node {
    ----------------- */
 #define TSINs_PER_BLOCK  256
 
-extern Structure_Manager smTSIN;
-
 /*
  *  Set `TSIN' to an unused entry in the global TS_IndexNode resource,
  *  and associate this entry with the TSTN pointed to by `TSTN'.
@@ -846,10 +874,9 @@ typedef struct HashTable_for_TSTNs {
    ----------------- */
 #define TSTHTs_PER_BLOCK  16
 
-extern Structure_Manager smTSTHT;
-
+/* TLS: no locking for subsumptive tables, which use private SMs */
 #define New_TSTHT(TSTHT,TrieType,TST) {				\
-   _New_TrieHT(smTSTHT,TSTHT,TrieType);				\
+   _New_TrieHT_Sub(smTSTHT,TSTHT,TrieType);				\
    TSTHT_InternalLink(TSTHT) = (TSTHTptr)TSTRoot_GetHTList(TST);\
    TSTRoot_SetHTList(TST,TSTHT);				\
    TSTHT_IndexHead(TSTHT) = TSTHT_IndexTail(TSTHT) = NULL;	\

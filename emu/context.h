@@ -106,7 +106,7 @@ struct asrtBuff_t {
 #include "token_defs_xsb.h"
 #include "odbc_def_xsb.h"
 #include "findall.h"
-
+#include "struct_manager.h"
 
 //BELOW INCLUDES ARE FOR SQL Interfaces
 #ifdef CYGWIN
@@ -297,9 +297,24 @@ struct asrtBuff_t *_asrtBuff;	/* assert code buffer */
 int    _i_have_dyn_mutex;	/* This thread has dynamic mutex, for asserted code read */
 
 struct random_seeds_t *_random_seeds;	/* struct containing seeds for random num gen */
- 
-struct Structure_Manager *_smBTN;
-struct Structure_Manager *_smBTHT;
+
+  /* Pointers to common structure managers (table vs. assert) */
+  struct Structure_Manager *_smBTN;
+  struct Structure_Manager *_smBTHT;
+
+  /* private structure managers */
+  Structure_Manager *_private_smTableBTN;
+  Structure_Manager *_private_smTableBTHT;
+  Structure_Manager *_private_smTSTN; 
+  Structure_Manager *_private_smTSTHT;
+  Structure_Manager *_private_smTSIN;
+  Structure_Manager *_private_smVarSF; 
+  Structure_Manager *_private_smProdSF;
+  Structure_Manager *_private_smConsSF;
+  Structure_Manager *_private_smALN;
+
+  int    _threads_current_sm;
+  
 
   /********** Error handling  **********/
 
@@ -484,8 +499,31 @@ typedef struct th_context th_context ;
 #define AnsVarCtr		(th->_AnsVarCtr)
 #define ans_var_pos_reg		(th->_ans_var_pos_reg)
 
+/******/
+
 #define smBTN			(th->_smBTN)
 #define smBTHT			(th->_smBTHT)
+
+#define private_smTableBTN        (th->_private_smTableBTN)
+#define private_smTableBTHT       (th->_private_smTableBTHT)
+#define private_smTSTN          (th-> _private_smTSTN)
+#define private_smTSTHT         (th-> _private_smTSTHT)
+#define private_smTSIN          (th-> _private_smTSIN)
+#define private_smVarSF         (th-> _private_smVarSF)
+#define private_smProdSF        (th-> _private_smProdSF)
+#define private_smConsSF        (th-> _private_smConsSF)
+#define private_smALN           (th-> _private_smALN)
+
+#define threads_current_sm      (th->_threads_current_sm)
+
+/* For now, Subsumptive-tables are all private*/
+#define smProdSF                (*private_smProdSF)
+#define smConsSF                (*private_smConsSF)
+#define smTSTN                  (*private_smTSTN)
+#define smTSIN                  (*private_smTSIN)
+#define smTSTHT                 (*private_smTSTHT)
+
+/******/
 
 #define  tstTermStack		(th->_tstTermStack)
 #define  tstTermStackLog	(th->_tstTermStackLog)
@@ -534,6 +572,7 @@ typedef struct th_context th_context ;
 
 #define CTXTdecltype
 #define CTXTdecltypec
+
 
 #endif /* MULTI_THREAD */
 

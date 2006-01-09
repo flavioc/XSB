@@ -120,6 +120,54 @@
  *    provided interface routines.
  */
 
+#define PRIVATE_SM 1
+#define SHARED_SM 0
+
+/* Only accounting for shared/private tables for variant tabling --
+   smTableXXX denotes shared.  All subsumptive tables must be private
+   in this version, and check should be made by loader.*/
+
+#ifdef MULTI_THREAD
+#define SET_TRIE_ALLOCATION_TYPE_TIP(pTIF)	\
+  if (isPrivateTIF(pTIF)) {			\
+    shared_flag = FALSE;			\
+    smBTN = private_smTableBTN;			\
+    smBTHT = private_smTableBTHT;			\
+    threads_current_sm = PRIVATE_SM;		\
+  } else {					\
+    shared_flag = TRUE;				\
+    smBTN = &smTableBTN;			\
+    smBTHT = &smTableBTHT;			\
+    threads_current_sm = SHARED_SM;		\
+  }
+
+#define SET_TRIE_ALLOCATION_TYPE_PSC(pPSC)	\
+  if (get_shared(pPSC)) {			\
+    smBTN = &smTableBTN;			\
+    smBTHT = &smTableBTHT;			\
+    threads_current_sm = SHARED_SM;		\
+  } else {					\
+    smBTN = private_smTableBTN;			\
+    smBTHT = private_smTableBTHT;			\
+    threads_current_sm = PRIVATE_SM;		\
+  }
+
+#define SET_TRIE_ALLOCATION_TYPE_SF(pSF) \
+  if (!(pSF->sf_type & SHARED_PRIVATE_MASK)) {	\
+    smBTN = private_smTableBTN;			\
+    smBTHT = private_smTableBTHT;		\
+    threads_current_sm = PRIVATE_SM;		\
+  } else {					\
+      smBTN = &smTableBTN;			\
+      smBTHT = &smTableBTHT;			\
+      threads_current_sm = SHARED_SM;		\
+    }
+#else
+#define SET_TRIE_ALLOCATION_TYPE_TIP(pTIF) 
+#define SET_TRIE_ALLOCATION_TYPE_SF(pSF) 
+#define SET_TRIE_ALLOCATION_TYPE_PSC(pPSC)	
+#endif
+
 typedef struct Structure_Manager {
   struct {		   /* Current block descriptor: */
     void *pBlock;          /* - current block; head of block chain */
@@ -212,14 +260,39 @@ extern xsbBool smIsAllocatedStructRef(Structure_Manager, void *);
    {NULL, NULL}							\
  }
 
+#define SM_InitDeclDyna(StructPtr,StructType,StructsPerBlock,NameString)  \
+  (StructPtr->cur_block).pBlock = NULL; 				\
+  (StructPtr->cur_block).pNextStruct = NULL;				\
+  (StructPtr->cur_block).pLastStruct = NULL;				\
+  (StructPtr->struct_desc).size = sizeof(StructType);			\
+  (StructPtr->struct_desc).num = StructsPerBlock;			\
+  (StructPtr->struct_desc).name = NameString;				\
+  (StructPtr->struct_lists).alloc = NULL;				\
+  (StructPtr->struct_lists).dealloc = NULL;				
+  
+/*  strcpy(&((StructPtr->struct_desc).name),NameString);		\*/
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 /*
  *  Allocate a structure from the Structure Manager.
  */
+
+#define SM_AllocateSharedStruct(SM,pStruct) {		\
+  SYS_MUTEX_LOCK( MUTEX_SM );				\
+  if ( IsNonNULL(SM_FreeList(SM)) ) {			\
+    SM_AllocateFree(SM,pStruct);			\
+  }							\
+  else {						\
+    if ( SM_CurBlockIsDepleted(SM) ) {			\
+      smAllocateBlock(&SM);				\
+    }							\
+    SM_AllocateFromBlock(SM,pStruct);			\
+  }							\
+  SYS_MUTEX_UNLOCK( MUTEX_SM );				\
+ }
+
 #define SM_AllocateStruct(SM,pStruct) {		\
 						\
-   SYS_MUTEX_LOCK( MUTEX_SM ); 			\
    if ( IsNonNULL(SM_FreeList(SM)) ) {		\
      SM_AllocateFree(SM,pStruct);		\
    }						\
@@ -228,7 +301,6 @@ extern xsbBool smIsAllocatedStructRef(Structure_Manager, void *);
        smAllocateBlock(&SM);			\
      SM_AllocateFromBlock(SM,pStruct);		\
    }						\
-   SYS_MUTEX_UNLOCK( MUTEX_SM ); 		\
  }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -371,9 +443,11 @@ extern xsbBool smIsAllocatedStructRef(Structure_Manager, void *);
    else {								      \
      if ( SM_AllocList(SM) == pRecord )					      \
        SM_AllocList(SM) = NextFieldMacro(pRecord);			      \
-     else								      \
+     else {								\
+       gdb_dummy();							\
        xsb_abort("Record not present in given Structure Manager: %s",	      \
 		 SM_StructName(SM));					      \
+     }									\
    }									      \
    if ( IsNonNULL(NextFieldMacro(pRecord)) )				      \
      PrevFieldMacro(NextFieldMacro(pRecord)) = PrevFieldMacro(pRecord);	      \

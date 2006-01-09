@@ -130,7 +130,7 @@ HashStats hash_statistics(Structure_Manager *sm) {
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-NodeStats subgoal_statistics(Structure_Manager *sm) {
+NodeStats subgoal_statistics(CTXTdeclc Structure_Manager *sm) {
 
   NodeStats sg_stats;
   TIFptr tif;
@@ -184,7 +184,7 @@ NodeStats subgoal_statistics(Structure_Manager *sm) {
  *                      ------------------------
  */
 
-void print_detailed_tablespace_stats() {
+void print_detailed_tablespace_stats(CTXTdecl) {
 
   NodeStats
     btn,		/* Basic Trie Nodes */
@@ -202,9 +202,9 @@ void print_detailed_tablespace_stats() {
 
   btn = node_statistics(&smTableBTN);
   btht = hash_statistics(&smTableBTHT);
-  varsf = subgoal_statistics(&smVarSF);
-  prodsf = subgoal_statistics(&smProdSF);
-  conssf = subgoal_statistics(&smConsSF);
+  varsf = subgoal_statistics(CTXTc &smVarSF);
+  prodsf = subgoal_statistics(CTXTc &smProdSF);
+  conssf = subgoal_statistics(CTXTc &smConsSF);
   aln = node_statistics(&smALN);
   tstn = node_statistics(&smTSTN);
   tstht = hash_statistics(&smTSTHT);
@@ -379,7 +379,7 @@ void reset_maximum_tablespace_stats() {
  * maximum.
  */
 
-void compute_maximum_tablespace_stats() {
+void compute_maximum_tablespace_stats(CTXTdecl) {
 
   NodeStats tstn, btn, aln, tsi;
   NodeStats varsf, prodsf, conssf;
@@ -387,9 +387,9 @@ void compute_maximum_tablespace_stats() {
 
   btn = node_statistics(&smTableBTN);
   btht = hash_statistics(&smTableBTHT);
-  varsf = subgoal_statistics(&smVarSF);
-  prodsf = subgoal_statistics(&smProdSF);
-  conssf = subgoal_statistics(&smConsSF);
+  varsf = subgoal_statistics(CTXTc &smVarSF);
+  prodsf = subgoal_statistics(CTXTc &smProdSF);
+  conssf = subgoal_statistics(CTXTc &smConsSF);
   tstn = node_statistics(&smTSTN);
   tstht = hash_statistics(&smTSTHT);
   tsi = node_statistics(&smTSIN);

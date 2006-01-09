@@ -966,7 +966,7 @@ inline static void abolish_table_info(CTXTdecl)
   }
   reset_freeze_registers;
   openreg = COMPLSTACKBOTTOM;
-  release_all_tabling_resources();
+  release_all_tabling_resources(CTXT);
   abolish_wfs_space(CTXT); 
   SYS_MUTEX_UNLOCK( MUTEX_TABLE );
 }
@@ -2202,6 +2202,7 @@ case WRITE_OUT_PROFILE:
 
     TRIE_W_LOCK();
     subgoal = (VariantSF) ptoc_int(CTXTc 1);
+    SET_TRIE_ALLOCATION_TYPE_SF(subgoal); // set smBTN to private/shared
     tif = (TIFptr) subgoal->tif_ptr;
     psc = TIF_PSC(tif);
     if (!is_completed(subgoal)) {
@@ -2272,11 +2273,12 @@ case WRITE_OUT_PROFILE:
 		regTableEntry, BuiltinName(TRIE_DELETE_RETURN), Arity);
 
     leaf = ptoc_addr(regReturnNode);
-    if ( ! smIsValidStructRef(smTableBTN,leaf) )
+    SET_TRIE_ALLOCATION_TYPE_SF(sf); /* set to private/shared SM */
+    if ( ! smIsValidStructRef(*smBTN,leaf) )
       xsb_abort("Invalid Return Handle\n\t Argument %d of %s/%d",
 		regReturnNode, BuiltinName(TRIE_DELETE_RETURN), Arity);
 
-    if ( (! smIsAllocatedStruct(smTableBTN,leaf)) ||
+    if ( (! smIsAllocatedStruct(*smBTN,leaf)) ||
 	 (subg_ans_root_ptr(sf) != get_trie_root(leaf)) ||
 	 (! IsLeafNode(leaf)) )
       return FALSE;

@@ -265,13 +265,13 @@ void print_statistics(CTXTdeclc int amount) {
     reset_stat_total(); 	/* reset 'ttt' struct variable (all 0's) */
     break;
   case 2:		    /* Print Detailed Table Usage */
-    print_detailed_tablespace_stats();
+    print_detailed_tablespace_stats(CTXT);
     break;
   case 3:		    /* Print Detailed Table, Stack, and CPUtime */
     perproc_stat();
     total_stat(CTXTc real_time()-realtime_count_gl);
     reset_stat_total();
-    print_detailed_tablespace_stats();
+    print_detailed_tablespace_stats(CTXT);
     print_detailed_subsumption_stats();
     break;
   case 4:                  /* mutex use (if PROFILE_MUTEXES is defined) */

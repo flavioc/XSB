@@ -75,8 +75,9 @@
 #include "deadlock.h"
 #include "rw_lock.h"
 #include "debug_xsb.h"
-
 #include "hash_xsb.h"
+#include "struct_manager.h"
+
 /*
  * Variable ans_var_pos_reg is a pointer to substitution factor of an
  * answer in the heap.  It is used and set in function

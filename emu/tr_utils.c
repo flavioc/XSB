@@ -342,6 +342,10 @@ VariantSF get_call(CTXTdeclc Cell callTerm, Cell *retTerm) {
 }
 
 
+/* TLS: since this deallocates from smBTHT, make sure
+   trie_allocation_type is set to private/shared before using this
+   function. */
+
 static void free_trie_ht(CTXTdeclc BTHTptr ht) {
 
   TrieHT_RemoveFromAllocList(*smBTHT,ht);
@@ -354,6 +358,10 @@ static void free_trie_ht(CTXTdeclc BTHTptr ht) {
    abolish_table_call.  It copies code from delete_variant_table, but
    uses its own stack.  (Not easy to integrate due to macro usage.) */
 
+/* 
+ * TLS: since this deallocates from SMs, make sure
+ * trie_allocation_type is set before using.
+ */
 void delete_variant_sf_and_answers(CTXTdeclc VariantSF pSF) {
   int node_stk_top = 0;
   BTNptr rnod, *Bkp; 
@@ -390,6 +398,10 @@ void delete_variant_sf_and_answers(CTXTdeclc VariantSF pSF) {
   mem_dealloc(freeing_stack,freeing_stack_size,TABLE_SPACE);
 }
 
+/* 
+ * TLS: since this deallocates from SMs, make sure
+ * trie_allocation_type is set before using.
+ */
 static void delete_variant_table(CTXTdeclc BTNptr x) {
 
   int node_stk_top = 0, call_nodes_top = 0;
@@ -465,10 +477,14 @@ static void delete_variant_table(CTXTdeclc BTNptr x) {
 }
 
 void delete_predicate_table(CTXTdeclc TIFptr tif) {
-
+  /*  printf("smBTN %x smTableBTN %x private_smTableBTN %x\n",
+      smBTN, &smTableBTN,private_smTableBTN);
+      printf("smBTHT %x smTableBTHT %x private_smTableBTHT %x\n",
+      smBTHT, &smTableBTHT,private_smTableBTHT);*/
   if ( TIF_CallTrie(tif) != NULL ) {
-    if ( IsVariantPredicate(tif) )
+    if ( IsVariantPredicate(tif) ) {
       delete_variant_table(CTXTc TIF_CallTrie(tif));
+    }
     else
       delete_subsumptive_table(CTXTc tif);
     TIF_CallTrie(tif) = NULL;
@@ -560,6 +576,10 @@ static BTNptr get_prev_sibl(BTNptr node)
  * trie, or for the first level of the trie (is a pointer to the child
  * field of the root).  */
 
+/* 
+ * TLS: since this deallocates from SMs, make sure
+ * trie_allocation_type is set before using.
+ */
 void delete_branch(CTXTdeclc BTNptr lowest_node_in_branch, BTNptr *hook) {
 
   int num_left_in_hash;
@@ -717,6 +737,10 @@ void undelete_branch(BTNptr lowest_node_in_branch) {
   delete_trie_hh[trie_hh_top] = hh;\
 }  
 
+/*************************************************************************/
+/* TLS: assumed for the purpose of MT storage managers, that
+   delete_trie() is being called only to delete asserted tries --
+   otherwise, need to set smBTN and smBTHT to private/shared */
 
 void delete_trie(CTXTdeclc BTNptr iroot) {
 
@@ -849,6 +873,7 @@ void delete_return(CTXTdeclc BTNptr l, VariantSF sg_frame)
   if (is_completed(sg_frame)) {
     safe_delete_branch(l);
   } else {
+    SET_TRIE_ALLOCATION_TYPE_SF(sg_frame);
     delete_branch(CTXTc l,&subg_ans_root_ptr(sg_frame));
     n = subg_ans_list_ptr(sg_frame);
     /* Find previous sibling -pvr */
@@ -1515,6 +1540,10 @@ inline int abolish_table_predicate(CTXTdeclc Psc psc)
   TIFptr tif;
   int action;
 
+#ifdef MULTI_THREAD  
+  SET_TRIE_ALLOCATION_TYPE_PSC(psc)
+#endif
+
   SYS_MUTEX_LOCK(MUTEX_TABLE);
   tif = get_tip(CTXTc psc);
   if ( IsNULL(tif) ) {
@@ -1538,9 +1567,9 @@ inline int abolish_table_predicate(CTXTdeclc Psc psc)
   }
   else action = 1;
   if (!action) {
-      delete_predicate_table(CTXTc tif);
-      SYS_MUTEX_UNLOCK(MUTEX_TABLE);
-      return 1;
+    delete_predicate_table(CTXTc tif);
+    SYS_MUTEX_UNLOCK(MUTEX_TABLE);
+    return 1;
   }
   else {
     SYS_MUTEX_UNLOCK(MUTEX_TABLE);

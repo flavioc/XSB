@@ -384,6 +384,7 @@ enum SubgoalFrameType {
   PRIVATE_SUBSUMED_CONSUMER_SFT      = 0x00    /* binary 0000 */
 };
 
+/* Private is default */
 #define VARIANT_PRODUCER_SFT   0x02
 #define SUBSUMPTIVE_PRODUCER_SFT   0x01
 #define SUBSUMED_CONSUMER_SFT   0x00
@@ -589,14 +590,18 @@ extern struct Structure_Manager smConsSF;
  * The TIP field is initialized, fields of the call trie leaf and this
  * subgoal are set to point to one another, while the completion stack
  * frame pointer is set to the next available location (frame) on the
- * stack (but the space is not yet allocated from the stack).  Also, an
- * answer-list node is allocated for pointing to a dummy answer node and
- * inserted into the answer list.  Note that answer sets (answer tries,
- * roots) are lazily created -- not until an answer is generated.
- * Therefore this field may potentially be NULL, as it is initialized
- * here.  memset() is used so that the remaining fields are initialized
- * to 0/NULL so, in some sense making this macro independent of the
- * number of fields.
+ * stack (but the space is not yet allocated from the stack).  Also,
+ * an answer-list node is allocated for pointing to a dummy answer
+ * node and inserted into the answer list.  Note that answer sets
+ * (answer tries, roots) are lazily created -- not until an answer is
+ * generated.  Therefore this field may potentially be NULL, as it is
+ * initialized here.  memset() is used so that the remaining fields
+ * are initialized to 0/NULL so, in some sense making this macro
+ * independent of the number of fields.  
+
+ * In addition, for variant tables, the private/shared field is set.
+ * This field is used to determine whether to use shared or private
+ * SMs when adding answers.
  */
 
 #define NewProducerSF(SF,Leaf,TableInfo) {				    \
@@ -606,7 +611,9 @@ extern struct Structure_Manager smConsSF;
    if ( IsVariantPredicate(TableInfo) ) {				    \
      SM_AllocateStruct(smVarSF,pNewSF);					    \
      pNewSF = memset(pNewSF,0,sizeof(variant_subgoal_frame));		    \
-     subg_sf_type(pNewSF) = VARIANT_PRODUCER_SFT;			    \
+     subg_sf_type(pNewSF) = (shared_flag?				\
+			     SHARED_VARIANT_PRODUCER_SFT:		\
+			     PRIVATE_VARIANT_PRODUCER_SFT);		\
    }									    \
    else {								    \
      SM_AllocateStruct(smProdSF,pNewSF);				    \

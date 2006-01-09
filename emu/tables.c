@@ -64,15 +64,19 @@
 /* Engine-Level Tabling Manager Structures
    --------------------------------------- */
 
-Structure_Manager smVarSF  = SM_InitDecl(variant_subgoal_frame,
-					 SUBGOAL_FRAMES_PER_BLOCK,
-					 "Variant Subgoal Frame");
+#ifndef MULTI_THREAD
 Structure_Manager smProdSF = SM_InitDecl(subsumptive_producer_sf,
 					 SUBGOAL_FRAMES_PER_BLOCK,
 					 "Subsumptive Producer Subgoal Frame");
+
 Structure_Manager smConsSF = SM_InitDecl(subsumptive_consumer_sf,
 					 SUBGOAL_FRAMES_PER_BLOCK,
 					 "Subsumptive Consumer Subgoal Frame");
+#endif
+
+Structure_Manager smVarSF  = SM_InitDecl(variant_subgoal_frame,
+					 SUBGOAL_FRAMES_PER_BLOCK,
+					 "Variant Subgoal Frame");
 Structure_Manager smALN    = SM_InitDecl(AnsListNode, ALNs_PER_BLOCK,
 					 "Answer List Node");
 
@@ -365,7 +369,7 @@ void table_complete_entry(CTXTdeclc VariantSF producerSF) {
   xsb_dbgmsg((LOG_STRUCT_MANAGER, " complete... reclaiming structures.\n"));
 
   if (flags[TRACE_STA])
-    compute_maximum_tablespace_stats();
+    compute_maximum_tablespace_stats(CTXT);
 
   /* Reclaim Auxiliary Structures from the TST
      ----------------------------------------- */
@@ -469,8 +473,7 @@ void table_complete_entry(CTXTdeclc VariantSF producerSF) {
  * Frees all the tabling space resources.
  */
 
-void release_all_tabling_resources() {
-
+void release_all_tabling_resources(CTXTdecl) {
   SM_ReleaseResources(smTableBTN);
   TrieHT_FreeAllocatedBuckets(smTableBTHT);
   SM_ReleaseResources(smTableBTHT);
@@ -483,5 +486,54 @@ void release_all_tabling_resources() {
   SM_ReleaseResources(smProdSF);
   SM_ReleaseResources(smConsSF);
 }
+
+#ifdef MULTI_THREAD
+
+extern struct TDispBlkHdr_t tdispblkhdr; // defined in loader
+
+/* TLS: mutex may not be needed here, as we're freeing private
+   resources.  This function handles the case when one thread creates
+   a private tif, exits, its xsb_thread_id is reused, and the new
+   thread creates a private tif for the same table.  */
+
+void thread_free_private_tifs(CTXTdecl) {
+  struct TDispBlk_t *tdispblk;
+  TIFptr tip;
+
+  SYS_MUTEX_LOCK( MUTEX_TABLE );
+  for (tdispblk=tdispblkhdr.firstDB ; tdispblk != NULL ; tdispblk=tdispblk->NextDB) {
+    if (th->tid <= tdispblk->MaxThread) {
+      tip = (&(tdispblk->Thread0))[th->tid];
+      if (tip) {
+	(&(tdispblk->Thread0))[th->tid] = (TIFptr) NULL;
+      }
+    }
+  }
+  SYS_MUTEX_UNLOCK( MUTEX_TABLE );
+}
+
+extern void smPrintBlocks(Structure_Manager *);
+
+void release_private_tabling_resources(CTXTdecl) {
+  void * btn;
+
+  //   printf("Equal?  %x %x\n",private_smTableBTN,&smTableBTN);
+  //  smPrintBlocks(&smTableBTN);
+  thread_free_private_tifs(CTXT);
+  SM_ReleaseResources(*private_smTableBTN);
+  SM_AllocateSharedStruct(smTableBTN,btn);
+  //  smPrintBlocks(&smTableBTN);
+  TrieHT_FreeAllocatedBuckets(*private_smTableBTHT);
+  SM_ReleaseResources(*private_smTableBTHT);
+  SM_ReleaseResources(*private_smTSTN);
+  TrieHT_FreeAllocatedBuckets(*private_smTSTHT);
+  SM_ReleaseResources(*private_smTSTHT);
+  SM_ReleaseResources(*private_smTSIN);
+  SM_ReleaseResources(*private_smALN);
+  SM_ReleaseResources(*private_smVarSF);
+  SM_ReleaseResources(*private_smProdSF);
+  SM_ReleaseResources(*private_smConsSF);
+}
+#endif
 
 /*=========================================================================*/

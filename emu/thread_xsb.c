@@ -347,6 +347,8 @@ int xsb_thread_self()
 #endif
 }
 
+extern void release_private_tabling_resources(CTXTdecl);
+
 xsbBool xsb_thread_request( CTXTdecl ) 
 {
 	Integer request_num = ptoc_int(CTXTc 1) ;
@@ -360,20 +362,26 @@ xsbBool xsb_thread_request( CTXTdecl )
 
 	switch( request_num )
 	{
-		case XSB_THREAD_CREATE:
-		  //		  show_policy();
-			rc = xsb_thread_create(th) ;
-			break ;
+	case XSB_THREAD_CREATE:
+	  rc = xsb_thread_create(th) ;
+	  break ;
 
-		case XSB_THREAD_EXIT:
-			rval = ptoc_int(CTXTc 2 ) ;
-			release_held_mutexes(CTXT);
-			cleanup_thread_structures(CTXT) ;
-			thread_free_dyn_blks(CTXT);    /* biassert.c */
-			thread_free_tab_blks(CTXT);    /* loader_xsb.c */
-			mem_dealloc(th,sizeof(th_context),THREAD_SPACE) ;
-			flags[NUM_THREADS]-- ;
-			pthread_mutex_lock( &th_mutex );
+	  /* TLS: replaced thread_free_dyn_blks() by
+	     thread_free_private_tabling_resources, which sets
+	     appropriate tifs to 0, but doesn't use
+	     delete_predicate_table -- rather it deallocates the
+	     structure managers directly.  */
+
+	case XSB_THREAD_EXIT:
+	  rval = ptoc_int(CTXTc 2 ) ;
+	  release_held_mutexes(CTXT);
+	  cleanup_thread_structures(CTXT) ;
+	  thread_free_dyn_blks(CTXT);    /* biassert.c */
+	  release_private_tabling_resources(CTXT);
+	  //		thread_free_tab_blks(CTXT);    /* loader_xsb.c */
+	  mem_dealloc(th,sizeof(th_context),THREAD_SPACE) ;
+	  flags[NUM_THREADS]-- ;
+	  pthread_mutex_lock( &th_mutex );
 			tid2 = pthread_self();
 #ifdef WIN_NT
 			i = th_find( &tid2 ) ;

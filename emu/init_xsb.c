@@ -65,7 +65,8 @@
 #include "sig_xsb.h"
 #include "thread_xsb.h"
 #include "varstring_xsb.h"
-
+#include "struct_manager.h"
+#include "trie_internals.h"
 /*-----------------------------------------------------------------------*/
 
 /* Sizes of the Data Regions in K-byte blocks
@@ -745,6 +746,7 @@ char *init_para(CTXTdeclc int argc, char *argv[])
  * thread-private memory areas that are cleaned up in
  * cleanup_thread_structures() */
 
+
 void init_thread_structures(CTXTdecl)
 {
 
@@ -797,6 +799,66 @@ void init_thread_structures(CTXTdecl)
   NewestCl = retracted_buffer;
 
 /*  call_intercept = init_call_intercept ; */
+
+  /******** Initialize Private structure managers ********/
+
+  private_smTableBTN  = 
+    (struct Structure_Manager*) mem_alloc(sizeof(struct Structure_Manager),
+					  MT_PRIVATE_SPACE);
+  SM_InitDeclDyna(private_smTableBTN,BasicTrieNode, BTNs_PER_BLOCK,
+		  "Basic Trie Node (Private)");
+
+  private_smTableBTHT  = 
+    (struct Structure_Manager*) mem_alloc(sizeof(struct Structure_Manager),
+					  MT_PRIVATE_SPACE);
+  SM_InitDeclDyna(private_smTableBTHT,BasicTrieHT, BTHTs_PER_BLOCK,
+		  "Basic Trie Hash Table (Private)");
+
+  private_smTSTN = 
+    (struct Structure_Manager*) mem_alloc(sizeof(struct Structure_Manager),
+					  MT_PRIVATE_SPACE);
+  SM_InitDeclDyna(private_smTSTN,TS_TrieNode, TSTNs_PER_BLOCK,
+		  "Time-Stamped Trie Node (Private)");
+
+  private_smTSTHT  = 
+    (struct Structure_Manager*) mem_alloc(sizeof(struct Structure_Manager),
+					  MT_PRIVATE_SPACE);
+  SM_InitDeclDyna(private_smTSTHT,TST_HashTable, TSTHTs_PER_BLOCK,
+		    "Time-Stamped Trie Hash Table (Private)");
+
+  private_smTSIN  = 
+    (struct Structure_Manager*) mem_alloc(sizeof(struct Structure_Manager),
+					  MT_PRIVATE_SPACE);
+  SM_InitDeclDyna(private_smTSIN,TS_IndexNode, TSINs_PER_BLOCK,
+			    "Time-Stamp Indexing Node (Private)");
+
+  private_smVarSF  = 
+    (struct Structure_Manager*) mem_alloc(sizeof(struct Structure_Manager),
+					  MT_PRIVATE_SPACE);
+  SM_InitDeclDyna(private_smVarSF,variant_subgoal_frame,
+		  SUBGOAL_FRAMES_PER_BLOCK,"Variant Subgoal Frame (Private)");
+
+  private_smProdSF  = 
+    (struct Structure_Manager*) mem_alloc(sizeof(struct Structure_Manager),
+					  MT_PRIVATE_SPACE);
+  SM_InitDeclDyna(private_smProdSF,subsumptive_producer_sf,
+		  SUBGOAL_FRAMES_PER_BLOCK,
+		  "Subsumptive Producer Subgoal Frame (Private)");
+
+  private_smConsSF  = 
+    (struct Structure_Manager*) mem_alloc(sizeof(struct Structure_Manager),
+					  MT_PRIVATE_SPACE);
+  SM_InitDeclDyna(private_smConsSF,subsumptive_consumer_sf,
+		  SUBGOAL_FRAMES_PER_BLOCK,
+		  "Subsumptive Consumer Subgoal Frame (Private)");
+
+  private_smALN  = 
+    (struct Structure_Manager*) mem_alloc(sizeof(struct Structure_Manager),
+					  MT_PRIVATE_SPACE);
+  SM_InitDeclDyna(private_smALN,AnsListNode, ALNs_PER_BLOCK,
+		  "Answer List Node (Private)");
+
+  /***************/
 
 /* This is here just for the first thread - others initialize its xsb tid
    on xsb_thread_run - the first thread has always tid = 0 */

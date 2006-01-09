@@ -44,15 +44,6 @@ extern BTHTptr hhadded;
 /* Freeing Individual Structures
    ----------------------------- */
 
-static void free_btn(CTXTdeclc BTNptr btn) {
-  SM_DeallocateStruct(smTableBTN,btn);
-}
-
-static void free_btht(CTXTdeclc BTHTptr btht) {
-  TrieHT_RemoveFromAllocList(smTableBTHT,btht);
-  SM_DeallocateStruct(smTableBTHT,btht);
-}
-
 static void free_tstn(CTXTdeclc TSTNptr tstn) {
   SM_DeallocateStruct(smTSTN,tstn);
 }
@@ -91,7 +82,8 @@ static void free_al(CTXTdeclc VariantSF sf) {
 
 static void delete_btht(CTXTdeclc BTHTptr btht) {
   mem_dealloc(BTHT_BucketArray(btht),BTHT_NumBuckets(btht)*sizeof(void *),TABLE_SPACE);
-  free_btht(CTXTc btht);
+  TrieHT_RemoveFromAllocList(smTableBTHT,btht);
+  SM_DeallocateStruct(smTableBTHT,btht);
 }
 
 static void delete_tstht(CTXTdeclc TSTHTptr tstht) {
@@ -153,7 +145,11 @@ static void delete_tst_answer_set(CTXTdeclc TSTNptr root) {
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 /*
- *  Delete the given Call Table node and recursively all of its children.
+ *  Delete the given Call Table node and recursively all of its
+ * children.  
+ * 
+ * TLS: subsumptive tables apparently are using BTNs, so make sure
+ * that you delete from the correct SM.
  */
 
 void delete_call_index(CTXTdeclc BTNptr root) {
@@ -184,7 +180,7 @@ void delete_call_index(CTXTdeclc BTNptr root) {
 	delete_call_index(CTXTc current);
       }
   }
-  free_btn(CTXTc root);
+  SM_DeallocateStruct(smTableBTN,root);
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
