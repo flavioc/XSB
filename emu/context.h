@@ -514,6 +514,10 @@ typedef struct th_context th_context ;
 #define private_smConsSF        (th-> _private_smConsSF)
 #define private_smALN           (th-> _private_smALN)
 
+#define subsumptive_smALN       (*private_smALN)
+#define subsumptive_smBTN       (*private_smTableBTN)
+#define subsumptive_smBTHT      (*private_smTableBTHT)
+
 #define threads_current_sm      (th->_threads_current_sm)
 
 /* For now, Subsumptive-tables are all private*/
@@ -572,6 +576,9 @@ typedef struct th_context th_context ;
 
 #define CTXTdecltype
 #define CTXTdecltypec
+
+#define subsumptive_smBTN        smTableBTN
+#define subsumptive_smBTHT       smTableBTHT
 
 
 #endif /* MULTI_THREAD */

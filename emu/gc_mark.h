@@ -913,9 +913,11 @@ void mark_trie_strings(CTXTdecl) {
   mark_trie_strings_for(*private_smTableBTN,BTNptr,pBTNStruct,apBTNStruct);
   printf("marked private trie strings\n");
 #endif  
+  SYS_MUTEX_LOCK(MUTEX_SM);
   mark_trie_strings_for(smTableBTN,BTNptr,pBTNStruct,apBTNStruct);
-  mark_trie_strings_for(smTSTN,TSTNptr,pTSTNStruct,apTSTNStruct);
   mark_trie_strings_for(smAssertBTN,BTNptr,pBTNStruct,apBTNStruct);
+  SYS_MUTEX_UNLOCK(MUTEX_SM);
+  mark_trie_strings_for(smTSTN,TSTNptr,pTSTNStruct,apTSTNStruct);
 }
 
 void mark_code_strings(int pflag, CPtr inst_addr, CPtr end_addr) {

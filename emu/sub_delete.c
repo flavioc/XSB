@@ -40,38 +40,36 @@
 
 extern BTHTptr hhadded;
 
+/* TLS: this file is used to delete subsumptive tables.  In the
+   current MT engine, all structure managers used for the mt engine
+   are private, and this code relies on that fact. I've made these
+   dependencies explicit in the various function names. */
 
 /* Freeing Individual Structures
    ----------------------------- */
 
-static void free_tstn(CTXTdeclc TSTNptr tstn) {
+static void free_private_tstn(CTXTdeclc TSTNptr tstn) {
   SM_DeallocateStruct(smTSTN,tstn);
 }
 
-static void free_tstht(CTXTdeclc TSTHTptr tstht) {
+static void free_private_tstht(CTXTdeclc TSTHTptr tstht) {
   TrieHT_RemoveFromAllocList(smTSTHT,tstht);
   SM_DeallocateStruct(smTSTHT,tstht);
 }
 
-static void free_tsi(CTXTdeclc TSTHTptr tstht) {
+static void free_private_tsi(CTXTdeclc TSTHTptr tstht) {
   if ( IsNonNULL(TSTHT_IndexHead(tstht)) )
     SM_DeallocateStructList(smTSIN,TSTHT_IndexTail(tstht),
 			    TSTHT_IndexHead(tstht));
 }
 
-static void free_producer_sf(CTXTdeclc VariantSF sf) {
-  FreeProducerSF(sf);
-}
-
-static void free_consumer_sf(CTXTdeclc VariantSF sf) {
-  SM_DeallocateStruct(smConsSF,sf);
-}
 
 /*
- * Answer List of a Consumer may already be completely deallocated, even
- * the dummy node.
+ * Answer List of a Consumer may already be completely deallocated,
+ * even the dummy node.  free_answer_list will handle either shared or
+ * private SMs.
  */
-static void free_al(CTXTdeclc VariantSF sf) {
+static void free_private_al(CTXTdeclc VariantSF sf) {
   if ( IsNonNULL(subg_ans_list_ptr(sf)) )
     free_answer_list(sf);
 }
@@ -80,24 +78,24 @@ static void free_al(CTXTdeclc VariantSF sf) {
 /* Deleting Structures with Substructures
    -------------------------------------- */
 
-static void delete_btht(CTXTdeclc BTHTptr btht) {
+static void delete_private_btht(CTXTdeclc BTHTptr btht) {
   mem_dealloc(BTHT_BucketArray(btht),BTHT_NumBuckets(btht)*sizeof(void *),TABLE_SPACE);
-  TrieHT_RemoveFromAllocList(smTableBTHT,btht);
-  SM_DeallocateStruct(smTableBTHT,btht);
+  TrieHT_RemoveFromAllocList(subsumptive_smBTHT,btht);
+  SM_DeallocateStruct(subsumptive_smBTHT,btht);
 }
 
-static void delete_tstht(CTXTdeclc TSTHTptr tstht) {
+static void delete_private_tstht(CTXTdeclc TSTHTptr tstht) {
   mem_dealloc(BTHT_BucketArray(tstht),BTHT_NumBuckets(tstht)*sizeof(void *),TABLE_SPACE);
-  free_tsi(CTXTc tstht);
-  free_tstht(CTXTc tstht);
+  free_private_tsi(CTXTc tstht);
+  free_private_tstht(CTXTc tstht);
 }
 
-static void delete_sf(CTXTdeclc VariantSF sf) {
-  free_al(CTXTc sf);
+static void delete_private_sf(CTXTdeclc VariantSF sf) {
+  free_private_al(CTXTc sf);
   if ( IsProducingSubgoal(sf) )
-    free_producer_sf(CTXTc sf);
+    FreeProducerSF(sf)
   else
-    free_consumer_sf(CTXTc sf);
+    SM_DeallocateStruct(smConsSF,sf);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -131,7 +129,7 @@ static void delete_tst_answer_set(CTXTdeclc TSTNptr root) {
 	sibling = TSTN_Sibling(current);
 	delete_tst_answer_set(CTXTc current);
       }
-    delete_tstht(CTXTc hash_hdr);
+    delete_private_tstht(CTXTc hash_hdr);
   }
   else if ( ! IsLeafNode(root) )
     for ( current = TSTN_Child(root);  IsNonNULL(current);
@@ -139,7 +137,7 @@ static void delete_tst_answer_set(CTXTdeclc TSTNptr root) {
       sibling = TSTN_Sibling(current);
       delete_tst_answer_set(CTXTc current);
     }
-  free_tstn(CTXTc root);
+  free_private_tstn(CTXTc root);
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -171,7 +169,7 @@ void delete_call_index(CTXTdeclc BTNptr root) {
 	  sibling = BTN_Sibling(current);
 	  delete_call_index(CTXTc current);
 	}
-      delete_btht(CTXTc hash_hdr);
+      delete_private_btht(CTXTc hash_hdr);
     }
     else 
       for ( current = BTN_Child(root);  IsNonNULL(current);
@@ -180,7 +178,7 @@ void delete_call_index(CTXTdeclc BTNptr root) {
 	delete_call_index(CTXTc current);
       }
   }
-  SM_DeallocateStruct(smTableBTN,root);
+  SM_DeallocateStruct(subsumptive_smBTN,root);
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -195,11 +193,11 @@ void delete_subsumptive_table(CTXTdeclc TIFptr tif) {
     for ( cur_cons = subg_consumers(cur_prod);
 	  IsNonNULL(cur_cons);  cur_cons = next_cons ) {
       next_cons = conssf_consumers(cur_cons);
-      delete_sf(CTXTc (VariantSF)cur_cons);
+      delete_private_sf(CTXTc (VariantSF)cur_cons);
     }
     next_prod = (SubProdSF)subg_next_subgoal(cur_prod);
     delete_tst_answer_set(CTXTc (TSTNptr)subg_ans_root_ptr(cur_prod));
-    delete_sf(CTXTc (VariantSF)cur_prod);
+    delete_private_sf(CTXTc (VariantSF)cur_prod);
   }
   delete_call_index(CTXTc TIF_CallTrie(tif));
 }

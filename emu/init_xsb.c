@@ -897,7 +897,24 @@ void cleanup_thread_structures(CTXTdecl)
 
   free_trie_aux_areas(CTXT) ;
 
-
+  mem_dealloc(private_smTableBTN,sizeof(struct Structure_Manager),
+	      MT_PRIVATE_SPACE);
+  mem_dealloc(private_smTableBTHT,sizeof(struct Structure_Manager),
+	      MT_PRIVATE_SPACE);
+  mem_dealloc(private_smTSTN,sizeof(struct Structure_Manager),
+	      MT_PRIVATE_SPACE);
+  mem_dealloc(private_smTSTHT,sizeof(struct Structure_Manager),
+	      MT_PRIVATE_SPACE);
+  mem_dealloc(private_smTSIN,sizeof(struct Structure_Manager),
+	      MT_PRIVATE_SPACE); 
+  mem_dealloc(private_smVarSF,sizeof(struct Structure_Manager),
+	      MT_PRIVATE_SPACE);
+  mem_dealloc(private_smProdSF,sizeof(struct Structure_Manager),
+	      MT_PRIVATE_SPACE); 
+  mem_dealloc(private_smConsSF,sizeof(struct Structure_Manager),
+	      MT_PRIVATE_SPACE); 
+  mem_dealloc(private_smALN,sizeof(struct Structure_Manager),
+	      MT_PRIVATE_SPACE); 
 }
 #endif /* MULTI_THREAD */
 

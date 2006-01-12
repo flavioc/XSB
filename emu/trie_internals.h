@@ -668,33 +668,26 @@ typedef struct Basic_Trie_HashTable {
    BTHT_NumBuckets(((BTHTptr)btht)) = TrieHT_INIT_SIZE;			\
    BTHT_BucketArray(((BTHTptr)btht)) =					\
      (BTNptr *)mem_calloc(TrieHT_INIT_SIZE, sizeof(void *),TABLE_SPACE);\
-   if ( IsNonNULL(BTHT_BucketArray(((BTHTptr)btht))) )			\
-     TrieHT_AddNewToAllocList(SM,((BTHTptr)btht))			\
-   else {								\
-     SM_DeallocateStruct(SM,((BTHTptr)btht));				\
-     xsb_abort("No room to allocate buckets for tabling hash table");	\
-   }									\
-   /*   printf("allocating hash for %s (%d): %x\n",SM_StructName(SM),xsb_thread_id,btht); \
-   for ( pBTHT = (BTHTptr)SM_AllocList(SM);  IsNonNULL(pBTHT);	\
-	 pBTHT = (BTHTptr)BTHT_NextBTHT(pBTHT) ) 			\
-	 printf("     hash allocation chain%x\n",pBTHT);	*/	\
+   SM_AddToAllocList_DL(SM,((BTHTptr)btht),BTHT_PrevBTHT,BTHT_NextBTHT) \
    THT = btht;								\
 }
 
+   /*   Debugging: 
+|	printf("allocating hash for %s (%d): %x\n",
+|	SM_StructName(SM),xsb_thread_id,btht);			
+|   for ( pBTHT = (BTHTptr)SM_AllocList(SM);  IsNonNULL(pBTHT);	
+|	 pBTHT = (BTHTptr)BTHT_NextBTHT(pBTHT) ) 			
+|	 printf("     hash allocation chain%x\n",pBTHT);	*/	
+
 extern void expand_trie_ht(BTHTptr);
 
-/*
- * Allocated Hash Tables are maintained on a list to facilitate
- * deallocation of the bucket arrays when the trie space is freed
- * en masse.
- */
-#define TrieHT_AddNewToAllocList(SM,THT)	\
-   SM_AddToAllocList_DL(SM,THT,BTHT_PrevBTHT,BTHT_NextBTHT)
-
+/* Currently SM must be a private table, or this macro must be called
+   from within the scope of a mutex. */
 #define TrieHT_RemoveFromAllocList(SM,THT)	\
    SM_RemoveFromAllocList_DL(SM,THT,BTHT_PrevBTHT,BTHT_NextBTHT)
 
-/* Preparation for mass deallocation */
+/* Preparation for mass deallocation.  Assumes that for a shared SM it
+   is in the scope of a mutex.  */
 #define TrieHT_FreeAllocatedBuckets(SM) {			\
    BTHTptr pBTHT;						\
 								\
@@ -823,7 +816,9 @@ typedef struct TimeStamp_Index_Node {
 /*
  *  Set `TSIN' to an unused entry in the global TS_IndexNode resource,
  *  and associate this entry with the TSTN pointed to by `TSTN'.
- * 'prev' and 'next' links are left to the caller to set.
+ * 'prev' and 'next' links are left to the caller to set.  Subsumptive
+ *  tables use private SMs, so don't worry about allocating shared
+ *  structures. 
  */
 #define New_TSIN(TSIN, TSTN) {			\
    void *t ;					\
@@ -893,8 +888,16 @@ typedef struct HashTable_for_TSTNs {
 extern Structure_Manager smALN;
 
 /* Allocating New ALNs
-   ------------------- */
-#define New_ALN(pALN, pTN, pNext) {		\
+
+New_ALN is for use in variant tables: in the MT engine it checks the
+subgoal frame (explicitly a parameter) to see if the private or shared
+structure manager is to be used.  New_Private_ALN is for use in
+subsumptive tables, which are private in the MT engine.
+
+  ------------------- */
+
+#ifndef MULTI_THREAD
+#define New_ALN(subgoal,pALN, pTN, pNext) {	\
    void *p ;					\
 						\
    SM_AllocateStruct(smALN,p);			\
@@ -902,17 +905,73 @@ extern Structure_Manager smALN;
    ALN_Answer(pALN) = (BTNptr)pTN;		\
    ALN_Next(pALN) = (ALNptr)pNext;		\
  }
+#else
+#define New_ALN(subgoal,pALN, pTN, pNext) {	\
+   void *p ;					\
+						\
+   if (IsSharedSF(subgoal)) {			\
+     SM_AllocateSharedStruct(smALN,p);		\
+   } else {					\
+     SM_AllocateStruct(*private_smALN,p);	\
+   }						\
+   pALN = (ALNptr)p;				\
+   ALN_Answer(pALN) = (BTNptr)pTN;		\
+   ALN_Next(pALN) = (ALNptr)pNext;		\
+ }
+#endif
 
-#ifndef CONC_COMPL
-#define free_answer_list(SubgoalFrame) {			\
-   if ( subg_answers(SubgoalFrame) > COND_ANSWERS )		\
-     SM_DeallocateStructList(smALN,				\
-			     subg_ans_list_ptr(SubgoalFrame),	\
-			     subg_ans_list_tail(SubgoalFrame))	\
-   else								\
-     SM_DeallocateStruct(smALN,subg_ans_list_ptr(SubgoalFrame))	\
+
+#ifndef MULTI_THREAD
+#define New_Private_ALN(pALN, pTN, pNext) {		\
+    void *p ;						\
+							\
+    SM_AllocateStruct(smALN,p);				\
+    pALN = (ALNptr)p;					\
+    ALN_Answer(pALN) = (BTNptr)pTN;			\
+    ALN_Next(pALN) = (ALNptr)pNext;			\
  }
 #else
+#define New_Private_ALN(pALN, pTN, pNext) {		\
+    void *p ;						\
+							\
+    SM_AllocateStruct(*private_smALN,p);		\
+    pALN = (ALNptr)p;					\
+    ALN_Answer(pALN) = (BTNptr)pTN;			\
+    ALN_Next(pALN) = (ALNptr)pNext;			\
+  }
+#endif
+
+/* Rui: please check this to see if its ok */
+#ifndef CONC_COMPL
+#ifndef MULTI_THREAD
+#define free_answer_list(SubgoalFrame) {			\
+    if ( subg_answers(SubgoalFrame) > COND_ANSWERS )		\
+      SM_DeallocateStructList(smALN,				\
+			      subg_ans_list_ptr(SubgoalFrame),	\
+			      subg_ans_list_tail(SubgoalFrame))	\
+      else							\
+	SM_DeallocateStruct(smALN,subg_ans_list_ptr(SubgoalFrame));	\
+  }
+#else /* MT but not CONC_COMPL */
+#define free_answer_list(SubgoalFrame) {			\
+    if (IsSharedSF(SubgoalFrame)) {				\
+      if ( subg_answers(SubgoalFrame) > COND_ANSWERS )		\
+	SM_DeallocateStructList(smALN,				\
+				subg_ans_list_ptr(SubgoalFrame),	\
+				subg_ans_list_tail(SubgoalFrame))	\
+	else								\
+	  SM_DeallocateSharedStruct(smALN,subg_ans_list_ptr(SubgoalFrame)); \
+    } else {								\
+      if ( subg_answers(SubgoalFrame) > COND_ANSWERS )			\
+	SM_DeallocateStructList(*private_smALN,				\
+				subg_ans_list_ptr(SubgoalFrame),	\
+				subg_ans_list_tail(SubgoalFrame))	\
+	else								\
+	  SM_DeallocateStruct(*private_smALN,subg_ans_list_ptr(SubgoalFrame)); \
+    }									\
+  }
+#endif
+#else /* CONC COMPL */
 #define free_answer_list(SubgoalFrame) {			\
    if ( !IsNULL(subg_answers(SubgoalFrame)) )			\
      SM_DeallocateStructList(smALN,				\

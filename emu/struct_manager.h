@@ -51,6 +51,11 @@
  * - SM_RawUsage(SM,TotalBlockUsageInBytes)
  * - SM_ReleaseResources(SM)
  *
+ * MT Interface also includes: 
+ * SM_InitDeclDyna(StructType,StructsPerBlock,StructNameString)
+ * as well as shared variants of the above routines.
+ * ---------
+ *
  * Management Organization:
  * -----------------------
  * Blocks of structures (records) are allocated from the system, one at a
@@ -76,9 +81,11 @@
  *
  * Use:
  * ---
+ * 
  * To use, observe the following guidelines:
  *
- * 1) Declare a Structure_Manager variable for your data structure AND
+ * 1) For single-threaded engine, or if a SM is to be shared among
+ *    threads, Declare a Structure_Manager variable for your data structure AND
  *    initialize it statically using the macro SM_InitDecl().  Provide
  *    the macro with the type of your record, the number you wish it to
  *    allocate at once, and a string which contains the name of the
@@ -86,10 +93,24 @@
  *
  *         Structure_Manager mySM = SM_InitDecl(int,5,"C integer");
  *
+ * 1a) Alternatively, for a thread-private SM, mem_alloc() memory and
+ * initialize the SM dynamically using SM_InitDeclDyna() with the same
+ * argument types as SM_InitDecl().
+ *
  * 2) To obtain a new structure from your Manager, make a call to
- *    SM_AllocateStruct():
+ *    SM_AllocateStruct() for single-threaded, or thread-private
+ *    SMs: 
  *
  *         SM_AllocateStruct(mySM,pNewStruct)
+ *
+ *    Similarly, for thread-shared SMs use the thread-safe
+ *
+ *         SM_AllocateSharedStruct(mySM,pNewStruct)
+ *
+ *    Here, and with the rest of the API, use of thread-private
+ *    routines do not add mutexes to those used by the underlying
+ *    operating system for mememory management, while thread-shared
+ *    routines do add such a layer.
  *
  *    If chaining of allocated structures is desired, then one can use
  *    macros SM_AddToAllocList_SL/DL to add the returned record to the
@@ -99,18 +120,24 @@
  *
  * 3) If mass deallocation of a list of records is desired, then make
  *    the first field in your record the link field for supporting the
- *    list.  You may then use macro SM_DeallocateStructList():
+ *    list.  You may then use macro SM_DeallocateStructList() (or
+ *    SM_DeallocateSharedStructList() )
  *
  *         SM_DeallocateStructList(mySM,pListHead,pListTail)
  *
  *    Otherwise, you'll have to deallocate them one at a time using
- *    SM_DeallocateStruct().  If these structs are maintained on the
+ *    SM_DeallocateStruct() (SM_DeallocateSharedStruct().  If these
+ *    structs are maintained on the 
  *    allocation chain of the Structure Manager, then they should be
  *    removed BEFORE the deallocation.  One may find the macros
- *    SM_RemoveFromAllocList_SL/DL helpful for this...
+ *    SM_RemoveFromAllocList_SL/DL helpful for this.
+ *    Note that these deallocation routines do NOT free the
+ *    underlying memory, but just return the structures to the free
+ *    list of the structure mamanger.
  *
  * 4) Get info about the state of the Manager using routines
  *    SM_CurrentCapacity(), SM_CountFreeStructs(), and SM_RawUsage().
+ * (No MT analogues yet)
  *
  * 5) Releasing the resources of the Structure Manager returns the blocks
  *    to the system and resets some of its fields.
@@ -130,12 +157,10 @@
 #ifdef MULTI_THREAD
 #define SET_TRIE_ALLOCATION_TYPE_TIP(pTIF)	\
   if (isPrivateTIF(pTIF)) {			\
-    shared_flag = FALSE;			\
     smBTN = private_smTableBTN;			\
     smBTHT = private_smTableBTHT;			\
     threads_current_sm = PRIVATE_SM;		\
   } else {					\
-    shared_flag = TRUE;				\
     smBTN = &smTableBTN;			\
     smBTHT = &smTableBTHT;			\
     threads_current_sm = SHARED_SM;		\
@@ -314,7 +339,9 @@ extern xsbBool smIsAllocatedStructRef(Structure_Manager, void *);
  *  the chain must be deallocated individually.
  *  Set the second word to -1 to indicate that the block is free.
  */
-#define SM_DeallocateStructList(SM,pHead,pTail) {	\
+
+#ifdef MULTI_THREAD
+#define SM_DeallocateSharedStructList(SM,pHead,pTail) {	\
    void *pStruct = pHead;				\
    while (pStruct != pTail) {				\
      *(((int *)pStruct)+1) = FREE_TRIE_NODE_MARK;	\
@@ -326,9 +353,40 @@ extern xsbBool smIsAllocatedStructRef(Structure_Manager, void *);
    SM_FreeList(SM) = pHead;				\
    SYS_MUTEX_UNLOCK( MUTEX_SM ); 			\
  }
+#else
+#define SM_DeallocateSharedStructList(SM,pHead,pTail)  \
+  SM_DeallocateStructList(SM,pHead,pTail)  
+#endif
+
+#define SM_DeallocateStructList(SM,pHead,pTail) {	\
+   void *pStruct = pHead;				\
+   while (pStruct != pTail) {				\
+     *(((int *)pStruct)+1) = FREE_TRIE_NODE_MARK;	\
+     pStruct = *(void **)pStruct;			\
+   }							\
+   *(((int *)pStruct)+1) = FREE_TRIE_NODE_MARK;		\
+   SMFL_NextFreeStruct(pTail) = SM_FreeList(SM);	\
+   SM_FreeList(SM) = pHead;				\
+ }
+
+#define SM_DeallocateSharedStruct(SM,pStruct)		\
+   SM_DeallocateSharedStructList(SM,pStruct,pStruct)
 
 #define SM_DeallocateStruct(SM,pStruct)		\
    SM_DeallocateStructList(SM,pStruct,pStruct)
+
+#ifdef MULTI_THREAD
+#define SM_DeallocatePossSharedStruct(SM,pStruct)		\
+  if (threads_current_sm == PRIVATE_SM) {			\
+    SM_DeallocateStruct(SM,pStruct);				\
+  } else {							\
+  SM_DeallocateSharedStruct(SM,pStruct);	\
+  }
+#else
+#define SM_DeallocatePossSharedStruct(SM,pStruct)		\
+  SM_DeallocateStruct(SM,pStruct)
+#endif
+
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
@@ -386,7 +444,8 @@ extern xsbBool smIsAllocatedStructRef(Structure_Manager, void *);
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 /*
- *  Return all memory blocks to the system.
+ *  Return all memory blocks to the system.  Need to use on private
+ *  SMs or within the scope of a mutex.
  */
 #define SM_ReleaseResources(SM)		smFreeBlocks(&SM)
 
@@ -394,7 +453,8 @@ extern xsbBool smIsAllocatedStructRef(Structure_Manager, void *);
 
 /*
  *  Place a newly allocated record on the "in use" list, maintained as
- *  either a singly- or doubly-linked (SL/DL) list.
+ *  either a singly- or doubly-linked (SL/DL) list.  These need to be
+ *  called either on private SMs or to be mutexed.
  */
 
 #define SM_AddToAllocList_SL(SM,pRecord,LinkFieldMacro) {	\
@@ -413,7 +473,9 @@ extern xsbBool smIsAllocatedStructRef(Structure_Manager, void *);
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 /*
- *  Prepare a record for deallocation by removing it from the "in use" list.
+ *  Prepare a record for deallocation by removing it from the "in use"
+ *  list.  Currently must be called from a private table or within
+ *  the scope of a mutex.
  */
 
 #define SM_RemoveFromAllocList_SL(SM,pRecord,LinkFieldMacro,RecordType) { \

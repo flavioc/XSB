@@ -204,7 +204,9 @@ Structure_Manager smAssertBTHT = SM_InitDecl(BasicTrieHT, BTHTs_PER_BLOCK,
    --------------------------------- */
 
 /* MT engine uses both shared and private structure managers,
-   sequential engine doesn't. Thus*/
+   sequential engine doesn't.  In addition, in MT engine, all
+   subsumptive tables are private, thus use subsumptive_smBTN/BTHT for
+   structure managers common to both variant and private tables. */
 
 #ifndef MULTI_THREAD
 Structure_Manager smTSTN      = SM_InitDecl(TS_TrieNode, TSTNs_PER_BLOCK,
@@ -993,7 +995,7 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
     TN_UpgradeInstrTypeToSUCCESS(Paren,tag);
     ans_inserts++;
 
-    New_ALN(answer_node,Paren,NULL);
+    New_ALN(subgoal_ptr,answer_node,Paren,NULL);
     SF_AppendNewAnswer(subgoal_ptr,answer_node);
   }
 
@@ -2003,12 +2005,12 @@ Cell get_lastnode_cs_retskel(CTXTdeclc Cell callTerm) {
 /* creates an empty (dummy) answer.					*/
 /*----------------------------------------------------------------------*/
 
-ALNptr empty_return(CTXTdecl)
+ALNptr empty_return(CTXTdeclc VariantSF subgoal)
 {
     ALNptr i;
   
     /* Used only in one context hence this abuse */
-    New_ALN(i,&dummy_ans_node,NULL);
+    New_ALN(subgoal,i,&dummy_ans_node,NULL);
     return i;
 }
 

@@ -349,8 +349,9 @@ VariantSF get_call(CTXTdeclc Cell callTerm, Cell *retTerm) {
 static void free_trie_ht(CTXTdeclc BTHTptr ht) {
 
   TrieHT_RemoveFromAllocList(*smBTHT,ht);
-  mem_dealloc(BTHT_BucketArray(ht),BTHT_NumBuckets(ht)*sizeof(void *),TABLE_SPACE);
-  SM_DeallocateStruct(*smBTHT,ht);
+  mem_dealloc(BTHT_BucketArray(ht),BTHT_NumBuckets(ht)*sizeof(void *),
+	      TABLE_SPACE);
+  SM_DeallocatePossSharedStruct(*smBTHT,ht); 
 }
 
 /* delete_variant_sf_and_answers deletes and reclaims space for
@@ -389,7 +390,7 @@ void delete_variant_sf_and_answers(CTXTdeclc VariantSF pSF) {
 	  push_node(BTN_Sibling(rnod));
 	if ( ! IsLeafNode(rnod) )
 	  push_node(BTN_Child(rnod));
-	SM_DeallocateStruct(*smBTN,rnod);
+	SM_DeallocatePossSharedStruct(*smBTN,rnod);
       }
     }
   } /* free answer trie */
@@ -942,7 +943,15 @@ void  reclaim_del_ret_list(CTXTdeclc VariantSF sg_frame) {
     y = x;
     x = ALN_Next(x);
 /*      delete_branch(ALN_Answer(y), &subg_ans_root_ptr(sg_frame)); */
+#ifndef MULTI_THREAD
     SM_DeallocateStruct(smALN,y);
+#else
+   if (IsSharedSF(sg_frame)) {			
+     SM_DeallocateSharedStruct(smALN,y);
+   } else {
+     SM_DeallocateStruct(*private_smALN,y);
+   }
+#endif
   }
 }
  

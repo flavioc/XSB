@@ -375,9 +375,9 @@ xsbBool xsb_thread_request( CTXTdecl )
 	case XSB_THREAD_EXIT:
 	  rval = ptoc_int(CTXTc 2 ) ;
 	  release_held_mutexes(CTXT);
+	  release_private_tabling_resources(CTXT);
 	  cleanup_thread_structures(CTXT) ;
 	  thread_free_dyn_blks(CTXT);    /* biassert.c */
-	  release_private_tabling_resources(CTXT);
 	  //		thread_free_tab_blks(CTXT);    /* loader_xsb.c */
 	  mem_dealloc(th,sizeof(th_context),THREAD_SPACE) ;
 	  flags[NUM_THREADS]-- ;

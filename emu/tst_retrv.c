@@ -241,12 +241,13 @@ void initCollectRelevantAnswers(CTXTdecl) {
 /*
  *  Create a new answer-list node, set it to point to an answer,  
  *  and place it at the head of a chain of answer-list nodes.
+ *  For MT engine: use only for private,subsumed tables.
  */
-#define ALN_InsertAnswer(pAnsListHead,pAnswerNode) {		\
-   ALNptr newAnsListNode;					\
-   New_ALN(newAnsListNode,(void *)pAnswerNode,pAnsListHead);	\
-   pAnsListHead = newAnsListNode;				\
- }
+#define ALN_InsertAnswer(pAnsListHead,pAnswerNode) {			\
+    ALNptr newAnsListNode;						\
+    New_Private_ALN(newAnsListNode,(void *)pAnswerNode,pAnsListHead);	\
+    pAnsListHead = newAnsListNode;					\
+  }
 
 /*
  *  Error handler for the collection algorithm.

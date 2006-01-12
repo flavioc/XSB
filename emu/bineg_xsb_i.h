@@ -40,9 +40,11 @@ case SLG_NOT: {
 
   sf = ptoc_addr(regSF);
 #ifdef DEBUG_ASSERTIONS
-  if ( ! smIsValidStructRef(smVarSF,sf) )
-    xsb_abort("Invalid Table Entry Handle\n\t Argument %d of %s/%d",
-	      regSF, BuiltinName(SLG_NOT), Arity);
+  /* Need to change for MT: smVarSF can be private or shared
+|  if ( ! smIsValidStructRef(smVarSF,sf) )
+|    xsb_abort("Invalid Table Entry Handle\n\t Argument %d of %s/%d",
+|	      regSF, BuiltinName(SLG_NOT), Arity);
+  */
 #endif
   if ( has_no_answers(sf) &&
        (is_completed(sf) || neg_delay == FALSE) )
@@ -106,10 +108,12 @@ case IS_INCOMPLETE: {
   VariantSF producerSF = ptoc_addr(regSubgoalFrame);
   CPtr t_ptcp = ptoc_addr(regRootSubgoal);
 #ifdef DEBUG_ASSERTIONS
-  if ( ! smIsValidStructRef(smVarSF,producerSF) &&
-       ! smIsValidStructRef(smProdSF,producerSF) )
-    xsb_abort("Invalid Table Entry Handle\n\t Argument %d of %s/%d",
-	      regSubgoalFrame, BuiltinName(IS_INCOMPLETE), Arity);
+  /* Need to change for MT: smVarSF can be private or shared
+|  if ( ! smIsValidStructRef(smVarSF,producerSF) &&
+|       ! smIsValidStructRef(smProdSF,producerSF) )
+|    xsb_abort("Invalid Table Entry Handle\n\t Argument %d of %s/%d",
+|	      regSubgoalFrame, BuiltinName(IS_INCOMPLETE), Arity);
+  */
 #endif
   xsb_dbgmsg((LOG_DELAY, "Is incomplete for "));
   dbg_print_subgoal(LOG_DELAY, stddbg, producerSF);

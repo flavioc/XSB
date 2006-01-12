@@ -537,11 +537,11 @@ typedef struct SubsumedConsumerSubgoalFrame {
 
 
 #ifndef MULTI_THREAD
-extern ALNptr empty_return(void);
-#define empty_return_handle() empty_return()
+extern ALNptr empty_return(VariantSF);
+#define empty_return_handle(SF) empty_return(SF)
 #else
-extern ALNptr empty_return(struct th_context *);
-#define empty_return_handle() empty_return(th)
+extern ALNptr empty_return(struct th_context *,VariantSF);
+#define empty_return_handle(SF) empty_return(th,SF)
 #endif
 
 /* Appending to the Answer List of a SF
@@ -585,55 +585,19 @@ extern struct Structure_Manager smConsSF;
 
 /* Subgoal Frame (De)Allocation
    ---------------------------- */
-/*
- * Allocates and initializes a subgoal frame for a producing subgoal.
- * The TIP field is initialized, fields of the call trie leaf and this
- * subgoal are set to point to one another, while the completion stack
- * frame pointer is set to the next available location (frame) on the
- * stack (but the space is not yet allocated from the stack).  Also,
- * an answer-list node is allocated for pointing to a dummy answer
- * node and inserted into the answer list.  Note that answer sets
- * (answer tries, roots) are lazily created -- not until an answer is
- * generated.  Therefore this field may potentially be NULL, as it is
- * initialized here.  memset() is used so that the remaining fields
- * are initialized to 0/NULL so, in some sense making this macro
- * independent of the number of fields.  
 
- * In addition, for variant tables, the private/shared field is set.
- * This field is used to determine whether to use shared or private
- * SMs when adding answers.
- */
-
-#define NewProducerSF(SF,Leaf,TableInfo) {				    \
-									    \
-   void *pNewSF;							    \
-									    \
-   if ( IsVariantPredicate(TableInfo) ) {				    \
-     SM_AllocateStruct(smVarSF,pNewSF);					    \
-     pNewSF = memset(pNewSF,0,sizeof(variant_subgoal_frame));		    \
-     subg_sf_type(pNewSF) = (shared_flag?				\
-			     SHARED_VARIANT_PRODUCER_SFT:		\
-			     PRIVATE_VARIANT_PRODUCER_SFT);		\
-   }									    \
-   else {								    \
-     SM_AllocateStruct(smProdSF,pNewSF);				    \
-     pNewSF = memset(pNewSF,0,sizeof(subsumptive_producer_sf));		    \
-     subg_sf_type(pNewSF) = SUBSUMPTIVE_PRODUCER_SFT;			    \
-   }									    \
-   subg_tif_ptr(pNewSF) = TableInfo;					    \
-   subg_dll_add_sf(pNewSF,TIF_Subgoals(TableInfo),TIF_Subgoals(TableInfo)); \
-   subg_leaf_ptr(pNewSF) = Leaf;					    \
-   CallTrieLeaf_SetSF(Leaf,pNewSF);					    \
-   subg_ans_list_ptr(pNewSF) = empty_return_handle();			    \
-   subg_compl_stack_ptr(pNewSF) = openreg - COMPLFRAMESIZE;		    \
-   SF = (VariantSF)pNewSF;						    \
-}
+/* NewProducerSF() is now a function, in tables.c */
 
 #define FreeProducerSF(SF) {					\
    subg_dll_remove_sf(SF,TIF_Subgoals(subg_tif_ptr(SF)),	\
 		      TIF_Subgoals(subg_tif_ptr(SF)));		\
-   if ( IsVariantSF(SF) )					\
-     SM_DeallocateStruct(smVarSF,SF)				\
+   if ( IsVariantSF(SF) ) {					\
+     if (IsSharedSF(SF)) {					\
+       SM_DeallocateSharedStruct(smVarSF,SF);			\
+     } else {							\
+       SM_DeallocateStruct(smVarSF,SF);				\
+     }								\
+   }								\
    else								\
      SM_DeallocateStruct(smProdSF,SF)				\
  }
@@ -664,6 +628,8 @@ void tstCreateTSIs(struct th_context *,TSTNptr);
 #define     tstCreateTSIs_handle(Producer) tstCreateTSIs(th,Producer) 
 #endif
 
+/* Private structure manager for subsumptive tables: no shared
+   allocation needed */
 #define NewSubConsSF(SF,Leaf,TableInfo,Producer) {		\
 								\
    void *pNewSF;						\
@@ -677,7 +643,7 @@ void tstCreateTSIs(struct th_context *,TSTNptr);
    conssf_producer(pNewSF) = (SubProdSF)Producer;		\
    if ( ! ProducerSubsumesSubgoals(Producer) )			\
      tstCreateTSIs_handle((TSTNptr)subg_ans_root_ptr(Producer));		\
-   subg_ans_list_ptr(pNewSF) = empty_return_handle();				\
+   subg_ans_list_ptr(pNewSF) = empty_return_handle(pNewSF);		\
    conssf_timestamp(pNewSF) = CONSUMER_SF_INITIAL_TS;		\
    conssf_consumers(pNewSF) = subg_consumers(Producer);		\
    subg_consumers(Producer) = (SubConsSF)pNewSF;		\

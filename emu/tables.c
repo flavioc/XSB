@@ -31,6 +31,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "auxlry.h"
 #include "cell_xsb.h"
@@ -64,6 +65,8 @@
 /* Engine-Level Tabling Manager Structures
    --------------------------------------- */
 
+/* In the multi-threaded engine, smProdSF and smConsSF will be defined
+   as their private analogues */
 #ifndef MULTI_THREAD
 Structure_Manager smProdSF = SM_InitDecl(subsumptive_producer_sf,
 					 SUBGOAL_FRAMES_PER_BLOCK,
@@ -72,6 +75,8 @@ Structure_Manager smProdSF = SM_InitDecl(subsumptive_producer_sf,
 Structure_Manager smConsSF = SM_InitDecl(subsumptive_consumer_sf,
 					 SUBGOAL_FRAMES_PER_BLOCK,
 					 "Subsumptive Consumer Subgoal Frame");
+
+#define subsumptive_smALN        smALN
 #endif
 
 Structure_Manager smVarSF  = SM_InitDecl(variant_subgoal_frame,
@@ -79,6 +84,61 @@ Structure_Manager smVarSF  = SM_InitDecl(variant_subgoal_frame,
 					 "Variant Subgoal Frame");
 Structure_Manager smALN    = SM_InitDecl(AnsListNode, ALNs_PER_BLOCK,
 					 "Answer List Node");
+
+/*
+ * Allocates and initializes a subgoal frame for a producing subgoal.
+ * The TIP field is initialized, fields of the call trie leaf and this
+ * subgoal are set to point to one another, while the completion stack
+ * frame pointer is set to the next available location (frame) on the
+ * stack (but the space is not yet allocated from the stack).  Also,
+ * an answer-list node is allocated for pointing to a dummy answer
+ * node and inserted into the answer list.  Note that answer sets
+ * (answer tries, roots) are lazily created -- not until an answer is
+ * generated.  Therefore this field may potentially be NULL, as it is
+ * initialized here.  memset() is used so that the remaining fields
+ * are initialized to 0/NULL so, in some sense making this macro
+ * independent of the number of fields.  
+
+ * In addition, for variant tables, the private/shared field is set.
+ * This field is used to determine whether to use shared or private
+ * SMs when adding answers.
+ */
+
+inline VariantSF NewProducerSF(CTXTdeclc BTNptr Leaf,TIFptr TableInfo) {   
+    									
+    void *pNewSF;							
+
+    if ( IsVariantPredicate(TableInfo) ) {				
+#ifdef MULTI_THREAD								
+      if (threads_current_sm == PRIVATE_SM) {				
+	SM_AllocateStruct(smVarSF,pNewSF);				
+	pNewSF = memset(pNewSF,0,sizeof(variant_subgoal_frame));		
+	subg_sf_type(pNewSF) = PRIVATE_VARIANT_PRODUCER_SFT;		
+      } else {								
+	SM_AllocateSharedStruct(smVarSF,pNewSF);				
+	pNewSF = memset(pNewSF,0,sizeof(variant_subgoal_frame));		
+	subg_sf_type(pNewSF) = SHARED_VARIANT_PRODUCER_SFT;	
+      }									
+    }
+#else
+       SM_AllocateStruct(smVarSF,pNewSF);			       
+       pNewSF = memset(pNewSF,0,sizeof(variant_subgoal_frame));		
+       subg_sf_type(pNewSF) = PRIVATE_VARIANT_PRODUCER_SFT;
+   }
+#endif
+    else {								    
+     SM_AllocateStruct(smProdSF,pNewSF);				    
+     pNewSF = memset(pNewSF,0,sizeof(subsumptive_producer_sf));		    
+     subg_sf_type(pNewSF) = SUBSUMPTIVE_PRODUCER_SFT;			    
+   }
+   subg_tif_ptr(pNewSF) = TableInfo;					    
+   subg_dll_add_sf(pNewSF,TIF_Subgoals(TableInfo),TIF_Subgoals(TableInfo)); 
+   subg_leaf_ptr(pNewSF) = Leaf;					    
+   CallTrieLeaf_SetSF(Leaf,pNewSF);					    
+   subg_ans_list_ptr(pNewSF) = empty_return_handle(pNewSF);		     
+   subg_compl_stack_ptr(pNewSF) = openreg - COMPLFRAMESIZE;		    
+   return (VariantSF)pNewSF;						  
+}
 
 /*=========================================================================*/
 
@@ -91,6 +151,7 @@ Structure_Manager smALN    = SM_InitDecl(AnsListNode, ALNs_PER_BLOCK,
 /*
  * Create an Empty Call Index, represented by a Basic Trie.  Note that
  * the root of the trie is labelled with the predicate symbol.
+ * Assumes that private/shared switch for SMs has been set.
  */
 
 inline static  BTNptr newCallIndex(CTXTdeclc Psc predicate) {
@@ -109,6 +170,7 @@ inline static  BTNptr newCallIndex(CTXTdeclc Psc predicate) {
  * call is entered.  Upon exit, CallLUR_VarVector(*results) points to
  * the size of the answer template on the CPS.  See slginsts_xsb_i.h
  * for answer template layout.
+ * Assumes that private/shared switch for SMs has been set.
  */
 
 void table_call_search(CTXTdeclc TabledCallInfo *call_info,
@@ -178,6 +240,7 @@ void table_call_search(CTXTdeclc TabledCallInfo *call_info,
 /*
  * Template is a pointer to the first term in the vector, with the
  * elements arranged from high to low memory.
+ * Assumes that private/shared switch for SMs has been set.
  */
 
 BTNptr table_answer_search(CTXTdeclc VariantSF producer, int size, int attv_num,
@@ -190,7 +253,7 @@ BTNptr table_answer_search(CTXTdeclc VariantSF producer, int size, int attv_num,
       subsumptive_answer_search(CTXTc (SubProdSF)producer,size,templ,is_new);
     if ( *is_new ) {
       ALNptr newALN;
-      New_ALN(newALN,answer,NULL);
+      New_Private_ALN(newALN,answer,NULL);
       SF_AppendNewAnswer(producer,newALN);
     }
     /*
@@ -426,7 +489,18 @@ void table_complete_entry(CTXTdeclc VariantSF producerSF) {
 	 IsNonNULL(ALN_Next(subg_ans_list_tail(producerSF))) )
       xsb_abort("Answer-List exception: Tail pointer incorrectly maintained");
 #ifndef CONC_COMPL
-    SM_DeallocateStructList(smALN,pRealAnsList,subg_ans_list_tail(producerSF));
+#ifdef MULTI_THREAD
+    if (IsSharedSF(producerSF)) {				
+      SM_DeallocateSharedStructList(smALN,pRealAnsList,
+			      subg_ans_list_tail(producerSF));
+    } else {
+      SM_DeallocateStructList(*private_smALN,pRealAnsList,
+			      subg_ans_list_tail(producerSF));
+    }
+#else
+      SM_DeallocateStructList(smALN,pRealAnsList,
+			      subg_ans_list_tail(producerSF));
+#endif
     subg_ans_list_tail(producerSF) = NULL;
 #endif
 
@@ -452,11 +526,10 @@ void table_complete_entry(CTXTdeclc VariantSF producerSF) {
       dbg_smPrint(LOG_STRUCT_MANAGER, smALN, "  before chain reclamation");
 
       if ( has_answers(pSF) )    /* real answers exist */
-	SM_DeallocateStructList(smALN,subg_ans_list_ptr(pSF),
+	SM_DeallocateStructList(subsumptive_smALN,subg_ans_list_ptr(pSF),
 				subg_ans_list_tail(pSF))
       else
-	SM_DeallocateStruct(smALN,subg_ans_list_ptr(pSF))
-
+	SM_DeallocateStruct(subsumptive_smALN,subg_ans_list_ptr(pSF))
       dbg_smPrint(LOG_STRUCT_MANAGER, smALN, "  after chain reclamation");
 
       subg_ans_list_ptr(pSF) = subg_ans_list_tail(pSF) = NULL;
@@ -517,12 +590,8 @@ extern void smPrintBlocks(Structure_Manager *);
 void release_private_tabling_resources(CTXTdecl) {
   void * btn;
 
-  //   printf("Equal?  %x %x\n",private_smTableBTN,&smTableBTN);
-  //  smPrintBlocks(&smTableBTN);
   thread_free_private_tifs(CTXT);
   SM_ReleaseResources(*private_smTableBTN);
-  SM_AllocateSharedStruct(smTableBTN,btn);
-  //  smPrintBlocks(&smTableBTN);
   TrieHT_FreeAllocatedBuckets(*private_smTableBTHT);
   SM_ReleaseResources(*private_smTableBTHT);
   SM_ReleaseResources(*private_smTSTN);

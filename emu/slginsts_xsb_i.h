@@ -120,7 +120,6 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
   CPtr answer_template;
   int template_size, attv_num, tmp;
   TIFptr tip;
-  int shared_flag = 0;                /* flag to indicate whether table is shared (default private) */
 #ifdef SHARED_COMPL_TABLES
   byte * inst_addr = lpcreg;
   int table_tid ;
@@ -231,12 +230,11 @@ xsb_dbgmsg((LOG_DEBUG,"After variant call search AT: %x\n",answer_template));
     CPtr producer_cpf;
     if( !grabbed )
     {
-      gdb_dummy();
-    	NewProducerSF(producer_sf, CallLUR_Leaf(lookupResults),
-		      CallInfo_TableInfo(callInfo));
-    	subg_tid(producer_sf) = th->tid;
-    	subg_grabbed(producer_sf) = 0;
-    	pthread_mutex_unlock( &completing_mut );
+      producer_sf = NewProducerSF(CTXTc CallLUR_Leaf(lookupResults),
+				   CallInfo_TableInfo(callInfo));
+      subg_tid(producer_sf) = th->tid;
+      subg_grabbed(producer_sf) = 0;
+      pthread_mutex_unlock( &completing_mut );
     }
     else
     {	subg_compl_stack_ptr(producer_sf) = openreg - COMPLFRAMESIZE;
@@ -253,10 +251,9 @@ xsb_dbgmsg((LOG_DEBUG,"After variant call search AT: %x\n",answer_template));
     /* New Producer
        ------------ */
     CPtr producer_cpf;
-    gdb_dummy();
-    NewProducerSF(producer_sf, CallLUR_Leaf(lookupResults),
-		  CallInfo_TableInfo(callInfo));
-#endif
+    producer_sf = NewProducerSF(CTXTc CallLUR_Leaf(lookupResults),
+				 CallInfo_TableInfo(callInfo));
+#endif /* !SHARED_COMPL_TABLES */
 #ifdef CONC_COMPL
     subg_tid(producer_sf) = th->tid;
     subg_tag(producer_sf) = INCOMP_ANSWERS;
