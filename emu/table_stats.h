@@ -119,6 +119,8 @@ HashStats hash_statistics(Structure_Manager *);
 
 /* Helpful Totaling Routines
    ------------------------- */
+
+#ifndef MULTI_THREAD
 #define CurrentTotalTableSpaceAlloc(BTN,BTHT,VARSF,PRODSF,CONSSF,	    \
 				    ALN,TSTN,TSTHT,TSI)			    \
   ( NodeStats_SizeAllocNodes(BTN)  +  HashStats_SizeAllocTotal(BTHT)  +	    \
@@ -134,6 +136,50 @@ HashStats hash_statistics(Structure_Manager *);
     NodeStats_SizeUsedNodes(CONSSF)  +  NodeStats_SizeUsedNodes(ALN)  +	  \
     NodeStats_SizeUsedNodes(TSTN)  +  HashStats_SizeUsedTotal(TSTHT)  +   \
     NodeStats_SizeUsedNodes(TSI) )
+
+#else
+
+#define CurrentTotalTableSpaceAlloc(BTN,BTHT,VARSF,PRODSF,CONSSF,	    \
+				    ALN,TSTN,TSTHT,TSI)			    \
+  ( NodeStats_SizeAllocNodes(BTN)  +  HashStats_SizeAllocTotal(BTHT)  +	    \
+    NodeStats_SizeAllocNodes(VARSF)  +  NodeStats_SizeAllocNodes(PRODSF)  + \
+    NodeStats_SizeAllocNodes(CONSSF)  +  NodeStats_SizeAllocNodes(ALN)  +   \
+    NodeStats_SizeAllocNodes(TSTN)  +  HashStats_SizeAllocTotal(TSTHT)  +   \
+    NodeStats_SizeAllocNodes(TSI) )
+
+#define CurrentTotalTableSpaceUsed(BTN,BTHT,VARSF,PRODSF,CONSSF,	  \
+				   ALN,TSTN,TSTHT,TSI) 			  \
+  ( NodeStats_SizeUsedNodes(BTN)  +  HashStats_SizeUsedTotal(BTHT)  +	  \
+    NodeStats_SizeUsedNodes(VARSF)  +  NodeStats_SizeUsedNodes(PRODSF)  + \
+    NodeStats_SizeUsedNodes(CONSSF)  +  NodeStats_SizeUsedNodes(ALN)  +	  \
+    NodeStats_SizeUsedNodes(TSTN)  +  HashStats_SizeUsedTotal(TSTHT)  +   \
+    NodeStats_SizeUsedNodes(TSI) )
+
+#define CurrentSharedTableSpaceAlloc(BTN,BTHT,VARSF,ALN)		\
+  ( NodeStats_SizeAllocNodes(BTN)  +  HashStats_SizeAllocTotal(BTHT)  +	    \
+    NodeStats_SizeAllocNodes(VARSF)  +  NodeStats_SizeAllocNodes(ALN) )
+
+#define CurrentPrivateTableSpaceAlloc(BTN,BTHT,VARSF,PRODSF,CONSSF,	    \
+				    ALN,TSTN,TSTHT,TSI)			    \
+  ( NodeStats_SizeAllocNodes(BTN)  +  HashStats_SizeAllocTotal(BTHT)  +	    \
+    NodeStats_SizeAllocNodes(VARSF)  +  NodeStats_SizeAllocNodes(PRODSF)  + \
+    NodeStats_SizeAllocNodes(CONSSF)  +  NodeStats_SizeAllocNodes(ALN)  +   \
+    NodeStats_SizeAllocNodes(TSTN)  +  HashStats_SizeAllocTotal(TSTHT)  +   \
+    NodeStats_SizeAllocNodes(TSI) )
+
+#define CurrentSharedTableSpaceUsed(BTN,BTHT,VARSF,ALN)			\
+  ( NodeStats_SizeUsedNodes(BTN)  +  HashStats_SizeUsedTotal(BTHT)  +	\
+    NodeStats_SizeUsedNodes(VARSF) + NodeStats_SizeUsedNodes(ALN) )
+
+#define CurrentPrivateTableSpaceUsed(BTN,BTHT,VARSF,PRODSF,CONSSF,	  \
+				   ALN,TSTN,TSTHT,TSI) 			  \
+  ( NodeStats_SizeUsedNodes(BTN)  +  HashStats_SizeUsedTotal(BTHT)  +	  \
+    NodeStats_SizeUsedNodes(VARSF)  +  NodeStats_SizeUsedNodes(PRODSF)  + \
+    NodeStats_SizeUsedNodes(CONSSF)  +  NodeStats_SizeUsedNodes(ALN)  +	  \
+    NodeStats_SizeUsedNodes(TSTN)  +  HashStats_SizeUsedTotal(TSTHT)  +   \
+    NodeStats_SizeUsedNodes(TSI) )
+
+#endif
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 

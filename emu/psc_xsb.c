@@ -194,7 +194,10 @@ TIFptr *get_tip_or_tdisp(Psc temp)
 
 /* get_tip takes a psc record and returns the tip (or null).  If
    multithreaded, it must go through the dispatch table to get the
-   tip. */
+   tip. 
+
+TLS: Added a few lines below to return NULL if the psc is non-tabled.
+Calling routines can then report the appropriate error.  */
 
 TIFptr get_tip(CTXTdeclc Psc psc) {
   TIFptr *tip = get_tip_or_tdisp(psc);
@@ -209,7 +212,11 @@ TIFptr get_tip(CTXTdeclc Psc psc) {
       if (temp1 && (*(pb)temp1 == tabletrysingle)) 
 	return *(TIFptr *)(temp1+2);
       else return (TIFptr) NULL;
-    } else xsb_error("Internal Error in table dispatch\n");
+    } else {
+      if (get_tabled(psc)) {
+	xsb_error("Internal Error in table dispatch\n");
+      } else { return NULL; }
+    }
   }
   if (TIF_EvalMethod(*tip) != DISPATCH_BLOCK) return *tip;
   /* *tip points to 3rd word in TDispBlk, so get addr of TDispBlk */
@@ -219,7 +226,7 @@ TIFptr get_tip(CTXTdeclc Psc psc) {
       New_TIF(rtip,psc);
       (&(tdispblk->Thread0))[th->tid] = rtip;
     }
-    return rtip;
+    return rtip; 
   }
 #endif
 }

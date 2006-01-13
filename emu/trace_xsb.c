@@ -103,6 +103,7 @@ static char *pspace_cat[NUM_CATS_SPACE] =
    "interprolog ","thread      ","read canon  ","leaking...  ",
    "special     ","other       "};
 
+#ifndef MULTI_THREAD
 void total_stat(CTXTdeclc double elapstime) {
 
   NodeStats
@@ -223,7 +224,7 @@ void total_stat(CTXTdeclc double elapstime) {
 /* TLS: Max stack stuff is probably not real useful with multiple
    threads -- to even get it to work correcly you'd have to use locks.
 */
-#ifndef MULTI_THREAD
+
   if (flags[TRACE_STA]) {
     /* Report Maximum Usages
        --------------------- */
@@ -240,7 +241,6 @@ void total_stat(CTXTdeclc double elapstime) {
 	   maximum_total_tablespace_usage());
     printf("\n");
   }
-#endif
 
   printf("Tabling Operations\n");
   printf("  %u subsumptive call check/insert ops: %u producers, %u variants,\n"
@@ -274,16 +274,196 @@ void total_stat(CTXTdeclc double elapstime) {
   print_gc_statistics();
 #endif
 
-#ifdef MULTI_THREAD
+  printf("Time: %.3f sec. cputime,  %.3f sec. elapsetime\n",
+	 ttt.time_count, elapstime);
+}
+/****************************/
+#else /* Below, the MT version */
+/****************************/
+
+void total_stat(CTXTdeclc double elapstime) {
+
+  NodeStats
+    tbtn,		/* Table Basic Trie Nodes */
+    abtn,		/* Asserted Basic Trie Nodes */
+    aln,		/* Answer List Nodes */
+    varsf,		/* Variant Subgoal Frames */
+
+    pri_tbtn,		/* Private Table Basic Trie Nodes */
+    pri_tstn,		/* Private Time Stamp Trie Nodes */
+    pri_aln,		/* Private Answer List Nodes */
+    pri_tsi,		/* Private Time Stamp Indices (Index Entries/Nodes) */
+    pri_varsf,		/* Private Variant Subgoal Frames */
+    pri_prodsf,		/* Private Subsumptive Producer Subgoal Frames */
+    pri_conssf;		/* Private Subsumptive Consumer Subgoal Frames */
+
+  HashStats
+    abtht,		/* Asserted Basic Trie Hash Tables */
+    tbtht,		/* Table Basic Trie Hash Tables */
+
+    pri_tbtht,		/* Table Basic Trie Hash Tables */
+    pri_tstht;		/* Time Stamp Trie Hash Tables */
+  
+  unsigned long
+    total_alloc, total_used,
+    tablespace_alloc, tablespace_used,
+    shared_tablespace_alloc, shared_tablespace_used,
+    private_tablespace_alloc, private_tablespace_used,
+    trieassert_alloc, trieassert_used,
+    gl_avail, tc_avail,
+    de_space_alloc, de_space_used,
+    dl_space_alloc, dl_space_used,
+    pspacetot;
+
+  int
+    num_de_blocks, num_dl_blocks,
+    de_count, dl_count,
+    i;
+
+  tbtn = node_statistics(&smTableBTN);
+  tbtht = hash_statistics(&smTableBTHT);
+  varsf = subgoal_statistics(CTXTc &smVarSF);
+  aln = node_statistics(&smALN);
+
+  pri_tbtn = node_statistics(private_smTableBTN);
+  pri_tbtht = hash_statistics(private_smTableBTHT);
+  pri_varsf = subgoal_statistics(CTXTc private_smVarSF);
+  pri_prodsf = subgoal_statistics(CTXTc private_smProdSF);
+  pri_conssf = subgoal_statistics(CTXTc private_smConsSF);
+  pri_aln = node_statistics(private_smALN);
+  pri_tstn = node_statistics(private_smTSTN);
+  pri_tstht = hash_statistics(private_smTSTHT);
+  pri_tsi = node_statistics(private_smTSIN);
+
+  shared_tablespace_alloc = CurrentSharedTableSpaceAlloc(tbtn,tbtht,varsf,aln);
+
+  private_tablespace_alloc = 
+    CurrentPrivateTableSpaceAlloc(pri_tbtn,pri_tbtht,pri_varsf,pri_prodsf,
+			  pri_conssf,pri_aln,pri_tstn,pri_tstht,pri_tsi);
+  private_tablespace_used = 
+    CurrentPrivateTableSpaceUsed(pri_tbtn,pri_tbtht,pri_varsf,pri_prodsf,
+			  pri_conssf,pri_aln,pri_tstn,pri_tstht,pri_tsi);
+
+  shared_tablespace_used = CurrentSharedTableSpaceUsed(tbtn,tbtht,varsf,aln);
+
+  tablespace_alloc = shared_tablespace_alloc + private_tablespace_alloc;
+  tablespace_used =  shared_tablespace_used + private_tablespace_used;
+
+  abtn = node_statistics(&smAssertBTN);
+  abtht = hash_statistics(&smAssertBTHT);
+  trieassert_alloc =
+    NodeStats_SizeAllocNodes(abtn) + HashStats_SizeAllocTotal(abtht);
+  trieassert_used =
+    NodeStats_SizeUsedNodes(abtn) + HashStats_SizeUsedTotal(abtht);
+
+  gl_avail = (top_of_localstk - top_of_heap - 1) * sizeof(Cell);
+  tc_avail = (top_of_cpstack - (CPtr)top_of_trail - 1) * sizeof(Cell);
+  
+  de_space_alloc = allocated_de_space(& num_de_blocks);
+  de_space_used = de_space_alloc - unused_de_space();
+  de_count = (de_space_used - num_de_blocks * sizeof(Cell)) /
+	     sizeof(struct delay_element);
+
+  dl_space_alloc = allocated_dl_space(& num_dl_blocks);
+  dl_space_used = dl_space_alloc - unused_dl_space();
+  dl_count = (dl_space_used - num_dl_blocks * sizeof(Cell)) /
+	     sizeof(struct delay_list);
+
+
+  pspacetot = 0;
+  for (i=0; i<NUM_CATS_SPACE; i++) 
+    if (i != TABLE_SPACE) pspacetot += pspacesize[i];
+
+  total_alloc =
+    pspacetot  +  trieassert_alloc  +  pspacesize[TABLE_SPACE] +
+    (pdl.size + glstack.size + tcpstack.size + complstack.size) * K +
+    de_space_alloc + dl_space_alloc;
+
+  total_used  =
+    pspacetot  +  trieassert_used  +  pspacesize[TABLE_SPACE]-(tablespace_alloc-tablespace_used) +
+    (glstack.size * K - gl_avail) + (tcpstack.size * K - tc_avail) +
+    de_space_used + dl_space_used;
+
+
+  printf("\n");
+  printf("Memory (total)    %12ld bytes: %12ld in use, %12ld free\n",
+	 total_alloc, total_used, total_alloc - total_used);
+  printf("  permanent space %12ld bytes: %12ld in use, %12ld free\n",
+	 pspacetot + trieassert_alloc, pspacetot + trieassert_used,
+	 trieassert_alloc - trieassert_used);
+  for (i=0; i<NUM_CATS_SPACE; i++) 
+    if (pspacesize[i] > 0 && i != TABLE_SPACE)
+      printf("    %s                      %12ld\n",pspace_cat[i],pspacesize[i]);
+
+  printf("  glob/loc space  %12ld bytes: %12ld in use, %12ld free\n",
+	 glstack.size * K, glstack.size * K - gl_avail, gl_avail);
+  printf("    global                            %12ld bytes\n",
+	 (long)((top_of_heap - (CPtr)glstack.low + 1) * sizeof(Cell)));
+  printf("    local                             %12ld bytes\n",
+	 (long)(((CPtr)glstack.high - top_of_localstk) * sizeof(Cell)));
+  printf("  trail/cp space  %12ld bytes: %12ld in use, %12ld free\n",
+	 tcpstack.size * K, tcpstack.size * K - tc_avail, tc_avail);
+  printf("    trail                             %12ld bytes\n",
+	 (long)((top_of_trail - (CPtr *)tcpstack.low + 1) * sizeof(CPtr)));
+  printf("    choice point                      %12ld bytes\n",
+	 (long)(((CPtr)tcpstack.high - top_of_cpstack) * sizeof(Cell)));
+  printf("  SLG unific. space %10ld bytes: %12ld in use, %12ld free\n",
+	 pdl.size * K, (unsigned long)(pdlreg+1) - (unsigned long)pdl.high,
+	 pdl.size * K - ((unsigned long)(pdlreg+1)-(unsigned long)pdl.high)); 
+  printf("  SLG completion  %12ld bytes: %12ld in use, %12ld free\n",
+	 (unsigned long)complstack.size * K,
+	 (unsigned long)COMPLSTACKBOTTOM - (unsigned long)top_of_complstk,
+	 (unsigned long)complstack.size * K -
+	 ((unsigned long)COMPLSTACKBOTTOM - (unsigned long)top_of_complstk));
+  printf("  SLG table space %12ld bytes: %12ld in use, %12ld free\n",
+	 pspacesize[TABLE_SPACE],  pspacesize[TABLE_SPACE]-(tablespace_alloc-tablespace_used),
+	 tablespace_alloc - tablespace_used);
+  printf("\n");
+
+/* TLS: Max stack stuff is probably not real useful with multiple
+   threads -- to even get it to work correcly you'd have to use locks.
+   So omitted below.
+*/
+
+  printf("Tabling Operations\n");
+  printf("  %u subsumptive call check/insert ops: %u producers, %u variants,\n"
+	 "  %u properly subsumed (%u table entries), %u used completed table.\n"
+	 "  %u relevant answer ident ops.  %u consumptions via answer list.\n",
+	 NumSubOps_CallCheckInsert,		NumSubOps_ProducerCall,
+	 NumSubOps_VariantCall,			NumSubOps_SubsumedCall,
+	 NumSubOps_SubsumedCallEntry,		NumSubOps_CallToCompletedTable,
+	 NumSubOps_IdentifyRelevantAnswers,	NumSubOps_AnswerConsumption);
+  {
+    long ttl_ops = ans_chk_ins + NumSubOps_AnswerCheckInsert,
+	 ttl_ins = ans_inserts + NumSubOps_AnswerInsert;
+
+    printf("  %ld variant call check/insert ops: %ld producers, %ld variants.\n"
+	   "  %ld answer check/insert ops: %ld unique inserts, %ld redundant.\n",
+	   subg_chk_ins, subg_inserts, subg_chk_ins - subg_inserts,
+	   ttl_ops, ttl_ins, ttl_ops - ttl_ins);
+  }
+  printf("\n");
+
+  if (de_count > 0) {
+    printf(" %6d DEs in the tables (space: %5ld bytes allocated, %5ld in use)\n",
+	   de_count, de_space_alloc, de_space_used);
+    printf(" %6d DLs in the tables (space: %5ld bytes allocated, %5ld in use)\n",
+	   dl_count, dl_space_alloc, dl_space_used);
+    printf("\n");
+  }
+
+#ifdef GC
+  printf("\n");
+  print_gc_statistics();
+#endif
 
   printf("%ld active user thread%s.\n",flags[NUM_THREADS],
 	 (flags[NUM_THREADS]>1?"s":""));
 
-#endif
-
   printf("Time: %.3f sec. cputime,  %.3f sec. elapsetime\n",
 	 ttt.time_count, elapstime);
 }
+#endif
 
 /*======================================================================*/
 

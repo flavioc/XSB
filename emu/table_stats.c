@@ -134,10 +134,9 @@ NodeStats subgoal_statistics(CTXTdeclc Structure_Manager *sm) {
 
   NodeStats sg_stats;
   TIFptr tif;
+  int nSubgoals;
   VariantSF pProdSF;
   SubConsSF pConsSF;
-  int nSubgoals;
-
 
   sg_stats = node_statistics(sm);
   nSubgoals = 0;
@@ -148,6 +147,7 @@ NodeStats subgoal_statistics(CTXTdeclc Structure_Manager *sm) {
 	      pProdSF = (VariantSF)subg_next_subgoal(pProdSF) )
 	  nSubgoals++;
   }
+  /* No shared smProdSF or smConsSF in MT engine */
   else if ( sm == &smProdSF ) {
     for ( tif = tif_list.first;  IsNonNULL(tif);  tif = TIF_NextTIF(tif) )
       if ( IsSubsumptivePredicate(tif) )
