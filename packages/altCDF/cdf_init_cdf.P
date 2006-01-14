@@ -98,6 +98,7 @@
 
 :- import check_var/3  from error_handler.
 :- import call0/1 from machine.
+:- import parsort/4 from machine.
 
 :- import '_$index'/3 from file_op.
 :- import conset/2, conget/2, coninc/1 from gensym.
@@ -1999,7 +2000,8 @@ updateExtTerm(ExtTerm,Vars,NValList) :-
 	sort(NValList,SNValList),
 	sort(OValList,SOValList),
 	updateExtTermMerge(SOValList,SNValList,p(ExtTerm,Vars),Updates,[]),
-	cdf_update_list(Updates).
+	parsort(Updates,desc,1,SUpdates),
+	cdf_update_list(SUpdates).
 
 updateExtTermMerge(SOValList,SNValList,ArgsVars,Updates0,Updates) :-
 	SOValList = [OVal|SOVals],
