@@ -569,9 +569,10 @@ current_prolog_flag(Flag,Value):-
 	  ; domain_error(atom_or_variable,Flag,current_prolog_flag/2,1) ),
 	  (iso_flag(Flag,Value) ; xsb_flag(Flag,Value)).
 
+%% fix for 64-bit compilation?
 iso_flag(bounded,true).
-iso_flag(maxint,Maxint) :- Maxint is 14 * 16'08000000 + 16'0fffffff.
-iso_flag(minint,Minint) :- iso_flag(maxint,Maxint), Minint is -Maxint.  %% fix this!!
+iso_flag(max_integer,Maxint) :- Maxint is 14 * 16'08000000 + 16'0fffffff.
+iso_flag(min_integer,Minint) :- iso_flag(max_integer,Maxint), Minint is -Maxint - 1.
 iso_flag(debug, Debug) :- xsb_flag(debugging, Debug).
 
 % TLS: need to figure this out.
