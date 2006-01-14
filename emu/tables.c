@@ -104,7 +104,10 @@ Structure_Manager smALN    = SM_InitDecl(AnsListNode, ALNs_PER_BLOCK,
  * SMs when adding answers.
  */
 
-inline VariantSF NewProducerSF(CTXTdeclc BTNptr Leaf,TIFptr TableInfo) {   
+#ifndef WIN32
+inline 
+#endif
+VariantSF NewProducerSF(CTXTdeclc BTNptr Leaf,TIFptr TableInfo) {   
     									
     void *pNewSF;							
 
