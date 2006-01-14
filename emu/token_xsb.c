@@ -62,13 +62,6 @@
 #define InType(c)       (intab.chtype+1)[c]
 #define DigVal(c)       (digval+1)[c]
 
-#ifdef BITS64
-#define MY_MAXINT ((long)0x7fffffffffffff)
-#define MY_MAXINT ((long)0x7fffffffffffffff)
-#else
-#define MY_MAXINT ((int)0x7fffffff)	/* Modified by Kostis */
-#endif
-
 //Char outqt[EOFCH+1];   /* All the "+1" appear because of the EOF char */
  
 struct CHARS

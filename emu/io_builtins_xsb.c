@@ -829,6 +829,24 @@ Cell read_canonical_return_var(CTXTdeclc int code) {
   } else return (Cell)NULL;
 }
 
+/* copied from emuloop.c and added param */
+#ifndef FAST_FLOATS
+inline void bld_boxedfloat_here(CTXTdeclc CPtr *h, CPtr addr, Float value)
+{
+    Float tempFloat = value;
+    new_heap_functor((*h),box_psc);
+    bld_int(*h,((ID_BOXED_FLOAT << BOX_ID_OFFSET ) | FLOAT_HIGH_16_BITS(tempFloat) ));
+    (*h)++;
+    bld_int(*h,FLOAT_MIDDLE_24_BITS(tempFloat)); (*h)++;
+    bld_int(*h,FLOAT_LOW_24_BITS(tempFloat)); (*h)++;
+    cell(addr) = makecs((*h)-4);
+}
+#else
+inline void bld_boxedfloat_here(CTXTdeclc CPtr *h, CPtr addr, Float value) {
+  bld_float(addr,value);
+}
+#endif
+
 /* read canonical term, and return prev psc pointer, if valid */
 int read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_location_code)
 {
@@ -998,9 +1016,15 @@ int read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_locati
 			opstk[optop-1].typ = TK_INT;
 			opstk[optop-1].op = makeint(-(*(int *)token->value));
 		  } else if (token->type == TK_REAL) {
-			opstk[optop-1].typ = TK_REAL;
 			float_temp = (Float) *(double *)(token->value);
-			opstk[optop-1].op = makefloat((float)-float_temp); // lose precision
+#ifdef FAST_FLOATS
+			opstk[optop-1].typ = TK_REAL;
+			opstk[optop-1].op = makefloat((float)-float_temp); // lose precision FIX!!
+#else
+			ensure_term_space(h,4); // size of boxfloat
+			opstk[optop-1].typ = TK_FUNC;
+			bld_boxedfloat_here(CTXTc &h, &opstk[optop-1].op, -float_temp);
+#endif
 		  } else return read_can_error(CTXTc filep,instr,prevchar,prologvar,findall_chunk_index);
 		} else return read_can_error(CTXTc filep,instr,prevchar,prologvar,findall_chunk_index);
       }
@@ -1083,9 +1107,15 @@ int read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_locati
 		break;
       case TK_REAL:
 	        if (optop >= opstk_size) expand_opstk;
-		opstk[optop].typ = TK_REAL;
 		float_temp = (Float)* (double *)(token->value);
-		opstk[optop].op = makefloat((float)float_temp); // lose precision
+#ifdef FAST_FLOATS		
+		opstk[optop].typ = TK_REAL;
+		opstk[optop].op = makefloat((float)float_temp); // lose precision  FIX!!
+#else
+		ensure_term_space(h,4); // size of boxfloat
+		opstk[optop].typ = TK_FUNC;
+		bld_boxedfloat_here(CTXTc &h, &opstk[optop].op, float_temp);
+#endif
 		optop++;
 		postopreq = TRUE;
 		break;
@@ -1668,7 +1698,8 @@ void call_conv write_canonical_term_rec(CTXTdeclc Cell prologterm, int letter_fl
       } else XSB_StrAppend(wcan_string,string_val(prologterm));
       break;
     case XSB_FLOAT:
-      sprintf(wcan_buff->string,"%2.4f",float_val(prologterm));
+      //      sprintf(wcan_buff->string,"%2.4f",float_val(prologterm));
+      sprintf(wcan_buff->string,"%.15g",float_val(prologterm));
       XSB_StrAppendV(wcan_string,wcan_buff);
       break;
     case XSB_REF:
@@ -1700,7 +1731,8 @@ void call_conv write_canonical_term_rec(CTXTdeclc Cell prologterm, int letter_fl
      }
      else if (isboxedfloat(prologterm))
      {
-          sprintf(wcan_buff->string,"%2.4f",boxedfloat_val(prologterm));
+       //          sprintf(wcan_buff->string,"%2.4f",boxedfloat_val(prologterm));
+          sprintf(wcan_buff->string,"%.15g",boxedfloat_val(prologterm));
           XSB_StrAppendV(wcan_string,wcan_buff);
           break;         
      }

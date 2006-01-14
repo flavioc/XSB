@@ -37,12 +37,14 @@
 typedef long prolog_int ;
 typedef long Integer ;
 typedef unsigned long UInteger ;
+#define MY_MAXINT ((long)0x7fffffffffffff)
 #else
 typedef int prolog_int ;
 typedef int Integer ;
 typedef unsigned int UInteger ;
+#define MY_MAXINT ((int)0x7fffffff)	/* Modified by Kostis */
 #endif
-
+#define MY_MININT (-MY_MAXINT - 1)
 typedef double prolog_float;
 
 #ifndef FAST_FLOATS
