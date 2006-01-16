@@ -1,0 +1,206 @@
+\chapter{Multi-Threaded Programming in XSB} \label{chap:threads}
+
+Starting from Version 3.0, XSB supports the use of Posix threads to
+perform separable computations, and in certain cases to parellelize
+them.  Posix threads have a simple and clear API, and are available on
+all Unixes as well as on Windows via ???.  This chapter introduces how
+to program with threads in XSB through a series of examples.  Later
+sections discuss performance aspects of our implementation as well as
+describing relevant predicates.  A general knowledge of multi-threaded
+programming is assumed, such as can be found in \cite{LewB98}.
+
+\section{Getting Started with Multi-Threading}
+%
+In Version 3.0 the default configuration of XSB does not include
+multi-threading.  This is partly because multi-threading is new, and
+despite our efforts, the multi-threaded engine may contain bugs not
+present in the single-threaded engine.  In addition, the
+multi-threaded engine is about 5-20\% slower than the single-threaded
+engine due to its use of mutexes and its greater use of dynamic,
+rather than static, C variables.  Finally, in Version 3.0, not all
+packages have yet been made thread-safe so that not all configurations
+are supported with multi-threading.  Currently ODBC is supported with
+the multi-threaded configuration, but {\tt dbdrivers}, {\tt xpath},
+{\tt iodbc}, {\tt interprolog} and {\tt smodels} have not been. (???)
+
+With this in mind, making the multi-threaded engine is simple:
+configure and make XSB as in Chapter~\ref{}, but include the command
+{\tt --enable-mt}.  When you invoke the newly made configuration of
+XSB you should see {\tt engine: multi-threading} in the configuration
+list below the banner.
+
+\paragraph{Hello World for Beginners}
+%
+We naturally start with a hello world program.  Within the
+multi-threaded engine, import {\tt xsb\_thread\_create/2} from the
+module thread, and type the command 
+\begin{center} 
+{\tt ?- xsb\_thread\_create(writeln('hello world'),Id)} 
+\end{center} 
+you should see something like 
+\begin{center} 
+{\tt Id = 1hello world} 
+\end{center} 
+%
+while the output is a little ugly, the simple ``hello world'' program
+does illustrate simple multi-threading at work.  The calling thread
+(i.e. the thread controlling the command-line interpreter which we
+call $T_{prompt}$) executes the predicate {\tt xsb\_thread\_create/2}
+which creates a thread $T_{child}$ and immediately returns with the
+{\em XSB thread id} of the created thread.  Meanwhile, $T_{child}$
+initializes its stacks and other memory areas and executes the goal
+{\tt writeln('hello world')}.  $T_{child}$ and $T_{prompt}$ share most
+of their process-level information: in particular they share a common
+I/O stream for standard output, leading to the output above.  What is
+happening may be seen a little more easily by executing the command
+%
+\begin{center} 
+{\tt ?- xsb\_thread\_create((sleep(1),writeln('hello world')),Id)} 
+\end{center} 
+%
+In this case the interpreter reports that {\tt F} is bound to a thread
+id, then about a second later {\tt writeln/1} is executed.  
+
+The simple ``hello world'' program illustrates a couple of points.
+First, it is easy to create a thread in XSB and have that thread do
+work.  Second, it can be tricky to coordinate actions among threads.
+We'll explore these two themes in more detail, but first suppose we
+are determined to extend out multi-threaded program so that it
+produces good output.  One way to do this is to {\em join}
+$T_{prompt}$ and $T_{child}$ as follows 
+%
+\begin{verbatim}
+?- xsb_thread_create(writeln('hello world'),Id),
+   xsb_thread_join(Id,ExitCode).
+hello world
+
+Id = 1
+ExitCode = 0
+\end{verbatim}
+%
+In this case, as soon as $T_{prompt}$ has issued a command to create
+$T_{child}$, it executes {\tt xsb\_thread\_join/2}.  This later
+predicate makes a system call to the underlying operating system to
+suspend $T_{prompt}$ until $T_{child}$ has exited.  {\tt
+  xsb\_thread\_join/2} returns the exit code of $T_{child}$: as usual,
+a value of {\tt 0} indicates normal termination.  
+
+\paragraph{Multi-threading Concepts}
+
+The previous section introduced some new concepts that were not fully
+discussed.  First was the concept of an {\em XSB thread id}: XSB
+manages up to {\tt MAXTHREAD} active threads using XSB thread ids.  It
+should be noted that the XSB thread id of a thread is different from
+the identifier of the underlying pthread.  An XSB thread id is a
+Prolog term, and unlike Posix thread ids, XSB thread ids can be
+compared for equality using unification.  The actual form of an XSB
+thread id, however, is subject to change between versions, so programs
+should not make use of the exact form of an XSB thread id.  In the
+multi-threaded engine, the XSB thread id of any thread can be queried
+using the predicate {\tt xsb\_thread\_self/1}
+
+{\sc talk at some point about exit codes and error terms}
+
+\section{Predicates for Multi-Threading}
+
+\begin{description}
+
+\ournewitem{xsb\_thread\_create(+Goal,-ThreadId)}{thread}
+\index{\texttt{xsb\_thread\_create/2}}
+%
+Called from thread $T$, creates a new XSB thread $T_{new}$ to execute
+{\tt Goal}: when goal either succeeds or fails, $T_{new}$ exits, but
+{\tt xsb\_thread\_create/2} will succeed immediately, binding {\tt
+  ThreadId} to the XSB thread id of $T_{new}$.  {\tt Goal} must be
+callable, but need not be fully instantiated.  No bindings from {\tt
+  Goal} are passed back from $T$ to $T_{new}$, so communication
+between $T_{new}$ and $T$ must be through tables, asserted code, or
+other side effects.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Goal} is not callable.
+\bi
+\item 	{\tt type\_error(callable\_term,Goal)}
+\ei
+%
+\item 	{\tt ThreadId} is not a variable
+\bi
+\item 	{\tt instantiation\_error}
+\ei
+\item   No more system threads are available (EAGAIN)
+\bi
+\item {\tt resource\_error('system threads')}
+\ei
+\ei
+
+\ournewitem{xsb\_thread\_join(+ThreadIds,-ExitCodes)}{thread}
+\index{\texttt{xsb\_thread\_join/2}} 
+% 
+When {\tt xsb\_thread\_join/2} is called by thread $T$, {\tt
+  ThreadIds} must be instantiated to either an XSB thread id, or a
+list of XSB thread ids and {\tt ExitCodes} must be uninstantiated.
+The action of the predicate is to suspend $T$ until all of the threads
+denoted by {\tt ThreadIds} have exited: the exact semantics relies on
+the {\sc pthread} join operation.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt ThreadIds} is not instantiated
+\bi
+\item 	{\tt instantiation\_error}
+\ei
+%
+\item 	{\tt ThreadIds} is not a list of XSB thread ids
+\bi
+\item 	{\tt domain\_error(listof\_threadids,ThreadIds)}
+\ei
+%
+\item 	{\tt ExitCodes} is not a variable
+\bi
+\item 	{\tt instantiation\_error}
+\ei
+%
+\item   {\tt ThreadId} does not correspond to a known thread
+\bi
+\item   {\tt existence\_error(known\_thread,ThreadId)}
+\ei
+\item   {\tt ThreadId} does not correspond to a joinable thread
+  (i.e. {\tt ThreadId} is detached).
+\bi
+\item   {\tt permission\_error(join,ThreadId)}
+\ei
+\ei
+
+\ournewitem{xsb\_thread\_exit(+ExitCode)}{thread}
+\index{\texttt{xsb\_thread\_exit/1}} 
+%
+Exits a thread $T$ after releasing any mutexes held by $T$, freeing
+any thread-specific memory allocated for $T$ (we hope) and exits with
+{\tt ExitCode}.  This exit code will be used if the caller of $T$
+joins to $T$, but will be ignored in other cases (???).  There is no
+need to call this routine on normal termination of a thread as it is
+called implicitly on success or (final) failure of a thread's goal.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt ThreadId} is not an integer
+\bi
+\item 	{\tt type\_error(integer,ExitCode)}
+\ei
+\ei
+
+\ournewitem{xsb\_thread\_self(-ThreadId)}{thread}
+\index{\texttt{xsb\_thread\_self/1}} 
+%
+Returns the XSB thread id of the calling thread.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt ThreadId} is not a variable
+\bi
+\item 	{\tt instantiation\_error}
+\ei
+\ei
+\end{description}
+
