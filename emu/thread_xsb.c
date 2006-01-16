@@ -287,9 +287,14 @@ static int xsb_thread_create(th_context *th)
 #else
 	rc = pthread_create( &thr, NULL, &xsb_thread_run, (void *)new_th_ctxt ) ;
 
-	if (rc != 0) 
-	  xsb_abort("Failure to create thread.\n");
 #endif
+
+	if (rc == EAGAIN) {
+	  xsb_resource_error(th,"system threads","xsb_thread_create",2);
+	} else {
+	  if (rc != 0) 
+	    xsb_abort("Failure to create thread: error %d\n",rc);
+	}
 
 /* This repetition of the call to th_new is need for concurrency reasons */
 	pthread_mutex_lock( &th_mutex );
@@ -395,19 +400,32 @@ xsbBool xsb_thread_request( CTXTdecl )
 			rc = 0 ; /* keep compiler happy */
 			break ;
 
-		case XSB_THREAD_JOIN:
-			id = ptoc_int( CTXTc 2 ) ;
-			pthread_mutex_lock( &th_mutex );
-			tid = th_get( id ) ;
-			pthread_mutex_unlock( &th_mutex );
-			if( tid == (pthread_t_p)0 )
-			        xsb_abort( "[THREAD] Thread join - invalid thread id" );
-			rc = pthread_join(P_PTHREAD_T, (void **)&rval ) ;
-			pthread_mutex_lock( &th_mutex );
-			th_delete(id);
-			pthread_mutex_unlock( &th_mutex );
-			ctop_int( CTXTc 3, rval ) ;
-			break ;
+	case XSB_THREAD_JOIN: {
+	  id = ptoc_int( CTXTc 2 ) ;
+	  pthread_mutex_lock( &th_mutex );
+	  tid = th_get( id ) ;
+	  pthread_mutex_unlock( &th_mutex );
+	  if( tid == (pthread_t_p)0 )
+	    xsb_existence_error(CTXTc "thread",reg[2],"xsb_thread_join",1,1); 
+	  rc = pthread_join(P_PTHREAD_T, (void **)&rval ) ;
+	  if (rc != 0) {
+	    if (rc == EINVAL) { /* pthread found, but not joinable */
+	      xsb_permission_error(CTXTc "thread_join","non-joinable thread",
+				   reg[2],"xsb_thread_join",1); 
+	    } else {
+	      if (rc == ESRCH)  { /* no such pthread found */
+		xsb_existence_error(CTXTc "thread",reg[2],
+				    "xsb_thread_join",1,1); 
+	      }
+	    }
+	  }
+
+	    pthread_mutex_lock( &th_mutex );
+	    th_delete(id);
+	    pthread_mutex_unlock( &th_mutex );
+	    ctop_int( CTXTc 3, rval ) ;
+	    break ;
+	}
 
 		case XSB_THREAD_DETACH:
 			id = ptoc_int( CTXTc 2 ) ;

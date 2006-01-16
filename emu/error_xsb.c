@@ -162,7 +162,40 @@ void call_conv xsb_domain_error(CTXTdeclc char *valid_domain,Cell culprit,
 
 /*****************/
 
-// void existence_error
+void call_conv xsb_existence_error(CTXTdeclc char *object,Cell culprit, 
+					char *predicate,int arity, int arg) 
+{
+  prolog_term ball_to_throw;
+  int isnew;
+  Cell *tptr; char message[255];
+  unsigned long ball_len = 10*sizeof(Cell);
+
+  sprintf(message,"in arg %d of predicate %s/%d)",arg,predicate,arity);
+
+  tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
+
+  ball_to_throw = makecs(tptr);
+  bld_functor(tptr, pair_psc(insert("error",3,
+				    (Psc)flags[CURRENT_MODULE],&isnew)));
+  tptr++;
+  bld_cs(tptr,(Cell) (tptr+3));
+  tptr++;
+  bld_string(tptr,string_find(message,1));
+  tptr++;
+  bld_copy(tptr,build_xsb_backtrace(CTXT));
+  tptr++;
+  bld_functor(tptr, pair_psc(insert("existence_error",2,
+				    (Psc)flags[CURRENT_MODULE],&isnew)));
+  tptr++;
+  bld_string(tptr,string_find(object,1));
+  tptr++;
+  if (culprit == (Cell)NULL) bld_int(tptr,0); 
+  else bld_ref(tptr,culprit);
+
+  xsb_throw(CTXTc ball_to_throw, ball_len);
+
+}
+
 
 /*****************/
 void call_conv xsb_instantiation_error(CTXTdeclc char *predicate,int arity,
@@ -197,8 +230,9 @@ void call_conv xsb_instantiation_error(CTXTdeclc char *predicate,int arity,
 }
 
 /*****************/
+/* Operation/Object_type/Culprit */
 void call_conv xsb_permission_error(CTXTdeclc
-				    char *operation,char *object,int rtrn,
+				    char *operation,char *object,Cell culprit, 
 				    char *predicate,int arity) 
 {
   prolog_term ball_to_throw;
@@ -206,7 +240,7 @@ void call_conv xsb_permission_error(CTXTdeclc
   Cell *tptr; char message[255];
   unsigned long ball_len = 10*sizeof(Cell);
 
-  sprintf(message,"(return %d) in predicate %s/%d)",rtrn,predicate,arity);
+  sprintf(message,"in predicate %s/%d)",predicate,arity);
 
   tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
 
@@ -220,20 +254,19 @@ void call_conv xsb_permission_error(CTXTdeclc
   tptr++;
   bld_copy(tptr,build_xsb_backtrace(CTXT));
   tptr++;
-  bld_functor(tptr, pair_psc(insert("permission_error",2,
+  bld_functor(tptr, pair_psc(insert("permission_error",3,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));
   tptr++;
   bld_string(tptr,string_find(operation,1));
   tptr++;
   bld_string(tptr,string_find(object,1));
+  tptr++;
+  if (culprit == (Cell)NULL) bld_int(tptr,0); 
+  else bld_ref(tptr,culprit);
 
   xsb_throw(CTXTc ball_to_throw,ball_len);
 
 }
-
-/**************/
-
-// representation_error
 
 /**************/
 
@@ -249,7 +282,7 @@ void call_conv xsb_permission_error(CTXTdeclc
    problems in allocating memory for ball.*/
 
 void call_conv xsb_resource_error(CTXTdeclc char *resource,
-					char *predicate,int arity, int arg) 
+					char *predicate,int arity) 
 {
   prolog_term ball_to_throw;
   int isnew;
@@ -261,7 +294,7 @@ void call_conv xsb_resource_error(CTXTdeclc char *resource,
     xsb_exit("++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory");
   else free(tptr);
 
-  sprintf(message,"in arg %d of predicate %s/%d)",arg,predicate,arity);
+  sprintf(message,"in predicate %s/%d)",predicate,arity);
   XSB_StrSet(&MsgBuf,message);
   XSB_StrSet(&FlagBuf,resource);
 

@@ -304,7 +304,7 @@ inline static xsbBool file_function(CTXTdecl)
 	if ((rtrn = fclose(fptr))) {
 	  if (ptoc_int(CTXTc 3) == NOFORCE_FILE_CLOSE) {
 	    XSB_STREAM_UNLOCK(io_port);
-	    xsb_permission_error(CTXTc "fclose","file",rtrn,"file_close",1); 
+	    xsb_permission_error(CTXTc "fclose","file",reg[2],"file_close",1); 
 	  }
 	}
 	open_files[io_port].file_ptr = NULL;
