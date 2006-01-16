@@ -814,11 +814,16 @@ extern long if_profiling;
 extern long prof_flag;
 
 void setProfileBit(void *place_holder) {
+  long unhandled = 0;
 #ifdef MULTI_THREAD
   th_context *th = find_context(xsb_thread_self());
 #endif
   while (TRUE) {
     if (if_profiling) {
+      if (asynint_val & PROFINT_MARK) {
+	unhandled++;
+	if (!(unhandled % 10)) printf("Unhandled profile ints: %ld\n",unhandled);
+      }
       asynint_val |= PROFINT_MARK;
     }
 #ifdef WIN_NT
@@ -836,7 +841,6 @@ xsbBool startProfileThread()
   if (!if_profiling) {
     Thread = (HANDLE)_beginthread(setProfileBit,0,NULL);
     SetThreadPriority(Thread,THREAD_PRIORITY_HIGHEST/*_ABOVE_NORMAL*/);
-    if_profiling = 1;
   }
 #elif defined(SOLARIS)
   printf("Profiling not supported\n");

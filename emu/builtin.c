@@ -147,6 +147,7 @@ extern xsbBool startInterruptThread(SOCKET intSocket);
 extern TIFptr get_tip(CTXTdeclc Psc);
 
 long if_profiling = 0;
+long profile_thread_started = 0;
 static long prof_unk_count = 0;
 static long prof_total = 0;
 
@@ -2493,9 +2494,12 @@ case WRITE_OUT_PROFILE:
       if (xsb_profiling_enabled) {
 	int call_type = ptoc_int(CTXTc 1);
 	if (call_type == 1) { /* turn profiling on */
-	  if (!startProfileThread()) {
-	    xsb_abort("[XSB_PROFILE] Profiling thread does not start");
+	  if (!profile_thread_started) {
+	    if (!startProfileThread()) {
+	      xsb_abort("[XSB_PROFILE] Profiling thread does not start");
+	    } else profile_thread_started = TRUE;
 	  }
+	  if_profiling = 1;
 	} else if (call_type == 2) {
 	  if_profiling = 0;
 	} else if (call_type == 3) {
