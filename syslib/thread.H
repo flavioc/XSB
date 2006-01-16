@@ -29,12 +29,14 @@
 :- import writeln/2 from standard.
 :- import catch/3 from standard.
 
-:- import default_error_handler/1 from error_handler.
-:- import append/3 from basics.
-:- import assert/1, (dynamic)/1 from assert.
-:- import (table)/1, functor/3, (=..)/2, name/2 from standard.
-:- import abolish_table_call/1, abolish_table_pred/1, tnot/1 from tables.
 :- import abolish/1 from assert.
+:- import assert/1, (dynamic)/1 from assert.
+:- import append/3 from basics.
+ :- import check_callable/3, check_integer/3, check_var/3,
+          default_error_handler/1,domain_error/5,
+          instantiation_error/3 from error_handler.
+ :- import (table)/1, functor/3, integer/1, (=..)/2, name/2 from standard.
+:- import abolish_table_call/1, abolish_table_pred/1, tnot/1 from tables.
 
 :-export xsb_thread_create/3, xsb_thread_exit/2, xsb_thread_join/3,
 	xsb_thread_detach/2, xsb_thread_self/2.
@@ -48,6 +50,8 @@
 :- export xsb_user_mutex_lock/1, xsb_user_mutex_unlock/1.
 
 :- export xsb_thread_yield/0, xsb_thread_yield/1.
+
+ :- export xsb_show_mutexes/1.
 
 /* Shortcuts */
 

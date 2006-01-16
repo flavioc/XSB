@@ -276,7 +276,14 @@ check_integer(Term,Predicate,Arg) :-
 check_nonneg_integer(Term,Predicate,Arg) :- 
 	(integer(Term), Term >= 0 -> 
 	    true
-	 ;  type_error(nonNegativeInteger,Term,Predicate,Arg) ).
+	 ;  domain_error(nonNegativeInteger,Term,Predicate,Arg) ).
+
+%-------------
+check_callable(Term,Predicate,Arg):- 
+	(callable(Term) -> 
+	    true
+	 ;  type_error(callable_term,Term,Predicate,Arg) ).
+
 
 %-------------
 % Checks that a term is ground
@@ -306,7 +313,7 @@ check_nonvar_list(Term,Predicate,Arg):-
 	check_nonvar(Term,Predicate,Arg),
 	(check_nonvar_list1(Term,Predicate,Arg) -> 
 	    true
-	 ;  type_error(list,Term,Predicate,Arg)).
+	 ;  domain_error(list,Term,Predicate,Arg)).
 	    
 check_nonvar_list1([],_Predicate,_Arg).
 check_nonvar_list1([H|T],Predicate,Arg):- 
@@ -322,7 +329,7 @@ check_atom_list(Term,Predicate,Arg):-
 	(( atom(Term) 
 	 ; check_atom_list1(Term,Predicate,Arg)) -> 
 	    true
-	 ;  type_error(list_of_atom,Term,Predicate,Arg)).
+	 ;  domain_error(list_of_atom,Term,Predicate,Arg)).
 	    
 check_atom_list1([],_Predicate,_Arg).
 check_atom_list1([H|T],Predicate,Arg):- 

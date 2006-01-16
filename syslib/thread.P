@@ -29,18 +29,58 @@
 
 :- import (:-)/2 from usermod.
 
+/* ==================================================================  */
+/* User-level API */
+
+xsb_thread_create( Goal, ThreadId ) :- 
+	check_callable(Goal,xsb_thread_create/2,1),
+	check_var(ThreadId,xsb_thread_create/2,2),
+	xsb_thread_create( Goal, ThreadId, _ ).
+
+xsb_thread_exit( ExitCode ) 	    :- 
+	check_integer(ExitCode,xsb_thread_exit/1,1),
+	xsb_thread_exit( ExitCode, _ ).
+
+/* Need to check errorval on return, as well as checking input state
+   of exitcode */
+xsb_thread_join(Input, ExitCode) :-
+	check_var(ExitCode,xsb_thread_join/2,2),
+	(var(Input) -> 
+	    instantiation_error(xsb_thread_join/1,1,ground)
+	;  (integer(Input) -> 
+	       thread_request( XSB_THREAD_JOIN,Input,ExitCode,_,ErrorVal )
+	    ; (Input = [Id|Rest] -> 
+	         ExitCode = [Exit|ERest],
+	         thread_request(XSB_THREAD_JOIN, Id,Exit,_,ErrorVal ),
+	         xsb_thread_join(Rest, ERest) 
+	       ; (Input = [] -> 
+		    ExitCode = []
+		  ; domain_error(listof_threadid,Input,xsb_thread_join/1,1,'')
+	      ) ) ) ).
+
+xsb_thread_self( ThreadId )	    :- 
+	check_var(ThreadId,xsb_thread_self/1,1),
+	xsb_thread_self( ThreadId, _ ).
+
+/* ==================================================================  */
+/* Lower level: intended for systems programmers, but not end-users.   */
 xsb_thread_create( Goal, ThreadId, ErrorVal ) :-
 	thread_request( XSB_THREAD_CREATE, Goal, ThreadId, _, ErrorVal ).
 xsb_thread_exit( ExitCode, ErrorVal ) :-
 	thread_request( XSB_THREAD_EXIT, ExitCode, _, _, ErrorVal ).
+
 xsb_thread_join( ThreadId, ExitCode, ErrorVal ) :-
 	thread_request( XSB_THREAD_JOIN, ThreadId, ExitCode, _, ErrorVal ).
+
 xsb_thread_detach( ThreadId, ErrorVal ) :-
 	thread_request( XSB_THREAD_DETACH, ThreadId, _, _, ErrorVal ).
 xsb_thread_self( ThreadId, ErrorVal ) :-
 	thread_request( XSB_THREAD_SELF, ThreadId, _, _, ErrorVal ).
 xsb_thread_yield(ErrorVal) :-
 	thread_request( XSB_THREAD_YIELD, _,_,_, ErrorVal).
+
+xsb_show_mutexes(ErrorVal):- 
+	thread_request( XSB_SHOW_MUTEXES, _,_,_, ErrorVal).
 
 xsb_mutex_init_np0( MutexId, KindNP, ErrorVal ) :-
 	thread_request( XSB_MUTEX_INIT, KindNP, MutexId, _, ErrorVal ).
@@ -69,22 +109,17 @@ xsb_sys_mutex_unlock( Id, ErrorVal ) :-
 	thread_request( XSB_SYS_MUTEX_UNLOCK, Id, _, _, ErrorVal ).
 
 
+/* ==================================================================  */
 /* Shortcuts */
 
 xsb_thread_create( Goal )	    :- xsb_thread_create( Goal, _, _ ).
-xsb_thread_create( Goal, ThreadId ) :- xsb_thread_create( Goal, ThreadId, _ ).
 
-xsb_thread_exit( ExitCode ) 	    :- xsb_thread_exit( ExitCode, _ ).
 xsb_thread_exit 		    :- xsb_thread_exit( 0, _ ).
 
-xsb_thread_join( ThreadId, ExitCode ) :-
-	xsb_thread_join( ThreadId, ExitCode, _ ).
 xsb_thread_join( ThreadId )	    :- xsb_thread_join( ThreadId, _, _ ).
 
 
 xsb_thread_detach( ThreadId )	    :- xsb_thread_detach( ThreadId, _ ).
-
-xsb_thread_self( ThreadId )	    :- xsb_thread_self( ThreadId, _ ).
 
 xsb_mutex_init( MutexId )	:- xsb_mutex_init( MutexId, _ ).
 xsb_mutex_init_np( Type, MutexId ) :-
@@ -120,9 +155,7 @@ init_multi_threading:-
 	term_psc('_$thread_run'(_), PSC), 
 	stat_set_flag(THREAD_RUN, PSC).
 
-
 /* System provided mutexes for users */
-
 user_mutex( N, N1 ) :-
 	N1 is N + MUTEX_USER1 - 1,
 	N1 >= MUTEX_USER1,
