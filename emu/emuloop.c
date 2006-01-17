@@ -651,7 +651,7 @@ contcase:     /* the main loop */
 /*      Op2(get_xxxn); */
     op2 = *(pw)(lpcreg+sizeof(Cell));
     ADVANCE_PC(size_xxxX);
-    bld_int_tagged((CPtr)op1, op2);
+    bld_oint((CPtr)op1, op2);
   XSB_End_Instr()
 
   XSB_Start_Instr(putfloat,_putfloat) /* PPR-F */
@@ -834,7 +834,7 @@ contcase:     /* the main loop */
     Op2(get_xxxn); /* num in op2 */
     ADVANCE_PC(size_xxxX);
     if (flag) {	/* if (flag == WRITE) */
-      new_heap_num(hreg, (Integer)op2);
+      new_heap_num(hreg, makeint(op2));
     }
     else {  /* op2 set */
       op1 = *(sreg++);
@@ -861,7 +861,7 @@ contcase:     /* the main loop */
     Def1op
     Op1(get_xxxn);  /* num to op2 */
     ADVANCE_PC(size_xxxX);
-    new_heap_num(hreg, (Integer)op1);
+    new_heap_num(hreg, (Integer)makeint(op1));
   XSB_End_Instr()
 
   XSB_Start_Instr(bldfloat,_bldfloat) /* PPP-F */
@@ -1480,15 +1480,15 @@ contcase:     /* the main loop */
     ADVANCE_PC(size_xxxXX);
     XSB_Deref(op1); 
     if (isnumber(op1)) {
-      if (op1 == op2)
+      if (int_val(op1) == op2)
 	lpcreg = (byte *)op3;
     }
     else if (isboxedinteger(op1)) {
-       if (oint_val(op1) == int_val(op2))
+       if (oint_val(op1) == op2)
           lpcreg = (byte *)op3;
     }	  
     else if (isboxedfloat(op1)) {
-      if (ofloat_val(op1) == (double)int_val(op2))
+      if (ofloat_val(op1) == (double)op2)
 	lpcreg = (byte *) op3;
     }
     else {
@@ -1504,15 +1504,15 @@ contcase:     /* the main loop */
     ADVANCE_PC(size_xxxXX);
     XSB_Deref(op1); 
     if (isnumber(op1)) {
-      if (op1 != op2)
+      if (int_val(op1) != op2)
 	lpcreg = (byte *) op3;
     }
     else if (isboxedinteger(op1)) {
-       if (oint_val(op1) != int_val(op2))
+       if (oint_val(op1) != op2)
           lpcreg = (byte *)op3;
     }	  
     else if (isboxedfloat(op1)) {
-      if (ofloat_val(op1) != (double)int_val(op2))
+      if (ofloat_val(op1) != (double)op2)
 	lpcreg = (byte *) op3;
     }
     else {
@@ -2129,7 +2129,7 @@ contcase:     /* the main loop */
     ADVANCE_PC(size_xxx);
     op1 = *(op3);
     XSB_Deref(op1);
-    if (isinteger(op1)) { bld_int(op3, ~(int_val(op1))); }
+    if (isinteger(op1)) { bld_oint(op3, ~(int_val(op1))); }
     else if (isboxedinteger(op1)) { 
       Integer temp = ~(boxedint_val(op1));
       bld_oint(op3, temp); 

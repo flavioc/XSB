@@ -417,7 +417,7 @@ static int load_text(FILE *fd, int seg_num, int text_bytes, int *current_tab)
 	inst_addr ++;
 	break;
       case B:                       // boxed integer
-	get_obj_word_bbsig(inst_addr);
+	get_obj_word_bbsig_notag(inst_addr);
 	inst_addr ++;
 	break;
       case I:                      // index of sob
