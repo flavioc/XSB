@@ -69,7 +69,18 @@ flt_args_head([Arg|Args], [NArg|NArgs], OldGoal, NewGoal, Level) :-
         flt_arg_head(Arg, NArg, MedGoal, NewGoal, Level).
 
 flt_arg_head(varocc(Var), varocc(Var), OldGoal, OldGoal, _).
-flt_arg_head(integer(Int), integer(Int), OldGoal, OldGoal, _).
+%%flt_arg_head(integer(Int), integer(Int), OldGoal, OldGoal, _).
+flt_arg_head(integer(Int), New, OldGoal, NewGoal, Level) :-
+	level_allowed(Allowed),
+	(Level =< Allowed
+	 ->	New = integer(Int), NewGoal = OldGoal
+	 ;	functor(IntBox,'$BOX$',3),
+		(Int @= IntBox
+		 ->	gennum(Vid), New = varocc(Vid),
+			NewGoal = and(inlinegoal('=',2,[New,integer(Int)]),OldGoal)
+		 ;	New = integer(Int), NewGoal = OldGoal
+		)
+	).	
 flt_arg_head(real(Real), New, OldGoal, NewGoal, Level) :-
 	level_allowed(Allowed),
 	(Level =< Allowed
@@ -177,7 +188,20 @@ flt_args([Arg|Args], [NArg|NArgs], OldGoal, NewGoal, Level, InIs) :-
 /*======================================================================*/
 
 flt_arg(varocc(Var), varocc(Var), OldGoal, OldGoal, _, _InIs).
-flt_arg(integer(Int), integer(Int), OldGoal, OldGoal, _, _InIs).
+%%flt_arg(integer(Int), integer(Int), OldGoal, OldGoal, _Level, _InIs).
+flt_arg(integer(Int), New, OldGoal, NewGoal, Level, InIs) :-
+	level_allowed(Allowed),
+	(Level =< Allowed
+	 ->	New = integer(Int), NewGoal = OldGoal
+	 ; InIs =:= 1
+	 ->	New = integer(Int), NewGoal = OldGoal
+	 ;	functor(IntBox,'$BOX$',3),
+		(Int @= IntBox
+		 ->	gennum(Vid), New = varocc(Vid),
+			NewGoal = and(inlinegoal('=',2,[New,integer(Int)]),OldGoal)
+		 ;	New = integer(Int), NewGoal = OldGoal
+		)
+	).
 flt_arg(real(Real), New, OldGoal, NewGoal, Level, InIs) :-
 	level_allowed(Allowed),
 	(Level =< Allowed
