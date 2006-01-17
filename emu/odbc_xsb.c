@@ -927,12 +927,15 @@ void Parse(CTXTdecl)
 int j;
 struct Cursor *cur = (struct Cursor *)ptoc_int(CTXTc 2);
 RETCODE rc;
-SQLINTEGER len = 0; 
+SQLINTEGER *len;
+  len = (SQLINTEGER *)calloc(cur->NumBindVars,sizeof(SQLINTEGER));
+  for (j = 0; j < cur->NumBindVars; j++) len[j] = 0; 
   if (cur->Status == 2) { /* reusing opened cursor*/
     rc = SQLFreeStmt(cur->hstmt,SQL_CLOSE);
     if ((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO)) {
       ctop_int(CTXTc 3, PrintErrorMsg(cur));
       SetCursorClose(cur);
+      free(len);
       return;
     }
     /* reset just char and null vars, since they store addr of chars*/
@@ -941,11 +944,11 @@ SQLINTEGER len = 0;
 		{
 		case 2:
 #ifdef DARWIN
-		  len = strlen((char *)cur->BindList[j]) + 1; // DARWIN wants +1 ?
+		  len[j] = strlen((char *)cur->BindList[j]) + 1; // DARWIN wants +1 ?
 #else
-		  len = strlen((char *)cur->BindList[j]);
+		  len[j] = strlen((char *)cur->BindList[j]);
 #endif
-		  rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,(char *) cur->BindList[j], len, &len);
+		  rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,(char *) cur->BindList[j], len[j], &len[j]);
 			break;
 		case 3:
 			rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,NULL, 0, &SQL_NULL_DATAval);
@@ -957,6 +960,7 @@ SQLINTEGER len = 0;
 		{
 		ctop_int(CTXTc 3,PrintErrorMsg(cur));
 		SetCursorClose(cur);
+		free(len);
 		return;
 		}
 
@@ -974,11 +978,11 @@ SQLINTEGER len = 0;
 		case 2:
 			/* we're sloppy here.  it's ok for us to use the default values*/
 #ifdef DARWIN
-		  len = strlen((char *)cur->BindList[j]) + 1; // DARWIN wants +1 ?
+		  len[j] = strlen((char *)cur->BindList[j]) + 1; // DARWIN wants +1 ?
 #else
-		  len = strlen((char *)cur->BindList[j]);
+		  len[j] = strlen((char *)cur->BindList[j]);
 #endif
-		  rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,(char *)cur->BindList[j], len, &len);
+		  rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,(char *)cur->BindList[j], len[j], &len[j]);
 		  break;
 		case 3:
 			rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,NULL, 0, &SQL_NULL_DATAval);
@@ -991,6 +995,7 @@ SQLINTEGER len = 0;
 		{
 		ctop_int(CTXTc 3,PrintErrorMsg(cur));
 		SetCursorClose(cur);
+		free(len);
 		return;
 		}
     }
@@ -999,9 +1004,11 @@ SQLINTEGER len = 0;
   if (SQLExecute(cur->hstmt) != SQL_SUCCESS) {
     ctop_int(CTXTc 3,PrintErrorMsg(cur));
     SetCursorClose(cur);
+    free(len);
     return;
   }
   ctop_int(CTXTc 3,0);
+  free(len);
   return;
 }
 
