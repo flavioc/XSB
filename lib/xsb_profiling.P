@@ -32,7 +32,7 @@ profile_call(Goal) :-
 	%% test xsb_configuration(xsb-profiling) so works when running with nonprof xsb
 	cputime(T0),
 	(prof_cmd(1)		% start profiling
-	 ->	call(Goal),
+	 ->	(call(Goal) ; prof_cmd(2),fail),
 		prof_cmd(2),	% stop profiling
 		cputime(T1),
 		Time is T1-T0,
