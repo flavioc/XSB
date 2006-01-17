@@ -940,8 +940,12 @@ SQLINTEGER len = 0;
       switch (cur->BindTypes[j])
 		{
 		case 2:
-			len = strlen((char *)cur->BindList[j]) + 1;
-			rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,(char *) cur->BindList[j], len, &len);
+#ifdef DARWIN
+		  len = strlen((char *)cur->BindList[j]) + 1; // DARWIN wants +1 ?
+#else
+		  len = strlen((char *)cur->BindList[j]);
+#endif
+		  rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,(char *) cur->BindList[j], len, &len);
 			break;
 		case 3:
 			rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,NULL, 0, &SQL_NULL_DATAval);
@@ -969,9 +973,13 @@ SQLINTEGER len = 0;
 			break;
 		case 2:
 			/* we're sloppy here.  it's ok for us to use the default values*/
-			len = strlen((char *)cur->BindList[j]) + 1;		
-			rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,(char *)cur->BindList[j], len, &len);
-			break;
+#ifdef DARWIN
+		  len = strlen((char *)cur->BindList[j]) + 1; // DARWIN wants +1 ?
+#else
+		  len = strlen((char *)cur->BindList[j]);
+#endif
+		  rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,(char *)cur->BindList[j], len, &len);
+		  break;
 		case 3:
 			rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,NULL, 0, &SQL_NULL_DATAval);
 			break;
