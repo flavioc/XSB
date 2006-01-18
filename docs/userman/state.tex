@@ -72,8 +72,8 @@ mean the following:
 %
 {\tt current\_prolog\_flag/2} allows the user to examine both dynamic
 aspects of XSB along with certain non-changable ISO
-flags~\footnote{The ISO flags {\tt integer\_rounding\_function}, {\tt
-char\_conversion}, {\tt double\_quotes}, and {\tt unknown} are not yet
+flags~\footnote{The ISO flags {\tt
+char\_conversion} and {\tt double\_quotes} are not yet
 implemented.}.  This predicate is based upon the predicate {\tt
 xsb\_flag/2}.
 
@@ -82,6 +82,25 @@ xsb\_flag/2}.
 \item 	{\tt Flag\_Name} is neither a variable nor an atom.
 \bi
 \item 	{\tt domain\_error(atom\_or\_variable,Flag\_Name)}
+\ei
+\ei
+
+\ournewitem{set\_prolog\_flag(?Flag\_Name, ?Value)}{ISO}
+\index{\texttt{set\_prolog\_flag/2}}
+%
+{\tt set\_prolog\_flag/2} allows the user to change settable prolog
+flags.  Currently the only settable flag is the {\tt unknown} flag.
+Setting the flag {\tt unknown} to {\tt fail} results in calls to
+undefined predicates to quietly fail.  Setting it to {\tt warning}
+causes calls to undefined predicates to generate a warning and then
+fail.  Setting it to {\tt error} (the default) causes calls to
+undefined predicates to throw an error.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Flag\_Name} is neither a variable nor an atom.
+\bi
+\item 	{\tt domain\_error(settable\_flag,Flag\_Name)}
 \ei
 \ei
 
