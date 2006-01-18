@@ -85,6 +85,7 @@ struct Cursor {
   int NumBindVars;      /* number of bind values*/
   UCHAR **BindList;     /* pointer to array of pointers to the bind values*/
   int *BindTypes;       /* types of the bind values, 0->int, 1->float, 2->char, 3->nullvalue(anytype)*/
+  SQLINTEGER *BindLens; /* lengths of the bind values that are strings */
   SWORD NumCols;        /* number of columns selected*/
   SWORD *ColTypes;      /* pointer to array of column types*/
   UDWORD *ColLen;       /* pointer to array of max column lengths*/
@@ -412,6 +413,7 @@ void SetCursorClose(struct Cursor *cur)
       if (cur->BindTypes[j] < 2) free((void *)cur->BindList[j]);
     free(cur->BindList);
     free(cur->BindTypes);
+    free(cur->BindLens);
   }
 
   if (cur->NumCols) {                  /* free the resulting row set*/
@@ -750,6 +752,10 @@ void SetBindVarNum(CTXTdecl)
   cur->BindTypes = malloc(sizeof(int) * NumBindVars);
   if (!cur->BindTypes)
     xsb_abort("[ODBC] Not enough memory for cur->BindTypes!");
+  cur->BindLens = malloc(sizeof(SQLINTEGER) * NumBindVars);
+  if (!cur->BindLens)
+    xsb_abort("[ODBC] Not enough memory for cur->BindLens!");
+
 }
 
 DllExport void call_conv write_canonical_term(CTXTdeclc Cell prologterm, int letterflag);
@@ -927,28 +933,21 @@ void Parse(CTXTdecl)
 int j;
 struct Cursor *cur = (struct Cursor *)ptoc_int(CTXTc 2);
 RETCODE rc;
-SQLINTEGER *len;
-  len = (SQLINTEGER *)calloc(cur->NumBindVars,sizeof(SQLINTEGER));
-  for (j = 0; j < cur->NumBindVars; j++) len[j] = 0; 
   if (cur->Status == 2) { /* reusing opened cursor*/
     rc = SQLFreeStmt(cur->hstmt,SQL_CLOSE);
     if ((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO)) {
       ctop_int(CTXTc 3, PrintErrorMsg(cur));
       SetCursorClose(cur);
-      free(len);
       return;
     }
-    /* reset just char and null vars, since they store addr of chars*/
+    /* reset just char and null vars, since they store addr of chars, and set lengths*/
     for (j = 0; j < cur->NumBindVars; j++) {
+      cur->BindLens[j] = 0;
       switch (cur->BindTypes[j])
 		{
 		case 2:
-#ifdef DARWIN
-		  len[j] = strlen((char *)cur->BindList[j]) + 1; // DARWIN wants +1 ?
-#else
-		  len[j] = strlen((char *)cur->BindList[j]);
-#endif
-		  rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,(char *) cur->BindList[j], len[j], &len[j]);
+		  cur->BindLens[j] = strlen((char *)cur->BindList[j]);
+		  rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,(char *) cur->BindList[j], cur->BindLens[j], &cur->BindLens[j]);
 			break;
 		case 3:
 			rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,NULL, 0, &SQL_NULL_DATAval);
@@ -960,7 +959,6 @@ SQLINTEGER *len;
 		{
 		ctop_int(CTXTc 3,PrintErrorMsg(cur));
 		SetCursorClose(cur);
-		free(len);
 		return;
 		}
 
@@ -977,12 +975,8 @@ SQLINTEGER *len;
 			break;
 		case 2:
 			/* we're sloppy here.  it's ok for us to use the default values*/
-#ifdef DARWIN
-		  len[j] = strlen((char *)cur->BindList[j]) + 1; // DARWIN wants +1 ?
-#else
-		  len[j] = strlen((char *)cur->BindList[j]);
-#endif
-		  rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,(char *)cur->BindList[j], len[j], &len[j]);
+		  cur->BindLens[j] = strlen((char *)cur->BindList[j]);
+		  rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,(char *)cur->BindList[j], cur->BindLens[j], &cur->BindLens[j]);
 		  break;
 		case 3:
 			rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,NULL, 0, &SQL_NULL_DATAval);
@@ -995,7 +989,6 @@ SQLINTEGER *len;
 		{
 		ctop_int(CTXTc 3,PrintErrorMsg(cur));
 		SetCursorClose(cur);
-		free(len);
 		return;
 		}
     }
@@ -1004,11 +997,9 @@ SQLINTEGER *len;
   if (SQLExecute(cur->hstmt) != SQL_SUCCESS) {
     ctop_int(CTXTc 3,PrintErrorMsg(cur));
     SetCursorClose(cur);
-    free(len);
     return;
   }
   ctop_int(CTXTc 3,0);
-  free(len);
   return;
 }
 
