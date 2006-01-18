@@ -165,34 +165,16 @@ unsigned long dec[8] = {0xffffffff,0xffffffff,0xffffffff,0xffffffff,
   XSB_Deref(OP1);      							\
   if (isref(OP1)) {							\
     /* op1 is FREE */							\
-    bind_oint((CPtr)(OP1), OP2);                 			\
+    bind_oint((CPtr)(OP1), (Integer)OP2);                 			\
   }									\
   else if (isinteger(OP1)) {						\
-    if (oint_val(OP1) == OP2) {XSB_Next_Instr();} else Fail1;	        \
+    if (oint_val(OP1) == (Integer)OP2) {XSB_Next_Instr();} else Fail1;	        \
   }									\
   else if (isattv(OP1)) {						\
     xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_num, interrupt needed\n"));	\
     /* add_interrupt(OP1, OP2); */				        \
     add_interrupt(CTXTc cell(((CPtr)dec_addr(op1) + 1)),makeint(OP2));  \
-    bind_oint((CPtr)dec_addr(op1), OP2);                 		\
-  }									\
-  else Fail1;	/* op1 is STRING, FLOAT, STRUCT, or LIST */
-
-#define nunify_with_num_okterm(OP1,OP2)					\
-  /* op1 is general, op2 has number (untagged) */			\
-  XSB_Deref(OP1);      							\
-  if (isref(OP1)) {							\
-    /* op1 is FREE */							\
-    bind_int_tagged((CPtr)(OP1), OP2);                 			\
-  }									\
-  else if (isinteger(OP1)) {						\
-    if (OP1 == OP2) {XSB_Next_Instr();} else Fail1;	                \
-  }									\
-  else if (isattv(OP1)) {						\
-    xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_num, interrupt needed\n"));	\
-    /* add_interrupt(OP1, OP2); */				        \
-    add_interrupt(CTXTc cell(((CPtr)dec_addr(op1) + 1)),OP2);  		\
-    bind_int_tagged((CPtr)dec_addr(op1), OP2);                 		\
+    bind_oint((CPtr)dec_addr(op1), (Integer)OP2);                 		\
   }									\
   else Fail1;	/* op1 is STRING, FLOAT, STRUCT, or LIST */
 

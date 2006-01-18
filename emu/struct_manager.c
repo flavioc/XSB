@@ -111,10 +111,10 @@ void smPrintBlocks(Structure_Manager *pSM) {
 
   void *pCurBlock, *pNextBlock;
 
-  printf("blocks for SM %x size %d\n",pSM,SM_NewBlockSize(*pSM));
+  printf("blocks for SM %p size %d\n",pSM,SM_NewBlockSize(*pSM));
   pCurBlock = SM_CurBlock(*pSM);
   while ( IsNonNULL(pCurBlock) ) {
-    printf("Block %x\n",pCurBlock);
+    printf("Block %p\n",pCurBlock);
     pNextBlock = SMBlk_NextBlock(pCurBlock);
     //    mem_dealloc(pCurBlock,SM_NewBlockSize(*pSM),TABLE_SPACE);
     pCurBlock = pNextBlock;
