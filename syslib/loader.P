@@ -285,9 +285,9 @@ load_pred1(PSC) :-
 	).
 
 handle_undefined_pred(ModName,Name,Arity) :-
-	(current_prolog_flag(undefined_predicate,fail)
+	(current_prolog_flag(unknown,fail)
 	 ->	fail
-	 ;	current_prolog_flag(undefined_predicate,warning)
+	 ;	current_prolog_flag(unknown,warning)
 	 ->	warning(['Undefined predicate: ',ModName,':',Name,'/',Arity,': failing']),
 		fail
 	 ;	xsb_sys_mutex_unlock( MUTEX_LOAD_UNDEF ),

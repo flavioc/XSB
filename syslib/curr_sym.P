@@ -569,13 +569,13 @@ current_prolog_flag(Flag,Value):-
 	  ; domain_error(atom_or_variable,Flag,current_prolog_flag/2,1) ),
 	  (iso_flag(Flag,Value) ; xsb_flag(Flag,Value)).
 
-settable_flag(undefined_predicate).
-settable_flag_value(undefined_predicate,error).
-settable_flag_value(undefined_predicate,fail).
-settable_flag_value(undefined_predicate,warning).
+settable_flag(unknown).
+settable_flag_value(unknown,error).
+settable_flag_value(unknown,fail).
+settable_flag_value(unknown,warning).
 
 :- dynamic settable_prolog_flag/2.
-:- asserta(settable_prolog_flag(undefined_predicate,error)).
+:- asserta(settable_prolog_flag(unknown,error)).
 
 set_prolog_flag(Flag,Value) :-
 	(atom(Flag)
@@ -607,7 +607,7 @@ iso_flag(min_integer,Minint) :- iso_flag(max_integer,Maxint), Minint is -Maxint 
 iso_flag(max_arity,255).
 iso_flag(integer_rounding_function,toward_zero).
 iso_flag(debug, Debug) :- xsb_flag(debugging, Debug).
-iso_flag(undefined_predicate, State) :- settable_prolog_flag(undefined_predicate, State).
+iso_flag(unknown, State) :- settable_prolog_flag(unknown, State).
 
 % TLS: need to understand ISO char conversion
 %iso_flag(char_conversion,{on,off})
