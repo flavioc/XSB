@@ -569,14 +569,46 @@ current_prolog_flag(Flag,Value):-
 	  ; domain_error(atom_or_variable,Flag,current_prolog_flag/2,1) ),
 	  (iso_flag(Flag,Value) ; xsb_flag(Flag,Value)).
 
+settable_flag(undefined_predicate).
+settable_flag_value(undefined_predicate,error).
+settable_flag_value(undefined_predicate,fail).
+settable_flag_value(undefined_predicate,warning).
+
+:- dynamic settable_prolog_flag/2.
+:- asserta(settable_prolog_flag(undefined_predicate,error)).
+
+set_prolog_flag(Flag,Value) :-
+	(atom(Flag)
+	 ->	true
+	 ;	instantiation_error(set_prolog_flag/2,1,bound)
+	),
+	(settable_flag(Flag)
+	 ->	(atomic(Value)
+		 ->	true
+		 ;	instantiation_error(set_prolog_flag/2,2,bound)
+		),
+		(settable_flag_value(Flag,Value)
+		 ->	retractall(settable_prolog_flag(Flag,_)),
+			asserta(settable_prolog_flag(Flag,Value))
+		 ;	findall(Val,settable_flag_value(Flag,Val),Vals),
+			make_set_tail(Vals,SetVals),
+			domain_error(['{'|SetVals],Value,set_prolog_flag/2,2)
+		)				
+	 ;	domain_error(settable_flag,Flag,set_prolog_flag/2,1)
+	).
+
+make_set_tail([Val],[Val,'}']) :- !.
+make_set_tail([Val|Vals],[Val,','|SetTail]) :- make_set_tail(Vals,SetTail).
+
 %% fix for 64-bit compilation?
 iso_flag(bounded,true).
 iso_flag(max_integer,Maxint) :- Maxint is 14 * 16'08000000 + 16'0fffffff.
 iso_flag(min_integer,Minint) :- iso_flag(max_integer,Maxint), Minint is -Maxint - 1.
+iso_flag(max_arity,255).
+iso_flag(integer_rounding_function,toward_zero).
 iso_flag(debug, Debug) :- xsb_flag(debugging, Debug).
+iso_flag(undefined_predicate, State) :- settable_prolog_flag(undefined_predicate, State).
 
-% TLS: need to figure this out.
-%iso_flag(integer_rounding_function,{down,towards_zero}).   
 % TLS: need to understand ISO char conversion
 %iso_flag(char_conversion,{on,off})
 % TLS: we only do codes...

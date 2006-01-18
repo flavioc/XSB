@@ -102,6 +102,7 @@ standard_symbol(current_output, 1, curr_sym).                 % ISO
 standard_symbol(current_predicate, 1, curr_sym).
 standard_symbol(current_predicate, 2, curr_sym).
 standard_symbol(current_prolog_flag, 2, curr_sym).	% ISO
+standard_symbol(set_prolog_flag, 2, curr_sym).	% ISO
 
 standard_symbol(current_input_port, 1, curr_sym).
 standard_symbol(current_output_port, 1, curr_sym).

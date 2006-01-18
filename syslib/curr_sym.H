@@ -32,7 +32,8 @@
 	current_predicate/1, current_predicate/2,
             current_prolog_flag/2,
 	predicate_property/2, module_property/2, 
-	xsb_flag/2, set_xsb_flag/2, garbage_collection/1, hilog_symbol/1.
+        xsb_flag/2, set_xsb_flag/2, garbage_collection/1, hilog_symbol/1,
+        set_prolog_flag/2.
 
 :- export current_input_port/1, current_output_port/1.
 
@@ -40,7 +41,7 @@
 :- import '_$op'/3, '_$trie_asserted'/1, '_$index'/3 from file_op.
 :- import '_$hilog_symbol'/1 from hilogsym.
 :- import libpath/1 from loader.
-:- import functor/3, warning/1, abort/1, number/1,integer/1,atom/1 from standard.
+:- import functor/3, warning/1, abort/1, number/1,integer/1,atom/1,atomic/1 from standard.
 :- import standard_symbol/3 from std_xsb.
 :- import psc_name/2, psc_arity/2, psc_prop/2, psc_type/2, term_psc/2,
 	  term_type/2, stat_flag/2, stat_set_flag/2, machine_file_exists/1, 
@@ -51,6 +52,8 @@
 :- import xsb_configuration/2 from xsb_configuration.
 :- import fmt_write_string/3 from file_io.
 :- import check_nonvar/3, check_number/3,domain_error/5,type_error/4,
-                domain_error/4 from error_handler.
+          instantiation_error/3, domain_error/4 from error_handler.
+:- import retractall/1, (dynamic)/1, asserta/1 from assert.
+:- import findall/3 from setof.
 
 /* ----------------- end of file current_sym.H -------------------- */

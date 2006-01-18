@@ -278,16 +278,22 @@ load_pred1(PSC) :-
 		%% '_$cutto'(B)
 		!
 		;
-		xsb_sys_mutex_unlock( MUTEX_LOAD_UNDEF ),
-		xsb_backtrace(BT),
-		throw(error(existence_error(procedure,ModName:Name/Arity),[],BT))
+	        handle_undefined_pred(ModName,Name,Arity)
 	    )
 	;
-	    xsb_sys_mutex_unlock( MUTEX_LOAD_UNDEF ),
-	    xsb_backtrace(BT),
-	    throw(error(existence_error(procedure,usermod:Name/Arity),[],BT))
+	    handle_undefined_pred(usermod,Name,Arity)
 	).
 
+handle_undefined_pred(ModName,Name,Arity) :-
+	(current_prolog_flag(undefined_predicate,fail)
+	 ->	fail
+	 ;	current_prolog_flag(undefined_predicate,warning)
+	 ->	warning(['Undefined predicate: ',ModName,':',Name,'/',Arity,': failing']),
+		fail
+	 ;	xsb_sys_mutex_unlock( MUTEX_LOAD_UNDEF ),
+		xsb_backtrace(BT),
+		throw(error(existence_error(procedure,ModName:Name/Arity),[],BT))
+	).
 
 /*
 %% Invoke undefined pred handlers until one succeeds.
