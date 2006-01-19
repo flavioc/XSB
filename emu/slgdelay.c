@@ -422,14 +422,14 @@ static void record_de_usage(DL dl)
 /*
  * For predicates using call variance, do_delay_stuff() is called in
  * table_answer_search(), immediately after variant_answer_search(),
- * (conditional answer handling is not implemented for predicates
- * using call subsumption), regardless of whether the answer is new.  
+ * regardless of whether the answer is new (conditional answer
+ * handling is not implemented for predicates using call subsumption),
  * Here, `as_leaf' is the leaf node of the answer trie (the
  * return value of variant_answer_search), `subgoal' is the subgoal
  * frame of the current call, and `sf_exists' tells whether the
  * non-conditional part of this answer is new or not. 
  *
- * At this time, `delayreg' is the delay register of the _current_
+ * At call time, `delayreg' is the delay register of the _current_
  * execution state.  If delayreg is not NULL, then it means this
  * answer has some delay elements and is conditional.  (If non-NULL,
  * delayreg points to a delay list of delay elements on the heap).
@@ -437,7 +437,8 @@ static void record_de_usage(DL dl)
  * checked to ensure none of their delay elements is non-satisfiable
  * (done in new_answer_dealloc).  At the same time, do_delay_stuff()
  * will recheck the delay elements to remove any that have become
- * unconditional.  Thus, two traversals of the delay list are required.
+ * unconditional.  Thus, two traversals of the delay list are
+ * required.
  *
  * Function intern_delay_list() will be called to save the delay list
  * information in the Delay Info node of current call's answer leaf.  It
@@ -448,6 +449,17 @@ static void record_de_usage(DL dl)
  * When the delay trie has been created, and a pointer in the delay
  * element (saved in the answer trie) has been set, we can say the
  * conditional answer is now tabled.
+ * 
+ * TLS: moved mutexes into conditionals.  This avoids locking the
+ * delay mutex when adding an answer for a LRD stratified program.
+ * For non-LRD programs the placement of mutexes may mean that we lock
+ * the mutex more than once per answer, but such cases will be
+ * uncommon for the most part (as two of the cases engender
+ * simplification).  And in any case, if we optimize non-LRD programs
+ * for MT, we'd probably want to deal with shared and non-shared DL/DE
+ * alloction along the lines of structure managers.  Finally, I'm not
+ * completely sure that simplification requires a mutex -- I need to
+ * figure this out.
  */
 
 void do_delay_stuff(CTXTdeclc NODEptr as_leaf, VariantSF subgoal, xsbBool sf_exists)
@@ -463,11 +475,12 @@ void do_delay_stuff(CTXTdeclc NODEptr as_leaf, VariantSF subgoal, xsbBool sf_exi
     xsb_dbgmsg((LOG_DEBUG, "\n"));
 #endif
 
-    SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
     if (delayreg && (!sf_exists || is_conditional_answer(as_leaf))) {
       if ((dl = intern_delay_list(CTXTc delayreg)) != NULL) {
+	SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
 	mark_conditional_answer(as_leaf, subgoal, dl);
 	record_de_usage(dl);
+	SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
       }
     }
     /*
@@ -479,12 +492,15 @@ void do_delay_stuff(CTXTdeclc NODEptr as_leaf, VariantSF subgoal, xsbBool sf_exi
        * Initiate positive simplification in places where this answer
        * substitution has already been returned.
        */
+      SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
       simplify_pos_unconditional(CTXTc as_leaf);
+      SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
     }
     if (is_unconditional_answer(as_leaf) && subg_nde_list(subgoal)) {
+      SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
       simplify_neg_succeeds(CTXTc subgoal);
+      SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
     }
-    SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
 }
 
 /*----------------------------------------------------------------------*/
