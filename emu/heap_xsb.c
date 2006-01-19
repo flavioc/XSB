@@ -242,7 +242,7 @@ int gc_strings = FALSE;
 
 static long last_string_space_size = 10000;
 static long last_assert_space_size = 10000;
-#define AUTO_STRING_GC_NTH 1
+#define AUTO_STRING_GC_NTH 10
 
 /******* When to GC string space? *************/
 int should_gc_strings() {
@@ -251,23 +251,27 @@ int should_gc_strings() {
   /* every AUTO_STRING_GC_NTH time that heap gc is done, regardless */
   if (!(--till_forced_string_gc)) {
     till_forced_string_gc = AUTO_STRING_GC_NTH;
+    //    printf("should_gc_strings: cycle\n");
     return TRUE;
   }
   /* if already requested by someone else, do it. */
   if (gc_strings) {
     till_forced_string_gc = AUTO_STRING_GC_NTH;
+    //    printf("should_gc_strings: requested\n");
     return TRUE;
   }
   /* if string_space has doubled, but assert space hasn't, since last string gc */
   if ((pspacesize[STRING_SPACE] > 2*last_string_space_size) &&
       (pspacesize[ASSERT_SPACE] < 2*last_assert_space_size)) {
     till_forced_string_gc = AUTO_STRING_GC_NTH;
+    //    printf("should_gc_strings: strings grew\n");
     return TRUE;
   }
   /* if assert space has shrunk alot */
   if (pspacesize[ASSERT_SPACE] < last_assert_space_size/4 ||
       (last_assert_space_size - pspacesize[ASSERT_SPACE]) > 1000000) {
     till_forced_string_gc = AUTO_STRING_GC_NTH;
+    //    printf("should_gc_strings: assert shrunk\n");
     return TRUE;
   }
   return FALSE;

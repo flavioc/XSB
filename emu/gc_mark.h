@@ -909,9 +909,9 @@ void mark_trie_strings(CTXTdecl) {
   void *pBlock, **apBlock;
 
 #ifdef MULTI_THREAD
-  printf("marking private trie strings\n");
+  //  printf("marking private trie strings\n");
   mark_trie_strings_for(*private_smTableBTN,BTNptr,pBTNStruct,apBTNStruct);
-  printf("marked private trie strings\n");
+  //  printf("marked private trie strings\n");
 #endif  
   SYS_MUTEX_LOCK(MUTEX_SM);
   mark_trie_strings_for(smTableBTN,BTNptr,pBTNStruct,apBTNStruct);
