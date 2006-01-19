@@ -142,10 +142,12 @@ filter_goal(Sym, Args) :- sym_prop(defined, Sym), sth_bound(Args).
 interesting_calls([], _, []).
 interesting_calls([pi_calls(Sym,C)|Cs], Preds, ICL) :-
 	Pred = pred(Sym,_Clauses,_),
-	memberchk(Pred, Preds),
-	'interesting calls'(C, Pred, IC),
-	( IC == [] -> ICL = ICs ; ICL = [pi_calls(Sym,IC)|ICs] ),
-	interesting_calls(Cs, Preds, ICs).
+	(memberchk(Pred, Preds)  % may not be there if dynamic
+	 ->	'interesting calls'(C, Pred, IC),
+		( IC == [] -> ICL = ICs ; ICL = [pi_calls(Sym,IC)|ICs] ),
+		interesting_calls(Cs, Preds, ICs)
+	 ;	interesting_calls(Cs, Preds, ICL)
+	).
 
 :- mode 'interesting calls'(+,+,-).
 
