@@ -41,3 +41,5 @@
 	trie_reclaim_uninterned_nr/1
    from intern.
 
+
+:- import throw/1, atom/1 from standard.

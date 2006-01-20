@@ -197,6 +197,8 @@ storage_reclaim_space(StorageName) :-
 %% Create a new trie or use an existing one 
 %% that is already saved as a property of StorageName
 triehandle_for_storage(StorageName,Handle,Snapshot) :-
+	(atom(StorageName), !
+	; throw(error(storage('Invalid storage name', StorageName)))),
 	storage_builtin(GET_STORAGE_HANDLE,StorageName,Handle,Snapshot,_).
 
 
