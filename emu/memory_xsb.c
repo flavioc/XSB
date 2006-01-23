@@ -225,7 +225,6 @@ void tcpstack_realloc(CTXTdeclc long new_size) {
   ComplStackFrame csf_ptr;    /* for stepping through the ComplStack */
   VariantSF subg_ptr;         /* and altering the CP ptrs in the SGFs */
 
-
   if (new_size == tcpstack.size)
     return;
 
@@ -341,10 +340,12 @@ void tcpstack_realloc(CTXTdeclc long new_size) {
   for (csf_ptr = (ComplStackFrame)openreg;
        csf_ptr < (ComplStackFrame)complstack.high;
        csf_ptr++) {
+
     subg_ptr = compl_subgoal_ptr(csf_ptr);
     if ( IsNonNULL(subg_asf_list_ptr(subg_ptr)) )
       subg_asf_list_ptr(subg_ptr) =
 	(CPtr)( (byte *)subg_asf_list_ptr(subg_ptr) + cps_offset );
+
     if ( IsNonNULL(subg_compl_susp_ptr(subg_ptr)) )
       subg_compl_susp_ptr(subg_ptr) =
 	(CPtr)( (byte *)subg_compl_susp_ptr(subg_ptr) + cps_offset );

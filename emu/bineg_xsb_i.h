@@ -170,13 +170,15 @@ case IS_INCOMPLETE: {
     xsb_dbgmsg((LOG_DELAY,"an UNTABLED predicate"));
     xsb_dbgmsg((LOG_DELAY, ")\n"));
 
+    check_tcpstack_overflow;
+
     adjust_level(subg_compl_stack_ptr(producerSF));
     save_find_locx(ereg);
     efreg = ebreg;
     if (trreg > trfreg) trfreg = trreg;
     if (hfreg < hreg) hfreg = hreg;
     if (bfreg > breg) bfreg = breg;
-    /* check_stack_overflow(bfreg, pcreg, (byte *)pcreg);	*/
+
 #ifdef SLG_GC
     old_cptop = bfreg;
 #endif

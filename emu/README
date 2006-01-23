@@ -232,6 +232,7 @@ static CPtr tr_top;
       long int subg_chk_ins; ???
       long int subg_inserts; ???
       static BasicTrieNode dummy_ans_node; ???
+      smAssertBTHT, smAssertBTN, smTableBTN, smTableBTHT: MUTEX_SM
 
       File tst_utils.c:
       	   char *NodeTypeStrings[9] -- _table

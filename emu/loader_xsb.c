@@ -953,20 +953,22 @@ byte *loader(CTXTdeclc char *file, int exp)
 } /* loader */
 
 #ifdef MULTI_THREAD
-void thread_free_tab_blks(CTXTdecl) {
-  struct TDispBlk_t *tdispblk;
-  TIFptr tip;
-
-  SYS_MUTEX_LOCK( MUTEX_TABLE );
-  for (tdispblk=tdispblkhdr.firstDB ; tdispblk != NULL ; tdispblk=tdispblk->NextDB) {
-    if (th->tid <= tdispblk->MaxThread) {
-      tip = (&(tdispblk->Thread0))[th->tid];
-      if (tip) {
-	delete_predicate_table(CTXTc tip);
-	(&(tdispblk->Thread0))[th->tid] = (TIFptr) NULL;
-      }
-    }
-  }
-  SYS_MUTEX_UNLOCK( MUTEX_TABLE );
-}
+/* TLS: not currently used.
+| void thread_free_tab_blks(CTXTdecl) {
+|   struct TDispBlk_t *tdispblk;
+|   TIFptr tip;
+| 
+|   SYS_MUTEX_LOCK( MUTEX_TABLE );
+|   for (tdispblk=tdispblkhdr.firstDB ; tdispblk != NULL ; tdispblk=tdispblk->NextDB) {
+|     if (th->tid <= tdispblk->MaxThread) {
+|       tip = (&(tdispblk->Thread0))[th->tid];
+|       if (tip) {
+| 	delete_predicate_table(CTXTc tip);
+| 	(&(tdispblk->Thread0))[th->tid] = (TIFptr) NULL;
+|       }
+|     }
+|   }
+|   SYS_MUTEX_UNLOCK( MUTEX_TABLE );
+| }
+*/
 #endif

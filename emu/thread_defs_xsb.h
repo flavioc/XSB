@@ -69,6 +69,9 @@
 /* If you add a mutex, also update mutex_names[] in thread_xsb.c */
 /* first mutexes are recursive */
 #define MUTEX_DYNAMIC		0
+
+/* Use this one only for the stream_table itself: see I/O code for 
+   locking the streams themselves. */
 #define MUTEX_IO		1	/* Must be recursive */
 #define MUTEX_TABLE		2
 #define MUTEX_TRIE		3
