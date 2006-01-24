@@ -64,9 +64,10 @@
     instruc == tableretry )	       
 
 
+//  if (check_table_cut && IS_TABLE_INSTRUC(instruc) && 
+
 #define CHECK_TABLE_CUT(instruc)       \
-  if (check_table_cut && IS_TABLE_INSTRUC(instruc) && \
-      !is_completed(tcp_subgoal_ptr(breg)))  {\
+  if (IS_TABLE_INSTRUC(instruc) && !is_completed(tcp_subgoal_ptr(breg)))  {\
           Psc psc = TIF_PSC(subg_tif_ptr(tcp_subgoal_ptr(breg)));\
           Psc call_psc = *(*((Psc **)ereg-1)-1);  \
           printf("Illegal cut over incomplete tabled predicate: %s/%d, from within a call to %s/%d\n", \
@@ -96,7 +97,7 @@
         unwind_trail(breg,xtemp1,xtemp2);			\
 	breg = cut_breg;					\
      }								\
-     check_table_cut = TRUE;                                    \
+     /*     check_table_cut = TRUE;	*/			\
      XSB_Next_Instr();		       			        \
    }
 

@@ -369,11 +369,13 @@ int  xctr;
 /* place for a meaningful message when segfault is detected */
 char *xsb_default_segfault_msg =
      "\n++Memory violation occurred during evaluation.\n++Please report this problem using the XSB bug tracking system accessible from\n++\t http://sourceforge.net/projects/xsb\n++Please supply the steps necessary to reproduce the bug.\n";
-char *xsb_segfault_message;
+
 
 #ifndef MULTI_THREAD
 jmp_buf xsb_abort_fallback_environment;
 #endif
+
+char *xsb_segfault_message;
 
 /*======================================================================*/
 /* the main emulator loop.						*/

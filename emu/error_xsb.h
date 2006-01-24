@@ -94,6 +94,7 @@ extern FILE *stdfdbk;	    	/* Stream for XSB feedback msgs         */
 #define err(d, a, f, ar)	err_handle(CTXTc d, a, f, ar, NULL, (Cell)NULL)
 
 extern char *xsb_default_segfault_msg;
+
 extern char *xsb_segfault_message; /* Put your segfault message here prior to
 				      executing the command that might
 				      segfault. Then restore it to

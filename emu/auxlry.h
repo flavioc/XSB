@@ -39,6 +39,9 @@ extern void get_date(int *year, int *month, int *day,
 extern int asynint_val;
 #endif
 
+extern char *xsb_segfault_message;
+extern char *xsb_default_segfault_msg;
+
 /*
  *  Mode in which XSB is run.
  */
@@ -56,9 +59,6 @@ typedef enum XSB_Execution_Mode {
 extern Exec_Mode xsb_mode;
 
 #define fileptr(xsb_filedes)  open_files[xsb_filedes].file_ptr
-
-extern char *xsb_default_segfault_msg;
-extern char *xsb_segfault_message;
 
 /* This would yield a meaningful message in case of segfault */
 #define SET_FILEPTR(stream, xsb_filedes) \

@@ -318,7 +318,8 @@ static void process_long_option(char *option)
 }
 
 /*==========================================================================*/
-/* Currently done on process startup after init_para(). */
+/* Currently done on process startup after init_para(). Do not use elsewhere, 
+   to avoid problems with multi-threading. */
 
 FILE *stream_err, *stream_out; 
 

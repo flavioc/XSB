@@ -73,7 +73,7 @@ Cell VarEnumerator[NUM_TRIEVARS];
 Cell TrieVarBindings[NUM_TRIEVARS];
 #endif
 
-xsbBool check_table_cut = TRUE;  /* flag for close_open_tables to turn off
+/* xsbBool check_table_cut = TRUE;  flag for close_open_tables to turn off
 				    cut-over-table check */
 
 /*
@@ -1594,7 +1594,7 @@ void remove_incomplete_tries(CTXTdeclc CPtr bottom_parameter)
     if (!is_completed(CallStrPtr)) {
       if (warned == FALSE) {
 	xsb_mesg("Removing incomplete tables...");
-	check_table_cut = FALSE;  /* permit cuts over tables */
+	//	check_table_cut = FALSE;  /* permit cuts over tables */
 	warned = TRUE;
       }
       remove_calls_and_returns(CTXTc CallStrPtr);

@@ -36,110 +36,100 @@ Other global varibles that I have checked out but have not changed to
 follow these conventions:
 
 File biassert.c:
-struct DispBlkHdr_t DispBlkHdr;
+     struct DispBlkHdr_t DispBlkHdr;
 
 File builtin.c:
-ubi_btRootPtr RootPtr;
-ubi_btRoot TreeRoot;
-Cell builtin_table[256][2];
-Cell flags[75];
-long int if_profiling;
-struct strbuf *iostrs[5];
-Psc p3psc;
-ubi_btNodePtr prof_table;
-ubi_btNodePtr prof_table_free;
-static long int prof_table_count;
-static long int prof_table_length;
-static long int prof_total;
-static long int prof_unk_count;
-static int psc_profile_count_max;
-static int psc_profile_count_num;
-static psc_profile_count *psc_profile_count_table;
-static long int total_prog_segments;
+     ubi_btRootPtr RootPtr;
+     ubi_btROot TreeRoot;
+	Cell flags[75];
+	long int if_profiling;
+	struct strbuf *iostrs[5];
+	Psc p3psc;
+	ubi_btNodePtr prof_table;
+	      ubi_btNodePtr prof_table_free;
+	      static long int prof_table_count;
+       static long int prof_table_length;
+       static long int prof_total;
+       static long int prof_unk_count;
+       static int psc_profile_count_max;
+       static int psc_profile_count_num;
+       static psc_profile_count *psc_profile_count_table;
+       static long int total_prog_segments;
 
 File cinterf.c:
-char tempstring[1024];
-static char *c_dataptr_rest;
-static long int lastWarningStart;
-static int xsb_initted_gl;
-static int xsb_inquery_gl;
-
-File debug_xsb.c:
-int call_step_gl;
-int hitrace_suspend_gl;
+     char tempstring[1024];
+     static char *c_dataptr_rest;
+     static long int lastWarningStart;
+     static int xsb_initted_gl;
+     static int xsb_inquery_gl;
 
 File emuloop.c:
-long unsigned int dec[8];
-long unsigned int enc[16];
-char *list_dot_string;
-int next_free_code;
-char *nil_string;
-Psc ret_psc[255];
-char *true_string;
-char *xsb_default_segfault_msg;
-char *xsb_segfault_message;
+     long unsigned int dec[8]; -- controlled by MUTEX_GENTAG
+     long unsigned int enc[16]; -- controlled by MUTEX_GENTAG
+     int next_free_code; -- controlled by MUTEX_GENTAG
+     char *xsb_default_segfault_msg; _glc
+     char *xsb_segfault_message; UNSAFE (to be fixed)
 
 File error_xsb.c:
-     FILE *stddbg;
-     FILE *stdfdbk;
-     FILE *stdmsg;
-     FILE *stdwarn;
+     FILE *stddbg; -- _glc
+     FILE *stdfdbk; -- _glc
+     FILE *stdmsg; -- _glc
+     FILE *stdwarn; -- _glc
 
 File hash_xsb.c:
-     Hash_Table string_table;
-     Hash_Table symbol_table;
-     static unsigned int primes[16];
+     Hash_Table string_table;  -- controlled by mutex
+     Hash_Table symbol_table; -- controlled by mutex
+     static unsigned int primes[16]; -- glc
 
-File heap_xsb.c:
-int gc_strings;
-static CPtr compl_bot;
-static CPtr compl_top;
-static CPtr cp_bot;
-static char *cp_marks;
-static CPtr cp_top;
-static const int fragmentation_only;
-static CPtr heap_bot;
-static int heap_early_reset;
-static char *heap_marks;
-static long unsigned int heap_marks_size;
-static CPtr heap_top;
-static long int last_assert_space_size;
-static long int last_string_space_size;
-static CPtr ls_bot;
-static int ls_early_reset;
-static char *ls_marks;
-static CPtr ls_top;
-static float mark_threshold;
-static CPtr next;
-static int num_gc;
-static int offset;
-static int printnum;
-static CPtr scan;
-static xsbBool slide;
-static CPtr *slide_buf;
-static long unsigned int slide_buf_size;
-static int slide_buffering;
-static long unsigned int slide_top;
-static long unsigned int total_collected;
-static double total_time_gc;
-static CPtr tr_bot;
-static char *tr_marks;
-static CPtr tr_top;
+File heap_xsb.c: ???
+     int gc_strings; 
+     static CPtr compl_bot;
+     static CPtr compl_top;
+     static CPtr cp_bot;
+     static char *cp_marks;
+     static CPtr cp_top;
+     static const int fragmentation_only;
+     static CPtr heap_bot;
+     static int heap_early_reset;
+     static char *heap_marks;
+     static long unsigned int heap_marks_size;
+     static CPtr heap_top;
+     static long int last_assert_space_size;
+     static long int last_string_space_size;
+     static CPtr ls_bot;
+     static int ls_early_reset;
+     static char *ls_marks;
+     static CPtr ls_top;
+     static float mark_threshold;
+     static CPtr next;
+     static int num_gc;
+     static int offset;
+     static int printnum;
+     static CPtr scan;
+     static xsbBool slide;
+     static CPtr *slide_buf;
+     static long unsigned int slide_buf_size;
+     static int slide_buffering;
+     static long unsigned int slide_top;
+     static long unsigned int total_collected;
+     static double total_time_gc;
+     static CPtr tr_bot;
+     static char *tr_marks;
+     static CPtr tr_top;
 
-      File init_xsb.c:
-       long int pspacesize[18];
-       Cell resume_compl_suspension_inst2;
-       FILE *stream_err;
-       FILE *stream_out;
-       Exec_Mode xsb_mode;
-       int xsb_profiling_enabled;
-       static System_Stack init_complstack;
-       static System_Stack init_glstack;
-       static System_Stack init_pdl;
-       static System_Stack init_tcpstack;
+     File init_xsb.c: 
+       long int pspacesize[18] (ctr for space, ok)
+       FILE *stream_err; ok - startup only
+       FILE *stream_out; ok - startup only
+       Exec_Mode xsb_mode; ok -- startup and shutdown only
+       int xsb_profiling_enabled; ???
+       static System_Stack init_complstack - ok, could be made dyna
+       static System_Stack init_glstack - ok, could be made dyna
+       static System_Stack init_pdl - ok, could be made dyna
+       static System_Stack init_tcpstack - ok, could be made dyna
 
       File io_builtins_xsb.c
-      stream_record open_files[55];
+            stream_record open_files[55]; -- controlled by MUTEX_IO
 
       File loader_xsb.c
       Psc global_mod;
@@ -157,20 +147,6 @@ static CPtr tr_top;
       static long unsigned int reloc_table_size;
       static TIFptr tab_info_ptr;
       static int warned_old_obj;
-
-      File slgdelay.c
-      static char *current_de_block_gl;
-      static DE current_de_block_top_gl;
-      static char *current_dl_block_gl;
-      static DL current_dl_block_top_gl;
-      static char *current_pnde_block_gl;
-      static PNDE current_pnde_block_top_gl;
-      static DE next_free_de_gl;
-      static DL next_free_dl_gl;
-      static PNDE next_free_pnde_gl;
-      static DE released_des_gl;
-      static DL released_dls_gl;
-      static PNDE released_pndes_gl;
 
       File socket_xsb.c
       static u_long block_false -- _glc
@@ -202,8 +178,8 @@ static CPtr tr_top;
       Structure_Manager smVarSF  -- controlled by mutex
 
       File thread_xsb.c
-      static xsb_thread_t *th_next;  ???
-      static xsb_thread_t th_vec[1024];  ???
+      static xsb_thread_t *th_next;  controlled by th_mutex
+      static xsb_thread_t th_vec[1024];  controlled by th_mutex
 
       File token_xsb.c:     
       char badexpt[13];  ???
@@ -216,7 +192,7 @@ static CPtr tr_top;
 
       File tr_utils.c
       DelTFptr deltf_chain_begin;  ???
-      static IGRptr IGRhead;  ???
+      static IGRptr IGRhead;    ???
 
       File trace_xsb.c:  ???
       struct trace_str tds; ???
@@ -226,12 +202,11 @@ static CPtr tr_top;
       static char *pspace_cat[18]; ???
 
       File tries.c: 
-      long int ans_chk_ins; ???
-      long int ans_inserts; ???
-      xsbBool check_table_cut; ???
-      long int subg_chk_ins; ???
-      long int subg_inserts; ???
-      static BasicTrieNode dummy_ans_node; ???
+      long int ans_chk_ins; ok, global counter
+      long int ans_inserts; ok, global counter
+      long int subg_chk_ins; ok, global counter
+      long int subg_inserts; ok, global counter
+      static BasicTrieNode dummy_ans_node; -- _glc
       smAssertBTHT, smAssertBTN, smTableBTN, smTableBTHT: MUTEX_SM
 
       File tst_utils.c:

@@ -2525,13 +2525,16 @@ PrRef build_prref( CTXTdeclc Psc psc )
     if (*(pb)get_ep(psc) != switchonthread) {
       /* create new switchonthread instruction and dispblock */
       pb disp_instr_addr = mem_calloc(sizeof(Cell),2,MT_PRIVATE_SPACE);
-      dispblk = (struct DispBlk_t *)mem_calloc(sizeof(struct DispBlk_t)+MAXTHREAD*sizeof(Cell),
-					       1,MT_PRIVATE_SPACE);
+      dispblk = (struct DispBlk_t *) 
+	mem_calloc(sizeof(struct DispBlk_t)+MAXTHREAD*sizeof(Cell),
+		   1,MT_PRIVATE_SPACE);
 
+      SYS_MUTEX_LOCK( MUTEX_DISPBLKHDR );
       if (DispBlkHdr.firstDB) DispBlkHdr.firstDB->PrevDB = dispblk;
       dispblk->NextDB = DispBlkHdr.firstDB;
       DispBlkHdr.firstDB = dispblk;
       if (!DispBlkHdr.lastDB) DispBlkHdr.lastDB = dispblk;
+      SYS_MUTEX_UNLOCK( MUTEX_DISPBLKHDR );
 
       dispblk->MaxThread = MAXTHREAD;
       *disp_instr_addr = switchonthread;
@@ -2760,6 +2763,9 @@ int gen_retract_all(CTXTdecl/* R1: + PredEP */)
   return TRUE;
 }
 
+/* TLS: did not put a MUTEX_DISPBLKHDR as the chain of dispblks
+   themselves are not changed, only pointers to prrefs within the
+   displblks. */
 #ifdef MULTI_THREAD
 void thread_free_dyn_blks(CTXTdecl) {
   struct DispBlk_t *dispblk;
