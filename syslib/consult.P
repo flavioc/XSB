@@ -83,38 +83,49 @@ reconsult(Path) :- reconsult(Path, []).
 reconsult(Path, Options) :- reconsult(Path, Options, false).
 
 reconsult(Path, Options, Ensure_loaded) :- 
-	( nonvar(Path) -> 
-		( atom(Path)
-                   -> \+ (\+ (reconsult0(Path, Options, Ensure_loaded)))
-		   ; abort('RECONSULT: Wrong type in argument 1!')
-		)
-	; abort('RECONSULT: Uninstantiated argument 1!')
-	).
+	check_nonvar(Path,reconsult/1,1),
+	check_atom(Path,reconsult/1,1),
+	\+ (\+ (reconsult0(Path, Options, Ensure_loaded))).
+
+/* TLS: restricting to only one thread for now.  Its possible that if
+ * the file hasn't been loaded before, we could load it, but I'm not 
+ * doing that yet. */
 
 reconsult0(Path, Options, Ensure_loaded) :-
 	(Path == user
-	 ->	compile_load_user(Options)
+	 ->	
+	        (check_one_thread(load,file,reconsult/3),
+	         compile_load_user(Options))
 	 ;	(search_module(Path, Dir, Mod, SExt, Base, Obj)
 		 ->	expand_filename(Obj,ExpObj),
 			((SExt \== XSB_OBJ_EXTENSION_ATOM_SANS_DOT,
 			  i_want_compile(SExt, Base, Obj))
-			 ->	compile_f(SExt,Base,Options,_ExList,Mod,Dir),
+			 ->	check_one_thread(load,file,reconsult/3),
+			        compile_f(SExt,Base,Options,_ExList,Mod,Dir),
 				load_exec(Obj, Mod),
 				(consult_file_loaded(ExpObj)
 				 ->	true
 				 ;	assert(consult_file_loaded(ExpObj))
 				)
-			 ;      ((Ensure_loaded==true,
-				 consult_file_loaded(ExpObj))
-				 ->     true
-			         ;	load_exec(Obj, Mod),
-				        (consult_file_loaded(ExpObj)
-					 ->	true
-					 ;	assert(consult_file_loaded(ExpObj))
+			 ;      /* Compilation not required */
+  			       (Ensure_loaded==true ->  
+			                (consult_file_loaded(ExpObj)
+				         ->     true
+				         ;      /* File not loaded, ok to load w. many threads */
+					        load_exec(Obj, Mod),
+						assert(consult_file_loaded(ExpObj)) 
+					 )
+			         ;	/* Ensure_loaded == false */
+				       check_one_thread(load,file,reconsult/3),
+				       load_exec(Obj, Mod),
+				       (consult_file_loaded(ExpObj)
+				        ->	true
+				       ;	assert(consult_file_loaded(ExpObj))
 					)
 				)
 			)
 		)
+	    
 	 ;	file_write0(STDERR, 'Cannot find the file/module '),
 		file_write0(STDERR, Path), file_nl(STDERR), fail
 	).
@@ -324,6 +335,12 @@ load_dyn(File) :-
 %% compatable with other ISO type errors, e.g. open/[3,4].  
 %% TLS allow calling with a or z 
 load_dyn(File,DirIn) :-
+	check_nonvar(File,load_dyn/1,1),
+	check_atom(File,load_dyn/1,1),
+	check_one_thread(load,file,load_dyn/2),
+	load_dyn_nocheck(File,DirIn).
+
+load_dyn_nocheck(File,DirIn) :-
 	load_dyn_convert(DirIn,Dir,load_dyn),
 	get_fname(File,SExt,Base,Mod),
 	load_dyn0(SExt,Base,Mod,Dir).
@@ -481,11 +498,15 @@ read_and_assert(Dir) :- read_and_assert(Dir).
 
 load_dync(File) :- load_dync(File,1).  % assertz
 load_dync(File,Dirin) :-
+	check_one_thread(load,file,load_dync/2),
 	(atom(File)
 	 ->	true
 	 ;	file_write0(STDERR, 'Wrong type in argument 1 of load_dync/1'),
 		fail
 	),
+	load_dync_nocheck(File,Dirin).
+	
+load_dync_nocheck(File,Dirin) :-
 	load_dyn_convert(Dirin,Dir,load_dync),
 	get_fname(File,SExt,Base,Mod),
 	load_dync0(SExt,Base,Mod,Dir).
@@ -714,43 +735,65 @@ thread_shared(PredSpec) :-
 	term_psc(Skel,PSC),
 	psc_set_shared(PSC,1).
 
-ensure_loaded(File,dyn) :- ensure_dyn_loaded(File,1).
-ensure_loaded(File,dyna) :- ensure_dyn_loaded(File,0).
-ensure_loaded(File,dync) :- ensure_dync_loaded(File,1).
-ensure_loaded(File,dynca) :- ensure_dync_loaded(File,0).
-ensure_loaded(File,consult) :- ensure_loaded(File).
+ensure_loaded(File,Dir):- 
+	check_nonvar(Dir,ensure_loaded/2,1),
+	ensure_loaded_novarcheck(File,Dir).
 
-ensure_loaded([]) :- !.
-ensure_loaded([File|Files]) :- !, 
-	ensure_loaded(File),
+ensure_loaded_novarcheck(File,dyn) :- !, ensure_dyn_loaded(File,1).
+ensure_loaded_novarcheck(File,dyna) :- !, ensure_dyn_loaded(File,0).
+ensure_loaded_novarcheck(File,dync) :- !, ensure_dync_loaded(File,1).
+ensure_loaded_novarcheck(File,dynca) :- !, ensure_dync_loaded(File,0).
+ensure_loaded_novarcheck(File,consult) :- !, ensure_loaded(File).
+ensure_loaded_novarcheck(_File,Dir) :- 
+	domain_error(load_action([dyn,dyna,dync,dynca,consult]),Dir,ensure_loaded/2,2).
+
+
+/* In the ensure loadeds, I'm relying on underlying reconsult,
+   load_dyn, etc to check for atoms. */
+
+ensure_loaded(File):- 
+	check_nonvar(File,ensure_loaded/1,1),
+	ensure_loaded_novarcheck(File).
+
+ensure_loaded_novarcheck([]) :- !.
+ensure_loaded_novarcheck([File|Files]) :- !,  
+	ensure_loaded(File),   % check elements of list for vars.
 	ensure_loaded(Files).
-ensure_loaded(File) :-
+ensure_loaded_novarcheck(File) :-
 	reconsult(File,[],true).
 
 ensure_dyn_loaded(Files) :-
 	ensure_dyn_loaded(Files,1).
 
-ensure_dyn_loaded([],_Dir) :- !.
-ensure_dyn_loaded([File|Files],Dir) :- !, 
+ensure_dyn_loaded(File,Dir) :- 
+	check_nonvar(File,ensure_dyn_loaded/1,1),
+	ensure_dyn_loaded_novarcheck(File,Dir).
+
+ensure_dyn_loaded_novarcheck([],_Dir) :- !.
+ensure_dyn_loaded_novarcheck([File|Files],Dir) :- !, 
 	ensure_dyn_loaded(File,Dir),
 	ensure_dyn_loaded(Files,Dir).
-ensure_dyn_loaded(File,Dir) :-
+ensure_dyn_loaded_novarcheck(File,Dir) :-
 	(if_should_not_reload(File)
 	 ->	true
-	 ;	load_dyn(File,Dir)
+	 ;	load_dyn_nocheck(File,Dir)  % no thread check
 	).
 
 ensure_dync_loaded(Files) :-
 	ensure_dync_loaded(Files,1).
 
-ensure_dync_loaded([],_Dir) :- !.
-ensure_dync_loaded([File|Files],Dir) :- !, 
+ensure_dync_loaded(File,Dir) :- 
+	check_nonvar(File,ensure_dync_loaded/1,1),
+	ensure_dync_loaded_novarcheck(File,Dir).
+
+ensure_dync_loaded_novarcheck([],_Dir) :- !.
+ensure_dync_loaded_novarcheck([File|Files],Dir) :- !, 
 	ensure_dync_loaded(File,Dir),
 	ensure_dync_loaded(Files,Dir).
-ensure_dync_loaded(File,Dir) :-
+ensure_dync_loaded_novarcheck(File,Dir) :-
 	(if_should_not_reload(File)
 	 ->	true
-	 ;	load_dync(File,Dir)
+	 ;	load_dync_nocheck(File,Dir)   % no thread check
 	).
 
 if_should_not_reload(File) :-

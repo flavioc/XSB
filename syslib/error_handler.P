@@ -299,6 +299,14 @@ check_nonvar(Term,Predicate,Arg) :-
 	    instantiation_error(Predicate,Arg,nonvar)
              ;  true).
 
+check_one_thread(Op,Obj_type,Predicate):- 
+	stat_flag(NUM_THREADS, Value),
+	(Value > 1 -> 
+	    misc_error(('Operation ',Op,' on ',Obj_type,
+	                 ' is not permitted when more than one thread is active (',
+			 Predicate,')') )
+         ; true).
+	
 %-------------
 % Checks that a term is a variable
 check_var(Term,Predicate,Arg) :- 
