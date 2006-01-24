@@ -825,13 +825,31 @@ is loaded into XSB's database.  After loading the file all exported
 predicates of that module are imported into the current environment
 (the current working module {\tt usermod}) if the file is a module.
 For non-modules, all predicates are imported into the current working
-module.
+module.  As the last part of loading, any queries --- that is, any
+terms with principal functor {\tt '?-'/1}, or with the principal
+functor {\tt ':-'/1} and that are not directives like the ones
+described in Section~\ref{the_compiler} are executed in the order that
+they are encountered.
 
-Finally any queries --- that is, any terms with principal functor {\tt
-'?-'/1}, or with the principal functor {\tt ':-'/1} and that are not
-directives like the ones described in Section~\ref{the_compiler} 
-are executed in the order that they are encountered.
+Error conditions for {\tt consult(+File)} are as follows: 
+\bi
+\item 	{\tt File} is not instantiated
+\bi
+\item 	{\tt instantiation\_error}
+\ei
+%
+\item 	{\tt File} is not an atom
+\bi
+\item 	{\tt type\_error(atom,File)}
+\ei
+%
+\item {\tt File} has been loaded previously in the session {\em and}
+  there is more than one active thread.  \bi
+\item 	{\tt misc\_error}
+\ei
+\ei
 
+\paragraph*{The multifile directive}
 \index{\texttt{multifile/2}}
 The default action upon loading a file or module is to delete all
 previous byte-code for predicates defined in the file.  If this is not

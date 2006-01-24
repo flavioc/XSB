@@ -484,6 +484,18 @@ Checks that {\tt Stream} is a stream.  If so, the predicate succeeds;
 if not it throws an instantiation error~\footnote{The representation
 of streams in XSB is subject to change.}.
 
+\ournewitem{check\_one\_thread(+Operation,+Object\_Type,+Predicate)}{error\_handler}
+\index{\texttt{check\_one\_thread/3}} 
+%
+In the Multi-Threaded Engine, checks that there is only one active
+thread: if not, a miscellaneous error is thrown indicating that {\tt
+  Operation} is not permitted on {\tt ObjectType} as called by {\tt
+  Predicate}, when more than one thread is active.  This check
+provides a convenient way to allow inclusion of certain operations
+that are difficult to make thread-safe by other means.
+
+In the single-threaded engine this predicate always succeeds.
+
 \end{description}
 
 %----------------------------------------------------------------------------

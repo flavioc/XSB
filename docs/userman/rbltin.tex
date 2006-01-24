@@ -490,10 +490,19 @@ Sections~\ref{LibPath} and~\ref{sec:filenames} for details.
 
 {\bf Error Cases}
 \bi
+\item 	{\tt FileName} is a variable
+ \bi
+ \item 	{\tt instantiation\_error}
+ \ei
 \item 	{\tt FileName} is not an atom.
-\bi
-\item 	{\tt type\_error(FileName,atom)}
-\ei
+ \bi
+ \item 	{\tt type\_error(FileName,atom)}
+ \ei
+\item {\tt FileName} has been loaded previously in the session {\em and}
+  there is more than one active thread.  
+ \bi
+ \item 	{\tt misc\_error}
+ \ei
 %
 \ei
 
@@ -512,6 +521,10 @@ Sections~\ref{LibPath} and~\ref{sec:filenames} for details.
 
 {\bf Error Cases}
 \bi
+\item 	{\tt FileName} is a variable
+\bi
+\item 	{\tt instantiation\_error}
+\ei
 \item 	{\tt FileName} is not an atom:
 \bi
 \item 	{\tt type\_error(FileName,atom)}
@@ -523,6 +536,11 @@ backward compatability, {\tt 0} and {\tt 1} are also allowed.}:
 \item 	{\tt domain\_error(a\_or\_z,Dir)}
 \ei
 %
+\item {\tt FileName} has been loaded previously in the session {\em and}
+  there is more than one active thread.  
+\bi
+\item 	{\tt misc\_error}
+\ei
 \ei
 
 \ouritem{load\_dync(+FileName)}\index{\texttt{load\_dync/1}}
@@ -559,11 +577,20 @@ backward compatability, {\tt 0} and {\tt 1} are also allowed.}:
 
 {\bf Error Cases}
 \bi
+\item 	{\tt FileName} is a variable
+\bi
+\item 	{\tt instantiation\_error}
+\ei
 \item 	{\tt FileName} is not an atom.
 \bi
 \item 	{\tt type\_error(FileName,atom)}
 \ei
 %
+\item {\tt FileName} has been loaded previously in the session {\em and}
+  there is more than one active thread.  
+\bi
+\item 	{\tt misc\_error}
+\ei
 \ei
 
 \ournewitem{load\_dync(+FileName,+Dir)}{consult}
@@ -593,6 +620,10 @@ backward compatability, {\tt 0} and {\tt 1} are also allowed.}:
 
 {\bf Error Cases}
 \bi
+\item 	{\tt FileName} is a variable
+\bi
+\item 	{\tt instantiation\_error}
+\ei
 \item 	{\tt FileName} is not an atom:
 \bi
 \item 	{\tt type\_error(FileName,atom)}
@@ -604,6 +635,11 @@ backward compatability, {\tt 0} and {\tt 1} are also allowed.}:
 \item 	{\tt domain\_error(a\_or\_z,Dir)}
 \ei
 %
+\item {\tt FileName} has been loaded previously in the session {\em and}
+  there is more than one active thread.  
+\bi
+\item 	{\tt misc\_error}
+\ei
 \ei
 
 \ouritem{ensure\_loaded(+FileName,+Action)}
@@ -633,6 +669,10 @@ is consulted.
 
 {\bf Error Cases}
 \bi
+\item 	{\tt FileName} is not instantiated:
+\bi
+\item 	{\tt instantiation\_error}
+\ei
 \item 	{\tt FileName} is not an atom:
 \bi
 \item 	{\tt type\_error(FileName,atom)}
