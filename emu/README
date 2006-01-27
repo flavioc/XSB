@@ -132,7 +132,6 @@ File heap_xsb.c: ???
             stream_record open_files[55]; -- controlled by MUTEX_IO
 
       File loader_xsb.c
-      Psc global_mod;
       struct TDispBlkHdr_t tdispblkhdr;
       struct tif_list tif_list;
       static pseg current_seg;

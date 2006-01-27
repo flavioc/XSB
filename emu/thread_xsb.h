@@ -105,10 +105,10 @@ void init_system_threads( th_context * ctxt ) ;
 th_context *find_context( int tid );
 #endif
 
-#define ENSURE_ONE_THREAD()					\
-{	if( flags[NUM_THREADS] > 1 ) 				\
-		xsb_abort( "more than one thread running" ) ; 	\
-}
+#define ENSURE_ONE_THREAD()						\
+  { if( flags[NUM_THREADS] > 1 )					\
+      xsb_abort( "Operation is permitted only when a single thread is active" ) ; \
+  }
 
 
 /*

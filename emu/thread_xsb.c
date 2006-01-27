@@ -75,8 +75,6 @@ extern void thread_free_dyn_blks(CTXTdecl);
 extern void thread_free_tab_blks(CTXTdecl);
 extern void delete_predicate_table(CTXTdeclc TIFptr);
 
-// pthread_mutex_t sys_mut[MAX_SYS_MUTEXES] ;
-
 MutexFrame sys_mut[MAX_SYS_MUTEXES] ;
 
 pthread_mutex_t th_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -98,7 +96,7 @@ char *mutex_names[] = {
 "mutex_flags"," mutex_load_undef","mutex_delay","mutex_sys_system","unused",
 "unused","unused","unused","unused","unused",
 "mutex_string","mutex_atom_buf","mutex_sm","mutex_stacks","mutex_sockets",
-"mutex_mem","mutex_odbc","mutex_gentag","unused","unused",
+"mutex_mem","mutex_odbc","mutex_gentag","mutex_dispbkhdr","unused",
 "unused","unused","unused","unused","unused",
 "mutex_console","mutex_user1","mutex_user2","mutex_user3","mutex_user4",
 "mutex_user5","mutex_user6","mutex_user7","mutex_user9","mutex_user9"};
