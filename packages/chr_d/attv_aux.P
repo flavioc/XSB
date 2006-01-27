@@ -1,5 +1,6 @@
 
-:- import put_attr/3, get_attr/3 from machine.
+:- import put_attr/3, get_attr/3,
+	get_attributes/2, put_attributes/2 from machine.
 :- import member/2, append/3, ith/3 from basics.
 :- import delete_ith/4 from listutil.
 
@@ -87,6 +88,34 @@ remove_duplicates([X|Xs],L) :-
 	  ; L = [X|Ys]).
 
 
+% insert attribute according to variable order defined using order/2 CHR
+insert_ordered(List,[],[Attr]) :-
+	Attr =.. [attr|List].
+insert_ordered(ListX,[AttrY|Ys],Zs) :-
+	AttrY =.. [attr|ListY],
+	(ordered_before(ListX,ListY)
+	 -> AttrX =.. [attr|ListX],
+	    Zs = [AttrX,AttrY|Ys]
+	  ; insert_ordered(ListX,Ys,Ws),
+	    Zs = [AttrY|Ws]
+	).	
+/*	
+	(check_order(X,Y)
+	 -> Zs = [attr(X),attr(Y)|Ys]
+	  ; insert_ordered(X,Ys,Ws),
+	    Zs = [attr(Y)|Ws]
+	).
+*/
+
+ordered_before([],[]).
+ordered_before([X|Xs],[Y|Ys]) :-
+	(X == Y
+	 -> true
+	  ; check_order(X,Y)
+	),
+	ordered_before(Xs,Ys).
+
+
 % set membership on variables
 var_member(V, [X|_Xs]) :-
 	V == X.
@@ -129,6 +158,13 @@ nf_get_nth_attr(V,Mod,N,Attr) :-
 	  ; Attr = []
 	).
 
+% get all matches for given constraint
+get_all_head_matches([V|Vs],Mod,[P|Ps],[A|As],Attr,
+		                                   [AL|ALs],AttrList):-
+	(get_nth_attr(V,Mod,P,A)
+	 -> Attr = A, AttrList = AL
+	  ; get_all_head_matches(Vs,Mod,Ps,As,Attr,ALs,AttrList)
+	).
 
 
 abs_ith(Index,List,Element) :-
@@ -138,6 +174,55 @@ abs_ith(Index,List,Element) :-
 
 abs_ith1([X|_],I,I,Y) :- X == Y.
 abs_ith1([_|L],I1,I,X) :- I2 is I1+1, abs_ith1(L,I2,I,X).
+
+
+
+% sort attribute sets into standard order
+attr_sort(X) :-
+	attr_sort(X,[],_).
+
+attr_sort(X,SortedIn,SortedOut) :-
+	(var_member(X,SortedIn)
+	 -> SortedOut = SortedIn
+	  ; (is_attv(X)
+	     -> get_attributes(X,AX),
+%		writeln(sorting(X,SortedIn)),
+%		writeln(atts_before_sort(X,AX)),
+		l_attr_sort(AX,[X|SortedIn],SAX,SortedOut),
+%		writeln(atts_after_sort(X,SAX)),
+		(SAX \== AX
+		 -> writeln(sorted(X,AX)),
+		    put_attributes(X,SAX),		    
+		    writeln(to(X,SAX)),nl
+		  ; true %writeln(same(AX,SAX))
+		)
+	      ; SortedOut = SortedIn)
+	).
+
+l_attr_sort([],Sorted,[],Sorted).
+l_attr_sort([Mod,Attr|Atts], SortedIn, [Mod,SAttr|SAtts], SortedOut) :-
+	Attr =.. [v|AttrLists],
+	l_rec_attr_sort(AttrLists,SortedIn,SAttrLists,Sorted),
+	SAttr =.. [v|SAttrLists],
+	l_attr_sort(Atts,Sorted,SAtts,SortedOut).
+
+l_rec_attr_sort([],Sorted,[],Sorted).
+l_rec_attr_sort([AttrL|AttrLs],SortedIn,[SAttrL|SAttrLs],SortedOut) :-
+	(AttrL == []
+	 -> SAttrL = [],
+	    Sorted = SortedIn
+	  ; rec_attr_sort(AttrL,SortedIn,SAttrL,Sorted)
+	),
+	l_rec_attr_sort(AttrLs,Sorted,SAttrLs,SortedOut).
+
+rec_attr_sort(Attr,SortedIn,SAttr,SortedOut) :-
+	rec_attr_sort_1(Attr,SortedIn,SortedOut),
+	sort(Attr,SAttr).
+
+rec_attr_sort_1([],Sorted,Sorted).
+rec_attr_sort_1([attr(A)|As],SortedIn,SortedOut) :-
+	attr_sort(A,SortedIn,Sorted),
+	rec_attr_sort_1(As,Sorted,SortedOut).
 
 
 
