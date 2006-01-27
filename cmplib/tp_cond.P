@@ -86,7 +86,8 @@ tcond(inlinegoal(Op,_,Args),SuccLab,FailLab,
 	     tcond_componfun(Op,Arg1,Arg2,SuccLab,FailLab,Pil,Pilr,Tin,Tout,Hold)
 	)
     ; Args = [Arg],		% Op = var/nonvar (only for the moment)
-	tcond_sot(Op,Arg,SuccLab,FailLab,Pil,Pilr,Tin,Tout,Hold)
+	inline_jumpcof_cond(Op,1,COF_Code),
+        tcond_cof(COF_Code,Arg,SuccLab,FailLab,Pil,Pilr,Tin,Tout,Hold)
     ; Args = [], Pil = Pilr, Tin = Tout
     ).
 
@@ -95,6 +96,11 @@ tcond_relop(Op, Arg1, Arg2, SuccLab, FailLab,
     SuccLab = label(_,SL0), FailLab = label(_,FL0),
     eval_relop(Op, Arg1, Arg2, Hold, FL0,
 	       Pil, [jump(SL0)|Pilr], Tin, Tout, PredSym, NC).
+
+tcond_cof(BIT_Code,Arg,SuccLab,FailLab,Pil,Pilr,Tin,Tout,Hold) :-
+    SuccLab = label(_,SL0), FailLab = label(_,FL0),
+    geninl_load_lhs(Arg, R1, Pil, [jumpcof(BIT_Code,R1,FL0),jump(SL0)|Pilr],Tin,Tout1,_),
+    release_if_done0(Arg, R1, Hold, Tout1, Tout).
 
 tcond_compop(Op, Arg1, Arg2, SuccLab, FailLab, Pil, Pilr, Tin, Tout, Hold) :-
     SuccLab = label(_,SL0), FailLab = label(_,FL0),
@@ -106,28 +112,12 @@ tcond_compop(Op, Arg1, Arg2, SuccLab, FailLab, Pil, Pilr, Tin, Tout, Hold) :-
     release_if_done0(Arg1, R1, Hold, Tout1, Tout2),
     release_if_done0(Arg2, R2, Hold, Tout2, Tout).
     
-tcond_componfun(_Op, Arg1, Arg2, _SuccLab, FailLab, Pil, Pilr, Tin, Tout, Hold) :-
-    FailLab = label(_,FL0),
+tcond_componfun(_Op, Arg1, Arg2, SuccLab, FailLab, Pil, Pilr, Tin, Tout, Hold) :-
+    FailLab = label(_,FL0), SuccLab = label(_,SL0),
     geninl_load_lhs(Arg1, R1, Pil, Pilm, Tin, Tmid, _),
-    geninl_load_lhs(Arg2, R2, Pilm, [fun_test_ne(R1,R2,FL0)|Pilr],Tmid,Tout1,_),
+    geninl_load_lhs(Arg2, R2, Pilm, [fun_test_ne(R1,R2,FL0),jump(SL0)|Pilr],Tmid,Tout1,_),
     release_if_done0(Arg1, R1, Hold, Tout1, Tout2),
     release_if_done0(Arg2, R2, Hold, Tout2, Tout).
-
-tcond_sot(Op,varocc(Vid,Prag),SuccLab,FailLab,Pil,Pilr,Tin,Tout,Hold) :-
-    alloc_reg(Prag, Tin, Tmid),
-    ( vprag_type(Prag,t), vprag_loc(Prag,L), R = L, Tmid = Tmid1
-    ; getreg(Tmid,R),hold(R,Tmid,Tmid1)
-    ),
-    putvarinst(Prag,R,Pil,Pilm,0), /* replace by tabled */
-    SuccLab = label(_,SL0),
-    FailLab = label(_,FL0),
-    ( Op == var -> Pilm = [switchonterm(R,FL0,FL0),jump(SL0)|Pilr]
-    ; /* nonvar */ Pilm = [switchonterm(R,SL0,SL0),jump(FL0)|Pilr]
-    ),
-    release_if_done(Vid,R,Prag,Hold,Tmid1,Tout).
-tcond_sot(Op,_Arg,_SuccLab,_FailLab,Pil,Pilr,_Tin,_Tout,_Hold) :-
-     warning(('argument to ', Op, '/1 is not a variable')),
-     ( Op == var -> Pil = [fail|Pilr] ; /* nonvar */ Pil = Pilr ).
 
 /*======================================================================*/
 /* Auxiliary predicates							*/

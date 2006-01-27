@@ -157,8 +157,9 @@ pre_body(inlinegoal('!',0,_),
 pre_body(Goal, Goal, _CutVid).
 
 
-pre_ifthen(A,B,C,if_then_else(A,NB,NC),CutVid) :-
-	all_inline_tests(A),
+pre_ifthen(A,B,C,if_then_else(A1,NB,NC),CutVid) :-
+	all_inline_tests(A,A1),
+%%	all_inline_tests(A), A1 = A,
 	!,
 	pre_body(B,NB,CutVid),
 	pre_body(C,NC,CutVid).
@@ -188,9 +189,10 @@ pre_else(or(if(A,B),C), NGoal, CutVid, CutVid1) :- !,
 pre_else(Goal, NGoal, CutVid, _) :- pre_body(Goal, NGoal, CutVid).
 
 /*======================================================================*/
-/* all_inline_tests(+Goal)						*/
-/*	Succeeds if the Goal is one or more inline tests that does not 	*/
-/*	change the state (without unification).				*/
+/* all_inline_tests(+Goal,-GoalOut)					*/
+/*	Succeeds if the Goal can be transformed (into GoalOut) into	*/
+/*	one or more inline tests that does not change the state 	*/
+/*	(without unification).						*/
 /*	At this point, a test is considered to be inline (and hence a	*/
 /*	candidate for transformation to an "if-then-else") iff it is	*/
 /*	either an inline test, or a conjunction or disjunction of	*/
@@ -200,7 +202,18 @@ pre_else(Goal, NGoal, CutVid, _) :- pre_body(Goal, NGoal, CutVid).
 /*	complex constructs are encountered frequently in practice.	*/
 /*======================================================================*/
 
-all_inline_tests(and(G1,G2)) :-
+all_inline_tests(and(G1,G2),and(G1o,G2o)) :-
+	all_inline_tests(G1,G1o),
+	all_inline_tests(G2,G2o).
+all_inline_tests(or(G1,G2),or(G1o,G2o)) :-
+	all_inline_tests(G1,G1o),
+	all_inline_tests(G2,G2o).
+all_inline_tests(inlinegoal(Pred,Arity,Args),inlinegoal(Pred,Arity,Args)) :- 
+	inline_test(Pred,Arity).
+all_inline_tests(goal(sym(Pred,Arity,_,_),Args),inlinegoal(Pred,Arity,Args)) :- 
+	inline_jumpcof_cond(Pred,Arity,_).
+
+/***all_inline_tests(and(G1,G2)) :-
 	all_inline_tests_conj(G1),
 	all_inline_tests_conj(G2).
 all_inline_tests(or(G1,G2)) :-
@@ -220,6 +233,7 @@ all_inline_tests_disj(or(G1,G2)) :-
 	all_inline_tests_disj(G2).
 all_inline_tests_disj(inlinegoal(Pred,Arity,_)) :-
 	inline_test(Pred,Arity).
+************/
 
 /*======================================================================*/
 /* inline_test(+Pred, +Arity)						*/

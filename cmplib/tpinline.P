@@ -76,7 +76,7 @@ geninline(Op, [Arg1,Arg2], HoldR, Pil, Pilr, Tin, Tout, PredSym, NC) :-
 	eval_relop(Op, Arg1, Arg2, HoldR, abs(-1),
 		   Pil, Pilr, Tin, Tout, PredSym, NC).
 geninline(TermCompOp, [Arg1,Arg2], HoldR, Pil, Pilr, Tin, Tout, _, _) :-
-	term_comp_op(TermCompOp),
+	term_comp_op(TermCompOp), !,
 	geninl_load_lhs(Arg1, R1, Pil, Pilm, Tin, Tmid, _),
 	geninl_load_lhs(Arg2, R2, Pilm,
 			[term_comp(R1,R2,R3),JumpInst|Pilr], Tmid, Tout1, _),
@@ -84,6 +84,12 @@ geninline(TermCompOp, [Arg1,Arg2], HoldR, Pil, Pilr, Tin, Tout, _, _) :-
 	getreg(Tout1, R3),
 	geninl_unload_lhs(Arg1, R1, HoldR, Tout1, Tout2),
 	geninl_unload_lhs(Arg2, R2, HoldR, Tout2, Tout).
+:- import inline_jumpcof_cond/3 from builtin.
+geninline(Cof, [Arg], HoldR, Pil, Pilr, Tin, Tout, _PredSym, _NC) :-
+	inline_jumpcof_cond(Cof,1,CofNum), !,
+	geninl_load_lhs(Arg, R, Pil, 
+			[jumpcof(CofNum,R,abs(-1))|Pilr], Tin, Tmid, _),
+	geninl_unload_lhs(Arg, R, HoldR, Tmid, Tout).
 
 /*======================================================================*/
 /*======================================================================*/

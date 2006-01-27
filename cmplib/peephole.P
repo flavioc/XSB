@@ -96,21 +96,45 @@ compile_popt11(fail, [Instr|PRest], OptCode) :-
 	;   
 	    compile_popt11(fail, PRest, OptCode)
 	).
-compile_popt11(jumpz(_,L), [label(T,L)|PRest], [label(T,L)|OptPRest]) :-
+compile_popt11(jumpz(R,L),Rest,Result) :-
+	(Rest = [label(T,L)|PRest] -> Result = [label(T,L)|OptPRest]
+	 ; Rest = [jump(L1),label(T,L)|PRest] -> Result = [jumpnz(R,L1),label(T,L)|OptPRest]
+	),
 	compile_popt1(PRest,OptPRest).
-compile_popt11(jumpnz(_,L), [label(T,L)|PRest], [label(T,L)|OptPRest]) :-
+compile_popt11(jumpnz(R,L),Rest,Result) :-
+	(Rest = [label(T,L)|PRest] -> Result = [label(T,L)|OptPRest]
+	 ; Rest = [jump(L1),label(T,L)|PRest] -> Result = [jumpz(R,L1),label(T,L)|OptPRest]
+	),
 	compile_popt1(PRest,OptPRest).
-compile_popt11(jumplt(_,L), [label(T,L)|PRest], [label(T,L)|OptPRest]) :-
-	compile_popt1(PRest, OptPRest).
-compile_popt11(jumple(_,L), [label(T,L)|PRest], [label(T,L)|OptPRest]) :-
-	compile_popt1(PRest, OptPRest).
-compile_popt11(jumpgt(_,L), [label(T,L)|PRest], [label(T,L)|OptPRest]) :-
+compile_popt11(jumplt(R,L),Rest,Result) :-
+	(Rest = [label(T,L)|PRest] -> Result = [label(T,L)|OptPRest]
+	 ; Rest = [jump(L1),label(T,L)|PRest] -> Result = [jumpge(R,L1),label(T,L)|OptPRest]
+	),
 	compile_popt1(PRest,OptPRest).
-compile_popt11(jumpge(_,L), [label(T,L)|PRest], [label(T,L)|OptPRest]) :-
+compile_popt11(jumple(R,L),Rest,Result) :-
+	(Rest = [label(T,L)|PRest] -> Result = [label(T,L)|OptPRest]
+	 ; Rest = [jump(L1),label(T,L)|PRest] -> Result = [jumpgt(R,L1),label(T,L)|OptPRest]
+	),
 	compile_popt1(PRest,OptPRest).
-compile_popt11(int_test_z(_,_,L), [label(T,L)|PRest], [label(T,L)|OptPRest]) :-
+compile_popt11(jumpgt(R,L),Rest,Result) :-
+	(Rest = [label(T,L)|PRest] -> Result = [label(T,L)|OptPRest]
+	 ; Rest = [jump(L1),label(T,L)|PRest] -> Result = [jumple(R,L1),label(T,L)|OptPRest]
+	),
 	compile_popt1(PRest,OptPRest).
-compile_popt11(int_test_nz(_,_,L), [label(T,L)|PRest], [label(T,L)|OptPRest]) :-
+compile_popt11(jumpge(R,L),Rest,Result) :-
+	(Rest = [label(T,L)|PRest] -> Result = [label(T,L)|OptPRest]
+	 ; Rest = [jump(L1),label(T,L)|PRest] -> Result = [jumplt(R,L1),label(T,L)|OptPRest]
+	),
+	compile_popt1(PRest,OptPRest).
+compile_popt11(int_test_z(R1,R2,L),Rest,Result) :-
+	(Rest = [label(T,L)|PRest] -> Result = [label(T,L)|OptPRest]
+	 ; Rest = [jump(L1),label(T,L)|PRest] -> Result = [int_test_nz(R1,R2,L1),label(T,L)|OptPRest]
+	),
+	compile_popt1(PRest,OptPRest).
+compile_popt11(int_test_nz(R1,R2,L),Rest,Result) :-
+	(Rest = [label(T,L)|PRest] -> Result = [label(T,L)|OptPRest]
+	 ; Rest = [jump(L1),label(T,L)|PRest] -> Result = [int_test_z(R1,R2,L1),label(T,L)|OptPRest]
+	),
 	compile_popt1(PRest,OptPRest).
 compile_popt11(Inst, PilRest, [Inst|OptPilRest]) :- 
 	compile_popt1(PilRest, OptPilRest).
@@ -142,21 +166,61 @@ compile_popt1a1(movreg(R,R), PilRest, OptPilRest) :-
 	compile_popt1a(PilRest, OptPilRest).
 compile_popt1a1(jump(Addr), [jump(_)|PRest], [jump(Addr)|OptPRest]) :-
 	compile_popt1a(PRest,OptPRest).
-compile_popt1a1(jumpz(_,L), [label(T,L)|PRest], [label(T,L)|OptPRest]) :-
+%%compile_popt1a1(jumpz(_,L), [label(T,L)|PRest], [label(T,L)|OptPRest]) :-
+%%	compile_popt1a(PRest,OptPRest).
+compile_popt1a1(jumpz(R,L),Rest,Result) :-
+	(Rest = [label(T,L)|PRest] -> Result = [label(T,L)|OptPRest]
+	 ; Rest = [jump(L1),label(T,L)|PRest] -> Result = [jumpnz(R,L1),label(T,L)|OptPRest]
+	),
 	compile_popt1a(PRest,OptPRest).
-compile_popt1a1(jumpnz(_,L), [label(T,L)|PRest], [label(T,L)|OptPRest]) :-
+%%compile_popt1a1(jumpnz(_,L), [label(T,L)|PRest], [label(T,L)|OptPRest]) :-
+%%	compile_popt1a(PRest,OptPRest).
+compile_popt1a1(jumpnz(R,L),Rest,Result) :-
+	(Rest = [label(T,L)|PRest] -> Result = [label(T,L)|OptPRest]
+	 ; Rest = [jump(L1),label(T,L)|PRest] -> Result = [jumpz(R,L1),label(T,L)|OptPRest]
+	),
 	compile_popt1a(PRest,OptPRest).
-compile_popt1a1(jumplt(_,L), [label(T,L)|PRest], [label(T,L)|OptPRest]) :-
-	compile_popt1a(PRest, OptPRest).
-compile_popt1a1(jumple(_,L), [label(T,L)|PRest], [label(T,L)|OptPRest]) :-
-	compile_popt1a(PRest, OptPRest).
-compile_popt1a1(jumpgt(_,L), [label(T,L)|PRest], [label(T,L)|OptPRest]) :-
+%%compile_popt1a1(jumplt(_,L), [label(T,L)|PRest], [label(T,L)|OptPRest]) :-
+%%	compile_popt1a(PRest, OptPRest).
+compile_popt1a1(jumplt(R,L),Rest,Result) :-
+	(Rest = [label(T,L)|PRest] -> Result = [label(T,L)|OptPRest]
+	 ; Rest = [jump(L1),label(T,L)|PRest] -> Result = [jumpge(R,L1),label(T,L)|OptPRest]
+	),
 	compile_popt1a(PRest,OptPRest).
-compile_popt1a1(jumpge(_,L), [label(T,L)|PRest], [label(T,L)|OptPRest]) :-
+%%compile_popt1a1(jumple(_,L), [label(T,L)|PRest], [label(T,L)|OptPRest]) :-
+%%	compile_popt1a(PRest, OptPRest).
+compile_popt1a1(jumple(R,L),Rest,Result) :-
+	(Rest = [label(T,L)|PRest] -> Result = [label(T,L)|OptPRest]
+	 ; Rest = [jump(L1),label(T,L)|PRest] -> Result = [jumpgt(R,L1),label(T,L)|OptPRest]
+	),
 	compile_popt1a(PRest,OptPRest).
-compile_popt1a1(int_test_z(_,_,L), [label(T,L)|PRest], [label(T,L)|OptPRest]) :-
+%%compile_popt1a1(jumpgt(_,L), [label(T,L)|PRest], [label(T,L)|OptPRest]) :-
+%%	compile_popt1a(PRest,OptPRest).
+compile_popt1a1(jumpgt(R,L),Rest,Result) :-
+	(Rest = [label(T,L)|PRest] -> Result = [label(T,L)|OptPRest]
+	 ; Rest = [jump(L1),label(T,L)|PRest] -> Result = [jumple(R,L1),label(T,L)|OptPRest]
+	),
 	compile_popt1a(PRest,OptPRest).
-compile_popt1a1(int_test_nz(_,_,L),[label(T,L)|PRest], [label(T,L)|OptPRest]) :-
+%%compile_popt1a1(jumpge(_,L), [label(T,L)|PRest], [label(T,L)|OptPRest]) :-
+%%	compile_popt1a(PRest,OptPRest).
+compile_popt1a1(jumpge(R,L),Rest,Result) :-
+	(Rest = [label(T,L)|PRest] -> Result = [label(T,L)|OptPRest]
+	 ; Rest = [jump(L1),label(T,L)|PRest] -> Result = [jumplt(R,L1),label(T,L)|OptPRest]
+	),
+	compile_popt1a(PRest,OptPRest).
+%%compile_popt1a1(int_test_z(_,_,L), [label(T,L)|PRest], [label(T,L)|OptPRest]) :-
+%%	compile_popt1a(PRest,OptPRest).
+compile_popt1a1(int_test_z(R1,R2,L),Rest,Result) :-
+	(Rest = [label(T,L)|PRest] -> Result = [label(T,L)|OptPRest]
+	 ; Rest = [jump(L1),label(T,L)|PRest] -> Result = [int_test_nz(R1,R2,L1),label(T,L)|OptPRest]
+	),
+	compile_popt1a(PRest,OptPRest).
+%%compile_popt1a1(int_test_nz(_,_,L),[label(T,L)|PRest], [label(T,L)|OptPRest]) :-
+%%	compile_popt1a(PRest,OptPRest).
+compile_popt1a1(int_test_nz(R1,R2,L),Rest,Result) :-
+	(Rest = [label(T,L)|PRest] -> Result = [label(T,L)|OptPRest]
+	 ; Rest = [jump(L1),label(T,L)|PRest] -> Result = [int_test_z(R1,R2,L1),label(T,L)|OptPRest]
+	),
 	compile_popt1a(PRest,OptPRest).
 compile_popt1a1(Inst, PilRest, OptPilRest) :- 
 	compile_popt1([Inst|PilRest], OptPilRest).

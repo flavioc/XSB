@@ -185,10 +185,10 @@ tbody(goal(Sym,Args),A,Pil,Pilr,Tin,Tout,Meet,_,_HoldRegs,Tabled,Tabar,_,_) :-
     sym_name(Sym, Pred, Arity),
     reserve(Arity,Tin,T1), Tout = [],
     tgoalargs(Args,1,Pil,Pil1,T1,_,Tabled),
-    ( option(sysmod), inline_builtin(Pred, Arity, BltNum), !,
-	( LastLit =:= 1, 
-	  ( A > 0,  Pil1 = [deallocate,builtin(BltNum),proceed|Pilr]
-	  ; A =< 0, Pil1 = [builtin(BltNum),proceed | Pilr]
+    ( (option(sysmod), inline_builtin(Pred, Arity, BltNum)) ->
+	( LastLit =:= 1 ->
+	  ( A > 0 ->  Pil1 = [deallocate,builtin(BltNum),proceed|Pilr]
+	   ; Pil1 = [builtin(BltNum),proceed | Pilr]
 	  )
         ; LastLit =\= 1, Pil1 = [builtin(BltNum)|Pilr]
         )

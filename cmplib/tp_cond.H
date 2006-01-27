@@ -26,12 +26,10 @@
 
 :- export tcond/10, tvar_hold/3, force_tp_cond_loaded/0.
 
-:- import warning/1 from auxlry.
 :- import gennum/1 from gensym.
-:- import vprag_loc/2, vprag_type/2 from varproc.
+:- import vprag_type/2 from varproc.
 :- import eval_relop/11, arithrelop/1 from tp_eval.
 :- import geninl_load_lhs/7, geninline/9 from tpinline.
 :- import term_comp_op/1, term_comp_tab/4 from tp_comp.
-:- import release_if_done/6, alloc_reg/3, release_if_done0/5, hold/3,
-	  getreg/2, putvarinst/5
-     from tp_var.
+:- import release_if_done0/5, getreg/2 from tp_var.
+:- import inline_jumpcof_cond/3 from builtin.

@@ -119,6 +119,7 @@ asm_genargs(OStr,[One|More], LabelTab) :-
 	asm_genarg(OStr,One, LabelTab), 
 	asm_genargs(OStr,More, LabelTab).
 
+:- index asm_genarg/3-2.
 asm_genarg(OStr,p, _) :- file_put(OStr,0).
 asm_genarg(OStr,pp, _) :- file_put(OStr,0), file_put(OStr,0).
 asm_genarg(OStr,ppp, _) :- file_put(OStr,0), file_put(OStr,0), file_put(OStr,0).

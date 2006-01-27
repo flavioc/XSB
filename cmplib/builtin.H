@@ -25,5 +25,5 @@
 
 
 
-:- export inline_predicate/2, inline_builtin/3, builtin_function/3.
+:- export inline_predicate/2, inline_builtin/3, inline_jumpcof_cond/3, builtin_function/3.
 

@@ -201,8 +201,12 @@ check_body(if(L1,L2), SymTab, InList, OutList) :-
 	check_body(L2, SymTab, MedList, OutList).
 check_body(not(L1), SymTab, InList, OutList) :-
 	check_body(L1, SymTab, InList, OutList).
-check_body(inlinegoal(_,_,Args), SymTab, InList, OutList) :-
-	check_args(Args, SymTab, InList, OutList).
+%%check_body(inlinegoal(_,_,Args), SymTab, InList, OutList) :-
+%%	check_args(Args, SymTab, InList, OutList).
+check_body(inlinegoal(Name,Arity,Args), SymTab, InList, OutList) :-
+	sym_insert(Name,Arity,[],SymTab,Sym),
+	add_if_necessary(Sym,InList,MedList),
+	check_args(Args, SymTab, MedList, OutList).
 check_body(goal(Sym,Args), SymTab, InList, OutList) :-
 %	message(goal(Sym,Args)),
 	sym_propin(pred, Sym),

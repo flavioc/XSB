@@ -545,12 +545,14 @@ parse_directive(export(X), SymTab,_ModName) :-
 	parse_comma_list(X, SymTab, [ex], (export)).
 parse_directive(document_export(X), SymTab,_ModName) :- 	
 	parse_comma_list(X, SymTab, [docex], (document_export)).
-parse_directive(import(from(P/A, _Mod)), _SymTab,_ModName) :-
-	inline_predicate(P, A), !,
-	error((P,'/',A,' is an inline predicate, cannot be imported !')).
+parse_directive(import(from(P/A, Mod)), _SymTab,_ModName) :-
+	inline_predicate(P, A), \+ standard_symbol(P,A,Mod), !,
+%%	error((P,'/',A,' is an inline predicate, cannot be imported !')).
+	warning((P,'/',A,' is an inline predicate, cannot be imported, ignored !')).
 parse_directive(document_import(from(P/A, _Mod)), _SymTab,_ModName) :-
 	inline_predicate(P, A), !,
-	error((P,'/',A,' is an inline predicate, cannot be doc-imported !')).
+%%	error((P,'/',A,' is an inline predicate, cannot be doc-imported !')).
+	warning((P,'/',A,' is an inline predicate, cannot be doc-imported, ignored !')).
 parse_directive(import(from(X, Mod)), SymTab,_ModName) :-
 	(var(Mod)
 	 ->	error(('Module cannot be a variable. Importing: ',X))
@@ -901,6 +903,7 @@ prime(3203).
 prime(6421).
 prime(12809).
 prime(25601).
+prime(51203).
 prime(102407).
 prime(204803).
 prime(409609).
@@ -909,7 +912,7 @@ prime(1638431).
 prime(3276803).
 prime(6553621).
 prime(13107229).
-prime(19999999).
+prime(24999983).
 prime(_).  % to generate an error!
 
 
