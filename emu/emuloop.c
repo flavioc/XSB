@@ -77,6 +77,7 @@
 #include "debug_xsb.h"
 #include "hash_xsb.h"
 #include "struct_manager.h"
+#include "builtin.h"
 
 /*
  * Variable ans_var_pos_reg is a pointer to substitution factor of an
@@ -321,7 +322,7 @@ inline void bld_boxedfloat(CTXTdeclc CPtr addr, Float value) {
 /* the case...								*/
 /*----------------------------------------------------------------------*/
 
-#define Fail1 lpcreg = cp_pcreg(breg);
+#define Fail1 lpcreg = cp_pcreg(breg)
 
 #define restore_trail_condition_registers(breg) \
       if (*breg != (Cell) &check_complete_inst) { \
@@ -334,6 +335,9 @@ inline void bld_boxedfloat(CTXTdeclc CPtr addr, Float value) {
 extern int  builtin_call(CTXTdeclc byte), unifunc_call(CTXTdeclc int, CPtr);
 extern Cell builtin_table[BUILTIN_TBL_SZ][2];
 extern Pair build_call(CTXTdeclc Psc);
+
+extern int is_proper_list(Cell term);
+extern int is_most_general_term(Cell term);
 
 extern void log_prog_ctr(byte *);
 extern long prof_flag;
@@ -1527,16 +1531,28 @@ contcase:     /* the main loop */
     Def3ops
     Op1(Register(get_xrx));
     Op2(Register(get_xxr));
-    Op3(get_xxxl);
-    ADVANCE_PC(size_xxxX);
     XSB_Deref(op1);
     XSB_Deref(op2);
     if (isconstr(op1)) {
-      if (!isconstr(op2) || get_str_psc(op1) != get_str_psc(op2)) 
+      if (!isconstr(op2) || get_str_psc(op1) != get_str_psc(op2)) {
+	Op3(get_xxxl);
         lpcreg = (byte *) op3;
+      } else {
+	ADVANCE_PC(size_xxxX);
+      }
     } else if (islist(op1)) {
-      if (!islist(op2)) lpcreg = (byte *) op3;
-    } else if (op1 != op2) lpcreg = (byte *) op3;
+      if (!islist(op2)) {
+	Op3(get_xxxl);
+	lpcreg = (byte *) op3;
+      }
+      else ADVANCE_PC(size_xxxX);
+    } else {
+      if (op1 != op2) {
+	Op3(get_xxxl);
+	lpcreg = (byte *) op3;
+      }
+      else ADVANCE_PC(size_xxxX);
+    }
   XSB_End_Instr()
 
      /* TLS: so much work for such a little function! */
@@ -1961,6 +1977,58 @@ contcase:     /* the main loop */
     pcreg=lpcreg; 
     if (builtin_call(CTXTc (byte)(op1))) {lpcreg=pcreg;}
     else Fail1;
+  XSB_End_Instr()
+
+#define jump_cond_fail(Condition) \
+      if (Condition) {ADVANCE_PC(size_xxxX);} else lpcreg = (byte *)get_xxxl
+
+  XSB_Start_Instr(jumpcof,_jumpcof)
+    Def2ops
+    Op1(get_xax);
+    Op2(get_xxr);
+    XSB_Deref(op2);
+    switch (op1) {
+    case ATOM_TEST:
+      jump_cond_fail(isatom(op2));
+      break;
+    case INTEGER_TEST:
+      jump_cond_fail(isinteger(op2) || isboxedinteger(op2));
+      break;
+    case REAL_TEST:
+      jump_cond_fail(isofloat(op2));
+      break;
+    case NUMBER_TEST:
+      jump_cond_fail(isnumber(op2) || isboxedinteger(op2) || isboxedfloat(op2));
+      break;
+    case ATOMIC_TEST:
+      jump_cond_fail(isatomic(op2) || isboxedinteger(op2) || isboxedfloat(op2));
+      break;
+    case COMPOUND_TEST:
+      jump_cond_fail(((isconstr(op2) && get_arity(get_str_psc(op2))) ||
+		      (islist(op2))) && !isboxedfloat(op2) && !isboxedinteger(op2));
+      break;
+    case CALLABLE_TEST:
+      jump_cond_fail((isconstr(op2) && !isboxed(op2)) || isstring(op2) || islist(op2));
+      break;
+    case IS_LIST_TEST:
+      jump_cond_fail(is_proper_list(op2));
+      break;
+    case IS_MOST_GENERAL_TERM_TEST:
+      jump_cond_fail(is_most_general_term(op2));
+      break;
+    case IS_ATTV_TEST:
+      jump_cond_fail(isattv(op2));
+      break;
+    case VAR_TEST:
+      jump_cond_fail(isref(op2));
+      break;
+    case NONVAR_TEST:
+      jump_cond_fail(isnonvar(op2));
+      break;
+    default: 
+      xsb_error("Undefined jumpcof condition");
+      Fail1;
+    }
   XSB_End_Instr()
 
   XSB_Start_Instr(unifunc,_unifunc)   /* PAR */

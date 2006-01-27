@@ -586,7 +586,7 @@ static int ground(CTXTdeclc CPtr temp)
 
 /* --------------------------------------------------------------------	*/
 
-inline static int is_proper_list(Cell term)	/* for standard preds */
+int is_proper_list(Cell term)	/* for standard preds */
 {
   register Cell addr;
 
@@ -611,7 +611,7 @@ inline static int is_proper_list(Cell term)	/* for standard preds */
    follow(addr) = makenil;			\
    *(++mini_trail_top) = (CPtr)addr;
 
-static int is_most_general_term(Cell term)
+int is_most_general_term(Cell term)
 {
   CPtr mini_trail[MAX_ARITY];
   CPtr *mini_trail_top;
