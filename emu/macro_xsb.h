@@ -214,7 +214,7 @@ extern struct tif_list  tif_list;
  *  manage thread-private tables.
  */
 
-#define MAXTABTHREAD 100
+#define MAXTABTHREAD 256
 
 struct TDispBlk_t { /* first two fields must be same as Table_Info_Frame for coercion! */
   Psc psc_ptr;

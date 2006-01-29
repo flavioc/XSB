@@ -27,8 +27,6 @@
 #include "thread_defs_xsb.h"
 #include "flag_defs_xsb.h"
 
-:- import (:-)/2 from usermod.
-
 /* ==================================================================  */
 /* User-level API */
 
@@ -109,6 +107,18 @@ xsb_sys_mutex_unlock( Id, ErrorVal ) :-
 	thread_request( XSB_SYS_MUTEX_UNLOCK, Id, _, _, ErrorVal ).
 
 
+xsb_set_init_glstack_size(S) :-
+	thread_request( XSB_SET_INIT_GLSTACK_SIZE, S, _, _, _ ).
+
+xsb_set_init_tcpstack_size(S) :-
+	thread_request( XSB_SET_INIT_TCPSTACK_SIZE, S, _, _, _ ).
+	  
+xsb_set_init_pdl_size(S) :-
+	thread_request( XSB_SET_INIT_PDL_SIZE, S, _, _, _ ).
+
+xsb_set_init_complstack_size(S) :-
+	thread_request( XSB_SET_INIT_COMPLSTACK_SIZE, S, _, _, _ ).
+
 /* ==================================================================  */
 /* Shortcuts */
 
@@ -171,53 +181,6 @@ xsb_user_mutex_unlock(N) :- writeln(userout, 'Error trying to unlock mutex '(N) 
 
 
 /**************************************************************/
-
-/** Thread specific assert and call **/
-
-/* make_ts_goal transforms a goal into a thread specific term */
-
-ts_prefix("$ts_").
-
-make_ts_goal(Goal, TSGoal) :-
-	xsb_thread_self(TID), name(TID, LTID),
-	ts_prefix(LPrefix),
-	append(LPrefix, LTID, LTSName ),
-	name(TSName, LTSName),
-	TSGoal =.. [TSName,Goal].
-
-ts_assert( (G:-C) ) :-
-	!,
-        make_ts_goal(G, TSG),
-	assert((TSG:-C)).
-ts_assert( G ) :-
-        make_ts_goal(G, TSG),
-	assert(TSG).
-
-ts_call( G ) :-
-	make_ts_goal(G, TSG), call(TSG).
-
-ts_abolish_table_call( G ) :-
-	make_ts_goal(G, TSG),
-	abolish_table_call(TSG).
-
-ts_tnot( G ) :-
-	make_ts_goal(G, TSG),
-	tnot(TSG).
-
-ts_init_tables :-
-	xsb_sys_mutex_lock( MUTEX_TABLE ),
-        make_ts_goal(_, TSG),
-        functor(TSG,NameTSG,ArityTSG),
-        table(NameTSG/ArityTSG),
-        dynamic(NameTSG/ArityTSG),
-	xsb_sys_mutex_unlock( MUTEX_TABLE ).
-
-ts_abolish_tables :-
-	make_ts_goal(_, TSPred),
-	abolish_table_pred( TSPred ).
-ts_abolish :-
-	make_ts_goal(_, TSPred),
-	abolish( TSPred ).
 
 /** Higher level stuff **/
 

@@ -55,6 +55,10 @@
 int emuloop(CTXTdeclc byte *startaddr);
 void cleanup_thread_structures(CTXTdecl);
 void init_machine(CTXTdecl);
+void set_init_glstack_size(int);
+void set_init_tcpstack_size(int);
+void set_init_pdl_size(int);
+void set_init_complstack_size(int);
 Cell copy_term_from_thread( th_context *th, th_context *from, Cell arg1 );
 
 typedef struct
@@ -534,6 +538,27 @@ xsbBool xsb_thread_request( CTXTdecl )
 	    if (sys_mut[i].owner > 0) 
 	      printf("Mutex %s (%d): %d\n",mutex_names[i],i,sys_mut[i].owner);
 	  }
+	  rc = 0;
+	  break;
+
+	case XSB_SET_INIT_GLSTACK_SIZE:
+	  i = ptoc_int(CTXTc 2) ;
+	  set_init_glstack_size(i);
+	  rc = 0;
+	  break;
+	case XSB_SET_INIT_TCPSTACK_SIZE:
+	  i = ptoc_int(CTXTc 2) ;
+	  set_init_tcpstack_size(i);
+	  rc = 0;
+	  break;
+	case XSB_SET_INIT_PDL_SIZE:
+	  i = ptoc_int(CTXTc 2) ;
+	  set_init_pdl_size(i);
+	  rc = 0;
+	  break;
+	case XSB_SET_INIT_COMPLSTACK_SIZE:
+	  i = ptoc_int(CTXTc 2) ;
+	  set_init_complstack_size(i);
 	  rc = 0;
 	  break;
 
