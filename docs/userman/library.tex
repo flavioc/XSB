@@ -2263,22 +2263,25 @@ will issue a warning message and have no effect on the database.
 
 \section{Low-level Trie Manipulation Utilities}
 
-The following utilities are used to implement assert and retract, but they
-can also be used to implement special purpose operations, like
-backtrackable assert and retract. All the utilities in this section are
-very low-level and require good understanding of the trie mechanism in XSB.
-
-The module {\tt storage} described in Volume 1 provides a higher-level and
-a more convenient interface to the XSB trie-based storage mechanism.
+The following utilities are used to implement assert and retract when
+trie indexing is used, but they can also be used to implement special
+purpose operations, like backtrackable assert and retract. All the
+utilities in this section are very low-level and require good
+understanding of the trie mechanism in XSB.  The module {\tt storage}
+described in Volume 1 provides a higher-level and a more convenient
+interface to the XSB trie-based storage mechanism (as does vanilla
+assert and retract with trie indexing).
 
 When multiple threads are used, all interned tries are private to a
 thread, so that information interned by one trie will not be visible
 to other threads.
 
+Terms can be interned within different tries, designated by a {\tt
+  Root}.  This root can be either explicit, or default.
 %%
 \begin{description}
   %%
-\ournewitem{newtrie(-Root)}{intern} \index{\texttt{newtrie/1}}
+\ournewitem{new\_trie(-Root)}{intern} \index{\texttt{newtrie/1}}
         {\tt Root} is instantiated to a handle for a new trie.
 
 \ournewitem{trie\_intern(+Term,+Root,-Leaf,-Flag,-Skel)}{intern}

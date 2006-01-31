@@ -9,6 +9,7 @@ sections discuss performance aspects of our implementation as well as
 describing relevant predicates.  A general knowledge of multi-threaded
 programming is assumed, such as can be found in \cite{LewB98}.
 
+\comment{
 \section{Getting Started with Multi-Threading}
 %
 In Version 3.0 the default configuration of XSB does not include
@@ -100,13 +101,14 @@ multi-threaded engine, the XSB thread id of any thread can be queried
 using the predicate {\tt xsb\_thread\_self/1}
 
 {\sc talk at some point about exit codes and error terms}
+}
 
 \section{Predicates for Multi-Threading}
 
 \begin{description}
 
-\ournewitem{xsb\_thread\_create(+Goal,-ThreadId)}{thread}
-\index{\texttt{xsb\_thread\_create/2}}
+\ournewitem{xsb\_thread\_create(+Goal,ThreadId,,+OptionsList)}{thread}
+\index{\texttt{xsb\_thread\_create/3}}
 %
 Called from thread $T$, creates a new XSB thread $T_{new}$ to execute
 {\tt Goal}: when goal either succeeds or fails, $T_{new}$ exits, but
@@ -117,13 +119,44 @@ callable, but need not be fully instantiated.  No bindings from {\tt
 between $T_{new}$ and $T$ must be through tables, asserted code, or
 other side effects.
 
+{\tt OptionList} allows optional parameters in the configuration for
+the initial size of XSB stacks and to indicate whether the thread is
+to be created as detached.  Note that XSB threads allow automatic
+stack allocation, so that the size options may be most useful for
+applications with very large numbers of threads.  In this case,
+setting initial stack sizes to be small may allow more threads to be
+created on a given hardware platform.  Also note that only XSB stacks
+are affected, the stack size of the underlying pthread remains
+unaltered.
+%
+\bi
+\item {\tt glsize(N)}: create thread with global (heap) plus local
+  stack size initially set ot {\tt N} kbytes.  If not specified, the
+  default size is used (cf. Section~\ref{sec:EmuOptions}).
+%
+\item {\tt tcsize(N)}: create thread with trail plus choice point 
+  stack size initially set ot {\tt N} kbytes.  If not specified, the
+  default size is used (cf. Section~\ref{sec:EmuOptions}).
+%
+\item {\tt complsize(N)}: create thread with completion
+  stack size initially set ot {\tt N} kbytes. If not specified, the
+  default size is used (cf. Section~\ref{sec:EmuOptions}).
+%
+\item {\tt pdlsize(N)}: create thread with {\tt N} kbytes of
+  unification stack.  If not specified, the
+  default size is used (cf. Section~\ref{sec:EmuOptions}).
+%
+\item {\tt detached}: creates detached thread.  If not specified, the
+  thread created will be joinable (and can later be set as detached by
+  {\tt xsb\_thread\_detach/1}.
+\ei
+
 {\bf Error Cases}
 \bi
 \item 	{\tt Goal} is not callable.
 \bi
 \item 	{\tt type\_error(callable\_term,Goal)}
 \ei
-%
 \item 	{\tt ThreadId} is not a variable
 \bi
 \item 	{\tt instantiation\_error}
@@ -132,7 +165,20 @@ other side effects.
 \bi
 \item {\tt resource\_error('system threads')}
 \ei
+\item 	{\tt OptionList} is not instantiated
+\bi
+\item 	{\tt instantiation\_error}
 \ei
+\item 	{\tt OptionList} contains an option, {\tt Option} not described above
+\bi
+\item 	{\tt domain\_error(xsb\_thread\_create\_optoin,Option)}
+\ei
+\ei
+
+\ournewitem{xsb\_thread\_create(+Goal,-ThreadId)}{thread}
+\index{\texttt{xsb\_thread\_create/2}}
+%
+Acts as {\tt xsb\_thread\_create(Goal,ThreadId,[])}.
 
 \ournewitem{xsb\_thread\_join(+ThreadIds,-ExitCodes)}{thread}
 \index{\texttt{xsb\_thread\_join/2}} 
@@ -161,14 +207,14 @@ the {\sc pthread} join operation.
 \item 	{\tt instantiation\_error}
 \ei
 %
-\item   {\tt ThreadId} does not correspond to a known thread
+\item   {\tt ThreadId} does not correspond to a live thread
 \bi
-\item   {\tt existence\_error(known\_thread,ThreadId)}
+\item   {\tt existence\_error(live\_thread,ThreadId)}
 \ei
 \item   {\tt ThreadId} does not correspond to a joinable thread
   (i.e. {\tt ThreadId} is detached).
 \bi
-\item   {\tt permission\_error(join,ThreadId)}
+\item   {\tt permission\_error(join,non\_joinable\_thread,ThreadId)}
 \ei
 \ei
 
@@ -202,5 +248,111 @@ Returns the XSB thread id of the calling thread.
 \item 	{\tt instantiation\_error}
 \ei
 \ei
-\end{description}
 
+\ournewitem{xsb\_thread\_detach(+ThreadId)}{thread}
+\index{\texttt{xsb\_thread\_detach/1}} 
+%
+Detaches the threadd denoted by {\tt ThreadId} so that all resources
+will be reclaimed upon its exit.  The thread denoted by {\tt ThreadId}
+will no longer be joinable, once it is detached.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt ThreadId} is not an integer
+\bi
+\item 	{\tt type\_error(integer,ExitCode)}
+\ei
+\item   {\tt ThreadId} does not correspond to a live thread
+\bi
+\item   {\tt existence\_error(live\_thread,ThreadId)}
+\ei
+\item 	{\tt ThreadId} is active but not joinable
+\bi
+\item 	{\tt permission\_error(thread\_detach,non\_joinable\_thread,ThreadId)}
+\ei
+\ei
+
+\ournewitem{xsb\_thread\_yield}{thread}
+\index{\texttt{xsb\_thread\_yield/0}} 
+% 
+Make the calling thread ready to be run {\em after} other threads of
+the same priority.  This predicate relies on the real-time extensions
+to pthreads specified in Posix 1b, and may not be available on all
+platforms.
+
+{\bf Error Cases}
+\bi
+\item 	The current platform does not support Posix real-time extensions
+\bi
+\item 	{\tt misc\_error}
+\ei
+\ei
+
+\ournewitem{xsb\_user\_mutex\_lock(MutexId)}{thread}
+\index{\texttt{xsb\_user\_mutex\_lock/1}} 
+%
+Locks a user-mutex, currently numbered 0 through 9, with 0
+corresponding to the mutex that controls I/O to the console.  These
+mutexes are initalized automatically at process startup, and In
+addition each of the mutexes have a {\tt pthread\_mutexattr\_t} type
+of {\tt NORMAL}.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt MutexId} is not an integer
+\bi
+\item 	{\tt type\_error(integer,MutexId)}
+\ei
+\item   {\tt MutexId} does is not the index of a user mutex
+\bi
+\item 	{\tt domain\_error(mutex\_id,MutexId)}
+\ei
+\item 	Locking {\tt MutexId} would lead to a deadlock
+\bi
+\item 	{\tt permission\_error('mutex lock','deadlocking mutex',MutexId)}
+\ei
+\ei
+
+\ournewitem{xsb\_user\_mutex\_trylock(MutexId)}{thread}
+\index{\texttt{xsb\_user_mutex_trylock/1}} 
+%
+If the user-mutex denoted by {\tt MutexId} is not busy, this predicate
+locks {\tt MutexId} and succeeds; if {\tt MutexId} is busy the
+predicate fails, rather than waiting for the lock as with {\tt
+  xsb\_user\_mutex\_trylock/1}
+
+{\bf Error Cases}
+\bi
+\item 	{\tt MutexId} is not an integer
+\bi
+\item 	{\tt type\_error(integer,MutexId)}
+\ei
+\item   {\tt MutexId} does is not the index of a user mutex
+\bi
+\item 	{\tt domain\_error(mutex\_id,MutexId)}
+\ei
+\ei
+
+\ournewitem{xsb\_user\_mutex\_unlock/0}{thread}
+\index{\texttt{xsb\_user\_mutex\_unlock/1}} 
+%
+Unlocks a user mutex (user mutexes are described above).
+
+{\bf Error Cases}
+\bi
+\item 	{\tt MutexId} is not an integer
+\bi
+\item 	{\tt type\_error(integer,MutexId)}
+\ei
+\item   {\tt MutexId} does is not the index of a user mutex
+\bi
+\item 	{\tt domain\_error(mutex\_id,MutexId)}
+\ei
+\item 	The thread calling {\tt xsb\_user\_mutex\_unlock/1} does not
+  own the lock for {\tt MutexId} 
+\bi
+\item 	{\tt permission\_error('mutex unlock',mutex,MutexId)}
+\ei
+\ei
+
+\end{description}
