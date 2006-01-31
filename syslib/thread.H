@@ -22,46 +22,39 @@
 ** 
 */
 
-:- import thread_request/5 from machine.
-:- import stat_set_flag/2, term_psc/2 from machine.
+:- export xsb_thread_create/1, xsb_thread_create/2,xsb_thread_create/3, 
+          xsb_thread_detach/1,
+	  xsb_thread_exit/1,  
+          xsb_thread_exit/0,  % obsolescent
+	  xsb_thread_join/2, 
+          xsb_thread_join/1,  % obsolescent
+          xsb_thread_self/1,
+          xsb_thread_yield/0.
 
-:- import call/1 from standard.
-:- import writeln/2 from standard.
-:- import catch/3 from standard.
-
-:- import check_callable/3, check_integer/3, check_var/3,
-          default_error_handler/1,domain_error/5,
-          instantiation_error/3 from error_handler.
-:- import integer/1 from standard.
-
-:-export xsb_thread_create/3, xsb_thread_exit/2, xsb_thread_join/3,
-	xsb_thread_detach/2, xsb_thread_self/2.
-
-:-export xsb_mutex_init/2, xsb_mutex_init_np/3, 
-	 xsb_mutex_lock/2, xsb_mutex_trylock/2,
-	 xsb_mutex_unlock/2, xsb_mutex_destroy/2.
+:-export xsb_mutex_init/1, xsb_mutex_lock/1, xsb_mutex_trylock/1,
+         xsb_mutex_unlock/1, xsb_mutex_destroy/1, xsb_mutex_init_np/2.
 
 :- export xsb_sys_mutex_lock/1, xsb_sys_mutex_unlock/1.
 
 :- export xsb_user_mutex_lock/1, xsb_user_mutex_unlock/1.
 
-:- export xsb_thread_yield/0, xsb_thread_yield/1.
-
-:- export xsb_show_mutexes/1.
+:- export xsb_show_mutexes/0.
 
 :- export xsb_set_init_glstack_size/1, xsb_set_init_tcpstack_size/1,
 	  xsb_set_init_pdl_size/1, xsb_set_init_complstack_size/1.
 
-/* Shortcuts */
+%:- import thread_request/5 from machine.
+:- import thread_request/8 from machine.
 
-:- export xsb_thread_create/1, xsb_thread_create/2,
-	  xsb_thread_exit/0, xsb_thread_exit/1,
-	  xsb_thread_join/2, xsb_thread_join/1,
-	  xsb_thread_detach/1,
-	  xsb_thread_self/1.
+:- import stat_set_flag/2, term_psc/2 from machine.
 
-:-export xsb_mutex_init/1, xsb_mutex_lock/1, xsb_mutex_trylock/1,
-         xsb_mutex_unlock/1, xsb_mutex_destroy/1, xsb_mutex_init_np/2.
+:- import call/1 from standard.
+:- import catch/3 from standard.
+
+ :- import check_callable/3, check_integer/3, check_nonvar/3, check_var/3,
+   default_error_handler/1,domain_error/5,
+   instantiation_error/3, misc_error/1 from error_handler.
+:- import integer/1 from standard.
 
 /* Higher level */
 

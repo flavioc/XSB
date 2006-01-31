@@ -138,7 +138,7 @@
         '$$set_scope_marker'/0,
         '$$unwind_stack'/0,
         '$$clean_up_block'/0,
-         thread_request/5,  mt_random_request/3,
+        thread_request/8,  mt_random_request/3,
         pow/3,
    gc_clauses/0,
 	print_ls/0, print_tr/0, print_heap/2, print_cp/0, print_regs/0,

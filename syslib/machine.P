@@ -345,7 +345,7 @@ socket_request(_ReqNumber,_Domain,_Sockfd,_Port,_Hostname,_Sockfptr,_Error) :-
 
 /*======================================================================*/
 
-thread_request(_ReqNumber,_Arg1,_Arg2,_Arg3,_Rc) :-
+thread_request(_ReqNumber,_Arg1,_Arg2,_Arg3,_Arg4,_Arg5,_Arg6,_Arg7) :-
         '_$builtin'(THREAD_REQUEST).
 
 mt_random_request(_ReqNumber,_Arg1,_Arg2):-  
