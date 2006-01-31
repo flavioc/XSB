@@ -429,89 +429,128 @@ xsbBool xsb_thread_request( CTXTdecl )
 	    break ;
 	}
 
-		case XSB_THREAD_DETACH:
-			id = ptoc_int( CTXTc 2 ) ;
-			pthread_mutex_lock( &th_mutex );
-			tid = th_get( id ) ;
-			if( tid == (pthread_t_p)0 )
-				xsb_abort( "[THREAD] Thread detach - invalid thread id" );
-			pthread_mutex_unlock( &th_mutex );
-			rc = PTHREAD_DETACH( tid ) ;
-			th_vec[id].detached = 1;
-			break ;
+	case XSB_THREAD_DETACH:
+	  id = ptoc_int( CTXTc 2 ) ;
+	  pthread_mutex_lock( &th_mutex );
+	  tid = th_get( id ) ;
+	  if( tid == (pthread_t_p)0 )
+	    xsb_abort( "[THREAD] Thread detach - invalid thread id" );
+	  pthread_mutex_unlock( &th_mutex );
+	  rc = PTHREAD_DETACH( tid ) ;
+	  if (rc == EINVAL) { /* pthread found, but not joinable */
+	    xsb_permission_error(CTXTc "thread_detach","non-joinable thread",
+				 reg[2],"xsb_thread_detach",1); 
+	  } else {
+	    if (rc == ESRCH)  { /* no such pthread found */
+	      xsb_existence_error(CTXTc "thread",reg[2],
+				  "xsb_thread_detach",1,1); 
+	    }
+	  }
+	  th_vec[id].detached = 1;
+	  break ;
 
-		case XSB_THREAD_SELF:
+       case XSB_THREAD_SELF:
 			rc = id = xsb_thread_self() ;
 			ctop_int( CTXTc 2, id ) ;
 			break ;
 
-		case XSB_MUTEX_INIT:
-		{
-			Integer arg = ptoc_int(CTXTc 2) ;
-			pthread_mutexattr_t attr ;
-			id = (Integer) mem_alloc( sizeof(pthread_mutex_t),THREAD_SPACE ) ;
-        		pthread_mutexattr_init( &attr ) ;
-			switch(arg)
-			{
-				case XSB_FAST_MUTEX:
-        				pthread_mutexattr_settype( &attr, 
-						PTHREAD_MUTEX_FAST_NP ) ;
-					break ;
-				case XSB_RECURSIVE_MUTEX:
-        				pthread_mutexattr_settype( &attr, 
-						PTHREAD_MUTEX_RECURSIVE_NP ) ;
-					break ;
-				case XSB_ERRORCHECK_MUTEX:
-        				pthread_mutexattr_settype( &attr, 
-						PTHREAD_MUTEX_ERRORCHECK_NP ) ;
-					break ;
-				default:
-        				pthread_mutexattr_settype( &attr, 
-						PTHREAD_MUTEX_FAST_NP ) ;
-					break ;
-			}
-			rc = pthread_mutex_init( (pthread_mutex_t *)id, &attr ) ;
-			ctop_int( CTXTc 3, id ) ;
-			break ;
+		case XSB_MUTEX_INIT:		{
+		  Integer arg = ptoc_int(CTXTc 2) ;
+		  pthread_mutexattr_t attr ;
+		  id = (Integer) mem_alloc( sizeof(pthread_mutex_t),THREAD_SPACE ) ;
+		  pthread_mutexattr_init( &attr ) ;
+		  switch(arg)
+		    {
+		    case XSB_FAST_MUTEX:
+		      pthread_mutexattr_settype( &attr, 
+						 PTHREAD_MUTEX_FAST_NP ) ;
+		      break ;
+		    case XSB_RECURSIVE_MUTEX:
+		      pthread_mutexattr_settype( &attr, 
+						 PTHREAD_MUTEX_RECURSIVE_NP ) ;
+		      break ;
+		    case XSB_ERRORCHECK_MUTEX:
+		      pthread_mutexattr_settype( &attr, 
+						 PTHREAD_MUTEX_ERRORCHECK_NP ) ;
+		      break ;
+		    default:
+		      pthread_mutexattr_settype( &attr, 
+						 PTHREAD_MUTEX_FAST_NP ) ;
+		      break ;
+		    }
+		  rc = pthread_mutex_init( (pthread_mutex_t *)id, &attr ) ;
+		  if (rc == ENOMEM) {
+		      xsb_resource_error(th,"memory","xsb_mutex_init",2);
+		  }
+		  break ;
 		}
-		case XSB_MUTEX_LOCK:
-			id = ptoc_int(CTXTc 2) ;
+                case XSB_MUTEX_LOCK:
+		  id = ptoc_int(CTXTc 2) ;
 #ifdef DEBUG_MUTEXES
-			fprintf( stddbg, "LOCK(%x)\n", id ) ;
+		  fprintf( stddbg, "LOCK(%x)\n", id ) ;
 #endif
-			rc = pthread_mutex_lock( (pthread_mutex_t *)id ) ;
-			break ;
+		  rc = pthread_mutex_lock( (pthread_mutex_t *)id ) ;
+		  if (rc == EINVAL) {
+		    xsb_permission_error(CTXTc "lock mutex","invalid mutex",
+				   reg[2],"xsb_mutex_lock",2); 
+		  } else if (rc == EDEADLK) { 
+		    xsb_permission_error(CTXTc "lock mutex","deadlocking mutex",
+				   reg[2],"xsb_mutex_lock",2); 
+		  } 
+		  break ;
 
 		case XSB_MUTEX_TRYLOCK:
-			id = ptoc_int(CTXTc 2) ;
-			rc = pthread_mutex_trylock( (pthread_mutex_t *)id ) ;
-			success = ( rc != EBUSY ) ;
+		  id = ptoc_int(CTXTc 2) ;
+		  rc = pthread_mutex_trylock( (pthread_mutex_t *)id ) ;
+		  if (rc == EINVAL) {
+		    xsb_permission_error(CTXTc "lock mutex","invalid mutex",
+				   reg[2],"xsb_mutex_lock",2); 
+		  } else success = ( rc != EBUSY ) ;
 			break ;
 
 		case XSB_MUTEX_UNLOCK:
-			id = ptoc_int(CTXTc 2) ;
+		  id = ptoc_int(CTXTc 2) ;
 #ifdef DEBUG_MUTEXES
-			fprintf( stddbg, "UNLOCK(%x)\n", id ) ;
+		  fprintf( stddbg, "UNLOCK(%x)\n", id ) ;
 #endif
-			rc = pthread_mutex_unlock( (pthread_mutex_t *)id ) ;
-			break ;
+		  rc = pthread_mutex_unlock( (pthread_mutex_t *)id ) ;
+		  if (rc == EINVAL) {
+		    xsb_permission_error(CTXTc "unlock mutex","invalid mutex",
+					 reg[2],"xsb_mutex_unlock",2); 
+		  } else if (rc == EPERM) { 
+		    xsb_permission_error(CTXTc "unlock mutex",
+					 "mutex not held by thread",
+					 reg[2],"xsb_mutex_unlock",2); 
+		  } 
+		  break ;
 
 		case XSB_MUTEX_DESTROY:
-			id = ptoc_int(CTXTc 2) ;
-			rc = pthread_mutex_destroy( (pthread_mutex_t *)id ) ;
-			mem_dealloc( (pthread_mutex_t *)id, sizeof(pthread_mutex_t),THREAD_SPACE ) ;
-			break ;
+		  id = ptoc_int(CTXTc 2) ;
+		  rc = pthread_mutex_destroy( (pthread_mutex_t *)id ) ;
+		  if (rc == EINVAL) {
+		    xsb_permission_error(CTXTc "destroy mutex","invalid mutex",
+					 reg[2],"xsb_mutex_destroy",1); 
+		  } else {
+		    if (rc == EBUSY) { 
+		      xsb_permission_error(CTXTc "destroy mutex",
+					   "busy mutex",
+					   reg[2],"xsb_mutex_destroy",1); 
+		    } else 
+		      mem_dealloc( (pthread_mutex_t *)id, sizeof(pthread_mutex_t),
+				   THREAD_SPACE ) ;
+		  }
+		  break ;
 
 		case XSB_SYS_MUTEX_LOCK:
-			id = ptoc_int(CTXTc 2) ;
+		  id = ptoc_int(CTXTc 2) ;
 #ifdef DEBUG_MUTEXES
-			fprintf( stddbg, "S LOCK(%ld)\n", (long)id ) ;
+		  fprintf( stddbg, "S LOCK(%ld)\n", (long)id ) ;
 #endif
-			rc = pthread_mutex_lock( MUTARRAY_MUTEX(id) ) ;
+		  rc = pthread_mutex_lock( MUTARRAY_MUTEX(id) ) ;
 #ifdef DEBUG_MUTEXES
-			fprintf( stddbg, "RC=%ld\n", (long)rc ) ;
+		  fprintf( stddbg, "RC=%ld\n", (long)rc ) ;
 #endif
-			break ;
+		  break ;
 		case XSB_SYS_MUTEX_UNLOCK:
 			id = ptoc_int(CTXTc 2) ;
 #ifdef DEBUG_MUTEXES
@@ -530,6 +569,8 @@ xsbBool xsb_thread_request( CTXTdecl )
 
 	case XSB_THREAD_YIELD:
 	  rc = sched_yield();
+	  if (rc == ENOSYS) /* Need support for POSIX 1b for this */
+	    xsb_abort("Real-time extensions not supported on this platform");
 	  break;
 
 	case XSB_SHOW_MUTEXES: 
@@ -567,7 +608,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  xsb_abort( "[THREAD] Invalid thread operation requested %d",request_num);
 	  break ;
 	}
-	ctop_int( CTXTc 5, rc ) ;
+	//	ctop_int( CTXTc 5, rc ) ;
 	return success ;
 #else
         switch( request_num )
