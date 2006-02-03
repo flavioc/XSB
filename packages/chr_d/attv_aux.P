@@ -1,7 +1,7 @@
 
 :- import put_attr/3, get_attr/3,
 	get_attributes/2, put_attributes/2 from machine.
-:- import member/2, append/3, ith/3 from basics.
+:- import length/2, member/2, append/3, ith/3 from basics.
 :- import delete_ith/4 from listutil.
 
 %
@@ -98,14 +98,7 @@ insert_ordered(ListX,[AttrY|Ys],Zs) :-
 	    Zs = [AttrX,AttrY|Ys]
 	  ; insert_ordered(ListX,Ys,Ws),
 	    Zs = [AttrY|Ws]
-	).	
-/*	
-	(check_order(X,Y)
-	 -> Zs = [attr(X),attr(Y)|Ys]
-	  ; insert_ordered(X,Ys,Ws),
-	    Zs = [attr(Y)|Ws]
 	).
-*/
 
 ordered_before([],[]).
 ordered_before([X|Xs],[Y|Ys]) :-
@@ -223,6 +216,37 @@ rec_attr_sort_1([],Sorted,Sorted).
 rec_attr_sort_1([attr(A)|As],SortedIn,SortedOut) :-
 	attr_sort(A,SortedIn,Sorted),
 	rec_attr_sort_1(As,Sorted,SortedOut).
+
+
+l_reconstruct_store([],[]).
+l_reconstruct_store([C|Cs],[S|Ss]) :-
+	reconstruct_store(C,S),
+	l_reconstruct_store(Cs,Ss).
+
+reconstruct_store([],_,[],[]).
+reconstruct_store([F/A|FAs],Var,Atts,Store) :-
+	length(AttsF,A),
+	append(AttsF,AttsFs,Atts),
+	atts2store(AttsF,Var,F,ConstrF),
+	reconstruct_store(FAs,Var,AttsFs,ConstrFs),
+	append(ConstrF,ConstrFs,Store).
+
+atts2store(Atts,Var,F,Store) :-
+	atts2store(Atts,Var,F,1,Store).
+
+atts2store([],_,_,_,[]).
+atts2store([A|As],Var,F,I,Constraints) :-
+	atts2store_1(A,Var,F,I,CA),
+	I1 is I+1,
+	atts2store(As,Var,F,I1,CAs),
+	append(CA,CAs,Constraints).
+
+atts2store_1([],_,_,_,[]).
+atts2store_1([A|As],Var,F,I,[C|Cs]) :-
+	A =.. [attr|ArgsA],
+	delete_ith(I,ArgsF,Var,ArgsA),
+	C =.. [F|ArgsF],
+	atts2store_1(As,Var,F,I,Cs).
 
 
 

@@ -247,13 +247,15 @@ generate_aux_preds(Declarations,Mod,AuxPreds) :-
 	generate_match_constr_clauses(Declarations,AttrCnt,Mod,MatchClauses),
 	generate_add_constr_clauses(Declarations,AttrCnt,Mod,AddClauses),
 	generate_remove_constr_clauses(Declarations,AttrCnt,Mod,RmClauses),
+	generate_reconstruct_store_clause(Declarations,Mod,RSClause),
 	append_lists([UnificationHandler,
 		      GetAttrClause,
 		      PutAttrClause,
 		      CheckClauses,
 		      MatchClauses,
 		      AddClauses,
-		      RmClauses],
+		      RmClauses,
+		      RSClause],
 		     AuxPreds).
 
 
@@ -427,11 +429,9 @@ generate_add_constr_body(Off,AttrCnt,F,A,ArgId,Args,Mod,CodeList,Code) :-
 	delete_ith(AttrNum,ArgAtts,IdAttr,RestArgAtts),
 	GetAttsCall =.. [GetAttsName,Arg|ArgAtts],
 
-	ArgAttr =.. ['attr'|OtherArgs],
-
-%	AppendCall =.. ['append_unique',Arg,IdAttr,[ArgAttr],NewIdAttr],
-	InsertCall =.. ['append',IdAttr,[ArgAttr],NewIdAttr],
-%	InsertCall =.. ['insert_ordered',OtherArgs,IdAttr,NewIdAttr],
+%	ArgAttr =.. ['attr'|OtherArgs],
+%	InsertCall =.. ['append',IdAttr,[ArgAttr],NewIdAttr],
+	InsertCall =.. ['insert_ordered',OtherArgs,IdAttr,NewIdAttr],
 
 	fmt_write_string(PutAttsName, "put_%s_atts", arg(Mod)),
 	delete_ith(AttrNum,NewArgAtts,NewIdAttr,RestArgAtts),
@@ -439,10 +439,9 @@ generate_add_constr_body(Off,AttrCnt,F,A,ArgId,Args,Mod,CodeList,Code) :-
 	
 	ArgCode = (var(Arg)
 		   -> GetAttsCall,
-%		      writeln(before_append_unique(IdAttr,Arg,ArgAttr)),
-%		      AppendCall,
+%		      writeln(before_insert(F,IdAttr,Args)),
 		      InsertCall,
-%		      writeln(append_unique_result(NewIdAttr)),nl,
+%		      writeln(after_insert(F,NewIdAttr)),nl,
 		      PutAttsCall
 		    ; true),
 	append(CodeList,[ArgCode],CL),
@@ -499,6 +498,14 @@ generate_remove_constr_body(Off,AttrCnt,F,A,ArgId,Args,Mod,CodeList,Code) :-
 	append(CodeList,[ArgCode],CL),
 	generate_remove_constr_body(Off,AttrCnt,F,A,ArgNum,Args,Mod,CL,Code).
 
+
+generate_reconstruct_store_clause(Declarations,Mod,RSClause) :-
+	Head = reconstruct_store(Var,Store),
+	Body = (get_attr(Var,Mod,AttrTerm),
+		AttrTerm =.. [v|AttrLists],
+		reconstruct_store(Declarations,Var,AttrLists,Store)
+	       ),
+	RSClause = [(Head :- Body)].
 
 generate_show_atts_clause(Mod,ShowAttsClause) :-
 	ShowAttsClause = (show_atts(X) :- show_atts(X,Mod)).
