@@ -2240,7 +2240,7 @@ DllExport int call_conv xsb(CTXTdeclc int flag, int argc, char *argv[])
    extern void dis(xsbBool);
    extern char *init_para(CTXTdeclc int, char **);
    extern void perform_IO_Redirect(CTXTdeclc int, char **);
-   extern void init_machine(CTXTdecl), init_symbols(void);
+   extern void init_machine(CTXTdeclc int, int, int, int), init_symbols(void);
 #ifdef FOREIGN
 #ifndef FOREIGN_ELF
 #ifndef FOREIGN_WIN32
@@ -2273,7 +2273,7 @@ DllExport int call_conv xsb(CTXTdeclc int flag, int argc, char *argv[])
      setbuf(stdout, NULL);
      startup_file = init_para(CTXTc argc, argv);	/* init parameters */
 
-     init_machine(CTXT);	/* init space, regs, stacks */
+     init_machine(CTXTc NULL,NULL,NULL,NULL);	/* init space, regs, stacks */
      init_inst_table();		/* init table of instruction types */
      init_symbols();		/* preset a few symbols in PSC table */
      init_interrupt();		/* catch ^C interrupt signal */

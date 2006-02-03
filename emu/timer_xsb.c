@@ -137,7 +137,7 @@
 
 #ifdef MULTI_THREAD
 
-void init_machine(CTXTdecl);
+void init_machine(CTXTdeclc int, int, int, int);
 
 #else /* not multithreaded */
 

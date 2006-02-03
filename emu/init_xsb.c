@@ -137,6 +137,11 @@ Cell trie_fail_unlock_inst;
 Cell halt_inst;
 Cell proceed_inst;
 
+#ifdef MULTI_THREAD
+/* Used to create detached thread -- process global. */
+pthread_attr_t detached_attr_gl;
+#endif
+
 extern double realtime_count_gl;
 
 extern void perproc_reset_stat(void), reset_stat_total(void); 
@@ -945,8 +950,14 @@ void cleanup_thread_structures(CTXTdecl)
 /*==========================================================================*/
 /* Initialize Memory Regions and Related Variables.  Done whenever
    threads are initialized.
+
+   If non-null, use input parameters for initial sizes (for greater
+   freedom in thread allocation) ; otherwise use process-level
+   defaults.  
    ----------------------------------------------- */
-void init_machine(CTXTdecl)
+
+void init_machine(CTXTdeclc int glsize, int tcpsize, 
+		  int complstacksize, int pdlsize)
 {
   void tstInitDataStructs(CTXTdecl);
   /* set special SLG_WAM instruction addresses */
@@ -981,29 +992,46 @@ void init_machine(CTXTdecl)
 
   /* Allocate Stack Spaces and set Boundary Parameters
      ------------------------------------------------- */
+
+  if (pdlsize == NULL) {
   pdl.low = (byte *)malloc(pdl.init_size * K);
+  } else {
+    pdl.low = (byte *)malloc(pdlsize * K);
+  }
   if (!pdl.low)
     xsb_exit("Not enough core for the PDL Stack!");
   pdl.high = pdl.low + pdl.init_size * K;
   pdl.size = pdl.init_size;
 
-  glstack.low = (byte *)malloc(glstack.init_size * K);
+  if (glsize == NULL) {
+    glstack.low = (byte *)malloc(glstack.init_size * K);
+  } else {
+    glstack.low = (byte *)malloc(glsize * K);
+  }    
   if (!glstack.low)
     xsb_exit("Not enough core for the Global and Local Stacks!");
   glstack.high = glstack.low + glstack.init_size * K;
   glstack.size = glstack.init_size;
 
 #if defined(GENERAL_TAGGING)
-    extend_enc_dec_as_nec(glstack.low,glstack.high);
+  extend_enc_dec_as_nec(glstack.low,glstack.high);
 #endif
 
-  tcpstack.low = (byte *)malloc(tcpstack.init_size * K);
+  if (tcpsize == NULL) {
+    tcpstack.low = (byte *)malloc(tcpstack.init_size * K);
+  } else {
+    tcpstack.low = (byte *)malloc(tcpsize * K);
+  }    
   if (!tcpstack.low)
     xsb_exit("Not enough core for the Trail and Choice Point Stack!");
   tcpstack.high = tcpstack.low + tcpstack.init_size * K;
   tcpstack.size = tcpstack.init_size;
 
-  complstack.low = (byte *)malloc(complstack.init_size * K);
+  if (complstacksize == NULL) {
+    complstack.low = (byte *)malloc(complstack.init_size * K);
+  } else {
+    complstack.low = (byte *)malloc(complstacksize * K);
+  }
   if (!complstack.low)
     xsb_exit("Not enough core for the Completion Stack!");
   complstack.high = complstack.low + complstack.init_size * K;
@@ -1103,13 +1131,13 @@ Psc make_code_psc_rec(char *name, int arity, Psc mod_psc) {
 
 /*==========================================================================*/
 
-/* Initialize Standard PSC Records
+/* Initialize Standard PSC Records and Thread Attributes
    ------------------------------- */
 void init_symbols(void)
 {
   Psc  tables_psc, standard_psc;
   Pair temp, tp;
-  int  i, new_indicator;
+  int  i, new_indicator, status;
 
   inst_begin_gl = 0;
   symbol_table.table = (void **)mem_calloc(symbol_table.size, sizeof(Pair),ATOM_SPACE);
@@ -1166,6 +1194,18 @@ void init_symbols(void)
 		      &new_indicator);
   temp = (Pair) insert("error",3,global_mod,&new_indicator);
   temp = (Pair) insert("resource_error",1,global_mod,&new_indicator);
+
+  #ifdef MULTI_THREAD
+  status = pthread_attr_init(&detached_attr_gl);
+  if (status != 0) 
+    xsb_exit("Cannot init pthread attr detached state during system initialization");
+  
+  status = pthread_attr_setdetachstate(&detached_attr_gl,PTHREAD_CREATE_DETACHED);
+  if (status != 0) 
+    xsb_exit("Cannot set pthread attr detached state during system initialization");
+
+  #endif
+
 }
 
 /*==========================================================================*/

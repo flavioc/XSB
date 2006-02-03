@@ -54,12 +54,13 @@
 
 int emuloop(CTXTdeclc byte *startaddr);
 void cleanup_thread_structures(CTXTdecl);
-void init_machine(CTXTdecl);
+void init_machine(CTXTdeclc int, int, int, int);
 void set_init_glstack_size(int);
 void set_init_tcpstack_size(int);
 void set_init_pdl_size(int);
 void set_init_complstack_size(int);
 Cell copy_term_from_thread( th_context *th, th_context *from, Cell arg1 );
+extern pthread_attr_t detached_attr_gl;
 
 typedef struct
 {	
@@ -268,43 +269,63 @@ static void copy_pflags( th_context *to, th_context *from )
 
 static int xsb_thread_create(th_context *th)
 {
-	int rc ;
-	Cell goal ;
-	th_context *new_th_ctxt ;
-	pthread_t_p thr ;
-	Integer id ;
+  int rc, is_detached ;
+  Cell goal ;
+  th_context *new_th_ctxt ;
+  pthread_t_p thr ;
+  Integer id ;
        
-	goal = ptoc_tag(th, 2) ;
-	new_th_ctxt = mem_alloc(sizeof(th_context),THREAD_SPACE) ;
+  goal = ptoc_tag(th, 2) ;
+  new_th_ctxt = mem_alloc(sizeof(th_context),THREAD_SPACE) ;
 
-	copy_pflags(new_th_ctxt, th) ;
-	init_machine(new_th_ctxt) ;
-	new_th_ctxt->_reg[1] = copy_term_from_thread(new_th_ctxt, th, goal) ;
+  copy_pflags(new_th_ctxt, th) ;
+  init_machine(new_th_ctxt,ptoc_int(CTXTc 4),ptoc_int(CTXTc 5),
+	       ptoc_int(CTXTc 6),ptoc_int(CTXTc 7)) ;
+  new_th_ctxt->_reg[1] = copy_term_from_thread(new_th_ctxt, th, goal) ;
 
-	flags[NUM_THREADS]++ ;
+  flags[NUM_THREADS]++ ;
+
+  is_detached = ptoc_int(CTXTc 8);
 
 #ifdef WIN_NT
-	thr = mem_alloc(sizeof(pthread_t),THREAD_SPACE);
-	rc = pthread_create( thr, NULL, &xsb_thread_run, (void *)new_th_ctxt ) ;
+  thr = mem_alloc(sizeof(pthread_t),THREAD_SPACE);
+  if (is_detached) { /* set detached */
+    rc = pthread_create(thr, &detached_attr_gl, &xsb_thread_run, 
+			 (void *)new_th_ctxt ) ;
+  }
+  else {
+    rc = pthread_create(thr, NULL, &xsb_thread_run, (void *)new_th_ctxt ) ;
+  }
+
 #else
-	rc = pthread_create( &thr, NULL, &xsb_thread_run, (void *)new_th_ctxt ) ;
+
+  if (is_detached) { /* set detached */
+    rc = pthread_create( &thr, &detached_attr_gl, &xsb_thread_run, 
+			 (void *)new_th_ctxt ) ;
+  }
+  else {
+    rc = pthread_create( &thr, NULL, &xsb_thread_run, (void *)new_th_ctxt ) ;
+  }
 
 #endif
 
-	if (rc == EAGAIN) {
-	  xsb_resource_error(th,"system threads","xsb_thread_create",2);
-	} else {
-	  if (rc != 0) 
-	    xsb_abort("Failure to create thread: error %d\n",rc);
-	}
+  if (rc == EAGAIN) {
+    xsb_resource_error(th,"system threads","xsb_thread_create",2);
+  } else {
+    if (rc != 0) 
+      xsb_abort("Failure to create thread: error %d\n",rc);
+  }
 
 /* This repetition of the call to th_new is need for concurrency reasons */
-	pthread_mutex_lock( &th_mutex );
-	id = th_new( thr, new_th_ctxt ) ;
-       	pthread_mutex_unlock( &th_mutex );
+  pthread_mutex_lock( &th_mutex );
+  id = th_new( thr, new_th_ctxt ) ;
 
-	ctop_int( th, 3, id ) ;
-	return rc ;
+  if (is_detached) th_vec[id].detached = 1;
+
+  pthread_mutex_unlock( &th_mutex );
+
+  ctop_int( th, 3, id ) ;
+  return rc ;
 }
 
 th_context *find_context( int id )
@@ -389,18 +410,18 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  mem_dealloc(th,sizeof(th_context),THREAD_SPACE) ;
 	  flags[NUM_THREADS]-- ;
 	  pthread_mutex_lock( &th_mutex );
-			tid2 = pthread_self();
+	  tid2 = pthread_self();
 #ifdef WIN_NT
-			i = th_find( &tid2 ) ;
+	  i = th_find( &tid2 ) ;
 #else
-			i = th_find( tid2 ) ;
+	  i = th_find( tid2 ) ;
 #endif
-			if( th_vec[i].detached )
-				th_delete(i);
-			pthread_mutex_unlock( &th_mutex );
-			pthread_exit((void *) rval ) ;
-			rc = 0 ; /* keep compiler happy */
-			break ;
+	  if( th_vec[i].detached )
+	    th_delete(i);
+	  pthread_mutex_unlock( &th_mutex );
+	  pthread_exit((void *) rval ) ;
+	  rc = 0 ; /* keep compiler happy */
+	  break ;
 
 	case XSB_THREAD_JOIN: {
 	  id = ptoc_int( CTXTc 2 ) ;
@@ -422,11 +443,11 @@ xsbBool xsb_thread_request( CTXTdecl )
 	    }
 	  }
 
-	    pthread_mutex_lock( &th_mutex );
-	    th_delete(id);
-	    pthread_mutex_unlock( &th_mutex );
-	    ctop_int( CTXTc 3, rval ) ;
-	    break ;
+	  pthread_mutex_lock( &th_mutex );
+	  th_delete(id);
+	  pthread_mutex_unlock( &th_mutex );
+	  ctop_int( CTXTc 3, rval ) ;
+	  break ;
 	}
 
 	case XSB_THREAD_DETACH:
@@ -450,40 +471,40 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  break ;
 
        case XSB_THREAD_SELF:
-			rc = id = xsb_thread_self() ;
-			ctop_int( CTXTc 2, id ) ;
-			break ;
+	 rc = id = xsb_thread_self() ;
+	 ctop_int( CTXTc 2, id ) ;
+	 break ;
 
-		case XSB_MUTEX_INIT:		{
-		  Integer arg = ptoc_int(CTXTc 2) ;
-		  pthread_mutexattr_t attr ;
-		  id = (Integer) mem_alloc( sizeof(pthread_mutex_t),THREAD_SPACE ) ;
-		  pthread_mutexattr_init( &attr ) ;
-		  switch(arg)
-		    {
-		    case XSB_FAST_MUTEX:
-		      pthread_mutexattr_settype( &attr, 
-						 PTHREAD_MUTEX_FAST_NP ) ;
-		      break ;
-		    case XSB_RECURSIVE_MUTEX:
-		      pthread_mutexattr_settype( &attr, 
-						 PTHREAD_MUTEX_RECURSIVE_NP ) ;
-		      break ;
-		    case XSB_ERRORCHECK_MUTEX:
-		      pthread_mutexattr_settype( &attr, 
-						 PTHREAD_MUTEX_ERRORCHECK_NP ) ;
-		      break ;
-		    default:
-		      pthread_mutexattr_settype( &attr, 
-						 PTHREAD_MUTEX_FAST_NP ) ;
-		      break ;
-		    }
-		  rc = pthread_mutex_init( (pthread_mutex_t *)id, &attr ) ;
-		  if (rc == ENOMEM) {
-		      xsb_resource_error(th,"memory","xsb_mutex_init",2);
-		  }
-		  break ;
-		}
+	case XSB_MUTEX_INIT:		{
+	  Integer arg = ptoc_int(CTXTc 2) ;
+	  pthread_mutexattr_t attr ;
+	  id = (Integer) mem_alloc( sizeof(pthread_mutex_t),THREAD_SPACE ) ;
+	  pthread_mutexattr_init( &attr ) ;
+	  switch(arg)
+	    {
+	    case XSB_FAST_MUTEX:
+	      pthread_mutexattr_settype( &attr, 
+					 PTHREAD_MUTEX_FAST_NP ) ;
+	      break ;
+	    case XSB_RECURSIVE_MUTEX:
+	      pthread_mutexattr_settype( &attr, 
+					 PTHREAD_MUTEX_RECURSIVE_NP ) ;
+	      break ;
+	    case XSB_ERRORCHECK_MUTEX:
+	      pthread_mutexattr_settype( &attr, 
+					 PTHREAD_MUTEX_ERRORCHECK_NP ) ;
+	      break ;
+	    default:
+	      pthread_mutexattr_settype( &attr, 
+					 PTHREAD_MUTEX_FAST_NP ) ;
+	      break ;
+	    }
+	  rc = pthread_mutex_init( (pthread_mutex_t *)id, &attr ) ;
+	  if (rc == ENOMEM) {
+	    xsb_resource_error(th,"memory","xsb_mutex_init",2);
+	  }
+	  break ;
+	}
                 case XSB_MUTEX_LOCK:
 		  id = ptoc_int(CTXTc 2) ;
 #ifdef DEBUG_MUTEXES
