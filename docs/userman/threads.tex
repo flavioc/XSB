@@ -1,40 +1,39 @@
 \chapter{Multi-Threaded Programming in XSB} \label{chap:threads}
 
-Starting from Version 3.0, XSB supports the use of Posix threads to
+Starting with Version 3.0, XSB supports the use of Posix threads to
 perform separable computations, and in certain cases to parellelize
 them.  Posix threads have a simple and clear API, and are available on
 all Unixes as well as on Windows via ???.  This chapter introduces how
 to program with threads in XSB through a series of examples.  Later
 sections discuss performance aspects of our implementation as well as
 describing relevant predicates.  A general knowledge of multi-threaded
-programming is assumed, such as can be found in \cite{LewB98}.
+programming is assumed, such as can be found in \cite{LewB98,Bute97}.
 
-\comment{
 \section{Getting Started with Multi-Threading}
 %
 In Version 3.0 the default configuration of XSB does not include
 multi-threading.  This is partly because multi-threading is new, and
 despite our efforts, the multi-threaded engine may contain bugs not
-present in the single-threaded engine.  In addition, the
-multi-threaded engine is about 5-20\% slower than the single-threaded
-engine due to its use of mutexes and its greater use of dynamic,
-rather than static, C variables.  Finally, in Version 3.0, not all
-packages have yet been made thread-safe so that not all configurations
-are supported with multi-threading.  Currently ODBC is supported with
-the multi-threaded configuration, but {\tt dbdrivers}, {\tt xpath},
-{\tt iodbc}, {\tt interprolog} and {\tt smodels} have not been. (???)
+present in the single-
+threaded engine.  In addition, in Version 3.0,
+not all packages have yet been made thread-safe so that not all
+configurations are supported with multi-threading.  Currently ODBC is
+supported with the multi-threaded configuration, but {\tt dbdrivers},
+{\tt xpath}, {\tt iodbc}, {\tt interprolog} and {\tt smodels} have not
+been. {\sf What about others?}
 
 With this in mind, making the multi-threaded engine is simple:
-configure and make XSB as in Chapter~\ref{}, but include the command
-{\tt --enable-mt}.  When you invoke the newly made configuration of
-XSB you should see {\tt engine: multi-threading} in the configuration
-list below the banner.
+configure and make XSB as in Chapter~\ref{chap:system}, but include
+the command {\tt --enable-mt}.  When you invoke the newly made
+configuration of XSB you should see {\tt engine: multi-threading} in
+the configuration list below the banner rather than {\tt engine:
+  slg-wam}.
 
 \paragraph{Hello World for Beginners}
 %
 We naturally start with a hello world program.  Within the
 multi-threaded engine, import {\tt xsb\_thread\_create/2} from the
-module thread, and type the command 
+module {\tt thread}, and type the command
 \begin{center} 
 {\tt ?- xsb\_thread\_create(writeln('hello world'),Id)} 
 \end{center} 
@@ -76,16 +75,18 @@ $T_{prompt}$ and $T_{child}$ as follows
 hello world
 
 Id = 1
-ExitCode = 0
+ExitCode = no_error_ball - 0
 \end{verbatim}
 %
 In this case, as soon as $T_{prompt}$ has issued a command to create
 $T_{child}$, it executes {\tt xsb\_thread\_join/2}.  This later
 predicate makes a system call to the underlying operating system to
 suspend $T_{prompt}$ until $T_{child}$ has exited.  {\tt
-  xsb\_thread\_join/2} returns the exit code of $T_{child}$: as usual,
-a value of {\tt 0} indicates normal termination.  
+  xsb\_thread\_join/2} returns both the error ball (if any) and the
+exit code of $T_{child}$.  As usual, a value of {\tt 0} indicates
+normal termination, as does the fact that no error ball was found.
 
+\comment{
 \paragraph{Multi-threading Concepts}
 
 The previous section introduced some new concepts that were not fully
@@ -102,7 +103,6 @@ using the predicate {\tt xsb\_thread\_self/1}
 
 {\sc talk at some point about exit codes and error terms}
 }
-
 \section{Predicates for Multi-Threading}
 
 \begin{description}
@@ -110,9 +110,10 @@ using the predicate {\tt xsb\_thread\_self/1}
 \ournewitem{xsb\_thread\_create(+Goal,ThreadId,,+OptionsList)}{thread}
 \index{\texttt{xsb\_thread\_create/3}}
 %
-Called from thread $T$, creates a new XSB thread $T_{new}$ to execute
-{\tt Goal}: when goal either succeeds or fails, $T_{new}$ exits, but
-{\tt xsb\_thread\_create/2} will succeed immediately, binding {\tt
+When called from thread $T$, this predicate creates a new XSB thread
+$T_{new}$ to execute {\tt Goal}.  When goal either succeeds, throws an
+unhandled error, or fails, $T_{new}$ exits, but {\tt
+  xsb\_thread\_create/2} will succeed immediately, binding {\tt
   ThreadId} to the XSB thread id of $T_{new}$.  {\tt Goal} must be
 callable, but need not be fully instantiated.  No bindings from {\tt
   Goal} are passed back from $T$ to $T_{new}$, so communication
@@ -120,9 +121,9 @@ between $T_{new}$ and $T$ must be through tables, asserted code, or
 other side effects.
 
 {\tt OptionList} allows optional parameters in the configuration for
-the initial size of XSB stacks and to indicate whether the thread is
-to be created as detached.  Note that XSB threads allow automatic
-stack allocation, so that the size options may be most useful for
+the initial size of XSB stacks and to indicate whether $T_{new}$ is to
+be created as detached.  Note that XSB threads allow automatic stack
+allocation, so that the size options may be most useful for
 applications with very large numbers of threads.  In this case,
 setting initial stack sizes to be small may allow more threads to be
 created on a given hardware platform.  Also note that only XSB stacks
@@ -147,8 +148,7 @@ unaltered.
   default size is used (cf. Section~\ref{sec:EmuOptions}).
 %
 \item {\tt detached}: creates detached thread.  If not specified, the
-  thread created will be joinable (and can later be set as detached by
-  {\tt xsb\_thread\_detach/1}.
+  thread created will be joinable.
 \ei
 
 {\bf Error Cases}
@@ -180,15 +180,38 @@ unaltered.
 %
 Acts as {\tt xsb\_thread\_create(Goal,ThreadId,[])}.
 
-\ournewitem{xsb\_thread\_join(+ThreadIds,-ExitCodes)}{thread}
+\ournewitem{xsb\_thread\_join(+ThreadIds,-ExitDesignators)}{thread}
 \index{\texttt{xsb\_thread\_join/2}} 
 % 
 When {\tt xsb\_thread\_join/2} is called by thread $T$, {\tt
   ThreadIds} must be instantiated to either an XSB thread id, or a
-list of XSB thread ids and {\tt ExitCodes} must be uninstantiated.
-The action of the predicate is to suspend $T$ until all of the threads
-denoted by {\tt ThreadIds} have exited: the exact semantics relies on
-the {\sc pthread} join operation.
+list of XSB thread ids; in either case, {\tt ExitDesignators} must be
+uninstantiated.  The action of the predicate is to suspend $T$ until
+all of the threads denoted by {\tt ThreadIds} have exited.  At this
+time, any remaining resources for the threads in {\tt ThreadIds} is
+reclaimed, and {\tt ExitCode} is either an element of the form:
+\begin{center}
+{\tt ExitBall -  ExitCode} 
+\end{center}
+%
+or a list of such elements.  For each XSB thread id $T_1$ in
+{ThreadIds}, {\tt ExitBall} is either
+\begin{itemize}
+%
+\item {\tt no\_error\_ball} if $T_1$ exited normally (through success or
+  failure), without throwing an error or being cancelled.
+%
+\item An error ball if $T_1$ threw an error that was not explicitly
+  handled by a catch or user error handler.
+%
+\item A special error ball of the form {\tt
+  error(thead\_cancel,$T_1$,Backtrace)} if $T_1$ was cancelled by some
+  other thread.  In this case, {\tt Backtrace} is an empty backtrace,
+  added for conformability with other error forms.
+\end{itemize}
+%
+ExitCode is either {\tt 0} for normal termination, or the value
+specified by an explicit call to {\tt xsb\_thread\_exit/1}.
 
 {\bf Error Cases}
 \bi
@@ -207,9 +230,9 @@ the {\sc pthread} join operation.
 \item 	{\tt instantiation\_error}
 \ei
 %
-\item   {\tt ThreadId} does not correspond to a live thread
+\item   {\tt ThreadId} does not correspond to a valid thread
 \bi
-\item   {\tt existence\_error(live\_thread,ThreadId)}
+\item   {\tt existence\_error(valid\_thread,ThreadId)}
 \ei
 \item   {\tt ThreadId} does not correspond to a joinable thread
   (i.e. {\tt ThreadId} is detached).
@@ -221,12 +244,12 @@ the {\sc pthread} join operation.
 \ournewitem{xsb\_thread\_exit(+ExitCode)}{thread}
 \index{\texttt{xsb\_thread\_exit/1}} 
 %
-Exits a thread $T$ after releasing any mutexes held by $T$, freeing
-any thread-specific memory allocated for $T$ (we hope) and exits with
-{\tt ExitCode}.  This exit code will be used if the caller of $T$
-joins to $T$, but will be ignored in other cases (???).  There is no
-need to call this routine on normal termination of a thread as it is
-called implicitly on success or (final) failure of a thread's goal.
+Exits a thread $T$ with {\tt ExitCode} after releasing any mutexes
+held by $T$, freeing any thread-specific memory allocated for $T$ (we
+hope).  {\tt ExitCode} will be used if the caller of $T$ joins to $T$,
+but will be ignored in other cases.  There is no need to call this
+routine on normal termination of a thread as it is called implicitly
+on success or (final) failure of a thread's goal.
 
 {\bf Error Cases}
 \bi
@@ -252,9 +275,13 @@ Returns the XSB thread id of the calling thread.
 \ournewitem{xsb\_thread\_detach(+ThreadId)}{thread}
 \index{\texttt{xsb\_thread\_detach/1}} 
 %
-Detaches the threadd denoted by {\tt ThreadId} so that all resources
-will be reclaimed upon its exit.  The thread denoted by {\tt ThreadId}
-will no longer be joinable, once it is detached.
+Detaches a joinable thread denoted by {\tt ThreadId} so that all
+resources will be reclaimed upon its exit.  The thread denoted by {\tt
+  ThreadId} will no longer be joinable, once it is detached.
+
+Note, if it is known at thread creation time that a thread should be
+detached, it is better to create the thread as detached via {\tt
+  xsb\_thread\_create/3}.
 
 {\bf Error Cases}
 \bi
@@ -262,13 +289,49 @@ will no longer be joinable, once it is detached.
 \bi
 \item 	{\tt type\_error(integer,ExitCode)}
 \ei
-\item   {\tt ThreadId} does not correspond to a live thread
+\item   {\tt ThreadId} does not correspond to a valid thread
 \bi
-\item   {\tt existence\_error(live\_thread,ThreadId)}
+\item   {\tt existence\_error(valid\_thread,ThreadId)}
 \ei
 \item 	{\tt ThreadId} is active but not joinable
 \bi
 \item 	{\tt permission\_error(thread\_detach,non\_joinable\_thread,ThreadId)}
+\ei
+\ei
+
+\ournewitem{xsb\_thread\_cancel(+ThreadId)}{thread}
+\index{\texttt{xsb\_thread\_cancel/1}} 
+%
+Cancels the XSB thread denoted by {\tt ThreadId}.  The cancellation
+does not use pthread cancellation mechanisms, rather it uses XSB's
+interrupt mechanism to set {\tt ThreadId}'s interrupt vector.  When
+this interrupt vector is checked, {\tt ThreadId} will throw a thread
+cancellation error, which can be caught within {\tt ThreadId} like any
+other error.  Usually, this means that {\tt ThreadId} will abort and
+exit.  Note that the high-level upon which thread cancellation is
+implemented allows for simplicity and portability of thread
+cancellation.  \footnote{While interrupt vector is not checked upon
+  every SLG-WAM instructiuon, it is checked on every {\sf call} and
+  {\sf execute} instruction, and should should be suitable for almost
+  any need for cancellation.}.
+
+The main XSB thread cannot be cancelled; apart from that any thread
+can cancel any other thread.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt ThreadId} is not instantiated
+\bi
+\item 	{\tt instantiation\_error}
+\ei
+%
+\item   {\tt ThreadId} does not correspond to valid thread
+\bi
+\item   {\tt existence\_error(valid\_thread,ThreadId)}
+\ei
+\item   {\tt ThreadId} denotes the main thread.
+\bi
+\item   {\tt permission\_error(cancel,main\_thread,ThreadId)}
 \ei
 \ei
 
@@ -288,6 +351,7 @@ platforms.
 \ei
 \ei
 
+\comment{
 \ournewitem{xsb\_user\_mutex\_lock(MutexId)}{thread}
 \index{\texttt{xsb\_user\_mutex\_lock/1}} 
 %
@@ -354,5 +418,5 @@ Unlocks a user mutex (user mutexes are described above).
 \item 	{\tt permission\_error('mutex unlock',mutex,MutexId)}
 \ei
 \ei
-
+}
 \end{description}
