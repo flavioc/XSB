@@ -220,7 +220,10 @@ rec_attr_sort_1([attr(A)|As],SortedIn,SortedOut) :-
 
 l_reconstruct_store([],[]).
 l_reconstruct_store([C|Cs],[S|Ss]) :-
-	reconstruct_store(C,S),
+	(is_attv(C)
+	 -> reconstruct_store(C,S)
+	  ; S = []
+	),
 	l_reconstruct_store(Cs,Ss).
 
 reconstruct_store([],_,[],[]).

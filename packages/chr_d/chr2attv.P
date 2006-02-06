@@ -429,9 +429,9 @@ generate_add_constr_body(Off,AttrCnt,F,A,ArgId,Args,Mod,CodeList,Code) :-
 	delete_ith(AttrNum,ArgAtts,IdAttr,RestArgAtts),
 	GetAttsCall =.. [GetAttsName,Arg|ArgAtts],
 
-%	ArgAttr =.. ['attr'|OtherArgs],
-%	InsertCall =.. ['append',IdAttr,[ArgAttr],NewIdAttr],
-	InsertCall =.. ['insert_ordered',OtherArgs,IdAttr,NewIdAttr],
+	ArgAttr =.. ['attr'|OtherArgs],
+	InsertCall =.. ['append',IdAttr,[ArgAttr],NewIdAttr],
+%	InsertCall =.. ['insert_ordered',OtherArgs,IdAttr,NewIdAttr],
 
 	fmt_write_string(PutAttsName, "put_%s_atts", arg(Mod)),
 	delete_ith(AttrNum,NewArgAtts,NewIdAttr,RestArgAtts),
