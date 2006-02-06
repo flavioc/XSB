@@ -62,3 +62,4 @@
 
 :- import xsb_thread_self/1 from thread.
 
+:- import abort_on_thread_cancel/0 from error_handler.

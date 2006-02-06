@@ -174,4 +174,27 @@ findall(Template,Goal,List,Tail) :-
 	  '$$findall_get_solutions'(L,T,I,Closed), List = L , Tail = T
 	) .
 
+/*
+TLS: would like to make findall catch errors gracefully, as in this code, 
+suggested by Bart.  The problem is that it breaks the ret_attv test?!?! and 
+I need to understand better why this might be.
+
+findall(Template,Goal,List,Tail) :-
+	'$$findall_init'(I,Closed),
+	(
+	     catch(Goal,Ball,findall_handler(Ball,I)),
+	     writeln(catch(Ball,I)),
+	     '$$findall_add'(Template,I,Closed), fail
+	;
+	  '$$findall_get_solutions'(L,T,I,Closed), List = L , Tail = T
+	) .
+
+:- import writeln/1 from standard.
+
+findall_handler(Ball,I):- 
+	writeln(findall_handler(Ball,I,_Goal)),
+	'$$findall_free'(I),  % this one calls the C version of findall_free
+        throw(Ball).
+*/
+
 /* ----------------------- end of file setof.P ------------------------ */

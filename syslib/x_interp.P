@@ -41,6 +41,7 @@
 interpreter :-
         set_inthandler('_$keyboard_int'(_,_), MYSIG_KEYB),
 	set_inthandler('_$attv_int'(_,_), MYSIG_ATTV),
+	set_inthandler('_$thread_int'(_,_), THREADSIG_CANCEL),
 	( banner_control(nobanner)
 	->  true		% don't print banner
 	;   version_message
@@ -234,6 +235,9 @@ readl_brklp1 :-
 '_$keyboard_int'(Call,_Code) :- 
 	is_xwammode(Flag),
 	( Flag =:= 1 -> abort ; break, call_c(Call) ).
+
+'_$thread_int'(_Call,_Code) :- 
+	abort_on_thread_cancel.
 
 '_$attv_int'(Intlist, Call) :-
 % 	file_write(1, '.... in _$attv_int/2'), file_nl(1),

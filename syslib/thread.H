@@ -22,12 +22,14 @@
 ** 
 */
 
-:- export xsb_thread_create/1, xsb_thread_create/2,xsb_thread_create/3, 
+:- export xsb_thread_cancel/1,
+          xsb_thread_create/2,xsb_thread_create/3, 
           xsb_thread_detach/1,
 	  xsb_thread_exit/1,  
           xsb_thread_exit/0,  % obsolescent
 	  xsb_thread_join/2, 
           xsb_thread_join/1,  % obsolescent
+          xsb_thread_property/2,
           xsb_thread_self/1,
           xsb_thread_yield/0.
 
@@ -43,25 +45,22 @@
 :- export xsb_set_init_glstack_size/1, xsb_set_init_tcpstack_size/1,
 	  xsb_set_init_pdl_size/1, xsb_set_init_complstack_size/1.
 
-%:- import thread_request/5 from machine.
-:- import thread_request/8 from machine.
+/* Higher level */
+:- export par_execute/1, n_par_execute/2.
+:- export exmut_execute/2, console_exmut/1.
 
-:- import stat_set_flag/2, term_psc/2 from machine.
-
-:- import call/1 from standard.
-:- import catch/3 from standard.
-
+ :- import retractall/1 from assert.
+ 
  :- import check_callable/3, check_integer/3, check_nonvar/3, check_var/3,
    default_error_handler/1,domain_error/5,
    instantiation_error/3, misc_error/1 from error_handler.
-:- import integer/1 from standard.
 
-/* Higher level */
+:- import thread_request/8 from machine.
+:- import stat_set_flag/2, term_psc/2 from machine.
 
-:- export par_execute/1, n_par_execute/2.
+:- import call/1, catch/3, integer/1 from standard.
 
-:- export exmut_execute/2, console_exmut/1.
-
+ :- import '_$thread_exit_ball'/2 from usermod.
 
 
 

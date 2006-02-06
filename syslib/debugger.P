@@ -238,7 +238,8 @@ show_this_hide_call(P,A) :- show_this_hide(P,A), !.
 %% Preds hidden by the user
 show_this_hide_call(P,A) :- '_$_deb_user_hidden'(P,A).
 
-
+/* TLS: assuming that this affects only undefined preds, so I'm not
+   making a check for only one thread. */
 must_load(PSC) :-
 	psc_type(PSC, T),
 	( T =:= 2 -> fail

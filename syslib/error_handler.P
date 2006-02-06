@@ -44,23 +44,36 @@ default_error_handler(Error) :-
 default_error_handler(Error) :-
 	default_sys_error_handler(Error),
 	!,
-%	messageln('Aborting...', STDFDBK),
 	close_open_tables,
 	%%reset_undef_pred_handlers, 
 	fail.
 
 /* Below, representation errors (usually mallocs returning null ptrs)
- * are handled seperately, by writing out message in C */
-default_sys_error_handler(error(Error,Msg,Backtrace)) :-
+ * are handled seperately, by writing out message in C.  
+ * Also, as a stab at error handling in the MT engine, we only print
+ * out backtrace for the console thread; we keep the error message
+ * around for non-console joinable threads. For detached threads,
+ * there's not much that can be done.  */
+
+:- import  '_$thread_exit_ball'/2 from usermod.
+:- dynamic '_$thread_exit_ball'/2.
+:- thread_shared('_$thread_exit_ball'(_,_)).
+
+ default_sys_error_handler(error(Error,Msg,Backtrace)) :-
 	% here is where we may do something abt backtraces.
 	xsb_flag(backtrace_on_error,BT),
-	default_sys_error_handler(error(Error,Msg)),
-	(BT == on -> 
-                print_backtrace(Backtrace)
-	  ; true).
+	xsb_thread_self(Thread),
+        default_sys_error_handler(error(Error,Msg)),
+	(Thread == 0 -> 
+	    (BT == on -> print_backtrace(Backtrace) ; true)
+	 ;  (xsb_thread_property(Thread,joinable) -> 
+	       get_backtrace(Backtrace,ReadBT),
+	       asserta('_$thread_exit_ball'(Thread,error(Error,Msg,ReadBT)))
+	     ; true) ).
+
 default_sys_error_handler(error(Error,Msg)) :-
 	get_sys_error_description(error(Error,Msg),NewMsg),
-	messageln(NewMsg,STDERR).
+	messageln(NewMsg,STDERR),!.
 default_sys_error_handler(X) :-
 	messageln(('++Error[XSB/Runtime] Unhandled Exception: ',X),STDERR).
 
@@ -100,6 +113,11 @@ get_sys_error_description(error(system_error,Msg), ExceptionDesc) :-
 	ExceptionDesc =   ('++Error[XSB/Runtime/P]: [System] ', Msg) .
 get_sys_error_description(error(table_error,Msg), ExceptionDesc) :-
 	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Table] ',Msg).
+
+get_sys_error_description(error(thread_cancel,Id), ExceptionDesc) :- 
+	ExceptionDesc = 
+             ('++Error[XSB/Runtime/P]: [XSB Thread Cancellation] Thread ',Id).
+
 get_sys_error_description(error(type_error(Valid_type,Culprit),Msg), ExceptionDesc) :-
 	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Type (',Culprit,' in place of ',
 	                          Valid_type,')] ', Msg).
@@ -214,6 +232,7 @@ instantiation_error(Predicate,Arg,State):-
 misc_error(Message):- 
 	xsb_backtrace(Bt),
 	throw(error(misc_error,Message,Bt)).
+
 %------
 permission_error(Op,Obj_type,Culprit,Predicate):- 
 	xsb_backtrace(Bt),
@@ -241,6 +260,12 @@ system_error(Flag,Predicate,Arg):-
 table_error(Message):- 
 	xsb_backtrace(Bt),
 	throw(error(table_error,Message,Bt)).
+
+%------
+abort_on_thread_cancel:- 
+	xsb_thread_self(Id),
+	throw(error(thread_cancel,Id,[[]])).
+
 %------
 type_error(Valid_type,Culprit,Predicate,Arg):- 
 	xsb_backtrace(Bt),

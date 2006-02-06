@@ -77,7 +77,7 @@ set_thread_create_arg(Option,Arg,OptionName):-
 xsb_thread_create( Goal, ThreadId ) :- 
 	check_callable(Goal,xsb_thread_create/2,1),
 	check_var(ThreadId,xsb_thread_create/2,2),
-	thread_request( XSB_THREAD_CREATE, Goal, ThreadId, _,_,_,_,_).
+	thread_request( XSB_THREAD_CREATE, Goal, ThreadId, 0,0,0,0,0).
 
 /*---------------*/
 
@@ -96,10 +96,17 @@ xsb_thread_join(Input, ExitCode) :-
 	(var(Input) -> 
 	    instantiation_error(xsb_thread_join/2,1,ground)
 	;  (integer(Input) -> 
-	       thread_request( XSB_THREAD_JOIN,Input,ExitCode,_,_,_,_,_ )
+	       thread_request( XSB_THREAD_JOIN,Input,Exit,_,_,_,_,_ ),
+	       ExitCode = Ball - Exit,
+	       ('_$thread_exit_ball'(Id,Ball) -> 
+		     retractall('_$thread_exit_ball'(Id,_))
+		   ; Ball = no_error_ball)
 	    ; (Input = [Id|Rest] -> 
-	         ExitCode = [Exit|ERest],
+	         ExitCode = [Ball-Exit|ERest],
 	         thread_request(XSB_THREAD_JOIN, Id,Exit,_,_,_,_,_),
+		 ('_$thread_exit_ball'(Id,Ball) -> 
+		     retractall('_$thread_exit_ball'(Id,_))
+		   ; Ball = no_error_ball),
 	         xsb_thread_join(Rest, ERest) 
 	       ; (Input = [] -> 
 		    ExitCode = []
@@ -166,6 +173,18 @@ xsb_sys_mutex_lock(Id) :-
 xsb_sys_mutex_unlock(Id) :- 
 	thread_request( XSB_SYS_MUTEX_UNLOCK, Id, _, _, _, _, _, _ ).
 
+xsb_thread_property(Id,Property) :- 
+	thread_request( XSB_THREAD_PROPERTY, Id,Prop1, _, _, _, _, _ ),
+	(Prop1 == 1 -> Property = detached ; Property = joinable).
+
+xsb_thread_cancel(Id):- 
+	check_var(ThreadId,xsb_thread_cancel/1,1),
+	(Id == 0 -> 
+	    permission_error(cancel,main_thread,0,xsb_thread_cancel/1)
+	  ; true),
+	thread_request( XSB_THREAD_INTERRUPT, Id,_, _, _, _, _, _ ).
+	
+	
 /* ==================================================================  */
 
 xsb_set_init_glstack_size(S) :-
