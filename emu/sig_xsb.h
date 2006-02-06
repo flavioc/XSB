@@ -37,6 +37,7 @@
 #define MYSIG_TRACE    4	       	/* trace point */
 #define MYSIG_ATTV     8		/* attributed var interrupt */
 #define MYSIG_PSC     14                /* new PSC creation interrupt */
+#define THREADSIG_CANCEL   0xf
 #define MYSIG_CLAUSE  16	       	/* clause interrupt */
 
 #define KEYINT_MARK 0x80		/* keyboard interrupt ^C */
@@ -44,3 +45,6 @@
 
 #define MSGINT_MARK 0x20		/* software message interrupt */
 #define PROFINT_MARK 0x10		/* XSB Profiling interrupt */
+
+#define THREADINT_MARK 0x1000
+

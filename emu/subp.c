@@ -360,6 +360,7 @@ Psc synint_proc(CTXTdeclc Psc psc, int intcode)
     case MYSIG_KEYB:		/*  1 */
     case MYSIG_SPY:		/*  3 */
     case MYSIG_TRACE:		/*  4 */
+    case THREADSIG_CANCEL:		/* f */
     case MYSIG_CLAUSE:		/* 16 */
       if (psc) bld_cs(reg+1, build_call(CTXTc psc));
       psc = (Psc)pflags[intcode+INT_HANDLERS_FLAGS_START];

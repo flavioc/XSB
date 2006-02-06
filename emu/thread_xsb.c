@@ -47,6 +47,7 @@
 #include "thread_xsb.h"
 #include "rw_lock.h"
 #include "memory_xsb.h"
+#include "sig_xsb.h"
 
 #ifdef MULTI_THREAD
 
@@ -240,6 +241,7 @@ void init_system_mutexes( void )
 	pthread_cond_init( &completing_cond, NULL );
 }
 
+/* calls _$thread_run/1 in thread.P */
 static void *xsb_thread_run( void *arg )
 {
         pthread_t tid;
@@ -583,10 +585,10 @@ xsbBool xsb_thread_request( CTXTdecl )
 #endif
 			break ;
 
-		case XSB_ENSURE_ONE_THREAD:
-			ENSURE_ONE_THREAD() ;
-			rc = 0 ;
-			break ;
+	case XSB_ENSURE_ONE_THREAD:
+	  ENSURE_ONE_THREAD() ;
+	  rc = 0 ;
+	  break ;
 
 	case XSB_THREAD_YIELD:
 	  rc = sched_yield();
@@ -623,6 +625,28 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  set_init_complstack_size(i);
 	  rc = 0;
 	  break;
+
+	  /* TLS: may generalize -- right now, just detached/joinable */
+	case XSB_THREAD_PROPERTY: 
+	  ctop_int(CTXTc 3, th_vec[ ptoc_int(CTXTc 2) ].detached);
+	  break;
+
+	  /* for now, one interrupt, but possibly we should allow
+	     users to define others  */
+	case XSB_THREAD_INTERRUPT: {
+	  th_context *	ctxt_ptr ;
+
+	  i = ptoc_int(CTXTc 2);
+	  if (th_vec[i].valid) {
+	    ctxt_ptr = th_vec[i].ctxt;
+	    ctxt_ptr->_asynint_val |= THREADINT_MARK;
+	  } else {
+	    bld_int(reg+2,i);
+	    xsb_permission_error(CTXTc "thread_interrupt","invalid_thread",
+				   reg[2],"xsb_thread_interrupt",1); 
+	  }
+	  break;
+	}
 
 	default:
 	  rc = 0 ; /* Keep compiler happy */

@@ -318,30 +318,40 @@ unsigned long dec[8] = {0xffffffff,0xffffffff,0xffffffff,0xffffffff,
 
 /*======================================================================*/
 
+/* TLS: refactored to support Thread Cancellation */
+
 #define call_sub(PSC) {							\
   if ( !(asynint_val) & !int_val(cell(interrupt_reg)) ) {   	        \
     lpcreg = (pb)get_ep(PSC);						\
   } else {								\
-     if (asynint_val & KEYINT_MARK) {                                   \
+    if (asynint_val) {							\
+      if (asynint_val & KEYINT_MARK) {					\
         synint_proc(CTXTc PSC, MYSIG_KEYB);	                      	\
         lpcreg = pcreg;							\
         asynint_val = asynint_val & ~KEYINT_MARK;			\
         asynint_code = 0;						\
-     } else if (int_val(cell(interrupt_reg))) {                         \
-        synint_proc(CTXTc PSC, MYSIG_ATTV);		                \
-        lpcreg = pcreg;							\
+      } else if (asynint_val & PROFINT_MARK) {				\
+        asynint_val &= ~PROFINT_MARK;					\
+        log_prog_ctr(lpcreg);						\
+        lpcreg = (byte *)get_ep(PSC);					\
       } else if (asynint_val & MSGINT_MARK) {                           \
         pcreg = (byte *)get_ep(PSC);					\
         intercept(CTXTc PSC);						\
         lpcreg = pcreg;							\
-     }  else if (asynint_val & PROFINT_MARK) {				\
-        asynint_val &= ~PROFINT_MARK;					\
-        log_prog_ctr(lpcreg);						\
-        lpcreg = (byte *)get_ep(PSC);					\
-     } else {								\
+      } else if (asynint_val & THREADINT_MARK) {			\
+	printf("Entered thread cancel: call_sub\n");			\
+        synint_proc(CTXTc PSC, THREADSIG_CANCEL);			\
+        lpcreg = pcreg;							\
+        asynint_val = 0;						\
+        asynint_code = 0;						\
+      } else {								\
         lpcreg = (byte *)get_ep(PSC);					\
         asynint_val = 0;		         			\
-     }                                                                  \
+      }									\
+    } else if (int_val(cell(interrupt_reg))) {				\
+        synint_proc(CTXTc PSC, MYSIG_ATTV);		                \
+        lpcreg = pcreg;							\
+    }									\
   }									\
 }
 
@@ -349,24 +359,33 @@ unsigned long dec[8] = {0xffffffff,0xffffffff,0xffffffff,0xffffffff,
   if ( !(asynint_val) & !int_val(cell(interrupt_reg)) ) {		\
      lpcreg = cpreg;							\
   } else {								\
+    if (asynint_val) {							\
      if (asynint_val & KEYINT_MARK) {					\
         synint_proc(CTXTc true_psc, MYSIG_KEYB);			\
         lpcreg = pcreg;							\
         asynint_val = asynint_val & ~KEYINT_MARK;			\
         asynint_code = 0;						\
      } else if (asynint_val & MSGINT_MARK) {				\
-        lpcreg = cpreg;  /* ignore MSGINT in proceed */			\
-     } else if (int_val(cell(interrupt_reg))) {				\
-        synint_proc(CTXTc true_psc, MYSIG_ATTV);			\
+       lpcreg = cpreg;  /* ignore MSGINT in proceed */			\
+     } else if (asynint_val & PROFINT_MARK) {				\
+       asynint_val &= ~PROFINT_MARK;					\
+       log_prog_ctr(lpcreg);						\
+       lpcreg = cpreg;							\
+       asynint_code = 0;						\
+     } else if (asynint_val & THREADINT_MARK) {				\
+       printf("Entered thread cancel: proceed\n");			\
+        synint_proc(CTXTc true_psc, THREADSIG_CANCEL);			\
         lpcreg = pcreg;							\
-      }  else {								\
-        if (asynint_val & PROFINT_MARK) {				\
-          asynint_val &= ~PROFINT_MARK;					\
-          log_prog_ctr(lpcreg);						\
-        }								\
+        asynint_val = 0;						\
+        asynint_code = 0;						\
+     } else {								\
         lpcreg = cpreg;							\
         asynint_code = 0;						\
      }									\
+    } else if (int_val(cell(interrupt_reg))) {				\
+        synint_proc(CTXTc true_psc, MYSIG_ATTV);			\
+        lpcreg = pcreg;							\
+    }									\
   }									\
 }
 

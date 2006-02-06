@@ -506,7 +506,6 @@ extern xsbBool smIsAllocatedStructRef(Structure_Manager, void *);
      if ( SM_AllocList(SM) == pRecord )					      \
        SM_AllocList(SM) = NextFieldMacro(pRecord);			      \
      else {								\
-       gdb_dummy();							\
        xsb_abort("Record not present in given Structure Manager: %s",	      \
 		 SM_StructName(SM));					      \
      }									\

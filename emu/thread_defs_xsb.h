@@ -53,6 +53,9 @@
 #define XSB_SET_INIT_PDL_SIZE		18 
 #define XSB_SET_INIT_COMPLSTACK_SIZE	19
 
+#define XSB_THREAD_PROPERTY             20
+#define XSB_THREAD_INTERRUPT             21
+
 #define MAX_THREADS		1024
 
 
