@@ -699,6 +699,8 @@ simplification_code(Head,OtherHs,R,F/A,I,N,Constrs,L,T) :-
 
 	guards_join_order(HeadVs,GuardCp,FreeParsGuards,BoundParGuards),
 
+	build_constr_remove(OtherHsCp,OtherHsRemove),
+
 /*
 	and2list(BodyCp,BodyCpL),
 	(member(Head,BodyCpL)
@@ -713,6 +715,7 @@ simplification_code(Head,OtherHs,R,F/A,I,N,Constrs,L,T) :-
 		     OtherHsCM,
 		     BoundParGuards
 		     -> %AddCall,
+			OtherHsRemove,
 		        BodyCp
 		      ; NextRHead)),
 	L = [RCode|T].
