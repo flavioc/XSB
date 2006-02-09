@@ -69,7 +69,7 @@
 
 static Psc     nullFctPsc = NULL;
 /* static int      numberOfCursors = 0; */
-/*static long      SQL_NTSval = SQL_NTS;*/
+static long      SQL_NTSval = SQL_NTS;
 static long      SQL_NULL_DATAval = SQL_NULL_DATA;
 
 static HENV henv = NULL;
@@ -79,6 +79,8 @@ struct Cursor {
   struct Cursor *NCursor; /* Next Cursor in cursor chain*/
   struct Cursor *PCursor; /* Prev Cursor in cursor chain*/
   HDBC hdbc;            /* connection handle for this cursor*/
+  int driver_code;	/* our code for driver, to handle ODBC inconsistencies, set in FindFreeCursor */
+			/* = 0 default, = 1 for MS Access */
   int Status;           /* status of the cursor*/
   UCHAR *Sql;           /* pointer to the sql statement*/
   HSTMT hstmt;          /* the statement handle*/
@@ -520,7 +522,7 @@ void ODBCConnect(CTXTdecl)
       return;
     }
   }
-
+  
   ctop_int(CTXTc 6, (long)hdbc);
   return;
 }
@@ -618,6 +620,7 @@ void FindFreeCursor(CTXTdecl)
   HDBC hdbc = (HDBC)ptoc_int(CTXTc 2);
   char *Sql_stmt = ptoc_longstring(CTXTc 3);
   RETCODE rc;
+  char drname[25]; SQLSMALLINT drnamelen;
 
   /* search */
   while (curi != NULL) {
@@ -708,6 +711,11 @@ void FindFreeCursor(CTXTdecl)
     curi->NCursor = FCursor;
     FCursor = curi;
   }
+
+  rc = SQLGetInfo(hdbc,SQL_DRIVER_NAME,drname,(SQLSMALLINT)25,&drnamelen);
+  if (rc != SQL_SUCCESS) curi->driver_code = 0;
+  else if (!strcmp(drname,"odbcjt32.dll")) curi->driver_code = 1;
+  else curi->driver_code = 0;
 
   curi->hdbc = hdbc;
   curi->Sql = (UCHAR *)strdup(Sql_stmt);
@@ -947,8 +955,10 @@ RETCODE rc;
 		{
 		case 2:
 		  cur->BindLens[j] = strlen((char *)cur->BindList[j]);
-		  rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,(char *) cur->BindList[j], cur->BindLens[j], &cur->BindLens[j]);
-			break;
+		  if (cur->driver_code == 1)
+		    rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,(char *)cur->BindList[j], 0, &SQL_NTSval);
+		  else rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,(char *)cur->BindList[j], cur->BindLens[j], &cur->BindLens[j]);
+		  break;
 		case 3:
 			rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,NULL, 0, &SQL_NULL_DATAval);
 			break;
@@ -976,7 +986,9 @@ RETCODE rc;
 		case 2:
 			/* we're sloppy here.  it's ok for us to use the default values*/
 		  cur->BindLens[j] = strlen((char *)cur->BindList[j]);
-		  rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,(char *)cur->BindList[j], cur->BindLens[j], &cur->BindLens[j]);
+		  if (cur->driver_code == 1)
+		    rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,(char *)cur->BindList[j], 0, &SQL_NTSval);
+		  else rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,(char *)cur->BindList[j], cur->BindLens[j], &cur->BindLens[j]);
 		  break;
 		case 3:
 			rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,NULL, 0, &SQL_NULL_DATAval);
@@ -995,6 +1007,7 @@ RETCODE rc;
   }
   /* submit it for execution*/
   if (SQLExecute(cur->hstmt) != SQL_SUCCESS) {
+    printf("execute failed\n");
     ctop_int(CTXTc 3,PrintErrorMsg(cur));
     SetCursorClose(cur);
     return;
