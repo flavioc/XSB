@@ -53,7 +53,7 @@
  
  :- import check_callable/3, check_integer/3, check_nonvar/3, check_var/3,
    default_error_handler/1,domain_error/5,
-   instantiation_error/3, misc_error/1 from error_handler.
+   instantiation_error/3, misc_error/1, permission_error/4 from error_handler.
 
 :- import thread_request/8 from machine.
 :- import stat_set_flag/2, term_psc/2 from machine.

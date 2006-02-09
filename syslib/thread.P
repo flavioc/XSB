@@ -178,7 +178,7 @@ xsb_thread_property(Id,Property) :-
 	(Prop1 == 1 -> Property = detached ; Property = joinable).
 
 xsb_thread_cancel(Id):- 
-	check_var(ThreadId,xsb_thread_cancel/1,1),
+	check_nonvar(Id,xsb_thread_cancel/1,1),
 	(Id == 0 -> 
 	    permission_error(cancel,main_thread,0,xsb_thread_cancel/1)
 	  ; true),
