@@ -6,3 +6,4 @@ ms_vc_mfile.mak
 msvc_makefile.mak
 orastuff.c
 private_builtin.*
+*.lnk
