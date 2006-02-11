@@ -162,42 +162,41 @@ Similarly, to load the mysql driver call:
 \subsection{Connecting to and Disconnecting from Databases}
 %=================================================
 
-There are two predicates for connecting to databases. 
+There are two predicates for connecting to databases, {\tt db\_connect/5}
+and {\tt db\_connect/6}.
+The {\tt db\_connect/5} predicate is for ODBC connections, while {\tt
+  db\_connect/6} is 
+for other (non-ODBC) database drivers.
 
 \begin{verbatim}
-| ?- db_connect(Handle, Driver, DSN, User, Password).
+| ?- db_connect(+Handle, +Driver, +DSN, +User, +Password).
+| ?- db_connect(+Handle, +Driver, +Server, +Database, +User, +Password).
 \end{verbatim}
 
-This predicate is specific for an ODBC connection only.
-This predicate assumes that an entry for a data source name (DSN) exists
-in the {\tt ODBC.INI} file. The {\tt Handle} is the handle name used for 
-the connection. The {\tt Driver} is the driver being used for the 
-connection.
-The {\tt User} and {\tt Password} are the user name and password 
-being used for the connection. The user is responsible for giving 
-the name to the handle.
-To connect to the data source mydb using the user name xsb and password xsb
-with the odbc driver, the call is as follows: 
+The {\tt db\_connect/5} predicate
+assumes that an entry for a data source name (DSN) exists in the {\tt
+  odbc.ini} file. The {\tt Handle} is the handle name used for the
+connection. The {\tt Driver} is the driver being used for the connection.
+The {\tt User} and {\tt Password} are the user name and password being used
+for the connection. The user is responsible for giving the name to the
+handle.  To connect to the data source mydb using the user name xsb and
+password xsb with the odbc driver, the call is as follows:
 
 \begin{verbatim}
 | ?- db_connect(ha, odbc, mydb, xsb, xsb).
 \end{verbatim}
 
 \noindent
-where {\tt ha} is the handle name that the user chose for the connection.
-The following version of {\tt db\_connect} is used for drivers other than
-ODBC.
+where {\tt ha} is the user-chosen handle name (a Prolog atom) for the
+connection.
 
-\begin{verbatim}
-| ?- db_connect(Handle, Driver, Server, Database, User, Password).
-\end{verbatim}
-
-The {\tt Handle}, {\tt Driver}, {\tt User}, and {\tt Password} are the same
-as before. The {\tt Server} and {\tt Database} arguments specify the server
-and database to connect to.  For example, for a connection to a database
-called {\tt test} located on the server {\tt wolfe} with the user name {\tt
-  xsb}, the password {\tt foo}, and using the {\tt mysql} driver, the call
-is:
+The {\tt db\_connect/6} predicate is used for drivers other than ODBC.  The
+arguments {\tt Handle}, {\tt Driver}, {\tt User}, and {\tt Password} are
+the same as for {\tt db\_connect/5}. The {\tt Server} and {\tt Database}
+arguments specify the server and database to connect to.  For example, for
+a connection to a database called {\tt test} located on the server {\tt
+  wolfe} with the user name {\tt xsb}, the password {\tt foo}, and using
+the {\tt mysql} driver, the call is:
 
 \begin{verbatim}
 | ?- db_connect(ha, mysql, wolfe, test, xsb, foo).
