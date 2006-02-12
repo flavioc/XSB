@@ -1,7 +1,26 @@
 /* File: mysql_driver.c
 ** Author: Saikat Mukherjee
-** Contact: saikat@cs.sunysb.edu
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 2002-2006
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+*/
 
+/*
 ** This is the driver for connecting to a MySQL database.
 ** This is invoked from the middle_layer module in emu.
 */
@@ -141,6 +160,7 @@ DllExport struct xsb_data** call_conv driverMySQL_query(struct xsb_queryHandle* 
 			query->resultSet = resultSet;
 			mysqlQueries[numQueries++] = query;
 			handle->state = QUERY_RETRIEVE;
+			handle->numResultCols = mysql_num_fields(resultSet);
 		}
 	}
 
@@ -238,6 +258,7 @@ int driverMySQL_prepareStatement(char* SQLQuery, struct xsb_queryHandle* handle)
 	rs->handle->parameters = mysql_param_count(stmt);
 	rs->returnFields = mysql_num_fields(res);
 	rs->metaInfo = (struct xsb_data **)malloc(rs->returnFields * sizeof(struct xsb_data *));
+	handle->numResultCols = rs->returnFields;
 	for (i = 0 ; i < rs->returnFields ; i++)
 	{
 		rs->metaInfo[i] = (struct xsb_data *)malloc(sizeof(struct xsb_data));

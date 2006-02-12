@@ -1,93 +1,118 @@
 /* File: db_interface.P
 ** Author: Saikat Mukherjee
-** Contact: saikat@cs.sunysb.edu
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 2002-2006
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+*/
 
-** This file defines the  Prolog interface to connect to a 
-** database. This layer will contact the  
+/*
+** Prolog interface to connect to a database. This layer will contact the  
 ** driver manager for furthur processing. 
 */
 
 :- import file_read_canonical/3 from machine.
 :- import length/2 from basics.
+:- import term_to_atom/3 from string.
 
 %% opening connection to the database
 
 db_connect(Handle, Driver, Server, Database, User, Password) :- 
-		(openConnection(Handle, Driver, Server, Database, User, Password)
-		-> true; 
-		exception(Number, Mesg), throw(xsb_error(database(Number), Mesg))
-		).
+	(openConnection(Handle, Driver, Server, Database, User, Password)
+	-> true; 
+	    exception(Number, Mesg), throw(xsb_error(database(Number), Mesg))
+	).
 
 db_connect(Handle, Driver, Dsn, User, Password) :-
-		(openConnection(Handle, Driver, '', Dsn, User, Password)
-		-> true; 
-		exception(Number, Mesg), throw(xsb_error(database(Number), Mesg))
-		).
+	(openConnection(Handle, Driver, '', Dsn, User, Password)
+	-> true; 
+	    exception(Number, Mesg), throw(xsb_error(database(Number), Mesg))
+	).
 
 %% closing connection to the database 
 
 db_disconnect(Handle) :- 
-		(closeConnection(Handle)
-		-> true; 
-		exception(Number, Mesg), throw(xsb_error(database(Number), Mesg))
-		).
+	(closeConnection(Handle)
+	-> true; 
+	    exception(Number, Mesg), throw(xsb_error(database(Number), Mesg))
+	).
 
 %% direct querying
 
 db_sql(Connhandle, QueryHandle, SQLQueryList, ReturnList) :-
-		(length(ReturnList, N), length(List, N), 
-		queryConnection(Connhandle, QueryHandle, SQLQueryList, List),
-		db_term(ReturnList, List)
-		-> true;
-		!, 
-		(exception(Number, Mesg)
-		-> throw(xsb_error(database(Number), Mesg));
+	(length(ReturnList, N), length(List, N), 
+	    db_canonise_term(SQLQueryList, CanSQLQueryList),
+	    queryConnection(Connhandle, QueryHandle, CanSQLQueryList, List),
+	    db_term(ReturnList, List)
+	-> true;
+	    !, 
+	    (exception(Number, Mesg)
+	    -> throw(xsb_error(database(Number), Mesg));
 		fail)
-		).
+	).
 
 db_sql(Connhandle, QueryHandle, SQLQueryList, ReturnList) :-
-		db_sql(Connhandle, QueryHandle, SQLQueryList, ReturnList).
+	db_sql(Connhandle, QueryHandle, SQLQueryList, ReturnList).
 
 
 %% prepared statements
 
 db_prepare(ConnHandle, QueryHandle, SQLQuery) :-
-		(prepareStatement(ConnHandle, QueryHandle, SQLQuery)
-		-> true; exception(Number, Mesg), throw(xsb_error(database(Number), Mesg))).
+	(prepareStatement(ConnHandle, QueryHandle, SQLQuery)
+	-> true; exception(Number, Mesg), throw(xsb_error(database(Number), Mesg))).
 
 db_prepare_execute(QueryHandle, BindList, ReturnList) :-
-		(executePreparedStatement(QueryHandle, BindList, ReturnList)
-		-> true;
-		!, 
-		(exception(Number, Mesg)
-		-> throw(xsb_error(database(Number), Mesg));
+	(executePreparedStatement(QueryHandle, BindList, ReturnList)
+	-> true;
+	    !, 
+	    (exception(Number, Mesg)
+	    -> throw(xsb_error(database(Number), Mesg));
 		fail)
-		).
+	).
 
 db_prepare_execute(QueryHandle, BindList, ReturnList) :-
-		db_prepare_execute(QueryHandle, BindList, ReturnList).
+	db_prepare_execute(QueryHandle, BindList, ReturnList).
 
 
 %% closing statements
 
 db_statement_close(QueryHandle) :-
-		(closeStatement(QueryHandle)
-		-> true; 
-		exception(Number, Mesg), throw(xsb_error(database(Number), Mesg))
-		).
+	(closeStatement(QueryHandle)
+	-> true; 
+	    exception(Number, Mesg), throw(xsb_error(database(Number), Mesg))
+	).
 
 
-%% misc. predicates
+%% term predicates
 
 db_term([], []).
 
 db_term([X|ReturnListTail], [term(Y)|ListTail]):-
-		open(atom(Y), read, IO), file_read_canonical(IO, X, _), 
-		db_term(ReturnListTail, ListTail).
+	open(atom(Y), read, IO), file_read_canonical(IO, X, _), 
+	db_term(ReturnListTail, ListTail).
 
 db_term([X|ReturnListTail], [X|ListTail]) :-
-		db_term(ReturnListTail, ListTail).
+	db_term(ReturnListTail, ListTail).
+
+db_canonise_term([], []).
+
+db_canonise_term([X|List], [Y|CanonicalList]) :-
+	term_to_atom(X, Y, [ignore_ops(canonical),quoted(true)]),
+	db_canonise_term(List, CanonicalList).
 
 
 
-	

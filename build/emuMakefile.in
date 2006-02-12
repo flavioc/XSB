@@ -169,7 +169,7 @@ xsbmod:: $(OBJS) ${ODBCOBJ} ${INTERPROLOGOBJ}
 
 xsbdynmod::
 	echo "Making XSB Shared Library $(bindir)/libxsb.$(SHAREDLIB_EXTENSION)"
-	@LD@ -o libxsb.$(SHAREDLIB_EXTENSION) $(DYNMOD_LINKFLAGS)  -faltivec -fPIC $(LINKFLAGS)  $(OBJS) ${ODBCOBJ} ${INTERPROLOGOBJ} -framework JavaVM -lSystem -lm
+	@LD@ -o libxsb.$(SHAREDLIB_EXTENSION) $(DYNMOD_LINKFLAGS)  -faltivec -fPIC $(LINKFLAGS)  $(OBJS) ${ODBCOBJ} ${INTERPROLOGOBJ} -lm
 	@cp libxsb.$(SHAREDLIB_EXTENSION) $(bindir) 2>/dev/null || echo ""
 
 # same as xsbmod, but with oracle support

@@ -1,7 +1,26 @@
-/* File: driver_manager.h
+/* File: driver_manager_defs.h
 ** Author: Saikat Mukherjee
-** Contact: saikat@cs.sunysb.edu
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 2002-2006
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+*/
 
+/*
 ** Data structures, function declarations for the driver_manager
 */
 
@@ -44,38 +63,39 @@
 
 union xsb_value
 {
-	int* i_val;
-	double* f_val;
-	char* str_val;
+  int* i_val;
+  double* f_val;
+  char* str_val;
 };
 
 struct xsb_data
 {
-	int type;
-	int length;
-	union xsb_value* val;
+  int type;
+  int length;
+  union xsb_value* val;
 };
 
 // **** the handle data structures ****
 
 struct xsb_connectionHandle
 {
-	char* handle; //key
-	char* server;
-	char* user;
-	char* database;
-	char* password;
-	char* dsn;
-	char* driver;
+  char* handle; //key
+  char* server;
+  char* user;
+  char* database;
+  char* password;
+  char* dsn;
+  char* driver;
 };
 
 struct xsb_queryHandle
 {
-	struct xsb_connectionHandle* connHandle;
-	char* handle; // key
-	char* query;
-	int state;
-	int numParams;
+  struct xsb_connectionHandle* connHandle;
+  char* handle;      /* key */
+  char* query;
+  int state;
+  int numParams;     /* number of parameters to prepare statement */
+  int numResultCols; /* number of columns in the result */
 };
 
 // **** the driver data structures ****
@@ -83,28 +103,28 @@ struct xsb_queryHandle
 
 struct driverFunction
 {
-	int functionType;
-	union functionPtrs* functionName;	
+  int functionType;
+  union functionPtrs* functionName;	
 };
 
 struct driver
 {
-	char* driver;
-	int numberFunctions;
-	struct driverFunction** functions;
+  char* driver;
+  int numberFunctions;
+  struct driverFunction** functions;
 };
 
 // **** the function ptrs and function declarations ****
 
 union functionPtrs
 {
-	int (*connectDriver)(struct xsb_connectionHandle*);
-	int (*disconnectDriver)(struct xsb_connectionHandle*);
-	struct xsb_data** (*queryDriver)(struct xsb_queryHandle*);
-	int (*prepareStmtDriver)(struct xsb_queryHandle*);
-	struct xsb_data** (*executeStmtDriver)(struct xsb_data**, struct xsb_queryHandle*);
-	int (*closeStmtDriver)(struct xsb_queryHandle*);
-	char* (*errorMesgDriver)();
+  int (*connectDriver)(struct xsb_connectionHandle*);
+  int (*disconnectDriver)(struct xsb_connectionHandle*);
+  struct xsb_data** (*queryDriver)(struct xsb_queryHandle*);
+  int (*prepareStmtDriver)(struct xsb_queryHandle*);
+  struct xsb_data** (*executeStmtDriver)(struct xsb_data**, struct xsb_queryHandle*);
+  int (*closeStmtDriver)(struct xsb_queryHandle*);
+  char* (*errorMesgDriver)();
 };
 
 DllExport int call_conv registerXSBDriver(char* driver, int num);
