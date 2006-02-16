@@ -109,7 +109,7 @@ char *trie_trie_type_table[] = {"call_trie_tt","basic_answer_trie_tt",
    CPtr can be abstracted out */
 #define safe_assign(ArrayNam,Index,Value,ArraySz) {\
    if (Index >= ArraySz) {\
-     trie_expand_array(CPtr,ArrayNam,ArraySz,"var_addr");\
+     trie_expand_array(CPtr,ArrayNam,ArraySz,Index,"var_addr");\
    }\
    ArrayNam[Index] = Value;\
 }
@@ -132,7 +132,7 @@ static int addr_stack_size    = DEFAULT_ARRAYSIZ;
 #define pop_addr Addr_Stack[--addr_stack_pointer]
 #define push_addr(X) {\
     if (addr_stack_pointer == addr_stack_size) {\
-       trie_expand_array(CPtr, Addr_Stack ,addr_stack_size,"Addr_Stack");\
+       trie_expand_array(CPtr, Addr_Stack ,addr_stack_size,0,"Addr_Stack");\
     }\
     Addr_Stack[addr_stack_pointer++] = ((CPtr) X);\
 }
@@ -148,7 +148,7 @@ static long term_stacksize = DEFAULT_ARRAYSIZ;
 #define pop_term term_stack[term_stackptr--]
 #define push_term(T) {\
     if (term_stackptr+1 == term_stacksize) {\
-       trie_expand_array(Cell,term_stack,term_stacksize,"term_stack");\
+       trie_expand_array(Cell,term_stack,term_stacksize,0,"term_stack");\
     }\
     term_stack[++term_stackptr] = ((Cell) T);\
 }

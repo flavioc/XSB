@@ -411,11 +411,12 @@ extern CPtr reg_arrayptr, var_regs[];
 
 /*----------------------------------------------------------------------*/
 
-/* expand (or allocate) the array by doubling its size */
-#define trie_expand_array(ArrType,ArrayNam, ArraySz, Nam) {\
+/* expand (or allocate) the array by doubling its size or the size needed, whichever is larger*/
+#define trie_expand_array(ArrType,ArrayNam, ArraySz, NeededSz, Nam) {\
     int Siz = ArraySz;\
     if (Siz == 0) ArraySz = DEFAULT_ARRAYSIZ;\
     else ArraySz = 2 * ArraySz;\
+    if (ArraySz < NeededSz) ArraySz = NeededSz;\
     ArrayNam = mem_realloc(ArrayNam,Siz*sizeof(ArrType),ArraySz*sizeof(ArrType),TABLE_SPACE);\
     if (ArrayNam == NULL) \
       xsb_exit("No More memory for reallocating Array");\
@@ -424,7 +425,7 @@ extern CPtr reg_arrayptr, var_regs[];
 #define will_overflow_reg_array(x) {\
    if (x >= reg_array+reg_array_size) {\
      int idx = reg_arrayptr - reg_array;\
-     trie_expand_array(Cell,reg_array,reg_array_size,"reg_array");\
+     trie_expand_array(Cell,reg_array,reg_array_size,x-reg_array,"reg_array");\
      reg_arrayptr = reg_array + idx;\
    }\
 }
