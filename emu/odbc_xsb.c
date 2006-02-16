@@ -1007,7 +1007,6 @@ RETCODE rc;
   }
   /* submit it for execution*/
   if (SQLExecute(cur->hstmt) != SQL_SUCCESS) {
-    printf("execute failed\n");
     ctop_int(CTXTc 3,PrintErrorMsg(cur));
     SetCursorClose(cur);
     return;
