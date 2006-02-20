@@ -712,45 +712,41 @@ xsb_flag(examine_data, ExamineYN) :-
 
 
 set_xsb_flag(Type,Val):- 
-	check_nonvar(Type,set_xsb_flag,2),
+	check_nonvar(Type,set_xsb_flag/2,1),
+	check_nonvar(Val,set_xsb_flag/2,2),
 	set_xsb_flag_1(Type,Val).
 
-set_xsb_flag_1(write_depth, Depth) :-
+set_xsb_flag_1(write_depth, Depth) :- !, 
 	set_file_write_depth(Depth).
-set_xsb_flag_1(backtrace_on_error, BT) :-
-	check_nonvar(BT,set_xsb_flag_1,2),
+set_xsb_flag_1(backtrace_on_error, BT) :-  !, 
 	(BT == off -> Value = 0 ; Value = 1),
 	stat_set_flag(BACKTRACE, Value). 
-set_xsb_flag_1(debugging, Debug) :-
-	check_nonvar(Debug,set_xsb_flag_1,2),
+set_xsb_flag_1(debugging, Debug) :-  !, 
 	(Debug == off -> Value = 0 ; Value = 1),
 	stat_set_flag(DEBUG_ON, Value). 
-set_xsb_flag_1(tracing, Trace) :-
-	check_nonvar(Trace,set_xsb_flag_1,2),
+set_xsb_flag_1(tracing, Trace) :-  !, 
 	(Trace == off -> Value = 0 ; Value = 1),
 	stat_set_flag(TRACE, Value).
-set_xsb_flag_1(verboseness,Level) :-
-	check_number(Level,set_xsb_flag_1,2),
+set_xsb_flag_1(verboseness,Level) :-  !, 
 	stat_set_flag(VERBOSENESS_LEVEL,Level).
 % TLS: dont think setting makes sense here.
 %% Goal passed on cmd line
 %set_xsb_flag_1(goal, Goal) :-
 %	stat_flag(CMD_LINE_GOAL, GoalUninterned),
 %	intern_string(GoalUninterned, Goal).
-set_xsb_flag_1(dcg_style, DcgMode) :-
-	check_nonvar(DcgMode,set_xsb_flag_1,2),
+set_xsb_flag_1(dcg_style, DcgMode) :-  !, 
 	( DcgMode == xsb -> Value = 0 ; Value = 1 ),
 	stat_flag(DCG_MODE, Value).
-set_xsb_flag_1(garbage_collection, GCmode) :-
+set_xsb_flag_1(garbage_collection, GCmode) :-  !, 
 	( GCmode = none -> GCflag = NO_GC 
 	; GCmode = sliding -> GCflag = SLIDING_GC 
 	; GCmode = copying -> GCflag = COPYING_GC
 	; GCmode = indirection -> GCflag = INDIRECTION_SLIDE_GC
 	; domain_error([none,sliding,copying,indirection],
-	                       GCmode,set_xsb_flag_1,2,'garbage_collection clause')
+                       GCmode,set_xsb_flag/2,2,'garbage_collection clause')
 	),
 	stat_set_flag(GARBAGE_COLLECT, GCflag).
-set_xsb_flag_1(gc_verbose_level,Level) :-
+set_xsb_flag_1(gc_verbose_level,Level) :-  !, 
 	(   Level = 0
 	-> stat_set_flag(VERBOSE_GC,0),
 	    stat_set_flag(COUNT_CHAINS,0),
@@ -767,29 +763,32 @@ set_xsb_flag_1(gc_verbose_level,Level) :-
 	->  stat_set_flag(VERBOSE_GC,1),
 	    stat_set_flag(COUNT_CHAINS,1),
 	    stat_set_flag(EXAMINE_DATA,1)
-	;   domain_error([0,1,2,3],Level,set_xsb_flag_1,2,'gc_verbose_level clause')
+	;   domain_error([0,1,2,3],Level,set_xsb_flag/2,2,'gc_verbose_level clause')
 	).
-set_xsb_flag_1(verbose_gc, VerboseGC) :-
+set_xsb_flag_1(verbose_gc, VerboseGC) :-  !, 
 	(   VerboseGC = yes
 	->  stat_set_flag(VERBOSE_GC, 1)
 	;   VerboseGC = no
 	->  stat_set_flag(VERBOSE_GC, 0)
-	;     domain_error([0,1],VerboseGC,set_xsb_flag_1,2,'verbose_gc clause')
+	;     domain_error([0,1],VerboseGC,set_xsb_flag/2,2,'verbose_gc clause')
 	).
-set_xsb_flag_1(count_chains, CountYN) :-
+set_xsb_flag_1(count_chains, CountYN) :-  !, 
 	(   CountYN = yes
 	->  stat_set_flag(COUNT_CHAINS, 1)
 	;   CountYN = no
 	->  stat_set_flag(COUNT_CHAINS, 0)
-	;     domain_error([0,1],CountYN,set_xsb_flag_1,2,'count_chains clause')
+	;     domain_error([0,1],CountYN,set_xsb_flag/2,2,'count_chains clause')
 	).
-set_xsb_flag_1(examine_data, ExamineYN) :-
+set_xsb_flag_1(examine_data, ExamineYN) :-  !, 
 	(   ExamineYN = yes
 	->  stat_set_flag(EXAMINE_DATA, 1)
 	;   ExamineYN = no
 	->  stat_set_flag(EXAMINE_DATA,0)
-	;     domain_error([0,1],ExamineYN,set_xsb_flag_1,2,'examine_data clause')
+	;     domain_error([0,1],ExamineYN,set_xsb_flag/2,2,
+	                  'examine_data clause')
 	).
+set_xsb_flag_1(Type, _) :-  
+	domain_error(xsb_flag,Type,set_xsb_flag/2,2).
 
 /* ==================================================================== */
 

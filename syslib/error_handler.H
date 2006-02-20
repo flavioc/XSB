@@ -50,8 +50,10 @@
 :- import close_open_tables/0, psc_data/2, psc_name/2, psc_arity/2,
           stat_flag/2, xsb_backtrace/1 from machine.
 
+:- import ','/2 from standard.
  :- import atom/1, callable/1, messageln/2, number/1, 
            throw/1,integer/1 from standard.
 :- import concat_atom/2 from string.
 :- import xsb_flag/2 from curr_sym.
- :- import xsb_thread_property/2 , xsb_thread_self/1 from thread.
+:- import xsb_thread_exit/1, 
+          xsb_thread_property/2 , xsb_thread_self/1 from thread.

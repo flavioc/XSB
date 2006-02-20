@@ -23,7 +23,7 @@
 ** 
 */
 
-:- compiler_options([xpp_on,sysmod,optimize]).
+:- compiler_options([xpp_on,sysmod,optimize,spec_off]).
 
 #include "sig_xsb.h"
 #include "flag_defs_xsb.h"
@@ -42,11 +42,7 @@ default_error_handler(Error) :-
 	close_open_tables,
 	!,fail.
 default_error_handler(Error) :-
-	default_sys_error_handler(Error),
-	!,
-	close_open_tables,
-	%%reset_undef_pred_handlers, 
-	fail.
+	default_sys_error_handler(Error).
 
 /* Below, representation errors (usually mallocs returning null ptrs)
  * are handled seperately, by writing out message in C.  
@@ -64,18 +60,39 @@ default_error_handler(Error) :-
 	xsb_flag(backtrace_on_error,BT),
 	xsb_thread_self(Thread),
         default_sys_error_handler(error(Error,Msg)),
+	!,
 	(Thread == 0 -> 
-	    (BT == on -> print_backtrace(Backtrace) ; true)
-	 ;  (xsb_thread_property(Thread,joinable) -> 
-	       get_backtrace(Backtrace,ReadBT),
-	       asserta('_$thread_exit_ball'(Thread,error(Error,Msg,ReadBT)))
-	     ; true) ).
+	    default_sys_error_handler_main(BT,Backtrace)
+	  ; 
+	    default_sys_error_handler_nonmain(Error,Thread,Backtrace,Msg) ).
 
 default_sys_error_handler(error(Error,Msg)) :-
 	get_sys_error_description(error(Error,Msg),NewMsg),
 	messageln(NewMsg,STDERR),!.
+
 default_sys_error_handler(X) :-
 	messageln(('++Error[XSB/Runtime] Unhandled Exception: ',X),STDERR).
+
+default_sys_error_handler_main(BT,Backtrace):- 
+	(BT == on -> print_backtrace(Backtrace) ; true),
+	close_open_tables,
+	fail.
+
+% Cancellation.
+default_sys_error_handler_nonmain(thread_cancel,Thread,Backtrace,Msg):- !,
+	(xsb_thread_property(Thread,joinable) -> 
+	       get_backtrace(Backtrace,ReadBT),
+	       asserta('_$thread_exit_ball'(Thread,
+	                                    error(thread_cancel,Msg,ReadBT)))
+	     ; true),
+	xsb_thread_exit(1).
+% Error: non-cancellation.
+default_sys_error_handler_nonmain(Error,Thread,Backtrace,Msg):- 
+	(xsb_thread_property(Thread,joinable) -> 
+	       get_backtrace(Backtrace,ReadBT),
+	       asserta('_$thread_exit_ball'(Thread,error(Error,Msg,ReadBT)))
+	     ; true),
+	xsb_thread_exit(2).
 
 % get_sys_error_description/3
 get_sys_error_description(error(Error,Msg,Backtrace), 

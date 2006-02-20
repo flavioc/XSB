@@ -51,7 +51,9 @@
      from machine.
 :- import xsb_configuration/2 from xsb_configuration.
 :- import fmt_write_string/3 from file_io.
-:- import check_nonvar/3, check_number/3,domain_error/5,type_error/4,
+:- import check_nonvar/3, 
+   %check_number/3,
+          domain_error/5,type_error/4,
           instantiation_error/3, domain_error/4 from error_handler.
 :- import retractall/1, (dynamic)/1, asserta/1 from assert.
 :- import findall/3 from setof.
