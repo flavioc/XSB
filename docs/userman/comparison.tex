@@ -153,15 +153,16 @@ Some further predicates involving comparison of terms are:
 
                 L = [1-b,1-a,2-c,3-a,3-a];
 
-                no
-     \end{verbatim}}
-    Exceptions:
-    \begin{description}
-    \item[{\tt instantiation\_error}]
-	Argument 1 of {\tt keysort/2} is a variable or is not a proper list.
-    \item[{\tt type\_error}]
-	The elements of {\tt L1} are not of the form \verb'Key-Value'.
-    \end{description}
+                no \end{verbatim}}
+     Exceptions: 
+\begin{description} 
+\item[{\tt instantiation\_error}]
+     {\tt L1} {\tt keysort/2} is a variable or is not a proper
+     list.  
+\item[{\tt domain\_error(key\_value\_pair,Element)}] {\tt
+     L1} contains an element {\tt Element} that is not of the
+     form \verb'Key-Value'.  
+\end{description}
 
 \ournewitem{parsort(+L1, +SortSpec, +ElimDupl, ?L2)}{machine}
 \index{\texttt{parsort/4}}
@@ -198,15 +199,16 @@ Some further predicates involving comparison of terms are:
 
             L = [f(1,4),f(1,3),f(2,2),f(2,1),f(3,2),f(3,1)];
 
-            no
-     \end{verbatim}}
-    Exceptions:
-    \begin{description}
-    \item[{\tt instantiation\_error}]
-	Argument 1 of {\tt parsort/4} is not a proper list.
-    \item[{\tt type\_error}]
-	The elements of {\tt L1} are not terms with at least as many arguments as 
-	required by {\tt SortSpec}, or {\tt SortSpec} is not of an allowed form.
-    \end{description}
+            no \end{verbatim}}
+
+{\bf Error Cases:}
+\begin{description} 
+\item[{\tt instantiation\_error}]
+     {\tt L1} is a variable or not a proper list.  
+% TLS: not sure how to make sense of this...
+%\item[{\tt type\_error}] The elements of {\tt L1} are not terms with at
+%     least as many arguments as required by {\tt SortSpec}, or {\tt
+%     SortSpec} is not of an allowed form.  
+\end{description}
 \end{description}
 

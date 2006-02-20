@@ -1,4 +1,4 @@
-\chapter{Exception Handling}\label{exception}
+\chapter{Exception Handling}\label{chap:exception}
 \index{exceptions}
 
 We use the term {\em exceptions} to define errors in program execution
@@ -246,14 +246,19 @@ arugment is instantiated to the representation of a backtrace.
 %
 \end{description}
 
-In addition, XSB's engine also makes use of two other types of errors.
+In addition, XSB's engine also makes use of some other types of
+errors.
 %
 \begin{description}
-\item[error(table\_error,Msg)] is the format of an error arising when using
-  XSB's tabling mechanism.
+\item[error(table\_error,Msg)] is the format of an error arising when
+  using XSB's tabling mechanism.
 %
 \item[error(misc\_error,Msg)] is the format of an error that is not
   otherwise classified.
+%
+\item[error(thread\_cancel,Id)] is the format of an error ball for a
+  thread that has been cancelled by XSB thread {\tt Id} (See
+  Chapter~\ref{chap:threads} for details on thread cancellation.)
 %
 \end{description}
 

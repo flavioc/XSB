@@ -253,13 +253,13 @@ compatibility with the {\tt retract/1} predicate of SB-Prolog.
 %compatibility with the {\tt retract/1} predicate provided by SB-Prolog that
 %did not reclaim space.
 
-\ouritem{reclaim\_space(+Head)}\index{\texttt{reclaim\_space/1}}
-Runs through the dynamic code for the predicate indicated by {\tt Head}, and
-reclaims space for any clauses that have been deleted from that predicate by
-{\tt retract\_nr/1}.  This cannot safely be used when execution is still
-within some invocation of the specified predicate, or will backtrack into
-such a scope.  To complete our example of retracting the intersection of
-dynamic predicates:
+\ouritem{reclaim\_space(+Head)}\index{\texttt{reclaim\_space/1}} Runs
+through the dynamic code for the predicate indicated by {\tt Head},
+and reclaims space for any clauses that have been deleted from that
+predicate by {\tt retract\_nr/1}.  This cannot safely be used when
+execution is still within some invocation of the specified predicate,
+or will backtrack into such a scope.  To complete our example of
+retracting the intersection of dynamic predicates:
 \begin{center}
 {\tt :- p(X), q(X), retract\_nr(p(X)), retract\_nr(q(X)), fail\ ;\\
      reclaim\_space(p(\_)), reclaim\_space(q(\_)).}
@@ -496,7 +496,7 @@ Sections~\ref{LibPath} and~\ref{sec:filenames} for details.
  \ei
 \item 	{\tt FileName} is not an atom.
  \bi
- \item 	{\tt type\_error(FileName,atom)}
+ \item 	{\tt type\_error(atom,Filename)}
  \ei
 \item {\tt FileName} has been loaded previously in the session {\em and}
   there is more than one active thread.  
@@ -527,7 +527,7 @@ Sections~\ref{LibPath} and~\ref{sec:filenames} for details.
 \ei
 \item 	{\tt FileName} is not an atom:
 \bi
-\item 	{\tt type\_error(FileName,atom)}
+\item 	{\tt type\_error(atom,FileName)}
 \ei
 %
 \item 	{\tt Dir} is not equal to {\tt a} or {\tt z}~\footnote{For
@@ -583,7 +583,7 @@ backward compatability, {\tt 0} and {\tt 1} are also allowed.}:
 \ei
 \item 	{\tt FileName} is not an atom.
 \bi
-\item 	{\tt type\_error(FileName,atom)}
+\item 	{\tt type\_error(atom,FileName)}
 \ei
 %
 \item {\tt FileName} has been loaded previously in the session {\em and}
@@ -626,7 +626,7 @@ backward compatability, {\tt 0} and {\tt 1} are also allowed.}:
 \ei
 \item 	{\tt FileName} is not an atom:
 \bi
-\item 	{\tt type\_error(FileName,atom)}
+\item 	{\tt type\_error(atom,FileName)}
 \ei
 %
 \item 	{\tt Dir} is not instantiated to {\tt a} or {\tt z}~\footnote{For
@@ -675,7 +675,7 @@ is consulted.
 \ei
 \item 	{\tt FileName} is not an atom:
 \bi
-\item 	{\tt type\_error(FileName,atom)}
+\item 	{\tt type\_error(atom,FileName)}
 \ei
 %
 \item 	{\tt Action} is not a valid load action as described above

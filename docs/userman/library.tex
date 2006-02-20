@@ -195,23 +195,25 @@ memberchk/2}, respectively.
 
 Attributed variables are a special data type that associates variables
 with arbitrary attributes as well as supports extensible unification.
-Attributed variables have proven to be a flexible and powerful mechanism
-to extend a classic logic programming system with the ability of
-constraint solving.  They have been implemented in SICStus \cite{sicstus-manual}, 
-ECL$^i$PS$^e$ \cite{eclipse-manual} and hProlog \footnote{In XSB we try
-to keep the implementation of attributed variables compatible with hProlog.} \cite{hprolog}.
-
-In XSB attributed variabels now comes with a new interface.  It  allows the
-programmer more control over structuring attributes than in SICStus.
+Attributed variables have proven to be a flexible and powerful
+mechanism to extend a classic logic programming system with the
+ability of constraint solving.  They have been implemented in SICStus
+\cite{sicstus-manual}, ECL$^i$PS$^e$ \cite{eclipse-manual} and
+hProlog \footnote{In \version, the implementation of attributed
+  variables is compatible with hProlog.  This allows the programmer
+  more control over structuring attributes than our previous
+  implementation, whose API was modeled on SICStus.}  \cite{hprolog}.
 
 \subsection{Lowlevel Interface}
+%
+Attributes of variables are pairs of module names and values. A module
+name can be any atom.  A value can be any XSB value (term, variable,
+atom, \ldots). Any variable has at most one attribute for a particular
+module.
 
-Attributes of variables are pairs of module names and values. A module name can be any atom.
-A value can be any XSB value (term, variable, atom, \ldots). Any variable has at most one 
-attribute for a particular module.
-
-Attributes can be manipulated with the following three predicates (\texttt{get\_attr/3},
-\texttt{put\_attr/3} and \texttt{del\_attr/2}) defined in the module \texttt{machine}.
+Attributes can be manipulated with the following three predicates
+(\texttt{get\_attr/3}, \texttt{put\_attr/3} and \texttt{del\_attr/2})
+defined in the module \texttt{machine}.
 
 \begin{description}
 \ournewitem{get\_attr(-Var,+Mod, ?Val)}{machine}\index{\texttt{get\_attr/3}}
@@ -1091,15 +1093,20 @@ syntactically correct term, then this predicate fails, quietly.
 \section{Script Writing Utilities}
 %========================
 
-Prolog, (or XSB) can be useful for writing scripts.  Prolog's simple
-syntax and declarative semantics make it especially suitable for
-scripts that involve text processing.  There are several ways to
-access script-writing commands from XSB.  The first is to execute the
-command via the predicates {\tt shell/1} or {\tt shell/2}.  These
-predicates can execute any command but they do not provide streamablity
-across UNIX and Windows commands, and they do not return any output of
-commands to Prolog.  Special predicates are provided to handle
-cross-platform compatability and to bring output into XSB.  
+Prolog, (in particular XSB!) can be useful for writing scripts.
+Prolog's simple syntax and declarative semantics make it especially
+suitable for scripts that involve text processing.  There are several
+ways to access script-writing commands from XSB.  The first is to
+execute the command via the predicates {\tt shell/1} or {\tt shell/2}.
+These predicates can execute any command but they do not provide
+streamablity across UNIX and Windows commands, and they do not return
+any output of commands to Prolog.  Special predicates are provided to
+handle cross-platform compatability and to bring output into XSB.
+
+Effort has been made to make the these thread-safe; however in
+\version, calls to the XSB script writing utilities go through a
+single mutex, and may couse contention if many threads seek to
+concurrently use sockets.
 
 \begin{description}
 \ournewitem{expand\_filename(+FileName,-ExpandedName)}{machine}
@@ -1778,24 +1785,25 @@ abnormality.
 
 \section{Socket I/O}
 
-The XSB socket library defines a number of predicates for communication
-over BSD-style sockets. Most are modeled after and are interfaces to the
-socket functions with the same name. For detailed information on sockets,
-the reader is referred to the Unix man pages (another good source is
-\emph{Unix Network Programming}, by W.  Richard Stevens).  Several examples
-of the use of the XSB sockets interface can be found in the {\tt XSB/examples/}
-directory in the XSB distribution.
+The XSB socket library defines a number of predicates for
+communication over BSD-style sockets. Most are modeled after and are
+interfaces to the socket functions with the same name. For detailed
+information on sockets, the reader is referred to the Unix man pages
+(another good source is \emph{Unix Network Programming}, by W.
+Richard Stevens).  Several examples of the use of the XSB sockets
+interface can be found in the {\tt XSB/examples/} directory in the XSB
+distribution.
 
-
-XSB supports two modes of communication via sockets: \emph{stream-oriented}
-and \emph{message-oriented}. In turn, stream-oriented communication can be
-\emph{buffered} or \emph{character-at-a-time}.
+XSB supports two modes of communication via sockets:
+\emph{stream-oriented} and \emph{message-oriented}. In turn,
+stream-oriented communication can be \emph{buffered} or
+\emph{character-at-a-time}.
 
 To use \emph{buffered} stream-oriented communication, system socket
 handles must be converted to XSB I/O streams using {\tt
-fd2iostream/2}.  In these stream-oriented communication, messages have
-no boundaries, and communication appears to the processes as reading
-and writing to a file.  At present, buffered stream-oriented
+  fd2iostream/2}.  In these stream-oriented communication, messages
+have no boundaries, and communication appears to the processes as
+reading and writing to a file.  At present, buffered stream-oriented
 communication works under Unix only.
 
 \emph{Character-at-a-time} stream communication is accomplished using
@@ -1810,6 +1818,11 @@ XSB messages are represented as strings where the first four bytes
 --- see the functions {\tt htonl} and {\tt ntohl} in socket documentation)
 and the rest is the body of the message. The integer in the header
 represents the length of the message body.
+
+Effort has been made to make the socket interface thread-safe; however
+in \version, calls to the XSB socket interface go through a single
+mutex, and may couse contention if many threads seek to concurrently
+use sockets.
 
 We now describe the XSB socket interface.  All predicates below must be
 imported from the module {\tt socket}. Note that almost all predicates have
@@ -2384,8 +2397,9 @@ generate random numbers (both integers and floating numbers), based on
 the Wichmann-Hill Algorithm \cite{WicH82,McLe85}.  The random number
 generator is entirely portable, and does not require any calls to the
 operating system.  As noted below, it does require 3 seeds, each of
-which must be an integer in a given range.
-
+which must be an integer in a given range.  These seeds are
+thread-specific: thus different threads may generate independent
+sequences of random numbers.
 
 \begin{description}
 
@@ -2618,12 +2632,16 @@ programs that define their own meta-predicates.
 currently equivalent to {\tt checkImpExps([],FileNameList)}.
 \end{description}
 
-\section{Pretty Printing}
-
-XSB contains a simple but useful pretty-printer~\footnote{This library
-uses code both from hProlog and Ciao.}.
+\section{Miscellaneous Predicates}
 
 \begin{description}
+
+\ournewitem{term\_hash(+Term,+HashSize,-HashVal)}{machine}
+\index{\texttt{term\_hash/3}}
+%
+Given an arbitrary Prolog term, {\tt Term}, that is to be hashed into
+a table of {\tt HashSize} buckets, this predicate returns a hash value
+for {\tt Term} that is between {\tt 0} and {\tt HashSize -1}.
 
 \ournewitem{pretty\_print(+ClausePairs)}{pretty\_print}
 \index{\texttt{pretty\_print/1}}

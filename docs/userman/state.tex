@@ -670,29 +670,34 @@ module {\tt "usermod"} may be enumerated using:
 %
 {\tt backtrace\_on\_error} & {\tt on} iff system-handled errors
 automatically print out the trace of the execution stack where the
-error arose, {\tt off} otherwise. Default is {\tt off}.\\ \hline 
+error arose, {\tt off} otherwise. Default is {\tt on}.  In the
+multi-threaded engine, this flag is thread-specific and controls
+whether the backtrace for a current execution will be printed to {\tt
+  STDERR}.\\ \hline
 %
 {\tt dcg\_style} & the DCG style currently used; {\tt xsb} or {\tt
-standard} (standard is used in Quintus, SICSTUS, etc.).  See
+  standard} (standard is used in Quintus, SICSTUS, etc.).  See
 Section~\ref{sec-dcg-differences} for more details. Default is {\tt
-xsb}.  \\ \hline 
+  xsb}. This flag affects all threads in the process. \\ \hline
 %
-{\tt debugging} & {\tt on} iff debug mode is on; {\tt
-off} otherwise.\\ \hline 
+{\tt debugging} & {\tt on} iff debug mode is on; {\tt off} otherwise.
+This flag affects all threads in the process. \\ \hline
 %
 {\tt garbage\_collection} & {\tt indirection}, {\tt none}, {\tt
   sliding}, or {\tt copying} depending on the heap garbage collection
 strategy that is currently being employed (see also
-Section~\ref{sec:EmuOptions}).  Default is {\tt indirection}.
-\\ \hline
+Section~\ref{sec:EmuOptions}).  Default is {\tt indirection}.  This
+flag is private to each thread.  \\ \hline
 %
 {\tt goal} & the goal passed to XSB on command line with the
-`-e' switch; `{\tt true.}' if nothing is passed.  \\ \hline {\tt
-tracing} & {\tt on} iff trace mode is on; {\tt off} otherwise.\\
-\hline 
+`-e' switch; `{\tt true.}' if nothing is passed.  \\ \hline 
 %
-{\tt write\_depth} & The depth to which a term is written by
-{\tt write}-like predicates.  Default is 64.  \\ \hline 
+{\tt tracing} & {\tt on} iff trace mode is on; {\tt off}
+otherwise. This flag affects all threads in the process.  \\ \hline
+%
+{\tt write\_depth} & The depth to which a term is written by {\tt
+  write}-like predicates.  Default is 64.  This flag affects all
+threads in the process.  \\ \hline
 \end{tabular} 
 \end{center}
     
@@ -700,6 +705,27 @@ tracing} & {\tt on} iff trace mode is on; {\tt off} otherwise.\\
       i.e.}, settings that might change between sessions or within the same
     session. For static configuration information, the predicate {\tt
       xsb\_configuration/2} is used. \index{\texttt{xsb\_configuration/2}} 
+
+\ouritem{set\_xsb\_flag(+Flag\_Name, +Value)}
+\index{\texttt{set\_xsb\_flag/2}}
+%
+Changes one of the dynamic XSB settings described for {\tt
+  xsb\_flag/2}.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Flag\_Name} or {\tt Value} is a variable.
+\bi
+\item 	{\tt instantiation\_error}
+\ei
+%
+\item 	{\tt Flag\_Name} is not the name of a recognized XSB flag.
+\bi
+\item 	{\tt domain\_error(xsb\_flag,Flag\_Name)}
+\ei
+
+\ei
+
 
 \ouritem{hilog\_symbol(?Symbol)}\index{\texttt{hilog\_symbol/1}}
     Succeeds iff {\tt Symbol} has been declared as a HiLog symbol, or 
@@ -748,6 +774,8 @@ specifier of the types above.
 \item 	{\tt domain\_error(atom\_or\_variable,Name)}
 \ei
 \ei
+
+
 
 \ouritem{hilog\_op(?Precedence, ?Type, ?Name)}\index{\texttt{hilog\_op/3}}
     This predicate has exactly the same behaviour as {\tt current\_op/3}
