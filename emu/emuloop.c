@@ -2023,7 +2023,7 @@ contcase:     /* the main loop */
       jump_cond_fail(isref(op2) || isattv(op2));
       break;
     case NONVAR_TEST:
-      jump_cond_fail(isnonvar(op2));
+      jump_cond_fail(isnonvar(op2) && !isattv(op2));
       break;
     default: 
       xsb_error("Undefined jumpcof condition");
