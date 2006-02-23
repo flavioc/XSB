@@ -1,7 +1,7 @@
 \chapter{Multi-Threaded Programming in XSB} \label{chap:threads}
 
 Starting with Version 3.0, XSB supports the use of Posix threads to
-perform separable computations, and in certain cases to parellelize
+perform separable computations, and in certain cases to parallelize
 them.  Posix threads have a simple and clear API, and are available on
 all Unixes as well as on Windows via ???.  This chapter introduces how
 to program with threads in XSB through a series of examples.  Later
@@ -117,7 +117,7 @@ the call {\tt p(X)} will fail.
 This illustrates an important point about dynamic and tabled
 predicates in the multi-threaded engine: by default such predicate
 {\tt p/n} are private to the thread that asserts clauses to {\tt p/n}
-or that creates the table for {\tt p/n}.  This constrasts to static
+or that creates the table for {\tt p/n}.  This contrasts to static
 code is always shared between threads.  To allow {\tt p(1)} to be
 visible to various threads, it must be declared to be shared with the
 following declaration.
@@ -181,7 +181,7 @@ because computation always takes place in the SCC most recently
 created, and no answer is returned outside of an SCC until the SCC has
 been completely evaluated.  Within this scheduling strategy it is not
 often useful to share answers between tables that have not been
-completed -- as local evulation would allow these answers to be
+completed -- as local evaluation would allow these answers to be
 returned only if the tables were in the same SCC.  This leads to a
 concurrency semantics called {\em Shared Completed Tables}.  Shared
 Completed Tables can in fact be supported by a relatively simple
@@ -192,7 +192,7 @@ nothing is done until it is detected that $Table_a$ and $Table_b$ are
 both incomplete and are contained in a SCC of the table dependency
 grahp.  At that time, one of the threads (e.g. $Thread_a$) takes over
 recomputation of all tables in the SCC, and when the SCC is completed,
-any remaining answers are returned to other threads that had invokled
+any remaining answers are returned to other threads that had invoked
 goals in the SCC.  While $Thread_a$ is completing this computation,
 $Thread_b$ suspends until the SCC is complete.  Thus the semantics of
 Shared Completed Tables supports concurrency, but does not support any
@@ -202,7 +202,7 @@ Batched evaluation, on the other hand, allows answers to be returned
 outside of an SCC before that SCC has been completed.  Concurrency
 control for batched evaluation is similar to that for local
 evaluation, except in the following case.  Assume as before that
-$Table_a$, first called by $Thread_a$, and $Table_b$ forst called by
+$Table_a$, first called by $Thread_a$, and $Table_b$ first called by
 $Thread_b$ are determined to be in the same SCC, and that $Thread_a$
 takes over computation of subgoals in the SCC.  Now, $Thread_b$,
 rather than suspending, may continue work.  In particular, $Thread_b$
@@ -221,7 +221,7 @@ For either semantics of shared tables, in \version{}, users of
 thread-shared tables are responsible for ensuring read consistency.
 Note that, in principle, thread-shared tables may depend on
 thread-private tables and vice-versa.  Either type of table may depend
-on thread-private or thread-shared dynanamic code.  In addition, a
+on thread-private or thread-shared dynamic code.  In addition, a
 predicate may be {\em both} dynamic and tabled, and its clauses and
 tables may be either thread-private or thread-shared.
 
@@ -250,7 +250,7 @@ XSB-specific status information about threads follows the pthread
 model: by default, error information is available when joining a
 joinable thread, but not otherwise~\footnote{This behavior can, of
   course, be overridden by embedding goals within {\tt catch/3} and
-  handling errors separately, or simply by adding a defailt user error
+  handling errors separately, or simply by adding a default user error
   handler: see Chapter~\ref{chap:exception} for details.}.
 
 \begin{example}
@@ -316,7 +316,7 @@ thread the ability to cancel the execution of another thread.  Within
 the semantics of pthreads, this is called {\em thread cancellation}.
 At the C level, thread cancellation can be tricky, as mutexes must be
 released, allocated memory freed, and so on.  Accordingly, the
-predicate {\tt xsb\_thread\_cancel/1} cancells XSB threads by acting
+predicate {\tt xsb\_thread\_cancel/1} cancels XSB threads by acting
 purely within the SLG-WAM engine.  When thread $T_1$ interrupts thread
 $T_2$, $T_1$ writes to the XSB interrupt vector in $T_2$.  Later, when
 $T_2$ checks its interrupt vector, it throws a cancellation error,
@@ -393,15 +393,15 @@ unaltered.
 %
 \bi
 \item {\tt glsize(N)}: create thread with global (heap) plus local
-  stack size initially set ot {\tt N} kbytes.  If not specified, the
+  stack size initially set to {\tt N} kbytes.  If not specified, the
   default size is used (cf. Section~\ref{sec:EmuOptions}).
 %
 \item {\tt tcsize(N)}: create thread with trail plus choice point 
-  stack size initially set ot {\tt N} kbytes.  If not specified, the
+  stack size initially set to {\tt N} kbytes.  If not specified, the
   default size is used (cf. Section~\ref{sec:EmuOptions}).
 %
 \item {\tt complsize(N)}: create thread with completion
-  stack size initially set ot {\tt N} kbytes. If not specified, the
+  stack size initially set to {\tt N} kbytes. If not specified, the
   default size is used (cf. Section~\ref{sec:EmuOptions}).
 %
 \item {\tt pdlsize(N)}: create thread with {\tt N} kbytes of
@@ -572,7 +572,7 @@ other error.  Usually, this means that {\tt ThreadId} will abort and
 exit.  Note that the high-level upon which thread cancellation is
 implemented allows for simplicity and portability of thread
 cancellation.  \footnote{While interrupt vector is not checked upon
-  every SLG-WAM instructiuon, it is checked on every {\sf call} and
+  every SLG-WAM instruction, it is checked on every {\sf call} and
   {\sf execute} instruction, and should should be suitable for almost
   any need for cancellation.}.
 
@@ -618,7 +618,7 @@ platforms.
 %
 Locks a user-mutex, currently numbered 0 through 9, with 0
 corresponding to the mutex that controls I/O to the console.  These
-mutexes are initalized automatically at process startup, and In
+mutexes are initialized automatically at process startup, and in
 addition each of the mutexes have a {\tt pthread\_mutexattr\_t} type
 of {\tt NORMAL}.
 
