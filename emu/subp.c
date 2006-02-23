@@ -92,10 +92,9 @@ double realtime_count_gl;
 #ifndef MULTI_THREAD
 extern int asynint_val;	/* 0 - no interrupt (or being processed) */
 extern int asynint_code;	/* 0 means keyboard interrupt */
-
 #endif
 
-
+extern void print_mutex_use(void);
 
 extern void dis(xsbBool), debug_call(CTXTdeclc Psc);
 

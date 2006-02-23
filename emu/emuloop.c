@@ -2273,7 +2273,7 @@ DllExport int call_conv xsb(CTXTdeclc int flag, int argc, char *argv[])
      setbuf(stdout, NULL);
      startup_file = init_para(CTXTc argc, argv);	/* init parameters */
 
-     init_machine(CTXTc NULL,NULL,NULL,NULL);	/* init space, regs, stacks */
+     init_machine(CTXTc (int)NULL,(int)NULL,(int)NULL,(int)NULL);	/* init space, regs, stacks */
      init_inst_table();		/* init table of instruction types */
      init_symbols();		/* preset a few symbols in PSC table */
      init_interrupt();		/* catch ^C interrupt signal */
