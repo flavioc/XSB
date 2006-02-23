@@ -2020,7 +2020,7 @@ contcase:     /* the main loop */
       jump_cond_fail(isattv(op2));
       break;
     case VAR_TEST:
-      jump_cond_fail(isref(op2));
+      jump_cond_fail(isref(op2) || isattv(op2));
       break;
     case NONVAR_TEST:
       jump_cond_fail(isnonvar(op2));
