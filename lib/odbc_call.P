@@ -1742,19 +1742,31 @@ user_tables(ConnHandle,A) :-
 % Use 'dbo' as default user to be backwards compatible
 odbc_get_schema1(accessible,ConnHandle,List) :-
 	bagof(A, accessible_tables(ConnHandle,dbo,A), List).
-
 odbc_get_schema1(accessible(User),ConnHandle, List) :-
 	bagof(A, accessible_tables(ConnHandle,User,A), List).
+odbc_get_schema1(all,ConnHandle,List) :-
+	bagof([A,Type], all_tables(ConnHandle,dbo,A,Type),List).
+odbc_get_schema1(all(User),ConnHandle, List) :-
+	bagof([A,Type], all_tables(ConnHandle,User,A,Type), List).
 
 odbc_show_schema1(accessible,ConnHandle) :-
 	odbc_show_schema1(accessible(dbo),ConnHandle).
 odbc_show_schema1(accessible(User),ConnHandle) :-
 	odbc_get_schema1(accessible(User),ConnHandle,List),
 	write(User), writeln(' owns:'), writelistln(List), fail; true.
+odbc_show_schema1(all,ConnHandle) :-
+	odbc_show_schema1(all(dbo),ConnHandle).
+odbc_show_schema1(all(User),ConnHandle) :-
+	odbc_get_schema1(all(User),ConnHandle,List),
+	write(User), writeln(' owns:'), writelistln(List), fail; true.
 
 accessible_tables(ConnHandle,User,A) :-
+	all_tables(ConnHandle,User,A,TabType),
+	(TabType = 'TABLE' -> true ; TabType = 'SYSTEM TABLE' -> true).
+
+all_tables(ConnHandle,User,A,TabType) :-
 	var(A),
-	odbc_accessible_tables(ConnHandle,User,A).
+	odbc_accessible_tables(ConnHandle,User,A,TabType).
 
 %----------------------------
 odbc_get_schema1(arity(Table),ConnHandle,N1) :-
@@ -1923,15 +1935,15 @@ odbc_get_attr(ConnHandle,Tab,Col,Type) :-
 		odbc_error('Parse error.')
 	).
 
-odbc_accessible_tables(ConnHandle,User,Tab) :-
+
+odbc_accessible_tables(ConnHandle,User,Tab,TabType) :-
 	find_free_cursor(ConnHandle,'GET TABLES',Cursor),
 	%%writeln(cursor(Cursor)),
 	odbc_tables(Cursor,RetVal0),
 	(RetVal0 =:=0
 	 ->	odbc_describe_select(Cursor,RetVal),
 		(RetVal =:= 0
-		 ->	fetch([1,2,3],Cursor,[User,Tab,TabType]),
-			(TabType = 'TABLE' ; TabType = 'SYSTEM TABLE')
+		 ->	fetch([1,2,3],Cursor,[User,Tab,TabType])
 		 ; RetVal =:= 2
 		 ->	odbc_deactivate_cursor(Cursor),
 			odbc_error('Getting All Tables.')
@@ -1941,6 +1953,9 @@ odbc_accessible_tables(ConnHandle,User,Tab) :-
 	 ;      odbc_deactivate_cursor(Cursor),
 		odbc_error('Parse error.')
 	).
+
+
+
 
 odbc_user_tables(Tab) :-
 	odbc_connection_check(defaultConnection,ConnHandle),
