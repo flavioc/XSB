@@ -438,6 +438,16 @@ static void delete_variant_table(CTXTdeclc BTNptr x) {
 	   * Remove the subgoal frame and its dependent structures
 	   */
 	  VariantSF pSF = CallTrieLeaf_GetSF(node);
+
+	  /* TLS: this checks whether any answer for this subgoal has
+	  a delay list: may overstate problems but will warn for any
+	  possible corruption. */
+
+	  if ( subg_answers(pSF) == COND_ANSWERS ) {
+	    xsb_warn("abolish_table_pred/1 is deleting a table with conditional\
+                      answers: delay dependencies may be corrupted.\n");
+	  }
+
 	  if ( IsNonNULL(subg_ans_root_ptr(pSF)) ) {
 	    call_nodes_top = node_stk_top;
 	    push_node((BTNptr)subg_ans_root_ptr(pSF));
@@ -1130,7 +1140,7 @@ int trie_interned(CTXTdecl)
       (!((long) Set_ArrayPtr[RootIndex] & 0x3))) {
     XSB_Deref(trie_term);
     XSB_Deref(Leafterm);
-    if (isref(Leafterm)) {  
+    if ( isref(Leafterm) ) {  
       reg_arrayptr = reg_array -1;
       num_vars_in_var_regs = -1;
       pushreg(trie_term);
@@ -1152,7 +1162,7 @@ int trie_interned(CTXTdecl)
       ret_val =  TRUE;
     }
     else{
-      xsb_exit("Not yet grd Leafterm!");
+      xsb_instantiation_error(CTXTc "trie_interned",4,3,"non-attributed and non-ground");
     }
   }
   return(ret_val);
@@ -1550,7 +1560,7 @@ inline int abolish_table_predicate(CTXTdeclc Psc psc)
   int action;
 
 #ifdef MULTI_THREAD  
-  SET_TRIE_ALLOCATION_TYPE_PSC(psc)
+  SET_TRIE_ALLOCATION_TYPE_PSC(psc)  // determine whether pvt/shared SMs
 #endif
 
   SYS_MUTEX_LOCK(MUTEX_TABLE);

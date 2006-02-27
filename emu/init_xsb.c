@@ -120,6 +120,7 @@ init_pdl = {NULL, NULL, 0,
 #endif
 
 Exec_Mode xsb_mode;     /* How XSB is run: interp, disassem, user spec, etc. */
+int max_threads_glc;
 
 int xsb_profiling_enabled = 0;
 
@@ -305,7 +306,7 @@ static void init_open_files(void)
 /* if command line option is long --optionname, then the arg here is
    'optionname'. Process it and return.
 */
-static void process_long_option(char *option)
+static void process_long_option(char *option,int *ctr,char *argv[],int argc)
 {
   if (0==strcmp(option, "nobanner")) {
     flags[BANNER_CTL] *= NOBANNER;
@@ -317,6 +318,12 @@ static void process_long_option(char *option)
     help_message();
   } else if (0==strcmp(option, "version")) {
     version_message();
+  } else if (0==strcmp(option, "max_threads")) {
+    if ((int) (*ctr) < argc) {
+      (*ctr)++;
+      sscanf(argv[*ctr], "%d", &max_threads_glc);
+    }
+    else xsb_warn("Missing size value for --max_threads");
   }
 
   return;
@@ -379,6 +386,7 @@ char *init_para(CTXTdeclc int argc, char *argv[])
   perproc_reset_stat();
   reset_stat_total();
 
+  max_threads_glc = MAX_THREADS;
   pflags[STACK_REALLOC] = TRUE;
 #ifdef GC
   pflags[GARBAGE_COLLECT] = INDIRECTION_SLIDE_GC;
@@ -462,7 +470,7 @@ char *init_para(CTXTdeclc int argc, char *argv[])
 	  sscanf(argv[i], "%ld", &init_pdl.init_size);
 #endif
 	else
-	  xsb_warn("Missing size value");
+	  xsb_warn("Missing size value for -u");
       }
       break;
     case 'm':
@@ -481,7 +489,7 @@ char *init_para(CTXTdeclc int argc, char *argv[])
 	  sscanf(argv[i], "%ld", &init_glstack.init_size);
 #endif
 	else
-	  xsb_warn("Missing size value");
+	  xsb_warn("Missing size value for -m");
       }
       break;
     case 'c':
@@ -500,7 +508,7 @@ char *init_para(CTXTdeclc int argc, char *argv[])
 	  sscanf(argv[i], "%ld", &init_tcpstack.init_size);
 #endif
 	else
-	  xsb_warn("Missing size value");
+	  xsb_warn("Missing size value for -c");
       }
       break;
     case 'o':
@@ -519,7 +527,7 @@ char *init_para(CTXTdeclc int argc, char *argv[])
 	  sscanf(argv[i], "%ld", &init_complstack.init_size);
 #endif
 	else
-	  xsb_warn("Missing size value");
+	  xsb_warn("Missing size value for -o");
       }
       break;
 #ifndef MULTI_THREAD
@@ -630,7 +638,7 @@ char *init_para(CTXTdeclc int argc, char *argv[])
       version_message();
       break;
     case '-': /* this was a long option of the form --optionname */
-      process_long_option(argv[i]+2);
+      process_long_option(argv[i]+2,&i,argv,argc);
       break;
     case 'p':
       xsb_profiling_enabled = 1;

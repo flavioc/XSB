@@ -96,7 +96,10 @@ void *mem_alloc(unsigned long size, int category)
     byte * ptr;
 
     size = (size+7) & ~0x7 ;	      /* round to 8 */
+
+#ifdef NON_OPT_COMPILE
     SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
+#endif
     pspacesize[category] += size;
 
     ptr = (byte *) malloc(size);
@@ -105,7 +108,11 @@ void *mem_alloc(unsigned long size, int category)
     //    printf("mem_alloc %x %x\n",ptr,ptr+size);
     extend_enc_dec_as_nec(ptr,ptr+size);
 #endif
+
+#ifdef NON_OPT_COMPILE
     SYS_MUTEX_UNLOCK_NOERROR(MUTEX_MEM);
+#endif
+
     if (ptr == NULL && size > 0) {
       xsb_memory_error("memory","mem_alloc()");
     }
@@ -120,14 +127,18 @@ void *mem_alloc_nocheck(unsigned long size, int category)
     byte * ptr;
 
     size = (size+7) & ~0x7 ;	      /* round to 8 */
+#ifdef NON_OPT_COMPILE
     SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
+#endif
     pspacesize[category] += size;
     ptr = (byte *) malloc(size);
 #if defined(GENERAL_TAGGING)
     //    printf("mem_alloc %x %x\n",ptr,ptr+size);
     extend_enc_dec_as_nec(ptr,ptr+size);
 #endif
+#ifdef NON_OPT_COMPILE
     SYS_MUTEX_UNLOCK_NOERROR(MUTEX_MEM);
+#endif
     return ptr;
 }
 
@@ -139,14 +150,18 @@ void *mem_calloc(unsigned long size, unsigned long occs, int category)
     byte * ptr;
     unsigned long length = (size*occs+7) & ~0x7;
 
+#ifdef NON_OPT_COMPILE
    SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
+#endif
     pspacesize[category] += length;
     ptr = (byte *) calloc(size,occs);
 #if defined(GENERAL_TAGGING)
     //    printf("mem_calloc %x %x\n",ptr,ptr+length);
     extend_enc_dec_as_nec(ptr,ptr+length);
 #endif
+#ifdef NON_OPT_COMPILE
     SYS_MUTEX_UNLOCK_NOERROR(MUTEX_MEM);
+#endif
     if (ptr == NULL && size > 0 && occs > 0) {
       xsb_memory_error("memory","mem_calloc()");
     }
@@ -160,13 +175,17 @@ void *mem_realloc(void *addr, unsigned long oldsize, unsigned long newsize, int 
 {
     newsize = (newsize+7) & ~0x7 ;	      /* round to 8 */
     oldsize = (oldsize+7) & ~0x7 ;	      /* round to 8 */
+#ifdef NON_OPT_COMPILE
     SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
+#endif
     pspacesize[category] = pspacesize[category] - oldsize + newsize;
     addr = (byte *) realloc(addr,newsize);
 #if defined(GENERAL_TAGGING)
     extend_enc_dec_as_nec(addr,addr+newsize);
 #endif
+#ifdef NON_OPT_COMPILE
     SYS_MUTEX_UNLOCK_NOERROR(MUTEX_MEM);
+#endif
     if (addr == NULL && newsize > 0) {
       xsb_memory_error("memory","mem_realloc()");
     }
@@ -177,13 +196,17 @@ void *mem_realloc_nocheck(void *addr, unsigned long oldsize, unsigned long newsi
 {
     newsize = (newsize+7) & ~0x7 ;	      /* round to 8 */
     oldsize = (oldsize+7) & ~0x7 ;	      /* round to 8 */
+#ifdef NON_OPT_COMPILE
     SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
+#endif
     pspacesize[category] = pspacesize[category] - oldsize + newsize;
     addr = (byte *) realloc(addr,newsize);
 #if defined(GENERAL_TAGGING)
     extend_enc_dec_as_nec(addr,addr+newsize);
 #endif
+#ifdef NON_OPT_COMPILE
     SYS_MUTEX_UNLOCK_NOERROR(MUTEX_MEM);
+#endif
     return addr;
 }
 
@@ -193,10 +216,14 @@ void *mem_realloc_nocheck(void *addr, unsigned long oldsize, unsigned long newsi
 void mem_dealloc(void *addr, unsigned long size, int category)
 {
     size = (size+7) & ~0x7 ;	      /* round to 8 */
+#ifdef NON_OPT_COMPILE
     SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
+#endif
     pspacesize[category] -= size;
     free(addr);
+#ifdef NON_OPT_COMPILE
     SYS_MUTEX_UNLOCK_NOERROR(MUTEX_MEM);
+#endif
 }
 
 

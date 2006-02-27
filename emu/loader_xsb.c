@@ -738,7 +738,7 @@ static xsbBool load_syms(FILE *fd, int psc_count, int count, Psc cur_mod, int ex
 static void new_tdispblk(TIFptr *instr_ptr, Psc psc) {
   struct TDispBlk_t *tdispblk;
 
-  if (!(tdispblk = (struct TDispBlk_t *)mem_calloc(sizeof(struct TDispBlk_t)+MAXTABTHREAD*sizeof(Cell),1,COMPILED_SPACE)))
+  if (!(tdispblk = (struct TDispBlk_t *)mem_calloc(sizeof(struct TDispBlk_t)+MAX_THREADS*sizeof(Cell),1,COMPILED_SPACE)))
     xsb_exit("No space for table dispatch block");  /* never deallocated */
   if (tdispblkhdr.firstDB) tdispblkhdr.firstDB->PrevDB = tdispblk;
   tdispblk->NextDB = tdispblkhdr.firstDB;
@@ -747,7 +747,7 @@ static void new_tdispblk(TIFptr *instr_ptr, Psc psc) {
 
   tdispblk->psc_ptr = psc;
   tdispblk->method = DISPATCH_BLOCK;
-  tdispblk->MaxThread = MAXTABTHREAD;
+  tdispblk->MaxThread = MAX_THREADS;
   *instr_ptr = (TIFptr)tdispblk;
 }
 #endif
