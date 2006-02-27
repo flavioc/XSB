@@ -297,7 +297,7 @@ translate(Declarations,NewDeclarations) :-
 			  (:- import activate_constraint/3,remove_constraint_internal/2,insert_constraint_internal/5,
 			         allocate_constraint/4,constraint_generation/3,sbag_member/2,sbag_del_element/3,
 			         run_suspensions/1,run_suspensions_loop/1,change_state/2,extend_history/2,
-			         novel_production/2,merge_attributes/3,lock/1,unlock/1,via_1/2, via_2/3, merge/3, 
+			         novel_production/2,merge_attributes/3,lock/1,unlock/1,via/2, via_1/2, via_2/3, merge/3, 
 			         term_variables/2, not_locked/1, global_term_ref_1/1 from chr_interp),
 				(:- import get_mutable/2, update_mutable/2 from mutablevar),
 				(:- import get_attr/3, put_attr/3, del_attr/2 from machine),
