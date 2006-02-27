@@ -293,6 +293,13 @@ via_2( T, _, V) :- compound(T), nonground( T, V), ! .
 via_2( _, T, V) :- compound(T), nonground( T, V), ! .
 via_2( _, _, V) :- global_term_ref_1( V).
 
+via(L,V) :-
+         ( nonground(L,V) ->
+                 true
+         ;
+                 global_term_ref_1(V)
+         ).
+
 %
 % The second arg is a witness.
 % The formulation with term_variables/2 is
