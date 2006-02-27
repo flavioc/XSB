@@ -74,6 +74,7 @@
 	merge_attributes/3,
 	lock/1,
 	unlock/1,
+	via/2,
 	via_1/2,
 	via_2/3,
 	merge/3,
