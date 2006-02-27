@@ -1191,6 +1191,7 @@ if test "${enable_profile}" = "yes"; then
 fi
 
 if test "${enable_debug}" = "yes"; then
+    AC_DEFINE(NON_OPT_COMPILE)
     AC_DEFINE(DEBUG)
 dnl    AC_DEFINE(CP_DEBUG)
     do_debugging=yes

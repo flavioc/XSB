@@ -151,6 +151,8 @@
 #define DEBUG_ASSERTIONS
 #endif
 
+#undef NON_OPT_COMPILE
+
 /*  File needed for XSB to get the configuration information */
 #undef CONFIGURATION
 #undef FULL_CONFIG_NAME

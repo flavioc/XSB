@@ -137,3 +137,4 @@
 /* Defined under OS X */
 #undef DARWIN
 
+#undef NON_OPT_COMPILE
