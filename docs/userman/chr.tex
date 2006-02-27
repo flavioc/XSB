@@ -4,20 +4,22 @@
 \section{Introduction}
 %=====================
 
-Constraint Handling Rules (CHR) is a committed-choice bottom-up language
-embedded in XSB. It is designed for writing constraint solvers and is
-particularily useful for providing application-specific constraints.
-It has been used in many kinds of applications, like scheduling,
-model checking, abduction, type checking among many others.
+Constraint Handling Rules (CHR) is a committed-choice bottom-up
+language embedded in XSB. It is designed for writing constraint
+solvers and is particularily useful for providing application-specific
+constraints.  It has been used in many kinds of applications, like
+scheduling, model checking, abduction, type checking among many
+others.
 
 CHR has previously been implemented in other Prolog systems (SICStus,
 Eclipse, Yap, hProlog), Haskell and Java. The XSB CHR system is based on
 the hProlog CHR system.
 
-In this documentation we restrict ourselves to giving a short overview of CHR
-in general and mainly focus on XSB-specific elements.  For a more thorough
-review of CHR we refer the reader to \cite{chr_survey}. More background on
-CHR can be found at \cite{chr_site}.
+In this documentation we restrict ourselves to giving a short overview
+of CHR in general and mainly focus on XSB-specific elements.  For a
+more thorough review of CHR we refer the reader to
+\cite{chr_survey}. More background on CHR can be found at
+\cite{chr_site}.
 
 In Section \ref{SyntaxAndSemantics} we present the syntax of CHR in XSB and
 explain informally its operational semantics. Next, Section \ref{practical}
@@ -162,7 +164,14 @@ Additional pragmas may be released in the future.
 
 \subsection{Embedding in XSB Programs}
 
-CHR rules are written in a .chr file. They should be preceded by a declaration of the constraints used:
+Since chr is an XSB package, it must be explicitly loaded before being
+used.
+\begin{verbatim}
+?- [chr].
+\end{verbatim}
+
+CHR rules are written in a {tt .chr} file. They should be preceded by
+a declaration of the constraints used: 
 \begin{verbatim}
 :- constraints ConstraintSpec1, ConstraintSpec2, ...
 \end{verbatim}

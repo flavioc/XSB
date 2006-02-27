@@ -896,7 +896,8 @@ or via an exception).
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-\ournewitem{abolish\_all\_tables}{Tabling}\index{\texttt{abolish\_all\_tables/0}}
+\ournewitem{abolish\_all\_tables}{Tabling}
+\index{\texttt{abolish\_all\_tables/0}}
 %
 Removes the tables presently in the system and frees all the memory
 held by XSB for these structures.  Predicates which have been declared
@@ -926,21 +927,32 @@ all of its other table entries remain intact. Throws a
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-\ournewitem{abolish\_table\_pred(+PredSpec)}{Tabling}
+\ournewitem{abolish\_table\_pred(+Pred)}{Tabling}
 \index{\texttt{abolish\_table\_pred/1}}
 %
-Removes all entries from the table for the predicate denoted by
-\code{PredSpec}.  The predicate remains tabled but the memory held by
-its former table entries is returned to XSB for future entry creation.
+Removes all entries from the table for the predicate denoted by the
+predicate or term indicator \code{Pred}.  The predicate remains tabled
+but the memory held by its former table entries is returned to XSB for
+future use.
 
 {\bf Error Cases}
 \bi
-\item There is currently an incomplete table for a atomic subgoal of
-  {\tt PredSpec}
-\bi
-\item 	{\tt table\_error}
-\ei
 %
+\item {\tt Pred} is not instantiated
+ \bi 
+ \item 	{\tt instantiation\_error}
+ \ei
+%
+\item {\tt PredSpec} is not a predicate\_indicator or a term\_indicator
+ \bi
+ \item 	{\tt domain\_error(predicate\_or\_term\_indicator,Pred)}
+ \ei
+%
+\item There is currently an incomplete table for a atomic subgoal of
+  {\tt Pred}
+ \bi
+ \item 	{\tt table\_error}
+ \ei
 %
 \ei
 
@@ -971,6 +983,14 @@ Removes the answer indicated by \code{ReturnHandle} from the table
 entry referenced by \code{TableEntryHandle}.  The value of each
 argument should be obtained from some previous invocation of a
 table-inspection predicate.
+
+This predicate is low-level so no error checking is done.  In \version
+, this predicate does not reclaim space for deleted returns, but
+simply marks the returns as invalid.
+
+{\em Warning: } While useful for purposes such as tabled aggregation,
+{\tt delete\_return/2} can be difficult to use, both from an
+implementation and semantic perspective.  
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

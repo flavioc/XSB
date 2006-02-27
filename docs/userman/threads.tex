@@ -3,11 +3,15 @@
 Starting with Version 3.0, XSB supports the use of Posix threads to
 perform separable computations, and in certain cases to parallelize
 them.  Posix threads have a simple and clear API, and are available on
-all Unixes as well as on Windows via ???.  This chapter introduces how
-to program with threads in XSB through a series of examples.  Later
-sections discuss performance aspects of our implementation as well as
-describing relevant predicates.  A general knowledge of multi-threaded
-programming is assumed, such as can be found in \cite{LewB98,Bute97}.
+all Unixes as well as on Windows~\footnote{For Windows users, a
+  pthread interface to Windows threads must be available to the
+  compiler.  We suggest using the Win32 pthreads interface, available
+  via {\tt http://sourceware.org/pthreads-win32}.}.  This chapter
+introduces how to program with threads in XSB through a series of
+examples.  Later sections discuss performance aspects of our
+implementation as well as describing relevant predicates.  A general
+knowledge of multi-threaded programming is assumed, such as can be
+found in \cite{LewB98,Bute97}.
 
 \section{Getting Started with Multi-Threading}
 %
