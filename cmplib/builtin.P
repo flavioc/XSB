@@ -48,8 +48,8 @@ inline_predicate('@=<', 2).
 inline_predicate('@>', 2).
 inline_predicate('@>=', 2).
 
-inline_predicate(var, 1).
-inline_predicate(nonvar, 1).
+%%inline_predicate(var, 1).
+%%inline_predicate(nonvar, 1).
 inline_predicate('_$cutto', 1).
 inline_predicate('_$savecp', 1).
 inline_predicate('_$builtin', 1).
@@ -59,7 +59,6 @@ inline_predicate(true, 0).
 inline_predicate(halt, 0).
 inline_predicate('!', 0).
 
-%% doesn't yet work...
 inline_predicate(Pred,A) :- inline_jumpcof_cond(Pred,A,_).
 
 /*======================================================================*/
