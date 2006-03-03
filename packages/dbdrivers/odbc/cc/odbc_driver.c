@@ -63,13 +63,13 @@ int driverODBC_connect(struct xsb_connectionHandle* handle)
   odbcHandle = (struct driverODBC_connectionInfo *)malloc(sizeof(struct driverODBC_connectionInfo));
 
   val = SQLAllocEnv(&henv);
-  if (val != SQL_SUCCESS) {
+  if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
     errorMesg = (SQLCHAR *) "HENV allocation error\n";
     return FAILURE;
   }
 
   val = SQLAllocConnect(henv, &(odbcHandle->hdbc));
-  if (val != SQL_SUCCESS) {
+  if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
     driverODBC_error(SQL_HANDLE_ENV, henv);
     free(odbcHandle);
     return FAILURE;
@@ -80,10 +80,10 @@ int driverODBC_connect(struct xsb_connectionHandle* handle)
 			       SQL_NTS, (SQLCHAR *) handle->user,
 			       SQL_NTS, (SQLCHAR *) handle->password,
 			       SQL_NTS);
-  if (val != SQL_SUCCESS) {
+  if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
     driverODBC_error(SQL_HANDLE_DBC, (SQLCHAR *) odbcHandle->hdbc);
     val = SQLFreeHandle(SQL_HANDLE_DBC, odbcHandle->hdbc);
-    if (val != SQL_SUCCESS)
+    if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO)
       driverODBC_error(SQL_HANDLE_DBC, odbcHandle->hdbc);
     free(odbcHandle);
     return FAILURE;
@@ -106,13 +106,13 @@ int driverODBC_disconnect(struct xsb_connectionHandle* handle)
   for (i = 0 ; i < numHandles ; i++) {
     if (!strcmp(odbcHandles[i]->handle, handle->handle)) {
       val = SQLDisconnect(odbcHandles[i]->hdbc);
-      if (val != SQL_SUCCESS) {
+      if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
 	driverODBC_error(SQL_HANDLE_DBC, odbcHandles[i]->hdbc);
 	return FAILURE;
       }
 	
       val = SQLFreeHandle(SQL_HANDLE_DBC, odbcHandles[i]->hdbc);
-      if (val != SQL_SUCCESS) {
+      if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
 	driverODBC_error(SQL_HANDLE_DBC, odbcHandles[i]->hdbc);
 	return FAILURE;
       }
@@ -165,20 +165,20 @@ struct xsb_data** driverODBC_query(struct xsb_queryHandle* handle)
     strcpy(query->query, handle->query);
 
     val = SQLAllocStmt(hdbc, &(query->hstmt));
-    if (val != SQL_SUCCESS) {
+    if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
       driverODBC_error(SQL_HANDLE_DBC, hdbc);
       return NULL;
     }
 		
     val = SQLExecDirect(query->hstmt, (SQLCHAR *) handle->query, SQL_NTS);
-    if (val != SQL_SUCCESS) {
+    if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
       driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
       return NULL;
     }
 
     query->resultmeta = (struct driverODBC_meta *)malloc(sizeof(struct driverODBC_meta));
     val = SQLNumResultCols(query->hstmt, (SQLSMALLINT *)(&(query->resultmeta->numCols)));
-    if (val != SQL_SUCCESS) {
+    if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
       driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
       return NULL;
     }
@@ -188,12 +188,12 @@ struct xsb_data** driverODBC_query(struct xsb_queryHandle* handle)
     for (i = 0 ; i < query->resultmeta->numCols ; i++) {
       query->resultmeta->types[i] = (struct driverODBC_columnmeta *)malloc(sizeof(struct driverODBC_columnmeta));
       val = SQLColAttribute(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_COLUMN_TYPE, NULL, 0, NULL, &(query->resultmeta->types[i]->type));
-      if (val != SQL_SUCCESS) {
+      if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
 	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
 	return NULL;
       }
       val = SQLColAttribute(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_COLUMN_LENGTH, NULL, 0, NULL, &(query->resultmeta->types[i]->length));
-      if (val != SQL_SUCCESS) {
+      if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
 	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
 	return NULL;
       }
@@ -225,7 +225,7 @@ static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* quer
       result[i]->length = query->resultmeta->types[i]->length + 1;
       result[i]->val->str_val = (char *)malloc(result[i]->length * sizeof(char));
       val = SQLBindCol(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_C_CHAR, (SQLPOINTER *)result[i]->val->str_val, (SQLINTEGER)result[i]->length, pcbValues[i]);
-      if (val != SQL_SUCCESS) {
+      if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
 	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
 	return NULL;
       }
@@ -234,7 +234,7 @@ static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* quer
       result[i]->type = INT_TYPE;
       result[i]->val->i_val = (int *)malloc(sizeof(int));
       val = SQLBindCol(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_C_SLONG, (SQLPOINTER *)result[i]->val->i_val, 0, pcbValues[i]);
-      if (val != SQL_SUCCESS) {
+      if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
 	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
 	return NULL;
       }
@@ -243,7 +243,7 @@ static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* quer
       result[i]->type = FLOAT_TYPE;
       result[i]->val->f_val = (double *)malloc(sizeof(double));
       val = SQLBindCol(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_C_DOUBLE, (SQLPOINTER *)result[i]->val->f_val, 0, pcbValues[i]);
-      if (val != SQL_SUCCESS) {
+      if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
 	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
 	return NULL;
       }
@@ -252,7 +252,7 @@ static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* quer
 
   val = SQLFetch(query->hstmt);
 
-  if (val == SQL_SUCCESS)
+  if (val == SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO)
     {
       for (i = 0 ; i < query->resultmeta->numCols ; i++) {
 	if (*(pcbValues[i]) == SQL_NULL_DATA)
@@ -260,14 +260,14 @@ static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* quer
       }
     }
 
-  if (val != SQL_SUCCESS) {
+  if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
     if (direct == 1) {
       for (i = 0 ; i < query->resultmeta->numCols ; i++)
 	free(query->resultmeta->types[i]);
       free(query->resultmeta->types);
       free(query->resultmeta);
       val = SQLFreeHandle(SQL_HANDLE_STMT, query->hstmt);
-      if (val != SQL_SUCCESS)
+      if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO)
 	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
       for (i = 0 ; i < numQueries ; i++) {
 	if (!strcmp(query->query, odbcQueries[i]->query)) {
@@ -283,13 +283,13 @@ static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* quer
     }
     else {
       val = SQLFreeStmt(query->hstmt, SQL_CLOSE);
-      if (val != SQL_SUCCESS)
+      if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO)
 	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
     }
     return NULL;
   }
 
-  if (val != SQL_SUCCESS && val != SQL_NO_DATA) {
+  if (val != SQL_SUCCESS && val != SQL_NO_DATA && val != SQL_SUCCESS_WITH_INFO) {
     driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
     return NULL;
   }	
@@ -321,27 +321,27 @@ int driverODBC_prepareStatement(struct xsb_queryHandle* qHandle)
   }
 	
   val = SQLAllocStmt(hdbc, &(query->hstmt));
-  if (val != SQL_SUCCESS) {
+  if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
     driverODBC_error(SQL_HANDLE_DBC, hdbc);
     return FAILURE;
   }
 
   val = SQLPrepare(query->hstmt, (SQLCHAR *) query->query, SQL_NTS);
-  if (val != SQL_SUCCESS) {
+  if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
     driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
     return FAILURE;
   }
 
   query->parammeta = (struct driverODBC_meta *)malloc(sizeof(struct driverODBC_meta));
   val = SQLNumParams(query->hstmt, &(query->parammeta->numCols));
-  if (val != SQL_SUCCESS) {
+  if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
     driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
     return FAILURE;
   }
 
   query->resultmeta = (struct driverODBC_meta *)malloc(sizeof(struct driverODBC_meta));
   val = SQLNumResultCols(query->hstmt, (SQLSMALLINT *)(&(query->resultmeta->numCols)));
-  if (val != SQL_SUCCESS) {
+  if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
     driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
     return FAILURE;
   }
@@ -351,7 +351,7 @@ int driverODBC_prepareStatement(struct xsb_queryHandle* qHandle)
   for (i = 0 ; i < query->parammeta->numCols ; i++) {
     query->parammeta->types[i] = (struct driverODBC_columnmeta *)malloc(sizeof(struct driverODBC_columnmeta));
     val = SQLDescribeParam(query->hstmt, (SQLUSMALLINT) (i + 1), &(query->parammeta->types[i]->type), &(query->parammeta->types[i]->length), NULL, NULL);
-    if (val != SQL_SUCCESS) {
+    if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
       driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
       return FAILURE;
     }
@@ -390,21 +390,21 @@ struct xsb_data** driverODBC_execPrepareStatement(struct xsb_data** param, struc
       val = SQLBindParameter(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_PARAM_INPUT, SQL_C_DEFAULT, SQL_INTEGER, 0, 0, (SQLPOINTER)param[i]->val->i_val, 0, NULL);
     else if (param[i]->type == FLOAT_TYPE)	
       val = SQLBindParameter(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_PARAM_INPUT, SQL_C_DEFAULT, SQL_DOUBLE, 0, 0, (SQLPOINTER)param[i]->val->f_val, 0, NULL);
-    if (val != SQL_SUCCESS) {
+    if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
       driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
       return NULL;
     }
   }
 	
   val = SQLExecute(query->hstmt);
-  if (val != SQL_SUCCESS) {
+  if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
     driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
     return NULL;
   }
 
   query->resultmeta = (struct driverODBC_meta *)malloc(sizeof(struct driverODBC_meta));
   val = SQLNumResultCols(query->hstmt, (SQLSMALLINT *)(&(query->resultmeta->numCols)));
-  if (val != SQL_SUCCESS) {
+  if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
     driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
     return NULL;
   }
@@ -413,12 +413,12 @@ struct xsb_data** driverODBC_execPrepareStatement(struct xsb_data** param, struc
   for (i = 0 ; i < query->resultmeta->numCols ; i++) {
     query->resultmeta->types[i] = (struct driverODBC_columnmeta *)malloc(sizeof(struct driverODBC_columnmeta));
     val = SQLColAttribute(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_COLUMN_TYPE, NULL, 0, NULL, &(query->resultmeta->types[i]->type));
-    if (val != SQL_SUCCESS) {
+    if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
       driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
       return NULL;
     }
     val = SQLColAttribute(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_COLUMN_LENGTH, NULL, 0, NULL, &(query->resultmeta->types[i]->length));
-    if (val != SQL_SUCCESS) {
+    if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
       driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
       return NULL;
     }
@@ -444,7 +444,7 @@ int driverODBC_closeStatement(struct xsb_queryHandle* handle)
       free(query->resultmeta->types);
       free(query->resultmeta);
       val = SQLFreeHandle(SQL_HANDLE_STMT, query->hstmt);
-      if (val != SQL_SUCCESS) {
+      if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
 	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
 	return FAILURE;
       }
