@@ -52,7 +52,7 @@
 :- import default_assert_size/1 from config.
 :- import file_time/2, file_close/1 from file_io.
 :- import '_$index'/3, '_$trie_asserted'/1, mpa_to_skel/2 from file_op.
-:- import compile_cH/5 from foreign.
+:- import compile_cH/6 from foreign.
 :- import conset/2, conget/2, gensym/2  from gensym.
 :- import add_hilog_symbol/1 from hilogsym.
 :- import libpath/1 from loader.
