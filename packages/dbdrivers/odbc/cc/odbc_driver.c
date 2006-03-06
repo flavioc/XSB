@@ -141,8 +141,7 @@ struct xsb_data** driverODBC_query(struct xsb_queryHandle* handle)
 
   query = NULL;
   hdbc = NULL;
-  if (handle->state == QUERY_RETRIEVE)
-    {
+  if (handle->state == QUERY_RETRIEVE) {
       for (i = 0 ; i < numQueries ; i++) {
 	if (!strcmp(odbcQueries[i]->handle, handle->handle)) {
 	  query = odbcQueries[i];
@@ -262,13 +261,14 @@ static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* quer
 
   if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
     if (direct == 1) {
+      //val = SQLFreeHandle(SQL_HANDLE_STMT, query->hstmt);
+      val = SQLFreeStmt(query->hstmt, SQL_CLOSE);
+      if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO)
+	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
       for (i = 0 ; i < query->resultmeta->numCols ; i++)
 	free(query->resultmeta->types[i]);
       free(query->resultmeta->types);
       free(query->resultmeta);
-      val = SQLFreeHandle(SQL_HANDLE_STMT, query->hstmt);
-      if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO)
-	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
       for (i = 0 ; i < numQueries ; i++) {
 	if (!strcmp(query->query, odbcQueries[i]->query)) {
 	  for (j = i + 1 ; j < numQueries ; j++)
