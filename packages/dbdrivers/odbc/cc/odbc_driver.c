@@ -186,12 +186,12 @@ struct xsb_data** driverODBC_query(struct xsb_queryHandle* handle)
     query->resultmeta->types = (struct driverODBC_columnmeta **)malloc(query->resultmeta->numCols * sizeof(struct driverODBC_columnmeta *));
     for (i = 0 ; i < query->resultmeta->numCols ; i++) {
       query->resultmeta->types[i] = (struct driverODBC_columnmeta *)malloc(sizeof(struct driverODBC_columnmeta));
-      val = SQLColAttribute(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_COLUMN_TYPE, NULL, 0, NULL, &(query->resultmeta->types[i]->type));
+      val = SQLColAttribute(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_COLUMN_TYPE, NULL, 0, NULL, (SQLPOINTER) &(query->resultmeta->types[i]->type));
       if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
 	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
 	return NULL;
       }
-      val = SQLColAttribute(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_COLUMN_LENGTH, NULL, 0, NULL, &(query->resultmeta->types[i]->length));
+      val = SQLColAttribute(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_COLUMN_LENGTH, NULL, 0, NULL, (SQLPOINTER) &(query->resultmeta->types[i]->length));
       if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
 	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
 	return NULL;
@@ -412,12 +412,12 @@ struct xsb_data** driverODBC_execPrepareStatement(struct xsb_data** param, struc
   query->resultmeta->types = (struct driverODBC_columnmeta **)malloc(query->resultmeta->numCols * sizeof(struct driverODBC_columnmeta *));
   for (i = 0 ; i < query->resultmeta->numCols ; i++) {
     query->resultmeta->types[i] = (struct driverODBC_columnmeta *)malloc(sizeof(struct driverODBC_columnmeta));
-    val = SQLColAttribute(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_COLUMN_TYPE, NULL, 0, NULL, &(query->resultmeta->types[i]->type));
+    val = SQLColAttribute(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_COLUMN_TYPE, NULL, 0, NULL, (SQLPOINTER) &(query->resultmeta->types[i]->type));
     if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
       driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
       return NULL;
     }
-    val = SQLColAttribute(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_COLUMN_LENGTH, NULL, 0, NULL, &(query->resultmeta->types[i]->length));
+    val = SQLColAttribute(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_COLUMN_LENGTH, NULL, 0, NULL, (SQLPOINTER) &(query->resultmeta->types[i]->length));
     if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
       driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
       return NULL;
