@@ -106,6 +106,7 @@ DllExport int call_conv openConnection(void)
     cHandle->dsn = (char *)malloc((strlen(dsn) + 1) * sizeof(char));
     strcpy(cHandle->dsn, dsn);
     cHandle->server = NULL;
+    cHandle->database = NULL;
   }
   else {
     cHandle->server = (char *)malloc((strlen(server) + 1) * sizeof(char));
