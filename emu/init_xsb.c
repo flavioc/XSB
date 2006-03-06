@@ -927,6 +927,11 @@ void cleanup_thread_structures(CTXTdecl)
   mem_dealloc(asrtBuff,sizeof(struct asrtBuff_t),OTHER_SPACE);
   mem_dealloc(last_answer,sizeof(VarString),OTHER_SPACE);
 
+  XSB_StrDestroy(tsgLBuff1);
+  XSB_StrDestroy(tsgLBuff2);
+  XSB_StrDestroy(tsgSBuff1);
+  XSB_StrDestroy(tsgSBuff2);
+
   mem_dealloc(tsgLBuff1,sizeof(VarString),OTHER_SPACE);
   mem_dealloc(tsgLBuff2,sizeof(VarString),OTHER_SPACE);
   mem_dealloc(tsgSBuff1,sizeof(VarString),OTHER_SPACE);
