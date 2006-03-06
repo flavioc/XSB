@@ -33,9 +33,9 @@
 
 
 /* need ldoption at compile time for ELF systems, so compile_H is done 1st. */
-compile_cH(Modname, Base, Options, ExList, Dir) :-
+compile_cH(Modname, Base, Ext, Options, ExList, Dir) :-
 	compile_H(Modname,Base,Options,ExList,LdOption,CompComm,TempFile),
-	compile_c(Modname,Base,Options,Dir,LdOption,CompComm,TempFile).
+	compile_c(Modname,Base,Ext,Options,Dir,LdOption,CompComm,TempFile).
 
 
 %% This is a user-level predicate, that can be used to compile shared objects.
@@ -47,7 +47,7 @@ compile_cH(Modname, Base, Options, ExList, Dir) :-
 compile_so(Path, COptions, LdOptions) :-
 	parse_filename(Path, Dir, BaseName, _Extension),
 	fmt_write_string(PathSansExt, '%s/%s', args(Dir,BaseName)),
-	compile_c(BaseName, PathSansExt, COptions, Dir, LdOptions, _, _).
+	compile_c(BaseName, PathSansExt, '.c ', COptions, Dir, LdOptions, _, _).
 
 
 %% User-level predicate that yields the flag suitable for defining 
@@ -86,7 +86,7 @@ runtime_loader_flag(Compiler,LibraryDir,Flag):-
 %% LdOptions: Loader options
 %% CompCom: compiler command--for testing?
 %% TempFile: Directory
-compile_c(Modname, Base, Options, Dir, LdOption, CompComm, TempFile) :-
+compile_c(Modname, Base, Ext, Options, Dir, LdOption, CompComm, TempFile) :-
 	xsb_configuration(configuration, Configuration),
 	xsb_configuration(compiler_flags, XSB_CC_Opts),
 	retractall(current_compiled_module(_)),
@@ -98,7 +98,7 @@ compile_c(Modname, Base, Options, Dir, LdOption, CompComm, TempFile) :-
 	-> str_cat(' -g ', CC_Opts0, CC_Opts)
 	;  CC_Opts = CC_Opts0
 	),
-	message(('[Compiling C file ', Base, '.c using ', CC_Name, ']')),
+	message(('[Compiling C file ', Base, Ext ,'using ', CC_Name, ']')),
 	( var(LdOption) -> LdOption = '' ; true ),
 	( var(TempFile) -> TempFile = ''; true ),
 	%% If not debugging, the strip the symbol table from the result
@@ -109,47 +109,47 @@ compile_c(Modname, Base, Options, Dir, LdOption, CompComm, TempFile) :-
 	(   var(CompComm)
 	->  (	str_sub('solaris', Configuration)
 	    ->	shell([CC_Name, SymbolTableFlag, ' -o ', Base, '.so', ' -G ',
-		       Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption])
+		       Base, Ext, TempFile, ' ', CC_Opts, ' ', LdOption])
 #ifdef FOREIGN_DEBUG
 	    , message((CC_Name, SymbolTableFlag, ' -o ', Base, '.so', ' -G ',
-		       Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption))
+		       Base, Ext, TempFile, ' ', CC_Opts, ' ', LdOption))
 #endif
 	    ;	str_sub('linux', Configuration)
 	    ->	shell([CC_Name, SymbolTableFlag, ' -o ', Base, '.so',
 		       ' -shared ',
-		       Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption])
+		       Base, Ext, TempFile, ' ', CC_Opts, ' ', LdOption])
 #ifdef FOREIGN_DEBUG
 	    , message((CC_Name, SymbolTableFlag, ' -o ', Base, '.so',
 		       ' -shared ',
-		       Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption))
+		       Base, Ext, TempFile, ' ', CC_Opts, ' ', LdOption))
 #endif
 	    ; str_sub('bsd-', Configuration)
 	    ->	shell([CC_Name, SymbolTableFlag, ' -o ', Base, '.so',
 		       ' -shared ',
-		       Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption])
+		       Base, Ext, TempFile, ' ', CC_Opts, ' ', LdOption])
 #ifdef FOREIGN_DEBUG
 	    , message((CC_Name, SymbolTableFlag, ' -o ', Base, '.so',
 		       ' -shared ',
-		       Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption))
+		       Base, Ext, TempFile, ' ', CC_Opts, ' ', LdOption))
 #endif
 	    ;	str_sub('sgi', Configuration)
 	    ->	shell([CC_Name, SymbolTableFlag, ' -o ', Base, '.so',
 		       ' -shared ',
-		       Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption])
+		       Base, Ext, TempFile, ' ', CC_Opts, ' ', LdOption])
 	    ;	str_sub('alpha', Configuration)
-	    ->	shell([CC_Name, ' -c ', Base, '.c ', TempFile, ' ',CC_Opts]),
+	    ->	shell([CC_Name, ' -c ', Base, Ext, TempFile, ' ',CC_Opts]),
 		shell(['ld -expect_unresolved \* -O1 -shared -o ',
 		       Base, '.so ', Base, '.o ', LdOption])
 	    ; str_sub('powerpc-apple-darwin', Configuration)
-	    ->	shell([CC_Name,' -dynamiclib -undefined dynamic_lookup -faltivec -fPIC -o ', Base, '.dylib ', Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption])
+	    ->	shell([CC_Name,' -dynamiclib -undefined dynamic_lookup -faltivec -fPIC -o ', Base, '.dylib ', Base, Ext, TempFile, ' ', CC_Opts, ' ', LdOption])
 #ifdef FOREIGN_DEBUG
-	    , message((CC_Name,' -dynamiclib -undefined dynamic_lookup -faltivec -fPIC -o ', Base, '.dylib ', Base, '.c ', TempFile, ' ', CC_Opts, ' ', LdOption))
+	    , message((CC_Name,' -dynamiclib -undefined dynamic_lookup -faltivec -fPIC -o ', Base, '.dylib ', Base, Ext, TempFile, ' ', CC_Opts, ' ', LdOption))
 #endif
 
 	    ;	str_sub('cygwin', Configuration)
-	    ->  message(shell([CC_Name, ' -c ', Base, '.c ', TempFile, ' ', CC_Opts])),
+	    ->  message(shell([CC_Name, ' -c ', Base, Ext, TempFile, ' ', CC_Opts])),
 		concat_atom([Base,'.o'], Obj),
-		shell([CC_Name, ' -c ', Base, '.c ', TempFile, ' -o ',
+		shell([CC_Name, ' -c ', Base, Ext, TempFile, ' -o ',
 		       Obj, ' ', CC_Opts]),
 		(  TempFile = ''
 		-> TempObj = ''
@@ -196,7 +196,7 @@ compile_c(Modname, Base, Options, Dir, LdOption, CompComm, TempFile) :-
 		((file_exists(DLLhere) ; file_exists(DLLbin)) -> true
 		; warning(('You must create the ', Modname,'.dll'))
 		)
-	    ;	shell([CC_Name, ' -c ', Base, '.c ', TempFile, ' ', CC_Opts]),
+	    ;	shell([CC_Name, ' -c ', Base, Ext, TempFile, ' ', CC_Opts]),
 	        /* The following is here because C compilers usually put 
 	           the object file in the current directory
 	           and not in the source one. */
@@ -207,6 +207,7 @@ compile_c(Modname, Base, Options, Dir, LdOption, CompComm, TempFile) :-
 	    )
         ;   shell([CompComm])
         ).
+
 
 cc_name(Options, CC_Name) :-
 	( memberchk(cc(CC_Name), Options), atom(CC_Name) -> true
