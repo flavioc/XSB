@@ -21,13 +21,18 @@ of terms, which has as follows:
 Within each one of the categories, the ordering is as follows:
 \begin{itemize}
 \item	variables are put in a standard order (roughly, the oldest first
-	--- the order is {\em not\/} related to the names of variables).
-	Also, note that two anonymous variables are not identical terms.
-	Unfortunately in the current implementation of our system (\version) 
-	variables ``tend to move'' rather quickly as a result of unification,
-	and thus the ordering may not continue to hold if the variables get
-	unified to some other variables.  We intend to ameliorate this bug in
-	future releases.
+	--- the order is {\em not\/} related to the names of
+	variables).  Also, note that two anonymous variables are not
+	identical terms.  As with most WAM-based Prologs, the order of
+	variables may change as variables become bound to one another.
+	If the order is expected to be invariant across variable
+	bindings, other mechanisms, such as attributed variables,
+	should be used.
+%	Unfortunately in the current implementation of our system (\version) 
+%	variables ``tend to move'' rather quickly as a result of unification,
+%	and thus the ordering may not continue to hold if the variables get
+%	unified to some other variables.  We intend to ameliorate this bug in
+%	future releases.
 \item	floating point numbers and integers are put in numeric order, 
 	from $-\infty$ to $+\infty$.  Note that a floating point number is
 	always less than an integer, regardless of their numerical values.

@@ -541,30 +541,33 @@ module_to_disassemble:
 cmd_loop_driver:
     The top-level command loop driver to be used instead of the
     standard one.  Usually needed when XSB is run as a server.
-
-           -i : bring up the XSB interpreter
-      -e goal : evaluate goal when XSB starts up
-           -l : the interpreter prints unbound variables using letters
-           -n : used when calling XSB from C
-           -B : specify the boot module to use in lieu of the standard loader
-           -D : Sets top-level command loop driver to replace the default
-           -t : trace execution at the SLG-WAM instruction level
-                  (for this to work, build XSB with the --debug option)
-           -d : disassemble the loader and exit
-         -c N : allocate N KB for the trail/choice-point stack
-         -m N : allocate N KB for the local/global stack
-         -o N : allocate N KB for the SLG completion stack
-         -u N : allocate N KB for the SLG unification stack
-           -r : turn off automatic stack expansion
-   -g gc_type : choose heap garbage collection ("none", "indirection", "sliding", or "copying") 
-           -s : maintain detailed statistical information
-           -S : set default tabling method to subsumption-based
-           -T : print a trace of each called predicate
--v, --version : print the version and configuration information about XSB
-   -h, --help : print this help message
-   --nobanner : don't show the XSB banner on startup
-  --quietload : don't show the `module loaded' messages
-   --noprompt : don't show prompt (for non-interactive use)
+ 
+             -i : bring up the XSB interpreter
+        -e goal : evaluate goal when XSB starts up
+             -l : the interpreter prints unbound variables using letters
+             -n : used when calling XSB from C
+             -B : specify the boot module to use in lieu of the standard loader
+             -D : Sets top-level command loop driver to replace the default
+             -t : trace execution at the SLG-WAM instruction level
+                   (for this to work, build XSB with the --debug option)
+             -d : disassemble the loader and exit
+           -c N : allocate N KB for the trail/choice-point stack
+           -m N : allocate N KB for the local/global stack
+           -o N : allocate N KB for the SLG completion stack
+           -u N : allocate N KB for the SLG unification stack
+             -r : turn off automatic stack expansion
+     -g gc_type : choose heap garbage collection ("none", "sliding", 
+                                                  "indirection", or "copying") 
+             -p : enable Prolog profiling thru use of profile_call/1
+             -s : maintain detailed statistical information
+             -S : set default tabling method to subsumption-based
+             -T : print a trace of each called predicate
+--max_threads N : maintain information for up to N threads
+  -v, --version : print the version and configuration information about XSB
+     -h, --help : print this help message
+     --nobanner : don't show the XSB banner on startup
+    --quietload : don't show the `module loaded' messages
+     --noprompt : don't show prompt (for non-interactive use)
 
 \end{verbatim}
 }
@@ -574,6 +577,10 @@ The order in which these options appear makes no difference.
 \item[{\tt -i}] Brings up the XSB interpreter.  This is the normal use
         and because of this, use of this option is optional and is
         only kept for backwards compatibility.
+\item[{\tt -e goal}] Pass {\tt goal}  to XSB at startup. This goal is evaluated
+    right before the first prompt is issued. For instance, 
+    \verb'xsb -e "write('Hello!'), nl."'
+    will print a heart-warming message when XSB starts up.
 \item[{\tt -l}] Forces the interpreter to print unbound variables as
 	letters, as opposed to the default setting which prints
 	variables as memory locations prefixed with an underscore.
@@ -622,6 +629,10 @@ The order in which these options appear makes no difference.
 \item[{\tt -D}] Tells XSB to use a top-level command loop driver specified
   here instead of the standard XSB interpreter. This is most useful when
   XSB is used as a server.
+\item[{\tt -t}] Traces through code at SLG-WAM instruction level.
+  This option is intended for developers and is not fully supported.
+  It is also not available when the system is being used at the
+  non-debug mode (see Section~\ref{debugging}).
 \item[{\tt -r}] Turns off automatic stack expansion.
 %
 \index{garbage collection}
@@ -632,9 +643,13 @@ The order in which these options appear makes no difference.
   \cite{CATmem@ISMM-98} for descriptions of the first two garbage
   collectors, and \cite{CaSC01} for a description of the third).
 %
-\item[{\tt -s}] Maintains information on the size of program stacks 
-    for the predicate {\tt statistics/0}.  This option may be expected
-    to slow execution by around 10\%.  Default: off.
+\item[{\tt -p}] Enables the engine to collect information that can be
+  used for profiling.  See Volume 2 of this manual for details.
+%
+\item[{\tt -s}] Maintains information on the size of program stacks
+  for the predicate {\tt statistics/0}.  This option may be expected
+  to slow execution by around 10\%.  Default: off.  Note: this option
+  is not available with the multi-threaded engine.
 \item[{\tt -S}] Indicates that tabled predicates are to be evaluated
     using subsumption-based tabling as a default for tabled predicates
     whose tabling method is not specified by using {\tt
@@ -651,14 +666,10 @@ The order in which these options appear makes no difference.
 
     Note: This option is not available when the system is being used
     at the non-tracing mode (see Section~\ref{debugging}).
-\item[{\tt -t}] Traces through code at SLG-WAM instruction level.  This
-    option is for internal debugging and is not fully supported.
-    It is also not available when the system is being used at the non-debug
-    mode (see Section~\ref{debugging}).
-\item[{\tt -e goal}] Pass {\tt goal}  to XSB at startup. This goal is evaluated
-    right before the first prompt is issued. For instance, 
-    \verb'xsb -e "write('Hello!'), nl."'
-    will print a heart-warming message when XSB starts up.
+  \item[{\tt --maxthreads N}] Allows XSB to maintain information for
+    up to {\tt N} threads.  This means that XSB can currently run {\tt
+      N} threads that are active, or that are inactive, non-detached,
+    and not yet joined.
   \item[{\tt --nobanner}] Start XSB without showing the startup banner.
     Useful in batch scripts and for interprocess communication (when XSB is
     launched as a subprocess).
@@ -693,7 +704,11 @@ included in XSB \cite{CaSC01,CATmem@ISMM-98}.  (To change the
 algorithm used for heap garbage collection or to turn it off
 altogether, see the predicate {\tt garbage\_collection/1} or
 Section~\ref{sec:EmuOptions} for command-line options).  In \version{}
-the default behavior is indirect garbage collection.
+the default behavior is indirect garbage collection.  Starting with
+\version{}, heap garbage collection may automatically invokes garbage
+collection of XSB's ``string'' table, which stores Prolog's atomic
+constants.  However string garbage collection will not be invoked if
+there is more than one active XSB thread.
 
 The program area (the area into which the code is loaded) is also
 dynamically expanded as needed.  For dynamic code (created using {\tt
@@ -716,7 +731,7 @@ single-threaded engine, since the data structures involved in heap
 garbage collection are all thread-private.  For a thread-shared
 predicate $P$, space reclamation for abolished tables for goals to $P$
 or retracted clauses for $P$ may be deferred until a later garbage
-collection phase.
+collection phase when only a single thread is active.
 
 \section{Compiling, Consulting, and Loading} \label{Consulting}
 %====================================================
