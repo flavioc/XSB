@@ -3,15 +3,12 @@
 Starting with Version 3.0, XSB supports the use of Posix threads to
 perform separable computations, and in certain cases to parallelize
 them.  Posix threads have a simple and clear API, and are available on
-all Unixes as well as on Windows~\footnote{For Windows users, a
-  pthread interface to Windows threads must be available to the
-  compiler.  We suggest using the Win32 pthreads interface, available
-  via {\tt http://sourceware.org/pthreads-win32}.}.  This chapter
-introduces how to program with threads in XSB through a series of
-examples.  Later sections discuss performance aspects of our
-implementation as well as describing relevant predicates.  A general
-knowledge of multi-threaded programming is assumed, such as can be
-found in \cite{LewB98,Bute97}.
+all Unixes as well as on Windows (see Section~\ref{sec:mt-windows} to
+configure under Windows).  This chapter introduces how to program with
+threads in XSB through a series of examples.  Later sections discuss
+performance aspects of our implementation as well as describing
+relevant predicates.  A general knowledge of multi-threaded
+programming is assumed, such as can be found in \cite{LewB98,Bute97}.
 
 \section{Getting Started with Multi-Threading}
 %
@@ -367,6 +364,50 @@ contend for I/O.  Thus, in multi-threaded applications, it may be more
 efficient to open and close streams and access these streams
 explicitly, than to redirect standard input or standard output through
 {\tt see/1} and {\tt tell/1}.
+
+\section{Configuring the Multi-threaded Engine under Windows}
+
+Libraries for Pthreads are included on most versions of Unix and
+Linux.  Windows also supports multi-threading, but with a somewhat
+different semantics and API than that of Pthreads.  To run
+multi-threaded XSB under Windows, a library must be included to
+translate the Pthread library, used by XSB, to the native thread API
+of Windows.
+
+Different libraries are available for this purpose.  Internally, the
+multi-threaded engine has been tested using the Win32 pthreads
+interface, available via {\tt http://sourceware.org/pthreads-win32},
+but other libraries may also work, including pthread library included
+with Cygwin.  To install the sourceware library, let {\tt \$XSBENV} be
+the parent directory of {\tt \$XSBDIR} the root directory of XSB --
+i.e. {\tt \$XSBENV} is the directory into which XSB is installed.
+
+\begin{itemize}
+\item Download a version such as pthreads-2005-01-25.exe or later, and
+  extract it into {\tt \$XSBENV}\\pthreads.  Add
+  \verb|$XSBENV\pthreads\Pre-built\lib| to your system path
+
+\item To configure with windows enter the commands: 
+\begin{verbatim}
+sh configure --enable-mt --with-wind \
+--site-includes='c:\XSBSYS\XSBENV\pthreads\Pre-built\include \
+--site-static-libraries='c:\XSBSYS\XSBENV\pthreads\Pre-built\lib
+
+makexsb_wind
+\end{verbatim}
+Note that the Unix {\tt sh} shell must be available in order to
+reconfigure.
+
+\item To configure with cygwin enter the commands:
+\begin{verbatim}
+sh configure --enable-mt \
+  --site-includes='/cygdrive/c/XSBSYS/XSBENV/pthreads/Pre-built/include' \
+  --site-static-libraries='/cygdrive/c/XSBSYS/XSBENV/pthreads/Pre-built/lib'
+
+sh makexsb --config-tag=mt
+\end{verbatim}
+
+\end{itemize}
 
 \section{Predicates for Multi-Threading} \label{sec:mt-threading}
 

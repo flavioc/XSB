@@ -18,6 +18,20 @@
 
 <h1>Release Notes</h1>
 
+<h2>Version 3.0 (???) </h2>
+<p> Version 3.0 is a major rewriting of the XSB engine to allow
+multi-threading and that includes many new and improved features.
+</p>
+
+<ul>
+  <li> XSB now supports multiple user-threads within a single process
+  on both Unix and Windows, using the semantics of Posix threads,
+  including detaching, joining, and cancelling threads.  Within XSB,
+  dynamic predicates and tables may be declared to be shared among
+  threads, or private within a thread (the default).
+</ul>
+
+
 <h2>Version 2.7.1 (Kinryo) </h2>
 <p>
 Version 2.7.1 is a minor release whose main changes are to support the

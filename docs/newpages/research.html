@@ -1,3 +1,4 @@
+
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <link type="text/css" rel="stylesheet" href="xsb.css">
@@ -83,14 +84,13 @@ XSB. Based on XSB's implementation of WFS, the Well-Founded Semantics
 with Explicit Negation (WFSX) has been implemented and extended to
 allow abduction and logical program updates; the object-based Frame
 Logic (F-Logic) and several temporal concurrency logics including the
-Modal &mu;-Calculus and Concurrent Temporal Logic
-have also been implemented using WFS, as described below. Using
-functional tabled aggregation, Generalized Annotated Programs and a
-type of probabilistic logic programs have been implemented; while
-using partial order tabled aggregation a species of Preference Logic
-has been implemented. Many of these logics will become more powerful
-with the recent addition of logical constraint handling techniques to
-XSB.</p>
+Modal &mu;-Calculus and Concurrent Temporal Logic have also been
+implemented using WFS, as described below. Using functional tabled
+aggregation, Generalized Annotated Programs and a type of
+probabilistic logic programs have been implemented; while using
+partial order tabled aggregation a species of Preference Logic has
+been implemented. Many of these logics become more powerful with the
+addition of logical constraint handling techniques to XSB.</p>
 
 <p>Before turning to applications of these logics we consider in
 detail how XSB can form the underpinnings of a system based on a
@@ -144,16 +144,17 @@ areas in which logic programming has not previously been
 successful. Using XSB, WFSX has been used for machine learning. With
 the addition of abduction, WFSX has been used for psychiatric
 diagnosis, as well as for fault diagnosis in electronic
-circuits. FLORA has been used for the creation of Web agents, for
-applications in neuroscience, and for processing ontologies and
+circuits. FLORA has been widely used for the creation of Web agents,
+for applications in neuroscience, and for processing ontologies and
 meta-data.  Probabilistic logic programs have been used to allow mined
 association rules to be used within an intensional
 database. Preference Logic Programs have been used to for data
 cleaning through the formalism of Preference Logic Grammars. These
 applications typically mix the use of the various logics with
-traditional Prolog programming techniques. The reasons for the success
-of each application varies. However, the use of XSB for the
-verification of concurrent systems, or <i>model-checking</i>
+traditional Prolog programming techniques. XSB with tabled constraints
+has been used for worflow rules for clinical oncology.  The reasons
+for the success of each application varies. However, the use of XSB
+for the verification of concurrent systems, or <i>model-checking</i>
 illustrates many common features of these applications.</p>
 
 <p>Model checkers are usually formulated in two stages. First there is
@@ -179,12 +180,17 @@ as the alternating modal &mu;calculus) can be modularly embedded into
 the well-founded semantics, but such logics have been evaluated by
 using XSB as a preprocessor to a stable model generator. Thus in model
 checking, XSB may be used alone or with other tools depending on the
-needs of the user. Given its power and applicability, it has not been
-trivial to implement tabling so that it is both efficient and
-integrable with Prolog. Much of the work of the XSB group has involved
-design and implementation of its underlying engine, the SLG-WAM, and
-its extensions. From the point of view of implementation, tabling has
-necessitated the development of algorithms in a variety of
+needs of the user.  Recently, the addition of constraint domains,
+implemented using XSB's CHR mechanism, has proven useful to reduce
+state explostion when applying XSB-based model checkers to
+verification of real-time and other concurrent systems. </p>
+
+<p>Given its power and applicability, it has not been trivial to
+implement tabling so that it is both efficient and integrable with
+Prolog. Much of the work of the XSB group has involved design and
+implementation of its underlying engine, the multi-threaded SLG-WAM,
+and its extensions. From the point of view of implementation, tabling
+has necessitated the development of algorithms in a variety of
 areas. During a tabled evaluation, one computation path may consume
 answers produced by another computation path. This means that
 resources must be retained for environments that consume answers to a
@@ -200,10 +206,15 @@ management, environment switching and garbage collection.  Much work
 has also been done on how to efficiently access tables from a
 WAM-style engine, how to maintain dependency information in the table
 (and stacks) for the well-founded semantics, and how answers in a
-table can be efficiently shared among subsuming calls.</p>
+table can be efficiently shared among subsuming calls.  Finally, the
+use of thread-shared tables provides a flexible mechanism for threads
+to intercommunicate in multi-threaded applications, while the use of
+thread-private tables allows for high scalability within a
+multi-threaded process.. </p>
 
-<p>Descriptions of tabling algorithms their implementations; of implemented
-logics, their applications, and implementations can be found via
+<p>Descriptions of tabling algorithms and their implementations; of
+implemented logics and their applications, as well as other material
+can be found via
 <ul>
   <li>
   <a href="xsb-people.html">List of people</a>

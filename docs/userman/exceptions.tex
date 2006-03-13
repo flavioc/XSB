@@ -404,13 +404,14 @@ obsolecent {\tt abort/1} and {\tt abort/2}.
 \subsection{Predicates to Handle Errors}
 
 \begin{description}
-\ouritem{catch(?Goal,?CatchTerm,+Handler)} \index{\texttt{catch/3}} 
+\ouritem{catch(?Goal,?CatchTerm,+Handler)} \index{\texttt{catch/3}}
 Calls {\tt Goal}, and sets up information so that future throws will
 be able to access {\tt CatchTerm} under the mechanism mentioned
 above. {\tt catch/3} does not attempt to clean up system level
-resources.   Thus, it is left up to the handler to close open tables
+resources.  Thus, it is left up to the handler to close open tables
 (via {\tt close\_open\_tables/0}, close any open files, reset current
-input and output, and so on.
+input and output, and so on \footnote{cf. the default system error
+  handler, which performs these functions, if needed.}.
 %
 \ouritem{default\_user\_error\_handler(?CatchTerm)}
 \index{\texttt{default\_user\_error\_handler/1}} Handles any error

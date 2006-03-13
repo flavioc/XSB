@@ -19,10 +19,10 @@
 
 <h3>Tabled Resolution</h3>
 <p>
-Tabled resolution is useful for recursive query computation, allowing programs
-to terminate correctly in many cases where Prolog does not. Users interested
-in Parsing, Program Analysis, Model-checking, Data Mining and Diagnosis
-may benefit from XSB.
+Tabled resolution is useful for recursive query computation, allowing
+programs to terminate correctly in many cases where Prolog does
+not. Users interested in Parsing, Program Analysis, Model-checking,
+Data Mining, Diagnosis and Temporal Reasoning may benefit from XSB.
 </p>
 <p>XSB's Tabling implementation:</p>
 <ul>
@@ -55,7 +55,7 @@ may benefit from XSB.
   </li>
 
   <li>
-  Versions 2.4 and later have as default a tabling strategy called
+  Has a default a tabling strategy called
   <i>Local Evaluation</i> which is efficient for returning all answers
   to a query, and is useful for applications such as program analysis
   and non-monotonic reasoning.  As a configuration alternative, <i>
@@ -63,10 +63,47 @@ may benefit from XSB.
   efficiently returns the first answer to a query.
   </li>
 
-  <li> Versions 2.5 and later have as their default stack management
+  <li> Has a default stack management
   configuration the SLG-WAM configuration, for which a choice of three
   heap garbage collectors are available.
   </li>
+</ul>
+
+<h3>
+Support for Multi-Threading
+</h3>
+<p>
+Beginning with Version 3.0, XSB supports a configuration that allows
+multiple threads of computation within a single process under the
+Posix model.
+
+<ul>
+<li>
+All threads within the multi-threaded engine share the same static
+code and I/O streams.  
+</li>
+
+<li>
+For dynamic code or tables, predicates may be declared
+thread-<i>private</i> or thread-<i>shared</i>.  Private predicates
+are visible only to a given thread, and the space for private
+predicates is reclaimed upon a thread's exit.  Thread-shared
+predicates are visible to all threads.  
+</li>
+
+<li>
+Within default local evaluation, concurrency for shared tables is
+supported by an optimistic concurrency control called <i>shared
+completed tables</i> which adds little overhead to computation.
+Within batched evaluation, non-completed tables are visible to
+multiple threads as well (this is experimental in version 3.0).
+</li>
+
+<li>
+Posix-style operations are supported for XSB threads, including
+joining and detaching threads, thread cancellation, etc.
+</li>
+
 </ul>
 
 <h3>Indexing and Dynamic Code</h3>
@@ -79,15 +116,16 @@ can be quickly loaded and efficiently indexed.
 
 <ul>
   <li>
-  XSB provides a variety of read and assert mechanisms for quickly
-  loading dynamic predicates, especially if these predicates are unit
-  clauses.
+  Indexes can be created on alternate or joint arguments of dynamic
+  code. Furthermore this indexing can be hash-based, or trie-based if
+  it is necessary to perform indexing deep within alternate arguments
+  of a term.
   </li>
 
   <li>
-  Indexes can be created on alternate or joint arguments of dynamic
-  code. Furthermore this indexing can be hash-based, or trie-based if
-  it is necessary to perform indexing deep within a term.
+  XSB provides a variety of read and assert mechanisms for quickly
+  loading dynamic predicates, especially if these predicates are unit
+  clauses.
   </li>
 
   <li>
@@ -132,7 +170,8 @@ have been!)
   YAJXB</a>
   </li>
 
-  <li> An interface to Perl, and especially to its pattern-matching facilities.
+  <li> An interface to Perl, and especially to its pattern-matching
+  facilities.
   </li>
   
   <li>
@@ -183,6 +222,10 @@ on top of XSB, inlcuding
 <ul>
   <li>Flora: a highly sophisticated and efficient implementation of
              F-logic
+  </li>
+  <li>
+    XJ: a system that allows XSB programs to create graphical sser
+    interfaces based on Java's Swing package.
   </li>
   <li>XMC: a temporal-logic model checker for verifying properties of
            concurrent programs. and containing a graphical user

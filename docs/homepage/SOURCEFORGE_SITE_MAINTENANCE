@@ -1,6 +1,6 @@
 XSB web site documents at Sourceforge are in
 
-    /home/groups/xsb/htdocs/
+    /home/groups/x/xs/xsb/htdocs/
     
 on shell.sourceforge.net
 
@@ -8,7 +8,7 @@ The Web site is maintained in the XSB CVS repository.
 To make changes to the Web site, you make changes to your local copy of the
 Web site (in XSB/docs/homepage) and then check the changes in.
 
-The directory /home/groups/xsb/htdocs/shadow_site on shell.sourceforge.net
+The directory /home/groups/x/xs/xsb/htdocs/shadow_site on shell.sourceforge.net
 contains a checked out copy of the XSB web site. Once you checked your
 changes to the Web site, run 
 
@@ -22,11 +22,11 @@ everything is OK on the shadow site by visiting
     http://xsb.sourceforge.net/shadow_site/
 
 If things are fine, copy everything but the CVS/ subdirectory to
-/home/groups/xsb/htdocs:
+/home/groups/x/xs/xsb/htdocs:
 
 cp -fr *html *gif *jpg *php ..
 
-/home/groups/xsb/htdocs/ also has three manual subdirectories:
+/home/groups/x/xs/xsb/htdocs/ also has three manual subdirectories:
 
     	manual/  -- for PS and PDF versions of the manuals.
 	manual1/ -- HTML version of Part I
@@ -35,4 +35,4 @@ cp -fr *html *gif *jpg *php ..
 None of these are under cvs control. These directories should be prepared
 locally and then copied using scp to
 
-	shell.sourceforge.net:/home/groups/xsb/htdocs/
+	shell.sourceforge.net:/home/groups/x/xs/xsb/htdocs/
