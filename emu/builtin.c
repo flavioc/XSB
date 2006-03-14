@@ -1007,7 +1007,8 @@ int abolish_usermod_tables(CTXTdecl)
       psc = pair_psc(pair);
       type = get_type(psc);
       if (type == T_DYNA || type == T_PRED) 
-	if (!strcmp(get_name(get_data(psc)),"usermod") ||
+	if (!get_data(psc) ||
+	    !strcmp(get_name(get_data(psc)),"usermod") ||
 	    !strcmp(get_name(get_data(psc)),"global")) 
 	  abolish_if_tabled(CTXTc psc);
     }
