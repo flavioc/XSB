@@ -51,6 +51,10 @@
 
 #ifdef MULTI_THREAD
 
+/* different things are included based on context.h -- easiest to
+   include this conditionally. */
+#include "macro_xsb.h"
+
 #include <errno.h>
 
 int emuloop(CTXTdeclc byte *startaddr);
@@ -644,6 +648,20 @@ xsbBool xsb_thread_request( CTXTdecl )
 	    bld_int(reg+2,i);
 	    xsb_permission_error(CTXTc "thread_interrupt","invalid_thread",
 				   reg[2],"xsb_thread_interrupt",1); 
+	  }
+	  break;
+	}
+
+	case ABOLISH_PRIVATE_TABLES: 
+	  release_private_tabling_resources(CTXT);
+	  break;
+
+	case ABOLISH_SHARED_TABLES: {
+	  TIFptr abol_tif;
+	  for (abol_tif = tif_list.first ; abol_tif != tif_list.last
+		 ; abol_tif = TIF_NextTIF(abol_tif) ) {
+	    if get_shared(TIF_PSC(abol_tif)) 
+	      abolish_table_predicate(CTXTc TIF_PSC(abol_tif));
 	  }
 	  break;
 	}

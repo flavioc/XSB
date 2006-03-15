@@ -1459,11 +1459,6 @@ DelTFptr deltf_chain_begin = (DelTFptr) NULL;
  ((int) cp_inst >= 0x5c && (int) cp_inst < 0x80) \
 	   || ((int) cp_inst >= 0x90 && (int) cp_inst < 0x94) 
 
-/* in other words, a basic_answer_trie_tt or ts_answer_trie_tt */
-#define is_answer_trie_node(node) \
-  TN_TrieType((BTNptr) node) > 0 \
-	    && TN_TrieType((BTNptr) node) < 3
-
 inline static xsbBool is_completed_table(TIFptr tif) {
   VariantSF sf;
 
@@ -1480,21 +1475,17 @@ Psc get_psc_for_answer_trie_cp(CTXTdeclc BTNptr pLeaf)
 
   while ( IsNonNULL(pLeaf) && (! IsTrieRoot(pLeaf)) && 
 			       ((int) TN_Instr(pLeaf) != trie_fail_unlock) ) {
-    //printf("%x, Trie type: %d %s Node type: %d %s parent %x\n",pLeaf,
-    //   TN_TrieType(pLeaf),trie_trie_type_table[(int) TN_TrieType(pLeaf)],
-    //   TN_NodeType(pLeaf),trie_node_type_table[(int) TN_NodeType(pLeaf)],
-    //   (int) TN_Parent(pLeaf));
+    //    printf("%x, Trie type: %d Node type: %d parent %x\n",pLeaf,
+    //   TN_TrieType(pLeaf), TN_NodeType(pLeaf), (int) TN_Parent(pLeaf));
     pLeaf = BTN_Parent(pLeaf);
   }
-  //printf("%p,Type for Root: %d %s, Node for Root: %d %s Parent %p\n", pLeaf,
-  // TN_TrieType(pLeaf),trie_trie_type_table[(int) TN_TrieType(pLeaf)],
-  // TN_NodeType(pLeaf),trie_node_type_table[(int) TN_NodeType(pLeaf)],
-  // TN_Parent(pLeaf));
+  //  printf("%p,Type for Root: %d, Node for Root: %d Parent %p\n", pLeaf,
+  //   TN_TrieType(pLeaf), TN_NodeType(pLeaf), TN_Parent(pLeaf));
 
-  if (TN_Parent(pLeaf)) { /* workaround till can get all roots pointing to subg's */
+  if (TN_Parent(pLeaf)) { /* workaround till all roots pointing to subg's */
     tif_ptr = subg_tif_ptr(TN_Parent(pLeaf));
-    //printf("Predicate is %s/%d\n",get_name(TIF_PSC(tif_ptr)),
-    //   get_arity(TIF_PSC(tif_ptr)));
+    //    printf("Predicate is %s/%d\n",get_name(TIF_PSC(tif_ptr)),
+    //    get_arity(TIF_PSC(tif_ptr)));
     return TIF_PSC(tif_ptr);
   } else {
     return NULL;
@@ -1505,6 +1496,7 @@ Psc get_psc_for_answer_trie_cp(CTXTdeclc BTNptr pLeaf)
    Recurse through CP stack looking for trie nodes that match PSC.
    Returns 1 if found a psc match, 0 if safe to delete now
 */
+
 int abolish_table_pred_cps_check(CTXTdeclc Psc psc) 
 {
   CPtr cp_top,cp_bot ;
@@ -1521,7 +1513,7 @@ int abolish_table_pred_cps_check(CTXTdeclc Psc psc)
     // asserted and interned tries
     if ( is_trie_instruction(cp_inst) ) {
       // Below we want basic_answer_trie_tt, ts_answer_trie_tt
-      if (is_answer_trie_node( *cp_top ) ) {
+      if (IsInAnswerTrie(((BTNptr) *cp_top))) {
 	if (psc == get_psc_for_answer_trie_cp(CTXTc (BTNptr) *cp_top)) {
 	  found_psc_match = 1;
 	}
@@ -1592,7 +1584,8 @@ inline int abolish_table_predicate(CTXTdeclc Psc psc)
   }
   else {
     SYS_MUTEX_UNLOCK(MUTEX_TABLE);
-    fprintf(stderr,"Delaying abolish of table in use: %s/%d\n",get_name(psc),get_arity(psc));
+    fprintf(stderr,"Delaying abolish of table in use: %s/%d\n",
+	    get_name(psc),get_arity(psc));
     check_insert_new_deltf(CTXTc tif);
     return 1; 
   }
@@ -1622,7 +1615,7 @@ void abolish_all_tables_cps_check(CTXTdecl)
       trie_type = (int) TN_TrieType((BTNptr) *cp_top);
       /* Here, we want call_trie_tt,basic_answer_trie_tt,
 	 ts_answer_trie_tt","delay_trie_tt */
-      if (is_answer_trie_node((*cp_top))) {
+      if (IsInAnswerTrie(((BTNptr) *cp_top))) {
 	xsb_abort("[abolish_all_tables/0] Illegal table operation"
 		  "\n\t Backtracking through tables to be abolished.");
       }
@@ -1657,7 +1650,7 @@ void mark_tabled_preds(CTXTdecl)
     // Want trie insts, but will need to distinguish from
     // asserted and interned tries
     if ( is_trie_instruction(cp_inst) ) {
-      if (is_answer_trie_node( *cp_top ) ) {
+      if (IsInAnswerTrie((BTNptr) *cp_top)) {
 	DelTFptr dtf;
 	BTNptr call_trie;
 	VariantSF subgoals;

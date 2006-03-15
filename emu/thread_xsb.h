@@ -75,7 +75,7 @@ extern pthread_cond_t completing_cond;
                                MUTARRAY_OWNER(M) = xsb_thread_id;	      \
                                MUTARRAY_NUMLOCKS(M)++; }
 
-#define SYS_MUTEX_LOCK_NOERROR( M )   {pthread_mutex_lock(MUTARRAY_MUTEX(M));	      \
+#define SYS_MUTEX_LOCK_NOERROR( M )   {pthread_mutex_lock(MUTARRAY_MUTEX(M));  \
                                        MUTARRAY_NUMLOCKS(M)++; }
 #else
 

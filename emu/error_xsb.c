@@ -760,6 +760,7 @@ int unwind_stack(CTXTdecl)
      remove_incomplete_tries(CTXTc prev_compl_frame(tmp_compl_frm));
    }
    unwind_trail(breg,xtemp1,xtemp2);
+
    return(FALSE);
 
 } /* unwind_stack */

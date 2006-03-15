@@ -570,14 +570,17 @@ extern struct TDispBlkHdr_t tdispblkhdr; // defined in loader
 /* TLS: mutex may not be needed here, as we're freeing private
    resources.  This function handles the case when one thread creates
    a private tif, exits, its xsb_thread_id is reused, and the new
-   thread creates a private tif for the same table.  */
+   thread creates a private tif for the same table.  
+
+   TLS: probably a memory leak for TIFs? */
 
 void thread_free_private_tifs(CTXTdecl) {
   struct TDispBlk_t *tdispblk;
   TIFptr tip;
 
   SYS_MUTEX_LOCK( MUTEX_TABLE );
-  for (tdispblk=tdispblkhdr.firstDB ; tdispblk != NULL ; tdispblk=tdispblk->NextDB) {
+  for (tdispblk=tdispblkhdr.firstDB 
+	 ; tdispblk != NULL ; tdispblk=tdispblk->NextDB) {
     if (th->tid <= tdispblk->MaxThread) {
       tip = (&(tdispblk->Thread0))[th->tid];
       if (tip) {
@@ -585,13 +588,14 @@ void thread_free_private_tifs(CTXTdecl) {
       }
     }
   }
-  SYS_MUTEX_UNLOCK( MUTEX_TABLE );
+   SYS_MUTEX_UNLOCK( MUTEX_TABLE );
 }
 
 extern void smPrintBlocks(Structure_Manager *);
 
+
 void release_private_tabling_resources(CTXTdecl) {
-  void * btn;
+  //  void * btn;
 
   thread_free_private_tifs(CTXT);
   SM_ReleaseResources(*private_smTableBTN);

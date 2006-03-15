@@ -56,6 +56,9 @@
 #define XSB_THREAD_PROPERTY             20
 #define XSB_THREAD_INTERRUPT             21
 
+#define ABOLISH_PRIVATE_TABLES        22
+#define ABOLISH_SHARED_TABLES        23
+
 #define MAX_THREADS		1024
 
 

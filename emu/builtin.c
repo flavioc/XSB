@@ -2541,16 +2541,18 @@ case WRITE_OUT_PROFILE:
     mark_heap(CTXTc ptoc_int(CTXTc 1),&tmpval);
     return TRUE;
   }
+
+    /* TLS: changed && -> & */
   case GC_STUFF: {
     int gc = ptoc_int(CTXTc 1);
     int ret_val = 0;
-    if (gc && GC_GC_STRINGS) {
+    if (gc & GC_GC_STRINGS) {
       gc &= ~GC_GC_HEAP;
       ret_val |= gc_heap(CTXTc 2,TRUE);
     }
-    if (gc && GC_GC_HEAP) ret_val |= gc_heap(CTXTc 2,FALSE);
-    if (gc && GC_GC_CLAUSES) ret_val |= gc_dynamic(CTXT);
-    if (gc && GC_GC_TABLED_PREDS) ret_val |= gc_tabled_preds(CTXT);
+    if (gc & GC_GC_HEAP) ret_val |= gc_heap(CTXTc 2,FALSE);
+    if (gc & GC_GC_CLAUSES) ret_val |= gc_dynamic(CTXT);
+    if (gc & GC_GC_TABLED_PREDS) ret_val |= gc_tabled_preds(CTXT);
 
     ctop_int(CTXTc 2, ret_val);
     return TRUE;
