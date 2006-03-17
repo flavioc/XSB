@@ -652,17 +652,13 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  break;
 	}
 
-	case ABOLISH_PRIVATE_TABLES: 
-	  release_private_tabling_resources(CTXT);
+	case ABOLISH_PRIVATE_TABLES: {
+	  abolish_private_tables(CTXT);
 	  break;
+	}
 
 	case ABOLISH_SHARED_TABLES: {
-	  TIFptr abol_tif;
-	  for (abol_tif = tif_list.first ; abol_tif != tif_list.last
-		 ; abol_tif = TIF_NextTIF(abol_tif) ) {
-	    if get_shared(TIF_PSC(abol_tif)) 
-	      abolish_table_predicate(CTXTc TIF_PSC(abol_tif));
-	  }
+	  abolish_shared_tables(CTXT);
 	  break;
 	}
 

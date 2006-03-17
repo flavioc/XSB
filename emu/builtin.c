@@ -128,6 +128,10 @@ int mem_flag;
 /*======================================================================*/
 extern void delete_variant_sf_and_answers(CTXTdeclc VariantSF pSF);
 extern int abolish_table_pred_cps_check(CTXTdeclc Psc psc);
+extern void abolish_table_info(CTXTdecl);
+extern int abolish_usermod_tables(CTXTdecl);
+extern int abolish_module_tables(CTXTdeclc const char *module_name);
+
 extern struct token_t *GetToken(CTXTdeclc FILE *, STRFILE *, int);
 
 extern int  sys_syscall(CTXTdeclc int);
@@ -939,113 +943,6 @@ void init_builtin_table(void)
   set_builtin_table(INTERPROLOG_CALLBACK, "interprolog_callback");
 }
 
-/*----------------------------------------------------------------------*/
-
-inline static void abolish_table_info(CTXTdecl)
-{
-  CPtr csf;
-  TIFptr pTIF;
-
-  SYS_MUTEX_LOCK( MUTEX_TABLE );
-  for ( csf = top_of_complstk;  csf != COMPLSTACKBOTTOM;
-	csf = csf + COMPLFRAMESIZE )
-    if ( ! is_completed(compl_subgoal_ptr(csf)) ) {
-      SYS_MUTEX_UNLOCK( MUTEX_TABLE );
-      xsb_abort("[abolish_all_tables/0] Illegal table operation"
-		"\n\t Cannot abolish incomplete tables");
-    }
-
-  if (flags[NUM_THREADS] == 1) {
-    abolish_all_tables_cps_check(CTXT) ;
-  } else {
-    xsb_warn("abolish_all_tables/0 called with more than one active thread.  No CP check.\n");
-  }
-   
-  for ( pTIF = tif_list.first; IsNonNULL(pTIF); pTIF = TIF_NextTIF(pTIF) ) {
-    TIF_CallTrie(pTIF) = NULL;
-    TIF_Subgoals(pTIF) = NULL;
-  }
-  reset_freeze_registers;
-  openreg = COMPLSTACKBOTTOM;
-  release_all_tabling_resources(CTXT);
-  abolish_wfs_space(CTXT); 
-  SYS_MUTEX_UNLOCK( MUTEX_TABLE );
-}
-
-void abolish_if_tabled(CTXTdeclc Psc psc)
-{
-  CPtr ep;
-
-  ep = (CPtr) get_ep(psc);
-  switch (*(pb)ep) {
-  case tabletry:
-  case tabletrysingle:
-    abolish_table_predicate(CTXTc psc);
-    break;
-  case test_heap:
-    if (*(pb)(ep+2) == tabletry || *(pb)(ep+2) == tabletrysingle)
-      abolish_table_predicate(CTXTc psc);
-    break;
-  case switchon3bound:
-  case switchonbound:
-  case switchonterm:
-    if (*(pb)(ep+3) == tabletry || *(pb)(ep+3) == tabletrysingle)
-      abolish_table_predicate(CTXTc psc);
-    break;
-  }
-}
-
-int abolish_usermod_tables(CTXTdecl)
-{
-  unsigned long i;
-  Pair pair;
-  Psc psc;
-  for (i=0; i<symbol_table.size; i++) {
-    if ((pair = (Pair) *(symbol_table.table + i))) {
-      byte type;
-      
-      psc = pair_psc(pair);
-      type = get_type(psc);
-      if (type == T_DYNA || type == T_PRED) 
-	if (!get_data(psc) ||
-	    !strcmp(get_name(get_data(psc)),"usermod") ||
-	    !strcmp(get_name(get_data(psc)),"global")) 
-	  abolish_if_tabled(CTXTc psc);
-    }
-  }
-  return TRUE;
-}
-
-int abolish_module_tables(CTXTdeclc const char *module_name)
-{
-  Pair modpair, pair;
-  byte type;
-  Psc psc, module;
-  
-  modpair = (Pair) flags[MOD_LIST];
-  
-  while (modpair && 
-	 strcmp(module_name,get_name(pair_psc(modpair))))
-    modpair = pair_next(modpair);
-
-  if (!modpair) {
-    xsb_warn("[abolish_module_tables] Module %s not found.\n",
-		module_name);
-    return FALSE;
-  }
-
-  module = pair_psc(modpair);
-  pair = (Pair) get_data(module);
-
-  while (pair) {
-    psc = pair_psc(pair);
-    type = get_type(psc);
-    if (type == T_DYNA || type == T_PRED) 
-      abolish_if_tabled(CTXTc psc);
-    pair = pair_next(pair);
-  }
-  return TRUE;
-}
 /* --------------------------------------------------------------------	*/
 
 #if defined(PROFILE) && !defined(MULTI_THREAD)

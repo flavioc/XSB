@@ -56,7 +56,8 @@ extern void trie_undispose(long, BTNptr);
 // extern xsbBool check_table_cut;
 
 extern int abolish_table_predicate(CTXTdeclc Psc);
-extern void abolish_all_tables_cps_check(CTXTdecl);
+extern void abolish_private_tables(CTXTdecl);
+extern void abolish_shared_tables(CTXTdecl);
 extern int gc_tabled_preds(CTXTdecl);
 
 /* Prasad's changes */

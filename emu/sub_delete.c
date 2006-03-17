@@ -201,3 +201,31 @@ void delete_subsumptive_table(CTXTdeclc TIFptr tif) {
   }
   delete_call_index(CTXTc TIF_CallTrie(tif));
 }
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+/* TLS: use this when table has been deleted (via an abolish), but
+   space for it has not been reclaimed.  In this case, we get the
+   access points from the DelTF rather than the TIF. 
+
+   Input types reflect those of the TIFs */
+
+void reclaim_deleted_subsumptive_table(CTXTdeclc DelTFptr deltf_ptr) {
+
+  SubProdSF cur_prod, next_prod;
+  SubConsSF cur_cons, next_cons;
+
+  for ( cur_prod = (SubProdSF) DTF_Subgoals(deltf_ptr);
+	IsNonNULL(cur_prod);  cur_prod = next_prod ) {
+    for ( cur_cons = subg_consumers(cur_prod);
+	  IsNonNULL(cur_cons);  cur_cons = next_cons ) {
+      next_cons = conssf_consumers(cur_cons);
+      delete_private_sf(CTXTc (VariantSF)cur_cons);
+    }
+    next_prod = (SubProdSF)subg_next_subgoal(cur_prod);
+    delete_tst_answer_set(CTXTc (TSTNptr)subg_ans_root_ptr(cur_prod));
+    delete_private_sf(CTXTc (VariantSF)cur_prod);
+  }
+  delete_call_index(CTXTc DTF_CallTrie(deltf_ptr));
+}
+

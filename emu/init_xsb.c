@@ -412,7 +412,7 @@ char *init_para(CTXTdeclc int argc, char *argv[])
 
 
   xsb_mode = DEFAULT;
-  pflags[TABLING_METHOD] = VARIANT_TEM;
+  pflags[TABLING_METHOD] = VARIANT_EVAL_METHOD;
 
   /* Modify Parameters Using Command Line Options
      -------------------------------------------- */
@@ -540,7 +540,7 @@ char *init_para(CTXTdeclc int argc, char *argv[])
       xsb_warn(warning);
 #endif
     case 'S':
-      pflags[TABLING_METHOD] = SUBSUMPTIVE_TEM;
+      pflags[TABLING_METHOD] = SUBSUMPTIVE_EVAL_METHOD;
       break;
     case 'd':
       if ( (xsb_mode != DEFAULT) && (xsb_mode != CUSTOM_BOOT_MODULE) )

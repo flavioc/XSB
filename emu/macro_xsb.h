@@ -57,26 +57,30 @@ typedef struct Deleted_Table_Frame {
 #define DTF_Subgoals(pDTF)	   ( (pDTF)->subgoals )
 #define DTF_NextDTF(pDTF)	   ( (pDTF)->next_delTF )
 #define DTF_NextPredDTF(pDTF)	   ( (pDTF)->next_pred_delTF )
-#define DTF_PrevDTF(pDTF)	   ( (pDTF)->next_delTF )
-#define DTF_PrevPredDTF(pDTF)	   ( (pDTF)->next_pred_delTF )
+#define DTF_PrevDTF(pDTF)	   ( (pDTF)->prev_delTF )
+#define DTF_PrevPredDTF(pDTF)	   ( (pDTF)->prev_pred_delTF )
 
+/* Creating two doubly-linked chains -- one for all DelTf, the other
+   for Deltfs for this predicate.  */
 #define New_DelTF(pDTF,pTIF) {						\
    pDTF = (DelTFptr)mem_alloc(sizeof(DeletedTableFrame),TABLE_SPACE);	\
    if ( IsNULL(pDTF) )							\
      xsb_abort("Ran out of memory in allocation of DeletedTableFrame");	\
    DTF_CallTrie(pDTF) = TIF_CallTrie(pTIF);				\
    DTF_Subgoals(pDTF) = TIF_Subgoals(pTIF);				\
-   DTF_NextDTF(pDTF) = deltf_chain_begin;				\
-   deltf_chain_begin = pDTF;                                            \
-   DTF_NextPredDTF(pDTF) = TIF_DelTF(pTIF);				\
+   DTF_Mark(pDTF) = 0;                                                  \
    DTF_PrevDTF(pDTF) = 0;						\
    DTF_PrevPredDTF(pDTF) = 0;						\
+   DTF_NextDTF(pDTF) = deltf_chain_begin;				\
+   DTF_NextPredDTF(pDTF) = TIF_DelTF(pTIF);				\
+   if (deltf_chain_begin) DTF_PrevDTF(deltf_chain_begin) = pDTF;	\
+   if (TIF_DelTF(pTIF))  DTF_PrevPredDTF(TIF_DelTF(pTIF)) = pDTF;	\
+   deltf_chain_begin = pDTF;                                            \
    TIF_DelTF(pTIF) = pDTF;                                              \
-   DTF_Mark(pDTF) = 0;                                                  \
   }
 
 /* In macro below, need to reset DTF chain, and Pred-level DTF chain */
-#define Free_DelTF(pDTF) {						\
+#define Free_DelTF(pDTF,pTIF) {						\
   if (DTF_PrevDTF(pDTF) == 0) {						\
     deltf_chain_begin = DTF_NextDTF(pDTF);				\
   }									\
@@ -87,7 +91,7 @@ typedef struct Deleted_Table_Frame {
     DTF_PrevDTF(DTF_NextDTF(pDTF)) = DTF_PrevDTF(pDTF);			\
   }									\
   if (DTF_PrevPredDTF(pDTF) == 0) {					\
-    TIF_DelTF(subg_tif_ptr(DTF_Subgoals(deltf_ptr))) = DTF_NextDTF(pDTF);\
+    TIF_DelTF(pTIF) = DTF_NextDTF(pDTF);				\
   }									\
   else {								\
     DTF_NextPredDTF(DTF_PrevPredDTF(pDTF)) = DTF_NextPredDTF(pDTF);	\
@@ -110,19 +114,24 @@ typedef struct Deleted_Table_Frame {
 
 #include "table_status_defs.h"
 
-typedef enum Tabled_Evaluation_Method {
-  VARIANT_TEM      = VARIANT_EVAL_METHOD,
-  SUBSUMPTIVE_TEM  = SUBSUMPTIVE_EVAL_METHOD,
-  DISPATCH_BLOCK    = 3
-} TabledEvalMethod;
+/*
+ *typedef enum Tabled_Evaluation_Method {
+ *  VARIANT_TEM      = VARIANT_EVAL_METHOD,
+ *  SUBSUMPTIVE_TEM  = SUBSUMPTIVE_EVAL_METHOD,
+ * DISPATCH_BLOCK    = 3
+ *} TabledEvalMethod;
+ */
 
 #define isSharedTIF(pTIF)   (TIF_EvalMethod(pTIF) != DISPATCH_BLOCK)
 #define isPrivateTIF(pTIF)  (TIF_EvalMethod(pTIF) == DISPATCH_BLOCK)
 
+typedef byte TabledEvalMethod;
+
 typedef struct Table_Info_Frame *TIFptr;
 typedef struct Table_Info_Frame {
   Psc  psc_ptr;			/* pointer to the PSC record of the subgoal */
-  TabledEvalMethod method;	/* eval pred using variant or subsumption? */
+  byte method;	                /* eval pred using variant or subsumption? */
+  byte mark;                    /* (bit) to indicate tif marked for gc */
   DelTFptr del_tf_ptr;          /* pointer to first deletion frame for pred */
   BTNptr call_trie;		/* pointer to the root of the call trie */
   VariantSF subgoals;		/* chain of predicate's subgoals */
@@ -132,15 +141,27 @@ typedef struct Table_Info_Frame {
 #define TIF_PSC(pTIF)		   ( (pTIF)->psc_ptr )
 #define TIF_DelTF(pTIF)	           ( (pTIF)->del_tf_ptr )
 #define TIF_EvalMethod(pTIF)	   ( (pTIF)->method )
+#define TIF_Mark(pTIF)	           ( (pTIF)->mark )
 #define TIF_CallTrie(pTIF)	   ( (pTIF)->call_trie )
 #define TIF_Subgoals(pTIF)	   ( (pTIF)->subgoals )
 #define TIF_NextTIF(pTIF)	   ( (pTIF)->next_tif )
 
+#define	cps_check_mark_tif(pTIF)   TIF_Mark(pTIF) = 0x1
+#define	cps_check_unmark_tif(pTIF)   TIF_Mark(pTIF) = 0x0
+
+/*
+ * #define IsVariantPredicate(pTIF)		\
+ *   ( TIF_EvalMethod(pTIF) == VARIANT_TEM )
+ *
+ * #define IsSubsumptivePredicate(pTIF)		\
+ *   ( TIF_EvalMethod(pTIF) == SUBSUMPTIVE_TEM )
+ */
+
 #define IsVariantPredicate(pTIF)		\
-   ( TIF_EvalMethod(pTIF) == VARIANT_TEM )
+   ( TIF_EvalMethod(pTIF) == VARIANT_EVAL_METHOD )
 
 #define IsSubsumptivePredicate(pTIF)		\
-   ( TIF_EvalMethod(pTIF) == SUBSUMPTIVE_TEM )
+ ( TIF_EvalMethod(pTIF) == SUBSUMPTIVE_EVAL_METHOD )
 
 struct tif_list {
   TIFptr first;
@@ -170,6 +191,8 @@ extern struct tif_list  tif_list;
       set_tabled(pPSC,T_TABLED_VAR);					\
    }									\
    TIF_CallTrie(pTIF) = NULL;						\
+   TIF_Mark(pTIF) = 0;                                                  \
+   TIF_DelTF(pTIF) = NULL;						\
    TIF_Subgoals(pTIF) = NULL;						\
    TIF_NextTIF(pTIF) = NULL;						\
    if ( IsNonNULL(tif_list.last) )					\
@@ -179,9 +202,9 @@ extern struct tif_list  tif_list;
    tif_list.last = pTIF;						\
  }
 
-/* TLS: as of 8/05 Free_TIF is used only when abolishing a dynamic tabled
-   predicate, or when exiting a thread to abolish thread-private
-   tables.  Otherwise, keep the TIF around. */
+/* TLS: as of 8/05 Free_TIF is used only when abolishing a dynamic
+   tabled predicate, or when exiting a thread to abolish
+   thread-private tables.  Otherwise, keep the TIF around. */
    
 #define Free_TIF(pTIF) { \
  TIFptr tTIF = tif_list.first; \
@@ -216,11 +239,12 @@ extern struct tif_list  tif_list;
 
 struct TDispBlk_t { /* first two fields must be same as Table_Info_Frame for coercion! */
   Psc psc_ptr;
-  TabledEvalMethod method; /* == DISPATCH_BLOCK for disp block, VARIANT/SUB for TIF */
+  byte method; /* == DISPATCH_BLOCK for disp block, VARIANT/SUB for TIF */
+  byte mark;	                /* eval pred using variant or subsumption? */
   struct TDispBlk_t *PrevDB;
   struct TDispBlk_t *NextDB;
   int MaxThread;
-  TIFptr Thread0;
+  TIFptr Thread0;       /* should probably call this tifarray */
 };
 typedef struct TDispBlk_t *TDBptr;
  

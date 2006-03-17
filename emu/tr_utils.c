@@ -28,6 +28,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /* Special debug includes */
 #include "debugs/debug_tries.h"
@@ -60,6 +61,8 @@
 #include "debug_xsb.h"
 #include "thread_xsb.h"
 #include "storage_xsb.h"
+#include "hash_xsb.h"
+#include "tables.h"
 
 /*----------------------------------------------------------------------*/
 
@@ -314,9 +317,10 @@ VariantSF get_call(CTXTdeclc Cell callTerm, Cell *retTerm) {
 
 
 /*----------------------------------------------------------------------*/
-/* delete_table() and supporting code.
+/* delete_predicate_table(), reclaim_deleted_predicate_table() 
+ * and supporting code.
  * 
- * Used to delete a predicate-level call and answer trie, works for
+ * Used to delete/reclaim a predicate-level call and answer trie, works for
  * both call-variance and call subsumption. */
 /*----------------------------------------------------------------------*/
 
@@ -501,6 +505,22 @@ void delete_predicate_table(CTXTdeclc TIFptr tif) {
     TIF_CallTrie(tif) = NULL;
     TIF_Subgoals(tif) = NULL;
   }
+}
+
+/* - - - - - */
+
+void reclaim_deleted_subsumptive_table(CTXTdeclc DelTFptr);
+
+void reclaim_deleted_predicate_table(CTXTdeclc DelTFptr deltf_ptr) {
+
+  /*  printf("smBTN %x smTableBTN %x private_smTableBTN %x\n",
+      smBTN, &smTableBTN,private_smTableBTN);
+      printf("smBTHT %x smTableBTHT %x private_smTableBTHT %x\n",
+      smBTHT, &smTableBTHT,private_smTableBTHT);*/
+
+  if ( IsVariantPredicate(subg_tif_ptr(DTF_Subgoals(deltf_ptr))) ) {
+      delete_variant_table(CTXTc DTF_CallTrie(deltf_ptr));
+    } else reclaim_deleted_subsumptive_table(CTXTc deltf_ptr);
 }
 
 /*----------------------------------------------------------------------*/
@@ -1453,11 +1473,17 @@ void trie_undispose(long rootIdx, BTNptr leafn)
  * one thread is active.  Soon to be fixed.
  */
 
+/*------------------------------------------------------------------*/
+/* Utility Code */
+/*------------------------------------------------------------------*/
+
 DelTFptr deltf_chain_begin = (DelTFptr) NULL;
 
 #define is_trie_instruction(cp_inst) \
  ((int) cp_inst >= 0x5c && (int) cp_inst < 0x80) \
 	   || ((int) cp_inst >= 0x90 && (int) cp_inst < 0x94) 
+
+/* - - - - - */
 
 inline static xsbBool is_completed_table(TIFptr tif) {
   VariantSF sf;
@@ -1469,18 +1495,16 @@ inline static xsbBool is_completed_table(TIFptr tif) {
   return TRUE;
 }
 
+/* - - - - - */
+
 Psc get_psc_for_answer_trie_cp(CTXTdeclc BTNptr pLeaf) 
 {
   TIFptr tif_ptr;
 
   while ( IsNonNULL(pLeaf) && (! IsTrieRoot(pLeaf)) && 
 			       ((int) TN_Instr(pLeaf) != trie_fail_unlock) ) {
-    //    printf("%x, Trie type: %d Node type: %d parent %x\n",pLeaf,
-    //   TN_TrieType(pLeaf), TN_NodeType(pLeaf), (int) TN_Parent(pLeaf));
     pLeaf = BTN_Parent(pLeaf);
   }
-  //  printf("%p,Type for Root: %d, Node for Root: %d Parent %p\n", pLeaf,
-  //   TN_TrieType(pLeaf), TN_NodeType(pLeaf), TN_Parent(pLeaf));
 
   if (TN_Parent(pLeaf)) { /* workaround till all roots pointing to subg's */
     tif_ptr = subg_tif_ptr(TN_Parent(pLeaf));
@@ -1488,9 +1512,136 @@ Psc get_psc_for_answer_trie_cp(CTXTdeclc BTNptr pLeaf)
     //    get_arity(TIF_PSC(tif_ptr)));
     return TIF_PSC(tif_ptr);
   } else {
+    fprintf(stderr,"Null parent ptr for TN Root Node type: %d Trie type %d\n",
+	    TN_TrieType(pLeaf), TN_NodeType(pLeaf));
     return NULL;
   }
 }
+
+/* - - - - - */
+
+TIFptr get_tif_for_answer_trie_cp(CTXTdeclc BTNptr pLeaf)
+{
+
+  while ( IsNonNULL(pLeaf) && (! IsTrieRoot(pLeaf)) && 
+			       ((int) TN_Instr(pLeaf) != trie_fail_unlock) ) {
+    pLeaf = BTN_Parent(pLeaf);
+  }
+  return subg_tif_ptr(TN_Parent(pLeaf));
+}
+
+/* - - - - - */
+
+/* TLS: not sure if SM is the best lock for this ... */
+void check_insert_new_deltf(CTXTdeclc TIFptr tif)
+{
+  DelTFptr dtf = TIF_DelTF(tif);
+  BTNptr call_trie = TIF_CallTrie(tif);
+  VariantSF subgoals = TIF_Subgoals(tif);	
+  int found = 0;
+
+  SYS_MUTEX_LOCK(MUTEX_SM);
+  while (dtf != 0 && !found) {
+    if (DTF_CallTrie(dtf) == call_trie && DTF_Subgoals(dtf) == subgoals)
+      found = 1;
+    else dtf = DTF_NextPredDTF(dtf);
+  }
+  if (!found) {
+    New_DelTF(dtf,tif);
+  }
+  TIF_CallTrie(tif) = NULL;
+  TIF_Subgoals(tif) = NULL;
+  SYS_MUTEX_UNLOCK(MUTEX_SM);
+}
+
+/* - - - - - - - - - - */
+
+/* Assumes cps check has already been done, so that mark bit is set.
+ * Assumes TIF is non-null.
+ * Tif chain is not changed, therefore no need for mutex.
+ * (Assumes that shared TIFs are only reclaimed when 1 active thread)
+ */  
+
+int fast_abolish_table_predicate(CTXTdeclc Psc psc)
+{
+  TIFptr tif;
+
+  tif = get_tip(CTXTc psc);
+
+  if (IsVariantPredicate(tif) && IsNULL(TIF_CallTrie(tif))) {
+    return 1;
+  }
+
+  if ( ! is_completed_table(tif) ) {
+      xsb_abort("[abolish_table_pred] Cannot abolish incomplete table"
+		" of predicate %s/%d\n", get_name(psc), get_arity(psc));
+  }
+
+#ifdef MULTI_THREAD  
+  SET_TRIE_ALLOCATION_TYPE_PSC(psc)  // determine whether pvt/shared SMs
+#endif
+
+    if (!TIF_Mark(tif) ) {
+      delete_predicate_table(CTXTc tif);
+    }  else {
+      fprintf(stderr,"Delaying abolish of table in use: %s/%d\n",
+	      get_name(psc),get_arity(psc));
+      check_insert_new_deltf(CTXTc tif);
+    }
+return 1;
+}
+
+/* - - - - - - - - - - */
+
+void mark_cp_tables(CTXTdecl)
+{
+  CPtr cp_top,cp_bot ;
+  byte cp_inst;
+  TIFptr tif;
+  
+  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
+
+  cp_top = breg ;				 
+  while ( cp_top < cp_bot ) {
+    cp_inst = *(byte *)*cp_top;
+    // Want trie insts, but will need to distinguish from
+    // asserted and interned tries
+    if ( is_trie_instruction(cp_inst) ) {
+      if (IsInAnswerTrie((BTNptr) *cp_top)) {
+	tif = get_tif_for_answer_trie_cp(CTXTc (BTNptr) *cp_top);
+	cps_check_mark_tif(tif);
+      }
+    }
+    cp_top = cp_prevtop(cp_top);
+  }
+}
+
+void unmark_cp_tables(CTXTdecl)
+{
+  CPtr cp_top,cp_bot ;
+  byte cp_inst;
+  TIFptr tif;
+  
+  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
+
+  cp_top = breg ;				 
+  while ( cp_top < cp_bot ) {
+    cp_inst = *(byte *)*cp_top;
+    // Want trie insts, but will need to distinguish from
+    // asserted and interned tries
+    if ( is_trie_instruction(cp_inst) ) {
+      if (IsInAnswerTrie((BTNptr) *cp_top)) {
+	tif = get_tif_for_answer_trie_cp(CTXTc (BTNptr) *cp_top);
+	cps_check_unmark_tif(tif);
+      }
+    }
+    cp_top = cp_prevtop(cp_top);
+  }
+}
+
+/*------------------------------------------------------------------*/
+/* abolish_table_pred() and supporting code */
+/*------------------------------------------------------------------*/
 
 /* 
    Recurse through CP stack looking for trie nodes that match PSC.
@@ -1524,27 +1675,8 @@ int abolish_table_pred_cps_check(CTXTdeclc Psc psc)
   return found_psc_match;
 }
 
-/* TLS: not sure if SM is the best lock for this ... */
-void check_insert_new_deltf(CTXTdeclc TIFptr tif)
-{
-  DelTFptr dtf = TIF_DelTF(tif);
-  BTNptr call_trie = TIF_CallTrie(tif);
-  VariantSF subgoals = TIF_Subgoals(tif);	
-  int found = 0;
-
-  SYS_MUTEX_LOCK(MUTEX_SM);
-  while (dtf != 0 && !found) {
-    if (DTF_CallTrie(dtf) == call_trie && DTF_Subgoals(dtf) == subgoals)
-      found = 1;
-    else dtf = DTF_NextPredDTF(dtf);
-  }
-  if (!found) {
-    New_DelTF(dtf,tif);
-  }
-  TIF_CallTrie(tif) = NULL;
-  TIF_Subgoals(tif) = NULL;
-  SYS_MUTEX_UNLOCK(MUTEX_SM);
-}
+/* abolish_table_predicate does not abolish delayed tables in deltf
+   frames.  Need to do gc tables for that. */
 
 inline int abolish_table_predicate(CTXTdeclc Psc psc)
 {
@@ -1589,14 +1721,265 @@ inline int abolish_table_predicate(CTXTdeclc Psc psc)
     check_insert_new_deltf(CTXTc tif);
     return 1; 
   }
-}
-    
+}  
 
 /*------------------------------------------------------------------*/
-/* TLS: for use in abolish_all_tables. Aborts if it detects the
+/* Table gc and supporting code */
+/*------------------------------------------------------------------*/
+
+/* Go through and mark DelTfs to ensure that on sweep we dont abolish
+  "active" predicates we're backtracking through.  Note that only the
+  first DelTF in the pred-specific chain may be active in this sense.
+  And its active only if calltrie and subgoals for tif are 0 -- if
+  they are 0, the table has been abolished (even though we're
+  backtracking through it).  If they aren't 0, we're backtracking
+  through a different table altogether, and we needn't mark.
+*/
+void mark_tabled_preds(CTXTdecl) { 
+CPtr cp_top,cp_bot ; byte cp_inst;
+TIFptr tif;
+  
+  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
+
+  cp_top = breg ;				 
+  while ( cp_top < cp_bot ) {
+    cp_inst = *(byte *)*cp_top;
+    // Want trie insts, but will need to distinguish from
+    // asserted and interned tries
+    if ( is_trie_instruction(cp_inst) ) {
+      if (IsInAnswerTrie((BTNptr) *cp_top)) {
+	DelTFptr dtf;
+
+	tif = get_tif_for_answer_trie_cp(CTXTc (BTNptr) *cp_top);
+
+	if (TIF_CallTrie(tif) == NULL && TIF_Subgoals(tif) == NULL) {
+	  dtf = TIF_DelTF(tif);
+	  DTF_Mark(dtf) = 1;
+	}
+      }
+    }
+    cp_top = cp_prevtop(cp_top);
+  }
+}
+
+int sweep_tabled_preds(CTXTdecl) 
+{
+  DelTFptr deltf_ptr;
+  int dtf_cnt = 0;
+  TIFptr tif_ptr;
+
+  deltf_ptr = deltf_chain_begin;
+  while (deltf_ptr) {
+    if (DTF_Mark(deltf_ptr)) {
+      DTF_Mark(deltf_ptr) = 0;
+      dtf_cnt++;
+    }
+    else {
+      tif_ptr = subg_tif_ptr(DTF_Subgoals(deltf_ptr));
+      fprintf(stderr,"Garbage Collecting: %s/%d\n",
+	      get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
+      reclaim_deleted_predicate_table(CTXTc deltf_ptr);
+      Free_DelTF(deltf_ptr,tif_ptr);
+    }
+    deltf_ptr = DTF_NextDTF(deltf_ptr);
+  }
+  return dtf_cnt;
+}
+
+/* Returns -1 in situations it cant handle: currently, calling with
+ * frozen stacks or multiple threads
+ */
+
+int gc_tabled_preds(CTXTdecl) 
+{
+
+  if (flags[NUM_THREADS] == 1) {
+    mark_tabled_preds(CTXT);
+    return sweep_tabled_preds(CTXT);
+  }
+  else {
+    xsb_warn("Cannot garbage collect tables with more than one thread active."); 
+    return -1;
+  }
+}
+
+/*----------------------------------------------------------------------*/
+/* abolish_module_tables() and supporting code */
+/*------------------------------------------------------------------*/
+
+/* - - - - - - - - - - */
+
+int abolish_usermod_tables(CTXTdecl)
+{
+  unsigned long i;
+  Pair pair;
+  Psc psc;
+
+  mark_cp_tables(CTXT);
+
+  for (i=0; i<symbol_table.size; i++) {
+    if ((pair = (Pair) *(symbol_table.table + i))) {
+      byte type;
+      
+      psc = pair_psc(pair);
+      type = get_type(psc);
+      if (type == T_DYNA || type == T_PRED) 
+	if (!get_data(psc) ||
+	    !strcmp(get_name(get_data(psc)),"usermod") ||
+	    !strcmp(get_name(get_data(psc)),"global")) 
+	  if (get_tabled(psc)) {
+	    fast_abolish_table_predicate(CTXTc psc);
+	  }
+    }
+  }
+
+  unmark_cp_tables(CTXT);
+
+  return TRUE;
+}
+
+/* - - - - - - - - - - */
+
+int abolish_module_tables(CTXTdeclc const char *module_name)
+{
+  Pair modpair, pair;
+  byte type;
+  Psc psc, module;
+  
+  mark_cp_tables(CTXT);
+  modpair = (Pair) flags[MOD_LIST];
+  
+  while (modpair && 
+	 strcmp(module_name,get_name(pair_psc(modpair))))
+    modpair = pair_next(modpair);
+
+  if (!modpair) {
+    xsb_warn("[abolish_module_tables] Module %s not found.\n",
+		module_name);
+    return FALSE;
+  }
+
+  module = pair_psc(modpair);
+  pair = (Pair) get_data(module);
+
+  while (pair) {
+    psc = pair_psc(pair);
+    type = get_type(psc);
+    if (type == T_DYNA || type == T_PRED) 
+      if (get_tabled(psc)) {
+	fast_abolish_table_predicate(CTXTc psc);
+      }
+    pair = pair_next(pair);
+  }
+  unmark_cp_tables(CTXT);
+  return TRUE;
+}
+
+/*----------------------------------------------------------------------*/
+/* abolish_private/shared_tables() and supporting code */
+/*------------------------------------------------------------------*/
+
+#ifdef MULTI_THREAD
+
+void abolish_shared_tables(CTXTdecl) {
+  TIFptr abol_tif;
+
+  mark_cp_tables(CTXT);
+
+  for (abol_tif = tif_list.first ; abol_tif != tif_list.last
+	 ; abol_tif = TIF_NextTIF(abol_tif) ) {
+    if (get_shared(TIF_PSC(abol_tif)))
+      fast_abolish_table_predicate(CTXTc TIF_PSC(abol_tif));
+  }
+
+  unmark_cp_tables(CTXT);
+
+}
+
+void abolish_private_tables(CTXTdecl) {
+  TIFptr abol_tif;
+
+  mark_cp_tables(CTXT);
+
+  for (abol_tif = tif_list.first ; abol_tif != tif_list.last
+	 ; abol_tif = TIF_NextTIF(abol_tif) ) {
+    if (!get_shared(TIF_PSC(abol_tif)))
+      fast_abolish_table_predicate(CTXTc TIF_PSC(abol_tif));
+  }
+
+  unmark_cp_tables(CTXT);
+
+}
+
+extern struct TDispBlkHdr_t tdispblkhdr; // defined in loader
+
+/* TLS: mutex may not be needed here, as we're freeing private
+   resources.  This function handles the case when one thread creates
+   a private tif, exits, its xsb_thread_id is reused, and the new
+   thread creates a private tif for the same table.  
+
+   TLS: probably a memory leak for TIFs? */
+
+void thread_free_private_tifs(CTXTdecl) {
+  struct TDispBlk_t *tdispblk;
+  TIFptr tip;
+
+  SYS_MUTEX_LOCK( MUTEX_TABLE );
+  for (tdispblk=tdispblkhdr.firstDB 
+	 ; tdispblk != NULL ; tdispblk=tdispblk->NextDB) {
+    if (th->tid <= tdispblk->MaxThread) {
+      tip = (&(tdispblk->Thread0))[th->tid];
+      if (tip) {
+	(&(tdispblk->Thread0))[th->tid] = (TIFptr) NULL;
+      }
+    }
+  }
+   SYS_MUTEX_UNLOCK( MUTEX_TABLE );
+}
+
+void release_private_tabling_resources(CTXTdecl) {
+
+  thread_free_private_tifs(CTXT);
+  SM_ReleaseResources(*private_smTableBTN);
+  TrieHT_FreeAllocatedBuckets(*private_smTableBTHT);
+  SM_ReleaseResources(*private_smTableBTHT);
+  SM_ReleaseResources(*private_smTSTN);
+  TrieHT_FreeAllocatedBuckets(*private_smTSTHT);
+  SM_ReleaseResources(*private_smTSTHT);
+  SM_ReleaseResources(*private_smTSIN);
+  SM_ReleaseResources(*private_smALN);
+  SM_ReleaseResources(*private_smVarSF);
+  SM_ReleaseResources(*private_smProdSF);
+  SM_ReleaseResources(*private_smConsSF);
+}
+
+#endif
+
+/*----------------------------------------------------------------------*/
+/* abolish_all_tables() and supporting code */
+/*------------------------------------------------------------------*/
+
+/*
+ * Frees all the tabling space resources (with a hammer)
+ */
+
+void release_all_tabling_resources(CTXTdecl) {
+  SM_ReleaseResources(smTableBTN);
+  TrieHT_FreeAllocatedBuckets(smTableBTHT);
+  SM_ReleaseResources(smTableBTHT);
+  SM_ReleaseResources(smTSTN);
+  TrieHT_FreeAllocatedBuckets(smTSTHT);
+  SM_ReleaseResources(smTSTHT);
+  SM_ReleaseResources(smTSIN);
+  SM_ReleaseResources(smALN);
+  SM_ReleaseResources(smVarSF);
+  SM_ReleaseResources(smProdSF);
+  SM_ReleaseResources(smConsSF);
+}
+
+/* TLS: Unlike the other abolishes, "all" aborts if it detects the
    presence of CPs for completed tables (incomplete tables are caught
-   as before, by examining the completion stack).  abolish_table_pred
-   will have something similar, but will actually make use of GC.
+   as before, by examining the completion stack).
 */
 
 void abolish_all_tables_cps_check(CTXTdecl) 
@@ -1624,93 +2007,59 @@ void abolish_all_tables_cps_check(CTXTdecl)
   }
 }
 
-TIFptr get_tif_for_answer_trie_cp(CTXTdeclc BTNptr pLeaf)
+inline void abolish_table_info(CTXTdecl)
 {
+  CPtr csf;
+  TIFptr pTIF;
 
-  while ( IsNonNULL(pLeaf) && (! IsTrieRoot(pLeaf)) && 
-			       ((int) TN_Instr(pLeaf) != trie_fail_unlock) ) {
-    pLeaf = BTN_Parent(pLeaf);
-  }
-  return subg_tif_ptr(TN_Parent(pLeaf));
-}
-
-void mark_tabled_preds(CTXTdecl) 
-{
-  CPtr cp_top,cp_bot ;
-  byte cp_inst;
-  TIFptr tif;
-  
-  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
-
-  cp_top = breg ;				 
-  while ( cp_top < cp_bot ) {
-    cp_inst = *(byte *)*cp_top;
-    //   printf("Cell %p (%s)\n",cp_top,
-    //     (char *)(inst_table[cp_inst][0])) ;
-    // Want trie insts, but will need to distinguish from
-    // asserted and interned tries
-    if ( is_trie_instruction(cp_inst) ) {
-      if (IsInAnswerTrie((BTNptr) *cp_top)) {
-	DelTFptr dtf;
-	BTNptr call_trie;
-	VariantSF subgoals;
-	int marked = 0;
-	tif = get_tif_for_answer_trie_cp(CTXTc (BTNptr) *cp_top);
-	dtf = TIF_DelTF(tif);
-	call_trie = TIF_CallTrie(tif);
-	subgoals = TIF_Subgoals(tif);	
-
-	while (dtf && !marked ) {
-	  if (DTF_CallTrie(dtf) == call_trie 
-	      && DTF_Subgoals(dtf) == subgoals) {
-	    marked = 1;
-	    DTF_Mark(dtf) = 1;
-	  }
-	  else dtf = DTF_NextPredDTF(dtf);
-	}
-      }
+  SYS_MUTEX_LOCK( MUTEX_TABLE );
+  for ( csf = top_of_complstk;  csf != COMPLSTACKBOTTOM;
+	csf = csf + COMPLFRAMESIZE )
+    if ( ! is_completed(compl_subgoal_ptr(csf)) ) {
+      SYS_MUTEX_UNLOCK( MUTEX_TABLE );
+      xsb_abort("[abolish_all_tables/0] Illegal table operation"
+		"\n\t Cannot abolish incomplete tables");
     }
-    cp_top = cp_prevtop(cp_top);
-  }
-}
-
-int sweep_tabled_preds(CTXTdecl) 
-{
-  DelTFptr deltf_ptr;
-  int dtf_cnt = 0;
-
-  deltf_ptr = deltf_chain_begin;
-  while (deltf_ptr) {
-    if (DTF_Mark(deltf_ptr)) {
-      DTF_Mark(deltf_ptr) = 0;
-      dtf_cnt++;
-    }
-    else {
-      delete_predicate_table(CTXTc subg_tif_ptr(DTF_Subgoals(deltf_ptr)));
-      Free_DelTF(deltf_ptr);
-    }
-    deltf_ptr = DTF_NextDTF(deltf_ptr);
-  }
-  return dtf_cnt;
-}
-
-/* Returns -1 in situations it cant handle: currently, calling with
- * frozen stacks or multiple threads
- */
-
-int gc_tabled_preds(CTXTdecl) 
-{
 
   if (flags[NUM_THREADS] == 1) {
-    mark_tabled_preds(CTXT);
-    return sweep_tabled_preds(CTXT);
+    abolish_all_tables_cps_check(CTXT) ;
+  } else {
+    xsb_warn("abolish_all_tables/0 called with more than one active thread.  No CP check.\n");
   }
-  else {
-    xsb_warn("Cannot garbage collect tables with more than one thread active."); 
-    return -1;
+   
+  for ( pTIF = tif_list.first; IsNonNULL(pTIF); pTIF = TIF_NextTIF(pTIF) ) {
+    TIF_CallTrie(pTIF) = NULL;
+    TIF_Subgoals(pTIF) = NULL;
   }
+  reset_freeze_registers;
+  openreg = COMPLSTACKBOTTOM;
+  release_all_tabling_resources(CTXT);
+  abolish_wfs_space(CTXT); 
+  SYS_MUTEX_UNLOCK( MUTEX_TABLE );
 }
 
-
-
+/*
+* void abolish_if_tabled(CTXTdeclc Psc psc)
+* {
+*   CPtr ep;
+* 
+*   ep = (CPtr) get_ep(psc);
+*   switch (*(pb)ep) {
+*   case tabletry:
+*   case tabletrysingle:
+*     abolish_table_predicate(CTXTc psc);
+*     break;
+*   case test_heap:
+*     if (*(pb)(ep+2) == tabletry || *(pb)(ep+2) == tabletrysingle)
+*       abolish_table_predicate(CTXTc psc);
+*     break;
+*   case switchon3bound:
+*   case switchonbound:
+*   case switchonterm:
+*     if (*(pb)(ep+3) == tabletry || *(pb)(ep+3) == tabletrysingle)
+*       abolish_table_predicate(CTXTc psc);
+*     break;
+*   }
+* }
+*/
 
