@@ -545,4 +545,60 @@ void table_complete_entry(CTXTdeclc VariantSF producerSF) {
 
 /*-------------------------------------------------------------------------*/
 
+/* TLS: I made this into a function and moved it from macro_xsb to
+   make the tif_list conditional a little more transparent, and to
+   facilitate debugging. */
+
+inline TIFptr New_TIF(CTXTdeclc Psc pPSC) {	   
+  TIFptr pTIF;
+
+   pTIF = (TIFptr)mem_alloc(sizeof(TableInfoFrame),TABLE_SPACE);	
+   if ( IsNULL(pTIF) )							
+     xsb_abort("Ran out of memory in allocation of TableInfoFrame");	
+   TIF_PSC(pTIF) = pPSC;						
+   if (get_tabled(pPSC)==T_TABLED) {					
+     TIF_EvalMethod(pTIF) = (TabledEvalMethod)pflags[TABLING_METHOD];	
+     if (TIF_EvalMethod(pTIF) == VARIANT_EVAL_METHOD)			
+       set_tabled(pPSC,T_TABLED_VAR);					
+     else set_tabled(pPSC,T_TABLED_SUB);				
+   }									
+   else if (get_tabled(pPSC)==T_TABLED_VAR) 				
+      TIF_EvalMethod(pTIF) = VARIANT_EVAL_METHOD;			
+   else if (get_tabled(pPSC)==T_TABLED_SUB) 				
+     TIF_EvalMethod(pTIF) = SUBSUMPTIVE_EVAL_METHOD;			
+   else {								
+      xsb_warn("%s/%d not identified as tabled in .xwam file, Recompile (variant assumed)", \
+	get_name(pPSC),get_arity(pPSC));				
+      TIF_EvalMethod(pTIF) = VARIANT_EVAL_METHOD;			
+      set_tabled(pPSC,T_TABLED_VAR);					
+   }									
+   TIF_CallTrie(pTIF) = NULL;						
+   TIF_Mark(pTIF) = 0;                                                  
+   TIF_DelTF(pTIF) = NULL;						
+   TIF_Subgoals(pTIF) = NULL;						
+   TIF_NextTIF(pTIF) = NULL;						
+#ifdef MULTI_THREAD
+   if (get_shared(pPSC)) {
+     if ( IsNonNULL(tif_list.last) )					
+       TIF_NextTIF(tif_list.last) = pTIF;				      
+     else									
+       tif_list.first = pTIF;						
+     tif_list.last = pTIF;						
+   } else {
+     if ( IsNonNULL(private_tif_list.last) )					
+       TIF_NextTIF(private_tif_list.last) = pTIF;			     
+     else									
+       private_tif_list.first = pTIF;						
+     private_tif_list.last = pTIF;					      
+   }
+#else
+   if ( IsNonNULL(tif_list.last) )					
+     TIF_NextTIF(tif_list.last) = pTIF;				      
+   else									
+     tif_list.first = pTIF;						
+   tif_list.last = pTIF;						
+#endif
+   return pTIF;
+}
+
 /*=========================================================================*/

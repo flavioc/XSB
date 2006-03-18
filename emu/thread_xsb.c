@@ -400,7 +400,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  rc = xsb_thread_create(th) ;
 	  break ;
 
-	  /* TLS: replaced thread_free_dyn_blks() by
+	  /* TLS: replaced thread_free_tab_blks() by
 	     thread_free_private_tabling_resources, which sets
 	     appropriate tifs to 0, but doesn't use
 	     delete_predicate_table -- rather it deallocates the
@@ -412,7 +412,6 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  release_private_tabling_resources(CTXT);
 	  cleanup_thread_structures(CTXT) ;
 	  thread_free_dyn_blks(CTXT);    /* biassert.c */
-	  //		thread_free_tab_blks(CTXT);    /* loader_xsb.c */
 	  mem_dealloc(th,sizeof(th_context),THREAD_SPACE) ;
 	  flags[NUM_THREADS]-- ;
 	  pthread_mutex_lock( &th_mutex );

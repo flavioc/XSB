@@ -84,6 +84,11 @@
 /* Use this one only for the stream_table itself: see I/O code for 
    locking the streams themselves. */
 #define MUTEX_IO		1	/* Must be recursive */
+
+/* MUTEX_TABLE handles global table data structures: lists of tifs,
+   dispatch blocks, table dispatch blocks, and
+   deleted_table_info_frames. */
+
 #define MUTEX_TABLE		2
 #define MUTEX_TRIE		3
 #define MUTEX_SYMBOL		4

@@ -837,6 +837,9 @@ void init_thread_structures(CTXTdecl)
 
 /*  call_intercept = init_call_intercept ; */
 
+  private_tif_list.first = NULL;
+  private_tif_list.last = NULL;
+
   /******** Initialize Private structure managers ********/
 
   private_smTableBTN  = 

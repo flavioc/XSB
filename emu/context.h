@@ -122,6 +122,8 @@ struct asrtBuff_t {
 
 #define MAX_REGS 257
 
+/************************************************************************/
+
 struct th_context
 {
 /* System & user Flags */
@@ -131,79 +133,81 @@ struct th_context
 /* The SLG-WAM data regions
    ------------------------ */
 
-System_Stack	_pdl,           /* PDL                   */
-		_glstack,	/* Global + Local Stacks */
-		_tcpstack,	/* Trail + CP Stack      */
-		_complstack;	/* Completion Stack  */
+  System_Stack	_pdl,           /* PDL                   */
+    _glstack,	/* Global + Local Stacks */
+    _tcpstack,	/* Trail + CP Stack      */
+    _complstack;	/* Completion Stack  */
 
 /* Argument Registers
    ------------------ */
-Cell _reg[MAX_REGS];
+  Cell _reg[MAX_REGS];
 
 
 /* Special Registers
    ----------------- */
-CPtr _ereg;		/* last activation record       */
-CPtr _breg;		/* last choice point            */
-CPtr _hreg;		/* top of heap                  */
-CPtr *_trreg;		/* top of trail stack           */
-CPtr _hbreg;		/* heap back track point        */
-CPtr _sreg;		/* current build or unify field */
-byte *_cpreg;		/* return point register        */
-byte *_pcreg;		/* program counter              */
-CPtr _ebreg;		/* breg into environment stack	*/
+  CPtr _ereg;		/* last activation record       */
+  CPtr _breg;		/* last choice point            */
+  CPtr _hreg;		/* top of heap                  */
+  CPtr *_trreg;		/* top of trail stack           */
+  CPtr _hbreg;		/* heap back track point        */
+  CPtr _sreg;		/* current build or unify field */
+  byte *_cpreg;		/* return point register        */
+  byte *_pcreg;		/* program counter              */
+  CPtr _ebreg;		/* breg into environment stack	*/
 
-CPtr _efreg;
-CPtr _bfreg;
-CPtr _hfreg;
-CPtr *_trfreg;
-CPtr _pdlreg;
-CPtr _openreg;
-xsbBool _neg_delay;
-int _xwammode;
-int _level_num;
-CPtr _root_address;
+  CPtr _efreg;
+  CPtr _bfreg;
+  CPtr _hfreg;
+  CPtr *_trfreg;
+  CPtr _pdlreg;
+  CPtr _openreg;
+  xsbBool _neg_delay;
+  int _xwammode;
+  int _level_num;
+  CPtr _root_address;
 
-CPtr _ptcpreg;
-CPtr _delayreg;
-CPtr _interrupt_reg;
-Cell _interrupt_counter;
+  CPtr _ptcpreg;
+  CPtr _delayreg;
+  CPtr _interrupt_reg;
+  Cell _interrupt_counter;
 
-int _asynint_code;
-int _asynint_val;
+  int _asynint_code;
+  int _asynint_val;
 
   /*********** Global Variables for various tries --- some of this may
   be able to be changed to local variables.  Regarray size is the size
   of the reg_array, used for expanding the reg_array (and is
   reset). ***********/
 
-Cell *_reg_array;
-CPtr _reg_arrayptr;
-int  _reg_array_size;
+  Cell *_reg_array;
+  CPtr _reg_arrayptr;
+  int  _reg_array_size;
 
 #define MAX_TRIE_REGS 500
-CPtr _var_regs[MAX_TRIE_REGS];
-int  _num_vars_in_var_regs ;
+  CPtr _var_regs[MAX_TRIE_REGS];
+  int  _num_vars_in_var_regs ;
 
-int  _num_heap_term_vars;
-CPtr *_var_addr;
-int  _var_addr_arraysz;
+  int  _num_heap_term_vars;
+  CPtr *_var_addr;
+  int  _var_addr_arraysz;
 
-Cell _VarEnumerator[NUM_TRIEVARS];
-Cell _TrieVarBindings[NUM_TRIEVARS];
+  Cell _VarEnumerator[NUM_TRIEVARS];
+  Cell _TrieVarBindings[NUM_TRIEVARS];
 
-CPtr _VarEnumerator_trail[NUM_TRIEVARS];
-CPtr *_VarEnumerator_trail_top;
+  CPtr _VarEnumerator_trail[NUM_TRIEVARS];
+  CPtr *_VarEnumerator_trail_top;
 
-int _addr_stack_pointer;
-CPtr *_Addr_Stack;
-int _addr_stack_size;
+  int _addr_stack_pointer;
+  CPtr *_Addr_Stack;
+  int _addr_stack_size;
                                                                                 
-int  _term_stackptr;
-Cell *_term_stack;
-long _term_stacksize;
+  int  _term_stackptr;
+  Cell *_term_stack;
+  long _term_stacksize;
 
-int _global_num_vars;
+  int _global_num_vars;
+
+  struct tif_list _private_tif_list;
 
 BTNptr  _NodePtr, 
 	_Last_Nod_Sav;
@@ -430,6 +434,8 @@ typedef struct th_context th_context ;
 #define term_stacksize		(th->_term_stacksize)
 
 #define global_num_vars		(th->_global_num_vars)
+
+#define private_tif_list        (th-> _private_tif_list)
 
 #define NodePtr			(th->_NodePtr)
 #define Last_Nod_Sav		(th->_Last_Nod_Sav)

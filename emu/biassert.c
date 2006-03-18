@@ -82,11 +82,12 @@ PrRef clref_to_prref(ClRef clref);
 #define pad64bits(Loc)	{}
 #endif
 
+/* TLS: probably dont need to keep max thread here -- could use max_threads_glc */
 struct DispBlk_t {
   struct DispBlk_t *PrevDB;
   struct DispBlk_t *NextDB;
   int MaxThread;
-  CPtr Thread0;
+  CPtr Thread0;    /* Pointer to array of prrefs */
   };
 
 struct DispBlkHdr_t {
@@ -2483,7 +2484,7 @@ static inline void allocate_prref_tab(CTXTdeclc Psc psc, PrRef *prref, pb *new_e
     {
       TIFptr tip;
       CPtr tp;
-      New_TIF(tip,psc);
+      tip = New_TIF(CTXTc psc);
       tp  = (CPtr)mem_alloc_nocheck(FIXED_BLOCK_SIZE_FOR_TABLED_PRED,ASSERT_SPACE) ;
       if (tp == NULL) {
 	xsb_exit("++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory (PrRef)");
@@ -2516,7 +2517,8 @@ PrRef build_prref( CTXTdeclc Psc psc )
   allocate_prref_tab(CTXTc psc,&p,&new_ep);
 
 #ifdef MULTI_THREAD
-  //  printf("prref disp tab for %s/%d? shared=%d\n",get_name(psc),get_arity(psc),get_shared(psc));
+  //  printf("prref disp tab for %s/%d? shared=%d\n",
+  //         get_name(psc),get_arity(psc),get_shared(psc));
 
   if ((*(pb)get_ep(psc) == switchonthread) || !get_shared(psc)) {
     struct DispBlk_t *dispblk;
@@ -2527,12 +2529,12 @@ PrRef build_prref( CTXTdeclc Psc psc )
 	mem_calloc(sizeof(struct DispBlk_t)+MAX_THREADS*sizeof(Cell),
 		   1,MT_PRIVATE_SPACE);
 
-      SYS_MUTEX_LOCK( MUTEX_DISPBLKHDR );
+      SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
       if (DispBlkHdr.firstDB) DispBlkHdr.firstDB->PrevDB = dispblk;
       dispblk->NextDB = DispBlkHdr.firstDB;
       DispBlkHdr.firstDB = dispblk;
       if (!DispBlkHdr.lastDB) DispBlkHdr.lastDB = dispblk;
-      SYS_MUTEX_UNLOCK( MUTEX_DISPBLKHDR );
+      SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
 
       dispblk->MaxThread = MAX_THREADS;
       *disp_instr_addr = switchonthread;
@@ -2589,12 +2591,25 @@ xsbBool db_get_prref( CTXTdecl /* PSC, -PrRef */ ) {
   return TRUE;
 }
 
-void free_prref(CTXTdeclc CPtr *p) {
+/* See also free_private_pref() below.  free_private_prref() is the
+   same as free_prref, except that it knows to free a private tif,
+   rather than having to check via the psc record. */
+
+void free_prref(CTXTdeclc CPtr *p, Psc psc) {
 
     if ( *(pb)p == tabletrysingle )
       {
 	TIFptr mtTIF = (TIFptr) *(p+2);
-	Free_TIF(mtTIF);
+#ifdef MULTI_THREAD
+	if (!get_shared(psc)) {
+	  Free_Private_TIF(mtTIF);
+	}
+	else {
+	  Free_Shared_TIF(mtTIF);
+	}
+#else
+	Free_Shared_TIF(mtTIF);
+#endif
 	/* free prref, from calld instr set in db_build_prref */
 	mem_dealloc((pb)(*(p+6)), sizeof(PrRefData),ASSERT_SPACE);
 	if (xsb_profiling_enabled)
@@ -2616,7 +2631,7 @@ xsbBool db_remove_prref( CTXTdecl /* Psc */ )
 
     SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
     if (get_ep(psc) != ((byte *)(&(psc->load_inst)))) {
-      free_prref(CTXTc (CPtr *)get_ep(psc));
+      free_prref(CTXTc (CPtr *)get_ep(psc),psc);
       set_type(psc, T_ORDI);
       set_ep(psc, ((byte *)(&(psc->load_inst))));
     }
@@ -2765,6 +2780,30 @@ int gen_retract_all(CTXTdecl/* R1: + PredEP */)
    themselves are not changed, only pointers to prrefs within the
    displblks. */
 #ifdef MULTI_THREAD
+
+/* free_private_prref() is the same as free_prref, except that it
+   knows to free a private tif, rather than having to check via the
+   psc record. */
+
+void free_private_prref(CTXTdeclc CPtr *p) {
+
+    if ( *(pb)p == tabletrysingle )
+      {
+	TIFptr mtTIF = (TIFptr) *(p+2);
+	Free_Private_TIF(mtTIF);
+	/* free prref, from calld instr set in db_build_prref */
+	mem_dealloc((pb)(*(p+6)), sizeof(PrRefData),ASSERT_SPACE);
+	if (xsb_profiling_enabled)
+	  remove_prog_seg((pb)*(p+6));
+	mem_dealloc((pb)p, FIXED_BLOCK_SIZE_FOR_TABLED_PRED,ASSERT_SPACE) ; /*free table hdr*/
+      }
+    else {
+      mem_dealloc((pb)p, sizeof(PrRefData),ASSERT_SPACE);  /* free prref */
+      if (xsb_profiling_enabled)
+	remove_prog_seg((pb)p);
+    }
+}
+
 void thread_free_dyn_blks(CTXTdecl) {
   struct DispBlk_t *dispblk;
   PrRef prref0, prref;
@@ -2779,7 +2818,7 @@ void thread_free_dyn_blks(CTXTdecl) {
 	  prref = (PrRef)((CPtr *)prref0)[6];
 	else prref = prref0;
 	retractall_prref(CTXTc prref);
-	free_prref(CTXTc (CPtr *)prref0);
+	free_private_prref(CTXTc (CPtr *)prref0);
 	//	printf("set prref free for thread %d\n",th->tid);
        	(&(dispblk->Thread0))[th->tid] = (CPtr) NULL;
       }

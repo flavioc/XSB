@@ -14,7 +14,7 @@
 ** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 ** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
 ** more details.
-** 
+**
 ** You should have received a copy of the GNU Library General Public License
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
@@ -735,11 +735,16 @@ static xsbBool load_syms(FILE *fd, int psc_count, int count, Psc cur_mod, int ex
 }
 
 #ifdef MULTI_THREAD
-static void new_tdispblk(TIFptr *instr_ptr, Psc psc) {
+
+static void new_tdispblk(CTXTdeclc TIFptr *instr_ptr, Psc psc) {
   struct TDispBlk_t *tdispblk;
 
-  if (!(tdispblk = (struct TDispBlk_t *)mem_calloc(sizeof(struct TDispBlk_t)+MAX_THREADS*sizeof(Cell),1,COMPILED_SPACE)))
+  if (!(tdispblk = (struct TDispBlk_t *) 
+	mem_calloc(sizeof(struct TDispBlk_t)+MAX_THREADS*sizeof(Cell),1,COMPILED_SPACE)))
     xsb_exit("No space for table dispatch block");  /* never deallocated */
+  
+  SYS_MUTEX_LOCK( MUTEX_TABLE );
+
   if (tdispblkhdr.firstDB) tdispblkhdr.firstDB->PrevDB = tdispblk;
   tdispblk->NextDB = tdispblkhdr.firstDB;
   tdispblkhdr.firstDB = tdispblk;
@@ -749,7 +754,11 @@ static void new_tdispblk(TIFptr *instr_ptr, Psc psc) {
   tdispblk->method = DISPATCH_BLOCK;
   tdispblk->MaxThread = MAX_THREADS;
   *instr_ptr = (TIFptr)tdispblk;
+
+  SYS_MUTEX_UNLOCK( MUTEX_TABLE );
+
 }
+
 #endif
 
 /************************************************************************/
@@ -819,10 +828,10 @@ static byte *loader1(CTXTdeclc FILE *fd, int exp)
       if (instruct_tip != NULL) {
 #ifdef MULTI_THREAD
 	if (get_tabled(ptr->psc_ptr) && !get_shared(ptr->psc_ptr)) {
-	  new_tdispblk(instruct_tip, ptr->psc_ptr);
+	  new_tdispblk(CTXTc instruct_tip, ptr->psc_ptr);
 	} else
 #endif
-	  New_TIF(*instruct_tip,(ptr->psc_ptr));
+	  *instruct_tip = New_TIF(CTXTc (ptr->psc_ptr));
       }
       //printf("table: %s/%d, psc_tabled: %x\n",get_name(ptr->psc_ptr),get_arity(ptr->psc_ptr),get_tabled(ptr->psc_ptr));
       break;
@@ -839,10 +848,10 @@ static byte *loader1(CTXTdeclc FILE *fd, int exp)
       if (instruct_tip != NULL) {
 #ifdef MULTI_THREAD
 	if (get_tabled(ptr->psc_ptr) && !get_shared(ptr->psc_ptr)) {
-	  new_tdispblk(instruct_tip, ptr->psc_ptr);
+	  new_tdispblk(CTXTc instruct_tip, ptr->psc_ptr);
 	} else
 #endif
-	  New_TIF(*instruct_tip,(ptr->psc_ptr));
+	  *instruct_tip = New_TIF(CTXTc (ptr->psc_ptr));
       }
       /* set data to point to module's psc */
       set_data(ptr->psc_ptr, cur_mod);

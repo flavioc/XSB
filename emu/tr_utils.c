@@ -1448,26 +1448,29 @@ void trie_undispose(long rootIdx, BTNptr leafn)
 
 /* TABLE ABOLISHING AND GARBAGE COLLECTING 
  *
- * When a table is abolished, two checks must be made before its space
- * can be reclaimed.  First, the table must be completed, and second
- * it must be ensured that there are not any trie choice points for
- * the table in the choice point stack.  
+ * When a table is abolished, various checks must be made before its
+ * space can be reclaimed.  First, the table must be completed, and
+ * second it must be ensured that there are not any trie choice points
+ * for the table in the choice point stack.  Also, if the table is
+ * shared, a check must be made that there is a single active thread.
  *
  * In the case of abolish_all_tables, if there are any incomplete
  * tables, or if there are trie nodes for completed tables on the
  * choice point stack, errors are thrown.  In the case of
- * abolish_table_pred(P), if P is not completed an error is thrown;
- * while if trie choice points for P are on the stack, P is
- * "abolished" (pointers in the TIF are reset) but its space is not
- * yet reclaimed.  Rather, a deleted table frame (DelTF) is set up so
- * that P can later be reclaimed upon a call to gc_tables/1.  
+ * abolish_table_pred(P) (and other abolishes), if P is not completed
+ * an error is thrown; while if trie choice points for P are on the
+ * stack, P is "abolished" (pointers in the TIF are reset) but its
+ * space is not yet reclaimed.  Rather, a deleted table frame (DelTF)
+ * is set up so that P can later be reclaimed upon a call to
+ * gc_tables/1.  A DelTF is also set up if P is shared and there is
+ * more than one active thread.
  *
- * Later, on a call to gc_tables/1, the choice point stacks may be
- * traversed to mark those DelTF frames corresponding to tables with
- * trie CPs in the CP stack.  Once this is done, the chain of DelTF
- * frames is traversed to reclaim tables for those unmarked DelTF
- * frames (and free the frames) as well as to unmark the marked DelTF
- * frames.
+ * Later, on a call to gc_tables/1 (which works only if there is a
+ * single active thread), the choice point stacks may be traversed to
+ * mark those DelTF frames corresponding to tables with trie CPs in
+ * the CP stack.  Once this is done, the chain of DelTF frames is
+ * traversed to reclaim tables for those unmarked DelTF frames (and
+ * free the frames) as well as to unmark the marked DelTF frames.
  * 
  * These predicates emit a warning and take no action if more than
  * one thread is active.  Soon to be fixed.
@@ -1532,7 +1535,6 @@ TIFptr get_tif_for_answer_trie_cp(CTXTdeclc BTNptr pLeaf)
 
 /* - - - - - */
 
-/* TLS: not sure if SM is the best lock for this ... */
 void check_insert_new_deltf(CTXTdeclc TIFptr tif)
 {
   DelTFptr dtf = TIF_DelTF(tif);
@@ -1540,7 +1542,7 @@ void check_insert_new_deltf(CTXTdeclc TIFptr tif)
   VariantSF subgoals = TIF_Subgoals(tif);	
   int found = 0;
 
-  SYS_MUTEX_LOCK(MUTEX_SM);
+  SYS_MUTEX_LOCK(MUTEX_TABLE);
   while (dtf != 0 && !found) {
     if (DTF_CallTrie(dtf) == call_trie && DTF_Subgoals(dtf) == subgoals)
       found = 1;
@@ -1551,15 +1553,15 @@ void check_insert_new_deltf(CTXTdeclc TIFptr tif)
   }
   TIF_CallTrie(tif) = NULL;
   TIF_Subgoals(tif) = NULL;
-  SYS_MUTEX_UNLOCK(MUTEX_SM);
+  SYS_MUTEX_UNLOCK(MUTEX_TABLE);
 }
 
 /* - - - - - - - - - - */
 
-/* Assumes cps check has already been done, so that mark bit is set.
- * Assumes TIF is non-null.
- * Tif chain is not changed, therefore no need for mutex.
- * (Assumes that shared TIFs are only reclaimed when 1 active thread)
+/* Assumes cps check has already been done, so that mark bit is set on
+ * TIFs.  Assumes TIF is non-null.  Tif chain is not changed,
+ * therefore no need for mutex.  Reclaims space for shared tables only
+ * if 1 active thread.
  */  
 
 int fast_abolish_table_predicate(CTXTdeclc Psc psc)
@@ -1577,17 +1579,18 @@ int fast_abolish_table_predicate(CTXTdeclc Psc psc)
 		" of predicate %s/%d\n", get_name(psc), get_arity(psc));
   }
 
+  if (!TIF_Mark(tif) && (!get_shared(psc) || flags[NUM_THREADS] == 1)) {
+
 #ifdef MULTI_THREAD  
-  SET_TRIE_ALLOCATION_TYPE_PSC(psc)  // determine whether pvt/shared SMs
+    SET_TRIE_ALLOCATION_TYPE_PSC(psc);  // set pvt/shared SMs
 #endif
 
-    if (!TIF_Mark(tif) ) {
-      delete_predicate_table(CTXTc tif);
-    }  else {
-      fprintf(stderr,"Delaying abolish of table in use: %s/%d\n",
-	      get_name(psc),get_arity(psc));
-      check_insert_new_deltf(CTXTc tif);
-    }
+    delete_predicate_table(CTXTc tif);
+  }  else {
+    fprintf(stderr,"Delaying abolish of table in use: %s/%d\n",
+	    get_name(psc),get_arity(psc));
+    check_insert_new_deltf(CTXTc tif);
+  }
 return 1;
 }
 
@@ -1675,32 +1678,28 @@ int abolish_table_pred_cps_check(CTXTdeclc Psc psc)
   return found_psc_match;
 }
 
-/* abolish_table_predicate does not abolish delayed tables in deltf
-   frames.  Need to do gc tables for that. */
+/* Delays spece reclamation if the cps check does not pass OR if
+   shared and more than 1 thread is active.
+
+  abolish_table_predicate does not reclaim space for previously
+ "abolished" tables in deltf frames.  Need to do gc tables for
+  that. */
 
 inline int abolish_table_predicate(CTXTdeclc Psc psc)
 {
   TIFptr tif;
   int action;
 
-#ifdef MULTI_THREAD  
-  SET_TRIE_ALLOCATION_TYPE_PSC(psc)  // determine whether pvt/shared SMs
-#endif
-
-  SYS_MUTEX_LOCK(MUTEX_TABLE);
   tif = get_tip(CTXTc psc);
   if ( IsNULL(tif) ) {
-    SYS_MUTEX_UNLOCK(MUTEX_TABLE);
     xsb_abort("[abolish_table_pred] Attempt to delete non-tabled predicate (%s/%d)\n",
 	      get_name(psc), get_arity(psc));
   }
   if (IsVariantPredicate(tif) && IsNULL(TIF_CallTrie(tif))) {
-    SYS_MUTEX_UNLOCK(MUTEX_TABLE);
     return 1;
   }
 
   if ( ! is_completed_table(tif) ) {
-      SYS_MUTEX_UNLOCK(MUTEX_TABLE);
       xsb_abort("[abolish_table_pred] Cannot abolish incomplete table"
 		" of predicate %s/%d\n", get_name(psc), get_arity(psc));
   }
@@ -1710,12 +1709,15 @@ inline int abolish_table_predicate(CTXTdeclc Psc psc)
   }
   else action = 1;
   if (!action) {
+
+#ifdef MULTI_THREAD  
+    SET_TRIE_ALLOCATION_TYPE_PSC(psc);  // determine whether pvt/shared SMs
+#endif
+
     delete_predicate_table(CTXTc tif);
-    SYS_MUTEX_UNLOCK(MUTEX_TABLE);
     return 1;
   }
   else {
-    SYS_MUTEX_UNLOCK(MUTEX_TABLE);
     fprintf(stderr,"Delaying abolish of table in use: %s/%d\n",
 	    get_name(psc),get_arity(psc));
     check_insert_new_deltf(CTXTc tif);
@@ -1762,6 +1764,7 @@ TIFptr tif;
   }
 }
 
+/* No mutex on this predicate, as it can only be called with one active thread */
 int sweep_tabled_preds(CTXTdecl) 
 {
   DelTFptr deltf_ptr;
@@ -1881,14 +1884,14 @@ int abolish_module_tables(CTXTdeclc const char *module_name)
 
 #ifdef MULTI_THREAD
 
+/* will not reclaim space if more than one thread (via fast_atp) */
 void abolish_shared_tables(CTXTdecl) {
   TIFptr abol_tif;
 
   mark_cp_tables(CTXT);
 
-  for (abol_tif = tif_list.first ; abol_tif != tif_list.last
+  for (abol_tif = tif_list.first ; abol_tif != NULL
 	 ; abol_tif = TIF_NextTIF(abol_tif) ) {
-    if (get_shared(TIF_PSC(abol_tif)))
       fast_abolish_table_predicate(CTXTc TIF_PSC(abol_tif));
   }
 
@@ -1901,9 +1904,8 @@ void abolish_private_tables(CTXTdecl) {
 
   mark_cp_tables(CTXT);
 
-  for (abol_tif = tif_list.first ; abol_tif != tif_list.last
+  for (abol_tif = private_tif_list.first ; abol_tif != NULL
 	 ; abol_tif = TIF_NextTIF(abol_tif) ) {
-    if (!get_shared(TIF_PSC(abol_tif)))
       fast_abolish_table_predicate(CTXTc TIF_PSC(abol_tif));
   }
 
@@ -1916,9 +1918,7 @@ extern struct TDispBlkHdr_t tdispblkhdr; // defined in loader
 /* TLS: mutex may not be needed here, as we're freeing private
    resources.  This function handles the case when one thread creates
    a private tif, exits, its xsb_thread_id is reused, and the new
-   thread creates a private tif for the same table.  
-
-   TLS: probably a memory leak for TIFs? */
+   thread creates a private tif for the same table.  */
 
 void thread_free_private_tifs(CTXTdecl) {
   struct TDispBlk_t *tdispblk;
@@ -1931,10 +1931,11 @@ void thread_free_private_tifs(CTXTdecl) {
       tip = (&(tdispblk->Thread0))[th->tid];
       if (tip) {
 	(&(tdispblk->Thread0))[th->tid] = (TIFptr) NULL;
+	Free_Private_TIF(tip);
       }
     }
   }
-   SYS_MUTEX_UNLOCK( MUTEX_TABLE );
+  SYS_MUTEX_UNLOCK( MUTEX_TABLE );
 }
 
 void release_private_tabling_resources(CTXTdecl) {
@@ -1979,7 +1980,8 @@ void release_all_tabling_resources(CTXTdecl) {
 
 /* TLS: Unlike the other abolishes, "all" aborts if it detects the
    presence of CPs for completed tables (incomplete tables are caught
-   as before, by examining the completion stack).
+   as before, by examining the completion stack).  It also aborts if
+   called with more than one thread.
 */
 
 void abolish_all_tables_cps_check(CTXTdecl) 
@@ -2012,30 +2014,37 @@ inline void abolish_table_info(CTXTdecl)
   CPtr csf;
   TIFptr pTIF;
 
-  SYS_MUTEX_LOCK( MUTEX_TABLE );
   for ( csf = top_of_complstk;  csf != COMPLSTACKBOTTOM;
 	csf = csf + COMPLFRAMESIZE )
     if ( ! is_completed(compl_subgoal_ptr(csf)) ) {
-      SYS_MUTEX_UNLOCK( MUTEX_TABLE );
-      xsb_abort("[abolish_all_tables/0] Illegal table operation"
+      xsb_table_error(CTXTc "[abolish_all_tables/0] Illegal table operation"
 		"\n\t Cannot abolish incomplete tables");
     }
 
   if (flags[NUM_THREADS] == 1) {
     abolish_all_tables_cps_check(CTXT) ;
   } else {
-    xsb_warn("abolish_all_tables/0 called with more than one active thread.  No CP check.\n");
+    xsb_table_error(CTXTc 
+		    "abolish_all_tables/1 called with more than one active thread.");
   }
    
   for ( pTIF = tif_list.first; IsNonNULL(pTIF); pTIF = TIF_NextTIF(pTIF) ) {
     TIF_CallTrie(pTIF) = NULL;
     TIF_Subgoals(pTIF) = NULL;
   }
+
+#ifdef MULTI_THREAD
+  for ( pTIF = private_tif_list.first; IsNonNULL(pTIF)
+	  ; pTIF = TIF_NextTIF(pTIF) ) {
+    TIF_CallTrie(pTIF) = NULL;
+    TIF_Subgoals(pTIF) = NULL;
+  }
+#endif
+
   reset_freeze_registers;
   openreg = COMPLSTACKBOTTOM;
   release_all_tabling_resources(CTXT);
   abolish_wfs_space(CTXT); 
-  SYS_MUTEX_UNLOCK( MUTEX_TABLE );
 }
 
 /*

@@ -223,7 +223,7 @@ TIFptr get_tip(CTXTdeclc Psc psc) {
   { struct TDispBlk_t *tdispblk = (struct TDispBlk_t *) (*tip);
     TIFptr rtip = (TIFptr)((&(tdispblk->Thread0))[th->tid]);
     if (!rtip) {
-      New_TIF(rtip,psc);
+      rtip = New_TIF(CTXTc psc);
       (&(tdispblk->Thread0))[th->tid] = rtip;
     }
     return rtip; 

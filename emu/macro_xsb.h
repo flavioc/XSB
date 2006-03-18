@@ -79,7 +79,9 @@ typedef struct Deleted_Table_Frame {
    TIF_DelTF(pTIF) = pDTF;                                              \
   }
 
-/* In macro below, need to reset DTF chain, and Pred-level DTF chain */
+/* In macro below, need to reset DTF chain, and Pred-level DTF chain.
+ * No mutexes, because it is called only during gc, w. only 1 active
+ * thread. */
 #define Free_DelTF(pDTF,pTIF) {						\
   if (DTF_PrevDTF(pDTF) == 0) {						\
     deltf_chain_begin = DTF_NextDTF(pDTF);				\
@@ -169,44 +171,23 @@ struct tif_list {
 };
 extern struct tif_list  tif_list;
 
-#define New_TIF(pTIF,pPSC) {						\
-   pTIF = (TIFptr)mem_alloc(sizeof(TableInfoFrame),TABLE_SPACE);	\
-   if ( IsNULL(pTIF) )							\
-     xsb_abort("Ran out of memory in allocation of TableInfoFrame");	\
-   TIF_PSC(pTIF) = pPSC;						\
-   if (get_tabled(pPSC)==T_TABLED) {					\
-     TIF_EvalMethod(pTIF) = (TabledEvalMethod)pflags[TABLING_METHOD];	\
-     if (TIF_EvalMethod(pTIF) == VARIANT_EVAL_METHOD)			\
-       set_tabled(pPSC,T_TABLED_VAR);					\
-     else set_tabled(pPSC,T_TABLED_SUB);				\
-   }									\
-   else if (get_tabled(pPSC)==T_TABLED_VAR) 				\
-      TIF_EvalMethod(pTIF) = VARIANT_EVAL_METHOD;			\
-   else if (get_tabled(pPSC)==T_TABLED_SUB) 				\
-     TIF_EvalMethod(pTIF) = SUBSUMPTIVE_EVAL_METHOD;			\
-   else {								\
-      xsb_warn("%s/%d not identified as tabled in .xwam file, Recompile (variant assumed)", \
-	get_name(pPSC),get_arity(pPSC));				\
-      TIF_EvalMethod(pTIF) = VARIANT_EVAL_METHOD;			\
-      set_tabled(pPSC,T_TABLED_VAR);					\
-   }									\
-   TIF_CallTrie(pTIF) = NULL;						\
-   TIF_Mark(pTIF) = 0;                                                  \
-   TIF_DelTF(pTIF) = NULL;						\
-   TIF_Subgoals(pTIF) = NULL;						\
-   TIF_NextTIF(pTIF) = NULL;						\
-   if ( IsNonNULL(tif_list.last) )					\
-     TIF_NextTIF(tif_list.last) = pTIF;					\
-   else									\
-     tif_list.first = pTIF;						\
-   tif_list.last = pTIF;						\
- }
+/* TLS: New_TIF is now a function in tables.c */
 
-/* TLS: as of 8/05 Free_TIF is used only when abolishing a dynamic
-   tabled predicate, or when exiting a thread to abolish
-   thread-private tables.  Otherwise, keep the TIF around. */
+#ifdef MULTI_THREAD
+extern TIFptr New_TIF(struct th_context *,Psc);
+#else
+extern TIFptr New_TIF(Psc);
+#endif
+
+/* TLS: as of 8/05 tifs are freed only when abolishing a dynamic
+   tabled predicate, (or when exiting a thread to abolish
+   thread-private tables).  Otherwise, keep the TIF around. */
+
+/* shared tifs use the global structure tif_list.  Thus, the
+   sequential engine uses Free_Shared_Tif rather than
+   Free_Private_TIF */
    
-#define Free_TIF(pTIF) { \
+#define Free_Shared_TIF(pTIF) { \
  TIFptr tTIF = tif_list.first; \
  if (tTIF ==  (pTIF)) {		       \
    tif_list.first = TIF_NextTIF((pTIF));	     \
@@ -220,8 +201,25 @@ extern struct tif_list  tif_list;
    TIF_NextTIF(tTIF) = TIF_NextTIF((pTIF));			\
  }								\
  delete_predicate_table(CTXTc pTIF);				\
- mem_dealloc((pTIF),sizeof(TableInfoFrame),TABLE_SPACE);			\
+ mem_dealloc((pTIF),sizeof(TableInfoFrame),TABLE_SPACE);	\
  }
+
+#define Free_Private_TIF(pTIF) {					\
+    TIFptr tTIF = private_tif_list.first;				\
+    if (tTIF ==  (pTIF)) {						\
+      private_tif_list.first = TIF_NextTIF((pTIF));			\
+      if  (private_tif_list.last == (pTIF)) private_tif_list.last = NULL; \
+    }									\
+    else {								\
+      while  (tTIF != NULL && TIF_NextTIF(tTIF) != (pTIF))		\
+	tTIF =  TIF_NextTIF(tTIF);					\
+      if (!tTIF) xsb_exit("Trying to free nonexistent TIF");		\
+      if ((pTIF) == private_tif_list.last) private_tif_list.last = tTIF; \
+      TIF_NextTIF(tTIF) = TIF_NextTIF((pTIF));				\
+    }									\
+    delete_predicate_table(CTXTc pTIF);					\
+    mem_dealloc((pTIF),sizeof(TableInfoFrame),TABLE_SPACE);		\
+  }
 
 /*===========================================================================*/
 
@@ -260,18 +258,18 @@ struct TDispBlkHdr_t {
 
 /* If private predicate in MT engine, find the thread's private TIF,
    otherwise leave unchanged */
-#define  handle_dispatch_block(tip)                     \
-  if ( isPrivateTIF(tip) ) {			        \
-    TDBptr tdispblk;                                    \
-    tdispblk = (TDBptr) tip;                            \
-    if (th->tid > TDB_MaxThread(tdispblk))		\
-	xsb_abort("Table Dispatch block too small");	\
-    tip = TDB_PrivateTIF(tdispblk,th->tid);              \
-    if (!tip) {                                         \
+#define  handle_dispatch_block(tip)					\
+  if ( isPrivateTIF(tip) ) {						\
+    TDBptr tdispblk;							\
+    tdispblk = (TDBptr) tip;						\
+    if (th->tid > TDB_MaxThread(tdispblk))				\
+      xsb_abort("Table Dispatch block too small");			\
+    tip = TDB_PrivateTIF(tdispblk,th->tid);				\
+    if (!tip) {								\
       /* this may not be possible, as it may always be initted in get_tip? */\
-      New_TIF(tip,tdispblk->psc_ptr);                    \
-      TDB_PrivateTIF(tdispblk,th->tid) = tip;\
-    }\
+      tip = New_TIF(CTXTc tdispblk->psc_ptr);			\
+      TDB_PrivateTIF(tdispblk,th->tid) = tip;				\
+    }									\
   }
 
 /*===========================================================================*/
