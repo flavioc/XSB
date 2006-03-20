@@ -52,13 +52,15 @@
 #define TERM_TYPE 4
 
 #define SUCCESS 0
-#define FAILURE 1
+#define FAILURE -1
 
 #define QUERY_BEGIN 0
 #define QUERY_RETRIEVE 1
 
 #define QUERY_SIZE 10000
 #define ELEMENT_SIZE 1000
+
+#define TERM_CHAR '\255'
 
 // **** the database value data structures ****
 

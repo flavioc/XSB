@@ -46,6 +46,7 @@ static struct xsb_queryHandle* isQueryHandle(char* handle);
 static char* buildSQLQuery(prolog_term sqlQueryList);
 //static char* parseTerm(prolog_term element);
 static union functionPtrs* getDriverFunction(char* driver, int type);
+static int bindReturnList(prolog_term returnList, struct xsb_data** result, struct xsb_queryHandle*);
 
 struct xsb_connectionHandle* CHandles[MAX_CONNECTIONS];
 struct xsb_queryHandle* QHandles[MAX_QUERIES];
@@ -168,7 +169,6 @@ DllExport int call_conv closeConnection(void)
       val = disconnectDriver(CHandles[i]);
       
       if (val == FAILURE) {
-	fprintf(stderr,"disconnect failed\n");
 	errorMesgDriver = getDriverFunction(CHandles[i]->driver, ERROR_MESG)->errorMesgDriver;
 	errorMesg = errorMesgDriver();
 	return FALSE;
@@ -183,7 +183,6 @@ DllExport int call_conv closeConnection(void)
 	  
 	  val = closeStmtDriver(QHandles[j]);
 	  if (val == FAILURE) {
-	    fprintf(stderr,"stmt closing failed\n");
 	    errorMesgDriver = getDriverFunction(CHandles[i]->driver, ERROR_MESG)->errorMesgDriver;
 	    errorMesg = errorMesgDriver();
 	    return FALSE;
@@ -228,13 +227,12 @@ DllExport int call_conv queryConnection(void)
 {
   struct xsb_data** (*queryDriver)(struct xsb_queryHandle*);
   char* (*errorMesgDriver)();
-  prolog_term returnList, sqlQueryList, element;
+  prolog_term returnList, sqlQueryList;
   struct xsb_connectionHandle* cHandle;
   struct xsb_queryHandle* qHandle;
   struct xsb_data** result;
-  char *chandle, *qhandle, *sqlQuery, *temp;
-  int i, j, flag;
-  char c1, c2;
+  char *chandle, *qhandle, *sqlQuery;
+  int i, j, val;
 
   chandle = ptoc_string(1);
   qhandle = ptoc_string(2);
@@ -266,7 +264,6 @@ DllExport int call_conv queryConnection(void)
       return FALSE;
     }
 
-    
     result = queryDriver(qHandle);
     if (result == NULL && qHandle->state == QUERY_RETRIEVE) {
       for (i = 0 ; i < numQHandles ; i++) {
@@ -294,7 +291,6 @@ DllExport int call_conv queryConnection(void)
     qHandle->state = QUERY_BEGIN;
     QHandles[numQHandles++] = qHandle;
 
-
     if (getDriverFunction(qHandle->connHandle->driver, QUERY) != NULL)
       queryDriver = getDriverFunction(qHandle->connHandle->driver, QUERY)->queryDriver;
     else
@@ -308,70 +304,9 @@ DllExport int call_conv queryConnection(void)
     return FALSE;		
   }
 
-
-  if (is_nil(returnList) && result == NULL) {
-    flag = 1;
-  }
-
-  if (!is_nil(returnList) && result == NULL) {
-    while (!is_nil(returnList)) {
-      element = p2p_car(returnList);
-      c2p_nil(element);
-      returnList = p2p_cdr(returnList);
-    }
-    flag = 0;
-  }
-
-  i = 0;
-  if (result != NULL) {
-    while (!is_nil(returnList)) {
-      if (qHandle->numResultCols <= i) {
-	errorMesg = "XSB_DBI ERROR: Number of requested columns exceeds the number of columns in the query";
-	errorNumber = "XSB_DBI_011";
-	return FALSE;	
-      }
-      element = p2p_car(returnList);
-      if (result == NULL) {
-	c2p_nil(element);
-      }
-      else if (is_var(element) && result[i]->type == STRING_TYPE) {
-	if (result[i]->val == NULL)
-	  c2p_nil(element);
-	else {
-	  c1 = result[i]->val->str_val[strlen(result[i]->val->str_val)-1];
-	  c2 = result[i]->val->str_val[strlen(result[i]->val->str_val)-2];
-	  if (c2 == '$' && c1 == 't') {
-	    temp = (char *)malloc((strlen(result[i]->val->str_val) - 1) * sizeof(char));
-	    temp[0] = '\0';
-	    strncat(temp, result[i]->val->str_val, strlen(result[i]->val->str_val) - 2);
-	    c2p_functor("term", 1, element);
-	    c2p_string(temp, p2p_arg(element, 1));
-	  }
-	  else if (c2 == '$' && c1 == 'i') {
-	    temp = (char *)malloc((strlen(result[i]->val->str_val) - 1) * sizeof(char));
-	    temp[0] = '\0';
-	    strncat(temp, result[i]->val->str_val, strlen(result[i]->val->str_val) - 2);
-	    c2p_int(atoi(temp), element);
-	  }
-	  else if (c2 == '$' && c1 == 'f') {
-	    temp = (char *)malloc((strlen(result[i]->val->str_val) - 1) * sizeof(char));
-	    temp[0] = '\0';
-	    strncat(temp, result[i]->val->str_val, strlen(result[i]->val->str_val) - 2);
-	    c2p_float(atof(temp), element);
-	  }
-	  else 
-	    c2p_string(result[i]->val->str_val, element);
-	}
-      }
-      else if (is_var(element) && result[i]->type == INT_TYPE)
-	c2p_int(*(result[i]->val->i_val), element);
-      else if (is_var(element) && result[i]->type == FLOAT_TYPE)
-	c2p_float(*(result[i]->val->f_val), element);
-      returnList = p2p_cdr(returnList);
-      i++;
-    }
-    flag = 1;
-  }	
+  val = bindReturnList(returnList, result, qHandle);
+  if (val == 2)
+    return FALSE;
 
   if ((cHandle = isConnectionHandle(chandle)) != NULL) {
     if (getDriverFunction(cHandle->driver, ERROR_MESG) != NULL)
@@ -384,7 +319,7 @@ DllExport int call_conv queryConnection(void)
     errorNumber = "XSB_DBI_000";
   }
 
-  if (errorMesg == NULL && flag == 1)
+  if (errorMesg == NULL && val == 1)
     return TRUE;
   else 
     return FALSE;
@@ -417,6 +352,7 @@ DllExport int call_conv prepareStatement(void)
   }
 
   sqlQuery = buildSQLQuery(sqlQueryList);
+
   qHandle = (struct xsb_queryHandle *)malloc(sizeof(struct xsb_queryHandle));
   qHandle->connHandle = cHandle;
   qHandle->query = (char *)malloc((strlen(sqlQuery) + 1) * sizeof(char));
@@ -429,7 +365,7 @@ DllExport int call_conv prepareStatement(void)
     prepareStmtDriver = getDriverFunction(cHandle->driver, PREPARE)->prepareStmtDriver;
   else
     return FALSE;
-  if ((val = prepareStmtDriver(qHandle)) != -1) {
+  if ((val = prepareStmtDriver(qHandle)) != FAILURE) {
     qHandle->numParams = val;
     QHandles[numQHandles++] = qHandle;
   }
@@ -439,6 +375,7 @@ DllExport int call_conv prepareStatement(void)
     else
       return FALSE;
     errorMesg = errorMesgDriver();
+    errorNumber = "XSB_DBI_000";
     free(qHandle->query);
     free(qHandle);
     return FALSE;
@@ -452,13 +389,13 @@ DllExport int call_conv executePreparedStatement(void)
   struct xsb_data** (*executeStmtDriver)(struct xsb_data**, struct xsb_queryHandle*);
   char* (*errorMesgDriver)();
   struct xsb_queryHandle* qHandle;
+  struct xsb_connectionHandle* cHandle;
   struct xsb_data** bindValues;
   struct xsb_data** result;
   prolog_term bindList, returnList, element;
-  char *queryHandle;
-  int temp_int;
+  char *queryHandle, *chandle;
   double temp_float;
-  int i;
+  int i, temp_int, val;
 
   queryHandle = ptoc_string(1);
   bindList = reg_term(2);
@@ -503,6 +440,8 @@ DllExport int call_conv executePreparedStatement(void)
 	temp_float = p2c_float(element);
 	bindValues[i]->val->f_val = &temp_float;
       }
+      else if (is_functor(element)) {
+      }
       else if (is_var(element)) {
 	errorMesg = "XSB_DBI ERROR: Unbound variable in parameter list";
 	errorNumber = "XSB_DBI_009";
@@ -518,30 +457,9 @@ DllExport int call_conv executePreparedStatement(void)
   else
     return FALSE;
   
-  if ((result = executeStmtDriver(bindValues, qHandle)) == NULL)
-    qHandle->state = QUERY_BEGIN;	
-  
-  i = 0;
-  while (!is_nil(returnList)) {
-    if (qHandle->numResultCols <= i) {
-	errorMesg = "XSB_DBI ERROR: Number of requested columns exceeds the number of columns in the query";
-	errorNumber = "XSB_DBI_011";
-	return FALSE;	
-    }
-    element = p2p_car(returnList);
-    if (result == NULL)
-      c2p_nil(element);
-    else if (is_var(element) && result[i]->type == STRING_TYPE)
-      c2p_string(result[i]->val->str_val, element);
-    else if (is_var(element) && result[i]->type == INT_TYPE)
-      c2p_int(*(result[i]->val->i_val), element);
-    else if (is_var(element) && result[i]->type == FLOAT_TYPE)
-      c2p_float(*(result[i]->val->f_val), element);
-    returnList = p2p_cdr(returnList);
-    i++;
-  }
-  
-  if (result == NULL) {
+  result = executeStmtDriver(bindValues, qHandle);
+
+  if (result == NULL && qHandle->state == QUERY_BEGIN) {
     if (getDriverFunction(qHandle->connHandle->driver, ERROR_MESG) != NULL)
       errorMesgDriver =
 	getDriverFunction(qHandle->connHandle->driver, ERROR_MESG)->errorMesgDriver;
@@ -551,8 +469,31 @@ DllExport int call_conv executePreparedStatement(void)
     errorMesg = errorMesgDriver();
     return FALSE;
   }
+  else if (result == NULL) {
+    qHandle->state = QUERY_BEGIN;
+  }
   
-  return TRUE;
+  val = bindReturnList(returnList, result, qHandle);
+  if (val == 2)
+    return FALSE;
+
+  cHandle = qHandle->connHandle;
+  chandle = cHandle->handle;
+  if ((cHandle = isConnectionHandle(chandle)) != NULL) {
+    if (getDriverFunction(cHandle->driver, ERROR_MESG) != NULL)
+      errorMesgDriver =
+	getDriverFunction(cHandle->driver, ERROR_MESG)->errorMesgDriver;
+    else
+      return FALSE;
+	  
+    errorMesg = errorMesgDriver();
+    errorNumber = "XSB_DBI_000";
+  }
+
+  if (errorMesg == NULL && val == 1)
+    return TRUE;
+  else 
+    return FALSE;
 }
 
 DllExport int call_conv closeStatement(void)
@@ -621,8 +562,8 @@ static char* buildSQLQuery(prolog_term sqlQueryList)
   prolog_term element;
   char* sqlQuery;
   char* temp;
-  int i;
-  double diff;
+  char* t1;
+  int i, cnt;
 
   sqlQuery = (char *)malloc(QUERY_SIZE * sizeof(char));
   sqlQuery[0] = '\0';
@@ -630,92 +571,113 @@ static char* buildSQLQuery(prolog_term sqlQueryList)
     element = p2p_car(sqlQueryList);
     sqlQueryList = p2p_cdr(sqlQueryList);
     if (is_string(element)) {
-      temp = (char *)malloc(ELEMENT_SIZE * sizeof(char));
-      sprintf(temp, "%s", p2c_string(element));
-      if (temp[0] == '\'' && temp[strlen(temp) - 1] == '\'') {
-	for (i = 0 ; i < strlen(temp) ; i++) {
-	  temp[i - 1] = temp[i];
+      t1 = (char *)malloc(ELEMENT_SIZE * sizeof(char));
+      sprintf(t1, "%s", p2c_string(element));
+      if (t1[0] == TERM_CHAR) {
+	cnt = 0;
+	temp = (char *)malloc(ELEMENT_SIZE * sizeof(char));
+	temp[cnt++] = '\'';
+	/* protect inner quotes in Prolog terms */
+	for (i = 0 ; i < strlen(t1) ; i++) {
+	  if (t1[i] == '\'') {
+	    temp[cnt++] = '\\';
+	    temp[cnt++] = t1[i];
+	  }
+	  else {
+	    temp[cnt++] = t1[i];
+	  }
 	}
-	temp[strlen(temp) - 2] = '\0';
+	temp[cnt++] = '\'';
 	strcat(sqlQuery, temp);
-      }
-      else if (strcmp(temp, "0") && atoi(temp)) {
-	diff = atoi(temp) - atof(temp);
-	if (diff) {
-	  strcat(temp, "$f");
-	  strcat(sqlQuery, "\"");
-	  strcat(sqlQuery, temp);
-	  strcat(sqlQuery, "\"");
-	}
-	else {
-	  strcat(temp, "$i");
-	  strcat(sqlQuery, "\"");
-	  strcat(sqlQuery, temp);
-	  strcat(sqlQuery, "\"");
-	}
       }
       else {
-	strcat(temp, "$t");
-	strcat(sqlQuery, temp);
+	strcat(sqlQuery, t1);            
       }
     }
     else if (is_int(element)) {
       temp = (char *)malloc(ELEMENT_SIZE * sizeof(char));
       sprintf(temp, "%d", p2c_int(element));
       strcat(sqlQuery, temp);
-      strcat(sqlQuery, "$i");
     }
     else if (is_float(element)) {
       temp = (char *)malloc(ELEMENT_SIZE * sizeof(char));
       sprintf(temp, "%f", p2c_float(element));			
       strcat(sqlQuery, temp);
-      strcat(sqlQuery, "$f");
     }
     else if (is_var(element)) {
       errorMesg = "XSB_DBI ERROR: Unbound variable in parameter list";
     }
   }
-  
-  return sqlQuery;
+
+  return sqlQuery;  
 }
 
 
-/*
-  static char* parseTerm(prolog_term element) {
-  char *temp, *query;
-	
-  query = (char *)malloc(QUERY_SIZE * sizeof(char));
-  query[0] = '\0';
-  if (is_string(element)) {
-  strcat(query, "'");
-  strcat(query, p2c_string(element));
-  strcat(query, "'");
+static int bindReturnList(prolog_term returnList, struct xsb_data** result, struct xsb_queryHandle* qHandle)
+{
+  prolog_term element;
+  char* temp;
+  char c;
+  int i, j;
+  int rFlag;
+  
+  if (is_nil(returnList) && result == NULL) {
+    rFlag = 1;
   }
-  else if (is_int(element)) {
-  temp = (char *)malloc(ELEMENT_SIZE * sizeof(char));
-  sprintf(temp, "%d", p2c_int(element));
-  strcat(query, temp);
+
+  if (!is_nil(returnList) && result == NULL) {
+    while (!is_nil(returnList)) {
+      element = p2p_car(returnList);
+      c2p_nil(element);
+      returnList = p2p_cdr(returnList);
+    }
+    rFlag = 0;
   }
-  else if (is_float(element)) {
-  temp = (char *)malloc(ELEMENT_SIZE * sizeof(char));
-  sprintf(temp, "%f", p2c_float(element));
-  strcat(query, temp);
+
+  i = 0;
+  if (result != NULL) {
+    while (!is_nil(returnList)) {
+      if (qHandle->numResultCols <= i) {
+	errorMesg = "XSB_DBI ERROR: Number of requested columns exceeds the number of columns in the query";
+	errorNumber = "XSB_DBI_011";
+	rFlag = 2;
+	return rFlag;	
+      }
+      element = p2p_car(returnList);
+      if (result == NULL) {
+	c2p_nil(element);
+      }
+      else if (is_var(element) && result[i]->type == STRING_TYPE) {
+	if (result[i]->val == NULL)
+	  c2p_nil(element);
+	else {
+	  c = result[i]->val->str_val[0];
+	  if (c == TERM_CHAR) {
+	    temp = (char *)malloc(strlen(result[i]->val->str_val) * sizeof(char));
+	    for (j = 1 ; j < strlen(result[i]->val->str_val) ; j++) {
+	      temp[j-1] = result[i]->val->str_val[j];
+	    }
+	    temp[strlen(result[i]->val->str_val) - 1] = '\0';
+	    c2p_functor("term", 1, element);
+	    c2p_string(temp, p2p_arg(element, 1));
+	  }
+	  else {
+	    c2p_string(result[i]->val->str_val, element);	    
+	  }
+	}
+      }
+      else if (is_var(element) && result[i]->type == INT_TYPE)
+	c2p_int(*(result[i]->val->i_val), element);
+      else if (is_var(element) && result[i]->type == FLOAT_TYPE)
+	c2p_float(*(result[i]->val->f_val), element);
+      returnList = p2p_cdr(returnList);
+      i++;
+    }
+    rFlag = 1;
   }
-  else if (is_var(element)) {
-  errorMesg = "XSB_DBI ERROR: Unbound variable in parameter list";
-  query = NULL;
-  }
-  else if (is_functor(element)) {
-  wcan_disp = 0;
-  write_canonical_term(element);
-  temp = (char *)malloc((wcan_disp + 1) * sizeof(char));
-  strncpy(temp, wcan_string, wcan_disp);
-  temp[wcan_disp] = '\0';
-  }
-	
-  return query;
-  }
-*/
+
+  return rFlag;  
+}
 
 
 static struct xsb_connectionHandle* isConnectionHandle(char* handle)

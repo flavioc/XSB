@@ -41,7 +41,7 @@
 	db_connect/6,
 	db_connect/5,
 	db_disconnect/1,
-	db_sql/4,
+	db_query/4,
 	db_prepare/3,
 	db_prepare_execute/3,
 	db_statement_close/1.

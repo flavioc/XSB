@@ -238,7 +238,7 @@ both types of querying are retrieved tuple at a time.
 Direct querying is done by the predicate:
 
 \begin{verbatim}
-| ?- db_sql(ConnectionHandle, QueryHandle, SQLQueryList, ReturnList).
+| ?- db_query(ConnectionHandle, QueryHandle, SQLQueryList, ReturnList).
 \end{verbatim}
 
 ConnectionHandle is the name of the handle used for the database connection.
@@ -259,7 +259,7 @@ for a given advisor is accomplished by the call:
 
 \begin{verbatim}
 | ?- X = adv,
-     db_sql(ha, qa, ['select T.name from student T where T.advisor = ', X], [P]),
+     db_query(ha, qa, ['select T.name from student T where T.advisor = ', X], [P]),
      fail.
 \end{verbatim}
 
@@ -374,7 +374,7 @@ This error is thrown when the user tries to create a connection handle in
 
 \item {\bf XSB\_DBI\_007: XSB\_DBI ERROR: Query handle already exists}\\
 This error is thrown when the user tries to create a query handle, in
-{\tt db\_sql} or {\tt db\_prepare}, using a name which already exists as
+{\tt db\_query} or {\tt db\_prepare}, using a name which already exists as
 a query handle for a different query.
 
 \item {\bf XSB\_DBI\_008: XSB\_DBI ERROR: Not all parameters supplied}\\

@@ -148,7 +148,7 @@ struct xsb_data** driverODBC_query(struct xsb_queryHandle* handle)
 	  break;
 	}
       }
-    }
+  }
   else if (handle->state == QUERY_BEGIN) {
     for (i = 0 ; i < numHandles ; i++) {
       if (!strcmp(odbcHandles[i]->handle, handle->connHandle->handle)) {
@@ -251,18 +251,16 @@ static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* quer
 
   val = SQLFetch(query->hstmt);
 
-  if (val == SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO)
-    {
+  if (val == SQL_SUCCESS || val == SQL_SUCCESS_WITH_INFO) {
       for (i = 0 ; i < query->resultmeta->numCols ; i++) {
 	if (*(pcbValues[i]) == SQL_NULL_DATA)
 	  result[i]->val = NULL;
       }
-    }
+  }
 
   if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
     if (direct == 1) {
-      //val = SQLFreeHandle(SQL_HANDLE_STMT, query->hstmt);
-      val = SQLFreeStmt(query->hstmt, SQL_CLOSE);
+      val = SQLFreeHandle(SQL_HANDLE_STMT, query->hstmt);
       if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO)
 	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
       for (i = 0 ; i < query->resultmeta->numCols ; i++)
@@ -339,14 +337,6 @@ int driverODBC_prepareStatement(struct xsb_queryHandle* qHandle)
     return FAILURE;
   }
 
-  query->resultmeta = (struct driverODBC_meta *)malloc(sizeof(struct driverODBC_meta));
-  val = SQLNumResultCols(query->hstmt, (SQLSMALLINT *)(&(query->resultmeta->numCols)));
-  if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
-    driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
-    return FAILURE;
-  }
-  qHandle->numResultCols = query->resultmeta->numCols;
-
   query->parammeta->types = (struct driverODBC_columnmeta **)malloc(query->parammeta->numCols * sizeof(struct driverODBC_columnmeta));
   for (i = 0 ; i < query->parammeta->numCols ; i++) {
     query->parammeta->types[i] = (struct driverODBC_columnmeta *)malloc(sizeof(struct driverODBC_columnmeta));
@@ -381,13 +371,11 @@ struct xsb_data** driverODBC_execPrepareStatement(struct xsb_data** param, struc
   if (handle->state == QUERY_RETRIEVE)
     return driverODBC_getNextRow(query, 0);
 	
-  // do a check of the number of parameters supplied and number expected
-
   for (i = 0 ; i < query->parammeta->numCols ; i++) {
-    if (param[i]->type == STRING_TYPE)
-      val = SQLBindParameter(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_PARAM_INPUT, SQL_C_DEFAULT, SQL_CHAR, 0, 0, (SQLPOINTER)param[i]->val->str_val, strlen(param[i]->val->str_val) + 1, NULL);
+    if (param[i]->type == STRING_TYPE) 
+      val = SQLBindParameter(query->hstmt, (SQLUSMALLINT)(i + 1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, strlen(param[i]->val->str_val) + 1, 0, (SQLPOINTER)param[i]->val->str_val, 0, NULL);
     else if (param[i]->type == INT_TYPE)
-      val = SQLBindParameter(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_PARAM_INPUT, SQL_C_DEFAULT, SQL_INTEGER, 0, 0, (SQLPOINTER)param[i]->val->i_val, 0, NULL);
+      val = SQLBindParameter(query->hstmt, (SQLUSMALLINT)(i + 1), SQL_PARAM_INPUT, SQL_C_DEFAULT, SQL_INTEGER, 0, 0, (SQLPOINTER)param[i]->val->i_val, 0, NULL);
     else if (param[i]->type == FLOAT_TYPE)	
       val = SQLBindParameter(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_PARAM_INPUT, SQL_C_DEFAULT, SQL_DOUBLE, 0, 0, (SQLPOINTER)param[i]->val->f_val, 0, NULL);
     if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
@@ -408,6 +396,7 @@ struct xsb_data** driverODBC_execPrepareStatement(struct xsb_data** param, struc
     driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
     return NULL;
   }
+  handle->numResultCols = query->resultmeta->numCols;
 
   query->resultmeta->types = (struct driverODBC_columnmeta **)malloc(query->resultmeta->numCols * sizeof(struct driverODBC_columnmeta *));
   for (i = 0 ; i < query->resultmeta->numCols ; i++) {
@@ -488,8 +477,7 @@ static int driverODBC_getXSBType(SQLSMALLINT dataType)
 
   case SQL_DECIMAL:
   case SQL_NUMERIC:
-  case SQL_REAL:
-  case SQL_FLOAT:
+  case SQL_REAL:    
   case SQL_DOUBLE:
     type = FLOAT_TYPE;
     break;
@@ -517,12 +505,7 @@ static void driverODBC_error(SQLSMALLINT handleType, SQLHANDLE handle)
 
   errorMesg = (SQLCHAR *)malloc(SQL_MAX_MESSAGE_LENGTH * sizeof(SQLCHAR));
   sqlState = (SQLCHAR *)malloc(6 * sizeof(SQLCHAR));
-  if (handleType == SQL_HANDLE_ENV)		
-    SQLError(SQL_NULL_HENV, SQL_NULL_HDBC, handle, sqlState, NULL, errorMesg, SQL_MAX_MESSAGE_LENGTH - 1, NULL);
-  else if (handleType == SQL_HANDLE_DBC)
-    SQLError(SQL_NULL_HENV, SQL_NULL_HDBC, handle, sqlState, NULL, errorMesg, SQL_MAX_MESSAGE_LENGTH - 1, NULL);
-  else if (handleType == SQL_HANDLE_STMT)
-    SQLError(SQL_NULL_HENV, SQL_NULL_HDBC, handle, sqlState, NULL, errorMesg, SQL_MAX_MESSAGE_LENGTH - 1, NULL);
+  SQLGetDiagRec(handleType, handle, 1, sqlState, NULL, errorMesg, SQL_MAX_MESSAGE_LENGTH - 1, NULL);
   free(sqlState);
 }
 
