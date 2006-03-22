@@ -644,11 +644,11 @@ rule_code(R,LastRule,F/A,RI,RN,Constrs,Mod,L,T) :-
 	(LastRule = true
 	 -> (Head2 = []
 	     -> head1code(Head1,true,[],IDs1,[],R,F/A,RI,RN,Constrs,L,T)
-	      ; head1code(Head1,false,[],IDs1,[],R,F/A,RI,RJ,Constrs,L,L1),
-	        head2code(Head2,true,Head1,IDs2,[],R,F/A,RJ,RN,Constrs,Mod,L1,T)
+	      ; head1code(Head1,false,Head2,IDs1,IDs2,R,F/A,RI,RJ,Constrs,L,L1),
+	        head2code(Head2,true,Head1,IDs2,IDs1,R,F/A,RJ,RN,Constrs,Mod,L1,T)
 	    )
-	  ; head1code(Head1,LastRule,Head2,IDs1,[],R,F/A,RI,RJ,Constrs,L,L1),
-	    head2code(Head2,LastRule,Head1,IDs2,[],R,F/A,RJ,RN,Constrs,Mod,L1,T)
+	  ; head1code(Head1,LastRule,Head2,IDs1,IDs2,R,F/A,RI,RJ,Constrs,L,L1),
+	    head2code(Head2,LastRule,Head1,IDs2,IDs1,R,F/A,RJ,RN,Constrs,Mod,L1,T)
 	    
 	).
 
