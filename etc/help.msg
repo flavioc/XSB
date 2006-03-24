@@ -42,7 +42,7 @@ Usage:	xsb [flags] [-l] [-i]
            -o N : allocate N KB for the SLG completion stack
            -u N : allocate N KB for the SLG unification stack
              -r : turn off automatic stack expansion
-     -g gc_type : choose the garbage collection ("none", "sliding",
+     -g gc_type : choose heap garbage collection ("none", "sliding",
 	 	  	 			 "indirection" or "copying")
              -p : enable Prolog profiling thru use of profile_call/1
              -s : maintain detailed statistical information
