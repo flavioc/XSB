@@ -2016,7 +2016,10 @@ void abolish_all_tables_cps_check(CTXTdecl)
   }
 }
 
-inline void abolish_table_info(CTXTdecl)
+#if !defined(WIN_NT) || defined(CYGWIN) 
+inline 
+#endif
+void abolish_table_info(CTXTdecl)
 {
   CPtr csf;
   TIFptr pTIF;
