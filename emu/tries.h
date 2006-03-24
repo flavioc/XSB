@@ -509,4 +509,20 @@ struct tstCPStack_t {
   tstChoicePointFrame base[TST_CPSTACK_SIZE];
 };
 
+/* Prasad's changes */
+
+typedef struct InternGarbageRootFrame *IGRptr;
+typedef struct InternGarbageLeafFrame *IGLptr;
+
+typedef struct InternGarbageLeafFrame{
+  BTNptr leaf;
+  IGLptr next;  
+} InternGarbageLeaf;
+
+typedef struct InternGarbageRootFrame{
+  long root;
+  IGLptr leaves;
+  IGRptr next;
+} InternGarbageRoot;
+
 #endif

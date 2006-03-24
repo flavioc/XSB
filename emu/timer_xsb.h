@@ -55,12 +55,14 @@
 extern sigjmp_buf xsb_timer_env;
 #endif
 
+/* TLS: changed xsb_timeout_info so to be non-empty when MULTI_THREAD
+   is not defined.  Some compilers complain about empty structures. */
 struct xsb_timeout_info {
+  int             exitFlag;
 #ifdef MULTI_THREAD
   pthread_t_p     timedThread;
   pthread_cond_t  condition;
   pthread_mutex_t mutex;
-  int             exitFlag;
   CTXTdecl;
 #else /* not multithreaded */
 #ifdef WIN_NT

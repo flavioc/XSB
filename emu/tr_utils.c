@@ -1262,7 +1262,9 @@ To reclaim all the garbage associated with a particular root
 
 */
 
+#ifndef MULTI_THREAD
 static IGRptr IGRhead = NULL;
+#endif
 
 static IGRptr newIGR(long root)
 {
@@ -1285,7 +1287,7 @@ static IGLptr newIGL(BTNptr leafn)
   return igl;
 }
 
-static IGRptr getIGRnode(long rootn)
+static IGRptr getIGRnode(CTXTdeclc long rootn)
 {
   IGRptr p = IGRhead;  
 
@@ -1304,7 +1306,7 @@ static IGRptr getIGRnode(long rootn)
   return p;
 }
 
-static IGRptr getAndRemoveIGRnode(long rootn)
+static IGRptr getAndRemoveIGRnode(CTXTdeclc long rootn)
 {
   IGRptr p = IGRhead;  
 
@@ -1379,7 +1381,7 @@ void trie_dispose_nr(CTXTdecl)
   Rootidx = ptoc_int(CTXTc 1);
   Leaf = (BTNptr)ptoc_int(CTXTc 2);
   switch_to_trie_assert;
-  insertLeaf(getIGRnode(Rootidx), Leaf);
+  insertLeaf(getIGRnode(CTXTc Rootidx), Leaf);
   safe_delete_branch(Leaf);
   switch_from_trie_assert;
 }
@@ -1387,7 +1389,7 @@ void trie_dispose_nr(CTXTdecl)
 
 void reclaim_uninterned_nr(CTXTdeclc long rootidx)
 {
-  IGRptr r = getAndRemoveIGRnode(rootidx);
+  IGRptr r = getAndRemoveIGRnode(CTXTc rootidx);
   IGLptr l, p;
   BTNptr leaf;
 
@@ -1424,9 +1426,9 @@ void reclaim_uninterned_nr(CTXTdeclc long rootidx)
 
 /*----------------------------------------------------------------------*/
 
-void trie_undispose(long rootIdx, BTNptr leafn)
+void trie_undispose(CTXTdeclc long rootIdx, BTNptr leafn)
 {
-  IGRptr r = getIGRnode(rootIdx);
+  IGRptr r = getIGRnode(CTXTc rootIdx);
   IGLptr p = r -> leaves;
   if(p == NULL){
     xsb_dbgmsg((LOG_INTERN,
@@ -1437,7 +1439,7 @@ void trie_undispose(long rootIdx, BTNptr leafn)
       mem_dealloc(p,sizeof(InternGarbageLeaf),TABLE_SPACE);
       if(r -> leaves == NULL){
 	/* Do not want roots with no leaves hanging around */
-	getAndRemoveIGRnode(rootIdx);
+	getAndRemoveIGRnode(CTXTc rootIdx);
       }
     }
     undelete_branch(leafn);
@@ -1451,19 +1453,22 @@ void trie_undispose(long rootIdx, BTNptr leafn)
  * When a table is abolished, various checks must be made before its
  * space can be reclaimed.  First, the table must be completed, and
  * second it must be ensured that there are not any trie choice points
- * for the table in the choice point stack.  Also, if the table is
+ * for the table in the choice point stack.  Third, if the table is
  * shared, a check must be made that there is a single active thread.
  *
  * In the case of abolish_all_tables, if there are any incomplete
  * tables, or if there are trie nodes for completed tables on the
- * choice point stack, errors are thrown.  In the case of
+ * choice point stack, an error is thrown.  In the case of
  * abolish_table_pred(P) (and other abolishes), if P is not completed
  * an error is thrown; while if trie choice points for P are on the
  * stack, P is "abolished" (pointers in the TIF are reset) but its
  * space is not yet reclaimed.  Rather, a deleted table frame (DelTF)
  * is set up so that P can later be reclaimed upon a call to
- * gc_tables/1.  A DelTF is also set up if P is shared and there is
- * more than one active thread.
+ * gc_tables/1.  The same action is also taken if P is shared and
+ * there is more than one active thread.  Note that if we have to
+ * create a DelTF for them, even private tables will not be gc'd until
+ * we're down to a single thread, so its best to call the abolishes
+ * when we dont have any more backtracking points.
  *
  * Later, on a call to gc_tables/1 (which works only if there is a
  * single active thread), the choice point stacks may be traversed to
@@ -1472,8 +1477,8 @@ void trie_undispose(long rootIdx, BTNptr leafn)
  * traversed to reclaim tables for those unmarked DelTF frames (and
  * free the frames) as well as to unmark the marked DelTF frames.
  * 
- * These predicates emit a warning and take no action if more than
- * one thread is active.  Soon to be fixed.
+ * Note that all of these require SLG_GC to be defined as we need to
+ * properly traverse the CPS.  So, probably we should take out SLG_GC.
  */
 
 /*------------------------------------------------------------------*/
@@ -1890,10 +1895,12 @@ void abolish_shared_tables(CTXTdecl) {
 
   mark_cp_tables(CTXT);
 
+  SYS_MUTEX_LOCK( MUTEX_TABLE );				
   for (abol_tif = tif_list.first ; abol_tif != NULL
 	 ; abol_tif = TIF_NextTIF(abol_tif) ) {
       fast_abolish_table_predicate(CTXTc TIF_PSC(abol_tif));
   }
+  SYS_MUTEX_UNLOCK( MUTEX_TABLE );				
 
   unmark_cp_tables(CTXT);
 

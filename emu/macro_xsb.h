@@ -187,22 +187,25 @@ extern TIFptr New_TIF(Psc);
    sequential engine uses Free_Shared_Tif rather than
    Free_Private_TIF */
    
-#define Free_Shared_TIF(pTIF) { \
- TIFptr tTIF = tif_list.first; \
- if (tTIF ==  (pTIF)) {		       \
-   tif_list.first = TIF_NextTIF((pTIF));	     \
-   if  (tif_list.last == (pTIF)) tif_list.last = NULL;	\
- } \
- else { \
-   while  (tTIF != NULL && TIF_NextTIF(tTIF) != (pTIF)) \
-     tTIF =  TIF_NextTIF(tTIF);				\
-   if (!tTIF) xsb_exit("Trying to free nonexistent TIF");	\
-   if ((pTIF) == tif_list.last) tif_list.last = tTIF;		\
-   TIF_NextTIF(tTIF) = TIF_NextTIF((pTIF));			\
- }								\
- delete_predicate_table(CTXTc pTIF);				\
- mem_dealloc((pTIF),sizeof(TableInfoFrame),TABLE_SPACE);	\
- }
+#define Free_Shared_TIF(pTIF) {						\
+    TIFptr tTIF;							\
+    SYS_MUTEX_LOCK( MUTEX_TABLE );					\
+    tTIF = tif_list.first;						\
+    if (tTIF ==  (pTIF)) {						\
+      tif_list.first = TIF_NextTIF((pTIF));				\
+      if  (tif_list.last == (pTIF)) tif_list.last = NULL;		\
+    }									\
+    else {								\
+      while  (tTIF != NULL && TIF_NextTIF(tTIF) != (pTIF))		\
+	tTIF =  TIF_NextTIF(tTIF);					\
+      if (!tTIF) xsb_exit("Trying to free nonexistent TIF");		\
+      if ((pTIF) == tif_list.last) tif_list.last = tTIF;		\
+      TIF_NextTIF(tTIF) = TIF_NextTIF((pTIF));				\
+    }									\
+    SYS_MUTEX_UNLOCK( MUTEX_TABLE );					\
+    delete_predicate_table(CTXTc pTIF);					\
+    mem_dealloc((pTIF),sizeof(TableInfoFrame),TABLE_SPACE);		\
+  }
 
 #define Free_Private_TIF(pTIF) {					\
     TIFptr tTIF = private_tif_list.first;				\

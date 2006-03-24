@@ -38,10 +38,10 @@
 #include "setjmp_xsb.h"
 #include "auxlry.h"
 #include "cell_xsb.h"
+#include "psc_xsb.h"
 #include "error_xsb.h"
 #include "cinterf.h"
 #include "memory_xsb.h"
-#include "psc_xsb.h"
 #include "heap_xsb.h"
 #include "register.h"
 #include "flags_xsb.h"
@@ -1188,7 +1188,7 @@ static void db_genmvs(CTXTdeclc struct instruction_q *inst_queue, RegStat Reg)
 /*									*/
 /*======================================================================*/
 
-/* Predicate References and Clause References defined in xsb_error.h   */
+/* Predicate References defined in error_xsb.h / clause reference in context.h  */
 
 #define PredOpCode(P)		(cell_opcode(&(P)->Instr))
 
@@ -2055,39 +2055,14 @@ ClRef *OldestCl = retracted_buffer, *NewestCl = retracted_buffer;
 /********************************************************************/
 // TLS: working area, to be ignored, for now.
 
-/* 
-   First check whether freeze registers are active.  If so, then skip
-   gc for now, as I'm not sure how traverse all paths in the CP stack.
-*/
-
-void gc_clauses_follow_par_chain(CTXTdeclc BTNptr pLeaf)
-{
-
-  TIFptr tif_ptr;
-
-  while ( IsNonNULL(pLeaf) && (! IsTrieRoot(pLeaf)) && 
-			       ((int) TN_Instr(pLeaf) != 0x94) ) {
-    //    printf("%x, Trie type: %d %s Node type: %d %s parent %x\n",pLeaf,
-    //   TN_TrieType(pLeaf),trie_trie_type_table[(int) TN_TrieType(pLeaf)],
-    //   TN_NodeType(pLeaf),trie_node_type_table[(int) TN_NodeType(pLeaf)],
-    //   TN_Parent(pLeaf));
-    pLeaf = BTN_Parent(pLeaf);
-  }
-  //  printf("%p,Type for Root: %d %s, Node for Root: %d %s Parent %p\n", pLeaf,
-  // TN_TrieType(pLeaf),trie_trie_type_table[(int) TN_TrieType(pLeaf)],
-  // TN_NodeType(pLeaf),trie_node_type_table[(int) TN_NodeType(pLeaf)],
-  // TN_Parent(pLeaf));
-
-  tif_ptr = subg_tif_ptr(TN_Parent(pLeaf));
-  //  printf("Predicate is %s/%d\n",get_name(TIF_PSC(tif_ptr)),
-  // get_arity(TIF_PSC(tif_ptr)));
-
+/*
+int check_retractall_cpstack(PrRef prref) {
 
 }
+*/
 
-#define is_dynamic_clause_inst(inst) \
-       (int) inst == dynretrymeelse ||					       \
-       (int) inst == dyntrustmeelsefail
+#define is_dynamic_clause_inst(inst)					\
+  ((int) inst == dynretrymeelse ||   (int) inst == dyntrustmeelsefail)	
 
 int mark_dynamic(CTXTdecl) 
 {
@@ -2096,24 +2071,19 @@ int mark_dynamic(CTXTdecl)
   
   cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
 
-  if (bfreg < cp_bot && bfreg > 0) {
+  if (bfreg < cp_bot && bfreg > (CPtr) 0) {
     return 1;
   }
 
-  else {
-    cp_top = breg ;				 
-    while ( cp_top < cp_bot ) {
-      cp_inst = *(byte *)*cp_top;
-        printf("Cell %p (%s)\n",cp_top,
-          (char *)(inst_table[cp_inst][0])) ;
-      if ( is_dynamic_clause_inst(cp_inst) ) {
-	// Below we want basic_answer_trie_tt, ts_answer_trie_tt, delay_trie_tt
-	printf("Found one!\n");
-      }
-      cp_top = cp_prevbreg(cp_top);
+  cp_top = breg ;				 
+  while ( cp_top < cp_bot ) {
+    cp_inst = *(byte *)*cp_top;
+    if ( is_dynamic_clause_inst(cp_inst) ) {
+      printf("Found one!\n");
     }
-    return 0;
+    cp_top = cp_prevtop(cp_top);
   }
+  return 0;
 }
 
 int sweep_dynamic(CTXTdecl) {
@@ -2215,7 +2185,7 @@ static int force_retract_buffers(CTXTdecl)
   return TRUE;
 }
 
-
+/* used by db_retract and db_reclaim -- also by non-abolish retractall  */
 static int retract_clause(CTXTdeclc ClRef Clause, int retract_nr )
 {
   xsb_dbgmsg((LOG_RETRACT,"Retract clause(%p) op(%x) type(%d)",
@@ -2472,14 +2442,16 @@ static inline void allocate_prref_tab(CTXTdeclc Psc psc, PrRef *prref, pb *new_e
 
   if (!(*prref = (PrRef)mem_alloc_nocheck(sizeof(PrRefData),ASSERT_SPACE))) 
     xsb_exit("++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory (PrRef)");
-  //  fprintf(stdout,"build_prref: %s/%d, shared=%d, prref=%p\n",get_name(psc),get_arity(psc),get_shared(psc),prref);
+  //  fprintf(stdout,"build_prref: %s/%d, shared=%d, prref=%p\n",
+  //          get_name(psc),get_arity(psc),get_shared(psc),prref);
 
   if (xsb_profiling_enabled)
     add_prog_seg(psc,(byte *)*prref,sizeof(PrRefData)); /* dsw profiling */
 
   Loc = 0 ;
   dbgen_inst_ppp(fail,*prref,&Loc) ;
-  ((CPtr)(*prref))[2] = (Cell)(*prref) ;
+  //  ((CPtr)(*prref))[2] = (Cell)(*prref) ; TLS: ugh!
+  (*prref)->LastClRef = (ClRefHdr *)*prref;     
   if ( get_tabled(psc) )
     {
       TIFptr tip;
@@ -2515,6 +2487,8 @@ PrRef build_prref( CTXTdeclc Psc psc )
     set_data(psc,global_mod);
     
   allocate_prref_tab(CTXTc psc,&p,&new_ep);
+  p->psc = psc;
+  p-> mark = 0;
 
 #ifdef MULTI_THREAD
   //  printf("prref disp tab for %s/%d? shared=%d\n",
@@ -2765,12 +2739,12 @@ void retractall_prref(CTXTdeclc PrRef prref) {
   }
 }
 
-
 int gen_retract_all(CTXTdecl/* R1: + PredEP */)
 {
   PrRef prref = (PrRef)ptoc_int(CTXTc 1);
 
   SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
+  //  check_retractall_cpstack(prref);
   retractall_prref(CTXTc dynpredep_to_prref(CTXTc prref));
   SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
   return TRUE;

@@ -206,7 +206,8 @@ void delete_subsumptive_table(CTXTdeclc TIFptr tif) {
 
 /* TLS: use this when table has been deleted (via an abolish), but
    space for it has not been reclaimed.  In this case, we get the
-   access points from the DelTF rather than the TIF. 
+   access points from the DelTF rather than the TIF. For now, called
+   only when 1 active thread.
 
    Input types reflect those of the TIFs */
 

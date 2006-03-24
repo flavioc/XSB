@@ -579,11 +579,13 @@ inline TIFptr New_TIF(CTXTdeclc Psc pPSC) {
    TIF_NextTIF(pTIF) = NULL;						
 #ifdef MULTI_THREAD
    if (get_shared(pPSC)) {
+     SYS_MUTEX_LOCK( MUTEX_TABLE );				
      if ( IsNonNULL(tif_list.last) )					
        TIF_NextTIF(tif_list.last) = pTIF;				      
      else									
        tif_list.first = pTIF;						
      tif_list.last = pTIF;						
+     SYS_MUTEX_UNLOCK( MUTEX_TABLE );				
    } else {
      if ( IsNonNULL(private_tif_list.last) )					
        TIF_NextTIF(private_tif_list.last) = pTIF;			     

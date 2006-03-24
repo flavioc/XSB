@@ -593,9 +593,13 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  rc = 0 ;
 	  break ;
 
+	  /*TLS: I should make the configuration check for existence
+	    of sched_yield somehow. */
 	case XSB_THREAD_YIELD:
+#if !defined(SOLARIS)
 	  rc = sched_yield();
 	  if (rc == ENOSYS) /* Need support for POSIX 1b for this */
+#endif
 	    xsb_abort("Real-time extensions not supported on this platform");
 	  break;
 

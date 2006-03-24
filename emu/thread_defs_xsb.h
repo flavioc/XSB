@@ -79,6 +79,9 @@
 
 /* If you add a mutex, also update mutex_names[] in thread_xsb.c */
 /* first mutexes are recursive */
+
+/* Handles various data structures for dynamic code, including
+   dispatch blocks. */
 #define MUTEX_DYNAMIC		0
 
 /* Use this one only for the stream_table itself: see I/O code for 
@@ -106,6 +109,7 @@
 #define MUTEX_MEM		20
 #define MUTEX_ODBC		21
 #define MUTEX_GENTAG		22
+/* probably obsolete */
 #define MUTEX_DISPBLKHDR        23
 
 /* Some mutexes available to users */

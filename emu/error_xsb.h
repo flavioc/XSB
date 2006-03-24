@@ -26,6 +26,7 @@
 #include "setjmp_xsb.h"
 #include "export.h"
 #include "context.h"
+#include "psc_xsb.h"
 
 /*----------------------------------------------------------------------*/
 /* The following is a list of errors as defined by the Prolog ISO	*/
@@ -124,10 +125,12 @@ void call_conv xsb_type_error(CTXTdeclc char *,Cell , char *,int, int) ;
 extern void call_conv xsb_memory_error(char *, char *);
 
 /* should include these from whereever they are.... split out from biassert **/
-typedef struct
-{	Cell	Instr ;
-	struct ClRefHdr *FirstClRef ;
-	struct ClRefHdr *LastClRef ;
+typedef struct {
+  Cell	Instr ;
+  struct ClRefHdr *FirstClRef ;
+  struct ClRefHdr *LastClRef ;
+  Psc psc;     // pointer to PSC
+  int mark;    // mark (for gc)
 }	*PrRef, PrRefData ;
 
 xsbBool assert_buff_to_clref_p(CTXTdeclc prolog_term, byte, PrRef, int,

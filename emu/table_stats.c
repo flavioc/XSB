@@ -37,7 +37,7 @@
 #include "error_xsb.h"
 #include "flags_xsb.h"
 #include "debug_xsb.h"
-
+#include "thread_xsb.h"
 
 /*==========================================================================*/
 
@@ -140,6 +140,7 @@ NodeStats subgoal_statistics(CTXTdeclc Structure_Manager *sm) {
 
   sg_stats = node_statistics(sm);
   nSubgoals = 0;
+  SYS_MUTEX_LOCK( MUTEX_TABLE );				
   if ( sm == &smVarSF ) {
     for ( tif = tif_list.first;  IsNonNULL(tif);  tif = TIF_NextTIF(tif) )
       if ( IsVariantPredicate(tif) )
@@ -165,11 +166,13 @@ NodeStats subgoal_statistics(CTXTdeclc Structure_Manager *sm) {
 	    nSubgoals++;
   }
   else {
+    SYS_MUTEX_UNLOCK( MUTEX_TABLE );				
     xsb_dbgmsg((LOG_DEBUG, "Incorrect use of subgoal_statistics()\n"
 	       "SM does not contain subgoal frames"));
     return sg_stats;
   }
 
+  SYS_MUTEX_UNLOCK( MUTEX_TABLE );				
   if ( NodeStats_NumUsedNodes(sg_stats) != (counter) nSubgoals )
     xsb_warn("Inconsistent Subgoal Frame Usage Calculations:\n"
 	     "\tSubgoal Frame count mismatch");
