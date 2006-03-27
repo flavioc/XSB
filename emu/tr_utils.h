@@ -56,8 +56,14 @@ extern void trie_undispose(CTXTdeclc long, BTNptr);
 // extern xsbBool check_table_cut;
 
 extern int abolish_table_predicate(CTXTdeclc Psc);
+extern int abolish_table_call(CTXTdeclc VariantSF);
 extern void abolish_private_tables(CTXTdecl);
 extern void abolish_shared_tables(CTXTdecl);
 extern int gc_tabled_preds(CTXTdecl);
+extern void delete_variant_sf_and_answers(CTXTdeclc VariantSF pSF);
+extern void abolish_table_info(CTXTdecl);
+extern int abolish_usermod_tables(CTXTdecl);
+extern int abolish_module_tables(CTXTdeclc const char *module_name);
+
 
 #endif /* __TR_UTILS_H__ */

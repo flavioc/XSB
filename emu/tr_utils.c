@@ -1485,6 +1485,7 @@ void trie_undispose(CTXTdeclc long rootIdx, BTNptr leafn)
 /* Utility Code */
 /*------------------------------------------------------------------*/
 
+/* used by mt engine for shared tables */
 DelTFptr deltf_chain_begin = (DelTFptr) NULL;
 
 #define is_trie_instruction(cp_inst) \
@@ -1528,6 +1529,25 @@ Psc get_psc_for_answer_trie_cp(CTXTdeclc BTNptr pLeaf)
 
 /* - - - - - */
 
+VariantSF get_subgoal_frame_for_answer_trie_cp(CTXTdeclc BTNptr pLeaf) 
+{
+
+  while ( IsNonNULL(pLeaf) && (! IsTrieRoot(pLeaf)) && 
+			       ((int) TN_Instr(pLeaf) != trie_fail_unlock) ) {
+    pLeaf = BTN_Parent(pLeaf);
+  }
+
+  if (TN_Parent(pLeaf)) { /* workaround till all roots pointing to subg's */
+    return (VariantSF) TN_Parent(pLeaf);
+  } else {
+    fprintf(stderr,"Null parent ptr for TN Root Node type: %d Trie type %d\n",
+	    TN_TrieType(pLeaf), TN_NodeType(pLeaf));
+    return NULL;
+  }
+}
+
+/* - - - - - */
+
 TIFptr get_tif_for_answer_trie_cp(CTXTdeclc BTNptr pLeaf)
 {
 
@@ -1540,26 +1560,116 @@ TIFptr get_tif_for_answer_trie_cp(CTXTdeclc BTNptr pLeaf)
 
 /* - - - - - */
 
-void check_insert_new_deltf(CTXTdeclc TIFptr tif)
-{
-  DelTFptr dtf = TIF_DelTF(tif);
-  BTNptr call_trie = TIF_CallTrie(tif);
-  VariantSF subgoals = TIF_Subgoals(tif);	
+/* If there is a deltf with same subgoals and arity (can this be) dont
+   add; otherwise if there is a subgoal for this pred, delete the
+   deltf (it must be for this generation of the table)
+*/
+void check_insert_global_deltf_pred(CTXTdeclc TIFptr tif) { 
+  DelTFptr dtf = TIF_DelTF(tif); 
+  BTNptr call_trie = TIF_CallTrie(tif); 
+  VariantSF subgoals = TIF_Subgoals(tif); 
   int found = 0;
 
   SYS_MUTEX_LOCK(MUTEX_TABLE);
-  while (dtf != 0 && !found) {
-    if (DTF_CallTrie(dtf) == call_trie && DTF_Subgoals(dtf) == subgoals)
+  while ( dtf != 0 ) {
+    if (DTF_Type(dtf) == DELETED_PREDICATE && 
+	DTF_CallTrie(dtf) == call_trie && DTF_Subgoals(dtf) == subgoals)
       found = 1;
-    else dtf = DTF_NextPredDTF(dtf);
+    if (DTF_Type(dtf) == DELETED_SUBGOAL) {
+      fprintf(stderr,"Predicate over-riding subgoal for %s/%d\n",
+	      get_name(TIF_PSC(tif)),get_arity(TIF_PSC(tif)));
+      Free_Global_DelTF_Subgoal(dtf,tif);
+    }
+    dtf = DTF_NextPredDTF(dtf);
   }
   if (!found) {
-    New_DelTF(dtf,tif);
+    New_Global_DelTF_Pred(dtf,tif);
   }
   TIF_CallTrie(tif) = NULL;
   TIF_Subgoals(tif) = NULL;
   SYS_MUTEX_UNLOCK(MUTEX_TABLE);
 }
+
+/* Dont think I need to check for deleted subgoals. */
+void check_insert_global_deltf_subgoal(CTXTdeclc VariantSF subgoal) {
+
+  SYS_MUTEX_LOCK(MUTEX_TABLE);
+
+  DelTFptr dtf;
+  TIFptr tif = subg_tif_ptr(subgoal);
+
+  New_Global_DelTF_Subgoal(dtf,tif,subgoal);
+
+  if (subg_prev_subgoal(subgoal) != 0) 
+    subg_prev_subgoal(subgoal) = subg_next_subgoal(subgoal);
+
+  if (subg_next_subgoal(subgoal) != 0) 
+    subg_next_subgoal(subgoal) = subg_prev_subgoal(subgoal);
+
+  (DelTFptr) subg_deltf_ptr(subgoal) = dtf;
+
+  SYS_MUTEX_UNLOCK(MUTEX_TABLE);
+}
+
+#ifdef MULTI_THREAD
+
+void check_insert_private_deltf_pred(CTXTdeclc TIFptr tif) {
+  DelTFptr dtf = TIF_DelTF(tif);
+  BTNptr call_trie = TIF_CallTrie(tif);
+  VariantSF subgoals = TIF_Subgoals(tif);	
+  int found = 0;
+
+  while ( dtf != 0 ) {
+    if (DTF_Type(dtf) == DELETED_PREDICATE && 
+	DTF_CallTrie(dtf) == call_trie && DTF_Subgoals(dtf) == subgoals)
+      found = 1;
+    if (DTF_Type(dtf) == DELETED_SUBGOAL) {
+      fprintf(stderr,"Predicate over-riding subgoal for %s/%d\n",
+	      get_name(TIF_PSC(tif)),get_arity(TIF_PSC(tif)));
+      Free_Private_DelTF_Subgoal(dtf,tif);
+    }
+    dtf = DTF_NextPredDTF(dtf);
+  }
+  if (!found) {
+    New_Private_DelTF_Pred(dtf,tif);
+  }
+  TIF_CallTrie(tif) = NULL;
+  TIF_Subgoals(tif) = NULL;
+}
+
+#define check_insert_shared_deltf_pred(context, tif)	\
+  check_insert_global_deltf_pred(context, tif)	 
+
+/* * * * * * * */
+
+void check_insert_private_deltf_subgoal(CTXTdeclc VariantSF subgoal)
+{
+  DelTFptr dtf;
+  TIFptr tif = subg_tif_ptr(subgoal);
+
+  New_Private_DelTF_Subgoal(dtf,tif,subgoal);
+
+  if (subg_prev_subgoal(subgoal) != 0) 
+    subg_prev_subgoal(subgoal) = subg_next_subgoal(subgoal);
+
+  if (subg_next_subgoal(subgoal) != 0) 
+    subg_next_subgoal(subgoal) = subg_prev_subgoal(subgoal);
+
+  (DelTFptr) subg_deltf_ptr(subgoal) = dtf;
+}
+
+#define check_insert_shared_deltf_subgoal(context, subgoal)	\
+  check_insert_global_deltf_subgoal(context, subgoal)	 
+
+#else /* not MULTI_THREAD */
+
+#define check_insert_private_deltf_pred(tif)	\
+  check_insert_global_deltf_pred(tif)	 
+
+#define check_insert_private_deltf_subgoal(subgoal)	\
+  check_insert_global_deltf_subgoal(subgoal)	 
+
+#endif
 
 /* - - - - - - - - - - */
 
@@ -1594,7 +1704,14 @@ int fast_abolish_table_predicate(CTXTdeclc Psc psc)
   }  else {
     fprintf(stderr,"Delaying abolish of table in use: %s/%d\n",
 	    get_name(psc),get_arity(psc));
-    check_insert_new_deltf(CTXTc tif);
+#ifndef MULTI_THREAD
+    check_insert_private_deltf_pred(CTXTc tif);
+#else
+    if (!get_shared(psc))
+      check_insert_private_deltf_pred(CTXTc tif);
+    else
+      check_insert_shared_deltf_pred(CTXT,tif);
+#endif
   }
 return 1;
 }
@@ -1645,6 +1762,90 @@ void unmark_cp_tables(CTXTdecl)
     }
     cp_top = cp_prevtop(cp_top);
   }
+}
+
+/*------------------------------------------------------------------*/
+/* abolish_table_call() and supporting code */
+/*------------------------------------------------------------------*/
+
+/* 
+   Recurse through CP stack looking for trie nodes that match PSC.
+   Returns 1 if found a psc match, 0 if safe to delete now
+*/
+
+int abolish_table_call_cps_check(CTXTdeclc VariantSF subgoal) 
+{
+  CPtr cp_top,cp_bot ;
+  byte cp_inst;
+  int found_subgoal_match;
+
+  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
+
+  cp_top = breg ;				 
+  found_subgoal_match = 0;
+  while ( cp_top < cp_bot && !(found_subgoal_match)) {
+    cp_inst = *(byte *)*cp_top;
+    // Want trie insts, but will need to distinguish from
+    // asserted and interned tries
+    if ( is_trie_instruction(cp_inst) ) {
+      // Below we want basic_answer_trie_tt, ts_answer_trie_tt
+      if (IsInAnswerTrie(((BTNptr) *cp_top))) {
+	if (subgoal == 
+	    get_subgoal_frame_for_answer_trie_cp(CTXTc (BTNptr) *cp_top)) {
+	  found_subgoal_match = 1;
+	}
+      }
+    }
+    cp_top = cp_prevtop(cp_top);
+  }
+  return found_subgoal_match;
+}
+
+int abolish_table_call(CTXTdeclc VariantSF subgoal) {
+
+    TIFptr tif;
+    Psc psc;
+    int action;
+
+    subgoal = (VariantSF) ptoc_int(CTXTc 1);
+    if (!is_completed(subgoal)) {
+      xsb_abort("[abolish_table_call] Cannot abolish incomplete tabled call"
+		" of predicate %s/%d\n",get_name(psc),get_arity(psc));
+    }
+
+    tif = subg_tif_ptr(subgoal);
+    psc = TIF_PSC(tif);
+
+    if (flags[NUM_THREADS] == 1 || !get_shared(psc)) {
+      action = abolish_table_call_cps_check(CTXTc subgoal);
+    } else action = 1;
+
+    if (!action) {
+#ifdef MULTI_THREAD      
+      SET_TRIE_ALLOCATION_TYPE_SF(subgoal); // set smBTN to private/shared
+#endif
+      delete_branch(CTXTc subgoal->leaf_ptr, &tif->call_trie); /* delete call */
+      delete_variant_sf_and_answers(CTXTc subgoal); // delete answers
+      return TRUE;
+    }
+    else {
+      fprintf(stderr,"Delaying abolish of call in use for: %s/%d\n",
+	      get_name(psc),get_arity(psc));
+#ifndef MULTI_THREAD
+      delete_branch(CTXTc subgoal->leaf_ptr, &tif->call_trie); /* delete call */
+      check_insert_private_deltf_subgoal(CTXTc subgoal);
+#else
+      if (!get_shared(psc)) {
+	delete_branch(CTXTc subgoal->leaf_ptr, &tif->call_trie); /* delete call */
+	check_insert_private_deltf_subgoal(CTXTc subgoal);
+      }
+      else {
+	safe_delete_branch(subgoal->leaf_ptr); 
+	check_insert_shared_deltf_subgoal(CTXT, subgoal);
+      }
+#endif
+      return TRUE;
+    }
 }
 
 /*------------------------------------------------------------------*/
@@ -1725,7 +1926,14 @@ inline int abolish_table_predicate(CTXTdeclc Psc psc)
   else {
     fprintf(stderr,"Delaying abolish of table in use: %s/%d\n",
 	    get_name(psc),get_arity(psc));
-    check_insert_new_deltf(CTXTc tif);
+#ifndef MULTI_THREAD
+    check_insert_private_deltf_pred(CTXTc tif);
+#else
+    if (!get_shared(psc))
+      check_insert_private_deltf_pred(CTXTc tif);
+    else
+      check_insert_shared_deltf_pred(CTXT, tif);
+#endif
     return 1; 
   }
 }  
@@ -1742,9 +1950,11 @@ inline int abolish_table_predicate(CTXTdeclc Psc psc)
   backtracking through it).  If they aren't 0, we're backtracking
   through a different table altogether, and we needn't mark.
 */
+
 void mark_tabled_preds(CTXTdecl) { 
-CPtr cp_top,cp_bot ; byte cp_inst;
-TIFptr tif;
+  CPtr cp_top,cp_bot ; byte cp_inst;
+  TIFptr tif;
+  VariantSF subgoal;
   
   cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
 
@@ -1757,11 +1967,19 @@ TIFptr tif;
       if (IsInAnswerTrie((BTNptr) *cp_top)) {
 	DelTFptr dtf;
 
+	/* Check for predicate DelTFs */
 	tif = get_tif_for_answer_trie_cp(CTXTc (BTNptr) *cp_top);
-
 	if (TIF_CallTrie(tif) == NULL && TIF_Subgoals(tif) == NULL) {
 	  dtf = TIF_DelTF(tif);
 	  DTF_Mark(dtf) = 1;
+	}
+	
+	/* Now check for subgoal DelTFs */
+	subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc (BTNptr) *cp_top);
+	if (is_completed(subgoal)) {
+	  if (subg_deltf_ptr(subgoal) != NULL) {
+	    DTF_Mark((DelTFptr) subg_deltf_ptr(subgoal)) = 1;
+	  }
 	}
       }
     }
@@ -1769,47 +1987,154 @@ TIFptr tif;
   }
 }
 
-/* No mutex on this predicate, as it can only be called with one active thread */
-int sweep_tabled_preds(CTXTdecl) 
-{
+/* Mark only private tables -- ignore shared tables. Used by mt system
+   when gc-ing with more than 1 active thread -- and used in lieu
+   of mark_tabled_preds()
+*/
+void mark_private_tabled_preds(CTXTdecl) { 
+  CPtr cp_top,cp_bot ; byte cp_inst;
+  TIFptr tif;
+  VariantSF subgoal;
+  
+  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
+
+  cp_top = breg ;				 
+  while ( cp_top < cp_bot ) {
+    cp_inst = *(byte *)*cp_top;
+    // Want trie insts, but will need to distinguish from
+    // asserted and interned tries
+    if ( is_trie_instruction(cp_inst) ) {
+      if (IsInAnswerTrie((BTNptr) *cp_top)) {
+	DelTFptr dtf;
+
+	/* Check for predicate DelTFs */
+	tif = get_tif_for_answer_trie_cp(CTXTc (BTNptr) *cp_top);
+	if (TIF_CallTrie(tif) == NULL && TIF_Subgoals(tif) == NULL 
+	    && !get_shared(TIF_PSC(tif))) { 
+	  dtf = TIF_DelTF(tif);
+	  DTF_Mark(dtf) = 1;
+	}
+
+	/* Now check for subgoal DelTFs */
+	subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc (BTNptr) *cp_top);
+	if (is_completed(subgoal) 
+	    && !get_shared(TIF_PSC(subg_tif_ptr(subgoal)))) {
+	  if (subg_deltf_ptr(subgoal) != NULL) {
+	    DTF_Mark((DelTFptr) subg_deltf_ptr(subgoal)) = 1;
+	  }
+	}
+      }
+    }
+    cp_top = cp_prevtop(cp_top);
+  }
+}
+
+#ifdef MULTI_THREAD
+int sweep_private_tabled_preds(CTXTdecl) {
   DelTFptr deltf_ptr;
   int dtf_cnt = 0;
   TIFptr tif_ptr;
 
-  deltf_ptr = deltf_chain_begin;
+  deltf_ptr = private_deltf_chain_begin;
   while (deltf_ptr) {
     if (DTF_Mark(deltf_ptr)) {
+      tif_ptr = subg_tif_ptr(DTF_Subgoals(deltf_ptr));
+      fprintf(stderr,"Skipping: %s/%d\n",
+	      get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
       DTF_Mark(deltf_ptr) = 0;
       dtf_cnt++;
     }
     else {
-      tif_ptr = subg_tif_ptr(DTF_Subgoals(deltf_ptr));
-      fprintf(stderr,"Garbage Collecting: %s/%d\n",
-	      get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
-      reclaim_deleted_predicate_table(CTXTc deltf_ptr);
-      Free_DelTF(deltf_ptr,tif_ptr);
+      if (DTF_Type(deltf_ptr) == DELETED_PREDICATE) {
+	tif_ptr = subg_tif_ptr(DTF_Subgoals(deltf_ptr));
+	fprintf(stderr,"Garbage Collecting Predicate: %s/%d\n",
+		get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
+	reclaim_deleted_predicate_table(CTXTc deltf_ptr);
+	Free_Private_DelTF_Pred(deltf_ptr,tif_ptr);
+      } else 
+	if (DTF_Type(deltf_ptr) == DELETED_SUBGOAL) {
+	  tif_ptr = subg_tif_ptr(DTF_Subgoal(deltf_ptr));
+	  fprintf(stderr,"Garbage Collecting Subgoal: %s/%d\n",
+		  get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
+	  delete_variant_sf_and_answers(CTXTc DTF_Subgoal(deltf_ptr)); 
+	  Free_Private_DelTF_Subgoal(deltf_ptr,tif_ptr);
+	}
     }
     deltf_ptr = DTF_NextDTF(deltf_ptr);
   }
   return dtf_cnt;
 }
+#endif
 
-/* Returns -1 in situations it cant handle: currently, calling with
- * frozen stacks or multiple threads
+/* No mutex on this predicate, as global portions can only be called
+   with one active thread */
+
+int sweep_tabled_preds(CTXTdecl) {
+  DelTFptr deltf_ptr;
+  int dtf_cnt = 0;
+  TIFptr tif_ptr;
+
+  /* Free global deltfs */
+  deltf_ptr = deltf_chain_begin;
+  while (deltf_ptr) {
+    if (DTF_Mark(deltf_ptr)) {
+      tif_ptr = subg_tif_ptr(DTF_Subgoals(deltf_ptr));
+      fprintf(stderr,"Skipping: %s/%d\n",
+	      get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
+      DTF_Mark(deltf_ptr) = 0;
+      dtf_cnt++;
+    }
+    else {
+      if (DTF_Type(deltf_ptr) == DELETED_PREDICATE) {
+	tif_ptr = subg_tif_ptr(DTF_Subgoals(deltf_ptr));
+	fprintf(stderr,"Garbage Collecting Predicate: %s/%d\n",
+		get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
+	reclaim_deleted_predicate_table(CTXTc deltf_ptr);
+	Free_Global_DelTF_Pred(deltf_ptr,tif_ptr);
+      } else 
+	if (DTF_Type(deltf_ptr) == DELETED_SUBGOAL) {
+	  tif_ptr = subg_tif_ptr(DTF_Subgoal(deltf_ptr));
+	  fprintf(stderr,"Garbage Collecting Subgoal: %s/%d\n",
+		  get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
+	  delete_variant_sf_and_answers(CTXTc DTF_Subgoal(deltf_ptr)); 
+	  Free_Global_DelTF_Subgoal(deltf_ptr,tif_ptr);
+	}
+    }
+    deltf_ptr = DTF_NextDTF(deltf_ptr);
+  }
+
+#ifdef MULTI_THREAD
+  dtf_cnt = dtf_cnt + sweep_private_tabled_preds(CTXT);
+#endif
+
+  return dtf_cnt;
+}
+
+/* * * * * * * * * * * * * * * 
+ * In MT engine gcs does not gc shared tables if there is more than
+ * one thread. 
  */
 
+#ifndef MULTI_THREAD
+int gc_tabled_preds(CTXTdecl) 
+{
+    mark_tabled_preds(CTXT);
+    return sweep_tabled_preds(CTXT);
+  return 0;
+}
+#else
 int gc_tabled_preds(CTXTdecl) 
 {
 
   if (flags[NUM_THREADS] == 1) {
     mark_tabled_preds(CTXT);
     return sweep_tabled_preds(CTXT);
-  }
-  else {
-    xsb_warn("Cannot garbage collect tables with more than one thread active."); 
-    return -1;
-  }
+  } else {
+    mark_private_tabled_preds(CTXT);
+    return sweep_private_tabled_preds(CTXT);
+  } 
 }
+#endif
 
 /*----------------------------------------------------------------------*/
 /* abolish_module_tables() and supporting code */

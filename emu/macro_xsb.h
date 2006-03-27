@@ -37,24 +37,32 @@
  * 		     Deleted Table Frame Records
  *                   ===========================
  *
- *    These records are used to hold pointers to abolished call     
- *    and answer tries for table garbage collection  
+ *    These records are used to hold pointers to abolished call and
+ *    answer tries for table garbage collection.  These are effective
+ *    a union type, as they can hold deleted subgoals as well as
+ *    deleted predicates.
  */     
 
 typedef struct Deleted_Table_Frame *DelTFptr;
 typedef struct Deleted_Table_Frame {
   BTNptr call_trie;		/* pointer to the root of the call trie */
   VariantSF subgoals;		/* chain of predicate's subgoals */
-  int      mark;                /* Marked by scan of CP stack */
+  byte      type;                /* Marked by scan of CP stack */
+  byte      mark;                /* Marked by scan of CP stack */
   DelTFptr next_delTF;		/* pointer to next table info frame */
   DelTFptr next_pred_delTF;	/* pointer to next table info frame same pred */
   DelTFptr prev_delTF;		/* pointer to prev table info frame */
   DelTFptr prev_pred_delTF;	/* pointer to prev table info frame same pred */
 } DeletedTableFrame;
 
+#define DELETED_PREDICATE 0 
+#define DELETED_SUBGOAL 1
+
 #define DTF_Mark(pDTF)	           ( (pDTF)->mark )
+#define DTF_Type(pDTF)	           ( (pDTF)->type )
 #define DTF_CallTrie(pDTF)	   ( (pDTF)->call_trie )
 #define DTF_Subgoals(pDTF)	   ( (pDTF)->subgoals )
+#define DTF_Subgoal(pDTF)	   ( (pDTF)->subgoals )
 #define DTF_NextDTF(pDTF)	   ( (pDTF)->next_delTF )
 #define DTF_NextPredDTF(pDTF)	   ( (pDTF)->next_pred_delTF )
 #define DTF_PrevDTF(pDTF)	   ( (pDTF)->prev_delTF )
@@ -62,12 +70,34 @@ typedef struct Deleted_Table_Frame {
 
 /* Creating two doubly-linked chains -- one for all DelTf, the other
    for Deltfs for this predicate.  */
-#define New_DelTF(pDTF,pTIF) {						\
+#define New_Global_DelTF_Pred(pDTF,pTIF) {				\
    pDTF = (DelTFptr)mem_alloc(sizeof(DeletedTableFrame),TABLE_SPACE);	\
    if ( IsNULL(pDTF) )							\
      xsb_abort("Ran out of memory in allocation of DeletedTableFrame");	\
    DTF_CallTrie(pDTF) = TIF_CallTrie(pTIF);				\
    DTF_Subgoals(pDTF) = TIF_Subgoals(pTIF);				\
+   DTF_Type(pDTF) = DELETED_PREDICATE;					\
+   DTF_Mark(pDTF) = 0;                                                  \
+   DTF_PrevDTF(pDTF) = 0;						\
+   DTF_PrevPredDTF(pDTF) = 0;						\
+   DTF_NextDTF(pDTF) = deltf_chain_begin;				\
+   DTF_NextPredDTF(pDTF) = TIF_DelTF(pTIF);				\
+   if (deltf_chain_begin) DTF_PrevDTF(deltf_chain_begin) = pDTF;	\
+   if (TIF_DelTF(pTIF))  DTF_PrevPredDTF(TIF_DelTF(pTIF)) = pDTF;	\
+   deltf_chain_begin = pDTF;                                            \
+   TIF_DelTF(pTIF) = pDTF;                                              \
+  }
+
+/* Creating two doubly-linked chains -- one for all DelTf, the other
+   for Deltfs for this predicate -- this may not be necess for
+   _subgoal */
+#define New_Global_DelTF_Subgoal(pDTF,pTIF,pSubgoal) {			\
+   pDTF = (DelTFptr)mem_alloc(sizeof(DeletedTableFrame),TABLE_SPACE);	\
+   if ( IsNULL(pDTF) )							\
+     xsb_abort("Ran out of memory in allocation of DeletedTableFrame");	\
+   DTF_CallTrie(pDTF) = NULL;						\
+   DTF_Subgoal(pDTF) = pSubgoal;					\
+   DTF_Type(pDTF) = DELETED_SUBGOAL;						\
    DTF_Mark(pDTF) = 0;                                                  \
    DTF_PrevDTF(pDTF) = 0;						\
    DTF_PrevPredDTF(pDTF) = 0;						\
@@ -82,7 +112,7 @@ typedef struct Deleted_Table_Frame {
 /* In macro below, need to reset DTF chain, and Pred-level DTF chain.
  * No mutexes, because it is called only during gc, w. only 1 active
  * thread. */
-#define Free_DelTF(pDTF,pTIF) {						\
+#define Free_Global_DelTF_Pred(pDTF,pTIF) {				\
   if (DTF_PrevDTF(pDTF) == 0) {						\
     deltf_chain_begin = DTF_NextDTF(pDTF);				\
   }									\
@@ -101,9 +131,118 @@ typedef struct Deleted_Table_Frame {
   if (DTF_NextPredDTF(pDTF) != 0) {					\
     DTF_PrevPredDTF(DTF_NextPredDTF(pDTF)) = DTF_PrevPredDTF(pDTF);	\
   }									\
-  mem_dealloc(pDTF,sizeof(DeletedTableFrame),TABLE_SPACE);				\
+  mem_dealloc(pDTF,sizeof(DeletedTableFrame),TABLE_SPACE);		\
 }
 
+#define Free_Global_DelTF_Subgoal(pDTF,pTIF) {				\
+  if (DTF_PrevDTF(pDTF) == 0) {						\
+    deltf_chain_begin = DTF_NextDTF(pDTF);				\
+  }									\
+  else {								\
+    DTF_NextDTF(DTF_PrevDTF(pDTF)) = DTF_NextDTF(pDTF);			\
+  }									\
+  if (DTF_NextDTF(pDTF) != 0) {						\
+    DTF_PrevDTF(DTF_NextDTF(pDTF)) = DTF_PrevDTF(pDTF);			\
+  }									\
+  if (DTF_PrevPredDTF(pDTF) == 0) {					\
+    TIF_DelTF(pTIF) = DTF_NextDTF(pDTF);				\
+  }									\
+  if (DTF_PrevPredDTF(pDTF) != 0) {					\
+    DTF_NextPredDTF(DTF_PrevPredDTF(pDTF)) = DTF_NextPredDTF(pDTF);	\
+  }									\
+  if (DTF_NextPredDTF(pDTF) != 0) {					\
+    DTF_PrevPredDTF(DTF_NextPredDTF(pDTF)) = DTF_PrevPredDTF(pDTF);	\
+  }									\
+  mem_dealloc(pDTF,sizeof(DeletedTableFrame),TABLE_SPACE);		\
+}
+
+#ifdef MULTI_THREAD
+#define New_Private_DelTF_Pred(pDTF,pTIF) {				\
+   pDTF = (DelTFptr)mem_alloc(sizeof(DeletedTableFrame),TABLE_SPACE);	\
+   if ( IsNULL(pDTF) )							\
+     xsb_abort("Ran out of memory in allocation of DeletedTableFrame");	\
+   DTF_CallTrie(pDTF) = TIF_CallTrie(pTIF);				\
+   DTF_Subgoals(pDTF) = TIF_Subgoals(pTIF);				\
+   DTF_Type(pDTF) = DELETED_PREDICATE;					\
+   DTF_Mark(pDTF) = 0;                                                  \
+   DTF_PrevDTF(pDTF) = 0;						\
+   DTF_PrevPredDTF(pDTF) = 0;						\
+   DTF_NextDTF(pDTF) = private_deltf_chain_begin;			\
+   DTF_NextPredDTF(pDTF) = TIF_DelTF(pTIF);				\
+   if (private_deltf_chain_begin)					\
+     DTF_PrevDTF(private_deltf_chain_begin) = pDTF;			\
+   if (TIF_DelTF(pTIF))  DTF_PrevPredDTF(TIF_DelTF(pTIF)) = pDTF;	\
+   private_deltf_chain_begin = pDTF;					\
+   TIF_DelTF(pTIF) = pDTF;                                              \
+  }
+
+#define New_Private_DelTF_Subgoal(pDTF,pTIF,pSubgoal) {			\
+   pDTF = (DelTFptr)mem_alloc(sizeof(DeletedTableFrame),TABLE_SPACE);	\
+   if ( IsNULL(pDTF) )							\
+     xsb_abort("Ran out of memory in allocation of DeletedTableFrame");	\
+   DTF_CallTrie(pDTF) = NULL;						\
+   DTF_Subgoal(pDTF) = pSubgoal;					\
+   DTF_Type(pDTF) = DELETED_SUBGOAL;					\
+   DTF_Mark(pDTF) = 0;                                                  \
+   DTF_PrevDTF(pDTF) = 0;						\
+   DTF_PrevPredDTF(pDTF) = 0;						\
+   DTF_NextDTF(pDTF) = private_deltf_chain_begin;			\
+   DTF_NextPredDTF(pDTF) = TIF_DelTF(pTIF);				\
+   if (private_deltf_chain_begin)					\
+     DTF_PrevDTF(deltf_chain_begin) = pDTF;				\
+   if (TIF_DelTF(pTIF))  DTF_PrevPredDTF(TIF_DelTF(pTIF)) = pDTF;	\
+   private_deltf_chain_begin = pDTF;					\
+   TIF_DelTF(pTIF) = pDTF;                                              \
+  }
+
+/* In macro below, need to reset DTF chain, and Pred-level DTF chain.
+ * No mutexes, because it is called only during gc, w. only 1 active
+ * thread. */
+#define Free_Private_DelTF_Pred(pDTF,pTIF) {				\
+  if (DTF_PrevDTF(pDTF) == 0) {						\
+    private_deltf_chain_begin = DTF_NextDTF(pDTF);			\
+  }									\
+  else {								\
+    DTF_NextDTF(DTF_PrevDTF(pDTF)) = DTF_NextDTF(pDTF);			\
+  }									\
+  if (DTF_NextDTF(pDTF) != 0) {						\
+    DTF_PrevDTF(DTF_NextDTF(pDTF)) = DTF_PrevDTF(pDTF);			\
+  }									\
+  if (DTF_PrevPredDTF(pDTF) == 0) {					\
+    TIF_DelTF(pTIF) = DTF_NextDTF(pDTF);				\
+  }									\
+  else {								\
+    DTF_NextPredDTF(DTF_PrevPredDTF(pDTF)) = DTF_NextPredDTF(pDTF);	\
+  }									\
+  if (DTF_NextPredDTF(pDTF) != 0) {					\
+    DTF_PrevPredDTF(DTF_NextPredDTF(pDTF)) = DTF_PrevPredDTF(pDTF);	\
+  }									\
+  mem_dealloc(pDTF,sizeof(DeletedTableFrame),TABLE_SPACE);		\
+}
+
+#define Free_Private_DelTF_Subgoal(pDTF,pTIF) {				\
+  if (DTF_PrevDTF(pDTF) == 0) {						\
+    private_deltf_chain_begin = DTF_NextDTF(pDTF);				\
+  }									\
+  else {								\
+    DTF_NextDTF(DTF_PrevDTF(pDTF)) = DTF_NextDTF(pDTF);			\
+  }									\
+  if (DTF_NextDTF(pDTF) != 0) {						\
+    DTF_PrevDTF(DTF_NextDTF(pDTF)) = DTF_PrevDTF(pDTF);			\
+  }									\
+  if (DTF_PrevPredDTF(pDTF) == 0) {					\
+    TIF_DelTF(pTIF) = DTF_NextDTF(pDTF);				\
+  }									\
+  if (DTF_PrevPredDTF(pDTF) != 0) {					\
+    DTF_NextPredDTF(DTF_PrevPredDTF(pDTF)) = DTF_NextPredDTF(pDTF);	\
+  }									\
+  if (DTF_NextPredDTF(pDTF) != 0) {					\
+    DTF_PrevPredDTF(DTF_NextPredDTF(pDTF)) = DTF_PrevPredDTF(pDTF);	\
+  }									\
+  mem_dealloc(pDTF,sizeof(DeletedTableFrame),TABLE_SPACE);		\
+}
+
+#endif
 /*===========================================================================*/
 
 /*
@@ -418,8 +557,17 @@ enum SubgoalFrameType {
 #define SHARED_SFT 0x01
 #define PRIVATE_SFT 0x00
 
-/* Variant (Producer) Subgoal Frame
+/* --------------------------------
+
+   Variant (Producer) Subgoal Frame
+
+   Note that the cp_ptr, which is not needed until a table is
+   complete, is reused as the pointer to the DelTF -- but the DelTF
+   usage will occur only after the table has been completed, so its
+   safe.
+
    -------------------------------- */
+
 typedef struct subgoal_frame {
   byte sf_type;		  /* The type of subgoal frame */
   byte is_complete;	  /* If producer, whether its answer set is complete */
@@ -437,6 +585,7 @@ typedef struct subgoal_frame {
   CPtr compl_stack_ptr;	  /* Pointer to subgoal's completion stack frame */
   CPtr compl_suspens_ptr; /* SLGWAM: CP stack ptr */
   PNDE nde_list;	  /* pointer to a list of negative DEs */
+  DelTFptr deltf_ptr;
 #ifdef MULTI_THREAD
   int tid;		  /* Thread id of the generator thread for this sg */
 #endif
@@ -460,6 +609,7 @@ typedef struct subgoal_frame {
 #define subg_ans_list_ptr(b)	((VariantSF)(b))->ans_list_ptr
 #define subg_ans_list_tail(b)	((VariantSF)(b))->ans_list_tail
 #define subg_cp_ptr(b)		((VariantSF)(b))->cp_ptr
+#define subg_deltf_ptr(b)     	((VariantSF)(b))->deltf_ptr
 #define subg_asf_list_ptr(b)	((VariantSF)(b))->asf_list_ptr
 
 /* use this for mark as completed == 0 */

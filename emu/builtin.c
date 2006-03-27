@@ -126,12 +126,6 @@
 int mem_flag;
 
 /*======================================================================*/
-extern void delete_variant_sf_and_answers(CTXTdeclc VariantSF pSF);
-extern int abolish_table_pred_cps_check(CTXTdeclc Psc psc);
-extern void abolish_table_info(CTXTdecl);
-extern int abolish_usermod_tables(CTXTdecl);
-extern int abolish_module_tables(CTXTdeclc const char *module_name);
-
 extern struct token_t *GetToken(CTXTdeclc FILE *, STRFILE *, int);
 
 extern int  sys_syscall(CTXTdeclc int);
@@ -2098,35 +2092,8 @@ case WRITE_OUT_PROFILE:
   }
 
   case ABOLISH_TABLE_CALL: {
-    VariantSF subgoal;
-    TIFptr tif;
-    Psc psc;
-    //    int action;
-
-    TRIE_W_LOCK();
-    subgoal = (VariantSF) ptoc_int(CTXTc 1);
-    SET_TRIE_ALLOCATION_TYPE_SF(subgoal); // set smBTN to private/shared
-    tif = (TIFptr) subgoal->tif_ptr;
-    psc = TIF_PSC(tif);
-    if (!is_completed(subgoal)) {
-      TRIE_W_UNLOCK();
-      xsb_abort("[abolish_table_call] Cannot abolish incomplete tabled call"
-		" of predicate %s/%d\n",get_name(psc),get_arity(psc));
-    }
-    //    if (flags[NUM_THREADS] == 1 || !get_shared(psc)) {
-    //      action = abolish_table_pred_cps_check(CTXTc psc);
-    //    } else action = 1;
-    //    if (!action) {
-      delete_branch(CTXTc subgoal->leaf_ptr, &tif->call_trie); /* delete call */
-      delete_variant_sf_and_answers(CTXTc subgoal); // delete answers
-      TRIE_W_UNLOCK();
-      return TRUE;
-      //    }
-      //    else {
-      //      TRIE_W_UNLOCK();
-      //      xsb_abort("Cannot abolish a table call for a table in use: %s/%d\n",get_name(psc),get_arity(psc));
-      //      return TRUE;
-      //    }
+    
+    return abolish_table_call(CTXTc (VariantSF) ptoc_int(CTXTc 1));
   }
 
   case ABOLISH_MODULE_TABLES: {

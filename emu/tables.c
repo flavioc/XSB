@@ -134,6 +134,7 @@ VariantSF NewProducerSF(CTXTdeclc BTNptr Leaf,TIFptr TableInfo) {
      pNewSF = memset(pNewSF,0,sizeof(subsumptive_producer_sf));		    
      subg_sf_type(pNewSF) = SUBSUMPTIVE_PRODUCER_SFT;			    
    }
+   subg_deltf_ptr(pNewSF) = NULL;
    subg_tif_ptr(pNewSF) = TableInfo;					    
    subg_dll_add_sf(pNewSF,TIF_Subgoals(TableInfo),TIF_Subgoals(TableInfo)); 
    subg_leaf_ptr(pNewSF) = Leaf;					    

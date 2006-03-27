@@ -208,6 +208,7 @@ struct th_context
   int _global_num_vars;
 
   struct tif_list _private_tif_list;
+  DelTFptr _private_deltf_chain_begin;
 
   BTNptr  _NodePtr, 
     _Last_Nod_Sav;
@@ -438,6 +439,7 @@ typedef struct th_context th_context ;
 #define global_num_vars		(th->_global_num_vars)
 
 #define private_tif_list        (th-> _private_tif_list)
+#define private_deltf_chain_begin (th-> _private_deltf_chain_begin)
 
 #define NodePtr			(th->_NodePtr)
 #define Last_Nod_Sav		(th->_Last_Nod_Sav)
