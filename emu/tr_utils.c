@@ -1606,7 +1606,7 @@ void check_insert_global_deltf_subgoal(CTXTdeclc VariantSF subgoal) {
   if (subg_next_subgoal(subgoal) != 0) 
     subg_next_subgoal(subgoal) = subg_prev_subgoal(subgoal);
 
-  (DelTFptr) subg_deltf_ptr(subgoal) = dtf;
+  subg_deltf_ptr(subgoal) = dtf;
 
   SYS_MUTEX_UNLOCK(MUTEX_TABLE);
 }
