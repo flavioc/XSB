@@ -633,6 +633,7 @@ build_fail(F/A,N,L,T) :-
 
 
 	
+rule_clauses([],_Mod,_Constr,R,R,_Constrs,L,L).
 rule_clauses([R|Rs],Mod,Constr,RI,RN,Constrs,L,T) :-
 	(Rs = []
 	 -> rule_code(R,true,Constr,RI,RN,Constrs,Mod,L,T)
@@ -647,10 +648,10 @@ rule_code(R,LastRule,F/A,RI,RN,Constrs,Mod,L,T) :-
 	 -> (Head2 = []
 	     -> head1code(Head1,true,[],IDs1,[],R,F/A,RI,RN,Constrs,L,T)
 	      ; head1code(Head1,false,[],IDs1,[],R,F/A,RI,RJ,Constrs,L,L1),
-	        head2code(Head2,true,[],IDs2,[],R,F/A,RJ,RN,Constrs,Mod,L1,T)
+	        head2code(Head2,true,Head1,IDs2,[],R,F/A,RJ,RN,Constrs,Mod,L1,T)
 	    )
-	  ; head1code(Head1,LastRule,[],IDs1,[],R,F/A,RI,RJ,Constrs,L,L1),
-	    head2code(Head2,LastRule,[],IDs2,[],R,F/A,RJ,RN,Constrs,Mod,L1,T)
+	  ; head1code(Head1,LastRule,Head2,IDs1,[],R,F/A,RI,RJ,Constrs,L,L1),
+	    head2code(Head2,LastRule,Head1,IDs2,[],R,F/A,RJ,RN,Constrs,Mod,L1,T)
 	    
 	).
 
@@ -819,7 +820,6 @@ simpagation2_code(Head,LastRule,OtherHs,R,F/A,I,N,Constrs,Mod,L,T) :-
 	guards_join_order(HeadVs,GuardCp,FreeParsGuards,BoundParGuards),
 
 	heads_intersect(OtherHsCp,Head1Cp,MatchRecHs),
-%	MatchRecHs = [],
 	append(OtherHsCp,Head1Cp,RestHsCp),
 	abs_remove_same(RestHsCp,MatchRecHs,MatchOnceHs,[]),
 
@@ -954,7 +954,7 @@ simpagation2_code(Head,LastRule,KeepHeads,R,F/A,I,N,Constrs,Mod,L,T) :-
 		       NextRHead
 
 		    ),
-	    L = [RCode]
+	    L = [RCode|T]
 	
 	  ; str_cat(RHeadLabel, '_1', RecursiveCallLabel),
 	    append(HeadVs,NthAtts,RecursiveArgs),
