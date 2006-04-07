@@ -1592,11 +1592,12 @@ void check_insert_global_deltf_pred(CTXTdeclc TIFptr tif) {
 
 /* Dont think I need to check for deleted subgoals. */
 void check_insert_global_deltf_subgoal(CTXTdeclc VariantSF subgoal) {
+  DelTFptr dtf;
+  TIFptr tif;
 
   SYS_MUTEX_LOCK(MUTEX_TABLE);
 
-  DelTFptr dtf;
-  TIFptr tif = subg_tif_ptr(subgoal);
+  tif = subg_tif_ptr(subgoal);
 
   New_Global_DelTF_Subgoal(dtf,tif,subgoal);
 
@@ -1808,13 +1809,13 @@ int abolish_table_call(CTXTdeclc VariantSF subgoal) {
     int action;
 
     subgoal = (VariantSF) ptoc_int(CTXTc 1);
+    tif = subg_tif_ptr(subgoal);
+    psc = TIF_PSC(tif);
+
     if (!is_completed(subgoal)) {
       xsb_abort("[abolish_table_call] Cannot abolish incomplete tabled call"
 		" of predicate %s/%d\n",get_name(psc),get_arity(psc));
     }
-
-    tif = subg_tif_ptr(subgoal);
-    psc = TIF_PSC(tif);
 
     if (flags[NUM_THREADS] == 1 || !get_shared(psc)) {
       action = abolish_table_call_cps_check(CTXTc subgoal);
