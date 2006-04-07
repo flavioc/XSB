@@ -554,7 +554,7 @@ enum SubgoalFrameType {
 #define VARIANT_SUBSUMPTION_MASK  0x03
 
 #define SHARED_PRIVATE_MASK 0x04
-#define SHARED_SFT 0x01
+#define SHARED_SFT 0x04
 #define PRIVATE_SFT 0x00
 
 /* --------------------------------
