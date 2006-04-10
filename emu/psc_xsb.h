@@ -80,7 +80,7 @@ struct psc_rec {
 				/* 0x20 - shared, 0x1 for pritave; 0x8 - tabled */
   byte entry_type;		/* see psc_defs.h */
   byte arity;
-  byte length;
+  byte unused;
   char *nameptr;
   struct psc_rec *data;      /* psc of module, if pred; otw data */
   byte *ep;                     /* entry point (initted to next word) */
