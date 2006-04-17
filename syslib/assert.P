@@ -348,16 +348,18 @@ db_new_prref(PSC,_PHead,Prref) :-
 	db_build_prref(PSC, _Tabled, Prref).
 
 /*======================================================================*/
-/* get_dynamic_pred_ep(+PHead,+CallingRef,-PredEP):			*/
+/* get_dynamic_pred_ep(+PHead,+CallingRef,-PredEP,-PSC):    	        */
 /*	returns the PredEP for the predicate that is the main functor	*/
 /*      symbol of PHead.  CallingRef is used in the error message	*/
 /*      thrown if PHead is a compiled predicate.  The predicate fails	*/
 /*      if PHead is undefined, and succeeds returning the PredEP if	*/
 /*      PHead is a dynamic predicate.					*/
+/*                                                                      */
+/* TLS: changed to return PSC, also                                     */ 
 /*									*/
 /*======================================================================*/
 
-get_dynamic_pred_ep(Head,CallingPred,PredEP) :-
+get_dynamic_pred_ep(Head,CallingPred,PredEP,PSC) :-
 	conpsc(Head, PSC),
 	psc_type(PSC,Type),
 	(Type =:= T_PRED		/* is compiled */
@@ -397,9 +399,9 @@ retract(Rule) :-	% changed for multifile predicates (2/24/98)
 do_multifile_retract(Head, Body) :-
 	'_$multifile_retract'(Head, _, New_Head),
 	check_retract(New_Head, multifile_retract/1),
-	(get_dynamic_pred_ep(New_Head,'retract/1',PredEP)
+	(get_dynamic_pred_ep(New_Head,'retract/1',PredEP,PSC)
 	 ->	true
-	 ;	db_retract(New_Head, Body, PredEP)
+	 ;	db_retract(New_Head, Body, PredEP, PSC)
 	).
 
 
@@ -409,8 +411,8 @@ retract0(Rule) :-	% original retract/1, is used in standard.P
 	 ;	Head = Rule, Body = true
 	),
 	check_retract(Head, retract/1),
-	get_dynamic_pred_ep(Head,'retract/1',PredEP),
-	db_retract(Head, Body, PredEP).
+	get_dynamic_pred_ep(Head,'retract/1',PredEP,PSC),
+	db_retract(Head, Body, PredEP,PSC).
 
 retractall(Fact) :-
 	call_xsb_hook(xsb_retract_hook(_),[Fact,true],all),
@@ -427,23 +429,25 @@ do_multifile_retractall(_).
 
 retractall0(Fact) :-
 	check_retract(Fact, retractall/1),
-	(get_dynamic_pred_ep(Fact,'retractall/1',PredEP)
-	 ->	db_retractall(Fact, PredEP)
+	(get_dynamic_pred_ep(Fact,'retractall/1',PredEP,PSC)
+	 ->	db_retractall(Fact, PredEP,PSC)
 	 ;	true
 	).
 
 retract_nr(Rule) :-
+	obsolete(retract_nr/1, retract/1),
 	(Rule = (Head :- Body)
 	 ->	true
 	 ;	Head = Rule, Body = true
 	),
 	check_retract(Head, retract_nr/1),
-	get_dynamic_pred_ep(Head,'retract_nr/1',PredEP),
-	db_retract_nr(Head, Body, PredEP).
+	get_dynamic_pred_ep(Head,'retract_nr/1',PredEP,PSC),
+	db_retract_nr(Head, Body, PredEP,PSC).
 
 reclaim_space(Fact) :-
+	obsolete(reclaim_space/1, gc_dynamic/0),
 	check_retract(Fact, reclaim_space/1),
-	(get_dynamic_pred_ep(Fact,'reclaim_space/1',PredEP)
+	(get_dynamic_pred_ep(Fact,'reclaim_space/1',PredEP,_PSC)
 	 ->	db_reclaim_space(Fact, PredEP)
 	 ;	true
 	).
@@ -462,10 +466,10 @@ retract_last_fact(Skel) :-
 	 ->	true
 	 ;      instantiation_error(retract_last_fact/1,1,skeleton)
 	),
-	get_dynamic_pred_ep(Skel,'retract_last_fact/1',PredEP),
+	get_dynamic_pred_ep(Skel,'retract_last_fact/1',PredEP,PSC),
 	db_get_last_clause(PredEP,Clref,_Type,EntryPoint),
 	do_dyn_code_call(EntryPoint,Skel),
-	db_retract0(Clref,0).
+	db_retract0(Clref,0,PSC).
 
 do_dyn_code_call(EntryPt,Skel) :-
 	code_call(EntryPt,Skel,1). % 1 => dynamic pred, and last call in clause.
@@ -579,7 +583,7 @@ clause(Head, Body) :-
 
 
 clause0(Head, Body) :-
-	get_dynamic_pred_ep(Head,'clause0/2',PredEP),
+	get_dynamic_pred_ep(Head,'clause0/2',PredEP,_PSC),
 	db_clause(Head,Body,PredEP,_Clref).
 
 

@@ -23,16 +23,16 @@
 */
 
 	  
-:- export db_retract/3, db_retract_nr/3, db_reclaim_space/2.
-:- export db_clause/4, db_retractall/2, db_abolish/1, '_$clause_int'/1.
+:- export db_retract/4, db_retract_nr/4, db_reclaim_space/2.
+:- export db_clause/4, db_retractall/3, db_abolish/1, '_$clause_int'/1.
 
 :- import abort/1, atom/1, call_c/1, repeat/0, is_most_general_term/1
      from standard.
 :- import set_inthandler/2, '_$load_undef'/1 from loader.
 :- import log_ith/3 from basics.
 :- import stat_set_flag/2, code_call/3, conname/2,
-          gen_retract_all/1,
-	  db_get_clause/11, db_retract0/2, db_remove_prref/1, db_reclaim0/2,
+          gen_retract_all/2,
+	  db_get_clause/11, db_retract0/3, db_remove_prref/2, db_reclaim0/2,
 	  globalvar/1, term_set_arg/4, psc_ep/2,
 	  trie_assert_hdr_info/3
      from machine.

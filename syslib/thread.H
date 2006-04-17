@@ -22,7 +22,8 @@
 ** 
 */
 
-:- export xsb_thread_cancel/1,
+:- export abolish_private_tables/0,abolish_shared_tables/0,
+          xsb_thread_cancel/1,
           xsb_thread_create/2,xsb_thread_create/3, 
           xsb_thread_detach/1,
 	  xsb_thread_exit/1,  

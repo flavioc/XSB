@@ -101,6 +101,7 @@ interpreter_readloop(_) :-
 	%% the handler when it starts up, which will cause a lot of grief
 	x_interp_repeat,
 	trimcore,
+	gc_tables(_),gc_dynamic(_),
 	stat_set_flag(HIDE_STATE, 1), %% hide call interceptions.
 	stat_set_flag(INVOKE_NUM, 0),
 	conset('_$break_level', 0),

@@ -209,16 +209,16 @@ assert_buff_to_clref(Head, NAri, Prref, AZ, RInd, HashTabSize) :-
 	assert_buff_to_clref(Head, NAri, Prref, AZ, RInd, HashTabSize).
 
 file_read_canonical(_File,_Var,_Ret) :- '_$builtin'(FILE_READ_CANONICAL).
-gen_retract_all(_Buff) :- '_$builtin'(GEN_RETRACT_ALL).
+gen_retract_all(_Buff,_PSC) :- '_$builtin'(GEN_RETRACT_ALL).
 
 db_get_last_clause(_PrRef,_Clause,_Type,_Entry) :- 
 	'_$builtin'(DB_GET_LAST_CLAUSE).
-db_retract0(_Clause,_DontReclaim) :- '_$builtin'(DB_RETRACT0).
+db_retract0(_Clause,_DontReclaim,_PSC) :- '_$builtin'(DB_RETRACT0).
 db_get_clause(_CC0,_CIL,_CI,_PrRef,_Head,_Failed,_Clause,_Type,_Entry,_NCIL,_NCI) :- 
 	'_$builtin'(DB_GET_CLAUSE).
 db_build_prref(_PSC,_Tabled,_PrRef) :- '_$builtin'(DB_BUILD_PRREF).
 db_get_prref(_PSC,_PrRef) :- '_$builtin'(DB_GET_PRREF).
-db_remove_prref(_Prref) :- '_$builtin'(DB_REMOVE_PRREF).
+db_remove_prref(_Prref,_PSC) :- '_$builtin'(DB_REMOVE_PRREF).
 db_reclaim0(_Clause,_Type) :- '_$builtin'(DB_RECLAIM0).
 
 formatted_io(_OPnumber, _FileOrString,_Format,_ArgTerm,_RetCode) :-

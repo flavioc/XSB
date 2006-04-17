@@ -39,8 +39,8 @@
 
 :- import default_assert_size/1 from config.
 
-:- import db_retract/3, db_retractall/2, db_abolish/1, db_clause/4,
-  db_retract_nr/3, db_reclaim_space/2
+:- import db_retract/4, db_retractall/3, db_abolish/1, db_clause/4,
+  db_retract_nr/4, db_reclaim_space/2
      from dbclause.
 
 :- import instantiation_error/3 , permission_error/4, 
@@ -50,8 +50,8 @@
 	  retract_index/1, retract_table/1, mpa_to_skel/2  from file_op.
 :- import psc_ep/2, psc_type/2, psc_set_type/2, psc_arity/2,
 	  conpsc/2, assert_code_to_buff/1, assert_buff_to_clref/6,
-  psc_set_ep/2, unload_seg/1, db_build_prref/3, db_get_prref/2,
-  code_call/3, db_retract0/2
+          psc_set_ep/2, unload_seg/1, db_build_prref/3, db_get_prref/2,
+          code_call/3, db_retract0/3
      from machine.
 :- import parsort/4 from machine.
 :- import db_get_last_clause/4 from machine.
@@ -68,3 +68,5 @@
 :- import xsb_sys_mutex_lock/1, xsb_sys_mutex_unlock/1 from thread.
 
 :- import call_xsb_hook/3, xsb_assert_hook/1, xsb_retract_hook/1 from xsb_hook.
+
+ :- import obsolete/2 from obsolete.

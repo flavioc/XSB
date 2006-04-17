@@ -126,6 +126,12 @@ xsb_thread_detach(ThreadId) :-
 xsb_thread_yield:-
 	thread_request( XSB_THREAD_YIELD, _,_,_, _, _, _, _).
 
+abolish_private_tables:-
+	thread_request( ABOLISH_PRIVATE_TABLES, _,_,_, _, _, _, _).
+
+abolish_shared_tables:-
+	thread_request( ABOLISH_SHARED_TABLES, _,_,_, _, _, _, _).
+
 /* ==================================================================  */
 
 /* System provided mutexes for users */
@@ -259,5 +265,5 @@ xsb_thread_exit( ExitCode, ErrorVal ) :-
 xsb_thread_join( ThreadId, ExitCode, ErrorVal ) :-
 	thread_request( XSB_THREAD_JOIN, ThreadId, ExitCode, _, _,_,_,_ ).
 
-xsb_thread_create( Goal )	    :- xsb_thread_create( Goal, _, _ ).
+%xsb_thread_create( Goal )	    :- xsb_thread_create( Goal, _, _ ).
 
