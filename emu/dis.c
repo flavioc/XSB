@@ -31,6 +31,7 @@
 #include <string.h>
 
 #include "auxlry.h"
+#include "context.h"
 #include "psc_xsb.h"
 #include "hash_xsb.h"
 #include "loader_xsb.h"

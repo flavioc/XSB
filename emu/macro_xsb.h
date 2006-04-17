@@ -243,6 +243,94 @@ typedef struct Deleted_Table_Frame {
 }
 
 #endif
+
+/*===========================================================================*/
+
+/*             
+ * 		     Predicate Reference Records
+ *                   ===========================
+ *
+ *    These records are used to hold some predicate-level information
+ *    for dynamic code (non-trie asserted).  Prrefs are pointed to by
+ *    the ep field of a PSC record and in turn point to ClRefs of each
+ *    asserted clause and back to the PSC record itself.  Prrefs also
+ *    contain fields for various GC information for the dynamic
+ *    predicate and its clauses.
+ */
+
+typedef struct Deleted_Clause_Frame *DelCFptr;
+typedef struct {
+  Cell	Instr ;
+  struct ClRefHdr *FirstClRef ;
+  struct ClRefHdr *LastClRef ;
+  Psc psc;                          // pointer to PSC
+  int mark;                         // mark (for gc)
+  //  int generation; 
+  DelCFptr delcf;                      // delcf pointer
+}	*PrRef, PrRefData ;
+
+#define PrRef_Instr(PRREF)          ( (PRREF)->Instr )
+#define PrRef_FirstClRef(PRREF)     ( (PRREF)->FirstClRef )
+#define PrRef_LastClRef(PRREF)      ( (PRREF)->LastClRef )
+//#define PrRef_Generation(PRREF)     ( (PRREF)->generation )
+#define PrRef_Psc(PRREF)            ( (PRREF)->psc )
+#define PrRef_Mark(PRREF)           ( (PRREF)->mark )
+#define PrRef_DelCF(PRREF)          ( (PRREF)->delcf )
+
+/* Can't use CTXTdeclc here because its included early in context.h */
+#ifdef MULTI_THREAD
+extern xsbBool assert_buff_to_clref_p(struct th_context *, prolog_term, byte, 
+				      PrRef, int, prolog_term, int, ClRef *);
+
+extern int assert_code_to_buff_p(struct th_context *, prolog_term);
+#else
+extern xsbBool assert_buff_to_clref_p(prolog_term, byte, PrRef, int,
+			       prolog_term, int, ClRef *);
+
+extern int assert_code_to_buff_p(prolog_term);
+#endif
+
+
+/*===========================================================================*/
+
+/*             
+ * 		     Deleted Clause Frames`
+ *                   ===========================
+ *
+ *    These records are used to hold pointers to abolished dynamic
+ *    predicates and clauses for dynamic clause garbage collection.
+ *    These are effectively a union type, as they can hold deleted
+ *    clauses as well as information about retractall-ed or abolished
+ *    predicates.
+ */     
+
+typedef struct Deleted_Clause_Frame {
+  PrRef prref;		        /* ptr to prref whose clauses are to be deleted*/
+  ClRef clref;		        /* ptr to first CLref in chain */
+  //  int generation;	        /* generation of retractalled prref*/
+  Psc psc;		        /* pointer to psc of prref (necess?) */
+  byte      type;               /* Prref or Clref */
+  byte      mark;               /* Marked by scan of CP stack */
+  DelCFptr next_delCF;		/* pointer to next DelCl frame */
+  DelCFptr next_pred_delCF;	/* pointer to next DelCl frame same pred */
+  DelCFptr prev_delCF;		/* pointer to prev DelCl frame */
+  DelCFptr prev_pred_delCF;	/* pointer to prev DelCl frame same pred */
+} DeletedClauseFrame;
+
+#define DELETED_PRREF 0 
+#define DELETED_CLREF 1
+
+#define DCF_Mark(pDCF)	           ( (pDCF)->mark )
+#define DCF_Type(pDCF)	           ( (pDCF)->type )
+#define DCF_PrRef(pDCF)	           ( (pDCF)->prref )
+#define DCF_ClRef(pDCF)	           ( (pDCF)->clref )
+//#define DCF_Generation(pDCF)	   ( (pDCF)->generation )
+#define DCF_PSC(pDCF)	           ( (pDCF)->psc )
+#define DCF_NextDCF(pDCF)	   ( (pDCF)->next_delCF )
+#define DCF_PrevDCF(pDCF)	   ( (pDCF)->prev_delCF )
+#define DCF_NextPredDCF(pDCF)	   ( (pDCF)->next_pred_delCF )
+#define DCF_PrevPredDCF(pDCF)	   ( (pDCF)->prev_pred_delCF )
+
 /*===========================================================================*/
 
 /*

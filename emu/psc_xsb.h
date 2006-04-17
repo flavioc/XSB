@@ -174,7 +174,12 @@ inline static char *get_ret_string()	{ return (char *)ret_psc[0]; }
 
 extern Psc get_intern_psc();
 
-//extern struct Table_Info_Frame *get_tip(CTXTdeclc Psc);
+/* Can't use CTXTdeclc here because its included early in context.h */
+#ifdef MULTI_THREAD
+extern struct Table_Info_Frame *get_tip(struct th_context *, Psc);
+#else
+extern struct Table_Info_Frame *get_tip(Psc);
+#endif
 
 extern void print_symbol_table();
 extern Psc get_psc_from_ep(void *);

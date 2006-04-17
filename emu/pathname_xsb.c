@@ -49,6 +49,7 @@
 
 #include "setjmp_xsb.h"
 #include "auxlry.h"
+#include "context.h"
 #include "psc_xsb.h"
 #include "cell_xsb.h"
 #include "cinterf.h"

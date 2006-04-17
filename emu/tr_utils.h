@@ -43,6 +43,7 @@ extern void safe_delete_branch(BTNptr);
 extern void undelete_branch(BTNptr);
 extern void reclaim_uninterned_nr(CTXTdeclc long rootidx);
 extern void delete_trie(CTXTdeclc BTNptr);
+extern xsbBool is_completed_table(TIFptr);
 
 extern xsbBool has_unconditional_answers(VariantSF);
 

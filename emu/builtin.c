@@ -142,7 +142,6 @@ extern xsbBool startInterruptThread(SOCKET intSocket);
 #endif
 
 // Externs for profiler
-extern TIFptr get_tip(CTXTdeclc Psc);
 
 long if_profiling = 0;
 long profile_thread_started = 0;

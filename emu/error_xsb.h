@@ -124,20 +124,6 @@ void call_conv xsb_type_error(CTXTdeclc char *,Cell , char *,int, int) ;
 
 extern void call_conv xsb_memory_error(char *, char *);
 
-/* should include these from whereever they are.... split out from biassert **/
-typedef struct {
-  Cell	Instr ;
-  struct ClRefHdr *FirstClRef ;
-  struct ClRefHdr *LastClRef ;
-  Psc psc;     // pointer to PSC
-  int mark;    // mark (for gc)
-}	*PrRef, PrRefData ;
-
-xsbBool assert_buff_to_clref_p(CTXTdeclc prolog_term, byte, PrRef, int,
-			       prolog_term, int, ClRef *);
-
-int assert_code_to_buff_p(CTXTdeclc prolog_term);
-
 DllExport void call_conv xsb_throw(CTXTdeclc prolog_term, unsigned long);
 
 extern prolog_term build_xsb_backtrace(CTXTdecl);

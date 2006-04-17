@@ -73,10 +73,6 @@
 
 /*----------------------------------------------------------------------*/
 
-extern struct Table_Info_Frame *get_tip(CTXTdeclc Psc);
-
-/*----------------------------------------------------------------------*/
-
 xsbBool has_unconditional_answers(VariantSF subg)
 {
   ALNptr node_ptr = subg_answers(subg);
@@ -1494,7 +1490,7 @@ DelTFptr deltf_chain_begin = (DelTFptr) NULL;
 
 /* - - - - - */
 
-inline static xsbBool is_completed_table(TIFptr tif) {
+xsbBool is_completed_table(TIFptr tif) {
   VariantSF sf;
 
   for ( sf = TIF_Subgoals(tif);  IsNonNULL(sf);  

@@ -1281,6 +1281,7 @@ contcase:     /* the main loop */
   XSB_End_Instr()
 
   XSB_Start_Instr(dyntrustmeelsefail,_dyntrustmeelsefail) /* PPA-L, second word ignored */
+      gdb_dummy();
     Def1op
     Op1(get_xxa);
     handle_xsb_profile_interrupt;

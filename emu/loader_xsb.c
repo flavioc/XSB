@@ -39,6 +39,7 @@
 #include <string.h>
 
 #include "auxlry.h"
+#include "context.h"
 #include "psc_xsb.h"
 #include "psc_defs.h"
 #include "loader_xsb.h"

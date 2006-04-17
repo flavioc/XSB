@@ -29,7 +29,6 @@
 
 /* Special debug includes */
 #include "debugs/debug_biassert.h"
-
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
@@ -96,13 +95,19 @@ struct DispBlkHdr_t {
 } DispBlkHdr = {NULL, NULL};
 
 #ifdef MULTI_THREAD
-/* For a private dynamic predicate, return addr of its prref or its table wrapper */
+
+/* For a private dynamic predicate, return addr of its prref or its
+   table wrapper */
+
 CPtr dynpredep_to_prortb(CTXTdeclc void *pred_ep) {
     if (th->tid > (((struct DispBlk_t **)pred_ep)[1])->MaxThread) 
       xsb_abort("Dynamic Dispatch block too small");
     return (CPtr) ((&((struct DispBlk_t **)pred_ep)[1]->Thread0)[th->tid]);
 }
 #endif
+
+/* Maps psc -> ep to the actual prref, accounting for dispatch tables
+   and/or table wrappers. */
 
 PrRef dynpredep_to_prref(CTXTdeclc void *pred_ep) {
 #ifdef MULTI_THREAD
@@ -1144,6 +1149,11 @@ static void db_genmvs(CTXTdeclc struct instruction_q *inst_queue, RegStat Reg)
 /*									*/
 /* PrRef's point to chain of clRef's (one of 2 types):			*/
 /* (the -8 location stores length of buff + flag indicating ClRef type	*/
+/*                                                                      */
+/* Whoever set this up arranged for the pointer to point AFTER the      */
+/* Clref structure.  So if you want to acess it as a structure you need */
+/* to decrement it (see macros below)                                   */
+/*                                                                      */
 /*	ClRef0 (for unindexed asserted code):				*/
 /*		-8: length of buffer (+0)				*/
 /*		-4: Addr of previous ClRef (or PrRef)			*/
@@ -1188,7 +1198,17 @@ static void db_genmvs(CTXTdeclc struct instruction_q *inst_queue, RegStat Reg)
 /*									*/
 /*======================================================================*/
 
-/* Predicate References defined in error_xsb.h / clause reference in context.h  */
+/* Predicate References defined in macro_xsb.h / clause reference in context.h  */
+
+typedef struct ClRefHdrI *ClRefI;
+typedef struct  {
+  unsigned long buflen ;
+  struct ClRefI *prev ;
+  CPtr Instr ;
+  struct ClRefI *next ;
+}	ClRefHdrI;
+
+
 
 #define PredOpCode(P)		(cell_opcode(&(P)->Instr))
 
@@ -1214,11 +1234,13 @@ typedef ClRef SOBRef ;
 #define INDEXED_CL	3
 
 #define MakeClRef(ptr,Type,NCells)\
-{	long sz = (((NCells)*sizeof(Cell)+sizeof(ClRefHdr) + 7) & ~0x7);\
+{	long sz = (((NCells)*sizeof(Cell)+sizeof(ClRefHdr) + 7) & ~0x7);	\
 	(ptr) = (ClRef)mem_calloc(sz,1,ASSERT_SPACE);\
 	(ptr)->buflen = ((Type)&3)+sz;\
 	(ptr)++;\
 }
+
+//	printf("MakeClRef(%x,%x,%d,%d)\n",ptr,Type,NCells,sz);	
 
 /* Clause common fields */
 
@@ -1419,7 +1441,8 @@ xsbBool assert_buff_to_clref_p(CTXTdeclc prolog_term Head,
   if (xsb_profiling_enabled)
     add_prog_seg(get_str_psc(Head),(byte *)Clause,ClRefSize(Clause));
 
-  //  printf("asserting clause for: %s/%d\n",get_name(get_str_psc(Head)),get_arity(get_str_psc(Head)));
+  //  printf("asserting clause for: %s/%d at %x\n",
+  // get_name(get_str_psc(Head)),get_arity(get_str_psc(Head)),Clause);
 
   Location = 0; Loc = &Location;
   dbgen_inst_ppv(dynnoop,sizeof(Cell)/2,Clause,Loc);    /* will become dyntry */
@@ -1960,7 +1983,7 @@ ClRef next_clref( PrRef Pred, ClRef Clause, prolog_term Head,
     }                                                                   \
 }
 
-/* delete from an hash chain */
+/* delete from a hash chain */
 
 static void delete_from_hashchain( ClRef Clause, int Ind, int NI )
 {  
@@ -2005,6 +2028,10 @@ static void delete_from_allchain( ClRef Clause )
      }
 }
 
+/* Delete the clref from the chain itself, then adjust the first and
+   last pointers from the PrRef -- note that retrys need no PrRef
+   adjustment. */
+
 static void delete_from_sobchain(ClRef Clause)
 {  
     PrRef Pred ;
@@ -2035,59 +2062,462 @@ static void delete_from_sobchain(ClRef Clause)
      }
 }
 
-/* circular buffer for retracted clauses */
+/********************************************************************
+Predicates for Clause Garbage Collecting and Safe Space Reclamation
+********************************************************************/
 
-#ifndef MULTI_THREAD
-ClRef retracted_buffer[MAX_RETRACTED_CLAUSES+1]  ;
-ClRef *OldestCl = retracted_buffer, *NewestCl = retracted_buffer;
-#endif
-
-#define next_in_buffer(pCl) ((pCl)>=(retracted_buffer+MAX_RETRACTED_CLAUSES)\
-                                ? retracted_buffer : (pCl) + 1)
-
-#define retract_buffer_empty()  (NewestCl == OldestCl)
-#define retract_buffer_full()   (OldestCl == next_in_buffer(NewestCl))
-
-#define insert_in_buffer(Cl) (*NewestCl = (Cl),\
-                                NewestCl = next_in_buffer(NewestCl))
-#define remove_from_buffer() (OldestCl = next_in_buffer(OldestCl))
-
-/********************************************************************/
-// TLS: working area, to be ignored, for now.
-
-/*
-int check_retractall_cpstack(PrRef prref) {
-
-}
-*/
-
+/* dynamic clauses now have special try/retry/trust instructions */
 #define is_dynamic_clause_inst(inst)					\
   ((int) inst == dynretrymeelse ||   (int) inst == dyntrustmeelsefail)	
 
-int mark_dynamic(CTXTdecl) 
-{
+/* TLS: due to weirdness of ClRefs, a ClRef pointer points to the END
+   of the ClRef.  To access its components you must decrement the
+   ClRef pointer.  At some point I'd like to change this, but this
+   would be a rather delicate operation. */
+
+#ifdef BITS64
+#define HIGHBIT 0x8000000000000000
+#else
+#define HIGHBIT 0x80000000
+#endif
+
+#define mark_clref(pClRef)  \
+  ClRef_Buflen(pClRef -1) = ClRef_Buflen(pClRef - 1) | HIGHBIT
+
+#define unmark_clref(pClRef)  \
+  ClRef_Buflen(pClRef -1) = ClRef_Buflen(pClRef - 1 ) & (~HIGHBIT)
+
+#define clref_is_marked(pClRef)  \
+  ClRef_Buflen(pClRef -1 ) & HIGHBIT
+
+/* Retract must mark clauses, rather than check for an exact match
+   between CPs and the clause.  This is because removing a clause from
+   a chain may change the instruction of the Clref immediately
+   preceding or succeeding it -- this change may not be possible if
+   there is a choice point pointing to that next instruction.
+
+   For instance, suppose an indexing chain has try -- retry -- trust
+   with a CP C pointing to the retry, and that the "try" clause is
+   retracted.  If space reclamation is done immediately, the retry
+   will be changed to a try.  Later, when C is executed on failure, a
+   second CP for the same goal will be put onto the CP stack ---
+   leading to an infinite loop that takes a little time to figure out
+   (believe me :-)
+
+   My solution is to mark the clauses which allows a later check of
+   immediate predecessors and successors, by
+   determine_if_safe_to_delete(). Space is reclaimed immediately only
+   if situations like the above do not occur.
+*/
+
+int mark_cpstack_retract(CTXTdeclc ClRef clref) {
   CPtr cp_top,cp_bot ;
   byte cp_inst;
-  
+  int found_match;
+  ClRef cp_clref;
+
   cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
 
-  if (bfreg < cp_bot && bfreg > (CPtr) 0) {
-    return 1;
+  cp_top = breg ;				 
+  found_match = 0;
+  while ( cp_top < cp_bot && !(found_match)) {
+    cp_inst = *(byte *)*cp_top;
+    if ( is_dynamic_clause_inst(cp_inst) ) {
+      cp_clref = (ClRef)*cp_top;
+      if (clref == cp_clref) {
+	fprintf(stderr,"found exact match\n");
+	found_match = 1;
+      } 
+      else {
+	mark_clref(cp_clref);
+      }
+    }
+    cp_top = cp_prevtop(cp_top);
   }
+  return found_match;
+}
+
+void unmark_cpstack_retract(CTXTdecl) {
+  CPtr cp_top,cp_bot ;
+  byte cp_inst;
+  ClRef cp_clref;
+
+  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
 
   cp_top = breg ;				 
   while ( cp_top < cp_bot ) {
     cp_inst = *(byte *)*cp_top;
     if ( is_dynamic_clause_inst(cp_inst) ) {
-      printf("Found one!\n");
+      cp_clref = (ClRef)*cp_top;
+      unmark_clref(cp_clref);
+    }
+    cp_top = cp_prevtop(cp_top);
+  }
+}
+
+/* old version from before mark.
+int check_cpstack_retract(ClRef clref) {
+  CPtr cp_top,cp_bot ;
+  byte cp_inst;
+  int found_match;
+  ClRef cp_clref;
+
+  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
+
+  cp_top = breg ;				 
+  found_match = 0;
+  while ( cp_top < cp_bot && !(found_match)) {
+    cp_inst = *(byte *)*cp_top;
+    // dynamic clauses now have special try/retry/trust instructions
+    if ( is_dynamic_clause_inst(cp_inst) ) {
+      fprintf(stderr,"CPs check cp_inst %x\n",cp_inst);
+      cp_clref = (ClRef)*cp_top;
+      if (clref == cp_clref) {
+	fprintf(stderr,"found one\n");
+	found_match = 1;
+      }
+    }
+    cp_top = cp_prevtop(cp_top);
+  }
+  return found_match;
+}
+*/
+
+static inline int dyntabled_incomplete(CTXTdeclc Psc psc) {
+ 
+  if (get_tabled(psc) && !is_completed_table(get_tip(CTXTc psc)))
+    return TRUE;
+  else return FALSE;
+  }
+
+/* In retractall/abolish we can simply check whether a clause for the
+   predicate is on the CP stack. This differs from retract, where an
+   explicit marking phase is needed.  */
+
+int check_cpstack_retractall(CTXTdeclc PrRef prref) { 
+
+CPtr cp_top,cp_bot; 
+byte cp_inst; 
+int found_prref_match; 
+ClRef clref_ptr;
+
+  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
+
+  cp_top = breg ;				 
+  found_prref_match = 0;
+  while ( cp_top < cp_bot && !(found_prref_match)) {
+    cp_inst = *(byte *)*cp_top;
+    // dynamic clauses now have special try/retry/trust instructions
+    if ( is_dynamic_clause_inst(cp_inst) ) {
+      clref_ptr = (ClRef)*cp_top;
+      if (prref == clref_to_prref(clref_ptr)) {
+	found_prref_match = 1;
+      }
+    }
+    cp_top = cp_prevtop(cp_top);
+  }
+  return found_prref_match;
+}
+
+/* * * * * * * * * */
+
+/* DelCf chains point to clrefs or prrefs that have been retracted or
+   abolished.  They are linked together by two doubly-linked list, one
+   for all DelCF frames, and one for frames for a given predicate.
+   The prref for a predicate P points to the first DelCF frame for P.
+
+   For a predicate P, DelCFs for clrefs are added before DelCFs for
+   prrefs -- this way clrefs are removed before prrefs during GC,
+   which is safer.  
+ */
+
+/* used by mt engine for shared tables */
+DelCFptr delcf_chain_begin = (DelCFptr) NULL;
+
+/* Asserting _pred structures to end of pred chain.  This means that
+   if lastdcf is not null, just stick it on the end; otherwise adjust
+   Prref's delcf pointer. */
+
+DelCFptr new_global_DelCF_pred(PrRef pPrRef,Psc pPSC) {
+  DelCFptr pDCF; 
+
+  pDCF = (DelCFptr)mem_alloc(sizeof(DeletedClauseFrame),ASSERT_SPACE); 
+    if ( IsNULL(pDCF) )							
+      xsb_abort("Ran out of memory in allocation of DeletedClauseFrame"); 
+    DCF_PrRef(pDCF) = pPrRef;			
+    //    DCF_Generation(pDCF) = PrRef_Generation(pPrRef);	
+    DCF_ClRef(pDCF) = PrRef_FirstClRef(pPrRef);	 // diff from _clause create
+    DCF_PSC(pDCF) = pPSC;						
+    DCF_Type(pDCF) = DELETED_PRREF;					
+    DCF_Mark(pDCF) = NULL;							
+    DCF_PrevDCF(pDCF) = 0;						
+    DCF_PrevPredDCF(pDCF) = 0;						
+    DCF_NextDCF(pDCF) = delcf_chain_begin;				
+    DCF_NextPredDCF(pDCF) = PrRef_DelCF(pPrRef);  
+    if (delcf_chain_begin) DCF_PrevDCF(delcf_chain_begin) = pDCF;	
+    if (PrRef_DelCF(pPrRef))  DCF_PrevPredDCF(PrRef_DelCF(pPrRef)) = pDCF; 
+    delcf_chain_begin = pDCF;						
+    PrRef_DelCF(pPrRef) = pDCF;
+    return pDCF;
+}
+
+/* Asserting _clause structures to START of pred chain -- this means
+   that they will be abolished before any pred-level retractalls for
+   the same predicate. */
+DelCFptr new_global_DelCF_clause(PrRef pPrRef,Psc pPSC,ClRef pClRef) {
+  DelCFptr pDCF; 
+
+  pDCF = (DelCFptr)mem_alloc(sizeof(DeletedClauseFrame),ASSERT_SPACE); 
+    if ( IsNULL(pDCF) )							
+      xsb_abort("Ran out of memory in allocation of DeletedClauseFrame"); 
+    DCF_PrRef(pDCF) = pPrRef;			
+    //    DCF_Generation(pDCF) = PrRef_Generation(pPrRef);	
+    DCF_ClRef(pDCF) = pClRef;	  // diff from _pred create
+    DCF_PSC(pDCF) = pPSC;						
+    DCF_Type(pDCF) = DELETED_CLREF;
+    DCF_Mark(pDCF) = 0;							
+    DCF_PrevDCF(pDCF) = 0;						
+    DCF_PrevPredDCF(pDCF) = 0;						
+    DCF_NextDCF(pDCF) = delcf_chain_begin;				
+    DCF_NextPredDCF(pDCF) = PrRef_DelCF(pPrRef);  
+    if (delcf_chain_begin) DCF_PrevDCF(delcf_chain_begin) = pDCF;	
+    if (PrRef_DelCF(pPrRef))  DCF_PrevPredDCF(PrRef_DelCF(pPrRef)) = pDCF; 
+    delcf_chain_begin = pDCF;						
+    PrRef_DelCF(pPrRef) = pDCF;
+    return pDCF;
+}
+
+/* No mutexes, because it is called only during gc, w. only 1 active
+ * thread. */
+#define Free_Global_DelCF(pDCF,pPRREF) {				\
+  if (DCF_PrevDCF(pDCF) == 0) {						\
+    delcf_chain_begin = DCF_NextDCF(pDCF);				\
+  }									\
+  else {								\
+    DCF_NextDCF(DCF_PrevDCF(pDCF)) = DCF_NextDCF(pDCF);			\
+  }									\
+  if (DCF_NextDCF(pDCF) != 0) {						\
+    DCF_PrevDCF(DCF_NextDCF(pDCF)) = DCF_PrevDCF(pDCF);			\
+  }									\
+  if (DCF_PrevPredDCF(pDCF) == 0) {					\
+    PrRef_DelCF(pPRREF) = DCF_NextPredDCF(pDCF);			\
+  }									\
+  else {								\
+    DCF_NextPredDCF(DCF_PrevPredDCF(pDCF)) = DCF_NextPredDCF(pDCF);	\
+  }									\
+  if (DCF_NextPredDCF(pDCF) != 0) {					\
+    DCF_PrevPredDCF(DCF_NextPredDCF(pDCF)) = DCF_PrevPredDCF(pDCF);	\
+  }									\
+  mem_dealloc(pDCF,sizeof(DeletedTableFrame),ASSERT_SPACE);		\
+}
+
+/* 
+   Assumes check has been made that the prref itself has at least one
+   clause to retract -- this prevents a retractall of an empty predicate
+   from adding a delcf frame.
+
+   Any clref structures present in the pred chain will be deleted by
+   the retractall anyway, so they can be removed.
+
+   Inserting delcf_preds at end of pred_chain.  
+*/
+
+void check_insert_global_delcf_pred(CTXTdeclc PrRef prref,Psc psc) { 
+  //  DelCFptr dcf = delcf_chain_begin;
+  DelCFptr dcf = PrRef_DelCF(prref);
+
+  SYS_MUTEX_LOCK(MUTEX_TABLE);
+  while ( dcf != 0 ) {
+    if (DCF_Type(dcf) == DELETED_CLREF) {
+      fprintf(stderr,"Prref over-riding clref for %s/%d\n",
+	      get_name(psc),get_arity(psc));
+      Free_Global_DelCF(dcf,prref);
+    }
+    dcf = DCF_NextPredDCF(dcf);
+  }
+  dcf = new_global_DelCF_pred(prref,psc);
+  SYS_MUTEX_UNLOCK(MUTEX_TABLE);
+}
+
+
+/* Currently am not comparing deleted clauses to deleted predicates.
+   Just delete the clauses, then do the retractalls.*/
+
+void check_insert_global_delcf_clause(CTXTdeclc PrRef prref,
+				      Psc psc,ClRef clref) { 
+  //  DelCFptr dcf = delcf_chain_begin;
+  DelCFptr dcf = PrRef_DelCF(prref);
+  int found = 0;
+
+  SYS_MUTEX_LOCK(MUTEX_TABLE);
+  while ( dcf != 0 ) {
+    if (DCF_Type(dcf) == DELETED_CLREF && DCF_ClRef(dcf) == clref) {
+      fprintf(stderr,"Found clref for %s/%d\n",
+	      get_name(psc),get_arity(psc));
+      found = 1;
+    }
+    dcf = DCF_NextPredDCF(dcf);
+  }
+  if (!found) {
+    dcf = new_global_DelCF_clause(prref,psc,clref);
+  }
+  SYS_MUTEX_UNLOCK(MUTEX_TABLE);
+}
+
+/* Stubs for later addition of private delcf chains. */
+
+#ifdef MULTI_THREAD
+#define check_insert_shared_delcf_pred(context,prref,psc)	\
+  check_insert_global_delcf_pred(context,prref,psc)	 
+
+#define check_insert_shared_delcf_clause(context,prref,psc,clref)	\
+  check_insert_global_delcf_clause(context,prref,psc,clref)	 
+
+#define check_insert_private_delcf_pred(context,prref,psc)	\
+  check_insert_global_delcf_pred(context,prref,psc)	 
+
+#define check_insert_private_delcf_clause(context,prref,psc,clref)	\
+  check_insert_global_delcf_clause(context,prref,psc,clref)	 
+
+#else 
+#define check_insert_private_delcf_pred(prref,psc)	\
+  check_insert_global_delcf_pred(prref,psc)	 
+
+#define check_insert_private_delcf_clause(prref,psc,clref)	\
+  check_insert_global_delcf_clause(prref,psc,clref)	 
+#endif
+
+/* Marking DelCFs
+
+   During the GC phase, a DelCF frame are marked if a traversal of the
+   choice point stack indicates that it may be unsafe to reclaim space
+   for the clrefs/prref it represents.
+
+   If a DelCF represents a deleted prref, reclamation is complicated
+   by the fact that clauses can be repeatedly asserted for a predicate
+   and retractalled.  If GC cannot occur right away, this leads to
+   "generations" of DelCFs.  The best solution for this is to put
+   ISO-style timestamps in clrefs and prrefs: until then, however, I'm
+   marking all prrefs for a predicate P if any clause for P is in the
+   CP stack -- regardless of its "generation".
+
+   In addition, if a dynamic predicate is tabled and has incomplete
+   tables, the Delcf is marked.
+*/
+
+void mark_delcf_subchain(CTXTdeclc DelCFptr delcf,ClRef clref) {
+  PrRef prref;
+
+  prref = clref_to_prref(clref);
+  while (delcf) {
+    if (dyntabled_incomplete(CTXTc DCF_PSC(delcf))) {
+      DCF_Mark(delcf) = 1;
+      fprintf(stderr,"Marking DelCF for incomplete table: %s/%d\n",
+	      get_name(DCF_PSC(delcf)),get_arity(DCF_PSC(delcf)));
+    }
+    if (DCF_Type(delcf) == DELETED_PRREF && prref == DCF_PrRef(delcf) ) {
+      DCF_Mark(delcf) = 1;
+      fprintf(stderr,"Marking Pred DelCF for %s/%d\n",
+	      get_name(DCF_PSC(delcf)),get_arity(DCF_PSC(delcf)));
+    } else if (DCF_Type(delcf) == DELETED_CLREF && DCF_ClRef(delcf) == clref) {
+      DCF_Mark(delcf) = 1;
+      fprintf(stderr,"Marking Clause DelCF for %s/%d\n",
+	      get_name(DCF_PSC(delcf)),get_arity(DCF_PSC(delcf)) );
+    } 
+    delcf = DCF_NextPredDCF(delcf);
+  }
+}
+
+/* 
+   This function, called by gc_dynamic traverses the CP stack to mark
+   both DelCFs and ClRefs that cannot be GC'd.  
+
+   DelCFs are marked in mark_delcf_subchain() and are obtained by the
+   DelCF pointer off of the PrRef.  ClRefs must also be marked
+   directly.  This is done so that determine_if_safe_to_delete() can
+   operate properly (see other comments for this predicate).  See
+   comments for mark_cpstack_retract()).
+ */
+
+int mark_dynamic(CTXTdecl) 
+{
+  CPtr cp_top,cp_bot ;
+  byte cp_inst;
+  ClRef clref_ptr;
+  PrRef prref_ptr;
+
+  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
+  cp_top = breg ;				 
+
+  while ( cp_top < cp_bot ) {
+    cp_inst = *(byte *)*cp_top;
+    if ( is_dynamic_clause_inst(cp_inst) ) {
+      clref_ptr = (ClRef)*cp_top;
+      mark_clref(clref_ptr);
+      prref_ptr = clref_to_prref(clref_ptr);
+      mark_delcf_subchain(CTXTc PrRef_DelCF(prref_ptr),clref_ptr);
     }
     cp_top = cp_prevtop(cp_top);
   }
   return 0;
 }
 
-int sweep_dynamic(CTXTdecl) {
-  return 0;
+void gc_retractall(CTXTdeclc ClRef);
+int determine_if_safe_to_delete(ClRef);
+static int really_delete_clause(ClRef);
+
+/* Upon freeing, the Pred-delcf pointer for the current prref may need
+   to be set.  To do this, need to find the current prref (via
+   dynpredep_to_prref()) not a possibly old one pointed to by the
+   delcf frame.
+*/
+
+int sweep_dynamic(CTXTdecl) { 
+  DelCFptr delcf_ptr; 
+  int dcf_cnt = 0;
+  PrRef prref;
+   
+  /* Free global deltcs */
+  delcf_ptr = delcf_chain_begin;
+  while (delcf_ptr) {
+    if (DCF_Mark(delcf_ptr)) {
+      fprintf(stderr,"GC Sweep skipping marked %s/%d\n",
+	      get_name(DCF_PSC(delcf_ptr)),get_arity(DCF_PSC(delcf_ptr)));
+      DCF_Mark(delcf_ptr) = 0;
+      dcf_cnt++;
+    }
+    else {
+      if (DCF_Type(delcf_ptr) == DELETED_PRREF) {
+	fprintf(stderr,"Garbage Collecting Predicate: %s/%d\n",
+	      get_name(DCF_PSC(delcf_ptr)),get_arity(DCF_PSC(delcf_ptr)));
+	gc_retractall(CTXTc DCF_ClRef(delcf_ptr));
+	prref = dynpredep_to_prref(CTXTc get_ep(DCF_PSC(delcf_ptr)));
+	Free_Global_DelCF(delcf_ptr,prref);
+      }
+      else {
+	if (DTF_Type(delcf_ptr) == DELETED_CLREF) {
+	  if (determine_if_safe_to_delete(DCF_ClRef(delcf_ptr))) {
+	    fprintf(stderr,"Garbage Collecting Clause: %s/%d\n",
+		    get_name(DCF_PSC(delcf_ptr)),get_arity(DCF_PSC(delcf_ptr)));
+	    really_delete_clause(DCF_ClRef(delcf_ptr));
+	    prref = dynpredep_to_prref(CTXTc get_ep(DCF_PSC(delcf_ptr)));
+	    Free_Global_DelCF(delcf_ptr,prref);
+	  } else {
+	    dcf_cnt++;
+	    fprintf(stderr,"GC Sweep skipping unsafe: %s/%d\n",
+		    get_name(DCF_PSC(delcf_ptr)),get_arity(DCF_PSC(delcf_ptr)));
+	  }
+	}
+      }
+    }
+    delcf_ptr = DCF_NextDCF(delcf_ptr);
+  }
+
+#ifdef MULTI_THREAD
+  //  dcf_cnt = dcf_cnt + sweep_private_tabled_preds(CTXT);
+#endif
+
+  return dcf_cnt;
 }
 
 /* Returns -1 in situations it cant handle: currently, calling with
@@ -2096,30 +2526,20 @@ int sweep_dynamic(CTXTdecl) {
 
 int gc_dynamic(CTXTdecl) 
 {
+  int ctr = -1;
 
-  if (flags[NUM_THREADS] == 1) {
-    if (!mark_dynamic(CTXT)) {
-      return sweep_dynamic(CTXT);
-    }
-    else return -1;
-  }
-  else {
-    xsb_warn("Cannot garbage collect dynamic clauses with more than one active thread."); 
-    return -1;
-  }
+  if (flags[NUM_THREADS] == 1 ) {
+    if (!delcf_chain_begin) return 0;
+    mark_dynamic(CTXT);
+    ctr = sweep_dynamic(CTXT);
+    unmark_cpstack_retract(CTXT);
+  } 
+  return ctr;
 }
+
 
 /********************************************************************/
 /* Insert in retract buffer and remove old clauses */
-
-#define delete_clause(Clause)\
-{   if( retract_buffer_full() )\
-    {   ClRef ClauseToDelete = *OldestCl;\
-	remove_from_buffer();\
-	really_delete_clause(ClauseToDelete);\
-    }\
-    insert_in_buffer(Clause);\
-}
 
 static int really_delete_clause(ClRef Clause)
 {
@@ -2176,43 +2596,53 @@ static int really_delete_clause(ClRef Clause)
     return TRUE ;
 }
 
-static int force_retract_buffers(CTXTdecl)
-{
-  while (!retract_buffer_empty()) {
-    really_delete_clause(*OldestCl);
-    remove_from_buffer();
+/********************/
+
+int determine_if_safe_to_delete(ClRef Clause) {
+  byte opcode;
+  int NI, i;
+  CPtr IP;
+
+  if (clref_is_marked(Clause)) return FALSE;
+
+  opcode = ClRefTryOpCode(Clause);
+  if ((opcode == trymeelse || opcode == dyntrymeelse)
+      && clref_is_marked(ClRefNext(Clause))) {
+    return FALSE;
+  }
+
+  NI = ClRefNumInds(Clause) ;
+
+  /* remove it from index chains */
+  for( i = NI; i >= 1; i-- ) {
+  
+    IP = ClRefIndPtr(Clause, i);
+    if (cell_opcode(IP) == trymeelse || cell_opcode(IP) == trymeelse) {
+      if (clref_is_marked((ClRef) IndRefNext(IP))) {
+	return FALSE;
+      }
+    }
   }
   return TRUE;
 }
-
-/* used by db_retract and db_reclaim -- also by non-abolish retractall  */
-static int retract_clause(CTXTdeclc ClRef Clause, int retract_nr )
+	  
+/* Mark a clause for deletion: don't do anything else.  This is done
+   regardless of whether space is reclaimed or not.*/
+static void mark_for_deletion(CTXTdeclc ClRef Clause)
 {
-  xsb_dbgmsg((LOG_RETRACT,"Retract clause(%p) op(%x) type(%d)",
-	     Clause, ClRefTryOpCode(Clause), ClRefType(Clause) ));
+  //  fprintf(stderr,"Mark for deletion: (%p) op(%x) type(%d)",
+  // Clause, ClRefTryOpCode(Clause), ClRefType(Clause));
   SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
-    switch( ClRefType(Clause) )
-    {
-        case UNINDEXED_CL:
-	    /* set fail for retract_nr AND protection */
-	  if (cell_opcode(ClRefEntryPoint(Clause)) == fail &&
-	      cell_operand1(ClRefEntryPoint(Clause)) == MARKED_FOR_DELETION) 
-	    retract_nr = 1;  /* previously scheduled for deletion */
-	  else {
-	    cell_opcode(ClRefEntryPoint(Clause)) = fail ;
-	    cell_operand1(ClRefEntryPoint(Clause)) = MARKED_FOR_DELETION;
-	  }
+  switch( ClRefType(Clause) ) {
+        case UNINDEXED_CL: {
+	  cell_opcode(ClRefEntryPoint(Clause)) = fail ;
+	  cell_operand1(ClRefEntryPoint(Clause)) = MARKED_FOR_DELETION;
+	}
 	  break ;
-        case INDEXED_CL:
-	  if (cell_opcode(ClRefIEntryPoint(Clause,ClRefNumInds(Clause))) 
-	           == fail 
-	      && cell_operand1(ClRefIEntryPoint(Clause,ClRefNumInds(Clause))) 
-	           == MARKED_FOR_DELETION)
-	    retract_nr = 1;  /* previously scheduled for deletion */
-	  else {
-	    cell_opcode(ClRefIEntryPoint(Clause,ClRefNumInds(Clause))) = fail ;
-	    cell_operand1(ClRefIEntryPoint(Clause,ClRefNumInds(Clause))) 
-	            = MARKED_FOR_DELETION;
+        case INDEXED_CL: {
+	  cell_opcode(ClRefIEntryPoint(Clause,ClRefNumInds(Clause))) = fail ;
+	  cell_operand1(ClRefIEntryPoint(Clause,ClRefNumInds(Clause))) 
+	    = MARKED_FOR_DELETION;
 	  }
 	  break ;
         case SOB_RECORD:
@@ -2222,15 +2652,50 @@ static int retract_clause(CTXTdeclc ClRef Clause, int retract_nr )
 	  xsb_exit( "retract internal error!" ) ;
 	  break ;
     }
-    if (!retract_nr) {
-      xsb_dbgmsg((LOG_RETRACT,
-		 "Inserting clause in delete buffer(%p) op(%x) type(%d)",
-		 Clause, ClRefTryOpCode(Clause), ClRefType(Clause) ));
-      delete_clause(Clause) ;
-    }
     SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
-    return TRUE ;
 }
+
+/* called only if retract_nr == 0.  If retract_nr != 0, then we check
+   that it is not a shared predicate and more than one active thread.
+   If not, the cpstack is marked, and it is determined whether the
+   clause is safe to delete (that we aren't changing an instruction
+   pointed to by the cp stack).  If none of these cases is true, THEN
+   we can actually delete the clause.  Otherwise, we make a frame on
+   the delcf list. */
+
+static void retract_clause(CTXTdeclc ClRef Clause, Psc psc ) { 
+  PrRef prref; 
+  int really_deleted = 0;
+  
+  mark_for_deletion(CTXTc Clause);
+
+  if ((flags[NUM_THREADS] == 1 || !get_shared(psc))
+      && !dyntabled_incomplete(CTXTc psc)) {
+
+    if (!mark_cpstack_retract(CTXTc Clause) && 
+	determine_if_safe_to_delete(Clause)) {
+      really_delete_clause(Clause);
+      really_deleted = 1;
+    }
+    unmark_cpstack_retract(CTXT);
+  }
+  if (!really_deleted) {
+    prref = dynpredep_to_prref(CTXTc get_ep(psc));
+    fprintf(stderr,"Delaying retract of clref in use: %s/%d\n",
+	    get_name(psc),get_arity(psc));
+#ifndef MULTI_THREAD
+    check_insert_private_delcf_clause(prref,psc,Clause);
+#else
+    if (!get_shared(psc)) {
+      check_insert_private_delcf_clause(CTXT, prref,psc,Clause);
+    }
+    else {
+      check_insert_shared_delcf_clause(CTXT, prref,psc,Clause);
+    }
+#endif
+  }
+}
+
 
 /***
  *** Entry points for CLAUSE/RETRACT predicates
@@ -2410,20 +2875,32 @@ set_outputs:
     return TRUE ;
 }
 
+/* obsolete, and probably wrong. */
 xsbBool db_reclaim0( CTXTdecl /* CLRef, Type */ )
 {
   ClRef Clause = (ClRef)ptoc_int(CTXTc 1) ;
 
-  return retract_clause(CTXTc Clause, 0 ) ;
+  mark_for_deletion(CTXTc Clause) ;
+  return TRUE;
 }
 
 xsbBool db_retract0( CTXTdecl /* ClRef, retract_nr */ )
 {
-  ClRef Clause = (ClRef)ptoc_int(CTXTc 1) ;
-  int retract_nr = (int)ptoc_int(CTXTc 2) ;
-
-  return retract_clause(CTXTc Clause, retract_nr ) ;
+  ClRef clause = (ClRef)ptoc_int(CTXTc 1) ;
+  //  int retract_nr = (int)ptoc_int(CTXTc 2) ;
+  
+  int retract_nr = 0;
+  
+  if (retract_nr) {
+    mark_for_deletion(CTXTc clause);
+  } 
+  else {
+    Psc psc = (Psc)ptoc_int(CTXTc 3);
+    retract_clause(CTXTc clause, psc ) ;
+  }
+  return TRUE;
 }
+
 
 /*----------------------------------------------------------------------
   in the following, the number 8 denotes the size (in cells) of the
@@ -2451,7 +2928,12 @@ static inline void allocate_prref_tab(CTXTdeclc Psc psc, PrRef *prref, pb *new_e
   Loc = 0 ;
   dbgen_inst_ppp(fail,*prref,&Loc) ;
   //  ((CPtr)(*prref))[2] = (Cell)(*prref) ; TLS: ugh!
-  (*prref)->LastClRef = (ClRefHdr *)*prref;     
+  PrRef_FirstClRef(*prref) = NULL;
+  PrRef_LastClRef(*prref) = (ClRefHdr *)*prref;
+  PrRef_Psc(*prref) = psc;        
+  PrRef_Mark(*prref) = 0;
+  //  PrRef_Generation(*prref) = 0;
+  PrRef_DelCF(*prref) = NULL;
   if ( get_tabled(psc) )
     {
       TIFptr tip;
@@ -2597,23 +3079,6 @@ void free_prref(CTXTdeclc CPtr *p, Psc psc) {
     }
 }
 
-xsbBool db_remove_prref( CTXTdecl /* Psc */ ) 
-{
-  Psc psc = (Psc)ptoc_int(CTXTc 1) ;
-
-  //  xsb_dbgmsg((LOG_RETRACT_GC, "DEL Prref %p", p )); TLS: p?
-
-    SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
-    if (get_ep(psc) != ((byte *)(&(psc->load_inst)))) {
-      free_prref(CTXTc (CPtr *)get_ep(psc),psc);
-      set_type(psc, T_ORDI);
-      set_ep(psc, ((byte *)(&(psc->load_inst))));
-    }
-    SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
-
-  return TRUE ;
-}
-
 /* Given an sob clref, return the prref in which it occurs */
 PrRef sob_to_prref(ClRef clref) {
   while (ClRefTryOpCode(clref) == dynretrymeelse) {
@@ -2634,13 +3099,38 @@ PrRef sob_to_prref(ClRef clref) {
 }
 
 /* Given a clref, return the prref in which it occurs */
+#ifdef UNDEFINED
 PrRef clref_to_prref(ClRef clref) {
+  CPtr curInd;
   if (ClRefType(clref) == UNINDEXED_CL) {
     return sob_to_prref(clref);
   } else if (ClRefType(clref) == INDEXED_CL) { /* indexed, use first index */
-    return sob_to_prref((SOBRef)IndRefNext(ClRefIndPtr(clref,1)));
+    curInd = ClRefIndPtr(clref,1);
+    if (ClRefTryOpCode(curInd) != dynnoop) {
+      while (cell_opcode(curInd) != dyntrustmeelsefail) {
+        curInd = IndRefNext(curInd);
+      }
+    }
+    return sob_to_prref((SOBRef)IndRefNext(curInd));
   } else return NULL;
 }
+#endif
+
+PrRef clref_to_prref(ClRef clref) {
+  CPtr curInd;
+  if (ClRefType(clref) == UNINDEXED_CL || ClRefType(clref) == SOB_RECORD) {
+    return sob_to_prref(clref);
+  } else if (ClRefType(clref) == INDEXED_CL) { /* indexed, use first index */
+    curInd = ClRefIndPtr(clref,1);
+    if (ClRefTryOpCode(curInd) != dynnoop) {
+      while (cell_opcode(curInd) != dyntrustmeelsefail) {
+        curInd = IndRefNext(curInd);
+      }
+    }
+    return sob_to_prref((SOBRef)IndRefNext(curInd));
+  } else return NULL;
+}
+
 
 /*----------------------------------------------------------------------*/
 /* some stuff for trie_assert                                           */
@@ -2695,6 +3185,7 @@ static int another_buff(Cell Instr)
 /*======================================================================*/
 #define MAXDYNFREEBUFF 200
 
+/* If you update this, please check gc_retractall() also */
 void retractall_prref(CTXTdeclc PrRef prref) {
   int btop = 0;
   ClRef buffer;
@@ -2705,8 +3196,6 @@ void retractall_prref(CTXTdeclc PrRef prref) {
       abolish_trie_asserted_stuff(CTXTc prref);
       return;
     }
-    force_retract_buffers(CTXT);
-    if (cell_opcode((CPtr)prref) == fail) return; /* if freeing buffered clauses empties it */
     buffers_to_free[btop++] = prref->FirstClRef;
     while (btop > 0) {
       if (btop >= MAXDYNFREEBUFF) xsb_exit("Too many buffers to retract");
@@ -2735,18 +3224,156 @@ void retractall_prref(CTXTdeclc PrRef prref) {
 	break;
       }
     }
+    PrRef_FirstClRef(prref) = NULL;
     cell_opcode((CPtr)prref) = fail;
   }
 }
 
-int gen_retract_all(CTXTdecl/* R1: + PredEP */)
+/* Like retractall_prref() but used from access is from a DelFC, so we
+   want to start with the old Prrefs first clref, rather than the
+   prref (which by the time we gc could have a new set of clrefs
+   associated with it)
+*/
+void gc_retractall(CTXTdeclc ClRef clref) {
+  int btop = 0;
+  ClRef buffer;
+  ClRef buffers_to_free[MAXDYNFREEBUFF];
+
+    buffers_to_free[btop++] = clref;
+    while (btop > 0) {
+      if (btop >= MAXDYNFREEBUFF) xsb_exit("Too many buffers to retract");
+      buffer = buffers_to_free[--btop];
+      switch (ClRefType(buffer)) {
+      case SOB_RECORD: 
+	if (another_buff(ClRefJumpInstr(buffer)))
+	  buffers_to_free[btop++] = (ClRef) ClRefFirstIndex(buffer);
+	if (another_buff(ClRefTryInstr(buffer)))
+	  buffers_to_free[btop++] = ClRefNext(buffer);
+	mem_dealloc((pb)ClRefAddr(buffer),ClRefSize(buffer),ASSERT_SPACE);
+	if (xsb_profiling_enabled)
+	  remove_prog_seg((pb)buffer);
+	break ;
+      case UNINDEXED_CL: 
+      case INDEXED_CL:
+	if (another_buff(ClRefTryInstr(buffer)))
+	  buffers_to_free[btop++] = ClRefNext(buffer);
+	if( ClRefNotRetracted(buffer) ) {
+	  /*		retract_clause(buffer,0) */
+	  /* really_delete_clause(buffer); */
+	  mem_dealloc((pb)ClRefAddr(buffer),ClRefSize(buffer),ASSERT_SPACE);
+	  if (xsb_profiling_enabled)
+	    remove_prog_seg((pb)buffer);
+	}
+	break;
+      }
+    }
+}
+
+/* TLS change for gc.  Space is reclaimed if 
+
+     The predicate is private OR there is a single active thread
+     AND 
+     a check of the CP stack determines that it is safe to
+     reclaim spaces for the predicate,
+     AND 
+     if the predicate is tabled, there is no incomplete table
+     for that predicate.
+ */
+int gen_retract_all(CTXTdecl/* R1: +PredEP , R2: +PSC */)
 {
   PrRef prref = (PrRef)ptoc_int(CTXTc 1);
+  Psc psc = (Psc)ptoc_int(CTXTc 2);
+  int action = 0;
 
+  gc_dynamic(CTXT);    // part of gc strategy -- dont know how good
+
+  prref = dynpredep_to_prref(CTXTc prref);
+
+  if (PrRef_FirstClRef(prref) == NULL) { /* nothing to retract */
+    return TRUE;
+  }
+
+  if ((flags[NUM_THREADS] == 1 || !get_shared(psc))
+      && !dyntabled_incomplete(CTXTc psc)) {
+    action = check_cpstack_retractall(CTXTc prref);
+  }  else action = 1;
+  if (!action) {
+    SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
+    retractall_prref(CTXTc prref);
+    SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
+  }
+  else {
+    fprintf(stderr,"Delaying retractall of prref in use: %s/%d\n",
+	    get_name(psc),get_arity(psc));
+#ifndef MULTI_THREAD
+    check_insert_private_delcf_pred(prref,psc);
+#else
+    if (!get_shared(psc)) {
+      check_insert_private_delcf_pred(CTXT, prref,psc);
+    }
+    else {
+      check_insert_shared_delcf_pred(CTXT, prref,psc);
+    }
+#endif
+    PrRef_FirstClRef(prref) = NULL;
+    //    PrRef_Generation(prref) = PrRef_Generation(prref) + 1;
+    cell_opcode((CPtr)prref) = fail;
+  }
+  return TRUE;
+}
+
+/* abolish/1
+   
+   I'm trying to approximate ISO semantics when 1 thread and
+   non-tabled.  Note that we have an operational gen_retractall that
+   most Prologs don't have.  GC-ing a prref that has been abolished is
+   problematic.  If you create a DelCF for the PrRef, you have a
+   pointer to a reclaimed prref which isn't good; if you delay
+   reclaiming the prref you lose ISO semantics.  You could create a
+   3-rd type of DelCF frame for abolishes, and some special treatment,
+   but I'd like to avoid that as I dont think that abolishing a
+   predicate you're backtracking into is good programming practice.
+ */
+
+/* No longer available as builtin -- I think that's too dangerous now
+   that we have prref gc -- TLS */
+void db_remove_prref_1( CTXTdeclc Psc psc ) 
+{
   SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
-  //  check_retractall_cpstack(prref);
-  retractall_prref(CTXTc dynpredep_to_prref(CTXTc prref));
+  if (get_ep(psc) != ((byte *)(&(psc->load_inst)))) {
+    free_prref(CTXTc (CPtr *)get_ep(psc),psc);
+    set_type(psc, T_ORDI);
+    set_ep(psc, ((byte *)(&(psc->load_inst))));
+  }
   SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
+}
+
+
+xsbBool db_remove_prref(CTXTdecl/* R1: +PredEP , R2: +PSC */)
+{
+  PrRef prref = (PrRef)ptoc_int(CTXTc 1);
+  Psc psc = (Psc)ptoc_int(CTXTc 2);
+  int action = 0;
+  
+  prref = dynpredep_to_prref(CTXTc prref);
+
+  if (flags[NUM_THREADS] != 1) {
+    xsb_abort("Cannot abolish a predicate when more than 1 thread is active");
+  }
+  if (dyntabled_incomplete(CTXTc psc)) {
+    xsb_table_error(CTXTc 
+		    "Cannot abolish tabled predicate when table is incomplete");
+  }
+  action = check_cpstack_retractall(CTXTc prref);
+  if (!action) {
+    SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
+    retractall_prref(CTXTc prref);
+    db_remove_prref_1( CTXTc psc);
+    SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
+  }
+  else {
+    xsb_abort("Cannot abolish a predicate with active backtrack points: use retractall");
+  }
   return TRUE;
 }
 
@@ -2802,7 +3429,9 @@ void thread_free_dyn_blks(CTXTdecl) {
 }
 #endif
 
-/*---------------------------------------------------------------*/
+/*===============================================================*/
+/* Trie Assert and Retract                                       */
+/*===============================================================*/
 
 static inline CPtr trie_asserted_clref(CPtr prref)
 {
@@ -2818,6 +3447,7 @@ static inline CPtr trie_asserted_clref(CPtr prref)
 }
 
 /*---------------------------------------------------------------*/
+/* used for debugging trie_assert */
 
 static inline void print_bytes(CPtr x, int lo, int hi)
 {

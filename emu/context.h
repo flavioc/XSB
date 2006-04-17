@@ -33,10 +33,16 @@
 #include "conc_compl.h"
 #include "hashtable_xsb.h"
 
+/* Note that ClRef pointers typically point to the end of a ClRef, so
+   to access the components, the pointer must be decremented! */
+
 typedef struct ClRefHdr
 {	unsigned long buflen ;
 	struct ClRefHdr *prev ;
 }	*ClRef, ClRefData, ClRefHdr ;
+
+#define ClRef_Buflen(CLREF)        ( (CLREF)->buflen )
+#define ClRef_Prev(CLREF)          ( (CLREF)->prev )
 
 struct token_t {
   int type;
