@@ -1349,12 +1349,9 @@ propagation_single_head(Head,LastRule,R,F/A,I,N,_Constrs,L,T) :-
 
 	guards_join_order(HeadVs,GuardCp,FreeParsGuards,BoundParGuards),
 	
-	and2list(BodyCp,BodyCpL),
-	(member(Head,BodyCpL)
-	 -> str_cat('add_',F,AddName),
-	    AddCall =.. [AddName|HeadVs]
-	  ; AddCall = true
-	),
+
+	str_cat('add_',F,AddName),
+	AddCall =.. [AddName|HeadVs],
 	
 	N is I+1,
 
