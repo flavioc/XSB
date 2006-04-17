@@ -38,6 +38,7 @@
 :- import write/1 from standard.
 
 :- import xsb_sys_mutex_lock/1, xsb_sys_mutex_unlock/1 from thread.
+:- import xsb_stream_lock/1, xsb_stream_unlock/1 from file_io.
 
 %:- import get_atts/2 from atts.
 
@@ -58,21 +59,22 @@ display(Term):- write(Term).
 % Mats Carlsson, Daniel Cabeza, and Manuel Hermenegildo.
 
 write_term(Stream, Term, OptList) :-
-	xsb_sys_mutex_lock( MUTEX_IO ),
+	xsb_stream_lock( Stream ),
         current_output(Curr),
         set_output(Stream),
         Default = options(false,false,false,false,1000000),
         compute_options(OptList, 3, Default, 1200, Options, Priority),
         write_out(Term, Options, Priority, 0, 0, '(', 2'100, _),
 	set_output(Curr),
-	xsb_sys_mutex_unlock( MUTEX_IO ).
+	xsb_stream_unlock( Stream ).
 
 write_term(Term,OptList):- 
-	xsb_sys_mutex_lock( MUTEX_IO ),
+        current_output(Curr),
+	xsb_sys_mutex_lock( Curr ),
         Default = options(false,false,false,false,1000000),
         compute_options(OptList, 2, Default, 1200, Options, Priority),
         write_out(Term, Options, Priority, 0, 0, '(', 2'100, _),
-	xsb_sys_mutex_unlock( MUTEX_IO ).
+	xsb_sys_mutex_unlock( Curr ).
 
 :- comment(write_option/1, "@var{Opt} is a valid write option which
  affects the predicate @tt{write_term/3} and similar ones. Possible
