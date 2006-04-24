@@ -968,10 +968,12 @@ void mark_atom_and_code_strings(CTXTdecl) {
 	if (get_type(pair_psc(pair_ptr)) == T_DYNA) {
 	  //	  printf("mark dc for usermod:%s/%d\n",string,get_arity(pair_psc(pair_ptr)));
 	  prref = dynpredep_to_prref(CTXTc get_ep(pair_psc(pair_ptr))); // fix for multi-threading to handle dispatch for privates 
-	  clref = db_get_clause_code_space(prref,(ClRef)NULL,&code_beg,&code_end);
-	  while (clref) {
-	    mark_code_strings(0,code_beg,code_end);
-	    clref = db_get_clause_code_space(prref,clref,&code_beg,&code_end);
+	  if (prref) {
+	    clref = db_get_clause_code_space(prref,(ClRef)NULL,&code_beg,&code_end);
+	    while (clref) {
+	      mark_code_strings(0,code_beg,code_end);
+	      clref = db_get_clause_code_space(prref,clref,&code_beg,&code_end);
+	    }
 	  }
 	}
       }
