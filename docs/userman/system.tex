@@ -694,44 +694,53 @@ default configuration of XSB might be run by invoking XSB with the command.
 %===================================================
 All execution stacks are automatically expanded in \version{},
 including the local stack/heap region, the trail/choice point region,
-and the completion stack region.  Each of these regions begin with an
-initial value set by the user (or the default stated in
-Section~\ref{sec:EmuOptions}), and double their size until it is not
-possible to do so with available system memory.  At that point XSB
-tries to find the maximal amount of space that will still fit in
-system memory.  In addition, heap garbage collection is automatically
-included in XSB \cite{CaSC01,CATmem@ISMM-98}.  (To change the
-algorithm used for heap garbage collection or to turn it off
-altogether, see the predicate {\tt garbage\_collection/1} or
-Section~\ref{sec:EmuOptions} for command-line options).  In \version{}
-the default behavior is indirect garbage collection.  Starting with
-\version{}, heap garbage collection may automatically invokes garbage
-collection of XSB's ``string'' table, which stores Prolog's atomic
-constants.  However string garbage collection will not be invoked if
-there is more than one active XSB thread.
+and the completion stack region.  For the main thread, each of these
+regions begin with an initial value set by the user at the
+command-line or with a default value -- see
+Section~\ref{sec:EmuOptions}).  Execution stacks increase their size
+until it is not possible to do so with available system memory.  At
+that point XSB tries to find the maximal amount of space that will
+still fit in system memory.  When a thread is created within an XSB
+process, the size of the thread's execution stacks may be set by {\tt
+  xsb\_thread\_create/3}, otherwise the default values indicated in
+Section~\ref{sec:EmuOptions} are used.  In addtion, whenever a thread
+exits, memory specific to that thread is reclaimed.
 
-The program area (the area into which the code is loaded) is also
+Heap garbage collection is automatically included in XSB
+\cite{CaSC01,CATmem@ISMM-98}.  (To change the algorithm used for heap
+garbage collection or to turn it off altogether, see the predicate
+{\tt garbage\_collection/1} or Section~\ref{sec:EmuOptions} for
+command-line options).  In \version{} the default behavior is indirect
+garbage collection.  Starting with \version{}, heap garbage collection
+may automatically invokes garbage collection of XSB's ``string''
+table, which stores Prolog's atomic constants.  Expansion and garbage
+collection of execution stacks can occur when multiple threads are
+active; however string garbage collection will not be invoked if there
+is more than one active XSB thread.
+
+The program area (the area into which XSB byte-code is loaded) is also
 dynamically expanded as needed.  For dynamic code (created using {\tt
-assert/1}, or the standard predicates {\tt load\_dyn/1} and {\tt
-load\_dync/1}) index size is also automatically reconfigured.  Space
-used by dynamic code is reclaimed when that code is retracted or
-abolished.  \version{} provides memory management for table space as
-well.  Space for tables is dynamically allocated as needed and
-reclaimed through use of the predicates {\tt abolish\_all\_tables/0}
-and {\tt abolish\_table\_pred/1} 
-%,{\tt abolish\_table\_call/1}.  
-(potentially together with {\tt gc\_tables/1} see
-Section~\ref{sec:TablingPredicates}). 
+  assert/1}, or the standard predicates {\tt load\_dyn/1} and {\tt
+  load\_dync/1}) index size is also automatically reconfigured.  Space
+reclaimed for dynamic code depends on several factors.  If there is
+only one active thread, space is reclaimed for retracted clauses and
+abolished predicates as long as (1) there are no choice points that
+may backtrack into the retracted or abolished code, and (2) if the
+dynamic predicate is tabled, all of its tables are completed.
+Otherwise, the code is marked for later garbage collection by {\tt
+  gc\_dynamic/0}.  If more than one thread is active, private
+predicates behave as just described, however space reclamation for
+shared predicates will be delayed until there is a single active
+thread.
 
-When multiple threads are used, memory specific to a thread is
-reclaimed upon a thread's exit.  This includes not only stack space,
-but space for thread-private dynamic code and tables.  Heap garbage
-collection works with multiple threads just as it works in the
-single-threaded engine, since the data structures involved in heap
-garbage collection are all thread-private.  For a thread-shared
-predicate $P$, space reclamation for abolished tables for goals to $P$
-or retracted clauses for $P$ may be deferred until a later garbage
-collection phase when only a single thread is active.
+Space for tables is dynamically allocated as needed and reclaimed
+through use of the predicates {\tt abolish\_all\_tables/0}, {\tt
+  abolish\_table\_pred/1}, {\tt abolish\_table\_call/1} and other
+predicates.  As with dynamic code, space for tables may be reclaimed
+immediately or marked for later garbage collection depending on
+whether choice points may backtrack into the abolished tables, on the
+number of active threads, etc.  See
+Section~\ref{sec:TablePred:Deleting} for details.
 
 \section{Compiling, Consulting, and Loading} \label{Consulting}
 %====================================================

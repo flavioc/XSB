@@ -3,31 +3,46 @@
 \section{Asserting, Retracting, and Other Database Modifications} \label{sec:assert}
 
 XSB provides an array of features for modifying the dynamic database.
-Using {\tt assert/1}, clauses can be asserted using first-argument
-indexing in a manner that is now standard to Prolog implementations.
-While this is the default behavior for XSB, other behavior can be
+As a default, using {\tt assert/1}, clauses can be asserted using
+first-argument indexing in a manner that is now standard to Prolog
+implementations.  However, a variety of other behavior can be
 specified using the (executable) directives {\tt index/3} and {\tt
   index/2}.  For instance, dynamic clauses can be declared to have
-multiple or joint indexes, while this indexing can be either
-hash-based as is typical in Prolog systems or based on {\em tries}.
-No matter what kind of indexing is used, space is dynamically
-allocated when a new clause is asserted and, unless specified
-otherwise, released when it is retracted.  Furthermore, the size of
-any index table expands dynamically as clauses are asserted.
+multiple or joint indexes, and this indexing can be either hash-based
+as is typical in Prolog systems or based on {\em tries}.  No matter
+what kind of indexing is used, space is dynamically allocated when a
+new clause is asserted and, unless specified otherwise, released after
+it is retracted.  Furthermore, the size of any index table expands
+dynamically as clauses are asserted.
 
-Consider first dynamic predicates that use traditional hash-based
-indexing.  XSB asserts WAM code for such clauses, leading to execution
-times similar to compiled code for unit and binary clauses.
-Furthermore, tabling can be used with a dynamic predicate by
-explicitly declaring a predicate to be both dynamic and tabled.  For
-clauses that are asserted as WAM code, the {\em ``immediate
-semantics''} of dynamic predicates is used, not the so-called {\em
-``logical semantics''} of assert/retract \cite{LiOk87}. This means
-that significant care must be taken when modifying the definition of a
-predicate which is currently being executed. Notice that this makes
-some operations difficult. For example, one might try to retract from
-dynamically asserted predicates, {\tt p/1} and {\tt q/1}, exactly
-their intersection, by issuing the following query:
+All dynamic predicates are compiled into SLG-WAM code, however the
+manner of their compilation may differ, and the differences in
+compilation affect the semantics for the predicate.  If a dynamic
+predicate $P/n$ is given an indexing directive of {\tt trie}, clauses
+for $P/n$ will be compiled using trie instructions; otherwise clauses
+for $P/n$ will be compiled into SLG-WAM instructions along the lines
+of static predicates. 
+
+Consider first dynamic predicates that use any indexing other than
+{\tt trie} -- including multiple or joint indices and star indexing.
+XSB asserts WAM code for such clauses so that that the execution time
+of dynamic code is similar to compiled code for unit and binary
+clauses.  Furthermore, tabling can be used by explicitly declaring a
+predicate to be both dynamic and tabled.  In \version{}, when the
+clause of a dynamic predicatw is asserted as WAM code, the {\em
+  ``immediate semantics''} rather than the ISO Semantics of
+assert/retract~\cite{LiOk87}.  The immediate semantics allows assert
+and retract to be fast and spatially efficient, but requires that
+significant care must be taken when modifying the definition of a
+predicate which is currently being executed.
+
+\comment{
+This means that significant care must be taken when
+modifying the definition of a predicate which is currently being
+executed. Notice that this makes some operations difficult. For
+example, one might try to retract from dynamically asserted
+predicates, {\tt p/1} and {\tt q/1}, exactly their intersection, by
+issuing the following query:
 \begin{center} 
 {\tt :- p(X), q(X), retract(p(X)), retract(q(X)), fail.}
 \end{center}
@@ -36,27 +51,26 @@ due to their techniques for space reclamation.  One alternative is to
 use {\tt findall/3} to collect the intersection first, before retracting.
 Another is to use the predicates {\tt retract\_nr/1} and {\tt
 reclaim\_space/1}, described below.  
+}
 
-Asserting clauses as WAM code might be considerably slow for some
-applications.  To remedy this, XSB provides an alternative to {\tt
-assert/1} which implements assert's functionality using the trie-based
-tabling data structures \cite{RRSSW98}.  Though trie-based dynamic
-code can be created (and usually executed) significantly faster than
-using {\tt assert/1}, users of the following predicates should be
-aware that trie-based assert can be used only for unit clauses where a
+If a dynamic predicate is given an indexing directive of {\tt trie},
+clauses of the predicate are compiled (upon a call {\tt assert/1})
+using trie instructions as described in \cite{RRSSW98}.  Creation of
+trie-based dynamic code is significantly faster than creation of other
+dynamic code, and execution time may also be faster.  However,
+trie-based predicates can only be used for unit clauses where a
 relation is viewed as a set, and where the order of the facts is not
 important.
 
 XSB does not at this time fully support dynamic predicates defined
 within compiled code.  The only way to generate dynamic code is by
 explicitly asserting it, or by using the standard predicate {\tt
-load\_dyn/1} to read clauses from a file and assert them (see
-the section {\it Asserting Dynamic Code} in Volume 2).  There is a
-{\tt dynamic/1} predicate (see 
-page~\pageref{dynamic/1}) that declares a predicate within the system
-so that if the predicate is called when no clauses are presently
-defining it, the call will quietly fail instead of issuing an {\sf
-``Undefined predicate''} error message.
+  load\_dyn/1} to read clauses from a file and assert them (see the
+section {\it Asserting Dynamic Code} in Volume 2).  There is a {\tt
+  dynamic/1} predicate (see page~\pageref{dynamic/1}) that declares a
+predicate within the system so that if the predicate is called when no
+clauses are presently defining it, the call will quietly fail instead
+of issuing an {\sf ``Undefined predicate''} error message.
 
 \begin{description}
 
@@ -69,9 +83,9 @@ database.  If the index specification for the predicate is {\tt trie},
 the clause is asserted arbitrarily within the trie, and a warning
 message sent to {\tt stderr}.
 
-Note that because of the precedence of {\tt :-/2}, using the second
-form requires an extra set of parentheses: {\tt assert((Head :-
-  Body))}.
+Note that because of the precedence of {\tt :-/2}, asserting a clause
+containing this operator requires an extra set of parentheses: {\tt
+  assert((Head :- Body))}.
 
 {\bf Error Cases}
 \bi
@@ -106,9 +120,9 @@ the clause is asserted arbitrarily within the trie, and a warning
 message sent to {\tt stderr}.  Error cases are as with {\tt
   asserta/1}.
 
-Note that because of the precedence of {\tt :-/2}, using the second
-form requires an extra set of parentheses: {\tt assert((Head :-
-  Body))}.
+Note that because of the precedence of {\tt :-/2}, asserting a clause
+containing this operator requires an extra set of parentheses: {\tt
+  assert((Head :- Body))}.
 
 \ouritem{assert(+Clause)}\index{\texttt{assert/1}}
 %
@@ -119,18 +133,35 @@ database (acting as {\tt assertz/1}).  If the index specification for
 the predicate is {\tt trie}, the clause is asserted arbitrarily within
 the trie.  Error cases are as with {\tt assertz/1}.
 
-Note that because of the precedence of {\tt :-/2}, using the second
-form requires an extra set of parentheses: {\tt assert((Head :-
-  Body))}.
+Note that because of the precedence of {\tt :-/2}, asserting a clause
+containing this operator requires an extra set of parentheses: {\tt
+  assert((Head :- Body))}.
 
 \ouritem{retract(+Clause)}\index{\texttt{retract/1}} 
 %
-removes through backtracking all clauses in the database that match
+Removes through backtracking all clauses in the database that match
 with {\tt Clause}.  {\tt Clause} must be of one of the forms: {\tt
   Head} or {\tt Head :- Body}.  Note, that because of the precedence
 of {\tt :-/2}, using the second form requires an extra set of
-parentheses: {\tt retract((Head :- Body))}.  Space is reclaimed after
-a clause is retracted.
+parentheses: {\tt retract((Head :- Body))}.  
+
+The technical details on space reclamation are as follows.  When
+retract is called, a check is made to determine whether it is safe to
+reclaim space for that clause.  Safety is ensured when:
+\begin{itemize}
+\item A check is made of the choice point stack indicating that no
+  choice point will backtack into space that is being reclaimed; AND
+\begin{itemize}
+\item The predicate is thread-private; OR 
+\item there is a single active thread
+\end{itemize}
+\item AND if the predicate is tabled, there is no incomplete table
+     for that predicate.
+\end{itemize}
+If it is safe to reclaim space for the clause, space is reclaimed
+immediately.  Otherwise the clause is marked so that its space may
+later be reclaimed through garbage collection.  (See {\tt
+  gc\_dynamic/1}).
 
 {\bf Error Cases}
 \bi
@@ -161,15 +192,17 @@ predicate whose clauses have been retracted retains the {\tt dynamic}
 property (contrast this behavior with that of predicates {\tt
   abolish/[1,2]} below).  Predicate {\tt retractall/1} is determinate
 and always succeeds.  The term {\tt Head} is not further instantiated
-by this call.  Error cases are as with {\tt retract/1}.
+by this call.  Conditions for space reclamation and error cases are as
+with {\tt retract/1}.
 
 \ouritem{abolish(+PredSpec)}\index{\texttt{abolish/1}} Removes the
 definition of the specified predicate.  {\tt PredSpec} is of the form
 {\tt Pred/Arity}.  Everything about the abolished predicate is
-completely forgotten by the system (including the {\tt dynamic or static}
-property) \footnote{For compatability with older Prologs, there is
-  also an {\tt abolish/2} which takes {\tt Pred} and {\tt Arity} as
-  its two arguments.}
+completely forgotten by the system (including the {\tt dynamic or
+  static} property, whether the predicate is tabled, and whether the
+predicate is thread-shared or thread-private) \footnote{For
+  compatability with older Prologs, there is also an {\tt abolish/2}
+  which takes {\tt Pred} and {\tt Arity} as its two arguments.}
 
 \compatability \version{} of XSB allows static predicates to be
 abolished and their space reclaimed.  Such space is reclaimed
@@ -229,6 +262,27 @@ matches {\tt Head} and Body matches {\tt Body}.  For facts the {\tt Body} is
 %
 \ei
 
+\ouritem{gc\_dynamic(-N)}\index{\texttt{gc_dynamic/1}} 
+%
+Invokes the garbage collector for dynamic clauses that have been
+retracted, or whose predicate has been abolished.  When called with
+more than 1 active thread, {\tt gc\_dynamic/1} will always perform
+garbage collection for that thread's private retracted clauses;
+however in \version{}, it will only perform garbage collection for
+retracted thread-shared clauses if there is a single active thread.
+{\tt N} is the number or shared and/or private frames left to be
+collected -- if {\tt N} is unified to 0, then all possible garbage
+collecting has been performed.  {\tt N} is unified to -1 garbage
+collection was not attempted (due to multiple active threads).
+
+By default, {\tt gc\_dynamic/1} is called automatically at the top
+level of the XSB interpreter, when abolishing a predicate, and when
+calling retractall for an ``open'' term containing no variable
+bindings.
+
+\comment{
+Now obsolete, what with GC.
+
 \ouritem{retract\_nr(+Clause)}\index{\texttt{retract\_nr/1}}
 Performs just as {\tt retract/1} does, except that it does not reclaim the
 space used by the retracted clause. This is provided to allow programmers
@@ -271,7 +325,7 @@ out of choice points for {\tt q(X)} and {\tt p(X)}.  Predicate
 standard but must be imported from module {\tt assert}.
 As with {\tt retract\_nr}, the use of this predicate is discouraged; 
 it is provided for (partial) compatibility with SB-Prolog.
-
+}
 \comment{ 
 TLS: I dont think we need hashtable size given that we use dynamic
 hashing.  We still are supporting it, but we dont need to encourage it
