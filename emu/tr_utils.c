@@ -2267,8 +2267,21 @@ void thread_free_private_tifs(CTXTdecl) {
   SYS_MUTEX_UNLOCK( MUTEX_TABLE );
 }
 
+static inline void thread_free_private_deltfs(CTXTdecl) {
+
+  DelTFptr next_deltf;
+  DelTFptr deltf = private_deltf_chain_begin;
+
+  while (deltf) {
+    next_deltf = DTF_NextDTF(deltf);
+    mem_dealloc(deltf,sizeof(DeletedTableFrame),TABLE_SPACE);		
+    deltf = next_deltf;
+  }
+}
+
 void release_private_tabling_resources(CTXTdecl) {
 
+  thread_free_private_deltfs(CTXT);
   thread_free_private_tifs(CTXT);
   SM_ReleaseResources(*private_smTableBTN);
   TrieHT_FreeAllocatedBuckets(*private_smTableBTHT);

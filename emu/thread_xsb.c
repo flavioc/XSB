@@ -81,8 +81,11 @@ typedef struct
 static xsb_thread_t th_vec[MAX_THREADS];
 static xsb_thread_t *th_next = th_vec;
 
-extern void thread_free_dyn_blks(CTXTdecl);
-extern void thread_free_tab_blks(CTXTdecl);
+extern void release_private_dynamic_resources(CTXTdecl);
+extern void release_private_tabling_resources(CTXTdecl);
+
+//extern void thread_free_dyn_blks(CTXTdecl);
+//extern void thread_free_tab_blks(CTXTdecl);
 extern void delete_predicate_table(CTXTdeclc TIFptr);
 
 MutexFrame sys_mut[MAX_SYS_MUTEXES] ;
@@ -381,8 +384,6 @@ int xsb_thread_self()
 #endif
 }
 
-extern void release_private_tabling_resources(CTXTdecl);
-
 xsbBool xsb_thread_request( CTXTdecl ) 
 {
 	Integer request_num = ptoc_int(CTXTc 1) ;
@@ -410,8 +411,8 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  rval = ptoc_int(CTXTc 2 ) ;
 	  release_held_mutexes(CTXT);
 	  release_private_tabling_resources(CTXT);
+	  release_private_dynamic_resources(CTXT);
 	  cleanup_thread_structures(CTXT) ;
-	  thread_free_dyn_blks(CTXT);    /* biassert.c */
 	  mem_dealloc(th,sizeof(th_context),THREAD_SPACE) ;
 	  flags[NUM_THREADS]-- ;
 	  pthread_mutex_lock( &th_mutex );

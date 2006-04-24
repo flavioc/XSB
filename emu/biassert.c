@@ -107,7 +107,11 @@ CPtr dynpredep_to_prortb(CTXTdeclc void *pred_ep) {
 #endif
 
 /* Maps psc -> ep to the actual prref, accounting for dispatch tables
-   and/or table wrappers. */
+   and/or table wrappers. 
+
+   Also, it could be that dynpredep_to_prref() returns NULL normally
+   -- if a private predicate has been defined for one thread but not
+   another.*/
 
 PrRef dynpredep_to_prref(CTXTdeclc void *pred_ep) {
 #ifdef MULTI_THREAD
@@ -2156,31 +2160,30 @@ void unmark_cpstack_retract(CTXTdecl) {
 }
 
 /* old version from before mark.
-int check_cpstack_retract(ClRef clref) {
-  CPtr cp_top,cp_bot ;
-  byte cp_inst;
-  int found_match;
-  ClRef cp_clref;
-
-  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
-
-  cp_top = breg ;				 
-  found_match = 0;
-  while ( cp_top < cp_bot && !(found_match)) {
-    cp_inst = *(byte *)*cp_top;
+| int check_cpstack_retract(ClRef clref) {
+|   CPtr cp_top,cp_bot ;
+|   byte cp_inst;
+|   int found_match;
+|   ClRef cp_clref;
+| 
+|   cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
+| 
+|   cp_top = breg ;				 
+|   found_match = 0;
+|   while ( cp_top < cp_bot && !(found_match)) {
+|     cp_inst = *(byte *)*cp_top;
     // dynamic clauses now have special try/retry/trust instructions
-    if ( is_dynamic_clause_inst(cp_inst) ) {
-      fprintf(stderr,"CPs check cp_inst %x\n",cp_inst);
-      cp_clref = (ClRef)*cp_top;
-      if (clref == cp_clref) {
-	fprintf(stderr,"found one\n");
-	found_match = 1;
-      }
-    }
-    cp_top = cp_prevtop(cp_top);
-  }
-  return found_match;
-}
+|     if ( is_dynamic_clause_inst(cp_inst) ) {
+|       fprintf(stderr,"CPs check cp_inst %x\n",cp_inst);
+|       cp_clref = (ClRef)*cp_top;
+|       if (clref == cp_clref) {
+| 	fprintf(stderr,"found one\n");
+| 	found_match = 1;
+|     }
+|     cp_top = cp_prevtop(cp_top);
+|   }
+|   return found_match;
+| }
 */
 
 static inline int dyntabled_incomplete(CTXTdeclc Psc psc) {
@@ -2237,26 +2240,25 @@ DelCFptr delcf_chain_begin = (DelCFptr) NULL;
 /* Asserting _pred structures to end of pred chain.  This means that
    if lastdcf is not null, just stick it on the end; otherwise adjust
    Prref's delcf pointer. */
-
-DelCFptr new_global_DelCF_pred(PrRef pPrRef,Psc pPSC) {
+DelCFptr new_DelCF_pred(CTXTdeclc PrRef pPrRef,Psc pPSC,
+				DelCFptr *chain_begin) {
   DelCFptr pDCF; 
 
   pDCF = (DelCFptr)mem_alloc(sizeof(DeletedClauseFrame),ASSERT_SPACE); 
     if ( IsNULL(pDCF) )							
       xsb_abort("Ran out of memory in allocation of DeletedClauseFrame"); 
     DCF_PrRef(pDCF) = pPrRef;			
-    //    DCF_Generation(pDCF) = PrRef_Generation(pPrRef);	
     DCF_ClRef(pDCF) = PrRef_FirstClRef(pPrRef);	 // diff from _clause create
     DCF_PSC(pDCF) = pPSC;						
     DCF_Type(pDCF) = DELETED_PRREF;					
     DCF_Mark(pDCF) = NULL;							
     DCF_PrevDCF(pDCF) = 0;						
     DCF_PrevPredDCF(pDCF) = 0;						
-    DCF_NextDCF(pDCF) = delcf_chain_begin;				
+    DCF_NextDCF(pDCF) = *chain_begin;
     DCF_NextPredDCF(pDCF) = PrRef_DelCF(pPrRef);  
-    if (delcf_chain_begin) DCF_PrevDCF(delcf_chain_begin) = pDCF;	
+    if (*chain_begin) DCF_PrevDCF(*chain_begin) = pDCF;	
     if (PrRef_DelCF(pPrRef))  DCF_PrevPredDCF(PrRef_DelCF(pPrRef)) = pDCF; 
-    delcf_chain_begin = pDCF;						
+    *chain_begin = pDCF;						
     PrRef_DelCF(pPrRef) = pDCF;
     return pDCF;
 }
@@ -2264,34 +2266,34 @@ DelCFptr new_global_DelCF_pred(PrRef pPrRef,Psc pPSC) {
 /* Asserting _clause structures to START of pred chain -- this means
    that they will be abolished before any pred-level retractalls for
    the same predicate. */
-DelCFptr new_global_DelCF_clause(PrRef pPrRef,Psc pPSC,ClRef pClRef) {
+DelCFptr new_DelCF_clause(PrRef pPrRef,Psc pPSC,ClRef pClRef,
+				 DelCFptr *chain_begin) {
   DelCFptr pDCF; 
 
   pDCF = (DelCFptr)mem_alloc(sizeof(DeletedClauseFrame),ASSERT_SPACE); 
     if ( IsNULL(pDCF) )							
       xsb_abort("Ran out of memory in allocation of DeletedClauseFrame"); 
     DCF_PrRef(pDCF) = pPrRef;			
-    //    DCF_Generation(pDCF) = PrRef_Generation(pPrRef);	
     DCF_ClRef(pDCF) = pClRef;	  // diff from _pred create
     DCF_PSC(pDCF) = pPSC;						
     DCF_Type(pDCF) = DELETED_CLREF;
     DCF_Mark(pDCF) = 0;							
     DCF_PrevDCF(pDCF) = 0;						
     DCF_PrevPredDCF(pDCF) = 0;						
-    DCF_NextDCF(pDCF) = delcf_chain_begin;				
+    DCF_NextDCF(pDCF) = *chain_begin;				
     DCF_NextPredDCF(pDCF) = PrRef_DelCF(pPrRef);  
-    if (delcf_chain_begin) DCF_PrevDCF(delcf_chain_begin) = pDCF;	
+    if (*chain_begin) DCF_PrevDCF(*chain_begin) = pDCF;	
     if (PrRef_DelCF(pPrRef))  DCF_PrevPredDCF(PrRef_DelCF(pPrRef)) = pDCF; 
-    delcf_chain_begin = pDCF;						
+    *chain_begin = pDCF;						
     PrRef_DelCF(pPrRef) = pDCF;
     return pDCF;
 }
 
 /* No mutexes, because it is called only during gc, w. only 1 active
  * thread. */
-#define Free_Global_DelCF(pDCF,pPRREF) {				\
+#define Free_DelCF(pDCF,pPRREF,chain_begin) {				\
   if (DCF_PrevDCF(pDCF) == 0) {						\
-    delcf_chain_begin = DCF_NextDCF(pDCF);				\
+    chain_begin = DCF_NextDCF(pDCF);					\
   }									\
   else {								\
     DCF_NextDCF(DCF_PrevDCF(pDCF)) = DCF_NextDCF(pDCF);			\
@@ -2323,33 +2325,46 @@ DelCFptr new_global_DelCF_clause(PrRef pPrRef,Psc pPSC,ClRef pClRef) {
 */
 
 void check_insert_global_delcf_pred(CTXTdeclc PrRef prref,Psc psc) { 
-  //  DelCFptr dcf = delcf_chain_begin;
   DelCFptr dcf = PrRef_DelCF(prref);
 
-  SYS_MUTEX_LOCK(MUTEX_TABLE);
+  SYS_MUTEX_LOCK(MUTEX_DYNAMIC);
   while ( dcf != 0 ) {
     if (DCF_Type(dcf) == DELETED_CLREF) {
       fprintf(stderr,"Prref over-riding clref for %s/%d\n",
 	      get_name(psc),get_arity(psc));
-      Free_Global_DelCF(dcf,prref);
+      Free_DelCF(dcf,prref,delcf_chain_begin);
     }
     dcf = DCF_NextPredDCF(dcf);
   }
-  dcf = new_global_DelCF_pred(prref,psc);
-  SYS_MUTEX_UNLOCK(MUTEX_TABLE);
+  dcf = new_DelCF_pred(CTXTc prref,psc,&delcf_chain_begin);
+  SYS_MUTEX_UNLOCK(MUTEX_DYNAMIC);
 }
 
+#ifdef MULTI_THREAD
+void check_insert_private_delcf_pred(CTXTdeclc PrRef prref,Psc psc) { 
+  DelCFptr dcf = PrRef_DelCF(prref);
+
+  while ( dcf != 0 ) {
+    if (DCF_Type(dcf) == DELETED_CLREF) {
+      fprintf(stderr,"Prref over-riding clref for %s/%d\n",
+	      get_name(psc),get_arity(psc));
+      Free_DelCF(dcf,prref,private_delcf_chain_begin);
+    }
+    dcf = DCF_NextPredDCF(dcf);
+  }
+  dcf = new_DelCF_pred(CTXTc prref,psc,&private_delcf_chain_begin);
+}
+#endif
 
 /* Currently am not comparing deleted clauses to deleted predicates.
    Just delete the clauses, then do the retractalls.*/
 
 void check_insert_global_delcf_clause(CTXTdeclc PrRef prref,
 				      Psc psc,ClRef clref) { 
-  //  DelCFptr dcf = delcf_chain_begin;
   DelCFptr dcf = PrRef_DelCF(prref);
   int found = 0;
 
-  SYS_MUTEX_LOCK(MUTEX_TABLE);
+  SYS_MUTEX_LOCK(MUTEX_DYNAMIC);
   while ( dcf != 0 ) {
     if (DCF_Type(dcf) == DELETED_CLREF && DCF_ClRef(dcf) == clref) {
       fprintf(stderr,"Found clref for %s/%d\n",
@@ -2359,14 +2374,30 @@ void check_insert_global_delcf_clause(CTXTdeclc PrRef prref,
     dcf = DCF_NextPredDCF(dcf);
   }
   if (!found) {
-    dcf = new_global_DelCF_clause(prref,psc,clref);
+    dcf = new_DelCF_clause(prref,psc,clref,&delcf_chain_begin);
   }
-  SYS_MUTEX_UNLOCK(MUTEX_TABLE);
+  SYS_MUTEX_UNLOCK(MUTEX_DYNAMIC);
 }
 
-/* Stubs for later addition of private delcf chains. */
-
 #ifdef MULTI_THREAD
+void check_insert_private_delcf_clause(CTXTdeclc PrRef prref,
+				      Psc psc,ClRef clref) { 
+  DelCFptr dcf = PrRef_DelCF(prref);
+  int found = 0;
+
+  while ( dcf != 0 ) {
+    if (DCF_Type(dcf) == DELETED_CLREF && DCF_ClRef(dcf) == clref) {
+      fprintf(stderr,"Found clref for %s/%d\n",
+	      get_name(psc),get_arity(psc));
+      found = 1;
+    }
+    dcf = DCF_NextPredDCF(dcf);
+  }
+  if (!found) {
+    dcf = new_DelCF_clause(prref,psc,clref,&private_delcf_chain_begin);
+  }
+}
+
 #define check_insert_shared_delcf_pred(context,prref,psc)	\
   check_insert_global_delcf_pred(context,prref,psc)	 
 
@@ -2374,7 +2405,7 @@ void check_insert_global_delcf_clause(CTXTdeclc PrRef prref,
   check_insert_global_delcf_clause(context,prref,psc,clref)	 
 
 #define check_insert_private_delcf_pred(context,prref,psc)	\
-  check_insert_global_delcf_pred(context,prref,psc)	 
+  check_insert_private_delcf_pred(context,prref,psc)	 
 
 #define check_insert_private_delcf_clause(context,prref,psc,clref)	\
   check_insert_global_delcf_clause(context,prref,psc,clref)	 
@@ -2470,15 +2501,19 @@ static int really_delete_clause(ClRef);
    to be set.  To do this, need to find the current prref (via
    dynpredep_to_prref()) not a possibly old one pointed to by the
    delcf frame.
+
+   BTW, returns from dynpredep_to_prref() should be non-null, as they
+   have a gc frame -- implying that any dispatch block has been filled
+   in.
 */
 
-int sweep_dynamic(CTXTdecl) { 
-  DelCFptr delcf_ptr; 
+int sweep_dynamic(CTXTdeclc DelCFptr *chain_begin) { 
+  DelCFptr delcf_ptr = *chain_begin; 
   int dcf_cnt = 0;
   PrRef prref;
    
   /* Free global deltcs */
-  delcf_ptr = delcf_chain_begin;
+  //  delcf_ptr = delcf_chain_begin;
   while (delcf_ptr) {
     if (DCF_Mark(delcf_ptr)) {
       fprintf(stderr,"GC Sweep skipping marked %s/%d\n",
@@ -2492,7 +2527,7 @@ int sweep_dynamic(CTXTdecl) {
 	      get_name(DCF_PSC(delcf_ptr)),get_arity(DCF_PSC(delcf_ptr)));
 	gc_retractall(CTXTc DCF_ClRef(delcf_ptr));
 	prref = dynpredep_to_prref(CTXTc get_ep(DCF_PSC(delcf_ptr)));
-	Free_Global_DelCF(delcf_ptr,prref);
+	Free_DelCF(delcf_ptr,prref,*chain_begin);
       }
       else {
 	if (DTF_Type(delcf_ptr) == DELETED_CLREF) {
@@ -2501,7 +2536,7 @@ int sweep_dynamic(CTXTdecl) {
 		    get_name(DCF_PSC(delcf_ptr)),get_arity(DCF_PSC(delcf_ptr)));
 	    really_delete_clause(DCF_ClRef(delcf_ptr));
 	    prref = dynpredep_to_prref(CTXTc get_ep(DCF_PSC(delcf_ptr)));
-	    Free_Global_DelCF(delcf_ptr,prref);
+	    Free_DelCF(delcf_ptr,prref,*chain_begin);
 	  } else {
 	    dcf_cnt++;
 	    fprintf(stderr,"GC Sweep skipping unsafe: %s/%d\n",
@@ -2512,11 +2547,6 @@ int sweep_dynamic(CTXTdecl) {
     }
     delcf_ptr = DCF_NextDCF(delcf_ptr);
   }
-
-#ifdef MULTI_THREAD
-  //  dcf_cnt = dcf_cnt + sweep_private_tabled_preds(CTXT);
-#endif
-
   return dcf_cnt;
 }
 
@@ -2528,15 +2558,102 @@ int gc_dynamic(CTXTdecl)
 {
   int ctr = -1;
 
+#ifdef MULTI_THREAD
   if (flags[NUM_THREADS] == 1 ) {
+    if (!delcf_chain_begin && !private_delcf_chain_begin) return 0;
+    mark_dynamic(CTXT);
+    ctr = sweep_dynamic(CTXTc &delcf_chain_begin) + 
+      sweep_dynamic(CTXTc &private_delcf_chain_begin);
+    unmark_cpstack_retract(CTXT);
+  } else {
+    if (!private_delcf_chain_begin) return 0;
+    mark_dynamic(CTXT);
+    ctr = sweep_dynamic(CTXTc &private_delcf_chain_begin);
+    unmark_cpstack_retract(CTXT);
+  }
+#else 
     if (!delcf_chain_begin) return 0;
     mark_dynamic(CTXT);
-    ctr = sweep_dynamic(CTXT);
+    ctr = sweep_dynamic(CTXTc &delcf_chain_begin);
     unmark_cpstack_retract(CTXT);
-  } 
+#endif
   return ctr;
 }
 
+#define FIXED_BLOCK_SIZE_FOR_TABLED_PRED     (8 * sizeof(Cell))
+
+/* TLS: did not put a MUTEX_DISPBLKHDR as the chain of dispblks
+   themselves are not changed, only pointers to prrefs within the
+   displblks. */
+#ifdef MULTI_THREAD
+
+static inline void thread_free_private_delcfs(CTXTdecl) {
+
+  DelCFptr next_delcf;
+  DelCFptr delcf = private_delcf_chain_begin;
+
+  while (delcf) {
+    next_delcf = DCF_NextDCF(delcf);
+    mem_dealloc(delcf,sizeof(DeletedClauseFrame),ASSERT_SPACE);		
+    delcf = next_delcf;
+  }
+}
+
+/* free_private_prref() is the same as free_prref, except that it
+   knows to free a private tif, rather than having to check via the
+   psc record. */
+
+void free_private_prref(CTXTdeclc CPtr *p) {
+
+    if ( *(pb)p == tabletrysingle )
+      {
+	TIFptr mtTIF = (TIFptr) *(p+2);
+	Free_Private_TIF(mtTIF);
+	/* free prref, from calld instr set in db_build_prref */
+	mem_dealloc((pb)(*(p+6)), sizeof(PrRefData),ASSERT_SPACE);
+	if (xsb_profiling_enabled)
+	  remove_prog_seg((pb)*(p+6));
+	mem_dealloc((pb)p, FIXED_BLOCK_SIZE_FOR_TABLED_PRED,
+		    ASSERT_SPACE) ; /*free table hdr*/
+      }
+    else {
+      mem_dealloc((pb)p, sizeof(PrRefData),ASSERT_SPACE);  /* free prref */
+      if (xsb_profiling_enabled)
+	remove_prog_seg((pb)p);
+    }
+}
+
+void retractall_prref(CTXTdeclc PrRef);
+
+void thread_free_dyn_blks(CTXTdecl) {
+  struct DispBlk_t *dispblk;
+  PrRef prref0, prref;
+
+  //  printf("Enter thread_free_dyn_blks\n");
+  SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
+  for (dispblk=DispBlkHdr.firstDB ; dispblk != NULL ; dispblk=dispblk->NextDB) {
+    if (th->tid <= dispblk->MaxThread) {
+      prref0 = (PrRef)(&(dispblk->Thread0))[th->tid];
+      if (prref0) {
+	if (cell_opcode((CPtr *)prref0) == tabletrysingle) 
+	  prref = (PrRef)((CPtr *)prref0)[6];
+	else prref = prref0;
+	retractall_prref(CTXTc prref);
+	free_private_prref(CTXTc (CPtr *)prref0);
+	//	printf("set prref free for thread %d\n",th->tid);
+       	(&(dispblk->Thread0))[th->tid] = (CPtr) NULL;
+      }
+    }
+  }
+  SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
+}
+
+void release_private_dynamic_resources(CTXTdecl) {
+  thread_free_private_delcfs(CTXT);
+  thread_free_dyn_blks(CTXT);
+}
+
+#endif
 
 /********************************************************************/
 /* Insert in retract buffer and remove old clauses */
@@ -2680,6 +2797,7 @@ static void retract_clause(CTXTdeclc ClRef Clause, Psc psc ) {
     unmark_cpstack_retract(CTXT);
   }
   if (!really_deleted) {
+    /* retracting only if unifying -- dont worry abt. NULL return for d_to_p */
     prref = dynpredep_to_prref(CTXTc get_ep(psc));
     fprintf(stderr,"Delaying retract of clref in use: %s/%d\n",
 	    get_name(psc),get_arity(psc));
@@ -2909,8 +3027,6 @@ xsbBool db_retract0( CTXTdecl /* ClRef, retract_nr */ )
   that gets generated as an entry point clause for all dynamic tabled
   predicates.
   ----------------------------------------------------------------------*/
-#define FIXED_BLOCK_SIZE_FOR_TABLED_PRED     (8 * sizeof(Cell))
-
 /* TLS: changed mem_alloc to nocheck as xsb_throw() depends on this
    predicate.  So if we're out of memory here, we're sunk. */
 
@@ -2932,7 +3048,6 @@ static inline void allocate_prref_tab(CTXTdeclc Psc psc, PrRef *prref, pb *new_e
   PrRef_LastClRef(*prref) = (ClRefHdr *)*prref;
   PrRef_Psc(*prref) = psc;        
   PrRef_Mark(*prref) = 0;
-  //  PrRef_Generation(*prref) = 0;
   PrRef_DelCF(*prref) = NULL;
   if ( get_tabled(psc) )
     {
@@ -3289,7 +3404,10 @@ int gen_retract_all(CTXTdecl/* R1: +PredEP , R2: +PSC */)
 
   prref = dynpredep_to_prref(CTXTc prref);
 
-  if (PrRef_FirstClRef(prref) == NULL) { /* nothing to retract */
+  /* Here, !prref can occur if the predicate is private but its
+     thread-specific prref has not been created. */
+
+  if (!prref || PrRef_FirstClRef(prref) == NULL) { /* nothing to retract */
     return TRUE;
   }
 
@@ -3316,7 +3434,6 @@ int gen_retract_all(CTXTdecl/* R1: +PredEP , R2: +PSC */)
     }
 #endif
     PrRef_FirstClRef(prref) = NULL;
-    //    PrRef_Generation(prref) = PrRef_Generation(prref) + 1;
     cell_opcode((CPtr)prref) = fail;
   }
   return TRUE;
@@ -3357,6 +3474,8 @@ xsbBool db_remove_prref(CTXTdecl/* R1: +PredEP , R2: +PSC */)
   
   prref = dynpredep_to_prref(CTXTc prref);
 
+  if (!prref) return TRUE;
+
   if (flags[NUM_THREADS] != 1) {
     xsb_abort("Cannot abolish a predicate when more than 1 thread is active");
   }
@@ -3377,57 +3496,6 @@ xsbBool db_remove_prref(CTXTdecl/* R1: +PredEP , R2: +PSC */)
   return TRUE;
 }
 
-/* TLS: did not put a MUTEX_DISPBLKHDR as the chain of dispblks
-   themselves are not changed, only pointers to prrefs within the
-   displblks. */
-#ifdef MULTI_THREAD
-
-/* free_private_prref() is the same as free_prref, except that it
-   knows to free a private tif, rather than having to check via the
-   psc record. */
-
-void free_private_prref(CTXTdeclc CPtr *p) {
-
-    if ( *(pb)p == tabletrysingle )
-      {
-	TIFptr mtTIF = (TIFptr) *(p+2);
-	Free_Private_TIF(mtTIF);
-	/* free prref, from calld instr set in db_build_prref */
-	mem_dealloc((pb)(*(p+6)), sizeof(PrRefData),ASSERT_SPACE);
-	if (xsb_profiling_enabled)
-	  remove_prog_seg((pb)*(p+6));
-	mem_dealloc((pb)p, FIXED_BLOCK_SIZE_FOR_TABLED_PRED,ASSERT_SPACE) ; /*free table hdr*/
-      }
-    else {
-      mem_dealloc((pb)p, sizeof(PrRefData),ASSERT_SPACE);  /* free prref */
-      if (xsb_profiling_enabled)
-	remove_prog_seg((pb)p);
-    }
-}
-
-void thread_free_dyn_blks(CTXTdecl) {
-  struct DispBlk_t *dispblk;
-  PrRef prref0, prref;
-
-  //  printf("Enter thread_free_dyn_blks\n");
-  SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
-  for (dispblk=DispBlkHdr.firstDB ; dispblk != NULL ; dispblk=dispblk->NextDB) {
-    if (th->tid <= dispblk->MaxThread) {
-      prref0 = (PrRef)(&(dispblk->Thread0))[th->tid];
-      if (prref0) {
-	if (cell_opcode((CPtr *)prref0) == tabletrysingle) 
-	  prref = (PrRef)((CPtr *)prref0)[6];
-	else prref = prref0;
-	retractall_prref(CTXTc prref);
-	free_private_prref(CTXTc (CPtr *)prref0);
-	//	printf("set prref free for thread %d\n",th->tid);
-       	(&(dispblk->Thread0))[th->tid] = (CPtr) NULL;
-      }
-    }
-  }
-  SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
-}
-#endif
 
 /*===============================================================*/
 /* Trie Assert and Retract                                       */

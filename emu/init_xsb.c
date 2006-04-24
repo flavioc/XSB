@@ -840,6 +840,7 @@ void init_thread_structures(CTXTdecl)
   private_tif_list.first = NULL;
   private_tif_list.last = NULL;
   private_deltf_chain_begin = NULL;
+  private_delcf_chain_begin = NULL;
 
   /******** Initialize Private structure managers ********/
 
