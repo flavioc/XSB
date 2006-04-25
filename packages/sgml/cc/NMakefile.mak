@@ -1,4 +1,4 @@
-# Make file for driver_manager.dll
+# Make file for sgml2pl.dll
 
 XSBDIR=..\..\..
 MYPROGRAM=sgml2pl
