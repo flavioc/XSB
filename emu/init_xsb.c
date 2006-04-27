@@ -141,11 +141,14 @@ Cell proceed_inst;
 #ifdef MULTI_THREAD
 /* Used to create detached thread -- process global. */
 pthread_attr_t detached_attr_gl;
+
+extern void reset_stat_total(void); 
 #endif
+
+extern void perproc_reset_stat(void); 
 
 extern double realtime_count_gl;
 
-extern void perproc_reset_stat(void), reset_stat_total(void); 
 
 /* these three are from orient_xsb.c */
 extern char *install_dir_gl; 
@@ -384,7 +387,10 @@ char *init_para(CTXTdeclc int argc, char *argv[])
 
   /* init statistics. structures */
   perproc_reset_stat();
+
+#ifndef MULTI_THREAD
   reset_stat_total();
+#endif
 
   max_threads_glc = MAX_THREADS;
   pflags[STACK_REALLOC] = TRUE;
@@ -899,6 +905,10 @@ void init_thread_structures(CTXTdecl)
 					  MT_PRIVATE_SPACE);
   SM_InitDeclDyna(private_smALN,AnsListNode, ALNs_PER_BLOCK,
 		  "Answer List Node (Private)");
+
+  num_gc = 0;
+  total_time_gc = 0;
+  total_collected = 0;
 
   /***************/
 

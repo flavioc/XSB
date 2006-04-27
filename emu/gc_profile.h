@@ -287,11 +287,11 @@ inline static void inspect_ptr(CPtr cell_ptr)
 /* the following cannot be "static inline" since it's used in
    emu/trace_xsb.c and also uses global variables in heap_xsb.c
    --lfcastro */
-void print_gc_statistics(void)
+void print_gc_statistics(CTXTdecl)
 {
   char *which = (slide) ? "sliding" : "copying" ;
 
-  printf("{GC} %4d heap garbage collections by %s: collected %ld cells in %lf secs\n\n",
+  printf("%4d heap garbage collections by %s: collected %ld cells in %lf secs\n\n",
 	 num_gc, which, total_collected, total_time_gc);
 }
 

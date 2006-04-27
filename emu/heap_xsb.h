@@ -65,7 +65,7 @@ extern void print_ls(CTXTdeclc int);
 extern void print_all_stacks(CTXTdeclc int);
 extern void print_regs(CTXTdeclc int,int);
 extern void print_heap(CTXTdeclc int,int,int);
-extern void print_gc_statistics(void);
+extern void print_gc_statistics(CTXTdecl);
 #ifndef MULTI_THREAD
 extern Cell attv_interrupts[20480][2];
 #endif

@@ -371,6 +371,10 @@ pthread_cond_t cond_var ;
 #endif
 
 Cell _attv_interrupts[20480][2];
+
+int _num_gc;
+double _total_time_gc;
+unsigned long _total_collected;
   
 } ;
 
@@ -576,6 +580,10 @@ typedef struct th_context th_context ;
 #define  pflags			(th->_pflags)
 
 #define  attv_interrupts        (th->_attv_interrupts)
+
+#define num_gc                  (th->_num_gc)
+#define total_time_gc           (th->_total_time_gc)
+#define total_collected         (th->_total_collected)
 
 #define CTXT			th
 #define CTXTc			th ,

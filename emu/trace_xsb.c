@@ -23,7 +23,6 @@
 ** 
 */
 
-
 #include "xsb_config.h"
 #include "xsb_debug.h"
 
@@ -46,14 +45,19 @@
 #include "trace_xsb.h"
 
 /*======================================================================*/
+/* Process-level information: keep this global */
 
 double time_start;      /* time from which stats started being collected */
 
+#ifndef MULTI_THREAD
 struct trace_str tds;			/* trace datastructure */
 struct trace_str ttt;			/* trace total */
 struct trace_str trace_init = {		/* initial value for a trace str */
     0, 0, 0, 0, 0, 0, 0.0
    };
+#else 
+double time_count = 0;
+#endif
 
 /*======================================================================*/
 /* perproc_stat()							*/
@@ -68,6 +72,7 @@ struct trace_str trace_init = {		/* initial value for a trace str */
  *  values held in 'tds'.)
  */
 
+#ifndef MULTI_THREAD
 void perproc_stat(void)
 {
   tds.time_count = cpu_time() - time_start;
@@ -85,6 +90,12 @@ void perproc_stat(void)
      ttt.maxlevel_num = tds.maxlevel_num;
   ttt.time_count += tds.time_count;
 }
+#else
+void perproc_stat(void)
+{
+  time_count = cpu_time() - time_start;
+}
+#endif
 
 /*======================================================================*/
 /* total_stat()								*/
@@ -277,9 +288,10 @@ void total_stat(CTXTdeclc double elapstime) {
   printf("Time: %.3f sec. cputime,  %.3f sec. elapsetime\n",
 	 ttt.time_count, elapstime);
 }
-/****************************/
+
+/**********************************************************************/
 #else /* Below, the MT version */
-/****************************/
+/**********************************************************************/
 
 void total_stat(CTXTdeclc double elapstime) {
 
@@ -376,25 +388,30 @@ void total_stat(CTXTdeclc double elapstime) {
 
   total_alloc =
     pspacetot  +  trieassert_alloc  +  pspacesize[TABLE_SPACE] +
-    (pdl.size + glstack.size + tcpstack.size + complstack.size) * K +
     de_space_alloc + dl_space_alloc;
 
   total_used  =
-    pspacetot  +  trieassert_used  +  pspacesize[TABLE_SPACE]-(tablespace_alloc-tablespace_used) +
-    (glstack.size * K - gl_avail) + (tcpstack.size * K - tc_avail) +
+    pspacetot  +  trieassert_used  + 
+    pspacesize[TABLE_SPACE]-(tablespace_alloc-tablespace_used) +
     de_space_used + dl_space_used;
 
 
   printf("\n");
-  printf("Memory (total)    %12ld bytes: %12ld in use, %12ld free\n",
-	 total_alloc, total_used, total_alloc - total_used);
+  printf("Non-stack memory for process:\n");
   printf("  permanent space %12ld bytes: %12ld in use, %12ld free\n",
 	 pspacetot + trieassert_alloc, pspacetot + trieassert_used,
 	 trieassert_alloc - trieassert_used);
   for (i=0; i<NUM_CATS_SPACE; i++) 
     if (pspacesize[i] > 0 && i != TABLE_SPACE)
       printf("    %s                      %12ld\n",pspace_cat[i],pspacesize[i]);
+  printf("  SLG table space %12ld bytes: %12ld in use, %12ld free\n",
+	 pspacesize[TABLE_SPACE],  pspacesize[TABLE_SPACE]-(tablespace_alloc-tablespace_used),
+	 tablespace_alloc - tablespace_used);
+  printf("Total             %12ld bytes: %12ld in use, %12ld free\n",
+	 total_alloc, total_used, total_alloc - total_used);
+  printf("\n");
 
+  printf("Stack info for thread %d:\n",xsb_thread_id);
   printf("  glob/loc space  %12ld bytes: %12ld in use, %12ld free\n",
 	 glstack.size * K, glstack.size * K - gl_avail, gl_avail);
   printf("    global                            %12ld bytes\n",
@@ -415,17 +432,17 @@ void total_stat(CTXTdeclc double elapstime) {
 	 (unsigned long)COMPLSTACKBOTTOM - (unsigned long)top_of_complstk,
 	 (unsigned long)complstack.size * K -
 	 ((unsigned long)COMPLSTACKBOTTOM - (unsigned long)top_of_complstk));
-  printf("  SLG table space %12ld bytes: %12ld in use, %12ld free\n",
-	 pspacesize[TABLE_SPACE],  pspacesize[TABLE_SPACE]-(tablespace_alloc-tablespace_used),
-	 tablespace_alloc - tablespace_used);
   printf("\n");
+#ifdef GC
+  print_gc_statistics(CTXT);
+#endif
 
 /* TLS: Max stack stuff is probably not real useful with multiple
    threads -- to even get it to work correcly you'd have to use locks.
    So omitted below.
 */
 
-  printf("Tabling Operations\n");
+  printf("Tabling Operations (shared and all private tables)\n");
   printf("  %u subsumptive call check/insert ops: %u producers, %u variants,\n"
 	 "  %u properly subsumed (%u table entries), %u used completed table.\n"
 	 "  %u relevant answer ident ops.  %u consumptions via answer list.\n",
@@ -452,16 +469,11 @@ void total_stat(CTXTdeclc double elapstime) {
     printf("\n");
   }
 
-#ifdef GC
-  printf("\n");
-  print_gc_statistics();
-#endif
-
   printf("%ld active user thread%s.\n",flags[NUM_THREADS],
 	 (flags[NUM_THREADS]>1?"s":""));
 
   printf("Time: %.3f sec. cputime,  %.3f sec. elapsetime\n",
-	 ttt.time_count, elapstime);
+	 time_count, elapstime);
 }
 #endif
 
@@ -472,6 +484,7 @@ void total_stat(CTXTdeclc double elapstime) {
  * counts and max memory usage info.
  */
 
+#ifndef MULTI_THREAD
 void perproc_reset_stat(void)
 {
    tds = trace_init;
@@ -481,12 +494,29 @@ void perproc_reset_stat(void)
    subg_chk_ins = subg_inserts = 0;
    time_start = cpu_time();
 }
+#else
+void perproc_reset_stat(void)
+{
+   ans_chk_ins = ans_inserts = 0;
+   subg_chk_ins = subg_inserts = 0;
+   time_start = cpu_time();
+}
+
+#endif
 
 /*======================================================================*/
 
+#ifndef MULTI_THREAD
 void reset_stat_total(void)
 {
    ttt = trace_init;
 }
+#else
+void reset_stat_total(void)
+{
+  time_start = 0;
+}
+
+#endif
 
 /*======================================================================*/

@@ -190,15 +190,13 @@ File heap_xsb.c: ???
       int token_too_long_warning;  ???
 
       File tr_utils.c
-      DelTFptr deltf_chain_begin;  ???
-      static IGRptr IGRhead;    ???
+      DelTFptr deltf_chain_begin:  OK
+      sys_mut: ok
 
-      File trace_xsb.c:  ???
-      struct trace_str tds; ???
-      double time_start; ???
-      struct trace_str trace_init; ???
-      struct trace_str ttt; ???
-      static char *pspace_cat[18]; ???
+      File trace_xsb.c:  
+      double time_start; ok
+      double time_count: ok
+      static char *pspace_cat[18]: ok -- constant
 
       File tries.c: 
       long int ans_chk_ins; ok, global counter

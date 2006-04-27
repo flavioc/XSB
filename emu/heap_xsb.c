@@ -222,7 +222,6 @@ static int ls_early_reset;
 
 /* ways to count gc and control the output during a gc */
 static int printnum = 0 ;
-static int num_gc = 0 ;
 
 #ifdef DEBUG_VERBOSE
 static int print_at = 0 ; /* at the print_at-th gc, the stacks are printed */
@@ -321,8 +320,11 @@ static unsigned long heap_marks_size;
 /* global variables used for statistics.                                */
 /*======================================================================*/
 
+#ifndef MULTI_THREAD
 static double total_time_gc = 0 ;
 static unsigned long total_collected = 0 ;
+static int num_gc = 0 ;
+#endif
 
 /*----------------------------------------------------------------------*/
 /* marker bits in different areas.                                      */

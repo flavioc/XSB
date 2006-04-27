@@ -35,5 +35,10 @@ struct trace_str {		/* for tracing purpose below */
 extern struct trace_str tds;
 
 extern void total_stat(CTXTdeclc double);
-extern void perproc_stat(void), perproc_reset_stat(void), reset_stat_total(void); 
+extern void perproc_reset_stat(void), reset_stat_total(void); 
+
+#ifndef MULTI_THREAD
+extern void perproc_stat(void); 
+#endif
+
 #endif /* __TRACE_XSB_H__ */

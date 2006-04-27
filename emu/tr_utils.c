@@ -1680,6 +1680,8 @@ int fast_abolish_table_predicate(CTXTdeclc Psc psc)
 {
   TIFptr tif;
 
+  gc_tabled_preds(CTXT);
+
   tif = get_tip(CTXTc psc);
 
   if (IsVariantPredicate(tif) && IsNULL(TIF_CallTrie(tif))) {
@@ -1893,6 +1895,7 @@ inline int abolish_table_predicate(CTXTdeclc Psc psc)
   TIFptr tif;
   int action;
 
+  gc_tabled_preds(CTXT);
   tif = get_tip(CTXTc psc);
   if ( IsNULL(tif) ) {
     xsb_abort("[abolish_table_pred] Attempt to delete non-tabled predicate (%s/%d)\n",

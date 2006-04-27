@@ -250,29 +250,47 @@ xsbBool are_identical_terms(Cell term1, Cell term2) {
 void print_statistics(CTXTdeclc int amount) {
 
   switch (amount) {
+
   case 0:		    /* Reset Statistical Parameters */
+#ifndef MULTI_THREAD
     realtime_count_gl = real_time();
     perproc_reset_stat();	/* reset op-counts, starting time, and 'tds'
 				   struct variable (all 0's) */
     reset_stat_total(); 	/* reset 'ttt' struct variable (all 0's) */
     xsb_mesg("Statistics is reset.");
     break;
-  case 1:		    /* Print Stack Usage and CPUtime: */
+#else
+    realtime_count_gl = real_time();
+    break;
+#endif
 
+  case 1:		    /* Default use: Print Stack Usage and CPUtime: */
     perproc_stat();		/* move max usage into 'ttt' struct variable */
     total_stat(CTXTc real_time()-realtime_count_gl);   /* print */
     reset_stat_total(); 	/* reset 'ttt' struct variable (all 0's) */
     break;
+
   case 2:		    /* Print Detailed Table Usage */
+#ifndef MULTI_THREAD
     print_detailed_tablespace_stats(CTXT);
     break;
+#else
+    fprintf(stdwarn,"statistics(2) not yet implemented for MT engine\n");
+    break;
+#endif
+
   case 3:		    /* Print Detailed Table, Stack, and CPUtime */
+#ifndef MULTI_THREAD
     perproc_stat();
     total_stat(CTXTc real_time()-realtime_count_gl);
     reset_stat_total();
     print_detailed_tablespace_stats(CTXT);
     print_detailed_subsumption_stats();
     break;
+#else
+    fprintf(stdwarn,"statistics(3) not yet implemented for MT engine\n");
+    break;
+#endif
   case 4:                  /* mutex use (if PROFILE_MUTEXES is defined) */
     print_mutex_use();
     break;
@@ -455,6 +473,7 @@ void intercept(CTXTdeclc Psc psc) {
   if (flags[HITRACE])
     debug_call(CTXTc psc);
 
+#ifndef MULTI_THREAD
   if (flags[TRACE_STA]) {
     unsigned long  byte_size;
 
@@ -481,6 +500,7 @@ void intercept(CTXTdeclc Psc psc) {
     if ((unsigned long)level_num > tds.maxlevel_num)
       tds.maxlevel_num = level_num;
   }
+#endif
 }
 
 /*======================================================================*/
