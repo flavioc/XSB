@@ -895,7 +895,46 @@ since the last call to \texttt{statistics(0)} by any thread.
 %
 Displays usage information on the current output stream, including: 
 \begin{itemize} 
-\item Information about allocation of memory  containing the 
+\item Process-level information about allocated memory excluding
+  execution stacks but including: 
+\begin{itemize}
+\item {\tt atom} Space used to maintain global information about
+  predicates and structures. 
+%
+\item {\tt string} Space used to maintain information about atomic
+  constants in XSB.
+%
+\item {\tt asserted} Space allocated for dynamic code.
+%
+\item {\tt asserted} Space allocated for static code.
+%
+\item {\tt foreign} Space allocated for foreign predicates.
+%
+\item {\tt table} Space allocated for XSB's tables.
+%
+\item {\tt findall} Space allocated for buffers to support {\tt
+  findall/3} and similar predicates.
+%
+\item {\tt mt-private} Private space used by threads.
+%
+\item {\tt profiling} Space used to maintain profiling information, if
+  XSB is called with profiling on.
+%
+\item {\tt gc temp} Temporary space for used for heap garbage
+  collector.
+%
+\item {\tt interprolog} space allocated for the Interprolog XSB/Java
+  interface.
+%
+\item {\tt thread} space allocated for the thread table
+%
+\item the space occupied by subgoal and answer tables (in the form of
+  tries) \cite{RRSSW98}.  In the multi-threaded configuration this
+  includes all private and shared tables.
+\end{itemize}
+
+\item Thread-specific information about allocation of memory
+  including the  
 \begin{itemize} 
 \item Global stack (heap) and local (environment) stack (see e.g.
   \cite{AitK90}) for the calling thread. Memory for these two WAM
@@ -903,9 +942,7 @@ Displays usage information on the current output stream, including:
   together; information is provided on the current allocation for the
   stacks as well as on the stack sizes themselves.  (See
   Section~\ref{sec:EmuOptions} for the memory re-allocation
-  algorithm).  For maximum space used by each of these stacks in XSB's
-  single-threaded configuration, use the {\tt '-s'} command-line
-  option.
+  algorithm).  
 %
 \item Trail and choice point stack (see e.g. \cite{AitK90}) for the
   calling thread.  Memory for these two WAM stacks is allocated as a
@@ -914,9 +951,7 @@ Displays usage information on the current output stream, including:
   stack sizes themselves.  The (re-)allocation follows the algorithm
   sketched in Section~\ref{sec:EmuOptions}).  (See
   Section~\ref{sec:EmuOptions} for the memory re-allocation
-  algorithm).  For maximum space used by each of these stacks in XSB's
-  single-threaded configuration, use the {\tt '-s'} command-line
-  option.
+  algorithm).  
 %
 \item SLG unification stack for the calling thread This stack is used
   as a space to copy terms from the execution stacks into table space,
@@ -929,10 +964,10 @@ Displays usage information on the current output stream, including:
   per tabled subgoal \cite{SaSw98} but the size of these frames is
   version-dependent.
 %
-\item the space occupied by subgoal and answer tables (in the form of
-  tries) \cite{RRSSW98}.  In the multi-threaded configuration this
-  includes all private and shared tables.
 \end{itemize}
+In XSB's single-threaded configuration, maximum space used by each of
+will be output if the {\tt '-s'} command-line option is used
+
 \item Information about the number of tabling operations performed in
   the session by any thread.  Note that the statistics are divided up
   between calls to predicates that use variant tabling and those that
@@ -967,9 +1002,10 @@ number of redundant answers derived.
 \end{itemize}
 %
 \item Garbage Collection Information.  Time spent garbage collecting
-  by all threads and number of heap cells collected.
+  by the calling thread and number of heap cells collected.
 
-\item Information about process CPU and clock time.
+\item Information about process CPU and clock time, as well as the
+  number of active threads.
     \end{itemize}
 
 As mentioned above, if XSB is configured with the single-threaded
@@ -1062,7 +1098,8 @@ Total Strings:	1702
 \item {\tt statistics(table)} Outputs {\em very} detailed statistics
 about table space, including breakdowns into variant and subsumptive
 call- and answer- trie nodes and hash tables; as well as answer return
-list nodes (cf. \cite{SaSw98, RRSSW98, TST99}).
+list nodes (cf. \cite{SaSw98, RRSSW98, TST99}).  This option is not
+available in the multi-threaded configuration.
 \end{itemize}
 
 \end{description}

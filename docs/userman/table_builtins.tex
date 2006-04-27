@@ -887,8 +887,8 @@ The following predicates succeed whenever the table(s) in question are
 tables may not be removed by the user.  Note that incomplete tables
 are abolished \emph{automatically} by the system on exceptions and
 when the interpreter level is resumed.  In addition, tables private to
-a thread are abolished automatically when the thread exits (normally
-or via an exception).
+a thread are abolished automatically when the thread exits (by normal
+termination or via an exception).
 
 \vspace{2ex}
 
@@ -913,7 +913,45 @@ tabled remain so, but their table entries, if any, are deleted.
 %
 \ei
 
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\comment{
+\ournewitem{abolish\_tables(+OptionsList)}{Tabling}
+\index{\texttt{abolish\_tables/1}}
 
+Removes tables as specified by options in {\tt OptionsList}, which is
+a list of terms of the form:
+
+\begin{itemize}
+
+\item {\tt private} In the multi-threaded engine, this option
+  abolishes all tables private to the calling thread.  In the
+  sequential engine, this option abolishes all tables.
+
+\item {\tt shared} In the multi-threaded engine, this option abolishes
+  all thread-shared tables.  Space reclamation for thread-shared
+  tables may not be performed until there is a single active thread.
+  In the sequential engine, this option has no effect.
+
+\item {\tt module(+Module)} Abolishes all tables in a given module,
+  whether they are shared or private.  If {\tt Module} is set to {\tt
+    usermod}, all tables not explicitly placed into a module are
+  abolished.
+
+\item {\tt pred(+PredSpecifier)} Abolishes the tabled predicate
+  referred to by {\tt PredSpecifier}, regardless of whether it is
+  shared or private.  
+
+\end{itemize}
+
+When {\tt OptionsList} contains several options, the options are taken
+to be disjunctive in that any table that is covered by at least one of
+the options will be abolished.  For instance
+\begin{verbatim}
+    abolish_tables([private,module(cdf),predicate(f/2)])
+\end{verbatim}
+abolishes all tables that are private {\em or} in the module {\tt cdf}
+{\em or} have been created by calls to the predicate {\tt f/2}.
+}
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
@@ -921,9 +959,19 @@ tabled remain so, but their table entries, if any, are deleted.
 \index{\texttt{abolish\_table\_call/1}}
 %
 Removes all table entries for the subgoals that unify with
-\code{CallTerm}, should any exist. The predicate remains tabled and
-all of its other table entries remain intact. Throws a
-\code{table\_error} exception if applied to subsumptive tables.
+\code{CallTerm}, should any exist, and manages space reclamation for
+the removed tables.  The predicate remains tabled and all of its other
+table entries remain intact.
+
+{\bf Error Cases}
+\bi
+\item {\tt CallTerm} unifies with a table that is incomplete, or is
+  formed from a predicate that does not use variant tabling.
+\bi
+\item 	{\tt table\_error}
+\ei
+\ei
+%
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -955,6 +1003,30 @@ future use.
  \ei
 %
 \ei
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\ournewitem{abolish\_module\_tables(+Module)}{Tabling}
+\index{\texttt{abolish\_module\_tables/1}}
+%
+Given a module name (or the default module, {\tt usermod}), this
+predicate abolishes all tables for each tabled predicate in {\tt
+  Module}.
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\ournewitem{abolish\_private\_tables}{Tabling}
+\index{\texttt{abolish\_private\_tables/0}}
+%
+Abolishes all private tables for the calling thread.  This predicate
+is defined only in the multi-threaded configuration.
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\ournewitem{abolish\_shared\_tables}{Tabling}
+\index{\texttt{abolish\_shared\_tables/0}}
+%
+Abolishes all shared tables for the calling thread.  This predicate is
+defined only in the multi-threaded configuration.  If called when more
+than 1 thread is active, the tables will be removed immediately, but
+space reclamation will be deferred until a single thread is active.
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

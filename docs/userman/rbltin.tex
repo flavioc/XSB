@@ -195,19 +195,20 @@ and always succeeds.  The term {\tt Head} is not further instantiated
 by this call.  Conditions for space reclamation and error cases are as
 with {\tt retract/1}.
 
-\ouritem{abolish(+PredSpec)}\index{\texttt{abolish/1}} Removes the
-definition of the specified predicate.  {\tt PredSpec} is of the form
-{\tt Pred/Arity}.  Everything about the abolished predicate is
+\ouritem{abolish(+PredSpec)}\index{\texttt{abolish/1}} Removes all
+information about the specified predicate. {\tt PredSpec} is of the
+form {\tt Pred/Arity}.  Everything about the abolished predicate is
 completely forgotten by the system (including the {\tt dynamic or
   static} property, whether the predicate is tabled, and whether the
-predicate is thread-shared or thread-private) \footnote{For
+predicate is thread-shared or thread-private)~\footnote{For
   compatability with older Prologs, there is also an {\tt abolish/2}
-  which takes {\tt Pred} and {\tt Arity} as its two arguments.}
+  which takes {\tt Pred} and {\tt Arity} as its two arguments.}.  Any
+completed tables for the predicate are also removed.
 
 \compatability \version{} of XSB allows static predicates to be
 abolished and their space reclaimed.  Such space is reclaimed
 immediately, and no check is made to ensure that XSB's choice point
-stack is free of choice points for the abolished predicate.
+stack is free of choice points for the abolished static predicate.
 Abolishing static code is thus dangerous and should be avoided unless
 a user is certain it is safe to use.
 
