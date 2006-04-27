@@ -163,7 +163,7 @@ extern xsbBool assert_code_to_buff(CTXTdecl), assert_buff_to_clref(CTXTdecl);
 extern xsbBool gen_retract_all(CTXTdecl), db_retract0(CTXTdecl), 
   db_get_clause(CTXTdecl);
 extern xsbBool db_get_last_clause(CTXTdecl);
-extern xsbBool db_build_prref(CTXTdecl), db_remove_prref(CTXTdecl), 
+extern xsbBool db_build_prref(CTXTdecl), db_abolish0(CTXTdecl), 
 	       db_reclaim0(CTXTdecl), db_get_prref(CTXTdecl);
 
 extern char *dirname_canonic(char *);
@@ -827,7 +827,7 @@ void init_builtin_table(void)
   set_builtin_table(DB_GET_CLAUSE, "db_get_clause");
   set_builtin_table(DB_BUILD_PRREF, "db_build_prref");
   set_builtin_table(DB_GET_PRREF, "db_get_prref");
-  set_builtin_table(DB_REMOVE_PRREF, "db_remove_prref");
+  set_builtin_table(DB_ABOLISH0, "db_abolish0");
   set_builtin_table(DB_RECLAIM0, "db_reclaim0");
 
   set_builtin_table(FORMATTED_IO, "formatted_io");
@@ -1863,9 +1863,9 @@ case WRITE_OUT_PROFILE:
     return formatted_io(CTXT);
   case FILE_READ_CANONICAL:
     return read_canonical(CTXT);
+
   case GEN_RETRACT_ALL:
     return gen_retract_all(CTXT);
-
   case DB_GET_LAST_CLAUSE:
     return db_get_last_clause(CTXT);
     break;
@@ -1881,8 +1881,8 @@ case WRITE_OUT_PROFILE:
   case DB_GET_PRREF:
     db_get_prref(CTXT);
     break;
-  case DB_REMOVE_PRREF:
-    db_remove_prref(CTXT);
+  case DB_ABOLISH0:
+    db_abolish0(CTXT);
     break;
   case DB_RECLAIM0:
     db_reclaim0(CTXT);
@@ -2509,6 +2509,11 @@ case WRITE_OUT_PROFILE:
     c2p_int(CTXTc size,size_var);
     return retcode;
   }
+
+    case DYNAMIC_CODE_FUNCTION: {
+      dynamic_code_function(CTXT);
+      break;
+    }
 
     case FINDALL_FREE: 
       findall_free(CTXTc ptoc_int(CTXTc 1));

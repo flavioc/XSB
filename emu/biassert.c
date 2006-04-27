@@ -56,6 +56,8 @@
 #include "context.h"
 #include "thread_xsb.h"
 #include "debug_xsb.h"
+#include "biassert_defs.h"
+
 /* --- routines used from other files ---------------------------------	*/
 
 extern Cell val_to_hash(Cell);
@@ -2159,6 +2161,25 @@ void unmark_cpstack_retract(CTXTdecl) {
   }
 }
 
+/* Used for non-open retractalls */
+void mark_cpstack_retractall(CTXTdecl) {
+  CPtr cp_top,cp_bot ;
+  byte cp_inst;
+  ClRef cp_clref;
+
+  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
+
+  cp_top = breg ;				 
+  while ( cp_top < cp_bot) {
+    cp_inst = *(byte *)*cp_top;
+    if ( is_dynamic_clause_inst(cp_inst) ) {
+      cp_clref = (ClRef)*cp_top;
+      mark_clref(cp_clref);
+    }
+    cp_top = cp_prevtop(cp_top);
+  }
+}
+
 /* old version from before mark.
 | int check_cpstack_retract(ClRef clref) {
 |   CPtr cp_top,cp_bot ;
@@ -3466,7 +3487,7 @@ void db_remove_prref_1( CTXTdeclc Psc psc )
 }
 
 
-xsbBool db_remove_prref(CTXTdecl/* R1: +PredEP , R2: +PSC */)
+xsbBool db_abolish0(CTXTdecl/* R1: +PredEP , R2: +PSC */)
 {
   PrRef prref = (PrRef)ptoc_int(CTXTc 1);
   Psc psc = (Psc)ptoc_int(CTXTc 2);
@@ -3531,6 +3552,7 @@ static inline void print_bytes(CPtr x, int lo, int hi)
 }
 
 /*----------------------------------------------------------------*/
+
 BTNptr trie_asserted_trienode(CPtr clref) {
       if ((ClRefType(clref) == TRIE_CL) && clref_trie_asserted(clref))
 	return((BTNptr)*(clref + 3));
@@ -3667,3 +3689,75 @@ int trie_retract_safe(CTXTdecl)
 }
 
 /*-----------------------------------------------------------------*/
+
+/* called only if retract_nr == 0.  This has close to the same
+   semantics as retract_clause, but the CP stack marking and unmarking
+   has been factored out into calling routines.  In fact, the first
+   conditinal could also be factored out, if we wanted to. */
+
+static void retractall_clause(CTXTdeclc ClRef Clause, Psc psc ) { 
+  PrRef prref; 
+  int really_deleted = 0;
+  
+  mark_for_deletion(CTXTc Clause);
+
+  if ((flags[NUM_THREADS] == 1 || !get_shared(psc))
+      && !dyntabled_incomplete(CTXTc psc)) {
+
+    if (!clref_is_marked(Clause) && 
+	determine_if_safe_to_delete(Clause)) {
+      really_delete_clause(Clause);
+      really_deleted = 1;
+    }
+  }
+  if (!really_deleted) {
+    /* retracting only if unifying -- dont worry abt. NULL return for d_to_p */
+    prref = dynpredep_to_prref(CTXTc get_ep(psc));
+    //    fprintf(stderr,"Delaying retractall of clref in use: %s/%d\n",
+    //            get_name(psc),get_arity(psc));
+#ifndef MULTI_THREAD
+    check_insert_private_delcf_clause(prref,psc,Clause);
+#else
+    if (!get_shared(psc)) {
+      check_insert_private_delcf_clause(CTXT, prref,psc,Clause);
+    }
+    else {
+      check_insert_shared_delcf_clause(CTXT, prref,psc,Clause);
+    }
+#endif
+  }
+}
+
+void db_retractall0( CTXTdecl /* (Switch) ClRef, retract_nr */ )
+{
+  ClRef clause = (ClRef)ptoc_int(CTXTc 2) ;
+  //  int retract_nr = (int)ptoc_int(CTXTc 3) ;
+  
+  Psc psc = (Psc)ptoc_int(CTXTc 4);
+  retractall_clause(CTXTc clause, psc ) ;
+}
+
+/* At some point should probably move some of the following into here: 
+ DB_GET_LAST_CLAUSE  DB_RETRACT0   DB_GET_CLAUSE    DB_BUILD_PRREF	
+ DB_ABOLISH0	 DB_RECLAIM0	 DB_GET_PRREF */
+
+xsbBool dynamic_code_function( CTXTdecl ) 
+{
+  switch (ptoc_int(CTXTc 1)) {
+
+  case MARK_CPSTACK_RETRACTALL: 
+    mark_cpstack_retractall(CTXT);
+  break;
+
+  case UNMARK_CPSTACK_RETRACT: 
+    unmark_cpstack_retract(CTXT);
+    break;
+
+  case DB_RETRACTALL0: 
+    db_retractall0(CTXT);
+    break;
+  }
+
+  return TRUE;
+}
+
