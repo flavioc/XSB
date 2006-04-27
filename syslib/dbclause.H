@@ -31,8 +31,8 @@
 :- import set_inthandler/2, '_$load_undef'/1 from loader.
 :- import log_ith/3 from basics.
 :- import stat_set_flag/2, code_call/3, conname/2,
-          gen_retract_all/2,
-	  db_get_clause/11, db_retract0/3, db_remove_prref/2, db_reclaim0/2,
+          gen_retract_all/2,dynamic_code_function/5,
+	  db_get_clause/11, db_retract0/3, db_abolish0/2, db_reclaim0/2,
 	  globalvar/1, term_set_arg/4, psc_ep/2,
 	  trie_assert_hdr_info/3
      from machine.

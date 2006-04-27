@@ -27,6 +27,7 @@
 #include "builtin.h"
 #include "sig_xsb.h"
 #include "flag_defs_xsb.h"
+#include "biassert_defs.h"
 
 /*======================================================================*/
 
@@ -37,8 +38,6 @@
 /* return them, and also to delete clauses for retracting. Space is	*/
 /* reclaimed. (See module assert for formats of data structures.	*/
 /************************************************************************/
-
-
 % db_retract(+Head,+Body,+PredEP,+PSC) deletes clauses and reclaims space
 
 db_retract(Head,Body,PredEP,PSC) :-
@@ -50,6 +49,34 @@ db_retract(Head,Body,PredEP,PSC) :-
 	 ;	db_clause_match(Head,Tbody,EntryP),
 		db_do_retract(Typ,Clref,0,PSC)
 	).
+
+%-------
+
+% db_retractall(+Call,+PredEP,+PSC) deletes all clauses matching a pattern
+/* TLS: passing down PSC now to check for shared/private */
+
+db_retractall(Call,PredEP,Psc) :-
+	( is_most_general_term(Call) ->	db_retract_abol(PredEP,Psc)
+ 	;   db_retractall_1(Call,PredEP,Psc)
+ 	),
+	fail.
+db_retractall(_,_,_).
+
+% Used within non-open retractall
+db_retractall_1(Head,PredEP, PSC) :-
+	dynamic_code_function(MARK_CPSTACK_RETRACTALL,_,_,_,_),
+	db_get_clauses(PredEP,0,Head,0,Clref,Typ,EntryP),
+	chk_if_trie_assert(Clref,Result,TrieNodeAddr),
+	(Result == trie
+	 ->	call_trie_retract(Head,_Body,Clref,TrieNodeAddr)
+	 ;	db_clause_match(Head,_Tbody,EntryP),
+		db_do_retractall(Typ,Clref,0,PSC)
+	),
+	fail.
+db_retractall_1(_Head, _PredEP, _PSC):- 
+	dynamic_code_function(UNMARK_CPSTACK_RETRACT,_,_,_,_).
+
+%-------
 
 %% Don't reclaim space
 db_retract_nr(Head,Body,PredEP,PSC) :-
@@ -66,6 +93,11 @@ db_do_retract(1,_Clref,_,_PSC) :- !, fail.
 db_do_retract(2,_Clref,_,_PSC) :- !, abort('Cannot erase compiled code').
 db_do_retract(_Typ,Clref,DontReclaim,PSC) :-
 	db_retract0(Clref,DontReclaim,PSC).
+
+db_do_retractall(1,_Clref,_,_PSC) :- !, fail.
+db_do_retractall(2,_Clref,_,_PSC) :- !, abort('Cannot erase compiled code').
+db_do_retractall(_Typ,Clref,DontReclaim,PSC) :-
+	dynamic_code_function(DB_RETRACTALL0,Clref,DontReclaim,PSC,_).
 
 % transform a goal to turn cuts (!) into '_$cutto's. Differs from
 % goal_cut_trans in that variables are not wrapped with call/1,
@@ -90,15 +122,6 @@ hack_consult([X],consult(X)) :- !.
 hack_consult([X|Y],(consult(X),Z)) :- !,hack_consult(Y,Z).
 
 
-% db_retractall(+Call,+PredEP,+PSC) deletes all clauses matching a pattern
-/* TLS: passing down PSC now to check for shared/private */
-
-db_retractall(Call,PredEP,Psc) :-
-	( is_most_general_term(Call) ->	db_retract_abol(PredEP,Psc)
-	;   db_retract(Call,_,PredEP,Psc)
-	),
-	fail.
-db_retractall(_,_,_).
 
 /* This predicate works as follows.  It starts with a pointer from a
 PSC record, and finds the PrRef.  If the predicate is tabled (via a
@@ -117,14 +140,10 @@ db_retract_abol(PredEP1,PSC) :-
 /* db_abolish(+Psc) deletes all clauses of a predicate and abolishes
 its prref structures.   */
 
-/* db_remove_prref now peforms analog of gen_retractall AND removes
-   prref.  However, their semantics are somewhat different
-   w.r.t. tables and threads.  See doc in biassert.c for details. */
-
 db_abolish(Psc) :-
 	psc_ep(Psc, PredEP),
 %	db_retract_abol(PredEP,Psc).
-        db_remove_prref(PredEP,Psc).
+        db_abolish0(PredEP,Psc).
 
 % db_clause(+Head,?Body,+PredEP,-Clref) retrieves a clause.
 
