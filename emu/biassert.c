@@ -1,3 +1,4 @@
+
 /* File:      biassert.c
 ** Author(s): David S. Warren, Jiyang Xu
 ** Contact:   xsb-contact@cs.sunysb.edu
@@ -2120,6 +2121,12 @@ Predicates for Clause Garbage Collecting and Safe Space Reclamation
 #define clref_is_marked(pClRef)  \
   ClRef_Buflen(pClRef -1 ) & HIGHBIT
 
+ClRef clref_from_try_addr(ClRef code_addr) {
+  while (cell_opcode((CPtr)code_addr - 2) == noop) {
+    code_addr = (ClRef)((CPtr)code_addr - 4);
+  }
+  return (ClRef)code_addr;
+}
 
 /* cf. mark_cpstack_retracall(), etc. */
 int mark_cpstack_retract(CTXTdeclc ClRef clref) {
@@ -2135,7 +2142,7 @@ int mark_cpstack_retract(CTXTdeclc ClRef clref) {
   while ( cp_top < cp_bot && !(found_match)) {
     cp_inst = *(byte *)*cp_top;
     if ( is_dynamic_clause_inst(cp_inst) ) {
-      cp_clref = (ClRef)*cp_top;
+      cp_clref = clref_from_try_addr((ClRef)*cp_top);
       if (clref == cp_clref) {
 	fprintf(stderr,"found exact match\n");
 	found_match = 1;
@@ -2162,7 +2169,7 @@ void unmark_cpstack_retract(CTXTdecl) {
   while ( cp_top < cp_bot ) {
     cp_inst = *(byte *)*cp_top;
     if ( is_dynamic_clause_inst(cp_inst) ) {
-      cp_clref = (ClRef)*cp_top;
+      cp_clref = clref_from_try_addr((ClRef)*cp_top);
       unmark_clref(cp_clref);
     }
     cp_top = cp_prevtop(cp_top);
@@ -2183,7 +2190,7 @@ void mark_cpstack_retractall(CTXTdecl) {
   while ( cp_top < cp_bot) {
     cp_inst = *(byte *)*cp_top;
     if ( is_dynamic_clause_inst(cp_inst) ) {
-      cp_clref = (ClRef)*cp_top;
+      cp_clref = clref_from_try_addr((ClRef)*cp_top);
       mark_clref(cp_clref);
     }
     cp_top = cp_prevtop(cp_top);
@@ -2222,7 +2229,7 @@ ClRef clref_ptr;
     cp_inst = *(byte *)*cp_top;
     // dynamic clauses now have special try/retry/trust instructions
     if ( is_dynamic_clause_inst(cp_inst) ) {
-      clref_ptr = (ClRef)*cp_top;
+      clref_ptr = clref_from_try_addr((ClRef)*cp_top);
       if (prref == clref_to_prref(clref_ptr)) {
 	found_prref_match = 1;
       }
@@ -2263,9 +2270,9 @@ DelCFptr new_DelCF_pred(CTXTdeclc PrRef pPrRef,Psc pPSC,
       xsb_abort("Ran out of memory in allocation of DeletedClauseFrame"); 
     DCF_PrRef(pDCF) = pPrRef;			
     DCF_ClRef(pDCF) = PrRef_FirstClRef(pPrRef);	 // diff from _clause create
-    DCF_PSC(pDCF) = pPSC;						
-    DCF_Type(pDCF) = DELETED_PRREF;					
-    DCF_Mark(pDCF) = NULL;							
+    DCF_PSC(pDCF) = pPSC;
+    DCF_Type(pDCF) = DELETED_PRREF;
+    DCF_Mark(pDCF) = 0;
     DCF_PrevDCF(pDCF) = 0;						
     DCF_PrevPredDCF(pDCF) = 0;						
     DCF_NextDCF(pDCF) = *chain_begin;
@@ -2507,7 +2514,7 @@ int mark_dynamic(CTXTdecl)
   while ( cp_top < cp_bot ) {
     cp_inst = *(byte *)*cp_top;
     if ( is_dynamic_clause_inst(cp_inst) ) {
-      clref_ptr = (ClRef)*cp_top;
+      clref_ptr = clref_from_try_addr((ClRef)*cp_top);
       mark_clref(clref_ptr);
       prref_ptr = clref_to_prref(clref_ptr);
       mark_delcf_subchain(CTXTc PrRef_DelCF(prref_ptr),clref_ptr);
@@ -2755,8 +2762,8 @@ int determine_if_safe_to_delete(ClRef Clause) {
   for( i = NI; i >= 1; i-- ) {
   
     IP = ClRefIndPtr(Clause, i);
-    if (cell_opcode(IP) == trymeelse || cell_opcode(IP) == trymeelse) {
-      if (clref_is_marked((ClRef) IndRefNext(IP))) {
+    if (cell_opcode(IP) == trymeelse || cell_opcode(IP) == dyntrymeelse) {
+      if (clref_is_marked((ClRef) (IndRefNext(IP) - (4 * i)))) {
 	return FALSE;
       }
     }
@@ -3421,8 +3428,6 @@ int gen_retract_all(CTXTdecl/* R1: +PredEP , R2: +PSC */)
   Psc psc = (Psc)ptoc_int(CTXTc 2);
   int action = 0;
 
-  gc_dynamic(CTXT);    // part of gc strategy -- dont know how good
-
   prref = dynpredep_to_prref(CTXTc prref);
 
   /* Here, !prref can occur if the predicate is private but its
@@ -3431,6 +3436,8 @@ int gen_retract_all(CTXTdecl/* R1: +PredEP , R2: +PSC */)
   if (!prref || PrRef_FirstClRef(prref) == NULL) { /* nothing to retract */
     return TRUE;
   }
+
+  gc_dynamic(CTXT);    // part of gc strategy -- dont know how good
 
   if ((flags[NUM_THREADS] == 1 || !get_shared(psc))
       && !dyntabled_incomplete(CTXTc psc)) {
