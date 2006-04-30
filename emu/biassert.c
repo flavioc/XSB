@@ -2113,13 +2113,13 @@ Predicates for Clause Garbage Collecting and Safe Space Reclamation
 #endif
 
 #define mark_clref(pClRef)  \
-  ClRef_Buflen(pClRef -1) = ClRef_Buflen(pClRef - 1) | HIGHBIT
+  (ClRef_Buflen(pClRef -1) = ClRef_Buflen(pClRef - 1) | HIGHBIT)
 
 #define unmark_clref(pClRef)  \
-  ClRef_Buflen(pClRef -1) = ClRef_Buflen(pClRef - 1 ) & (~HIGHBIT)
+  (ClRef_Buflen(pClRef -1) = ClRef_Buflen(pClRef - 1 ) & (~HIGHBIT))
 
 #define clref_is_marked(pClRef)  \
-  ClRef_Buflen(pClRef -1 ) & HIGHBIT
+  (ClRef_Buflen(pClRef -1 ) & HIGHBIT)
 
 ClRef clref_from_try_addr(ClRef code_addr) {
   while (cell_opcode((CPtr)code_addr - 2) == noop) {
@@ -3548,10 +3548,10 @@ static void retractall_clause(CTXTdeclc ClRef Clause, Psc psc ) {
   
   mark_for_deletion(CTXTc Clause);
 
-  if ((flags[NUM_THREADS] == 1 || !get_shared(psc))
-      && !dyntabled_incomplete(CTXTc psc)) {
+    if ((flags[NUM_THREADS] == 1 || !get_shared(psc))
+        && !dyntabled_incomplete(CTXTc psc)) {
 
-    if (!clref_is_marked(Clause) && 
+    if(!(clref_is_marked(Clause)) && 
 	determine_if_safe_to_delete(Clause)) {
       really_delete_clause(Clause);
       really_deleted = 1;

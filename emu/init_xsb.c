@@ -142,9 +142,9 @@ Cell proceed_inst;
 /* Used to create detached thread -- process global. */
 pthread_attr_t detached_attr_gl;
 
-extern void reset_stat_total(void); 
 #endif
 
+extern void reset_stat_total(void); 
 extern void perproc_reset_stat(void); 
 
 extern double realtime_count_gl;
@@ -225,6 +225,14 @@ static void init_flags(CTXTdecl)
 /* In MT engine, now providing a separate mutex (default type) for
    each io stream.  */
 
+char    standard_input_glc[]      = "stdin";
+char    standard_output_glc[]      = "stdout";
+char    standard_error_glc[]      = "stderr";
+char    standard_warning_glc[]      = "stdwarn";
+char    standard_message_glc[]      = "stdmsg";
+char    standard_debug_glc[]      = "stddbg";
+char    standard_feedback_glc[]      = "stdfdbk";
+
 static void init_open_files(void)
 {
   int i, msg_fd, dbg_fd, warn_fd, fdbk_fd;
@@ -237,14 +245,17 @@ static void init_open_files(void)
   open_files[0].file_ptr = stdin;
   open_files[0].io_mode = 'r';
   open_files[0].stream_type = CONSOLE_STREAM;
+  open_files[2].file_name = standard_input_glc;
 
   open_files[1].file_ptr = stdout;
   open_files[1].io_mode = 'w';
   open_files[1].stream_type = CONSOLE_STREAM;
+  open_files[2].file_name = standard_output_glc;
 
   open_files[2].file_ptr = stderr;
   open_files[2].io_mode = 'w';
   open_files[2].stream_type = CONSOLE_STREAM;
+  open_files[2].file_name = standard_error_glc;
 
   /* stream for xsb warning msgs */
   if ((warn_fd = dup(fileno(stderr))) < 0)
@@ -253,6 +264,7 @@ static void init_open_files(void)
   open_files[3].file_ptr = stdwarn;
   open_files[3].io_mode = 'w';
   open_files[3].stream_type = CONSOLE_STREAM;
+  open_files[2].file_name = standard_warning_glc;
 
   /* stream for xsb normal msgs */
   if ((msg_fd = dup(fileno(stderr))) < 0)
@@ -261,6 +273,7 @@ static void init_open_files(void)
   open_files[4].file_ptr = stdmsg;
   open_files[4].io_mode = 'w';
   open_files[4].stream_type = CONSOLE_STREAM;
+  open_files[2].file_name = standard_message_glc;
 
   /* stream for xsb debugging msgs */
   if ((dbg_fd = dup(fileno(stderr))) < 0)
@@ -269,6 +282,7 @@ static void init_open_files(void)
   open_files[5].file_ptr = stddbg;
   open_files[5].io_mode = 'w';
   open_files[5].stream_type = CONSOLE_STREAM;
+  open_files[2].file_name = standard_debug_glc;
 
   /* stream for xsb feedback msgs */
   if ((fdbk_fd = dup(fileno(stdout))) < 0)
@@ -277,6 +291,7 @@ static void init_open_files(void)
   open_files[6].file_ptr = stdfdbk;
   open_files[6].io_mode = 'w';
   open_files[6].stream_type = CONSOLE_STREAM;
+  open_files[2].file_name = standard_feedback_glc;
 
   /* NT doesn't seem to think that dup should preserve the buffering mode of
      the original file. So we make all new descriptors unbuffered -- dunno if
@@ -909,6 +924,8 @@ void init_thread_structures(CTXTdecl)
   num_gc = 0;
   total_time_gc = 0;
   total_collected = 0;
+
+  token_too_long_warning = 1;
 
   /***************/
 

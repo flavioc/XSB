@@ -497,8 +497,10 @@ static int com2plain(register FILE *card,	/* source file */
         if (c < 0) return 1; 
 	else return 0; 
 }
- 
+
+#ifndef MULTI_THREAD 
 int token_too_long_warning = 1;
+#endif
 
 void realloc_strbuff(CTXTdeclc char **pstrbuff, char **ps, int *pn)
      /* Expand token buffer when needed.
