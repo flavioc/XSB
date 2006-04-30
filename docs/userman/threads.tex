@@ -15,13 +15,12 @@ programming is assumed, such as can be found in \cite{LewB98,Bute97}.
 In Version 3.0 the default configuration of XSB does not include
 multi-threading.  This is partly because multi-threading is new, and
 despite our efforts, the multi-threaded engine may contain bugs not
-present in the single-
-threaded engine.  In addition, in Version 3.0,
+present in the single- threaded engine.  In addition, in Version 3.0,
 not all packages have yet been made thread-safe so that not all
 configurations are supported with multi-threading.  Currently ODBC is
 supported with the multi-threaded configuration, but {\tt dbdrivers},
-{\tt xpath}, {\tt iodbc}, {\tt interprolog} and {\tt smodels} have not
-been. {\sc What about others?}
+{\tt xpath}, {\tt iodbc}, {\tt interprolog}, {\tt smodels} and others
+have not been.
 
 With this in mind, making the multi-threaded engine is simple:
 configure and make XSB as in Chapter~\ref{chap:system}, but include
@@ -141,11 +140,10 @@ later time.  While clause garbage collection is simple enough to
 implement for a single thread, garbage collecting clauses for shared
 dynamic predicates is nearly impossible to do when multiple threads
 are active.  Thus one set of reasons for making dynamic predicates
-private by default are based on efficiency~\footnote{\version{} of
-  XSB allows garbage collection of retracted clauses only when there
-  is a single active thread.  Future versions will likely offer more
-  powerful garbage collectors.}.  {\sc Clause GC is not yet
-  implemented; also need to talk about tries}.
+private by default are based on efficiency~\footnote{\version{} of XSB
+  allows garbage collection of retracted clauses only when there is a
+  single active thread.  Future versions will likely offer more
+  powerful garbage collectors.}.
 
 The second reason for making dynamic predicates thread-private by
 default is semantic.  Suppose thread $T_1$ starts a tabled computation
