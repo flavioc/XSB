@@ -297,6 +297,10 @@ add_lib_dir1(Path) :-
 
 /*-------------define load_dyn for reading in dynamic predicates -----*/
 
+read_canonical(S_or_A,Term) :- 
+	check_open_stream_or_alias(S_or_A,read_canonical/2,1,input,Istr),
+	file_read_canonical(Istr,Term,_).
+
 read_canonical(Term) :- 
 	current_input_port(File), 
 	file_read_canonical(File,Term,_).

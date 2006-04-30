@@ -195,6 +195,7 @@ standard_dynamic_symbol(library_directory,1).
 standard_symbol(load_dyn, 1, consult).			% Not ISO
 standard_symbol(load_dync, 1, consult).			% Not ISO
 standard_symbol(read_canonical, 1, consult).
+standard_symbol(read_canonical, 2, consult).
 
 standard_symbol(listing, 0, standard).
 standard_symbol(listing, 1, standard).
