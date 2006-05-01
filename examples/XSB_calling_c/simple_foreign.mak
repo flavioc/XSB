@@ -47,7 +47,7 @@ CLEAN :
 	-@erase "$(OUTDIR)\simple_foreign.exp"
 	-@erase "$(OUTDIR)\simple_foreign.lib"
 
-CPP_PROJ=/nologo /MT /W3 /GX /O2 /I "..\..\emu\\" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SIMPLE_FOREIGN_EXPORTS" /D "XSB_DLL" /Fp"$(INTDIR)\simple_foreign.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_PROJ=/nologo /MT /W3 /EHsc /O2 /I "..\..\emu\\" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SIMPLE_FOREIGN_EXPORTS" /D "XSB_DLL" /Fp"$(INTDIR)\simple_foreign.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\simple_foreign.bsc" 
@@ -84,7 +84,7 @@ CLEAN :
 	-@erase "$(OUTDIR)\simple_foreign.lib"
 	-@erase "$(OUTDIR)\simple_foreign.pdb"
 
-CPP_PROJ=/nologo /MTd /W3 /Gm /GX /ZI /Od /I "..\..\emu\\" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SIMPLE_FOREIGN_EXPORTS" /D "XSB_DLL" /Fp"$(INTDIR)\simple_foreign.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ  /c 
+CPP_PROJ=/nologo /MTd /W3 /Gm /EHsc /ZI /Od /I "..\..\emu\\" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SIMPLE_FOREIGN_EXPORTS" /D "XSB_DLL" /Fp"$(INTDIR)\simple_foreign.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ  /c 
 MTL_PROJ=/nologo /D "_DEBUG" /mktyplib203 /win32 
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\simple_foreign.bsc" 

@@ -27,7 +27,7 @@ CLEAN :
 "$(INTDIR)" :
     if not exist "$(INTDIR)/$(NULL)" mkdir "$(INTDIR)"
 
-CPP_PROJ=/nologo /ML /W3 /GX /O2 /D "WIN32" /D "WIN_NT" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /c 
+CPP_PROJ=/nologo /ML /W3 /EHsc /O2 /D "WIN32" /D "WIN_NT" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /c 
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\gpp.bsc" 
 BSC32_SBRS= \

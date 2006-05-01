@@ -315,7 +315,7 @@ LINK32_OBJS=$(LINK32_OBJS) $(OBJDIR)/interprolog_callback.obj
 !IF  "$(CFG)" == "release"  &&  "$(DLL)" == "no"
 !MESSAGE Building XSB executable in Release mode $(ORACLE_MSG) $(INTERPROLOG_MSG)
 
-CPP_PROJ=/nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE"\
+CPP_PROJ=/nologo /MT /W3 /EHsc /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE"\
  $(CONFIG_INCLUDE_FLAG) $(ORACLE_FLAG) $(INTERPROLOG_FLAG)\
   /Fp"$(OBJDIR)/xsb.pch" /YX /Fo"$(OBJDIR)/" /c 
 
@@ -329,7 +329,7 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
 !ELSEIF  "$(CFG)" == "debug"  &&  "$(DLL)" == "no"
 !MESSAGE Building XSB executable in Debug mode $(ORACLE_MSG) $(INTERPROLOG_MSG)
 
-CPP_PROJ=/nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE"\
+CPP_PROJ=/nologo /MTd /W3 /Gm /EHsc /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE"\
  /D "DEBUG" $(CONFIG_INCLUDE_FLAG) $(ORACLE_FLAG) $(INTERPRLOG_FLAG)\
   /Fp"$(OBJDIR)/xsb.pch" /YX /Fo"$(OBJDIR)/" /Fd"$(INTDIR)/" /c 
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
@@ -342,10 +342,10 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
 !ELSEIF "$(CFG)" == "release" && "$(DLL)" == "yes"
 !MESSAGE Building XSB as a DLL in Release mode $(ORACLE_MSG) $(INTERPROLOG_MSG)
 
-CPP_PROJ=/nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE"\
+CPP_PROJ=/nologo /MT /W3 /EHsc /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE"\
  /D "$(CALL_CONV)" $(CONFIG_INCLUDE_FLAG) $(ORACLE_FLAG) $(INTERPROLOG_FLAG)\
   /Fp"$(OBJDIR)/xsb.pch" /YX /Fo"$(OBJDIR)/" /c 
-DLL_CPP_PROJ=/nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS"\
+DLL_CPP_PROJ=/nologo /MT /W3 /EHsc /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS"\
   /D "$(CALL_CONV)" $(CONFIG_INCLUDE_FLAG) $(ORACLE_FLAG)$(INTERPROLOG_FLAG)\
    /Fp"$(OBJDIR)/xsb.pch" /YX /Fo"$(OBJDIR)/" /c 
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
@@ -364,7 +364,7 @@ DLL_LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
 !ELSEIF "$(CFG)" == "debug" &&  "$(DLL)" == "yes"
 !MESSAGE Building XSB as a DLL in Debug mode $(ORACLE_MSG) $(INTERPROLOG_MSG)
 
-DLL_CPP_PROJ=/nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG"\
+DLL_CPP_PROJ=/nologo /MTd /W3 /Gm /EHsc /Zi /Od /D "WIN32" /D "_DEBUG"\
  /D "_WINDOWS"\ /D "DEBUG" $(CONFIG_INCLUDE_FLAG) $(ORACLE_FLAG) $(INTERPROLOG_FLAG)\
   /D "$(CALL_CONV)" /Fp"$(OBJDIR)/xsb.pch" /YX\
  /Fo"$(OBJDIR)/" /Fd"$(INTDIR)/" /c 
@@ -375,7 +375,7 @@ DLL_LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  /pdb:"$(DLLDIR)/xsbdll.pdb" /debug /machine:I386\
  /out:"$(DLLDIR)\xsb.dll"\
  /implib:"$(DLLDIR)/xsb.lib"	 
-CPP_PROJ=/nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE"\
+CPP_PROJ=/nologo /MTd /W3 /Gm /EHsc /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE"\
  /D "DEBUG" $(CONFIG_INCLUDE_FLAG) $(ORACLE_FLAG) $(INTERPROLOG_FLAG) /D "$(CALL_CONV)" \
   /Fp"$(OBJDIR)/xsb.pch" /YX /Fo"$(OBJDIR)/" /Fd"$(INTDIR)/" /c 
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\

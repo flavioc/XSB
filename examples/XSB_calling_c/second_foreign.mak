@@ -45,7 +45,7 @@ CLEAN :
 	-@erase "$(OUTDIR)\second_foreign.lib"
 
 CPP=cl.exe
-CPP_PROJ=/nologo /MT /W3 /GX /O2 /I "..\..\emu" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SECOND_FOREIGN_EXPORTS" /D "XSB_DLL" /Fp"$(INTDIR)\second_foreign.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_PROJ=/nologo /MT /W3 /EHsc /O2 /I "..\..\emu" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SECOND_FOREIGN_EXPORTS" /D "XSB_DLL" /Fp"$(INTDIR)\second_foreign.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 .c{$(INTDIR)}.obj::
    $(CPP) @<<
@@ -118,7 +118,7 @@ CLEAN :
 	-@erase "$(OUTDIR)\second_foreign.pdb"
 
 CPP=cl.exe
-CPP_PROJ=/nologo /MTd /W3 /Gm /GX /ZI /Od /I "..\..\emu" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SECOND_FOREIGN_EXPORTS" /D "XSB_DLL" /Fp"$(INTDIR)\second_foreign.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+CPP_PROJ=/nologo /MTd /W3 /Gm /EHsc /ZI /Od /I "..\..\emu" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SECOND_FOREIGN_EXPORTS" /D "XSB_DLL" /Fp"$(INTDIR)\second_foreign.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
 
 .c{$(INTDIR)}.obj::
    $(CPP) @<<
@@ -185,7 +185,7 @@ SOURCE=second_foreign.c
 
 !IF  "$(CFG)" == "second_foreign - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /O2 /I "..\..\emu" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SECOND_FOREIGN_EXPORTS" /D "XSB_DLL" /Fp"$(INTDIR)\second_foreign.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /EHsc /O2 /I "..\..\emu" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SECOND_FOREIGN_EXPORTS" /D "XSB_DLL" /Fp"$(INTDIR)\second_foreign.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\second_foreign.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -195,7 +195,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /O2 /I "..\..\emu" /D "NDEBUG" /D "WIN32" /D "_
 
 !ELSEIF  "$(CFG)" == "second_foreign - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /Gm /GX /ZI /Od /I "..\..\emu" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SECOND_FOREIGN_EXPORTS" /D "XSB_DLL" /Fp"$(INTDIR)\second_foreign.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+CPP_SWITCHES=/nologo /MTd /W3 /Gm /EHsc /ZI /Od /I "..\..\emu" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SECOND_FOREIGN_EXPORTS" /D "XSB_DLL" /Fp"$(INTDIR)\second_foreign.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
 
 "$(INTDIR)\second_foreign.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -209,7 +209,7 @@ SOURCE=xsb_wrap_second_foreign.c
 
 !IF  "$(CFG)" == "second_foreign - Win32 Release"
 
-CPP_SWITCHES=/nologo /MT /W3 /GX /O2 /I "..\..\emu" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SECOND_FOREIGN_EXPORTS" /D "XSB_DLL" /Fp"$(INTDIR)\second_foreign.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_SWITCHES=/nologo /MT /W3 /EHsc /O2 /I "..\..\emu" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SECOND_FOREIGN_EXPORTS" /D "XSB_DLL" /Fp"$(INTDIR)\second_foreign.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 
 "$(INTDIR)\xsb_wrap_second_foreign.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
@@ -219,7 +219,7 @@ CPP_SWITCHES=/nologo /MT /W3 /GX /O2 /I "..\..\emu" /D "NDEBUG" /D "WIN32" /D "_
 
 !ELSEIF  "$(CFG)" == "second_foreign - Win32 Debug"
 
-CPP_SWITCHES=/nologo /MTd /W3 /Gm /GX /ZI /Od /I "..\..\emu" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SECOND_FOREIGN_EXPORTS" /D "XSB_DLL" /Fp"$(INTDIR)\second_foreign.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
+CPP_SWITCHES=/nologo /MTd /W3 /Gm /EHsc /ZI /Od /I "..\..\emu" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "SECOND_FOREIGN_EXPORTS" /D "XSB_DLL" /Fp"$(INTDIR)\second_foreign.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /GZ /c 
 
 "$(INTDIR)\xsb_wrap_second_foreign.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) @<<
