@@ -33,12 +33,22 @@ pose_constraints(F,Pos,X,[C|Cs]) :-
 	pose_constraint(F,Pos,X,C),
 	pose_constraints(F,Pos,X,Cs).
 
+%pose_constraint(F,Pos,X,C) :-
+%	C =.. [attr|Args],
+%	delete_ith(Pos,AllArgs,X,Args),
+%	Goal =.. [F|AllArgs],
+%	call(Goal).
+
+
 pose_constraint(F,Pos,X,C) :-
 	C =.. [attr|Args],
 	delete_ith(Pos,AllArgs,X,Args),
-	Goal =.. [F|AllArgs],
+	str_cat(F,'_1',F1),
+	Goal =.. [F1|AllArgs],
 	call(Goal).
 
+
+my_print(X) :- writeln(X).
 
 % merge corresponding attribute sets
 merge_attr_lists([],[],[]).
@@ -88,7 +98,8 @@ remove_duplicates([X|Xs],L) :-
 	  ; L = [X|Ys]).
 
 
-% insert attribute according to variable order defined using order/2 CHR
+% insert attribute according to variable order defined
+% using order/2 CHR
 insert_ordered(List,[],[Attr]) :-
 	Attr =.. [attr|List].
 insert_ordered(ListX,[AttrY|Ys],Zs) :-
@@ -136,12 +147,17 @@ nf_put_atts(Term,_) :-
 
 % retrieve N-th attribute Attr from variable V's attribute set
 get_nth_attr(V,Mod,N,Attr) :-
-	(var(V)
-	 -> get_attr(V,Mod,Atts),
-	    arg(N,Atts,Attr),
-	    Attr \== []
-	  ; Attr = []
-	).
+	var(V),
+	get_attr(V,Mod,Atts),
+	arg(N,Atts,Attr).
+
+%get_nth_attr(V,Mod,N,Attr) :-
+%	(var(V)
+%	 -> get_attr(V,Mod,Atts),
+%	    arg(N,Atts,Attr),
+%	    Attr \== []
+%	  ; Attr = []
+%	).
 
 % same non-failing
 nf_get_nth_attr(V,Mod,N,Attr) :-
@@ -153,7 +169,7 @@ nf_get_nth_attr(V,Mod,N,Attr) :-
 
 % get all matches for given constraint
 get_all_head_matches([V|Vs],Mod,[P|Ps],[A|As],Attr,
-		                                   [AL|ALs],AttrList):-
+		                              [AL|ALs],AttrList):-
 	(get_nth_attr(V,Mod,P,A)
 	 -> Attr = A, AttrList = AL
 	  ; get_all_head_matches(Vs,Mod,Ps,As,Attr,ALs,AttrList)
@@ -273,3 +289,15 @@ show_atts(X,Mod) :-
 	(get_attr(X,Mod,Atts) -> true; Atts = []),
 	nl, writeln(attributes(X,Atts)), nl.
 
+write_store(X) :-
+	is_attv(X),!,
+	reconstruct_store(X,Atts),
+	write(atts(X)), write(' = '),writeln(Atts).
+write_store(X) :-
+	var(X), !.
+write_store([X|Xs]) :-
+	!,
+	write_store(X),
+	write_store(Xs).
+write_store(_).
+	
