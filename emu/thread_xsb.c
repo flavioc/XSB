@@ -384,6 +384,10 @@ int xsb_thread_self()
 #endif
 }
 
+extern void release_private_tabling_resources(CTXTdecl);
+extern void abolish_private_tables(CTXTdecl);
+extern void abolish_shared_tables(CTXTdecl);
+
 xsbBool xsb_thread_request( CTXTdecl ) 
 {
 	Integer request_num = ptoc_int(CTXTc 1) ;
