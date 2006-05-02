@@ -635,7 +635,7 @@ static xsbBool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
 {
   static XSB_StrDefine(str);
   int  is_new;
-  byte t_arity, t_type, t_env;
+  byte t_arity, t_type, t_env, t_defined;
   Pair temp_pair;
   Psc  mod;
 
@@ -645,7 +645,7 @@ static xsbBool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
     xsb_abort("[LOADER] The loaded object file %s%s is corrupted",
 	      cur_mod->nameptr, XSB_OBJ_EXTENSION_STRING);
 
-  get_obj_byte(&t_type);
+  get_obj_byte(&t_type);  t_defined = t_type & T_DEFI; t_type = t_type & ~T_DEFI;
   get_obj_byte(&t_arity);
   get_obj_atom(fd, &str);
   if (t_type == T_MODU)
@@ -672,7 +672,6 @@ static xsbBool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
 	(get_type(temp_pair->psc_ptr) == T_ORDI &&
 	 (t_type == T_DYNA || t_type == T_PRED || t_type == T_UDEF) &&
 	 get_data(temp_pair->psc_ptr) == NULL)) {
-      /* set psc_data to the psc record of the module name */
       set_data(temp_pair->psc_ptr, mod);
     }
     env_type_set(temp_pair->psc_ptr, (t_env&(T_ENV|T_GLOBAL)), t_type, (xsbBool)is_new);
@@ -686,9 +685,9 @@ static xsbBool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
 
     if (t_env&T_TABLED_SUB_LOADFILE) 
       set_tabled(temp_pair->psc_ptr,((t_env&T_TABLED_VAR) | T_TABLED_SUB));
-    else if (is_new || (get_type(temp_pair->psc_ptr) != T_DYNA))
+    else if (is_new || t_defined)
       set_tabled(temp_pair->psc_ptr,(t_env&T_TABLED_VAR));
-    //printf("sym loaded: %s/%d, tabled=%x\n",get_name(temp_pair->psc_ptr),get_arity(temp_pair->psc_ptr),get_tabled(temp_pair->psc_ptr));
+    //    printf("sym loaded: %s/%d, tabled=%x, t_env=%x, t_type=%x, t_defined=%x\n",get_name(temp_pair->psc_ptr),get_arity(temp_pair->psc_ptr),get_tabled(temp_pair->psc_ptr),t_env,t_type,t_defined);
     /* dsw added following, maybe wrongly */
     if (exp && (t_env&0x7) == T_EXPORTED) {
       /* xsb_dbgmsg(("exporting: %s from: %s",name,cur_mod->nameptr)); */
