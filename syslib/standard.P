@@ -821,7 +821,7 @@ table(Ps) :-
 	 ->	Ps1 = Ps
 	 ;	functor(Ps,P,S), Ps1 = P/S
 	),
-	dynamic(Ps1),		% implies dynamic....
+%%	dynamic(Ps1),		% implies dynamic....
 	add_table(Ps1).
 
 			/***********************/
