@@ -215,6 +215,11 @@ DllExport void call_conv c2p_setfree(prolog_term var)
     bld_free(v);
 }
 
+/* space is space in words required; regcnt is number of registers to protect */
+DllExport void call_conv ensure_heap_space(CTXTdeclc int space, int regcnt) {
+  check_glstack_overflow(regcnt,pcreg,space);
+}
+
 DllExport xsbBool call_conv c2p_functor(CTXTdeclc char *functor, int arity, 
 					prolog_term var)
 {
