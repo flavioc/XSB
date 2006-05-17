@@ -305,24 +305,27 @@ DllExport int call_conv queryConnection(void)
   }
 
   val = bindReturnList(returnList, result, qHandle);
-  if (val == 2)
+  if (val == TOO_MANY_RETURN_COLS) {
     return FALSE;
+  }
 
   if ((cHandle = isConnectionHandle(chandle)) != NULL) {
     if (getDriverFunction(cHandle->driver, ERROR_MESG) != NULL)
       errorMesgDriver =
 	getDriverFunction(cHandle->driver, ERROR_MESG)->errorMesgDriver;
-    else
+    else {
       return FALSE;
+    }
 	  
     errorMesg = errorMesgDriver();
     errorNumber = "XSB_DBI_000";
   }
 
-  if (errorMesg == NULL && val == 1)
+  if (errorMesg == NULL && val == RESULT_NONEMPTY_OR_NOT_REQUESTED)
     return TRUE;
-  else 
+  else {
     return FALSE;
+  }
 }
 
 DllExport int call_conv prepareStatement(void)
@@ -474,7 +477,7 @@ DllExport int call_conv executePreparedStatement(void)
   }
   
   val = bindReturnList(returnList, result, qHandle);
-  if (val == 2)
+  if (val == TOO_MANY_RETURN_COLS)
     return FALSE;
 
   cHandle = qHandle->connHandle;
@@ -490,7 +493,7 @@ DllExport int call_conv executePreparedStatement(void)
     errorNumber = "XSB_DBI_000";
   }
 
-  if (errorMesg == NULL && val == 1)
+  if (errorMesg == NULL && val == RESULT_NONEMPTY_OR_NOT_REQUESTED)
     return TRUE;
   else 
     return FALSE;
@@ -622,7 +625,7 @@ static int bindReturnList(prolog_term returnList, struct xsb_data** result, stru
   int rFlag;
   
   if (is_nil(returnList) && result == NULL) {
-    rFlag = 1;
+    rFlag = RESULT_NONEMPTY_OR_NOT_REQUESTED;
   }
 
   if (!is_nil(returnList) && result == NULL) {
@@ -631,7 +634,7 @@ static int bindReturnList(prolog_term returnList, struct xsb_data** result, stru
       c2p_nil(element);
       returnList = p2p_cdr(returnList);
     }
-    rFlag = 0;
+    rFlag = RESULT_EMPTY_BUT_REQUESTED;
   }
 
   i = 0;
@@ -640,7 +643,7 @@ static int bindReturnList(prolog_term returnList, struct xsb_data** result, stru
       if (qHandle->numResultCols <= i) {
 	errorMesg = "XSB_DBI ERROR: Number of requested columns exceeds the number of columns in the query";
 	errorNumber = "XSB_DBI_011";
-	rFlag = 2;
+	rFlag = TOO_MANY_RETURN_COLS;
 	return rFlag;	
       }
       element = p2p_car(returnList);
@@ -673,7 +676,7 @@ static int bindReturnList(prolog_term returnList, struct xsb_data** result, stru
       returnList = p2p_cdr(returnList);
       i++;
     }
-    rFlag = 1;
+    rFlag = RESULT_NONEMPTY_OR_NOT_REQUESTED;
   }
 
   return rFlag;  

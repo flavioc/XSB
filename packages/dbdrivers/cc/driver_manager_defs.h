@@ -62,6 +62,11 @@
 
 #define TERM_CHAR '\255'
 
+// codes returned by bindReturnList
+#define RESULT_EMPTY_BUT_REQUESTED 0
+#define RESULT_NONEMPTY_OR_NOT_REQUESTED 1
+#define TOO_MANY_RETURN_COLS 2
+
 // **** the database value data structures ****
 
 union xsb_value
