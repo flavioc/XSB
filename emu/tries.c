@@ -576,6 +576,7 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
       return;								\
     }									\
   }									\
+  if (top_of_localstk < top_of_heap) xsb_abort("Heap overflow: should expand"); \
 }
 
 /*----------------------------------------------------------------------*/
@@ -630,6 +631,7 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
     xsb_abort("Bad tag in macro_make_heap_term");			\
     return;								\
   }									\
+  if (top_of_localstk < top_of_heap) xsb_abort("Heap overflow: should expand"); \
 }
 
 /*----------------------------------------------------------------------*/
