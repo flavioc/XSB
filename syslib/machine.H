@@ -131,6 +131,7 @@
 	oracle_query/7,
 	odbc_exec_query/6,
         parsort/4,
+   unify_with_occurs_check/2,
 	private_builtin/11,
 	segfault_handler/1,
 	is_charlist/2,

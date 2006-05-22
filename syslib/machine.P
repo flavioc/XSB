@@ -123,6 +123,9 @@ string_substitute(_String, _SubstSpec, _SubstList, _Result) :-
 parsort(_InList,_ParSpec,_ElimDupls,_OutList) :-
 	'_$builtin'(PARSORT).
 
+unify_with_occurs_check(_One,_Two):- 
+	'_$builtin'(UNIFY_WITH_OCCURS_CHECK).
+
 call0(Term) :- call0(Term).
 stat_sta(X) :- stat_sta(X).
 stat_cputime(X) :- stat_cputime(X).
