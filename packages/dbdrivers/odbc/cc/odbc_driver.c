@@ -182,6 +182,9 @@ struct xsb_data** driverODBC_query(struct xsb_queryHandle* handle)
       return NULL;
     }
     handle->numResultCols = query->resultmeta->numCols;
+    if (query->resultmeta->numCols == 0) {
+      return NULL;
+    }
 
     query->resultmeta->types = (struct driverODBC_columnmeta **)malloc(query->resultmeta->numCols * sizeof(struct driverODBC_columnmeta *));
     for (i = 0 ; i < query->resultmeta->numCols ; i++) {

@@ -628,7 +628,12 @@ static int bindReturnList(prolog_term returnList, struct xsb_data** result, stru
     rFlag = RESULT_NONEMPTY_OR_NOT_REQUESTED;
   }
 
-  if (!is_nil(returnList) && result == NULL) {
+  if (!is_nil(returnList) && result == NULL && qHandle->state == QUERY_BEGIN) {
+    errorMesg = "XSB_DBI_ERROR: Invalid return list in query";
+    errorNumber = "XSB_DBI_012";
+    rFlag = 2;
+  }  
+  else if (!is_nil(returnList) && result == NULL) {
     while (!is_nil(returnList)) {
       element = p2p_car(returnList);
       c2p_nil(element);
