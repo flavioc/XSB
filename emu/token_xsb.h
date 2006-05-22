@@ -30,6 +30,7 @@
 
  
 #define strgetc(p) (--(p)->strcnt>=0? ((int)*(p)->strptr++): -1)
+#define strpeekc(p) ((p)->strcnt>=0? ((int)*(p)->strptr): -1)
 
 #define GetC(card,instr) (instr ? strgetc(instr) : getc(card))
 

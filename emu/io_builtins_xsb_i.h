@@ -893,7 +893,7 @@ inline static xsbBool file_function(CTXTdecl)
     XSB_STREAM_LOCK(io_port);
     if ((io_port < 0) && (io_port >= -MAXIOSTRS)) {
       sfptr = strfileptr(io_port);
-      ctop_int(CTXTc 3, strgetc(sfptr));
+      ctop_int(CTXTc 3, strpeekc(sfptr));
     } else {
       SET_FILEPTR(fptr, io_port);
       bufchar = getc(fptr);
