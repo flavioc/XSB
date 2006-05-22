@@ -920,6 +920,7 @@ xsbBool unify_with_occurs_check(CTXTdeclc Cell Term1, Cell Term2) {
   xsbBool Res = TRUE;
 
   XSB_Deref(Term1);
+  XSB_Deref(Term2);
   switch (cell_tag(Term1)) {
   case XSB_ATTV: 
   case XSB_REF: 
@@ -939,7 +940,6 @@ xsbBool unify_with_occurs_check(CTXTdeclc Cell Term1, Cell Term2) {
   case XSB_STRUCT: {
 
 /**********/
-    XSB_Deref(Term2);
     switch (cell_tag(Term2)) {
     case XSB_ATTV: 
     case XSB_REF: 
