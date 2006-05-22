@@ -864,8 +864,9 @@ void init_builtin_table(void)
   set_builtin_table(RECLAIM_UNINTERNED_NR, "reclaim_uninterned_nr");
   set_builtin_table(GLOBALVAR, "globalvar");
 
-
   set_builtin_table(SET_TABLED_EVAL, "set_tabled_eval_method");
+  set_builtin_table(UNIFY_WITH_OCCURS_CHECK, "unify_with_occurs_check");
+
   set_builtin_table(PUT_ATTRIBUTES, "put_attributes");
   set_builtin_table(GET_ATTRIBUTES, "get_attributes");
   set_builtin_table(DELETE_ATTRIBUTES, "delete_attributes");
@@ -2354,6 +2355,9 @@ case WRITE_OUT_PROFILE:
 ***/
     return TRUE;
   }
+
+    case UNIFY_WITH_OCCURS_CHECK:
+      return unify_with_occurs_check(CTXTc cell(reg+1),cell(reg+2));
 
   case XSB_PROFILE:
     {

@@ -60,7 +60,8 @@ static CPtr sched_answers(CTXTdeclc VariantSF producer_sf, CPtr *last_consumer)
   consumer_cpf = subg_asf_list_ptr(producer_sf);
 
   /**** The producer has answers and consuming calls ****/  
-  if ( has_answers(producer_sf) && IsNonNULL(consumer_cpf) ) {
+  if ( has_answers(producer_sf) && IsNonNULL(consumer_cpf) 
+       && !subg_is_reclaimed(producer_sf)) {
     /**** Check each consumer for unresolved answers ****/
     if ( IsSubsumptiveProducer(producer_sf) )
       while ( IsNonNULL(consumer_cpf) ) {
