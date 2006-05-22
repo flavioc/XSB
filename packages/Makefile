@@ -76,9 +76,6 @@ slx::
 
 flora2::
 	@echo ""
-	@rm -f flora2.P flora2$(OBJEXT)
-	@ln -s flora2/flora2.P .
-	cd flora2; makeflora all ../$(XSB)
 
 #Add interprolog
 iprolog::
