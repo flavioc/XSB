@@ -106,6 +106,10 @@
 /*----------------------------------------------------------------------*/
 
 #define cut_restore_trail_condition_registers(CUTB) \
+  restore_trail_condition_registers(CUTB)	    
+
+/*
+#define cut_restore_trail_condition_registers(CUTB) \
     if ((CPtr)  *CUTB >= (CPtr) pdl.low || \
 		*CUTB == (Cell) &answer_return_inst || \
                 *CUTB == (Cell) &resume_compl_suspension_inst ||\
@@ -113,6 +117,7 @@
 	ebreg = cp_ebreg(CUTB); \
 	hbreg = cp_hreg(CUTB); \
     }
+*/
 
 /*
 #define cut_restore_trail_condition_registers(CUTB) \
