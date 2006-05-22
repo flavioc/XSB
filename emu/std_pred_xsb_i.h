@@ -923,10 +923,14 @@ xsbBool unify_with_occurs_check(CTXTdeclc Cell Term1, Cell Term2) {
   switch (cell_tag(Term1)) {
   case XSB_ATTV: 
   case XSB_REF: 
-  case XSB_REF1: 
-    if (not_occurs_in(Term1,Term2))
-      return unify(CTXTc Term1,Term2);
-    else return FALSE;
+  case XSB_REF1: {
+    if (isnonvar(Term2)) {
+      if (not_occurs_in(Term1,Term2))
+	return unify(CTXTc Term1,Term2);
+      else return FALSE;
+    } else 
+      return (int) unify(CTXTc Term1,Term2);
+  }
   case XSB_INT:
   case XSB_STRING:
   case XSB_FLOAT: 
