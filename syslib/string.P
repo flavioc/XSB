@@ -233,13 +233,20 @@ get_varcode_1(N, _Opt,Vin,Vin,[95]) :-       % _
 get_varcode_1(A,_Opt,Vin,Vin,Codes):- 
 	atom(A), !,
 	atom_codes(A,Codes).
+get_varcode_1([H|T],_Opt,Vin,Vin,[H|T]):- 
+	is_numeric_list([H|T]), !.
 get_varcode_1(N, Opt,Vin,Vout,Codes):- 
 	    term_to_codes(N,Opt,Vin,Vout,Codes,[]).
+
+is_numeric_list([]).
+is_numeric_list([H|T]):-
+	integer(H),
+	is_numeric_list(T).
 
 get_listcode(Term1,Terms,Struct,Var0,Var,Codes0,Codes):-
 	(ignore_ops(Struct,canonical) ->
    	    Codes0 = [0'[|Codes1],
-	    term_to_codes(Term1,Structure,Var0,Var1,Codes1,Codes2),
+	    term_to_codes(Term1,Struct,Var0,Var1,Codes1,Codes2),
 	    cvt_termlist_to_codes(Terms,Structure,Var1,Var,Codes2,[0']|Codes])
 	 ;  get_listhead(Struct,Codes0,Codes1),
 	    term_to_codes(Term1,Struct,Var0,Var1,Codes1,Codes2),
