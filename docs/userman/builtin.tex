@@ -4,10 +4,12 @@
 This chapter describes standard predicates, which are always available
 to the Prolog interpreter, and do not need to be imported or loaded
 explicitly as do other Prolog predicates.  By default, it is a
-compiler error to redefine standard predicates.  This behavior can be
-overridden by allowing explicit redefinition of standard predicates
-(see Section~\ref{}); or alternatively the set of standard predicates
-can be easily reconfigured (Section~\ref{}).
+compiler error to redefine standard predicates.  
+
+\comment{This behavior can be overridden by allowing explicit
+  redefinition of standard predicates (see Section~\ref{}); or
+  alternatively the set of standard predicates can be easily
+  reconfigured (Section~\ref{}).}
 
 In the description below, certain standard predicates depend on HiLog
 semantics; the description of such predicates have the token {\sf
@@ -1853,10 +1855,62 @@ unless otherwise noted.
 \end{description}
 %%
 
-%--------------------------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------
+\section{Unification with Occurs Check}
+\label{sec:uwoc} 
+
+Like most Prologs, default unification in XSB does not perform a
+so-called {\em occurs check} --- it does not handle situations where a
+variable {\tt X} may be bound to a structure containing {\tt X} as a
+proper subterm.  For instance, in the goal
+
+{\tt X = f(X)}    {\em \% incorrect!}
+
+{\tt X} is bound to f(X) creating a term that is either cyclic or
+infinite, depending on one's point of view.  Prologs in general
+perform unification without occurs check since without occurs check
+unification is linear in the size of the largest term to be unified,
+while unification with occurs check may be exponential in the size of
+the largest term to be unified.
+
+Still, unification with occurs check can be important for certain
+applications, in particular when Prolog is used to implement theorem
+provers or sophisticated constraint handlers.  As a result XSB
+provides an ISO-style implementation of the predicate {\tt
+  unify\_with\_occurs\_check/2}.
+
+\begin{description}
+  \ouritem{unify\_with\_occurs\_check(One,Two)} 
+  \index{\texttt{unify\_with\_occurs\_check/2}}
+
+Unifies {\tt One} and {\tt Two} using an occur check, and failing if
+{\tt One} is a proper subterm of {\tt Two} or if {\tt Two} is a proper
+subterm of {\tt One}.  
+
+    Example:
+    {\footnotesize
+     \begin{verbatim}
+                | ?- unify_with_occurs_check(f(1,X),f(1,a(X))).
+
+                no
+                | ?- unify_with_occurs_check(f(1,X),f(1,a(Y))).
+
+                X = a(_h165)
+                Y = _h165
+
+                yes
+                | ?- unify_with_occurs_check(f(1,a(X)),f(1,a(X))).
+
+                X = _h165
+
+                yes
+  \end{verbatim}}
+\end{description}
+
 \section{Evaluating Arithmetic Expressions through {\tt is/2}}
 \label{Arithmetic} 
 
+\comment{
 As do most Prologs, XSB supports evaluation of arithmetic expressions
 in two ways.  First, ground arithmetic expressions can be evaluated
 through the {\tt is/2} operator.  Solving non-ground arithmetic
@@ -1864,6 +1918,7 @@ expressions is provided through XSB's port of the CLPQR constraint
 handling interface.  In this section we describe how arithmetic
 expressions can be evaluated through {\tt is/2}, while the CLPQR
 interface is described in Volume 2 of this manual.
+}
 
 Before describing {\tt is/2} and the expressions that it can evaluate,
 we note that in \version{} of XSB, integers in XSB are represented

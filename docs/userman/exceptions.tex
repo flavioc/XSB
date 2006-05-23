@@ -195,9 +195,10 @@ While the ISO standard defines various types of errors and how they
 should arise during execution of ISO Prolog predicates, it does not
 define the actual error terms a system should use.  Accordingly, we
 define the formats for various ISO errors~\footnote{We note that XSB's
-system predicates are in the process of being updated to handle these
-errors.}.  Below, in Section~\ref{} we provide convenience predicates
-for throwing various ISO errors and performing various error checks.
+  system predicates are in the process of being updated to handle
+  these errors.}.  Below, in Section~\ref{sec:errorpredicates} we
+provide convenience predicates for throwing various ISO errors and
+performing various error checks.
 
 In the following predicates, {\tt Msg} is either a list of HiLog terms
 or a comma-list of HiLog terms.  Each of the {\tt error/2} terms below
@@ -273,6 +274,7 @@ types.
 
 %---------------------------------------------------------------------------------------
 \section{Predicates to Throw and Handle Errors}
+\label{sec:errorpredicates}
 
 \subsection{Predicates to Throw Errors}
 
@@ -506,6 +508,7 @@ In the single-threaded engine this predicate always succeeds.
 
 %----------------------------------------------------------------------------
 \section{Backtraces}
+\label{sec:backtrace}
 
 Displaying a backtrace in addition to an error message can greatly
 expedite debugging.  For XSB's default error handler, backtraces are

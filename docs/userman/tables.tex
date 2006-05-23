@@ -602,9 +602,9 @@ and including the call for $P$.  In XSB {\em a cut is allowed to
 This means, among other matters, that the validity of a cut depends on
 the {\em scheduling strategy} used for tabling, that is on the
 strategy used to determine when an answer is to be returned to a
-consuming subgoal.  Scheduling strategy will be discussed further in
-Section~\ref{}.  For now, we assume that XSB's default local
-scheduling is used in the examples for cuts.
+consuming subgoal.  Scheduling strategy was discussed
+Section~\ref{section:scheduling}: for now, we assume that XSB's
+default local scheduling is used in the examples for cuts.
 
 \begin{exercise} \label{ex:nocut}
 Consider the program
@@ -1005,6 +1005,7 @@ page~\pageref{tfindall/3}).
 
 \subsection{Non-stratified Programs}
 \index{negation!unstratified}
+\label{negation!unstratified}
 
 As discussed above, in stratified programs, facts are either true or
 false, while in non-stratified programs facts may also be undefined.
@@ -1462,8 +1463,7 @@ By simply failing out of {\tt filterReduce1/4} and then rereading the
 maximal value from the table, an efficient {\tt shortest\_path}
 algorithm is derived, whose complexity is roughly cubic in the number
 or vertices of the graph.  This solution is not general for all
-predicates, but does work for deriving the shortest path.  A more
-general solution is provided in Section \ref{sec:local}.
+predicates, but does work for deriving the shortest path.
 
 {\tt filterReduce/4} is an extremely useful predicate.  It can write
 database aggregation functions, such as min, max, count, sum, and
@@ -1494,133 +1494,3 @@ be found in \cite{CuSW99a}.
 %%% End: 
 
 %--------------------------------------------------------------------
-\comment{
-
-\section{Tabling and Multi-Threading}
-\label{sec:TablingMultiThreading}
-
-Tabling can factor out redundant subcomputations from a logical
-evaluation so that the each subcomputation uses program clause
-resolution only once, and uses answer resolution in other cases.  When
-multiple threads are executed within the same XSB process, the
-question arises of how -- or whether -- the threads can share tables
-between themselves.  Abstractly, there are two different perspectives
-one could take.
-
-\begin{itemize}
-\item {\bf Thread-Specific Tables} One point of view is that each
-  thread creates its own tables, and does not share these tables with
-  other threads.  Any tables created by a thread are abolished as soon
-  as the thread exits.
-
-\item {\bf Thread-Shared Tables} The other point of view is that all
-  threads should share tables among themselves, so that no redundant
-  subcomputations are ever performed {\em even by separate threads}.
-  When a thread exits, any tables created by the thread remain, until
-  they are explicitly abolished.
-\end{itemize}
-
-From the perspective of Thread-Specific Tables, threads are acting
-independently, and so there is little need to share tables.
-Thread-Specific Tables are used, for instance, if XSB is incorporated
-into a web-server to aid in query evaluation.  When a new query is
-presented to XSB, a new thread is created and the query is evaluated,
-perhaps making use of tabled computation.  When the query to XSB is
-completed, the thread exits and any space for its tables are
-abolished.  If the queries share relatively little computation among
-themselves, Thread-Specific Tables are a good solution, and in fact
-Thread-Specific Tables are being used in a XSB web-server that is
-under development to answer engineering questions about aircraft
-parts.
-
-Thread-Specific Tables are not adequate for two other multi-threading
-applications.  One involves queries to a multi-threaded system that
-share information.  An example of such an application is a
-multi-threaded web-server that uses the FLORA package, or XSB's
-Coherent Description Framework package (under development).  Both of
-these packages use tabling to evaluate core inheritance structures
-used to answer many different queries.  A second application involves
-using tabling as a communication for parallelism, the so-called {\em
-  Table Parallelism} of \cite{FHSW95,???}.  From this perspective,
-threads do not act independently, nor do they simply allow reuse of
-shared information, but multiple threads, working on multiple
-processors coordinate to speed up costly computations.
-
-\version{} of XSB offers both thread-specific and thread-shared tables
-for multi-threading.  The current version of XSB makes thread-shared
-tables the default for multi-threading, using the following simple
-mechanism.
-
-\begin{sf}
-\begin{tabbing}
-foooo\=foooo\=foooo\=foooo\=fooooooooooooooooooooo\=ooo\=\kill
-\> Upon a call to a tabled subgoal $S$ by thread $i$ \\
-\\
-\> \>   if (a variant of) $S$ is not in the shared table, add it to the
-  common table, \\
-\> \> \> marking it as begun by thread $i$, then proceed as in
-  the sequential case.\\
-\\
-\> \>   if $S$ is completed, proceed as in the sequential case.\\
-
-\> \>   if $S$ is in the shared table but is not completed and was not
-  marked as being begun by $i$, \\
-\> \> \> suspend the thread $i$ until the completion of $S$.
-\end{tabbing}
-\end{sf}
-\noindent
-Thus calls to thread-shared tables differ only from sequential
-computation when a thread $i$ calls a non-completed table that was
-begun by another thread.  In such a case, $i$ suspends until the
-completion of the tabled subgoal by another thread.  Such a mechanism
-can easily lead to deadlocks, as shown below, so that if threads
-suspend on mutually dependent subgoals, a deadlock detection thread
-will abort the computation.
-
-\begin{example}
-Consider a variant of the program in Example~\ref{ex:cutTable}
-\begin{verbatim}
-     :- table a/1, b/1.
-
-     a(a1).
-     a(X):- b(X).
-
-     b(b1).
-     b(X):- a(X).
-\end{verbatim}
-By default, tables are thread-shared if multiple threads are active.
-Thus, if thread $i$ evaluates and completes a query {\tt a(X)}, other
-threads may use the completed tables just as in the sequential engine.
-
-On the other hand, consider the following sequence of events.
-
-{\em Time 1} Thread $i$ calls {\tt a(X)} for the first time in the session
-
-{\em Time 2} Thread $j$ calls {\tt b(X)} for the first time in the session
-
-{\em Time 3} Thread $j$ calls {\tt a(X)}, discovers an incomplete
-table, and suspends
-
-{\em Time 4} Thread $i$ calls {\tt b(X)}, discovers an incomplete
-table, and suspends
-
-\noindent
-In this case a deadlock occurs, and XSB's deadlock detection thread
-will abort the computation.
-
-Had the declaration been
-\begin{verbatim}
-:- table_thread_specific a/1, b/1.
-\end{verbatim}
-then the tables would only be visible to thread $i$: other threads
-would re-evaluate the query {\tt a(X)}.
-\end{example}
-
-In \version{} of XSB, multi-threading with thread-shared tables is
-supported only for local evaluation.  In addition, call subsumption is
-not supported when there are multiple threads.
-
-%--------------------------------------------------------------------
-
-
-}
