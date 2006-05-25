@@ -33,12 +33,6 @@ pose_constraints(F,Pos,X,[C|Cs]) :-
 	pose_constraint(F,Pos,X,C),
 	pose_constraints(F,Pos,X,Cs).
 
-%pose_constraint(F,Pos,X,C) :-
-%	C =.. [attr|Args],
-%	delete_ith(Pos,AllArgs,X,Args),
-%	Goal =.. [F|AllArgs],
-%	call(Goal).
-
 
 pose_constraint(F,Pos,X,C) :-
 	C =.. [attr|Args],
@@ -151,14 +145,6 @@ get_nth_attr(V,Mod,N,Attr) :-
 	get_attr(V,Mod,Atts),
 	arg(N,Atts,Attr).
 
-%get_nth_attr(V,Mod,N,Attr) :-
-%	(var(V)
-%	 -> get_attr(V,Mod,Atts),
-%	    arg(N,Atts,Attr),
-%	    Attr \== []
-%	  ; Attr = []
-%	).
-
 % same non-failing
 nf_get_nth_attr(V,Mod,N,Attr) :-
 	(var(V)
@@ -186,7 +172,24 @@ abs_ith1([_|L],I1,I,X) :- I2 is I1+1, abs_ith1(L,I2,I,X).
 
 
 
+abs_remove([],_,[]).
+abs_remove([X|Xs],Y,Zs) :-
+	(X == Y
+	 -> Zs=Xs
+	  ; abs_remove(Xs,Y,Ws),
+	    Zs = [X|Ws]
+	).
+
+abs_remove_f([X|Xs],Y,Zs) :-
+	(X == Y
+	 -> Zs=Xs
+	  ; abs_remove_f(Xs,Y,Ws),
+	    Zs = [X|Ws]
+	).
+
+
 % sort attribute sets into standard order
+% for sorted constraint storage -- currently not in use
 attr_sort(X) :-
 	attr_sort(X,[],_).
 
@@ -195,15 +198,12 @@ attr_sort(X,SortedIn,SortedOut) :-
 	 -> SortedOut = SortedIn
 	  ; (is_attv(X)
 	     -> get_attributes(X,AX),
-%		writeln(sorting(X,SortedIn)),
-%		writeln(atts_before_sort(X,AX)),
 		l_attr_sort(AX,[X|SortedIn],SAX,SortedOut),
-%		writeln(atts_after_sort(X,SAX)),
 		(SAX \== AX
 		 -> writeln(sorted(X,AX)),
 		    put_attributes(X,SAX),		    
 		    writeln(to(X,SAX)),nl
-		  ; true %writeln(same(AX,SAX))
+		  ; true
 		)
 	      ; SortedOut = SortedIn)
 	).
