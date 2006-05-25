@@ -4,7 +4,7 @@
 :- import length/2, member/2, memberchk/2, append/3, ith/3 from basics.
 :- import delete_ith/4 from listutil.
 :- import permutation/2 from lists.
-:- import print_CHRd/1 from print_CHRd.
+:- import print_chrd/1 from print_chrd.
 :- import lookup_eq/3,pairup/3,translate/3 from pairlist.
 
 :- op(1200,xfx,@).
@@ -52,7 +52,7 @@ write_attv(Attv,To) :-
 
 write_content([]).
 write_content([C|Cs]) :-
-	print_CHRd(C),
+	print_chrd(C),
 	write_content(Cs).
 
 
@@ -1330,8 +1330,8 @@ propagation_recursive_code(F,OccurNum,LastRule,HeadLabel,HeadArgs,N,A,
 	RecursiveNextHead =.. [HeadName|RecursiveNextArgs],
 
 	RecursiveCase = (RecursiveHead :-
-			    FirstMatching,
-			    (GuardCp
+			    (FirstMatching,
+			     GuardCp
 			     -> BodyCp
 			      ; true
 			    ),
@@ -1397,8 +1397,8 @@ propagation_recursive_code(F,OccurNum,LastRule,HeadLabel,HeadArgs,N,A,
 	RecursiveNextHead =.. [HeadName|RecursiveNextArgs],
 
 	RecursiveCase = (RecursiveHead :-
-			    FirstMatching,
-			    (FreeParsGuards,
+			    (FirstMatching,
+			     FreeParsGuards,
 			     CheckAllFreeHsClauses,
 			     GetNthAttrClauses
 			     -> NextLevelCall
