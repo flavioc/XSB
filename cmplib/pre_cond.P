@@ -77,10 +77,10 @@ inline_neg(inlinegoal(P,A,Args), inlinegoal(NP,A,Args)) :-
 
 inline_neg0('=:=', 2, '=\=').
 inline_neg0('=\=', 2, '=:=').
-inline_neg0('>', 2, '=<').
-inline_neg0('>=', 2, '<').
-inline_neg0('=<', 2, '>').
-inline_neg0('<', 2, '>=').
+%%inline_neg0('>', 2, '=<').  %% not equivalent for floating point inf's 
+%%inline_neg0('>=', 2, '<').
+%%inline_neg0('=<', 2, '>').
+%%inline_neg0('<', 2, '>=').
 
 inline_neg0('==', 2, '\==').
 inline_neg0('\==', 2, '==').

@@ -142,16 +142,8 @@ pre_body(or(A,B), Goal, CutVid) :-
 pre_body(or(A,B), or(NA,NB), CutVid) :- !,
 	pre_body(A, NA, CutVid),
 	pre_body(B, NB, CutVid).
-pre_body(not(Goal), NewGoal, _CutVid) :- !,
-	( inline_neg(Goal, NewGoal)
-	; gensym('_v', CutVid1),
-	  NewGoal = and(inlinegoal('_$savecp',1,[varocc(CutVid1)]),
-			or( and( NegGoal,
-			      and(inlinegoal('_$cutto',1,[varocc(CutVid1)]),
-				  inlinegoal(fail, 0, []))),
-			    inlinegoal(true, 0, []))),
-	  pre_body(Goal, NegGoal, CutVid1)
-	).
+pre_body(not(Goal), NewGoal, CutVid) :- !,
+	pre_ifthen(Goal,inlinegoal(fail,0,[]),inlinegoal(true,0,[]),NewGoal,CutVid).
 pre_body(inlinegoal('!',0,_),
 	 inlinegoal('_$cutto',1,[varocc(CutVid)]), CutVid) :- !.
 pre_body(Goal, Goal, _CutVid).
@@ -159,7 +151,6 @@ pre_body(Goal, Goal, _CutVid).
 
 pre_ifthen(A,B,C,if_then_else(A1,NB,NC),CutVid) :-
 	all_inline_tests(A,A1),
-%%	all_inline_tests(A), A1 = A,
 	!,
 	pre_body(B,NB,CutVid),
 	pre_body(C,NC,CutVid).
@@ -167,16 +158,16 @@ pre_ifthen(A,B,C,NGoal,CutVid) :-
 	gensym('_v', CutVid1),
 	pre_body(A, T1, CutVid1),
 	pre_body(B, NB, CutVid),
-	( C = inlinegoal(fail,0,_), !,
-	  NGoal = and(inlinegoal('_$savecp', 1, [varocc(CutVid1)]),
-		    and(T1,
-			 and(inlinegoal('_$cutto', 1, [varocc(CutVid1)]),
-			    NB)))
-	; pre_else(C, NC, CutVid, CutVid1),
-	  NGoal = and(inlinegoal('_$savecp', 1, [varocc(CutVid1)]),
-		 or( and(T1,
-			 and(inlinegoal('_$cutto', 1, [varocc(CutVid1)]),
-			    NB)),NC))
+	(C == inlinegoal(fail,0,[])
+	 ->	NGoal = and(inlinegoal('_$savecp', 1, [varocc(CutVid1)]),
+			    and(T1,
+				and(inlinegoal('_$cutto', 1, [varocc(CutVid1)]),
+				    NB)))
+	 ;	pre_else(C, NC, CutVid, CutVid1),
+		NGoal = and(inlinegoal('_$savecp', 1, [varocc(CutVid1)]),
+			    or( and(T1,
+				    and(inlinegoal('_$cutto', 1, [varocc(CutVid1)]),
+					NB)),NC))
 	).
 
 
@@ -212,28 +203,6 @@ all_inline_tests(inlinegoal(Pred,Arity,Args),inlinegoal(Pred,Arity,Args)) :-
 	inline_test(Pred,Arity).
 all_inline_tests(goal(sym(Pred,Arity,_,_),Args),inlinegoal(Pred,Arity,Args)) :- 
 	inline_jumpcof_cond(Pred,Arity,_).
-
-/***all_inline_tests(and(G1,G2)) :-
-	all_inline_tests_conj(G1),
-	all_inline_tests_conj(G2).
-all_inline_tests(or(G1,G2)) :-
-	all_inline_tests_disj(G1),
-	all_inline_tests_disj(G2).
-all_inline_tests(inlinegoal(Pred,Arity,_)) :- 
-	inline_test(Pred,Arity).
-
-all_inline_tests_conj(and(G1,G2)) :-
-	all_inline_tests_conj(G1),
-	all_inline_tests_conj(G2).
-all_inline_tests_conj(inlinegoal(Pred,Arity,_)) :-
-	inline_test(Pred,Arity).
-
-all_inline_tests_disj(or(G1,G2)) :-
-	all_inline_tests_disj(G1),
-	all_inline_tests_disj(G2).
-all_inline_tests_disj(inlinegoal(Pred,Arity,_)) :-
-	inline_test(Pred,Arity).
-************/
 
 /*======================================================================*/
 /* inline_test(+Pred, +Arity)						*/
