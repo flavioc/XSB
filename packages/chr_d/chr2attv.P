@@ -60,7 +60,7 @@ write_content([C|Cs]) :-
 
 translate(CHR,Attv) :-
 	split_clauses(CHR, ConstrDeclarations, NeverStored, Rules, Other, Mod),
-	(var(Mod) -> Mod = junk; true),
+	(var(Mod) -> Mod = user; true),
 	check_rules(Rules,ConstrDeclarations,_RCnt),
 	generate_attribute_declaration(ConstrDeclarations,AttrDecl),
 	select_stored_constraints(ConstrDeclarations,NeverStored,Declarations),
