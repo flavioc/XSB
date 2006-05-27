@@ -18,18 +18,91 @@
 
 <h1>Release Notes</h1>
 
-<h2>Version 3.0 (???) </h2>
-<p> Version 3.0 is a major rewriting of the XSB engine to allow
-multi-threading and that includes many new and improved features.
+<h2>Version 3.0 (Sagres) </h2>
+
+<h3>General</h3>
+<p> Version 3.0 is a major rewriting of the XSB engine to support
+multi-threading and to include many new and improved features.
 </p>
 
+<h3>Major New Functionality</h3>
 <ul>
-  <li> XSB now supports multiple user-threads within a single process
-  on both Unix and Windows, using the semantics of Posix threads,
-  including detaching, joining, and cancelling threads.  Within XSB,
-  dynamic predicates and tables may be declared to be shared among
-  threads, or private within a thread (the default).
+  <li> The XSB engine has been entirely rewritten to allow a user to
+  create and run multiple XSB threads within a single process on both
+  Unix and Windows.  Thread manipulation is based on the semantics of
+  Posix threads, and includes major Posix-style operations such as
+  detaching, joining, and canceling threads.  The engine has been
+  designed to allow hundreds of threads to execute concurrently,
+  including asserting and retracting dynamic code, creating and
+  abolishing tables, and performing I/O.  To support this, dynamic
+  predicates and tables are considered to be thread-private by
+  default, but may also be declared to be shared among threads when
+  appropriate.
+
+  <li> Improved garbage collection routines have been written to
+  reclaim space for dynamic clauses, SLG tables, and Prolog atoms.
+  Garbage collection for thread-private dynamic clauses and tables,
+  can occur concurrently in multiple threads.
+
+  <li> XSB now supports 32-bit integer and 64-bit float computation by
+  default.
+
+  <li> A new package, CHRd has been added.  CHRd is an alternative
+    implementation of Constraint Handling Rules, which uses a
+    distributed storage of constraints and a set-based operational
+    semantics.  The distributed storage of constraints can lead to
+    efficiencies when tabling predicates within a CHR framework.
 </ul>
+
+<h3>Other Functionality</h3>
+<ul>
+  <li> A number of changes have been made to make XSB more compatible
+  with the ISO standard for Prolog.  Changes have been made to XSB's
+  scanning of atoms and numbers, exception handling, and to handling
+  of undefined predicates.  In addition, Version 3.0 includes the new
+  ISO
+  predicates <tt>unify_with_occurs_check/2</tt>, <tt>atom_length/2</tt>
+  and <tt>initialization/1</tt> .
+
+  <li> The compiler now generates more efficient code for
+  deterministic tests within conditionals.
+
+  <li> Several changes have been made to support (non ISO)
+  compatibility with other Prologs.  
+    <ul>
+       <li> XSB's compiler and consult mechanism now recognizes files
+  with a <tt>.pl</tt> extension as well as a <tt>.P</tt> extension.  
+
+       <li> Clauses for dynamic predicates can now be included in
+       statically compiled files.
+
+       <li> <tt>min/1</tt> and <tt>max/1</tt> are now included as arithmetic
+  functions.
+    </ul>
+
+  <li> The following predicates provide new functionity beyond that
+  discussed.
+    <ul> 
+      <li> <tt>term_to_atom/3</tt> allows an atom to be created from a term
+	using the write options familiar from <tt>write_term/3</tt>.
+    
+      <li> <tt>statistics</tt> provides a much more detailed
+	account of how program memory is used.
+
+      <li> New predicates, <tt>abolish_module_tables/1</tt>,
+	<tt>abolish_private_tables/0</tt>,
+	and <tt>abolish_shared_tables/0</tt> allow greater flexibility
+	for invalidating tables for sets of predicates.
+    </ul>
+
+  </li>
+
+</ul>
+
+
+
+
+
 
 
 <h2>Version 2.7.1 (Kinryo) </h2>
