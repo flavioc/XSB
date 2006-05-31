@@ -504,7 +504,19 @@ DllExport void call_conv xsb_abort(char *description, ...)
   xsb_basic_abort(message);
 }
 
-/* could give this a different ball to throw */
+DllExport void call_conv abort_xsb(char * description)
+{
+  char message[MAXBUFSIZE];
+  strcpy(message, "++Error[XSB]: [Runtime/C] ");
+  sprintf(message+strlen(message), description);
+  if (message[strlen(message)-1] == '\n')
+  {
+    message[strlen(message)-1] = 0;
+  }
+  xsb_basic_abort(message);
+}
+
+/* could give these a different ball to throw */
 DllExport void call_conv xsb_bug(char *description, ...)
 {
   char message[MAXBUFSIZE];
@@ -518,6 +530,17 @@ DllExport void call_conv xsb_bug(char *description, ...)
     strcat(message, "\n");
 
   va_end(args);
+  xsb_basic_abort(message);
+}
+
+DllExport void call_conv bug_xsb(char *description)
+{
+  char message[MAXBUFSIZE];
+  strcpy(message, "++XSB bug: ");
+  sprintf(message+strlen(message), description);
+  if (message[strlen(message)-1] != '\n')
+    strcat(message, "\n");
+
   xsb_basic_abort(message);
 }
 
@@ -589,6 +612,16 @@ DllExport void call_conv xsb_error (char *description, ...)
 #endif
 }
 
+DllExport void call_conv error_xsb (char *description)
+{
+  fprintf(stderr, "\n++Error[XSB]: [Runtime/C] ");
+  fprintf(stderr, description);
+  fprintf(stderr, "\n");
+#if defined(DEBUG_VERBOSE) && defined(CP_DEBUG)
+  print_cp_backtrace();
+#endif
+}
+
 DllExport void call_conv xsb_warn(char *description, ...)
 {
   va_list args;
@@ -597,6 +630,16 @@ DllExport void call_conv xsb_warn(char *description, ...)
   fprintf(stdwarn, "\n++Warning[XSB]: [Runtime/C] ");
   vfprintf(stdwarn, description, args);
   va_end(args);
+  fprintf(stdwarn, "\n");
+#if defined(DEBUG_VERBOSE) && defined(CP_DEBUG)
+  print_cp_backtrace();
+#endif
+}
+
+DllExport void call_conv warn_xsb(char *description)
+{
+  fprintf(stdwarn, "\n++Warning[XSB]: [Runtime/C] ");
+  fprintf(stdwarn, description);
   fprintf(stdwarn, "\n");
 #if defined(DEBUG_VERBOSE) && defined(CP_DEBUG)
   print_cp_backtrace();
@@ -613,6 +656,12 @@ DllExport void call_conv xsb_mesg(char *description, ...)
   fprintf(stdmsg, "\n");
 }
 
+DllExport void call_conv mesg_xsb(char *description)
+{
+  fprintf(stdmsg, description);
+  fprintf(stdmsg, "\n");
+}
+
 #ifdef DEBUG_VERBOSE
 DllExport void call_conv xsb_dbgmsg1(int log_level, char *description, ...)
 {
@@ -623,6 +672,13 @@ DllExport void call_conv xsb_dbgmsg1(int log_level, char *description, ...)
     vfprintf(stddbg, description, args);
     va_end(args);
     //    fprintf(stddbg, "\n");
+  }
+}
+
+DllExport void call_conv dbgmsg1_xsb(int log_level, char *description)
+{
+  if (log_level <= cur_log_level) {
+    fprintf(stddbg, description);
   }
 }
 #endif
@@ -636,6 +692,14 @@ DllExport void call_conv xsb_exit(char *description, ...)
   va_start(args, description);
   vfprintf(stderr, description, args);
   va_end(args);
+
+  fprintf(stdfdbk, "\nExiting XSB abnormally...\n");
+  exit(1);
+}
+
+DllExport void call_conv exit_xsb(char *description)
+{
+  fprintf(stderr, description);
 
   fprintf(stdfdbk, "\nExiting XSB abnormally...\n");
   exit(1);

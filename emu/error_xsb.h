@@ -68,19 +68,26 @@
 
 
 DllExport extern void call_conv xsb_exit(char *, ...);
-//#ifndef MULTI_THREAD
+DllExport extern void call_conv exit_xsb(char *);
+
 DllExport extern void call_conv xsb_abort(char *, ...);
+DllExport extern void call_conv abort_xsb(char *);
+
 DllExport extern void call_conv xsb_bug(char *, ...);
+DllExport extern void call_conv bug_xsb(char *);
 void call_conv xsb_basic_abort(char *);
-//#else
-//#define	xsb_abort	xsb_exit
-//#define	xsb_basic_abort	xsb_exit
-//#define	xsb_bug		xsb_exit
-//#endif
+
 DllExport extern void call_conv xsb_warn(char *, ...);
+DllExport extern void call_conv warn_xsb(char *);
+
 DllExport extern void call_conv xsb_mesg(char *, ...);
+DllExport extern void call_conv mesg_xsb(char *);
+
 DllExport extern void call_conv xsb_error(char *, ...);
+DllExport extern void call_conv error_xsb(char *);
+
 DllExport extern void call_conv xsb_dbgmsg1(int, char *, ...);
+DllExport extern void call_conv dbgmsg1_xsb(int, char *);
 
 extern void arithmetic_abort1(CTXTdeclc char *, Cell);
 extern void arithmetic_abort(CTXTdeclc Cell, char *, Cell);
