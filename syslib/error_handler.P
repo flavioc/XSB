@@ -354,7 +354,7 @@ check_one_thread(Op,Obj_type,Predicate):-
 check_var(Term,Predicate,Arg) :- 
 	(var(Term) -> 
 	    true
-             ;  instantiation_error(Predicate,Arg,variable) ).
+             ;  type_error(variable,Term,Predicate,Arg) ).
 
 %-------------
 

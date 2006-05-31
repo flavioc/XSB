@@ -22,8 +22,18 @@
 ** 
 */
 
-:- export abolish_private_tables/0,abolish_shared_tables/0,
-          xsb_thread_cancel/1,
+:- export thread_cancel/1,
+          thread_create/2,thread_create/3,
+          thread_detach/1,
+	  thread_exit/1,
+          thread_exit/0,
+	  thread_join/2, 
+          thread_join/1,
+          thread_property/2,
+          thread_self/1,
+          thread_yield/0.
+
+:- export xsb_thread_cancel/1,
           xsb_thread_create/2,xsb_thread_create/3, 
           xsb_thread_detach/1,
 	  xsb_thread_exit/1,  
@@ -33,6 +43,8 @@
           xsb_thread_property/2,
           xsb_thread_self/1,
           xsb_thread_yield/0.
+
+:- export abolish_private_tables/0,abolish_shared_tables/0.
 
 :-export xsb_mutex_init/1, xsb_mutex_lock/1, xsb_mutex_trylock/1,
          xsb_mutex_unlock/1, xsb_mutex_destroy/1, xsb_mutex_init_np/2.

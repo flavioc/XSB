@@ -34,9 +34,9 @@
 /* User-level API */
 
 /* Error checking for pthread_create() done in C -- all args are input.*/
-xsb_thread_create( Goal, ThreadId , Options) :- 
-	check_callable(Goal,xsb_thread_create/2,1),
-	check_var(ThreadId,xsb_thread_create/2,2),
+thread_create( Goal, ThreadId , Options) :- 
+	check_callable(Goal,thread_create/2,1),
+	check_var(ThreadId,thread_create/2,2),
 	check_options_list(Options,GLSize,TCSize,ComplSize,PDLSize,Detached),
 	writeln(thread_request( XSB_THREAD_CREATE, Goal, ThreadId, 
 	                GLSize,TCSize,ComplSize,PDLSize,Detached)),
@@ -46,7 +46,7 @@ xsb_thread_create( Goal, ThreadId , Options) :-
 :- import writeln/1 from standard.
 
 check_options_list(Options,_GLSize,_TCSize,_ComplSize,_PDLSize,_Detached):- 
-	check_nonvar(Options,xsb_thread_create/3,3),
+	check_nonvar(Options,thread_create/3,3),
 	fail.
 check_options_list([],GLSize,TCSize,ComplSize,PDLSize,Detached):- !,
 	(var(GLSize) -> GLSize = 0 ; true),
@@ -59,42 +59,43 @@ check_options_list([Option|Rest],GLSize,TCSize,ComplSize,PDLSize,Detached):- !,
           ; (Option = tcsize(N) -> set_thread_create_arg(N,TCSize,tcsize)
             ; (Option = complsize(N) -> set_thread_create_arg(N,ComplSize,complsize)
               ; (Option = pdlsize(N) -> set_thread_create_arg(N,PDLSize,pdlsize)
-                ; (Option = detached -> Detached = 1
-	            ; 	domain_error(xsb_thread_create_option,Option,
-		                     xsb_thread_create/3,3,'') ) ) ) ) ),
+                ; (Option = detached(Boolean) -> 
+		    (Boolean == true -> Detached = 1 ; Detached = 0)
+	            ; 	domain_error(thread_create_option,Option,
+		                     thread_create/3,3,'') ) ) ) ) ),
        check_options_list(Rest,GLSize,TCSize,ComplSize,PDLSize,Detached).
 check_options_list(Culprit,_GLSize,_TCSize,_ComplSize,_PDLSize,_Detached):- 
-	domain_error(xsb_thread_create_option_list,Culprit,xsb_thread_create/3,3,'').
+	domain_error(thread_create_option_list,Culprit,thread_create/3,3,'').
 
 set_thread_create_arg(Option,Arg,OptionName):- 
 	(\+ (Option = Arg) -> 
-	    misc_error(('Conflicting options in xsb_thread_create/3: ',
+	    misc_error(('Conflicting options in thread_create/3: ',
 	                 OptionName,' set to ',Arg,' and ',Option))
          ; Arg = Option).
 
 /*---------------*/
 	    
-xsb_thread_create( Goal, ThreadId ) :- 
-	check_callable(Goal,xsb_thread_create/2,1),
-	check_var(ThreadId,xsb_thread_create/2,2),
+thread_create( Goal, ThreadId ) :- 
+	check_callable(Goal,thread_create/2,1),
+	check_var(ThreadId,thread_create/2,2),
 	thread_request( XSB_THREAD_CREATE, Goal, ThreadId, 0,0,0,0,0).
 
 /*---------------*/
 
-xsb_thread_exit( ExitCode ) 	    :- 
-	check_integer(ExitCode,xsb_thread_exit/1,1),
+thread_exit( ExitCode ) 	    :- 
+	check_integer(ExitCode,thread_exit/1,1),
 	thread_request( XSB_THREAD_EXIT, ExitCode,_, _,_,_,_,_).
 
-xsb_thread_exit 		    :- xsb_thread_exit( 0).
+thread_exit 		    :- thread_exit( 0).
 
 /*---------------*/
 
 /* Need to check errorval on return, as well as checking input state
    of exitcode */
-xsb_thread_join(Input, ExitCode) :-
-	check_var(ExitCode,xsb_thread_join/2,2),
+thread_join(Input, ExitCode) :-
+	check_var(ExitCode,thread_join/2,2),
 	(var(Input) -> 
-	    instantiation_error(xsb_thread_join/2,1,ground)
+	    instantiation_error(thread_join/2,1,ground)
 	;  (integer(Input) -> 
 	       thread_request( XSB_THREAD_JOIN,Input,Exit,_,_,_,_,_ ),
 	       ExitCode = Ball - Exit,
@@ -107,23 +108,23 @@ xsb_thread_join(Input, ExitCode) :-
 		 ('_$thread_exit_ball'(Id,Ball) -> 
 		     retractall('_$thread_exit_ball'(Id,_))
 		   ; Ball = no_error_ball),
-	         xsb_thread_join(Rest, ERest) 
+	         thread_join(Rest, ERest) 
 	       ; (Input = [] -> 
 		    ExitCode = []
-		  ; domain_error(listof_threadid,Input,xsb_thread_join/1,2,'')
+		  ; domain_error(listof_threadid,Input,thread_join/1,2,'')
 	      ) ) ) ).
 
-xsb_thread_join( ThreadId )	    :- xsb_thread_join( ThreadId, _).
+thread_join( ThreadId )	    :- thread_join( ThreadId, _).
 
-xsb_thread_self( ThreadId )	    :- 
-	check_var(ThreadId,xsb_thread_self/1,1),
+thread_self( ThreadId )	    :- 
+	check_var(ThreadId,thread_self/1,1),
 	thread_request( XSB_THREAD_SELF, ThreadId, _, _, _, _, _, _ ).
 
-xsb_thread_detach(ThreadId) :-
-	check_integer(ThreadId,xsb_thread_detach/1,1),
+thread_detach(ThreadId) :-
+	check_integer(ThreadId,thread_detach/1,1),
 	thread_request( XSB_THREAD_DETACH, ThreadId, _, _, _ , _, _, _).
 
-xsb_thread_yield:-
+thread_yield:-
 	thread_request( XSB_THREAD_YIELD, _,_,_, _, _, _, _).
 
 abolish_private_tables:-
@@ -131,6 +132,28 @@ abolish_private_tables:-
 
 abolish_shared_tables:-
 	thread_request( ABOLISH_SHARED_TABLES, _,_,_, _, _, _, _).
+
+/* ==================================================================  */
+
+/* Obsolescent */
+xsb_thread_create(One,Two,Three):- thread_create(One,Two,Three).
+xsb_thread_create(One,Two):- thread_create(One,Two).
+
+xsb_thread_cancel(Id):- thread_cancel(Id).
+
+xsb_thread_detach(ThreadId):- thread_detach(ThreadId).
+
+xsb_thread_exit(ExitCode):- thread_exit(ExitCode).
+xsb_thread_exit:- thread_exit.
+
+xsb_thread_join(Input, ExitCode) :- thread_join(Input, ExitCode).
+xsb_thread_join(Input) :- thread_join(Input).
+
+xsb_thread_property(Id,Property) :- thread_property(Id,Property).
+
+xsb_thread_self(ThreadId):- thread_self(ThreadId).
+
+xsb_thread_yield:- thread_yield.
 
 /* ==================================================================  */
 
@@ -179,17 +202,16 @@ xsb_sys_mutex_lock(Id) :-
 xsb_sys_mutex_unlock(Id) :- 
 	thread_request( XSB_SYS_MUTEX_UNLOCK, Id, _, _, _, _, _, _ ).
 
-xsb_thread_property(Id,Property) :- 
+thread_property(Id,Property) :- 
 	thread_request( XSB_THREAD_PROPERTY, Id,Prop1, _, _, _, _, _ ),
 	(Prop1 == 1 -> Property = detached ; Property = joinable).
 
-xsb_thread_cancel(Id):- 
-	check_nonvar(Id,xsb_thread_cancel/1,1),
+thread_cancel(Id):- 
+	check_nonvar(Id,thread_cancel/1,1),
 	(Id == 0 -> 
-	    permission_error(cancel,main_thread,0,xsb_thread_cancel/1)
+	    permission_error(cancel,main_thread,0,thread_cancel/1)
 	  ; true),
 	thread_request( XSB_THREAD_INTERRUPT, Id,_, _, _, _, _, _ ).
-	
 	
 /* ==================================================================  */
 
