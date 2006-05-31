@@ -3,12 +3,13 @@
 Starting with Version 3.0, XSB supports the use of Posix threads to
 perform separable computations, and in certain cases to parallelize
 them.  Posix threads have a simple and clear API, and are available on
-all Unixes as well as on Windows (see Section~\ref{sec:mt-windows} to
-configure under Windows).  This chapter introduces how to program with
-threads in XSB through a series of examples.  Later sections discuss
-performance aspects of our implementation as well as describing
-relevant predicates.  A general knowledge of multi-threaded
-programming is assumed, such as can be found in \cite{LewB98,Bute97}.
+all Unixes and, by using open-source libraries, on Windoes as well (see
+Section~\ref{sec:mt-windows} to configure under Windows).  This
+chapter introduces how to program with threads in XSB through a series
+of examples.  Later sections discuss performance aspects of our
+implementation as well as describing relevant predicates.  A general
+knowledge of multi-threaded programming is assumed, such as can be
+found in \cite{LewB98,Bute97}.
 
 \section{Getting Started with Multi-Threading}
 %
@@ -27,15 +28,15 @@ configure and make XSB as in Chapter~\ref{chap:system}, but include
 the command {\tt --enable-mt}.  When you invoke the newly made
 configuration of XSB you should see {\tt engine: multi-threading} in
 the configuration list below the banner rather than {\tt engine:
-  slg-wam}.
+  slg-wam} as in the sequential engine.
 
 \paragraph{Hello World for Beginners}
 %
 We naturally start with a program to print ``hello world''.  Within
-the multi-threaded engine, import {\tt xsb\_thread\_create/2} from the
+the multi-threaded engine, import {\tt thread\_create/2} from the
 module {\tt thread}, and type the command
 \begin{center} 
-{\tt ?- xsb\_thread\_create(writeln('hello world'),Id)} 
+{\tt ?- thread\_create(writeln('hello world'),Id)} 
 \end{center} 
 you should see something like 
 \begin{center} 
@@ -45,7 +46,7 @@ you should see something like
 while the output is a little ugly, the simple ``hello world'' program
 does illustrate simple multi-threading at work.  The calling thread
 (i.e. the thread controlling the command-line interpreter which we
-call $T_{prompt}$) executes the predicate {\tt xsb\_thread\_create/2}
+call $T_{prompt}$) executes the predicate {\tt thread\_create/2}
 which creates a thread $T_{child}$ and immediately returns with the
 {\em XSB thread id} of the created thread.  Meanwhile, $T_{child}$
 initializes its stacks and other memory areas and executes the goal
@@ -55,7 +56,7 @@ I/O stream for standard output, leading to the output above.  What is
 happening may be seen a little more easily by executing the command
 %
 \begin{center} 
-{\tt ?- xsb\_thread\_create((sleep(1),writeln('hello world')),Id)} 
+{\tt ?- thread\_create((sleep(1),writeln('hello world')),Id)} 
 \end{center} 
 %
 In this case the interpreter reports that {\tt F} is bound to a thread
@@ -79,12 +80,12 @@ ExitCode = no_error_ball - 0
 \end{verbatim}
 %
 In this case, as soon as $T_{prompt}$ has issued a command to create
-$T_{child}$, it executes {\tt xsb\_thread\_join/2}.  This later
-predicate makes a system call to the underlying operating system to
-suspend $T_{prompt}$ until $T_{child}$ has exited.  {\tt
-  xsb\_thread\_join/2} returns both the error ball (if any) and the
-exit code of $T_{child}$.  As usual, a value of {\tt 0} indicates
-normal termination, as does the fact that no error ball was found.
+$T_{child}$, it executes {\tt thread\_join/2}.  This latter predicate
+makes a system call to the underlying operating system to suspend
+$T_{prompt}$ until $T_{child}$ has exited.  {\tt thread\_join/2}
+returns both the error ball (if any) and the exit code of $T_{child}$.
+As usual, a value of {\tt 0} indicates normal termination, as does the
+fact that no error ball was found.
 
 So far, we've introduced a few concepts that have not been fully
 discussed.  First is the concept of an {\em XSB thread id}: XSB
@@ -92,13 +93,13 @@ manages up to {\tt MAXTHREAD} active threads using XSB thread
 ids~\footnote{This number can be reset via a command line option to
   XSB, see Section~\ref{sec:EmuOptions}}.  It should be noted that the
 XSB thread id of a thread is different from the identifier of the
-underlying pthread.  An XSB thread id is a Prolog term, and unlike
+underlying Pthread.  An XSB thread id is a Prolog term, and unlike
 Posix thread ids, XSB thread ids can be compared for equality using
 unification.  The actual form of an XSB thread id, however, is subject
 to change between versions, so programs should not make use of the
 exact form of an XSB thread id.  In the multi-threaded engine, the XSB
 thread id of any thread can be queried using the predicate {\tt
-  xsb\_thread\_self/1}.
+  thread\_self/1}.
 
 \section{Communication among Threads}
 
@@ -114,16 +115,19 @@ If you type the goal {\tt ?- test} and then the goal {\tt ?- p(X)},
 the call {\tt p(X)} will fail.  
 \end{example}
 
+\noindent
 This illustrates an important point about dynamic and tabled
-predicates in the multi-threaded engine: by default such predicate
-{\tt p/n} are private to the thread that asserts clauses to {\tt p/n}
-or that creates the table for {\tt p/n}.  This contrasts to static
-code is always shared between threads.  To allow {\tt p(1)} to be
-visible to various threads, it must be declared to be shared with the
-following declaration.
+predicates in the multi-threaded engine: by default clauses for a
+dynamic predicate {\tt p/n} are private to the thread that asserts
+them; and by default tables created in an evaluation of a goal for
+{\tt p/n} are private to the thread that evaluates the goal.  This
+behavior contrasts to that of static code which is always shared
+between threads.  In the example above, to allow {\tt p(1)} to be
+visible to various threads, {\tt p/1} must be declared to be shared
+with the following declaration.
 %
 \begin{verbatim}
-n:- thread_shared(p(_)).
+:- thread_shared(p(_)).
 \end{verbatim}
 
 The ability to share dynamic code between predicates provides an
@@ -132,18 +136,22 @@ XSB make dynamic predicates thread-private by default?  The main
 reason for this is that if dozens or hundreds of threads are running
 concurrently, shared dynamic code becomes an expensive synchronization
 point.  Code for shared predicates must be more heavily mutexed than
-code for private predicates.  In particular, XSB may not immediately
-reclaim the space of retracted clause, to avoid the possibility of
-some computation backtracking into a clause that has been reclaimed.
-Rather XSB may garbage collect the space of the retracted clauses at a
-later time.  While clause garbage collection is simple enough to
-implement for a single thread, garbage collecting clauses for shared
-dynamic predicates is nearly impossible to do when multiple threads
-are active.  Thus one set of reasons for making dynamic predicates
-private by default are based on efficiency~\footnote{\version{} of XSB
-  allows garbage collection of retracted clauses only when there is a
-  single active thread.  Future versions will likely offer more
-  powerful garbage collectors.}.
+code for private predicates.  In the case of dynamic code, XSB does
+not always immediately reclaim the space of retracted clause, to avoid
+the possibility of some computation backtracking into a clause that
+has been reclaimed.  Rather, (like most Prologs), XSB may garbage
+collect the space of the retracted clauses at a later time.  While
+clause garbage collection is simple enough to implement for a single
+thread, garbage collecting clauses for shared dynamic predicates is
+difficult to do when multiple threads are active.  XSB can reclaim
+space for retracted clauses for dynamic thread-private predicates when
+multiple threads are active: from the engine's perspective garbage
+collection is no different than in the sequential case.  However in
+\version , space for shared dynamic clauses is not reclaimed until
+there is a single active thread.  Thus one set of reasons for making
+dynamic predicates private by default are based on
+efficiency~\footnote{Future versions may offer more powerful garbage
+  collectors for shared predicates.}.
 
 The second reason for making dynamic predicates thread-private by
 default is semantic.  Suppose thread $T_1$ starts a tabled computation
@@ -161,20 +169,23 @@ data, but
 %in the default multi-threaded configuration of XSB, which
 %uses local scheduling for tabled evaluation, 
 the tables themselves may be thread-shared or thread-private.  Like
-dynamic code, tables are private by default; the declaration {\tt
-  thread\_shared/1} allows completed tables for a predicate evaluated
-with call-variance to be shared among threads~\footnote{In \version,
-  tabled predicates using call-subsumption are always private; an
-  attempt to make such a predicate thread-shared throws an
-  exception.}.
+dynamic code, the declaration {\tt thread\_shared/1} allows sharing of
+tables for a predicate evaluated with call-variance to be shared among
+threads~\footnote{In \version, tabled predicates using
+  call-subsumption are always private; an attempt to make such a
+  predicate thread-shared throws an exception.}.
 %
 To some extent, tabling considerations for making a predicate
 thread-shared or thread-private are like those of dynamic code.
-Thread-private tables require fewer synchonization points overall, and
-garbage collection of space for abolished thread-private tables is far
-easier to perform.  However the semantics of how tabling information
-is shared depends on whether local or batched evaluation is used with
-the multi-threaded engine.  Recall from
+Thread-private tables require fewer synchonization points overall.
+The situation for reclaiming space for abolished tables is analogous
+to reclaiming space for retracted dynamic clauses: the garbage
+collector treats abolished tables for thread-private predicates as in
+the sequential case, while space for shared tables is not reclaimed
+until there is a single active thread.  However the precise semantics
+of how tabling information is shared depends on whether the
+multi-threaded engine is configured with the default local evaluation
+or with batched evaluation.  Recall from
 Chapter~\ref{chap:TablingOverview} that local evaluation is so-named
 because computation always takes place in the SCC most recently
 created, and no answer is returned outside of an SCC until the SCC has
@@ -188,14 +199,14 @@ algorithm for optimistic concurrency control.  If goals to two
 mutually dependent tables $Table_a$ and $Table_b$ are called
 concurrently by two different threads, $Thread_a$ and $Thread_b$,
 nothing is done until it is detected that $Table_a$ and $Table_b$ are
-both incomplete and are contained in a SCC of the table dependency
-grahp.  At that time, one of the threads (e.g. $Thread_a$) takes over
-recomputation of all tables in the SCC, and when the SCC is completed,
-any remaining answers are returned to other threads that had invoked
-goals in the SCC.  While $Thread_a$ is completing this computation,
-$Thread_b$ suspends until the SCC is complete.  Thus the semantics of
-Shared Completed Tables supports concurrency, but does not support any
-but the most coarse-grained parallelism.
+both incomplete and are contained in the same SCC of the table
+dependency grahp.  At that time, one of the threads (e.g. $Thread_a$)
+takes over recomputation of all tables in the SCC, and when the SCC is
+completed, any remaining answers are returned to other threads that
+had invoked goals in the SCC.  While $Thread_a$ is completing this
+computation, $Thread_b$ suspends until the SCC is complete.  Thus the
+semantics of Shared Completed Tables supports concurrency, but only
+supports the most coarse-grained parallelism.
 
 Batched evaluation, on the other hand, allows answers to be returned
 outside of an SCC before that SCC has been completed.  Concurrency
@@ -205,52 +216,57 @@ $Table_a$, first called by $Thread_a$, and $Table_b$ first called by
 $Thread_b$ are determined to be in the same SCC, and that $Thread_a$
 takes over computation of subgoals in the SCC.  Now, $Thread_b$,
 rather than suspending, may continue work.  In particular, $Thread_b$
-can return any answers in $Table_b$ that it finds, regardless of
-whether they have been produced by $Thread_b$ (before $Thread_a$ took
-over the SCC) or by $Thread_a$ (afterwards).  We call this type of
-concurrency semantics, {\em Table Parallelism}.  Table Parallelism can
-be used to program producer-consumer examples, as well as to implement
-Or- and And- parallelism.  Table Parallelism was first introduced
-in~\cite{FHSW95}, but the mechanism now used for implementing Table
-Parallelism differs significantly from what was described there.  In
-\version{} of XSB, the implementation of Table Parallelism is
-experimental: in particular, it does not yet support tabled negation.
+can return any answers in $Table_b$ that it finds whenever it finds
+them, regardless of whether they have been produced by $Thread_b$
+(before $Thread_a$ took over the SCC) or by $Thread_a$ (afterwards).
+We call this type of concurrency semantics, {\em Table Parallelism}.
+Table Parallelism can be used to program producer-consumer examples,
+as well as to implement Or- and And- parallelism.  Table Parallelism
+was first introduced in~\cite{FHSW95}, but the mechanism now used for
+implementing Table Parallelism differs significantly from what was
+described there.  In \version{} of XSB, the implementation of Table
+Parallelism is experimental: in particular, it does not yet support
+tabled negation.
 
-For either semantics of shared tables, in \version{}, users of
-thread-shared tables are responsible for ensuring read consistency.
-Note that, in principle, thread-shared tables may depend on
-thread-private tables and vice-versa.  Either type of table may depend
-on thread-private or thread-shared dynamic code.  In addition, a
-predicate may be {\em both} dynamic and tabled, and its clauses and
+As mentioned, for either semantics of shared tables, in \version{},
+users of thread-shared tables are responsible for ensuring read
+consistency.  Note that, in principle, thread-shared tables may depend
+on thread-private tables and vice-versa.  Either type of table may
+depend on thread-private or thread-shared dynamic code.  In addition,
+a predicate may be {\em both} dynamic and tabled, and its clauses and
 tables may be either thread-private or thread-shared.
 
 \section{Error Conditions: Joinable and Detached Threads}
 
 So far we have assumed that the goal called in {\tt
-  xsb\_thread\_create/2} terminates normally --- by success or
+  thread\_create/2} terminates normally --- by success or
 failure.  But what if a thread throws an error while executing a goal?
 How long should error information for a thread persist, and how can it
 be checked?
 
-Our approach relies on the semantics of pthreads, which can be either
-{\em joinable} or {\em detached}.  After a joinable pthread $T_{dead}$
-has terminated, status information about $T_{dead}$ persists until
-some other thread joins it -- at which time the information is
-removed.  On the other hand, if $T_{dead}$ is detached, status
-information is removed as soon as $T_{dead}$ terminates.  A thread is
-valid if it has not yet terminated, or if it is joinable and has not
-yet been joined.  Reclamation of thread status information differs
-from that of thread-specific data structures: upon normal or
-exceptional termination of $T_{dead}$, any mutexes held by $T_{dead}$,
-are released, as well as any memory automatically allocated in the
-process of initializing $T_{dead}$'s, or executing its goal --
-including stacks, private dynamic code, private tables, etc.
-XSB-specific status information about threads follows the pthread
-model: by default, error information is available when joining a
-joinable thread, but not otherwise~\footnote{This behavior can, of
-  course, be overridden by embedding goals within {\tt catch/3} and
-  handling errors separately, or simply by adding a default user error
-  handler: see Chapter~\ref{chap:exception} for details.}.
+\index{thread!valid}
+
+Our approach relies on the semantics of Pthreads, which can be either
+{\em joinable} or {\em detached}.  Within this framework, we consider
+a thread to be {\em valid} if it has not yet terminated, or if it is
+joinable and has not yet been joined.  After a joinable Pthread
+$T_{dead}$ has terminated, status information about $T_{dead}$
+persists until some other thread joins it --- at which time the
+information is removed.  On the other hand, if $T_{dead}$ is detached,
+status information is removed as soon as $T_{dead}$ terminates.
+Reclamation of thread status information may be constrasted to that of
+thread-specific data structures such as stacks.  Upon normal or
+exceptional termination of $T_{dead}$, any memory automatically
+allocated in the process of initializing $T_{dead}$'s, or executing
+its goal -- including stacks, private dynamic code, private tables is
+reclaimed.  In addition, any mutexes held by $T_{dead}$, are released.
+On the other hand, XSB-specific {\em status} information about threads
+follows the Pthread model: by default, error information is available
+when joining a joinable thread, but not otherwise~\footnote{This
+  behavior can, of course, be overridden by embedding goals within
+  {\tt catch/3} and handling errors separately, or simply by adding a
+  default user error handler: see Chapter~\ref{chap:exception} for
+  details.}.
 
 \begin{example}
 Suppose the goal 
@@ -289,38 +305,39 @@ Error = error(instantiation_error, in arg 2 of predicate functor/3,
 \end{verbatim}
 %
 In other words, {\tt Error} is instantiated to a {\tt -/2} structure,
-the first argument of which is a standard XSB error term, and the
-second argument of which is the exit code of the thread.  
+the first argument of which is a standard XSB error term (including
+backtrace), and the second argument of which is the exit code of the
+thread.
 \end{example}
 %
-In general, error terms in XSB should be more useful than C exit
-codes, but C exit codes may conceivably be useful if XSB is called by
-one of the interfaces for C calling XSB~\footnote{C calling XSB
-  interfaces are not yet supported in \version.}.  By default,
-however, normal termination of an xsb thread will result in an exit
-code of {\tt 0}, a cancelled thread will have an exit code of {\tt 1}
-and a thread terminated with any other error will have an exit code of
-{\tt 2}.
+Error terms in XSB provide much more information than C exit codes,
+but C exit codes may conceivably be useful if XSB is called by one of
+the interfaces for C calling XSB~\footnote{The C calling XSB
+  interfaces are not yet supported in \version.}.  By default when no
+call to {\tt thread\_exit/1} has been made, an XSB thread that
+terminates normally will have an exit code of {\tt 0}, a cancelled
+thread will have an exit code of {\tt 1} and a thread terminated with
+any other error will have an exit code of~{\tt 2}.
 
-As with pthreads, XSB threads are created as joinable by default, but
-can be created as detached using an option in {\tt
-  xsb\_thread\_create/3}.  Alternatively, a thread created as joinable
-can be made detached by {\tt xsb\_set\_detached/1}.  Both of these
-predicates are described in Section~\ref{sec:mt-threading}.
+As with Pthreads, XSB threads are created as joinable by default, but
+can be created as detached using an option in {\tt thread\_create/3}.
+Alternatively, a thread created as joinable can be made detached by
+{\tt thread\_detach/1}.  Both of these predicates are described in
+Section~\ref{sec:mt-threading}.
 
 \section{Thread Cancellation}
 %
 There may be a number of situations in which it is useful to give one
 thread the ability to cancel the execution of another thread.  Within
-the semantics of pthreads, this is called {\em thread cancellation}.
+the semantics of Pthreads, this is called {\em thread cancellation}.
 At the C level, thread cancellation can be tricky, as mutexes must be
 released, allocated memory freed, and so on.  Accordingly, the
-predicate {\tt xsb\_thread\_cancel/1} cancels XSB threads by acting
-purely within the SLG-WAM engine.  When thread $T_1$ interrupts thread
-$T_2$, $T_1$ writes to the XSB interrupt vector in $T_2$.  Later, when
-$T_2$ checks its interrupt vector, it throws a cancellation error,
-which causes it to clean up its mutexes, memory, private tables and
-dynamic code, and then exit.
+predicate {\tt thread\_cancel/1} cancels XSB threads by acting purely
+within the SLG-WAM engine.  When thread $T_1$ interrupts thread $T_2$,
+$T_1$ writes to the thread-specific XSB interrupt vector in $T_2$.
+Later, when $T_2$ checks its interrupt vector, it throws a
+cancellation error, which causes it to clean up its mutexes, memory,
+private tables and dynamic code, and then exit.
 
 Any thread can cancel any other thread, with the exception that the
 {\em main} thread, which controls the console (or interface to C or
@@ -341,15 +358,15 @@ underlying operating system.
 
 The size of a given thread may be a consideration for multi-threaded
 applications.  Each thread has an area of thread-private variables
-that are ``global'' to its own virtual machine, called the {\em thread
-  context}, which accounts for about 2-4Kbytes of space.  Much larger
-are the various stacks used by the threads for tabled and Prolog
-execution.  Almost all of XSB's stacks are fully expandable, and the
-initial size of several of these stacks may be set explicitly as
-options in {\tt xsb\_thread\_create/3}.  Explicitly setting a default
+that are ``global'' to its own virtual machine.  This area, called the
+{\em thread context}, which accounts for about 4 Kbytes of space.
+Much larger are the various stacks used by the threads for tabled and
+Prolog execution.  Almost all of XSB's stacks are fully expandable,
+and the initial size of several of these stacks may be set explicitly
+as options in {\tt thread\_create/3}.  Explicitly setting a default
 thread stack size for an XSB thread to be smaller than the default
 process stack size may be useful for applications that have a large
-number of concurrently running threads.  
+number of concurrently running threads.
 
 Other performance considerations involve the contention by threads for
 shared resources.  As discussed above, contention may arise when
@@ -373,9 +390,9 @@ translate the Pthread library, used by XSB, to the native thread API
 of Windows.
 
 Different libraries are available for this purpose.  Internally, the
-multi-threaded engine has been tested using the Win32 pthreads
+multi-threaded engine has been tested using the Win32 Pthreads
 interface, available via {\tt http://sourceware.org/pthreads-win32},
-but other libraries may also work, including pthread library included
+but other libraries may also work, including Pthread library included
 with Cygwin.  To install the sourceware library, let {\tt \$XSBENV} be
 the parent directory of {\tt \$XSBDIR} the root directory of XSB --
 i.e. {\tt \$XSBENV} is the directory into which XSB is installed.
@@ -411,13 +428,13 @@ sh makexsb --config-tag=mt
 
 \begin{description}
 
-\ournewitem{xsb\_thread\_create(+Goal,ThreadId,,+OptionsList)}{thread}
-\index{\texttt{xsb\_thread\_create/3}}
+\ournewitem{thread\_create(+Goal,ThreadId,,+OptionsList)}{thread}
+\index{\texttt{thread\_create/3}}
 %
 When called from thread $T$, this predicate creates a new XSB thread
 $T_{new}$ to execute {\tt Goal}.  When goal either succeeds, throws an
 unhandled error, or fails, $T_{new}$ exits, but {\tt
-  xsb\_thread\_create/2} will succeed immediately, binding {\tt
+  thread\_create/2} will succeed immediately, binding {\tt
   ThreadId} to the XSB thread id of $T_{new}$.  {\tt Goal} must be
 callable, but need not be fully instantiated.  No bindings from {\tt
   Goal} are passed back from $T$ to $T_{new}$, so communication
@@ -431,7 +448,7 @@ allocation, so that the size options may be most useful for
 applications with very large numbers of threads.  In this case,
 setting initial stack sizes to be small may allow more threads to be
 created on a given hardware platform.  Also note that only XSB stacks
-are affected, the stack size of the underlying pthread remains
+are affected, the stack size of the underlying Pthread remains
 unaltered.
 %
 \bi
@@ -451,43 +468,44 @@ unaltered.
   unification stack.  If not specified, the
   default size is used (cf. Section~\ref{sec:EmuOptions}).
 %
-\item {\tt detached}: creates detached thread.  If not specified, the
-  thread created will be joinable.
+\item {\tt detached(Boolean)}: if {\tt Boolean} is true, creates
+  detached thread.  If {\tt Boolean} is false or the option is not
+  specified, the thread created will be joinable.  
 \ei
 
 {\bf Error Cases}
 \bi
 \item 	{\tt Goal} is not callable.
 \bi
-\item 	{\tt type\_error(callable\_term,Goal)}
+\item 	{\tt type\_error(callable,Goal)}
 \ei
 \item 	{\tt ThreadId} is not a variable
 \bi
-\item 	{\tt instantiation\_error}
+\item 	{\tt type\_error(variable,ThreadId)}
 \ei
 \item   No more system threads are available (EAGAIN)
 \bi
-\item {\tt resource\_error('system threads')}
+\item {\tt resource\_error(system threads)}
 \ei
-\item 	{\tt OptionList} is not instantiated
+\item 	{\tt OptionList} is a variable
 \bi
 \item 	{\tt instantiation\_error}
 \ei
 \item 	{\tt OptionList} contains an option, {\tt Option} not described above
 \bi
-\item 	{\tt domain\_error(xsb\_thread\_create\_option,Option)}
+\item 	{\tt domain\_error(thread\_create\_option,Option)}
 \ei
 \ei
 
-\ournewitem{xsb\_thread\_create(+Goal,-ThreadId)}{thread}
-\index{\texttt{xsb\_thread\_create/2}}
+\ournewitem{thread\_create(+Goal,-ThreadId)}{thread}
+\index{\texttt{thread\_create/2}}
 %
-Acts as {\tt xsb\_thread\_create(Goal,ThreadId,[])}.
+Acts as {\tt thread\_create(Goal,ThreadId,[])}.
 
-\ournewitem{xsb\_thread\_join(+ThreadIds,-ExitDesignators)}{thread}
-\index{\texttt{xsb\_thread\_join/2}} 
+\ournewitem{thread\_join(+ThreadIds,-ExitDesignators)}{thread}
+\index{\texttt{thread\_join/2}} 
 % 
-When {\tt xsb\_thread\_join/2} is called by thread $T$, {\tt
+When {\tt thread\_join/2} is called by thread $T$, {\tt
   ThreadIds} must be instantiated to either an XSB thread id, or a
 list of XSB thread ids; in either case, {\tt ExitDesignators} must be
 uninstantiated.  The action of the predicate is to suspend $T$ until
@@ -515,7 +533,7 @@ or a list of such elements.  For each XSB thread id $T_1$ in
 \end{itemize}
 %
 ExitCode is either {\tt 0} for normal termination, or the value
-specified by an explicit call to {\tt xsb\_thread\_exit/1}.
+specified by an explicit call to {\tt thread\_exit/1}.
 
 {\bf Error Cases}
 \bi
@@ -531,7 +549,7 @@ specified by an explicit call to {\tt xsb\_thread\_exit/1}.
 %
 \item 	{\tt ExitCodes} is not a variable
 \bi
-\item 	{\tt instantiation\_error}
+\item 	{\tt type\_error(variable,ExitCodes)}
 \ei
 %
 \item   {\tt ThreadId} does not correspond to a valid thread
@@ -545,8 +563,12 @@ specified by an explicit call to {\tt xsb\_thread\_exit/1}.
 \ei
 \ei
 
-\ournewitem{xsb\_thread\_exit(+ExitCode)}{thread}
-\index{\texttt{xsb\_thread\_exit/1}} 
+\comment{
+a) Thread is a variable  instantiation_error
+}
+
+\ournewitem{thread\_exit(+ExitCode)}{thread}
+\index{\texttt{thread\_exit/1}} 
 %
 Exits a thread $T$ with {\tt ExitCode} after releasing any mutexes
 held by $T$, freeing any thread-specific memory allocated for $T$ (we
@@ -557,14 +579,14 @@ on success or (final) failure of a thread's goal.
 
 {\bf Error Cases}
 \bi
-\item 	{\tt ThreadId} is not an integer
+\item 	{\tt ExitCode} is not an integer
 \bi
 \item 	{\tt type\_error(integer,ExitCode)}
 \ei
 \ei
 
-\ournewitem{xsb\_thread\_self(-ThreadId)}{thread}
-\index{\texttt{xsb\_thread\_self/1}} 
+\ournewitem{thread\_self(-ThreadId)}{thread}
+\index{\texttt{thread\_self/1}} 
 %
 Returns the XSB thread id of the calling thread.
 
@@ -572,12 +594,12 @@ Returns the XSB thread id of the calling thread.
 \bi
 \item 	{\tt ThreadId} is not a variable
 \bi
-\item 	{\tt instantiation\_error}
+\item 	{\tt type\_error(variable,ThreadId)}
 \ei
 \ei
 
-\ournewitem{xsb\_thread\_detach(+ThreadId)}{thread}
-\index{\texttt{xsb\_thread\_detach/1}} 
+\ournewitem{thread\_detach(+ThreadId)}{thread}
+\index{\texttt{thread\_detach/1}} 
 %
 Detaches a joinable thread denoted by {\tt ThreadId} so that all
 resources will be reclaimed upon its exit.  The thread denoted by {\tt
@@ -585,7 +607,7 @@ resources will be reclaimed upon its exit.  The thread denoted by {\tt
 
 Note, if it is known at thread creation time that a thread should be
 detached, it is better to create the thread as detached via {\tt
-  xsb\_thread\_create/3}.
+  thread\_create/3}.
 
 {\bf Error Cases}
 \bi
@@ -603,11 +625,11 @@ detached, it is better to create the thread as detached via {\tt
 \ei
 \ei
 
-\ournewitem{xsb\_thread\_cancel(+ThreadId)}{thread}
-\index{\texttt{xsb\_thread\_cancel/1}} 
+\ournewitem{thread\_cancel(+ThreadId)}{thread}
+\index{\texttt{thread\_cancel/1}} 
 %
 Cancels the XSB thread denoted by {\tt ThreadId}.  The cancellation
-does not use pthread cancellation mechanisms, rather it uses XSB's
+does not use Pthread cancellation mechanisms, rather it uses XSB's
 interrupt mechanism to set {\tt ThreadId}'s interrupt vector.  When
 this interrupt vector is checked, {\tt ThreadId} will throw a thread
 cancellation error, which can be caught within {\tt ThreadId} like any
@@ -639,12 +661,12 @@ can cancel any other thread.
 \ei
 \ei
 
-\ournewitem{xsb\_thread\_yield}{thread}
-\index{\texttt{xsb\_thread\_yield/0}} 
+\ournewitem{thread\_yield}{thread}
+\index{\texttt{thread\_yield/0}} 
 % 
 Make the calling thread ready to be run {\em after} other threads of
 the same priority.  This predicate relies on the real-time extensions
-to pthreads specified in Posix 1b, and may not be available on all
+to Pthreads specified in Posix 1b, and may not be available on all
 platforms.
 
 {\bf Error Cases}
@@ -656,8 +678,8 @@ platforms.
 \ei
 
 \comment{
-\ournewitem{xsb\_user\_mutex\_lock(MutexId)}{thread}
-\index{\texttt{xsb\_user\_mutex\_lock/1}} 
+\ournewitem{user\_mutex\_lock(MutexId)}{thread}
+\index{\texttt{user\_mutex\_lock/1}} 
 %
 Locks a user-mutex, currently numbered 0 through 9, with 0
 corresponding to the mutex that controls I/O to the console.  These
@@ -681,8 +703,8 @@ of {\tt NORMAL}.
 \ei
 \ei
 
-\ournewitem{xsb\_user\_mutex\_trylock(MutexId)}{thread}
-\index{\texttt{xsb\_user_mutex_trylock/1}} 
+\ournewitem{user\_mutex\_trylock(MutexId)}{thread}
+\index{\texttt{user_mutex_trylock/1}} 
 %
 If the user-mutex denoted by {\tt MutexId} is not busy, this predicate
 locks {\tt MutexId} and succeeds; if {\tt MutexId} is busy the

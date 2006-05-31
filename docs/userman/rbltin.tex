@@ -205,12 +205,22 @@ predicate is thread-shared or thread-private)~\footnote{For
   which takes {\tt Pred} and {\tt Arity} as its two arguments.}.  Any
 completed tables for the predicate are also removed.
 
+It is an error to abolish a predicate when there is more than 1 active
+thread, regardless of whether the predicate is thread-private or
+thread-shared.  The reason for this is that, even if {\tt PredInd}
+denotes a thread-private predicate, one thread may be making use of
+{\tt PredInd} as another thread abolishes it.  {\tt abolish/1} throws
+an error in such a case to prevent such a semantic inconsistency.
+Similarly, if there is a non-completed table for {\tt PredInd}, an
+error is thrown to prevent incompleteness in the tabled computation.
+
 \compatability \version{} of XSB allows static predicates to be
 abolished and their space reclaimed.  Such space is reclaimed
-immediately, and no check is made to ensure that XSB's choice point
-stack is free of choice points for the abolished static predicate.
-Abolishing static code is thus dangerous and should be avoided unless
-a user is certain it is safe to use.
+immediately, and unlike the case for abolished static code,  no check
+is made to ensure that XSB's choice point stack is free of choice
+points for the abolished static predicate.  Abolishing static code is
+thus dangerous and should be avoided unless a user is certain it is
+safe to use.
 
 {\bf Error Cases}
 \bi
@@ -228,9 +238,25 @@ a user is certain it is safe to use.
 \bi
 \item 	{\tt permission\_error(modify,builtin,Predind)}
 \ei
-\item 	{\tt Clause} has a head that is a static user predicate
+%
+\item {\tt abolish/1} is called when there is more than 1 active thread.
 \bi
-\item 	{\tt permission\_error(modify,static,Clause)}
+\item {\tt misc\_error}
+\ei
+%
+\item {\tt PredInd} has a non-completed table in the current thread.
+\bi
+\item {\tt table\_error}
+\ei
+%
+\item There are active backtrack points to a (dynamic) clause for {\tt
+  PredInd}~\footnote{XSB throws an error in this case because garbage
+  collection for abolished predicates has not been implemented
+  (unlike for retract(all) and various table abolishes).  Besides, you
+  shouldn't be abolishing a predicate that you could backtrack into.
+  What were you thinking?}. 
+\bi
+\item {\tt misc\_error}
 \ei
 %
 \ei

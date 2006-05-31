@@ -1042,53 +1042,8 @@ Sep}, return the resulting atom in {\tt Atom}.  Integers and floats
 are converted to character strings using {\tt number\_codes/2}.
 \end{description}
 
-%-------------------------------------------------------------------------------------------
-\comment{
-% TLS: not needed with streams.
-\ournewitem{atom\_to\_term(+Atom,-Term)}{string}
-\index{\texttt{atom\_to\_term/2 }}
-
-This predicate converts an atom (in {\tt Atom}) consisting of the
-characters making up a valid term and converts it into that term,
-placing the result in {\tt Term}.  This predicate is for convenience,
-as any atom can be opened and read using XSB's streams.  The accepted
-syntax is intended to be valid canonical form (with no trailing '.'),
-extended by a treatment of the usual list syntax.  It should be the
-inverse of {\tt term\_to\_atom/2}.  Floating point numbers are not
-completely handled; only a fixed point representation is used.  If the
-atom is not a syntactically valid term, the predicate fails, quietly.
-
-\ournewitem{codes\_to\_term(+CodeList,-Term)}{string}
-\index{\texttt{codes\_to\_term/2 }}
-
-This predicate is used in the definition of {\tt atom\_to\_term/2} and 
-converts a list of ascii codes consisting of a valid canonical term
-into that term.  See {\tt atom\_to\_term} for details.
-
-\ournewitem{read\_atom\_to\_term(+Atom,-Term)}{string}
-\index{\texttt{read\_atom\_to\_term/2 }}
-
-This predicate converts an atom {\tt Atom} whose characters make up a
-valid term that can be read by {\tt read/1} into the term ({\tt Term})
-it represents.  This predicate is for convenience, as any atom can be
-opened and read using XSB's streams.  A minor difference with the
-stream-based approach is that the atom should {\em not} contain a
-terminating period ('.'). If the atom is not a syntactically correct
-term, then this predicate fails, quietly.
-
-\ournewitem{read\_atom\_to\_term(+Atom,-Term,-VarList)}{string}
-\index{\texttt{read\_atom\_to\_term/3 }}
-
-This predicate converts an atom {\tt Atom} whose characters make up a
-valid term that can be read by {\tt read/1} into the term ({\tt Term})
-it represents.  This predicate is for convenience, as any atom can be
-opened and read using XSB's streams and {\tt read\_term/3}.  A minor
-difference with the stream-based approach is that the atom should {\em
-not} contain a terminating period ('.'). If the atom is not a
-syntactically correct term, then this predicate fails, quietly.
-}
 %%
-%-------------------------------------------------------------------------------------------
+%------------------------------------------------------------------------------
 
 \section{Script Writing Utilities}
 %========================

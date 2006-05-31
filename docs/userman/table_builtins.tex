@@ -116,16 +116,16 @@ a predicate \code{p} and arity \code{n}, represented as
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 \comment{
-TLS: Unnecessary, as exceptions are described elsewhere
-\subsubsection*{Exceptions}
-
-Exceptions caught by the following predicates include:
-\begin{description}
-\item[Instantiation Error] Argument is a variable.
-\item[Type Error] Argument is not a predicate specification or callable term.
-\item[Table Error] Argument does not contain a tabled predicate, or a valid
-        reference to a table component.
-\end{description}
+| TLS: Unnecessary, as exceptions are described elsewhere
+| \subsubsection*{Exceptions}
+| 
+| Exceptions caught by the following predicates include:
+| \begin{description}
+| \item[Instantiation Error] Argument is a variable.
+| \item[Type Error] Argument is not a predicate specification or callable term.
+| \item[Table Error] Argument does not contain a tabled predicate, or a valid
+|         reference to a table component.
+| \end{description}
 }
 
 %--------------------------------------------------------------------------
@@ -269,7 +269,7 @@ These latter two arguments should be given as variables.
 \bi
 \item {\tt CallTerm} is not a callable term
 \bi
-\item {\tt domain\_error(callable,CallTerm)}
+\item {\tt domain\_error(callable\_term,CallTerm)}
 \ei
 \item {\tt CallTerm} does not correspond to a tabled predicate
 \bi
@@ -871,7 +871,7 @@ has not been declared tabled.
 Exceptions:
     \begin{description}
     \item[{\tt type\_error}]
-        Argument 1 is not a callable predicate.
+        Argument 1 is not callable.
     \end{description}
 }
 

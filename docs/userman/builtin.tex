@@ -2176,7 +2176,7 @@ described only briefly.
     \item[{\tt instantiation\_error}]
 	{\tt P} is not instantiated.
     \item[{\tt type\_error(callable,P)}]
-	{\tt P} is not a callable term.
+	{\tt P} is not callable.
     \end{description}
 
 
@@ -2226,7 +2226,7 @@ described only briefly.
     \item[{\tt instantiation\_error}]
 	{\tt P} is not ground (floundering occurs).
     \item[{\tt type\_error(callable,P)}]
-	{\tt P} is not a callable term.
+	{\tt P} is not callable.
     \item[{\tt table\_error}]
 	{\tt P} is not a call to a tabled predicate.
     \end{description}
@@ -3238,6 +3238,35 @@ nor a write option.
 \ei
 \ei
 
+Examples:
+{\footnotesize
+\begin{verbatim}
+| ?- term_to_atom(f(a,1,X,['3cpio',d(3),'$VAR'("Foo")]),F,[]).
+
+X = _h131
+F = f(a,1,_h0,[3cpio,d(3),$VAR([70,111,111])])
+
+yes
+| ?- term_to_atom(f(a,1,X,['3cpio',d(3),'$VAR'("Foo")]),F,[numbervars(true)]).
+
+X = _h131
+F = f(a,1,_h0,[3cpio,d(3),Foo])
+
+yes
+| ?- term_to_atom(f(a,1,X,['3cpio',d(3),'$VAR'("Foo")]),F,[numbervars(true),quoted(true)]).
+
+X = _h131
+F = f(a,1,_h0,['3cpio',d(3),Foo])
+
+yes
+| ?- term_to_atom(f(a,1,X,['3cpio',d(3),'$VAR'("Foo")]),F,[numbervars(true),quoted(true),ignore_ops(true)]).
+
+X = _h131
+F = f(a,1,_h0,'.'('3cpio','.'(d(3),'.'(Foo,[]))))
+
+yes
+\end{verbatim}}
+
 \ournewitem{term\_to\_atom(+Term,-Atom)}{string}
 \index{\texttt{term\_to\_atom/2 }}
 %
@@ -3770,7 +3799,7 @@ bagAvg(Call,Avg) :-
     \item[{\tt instantiation\_error}]
 	{\tt X} is a variable
      \item[{\tt type\_error(callable,X)}]
-	{\tt X} is not a callable term.
+	{\tt X} is not callable.
     \end{description}
 
 \ouritem{\#X}					      
