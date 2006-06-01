@@ -589,8 +589,8 @@ void env_type_set(Psc psc, byte t_env, byte t_type, xsbBool is_new)
     if (t_type && type && t_type != type) {
       if (t_type==T_UDEF && (type==T_PRED || type==T_DYNA || type==T_FORN)) ;
       else if (t_type==T_FORN && type==T_UDEF) set_type(psc, T_FORN);
-      else xsb_error("incompatible types in the use of %s (%x with %x)",
-		     get_name(psc), type, t_type);
+      else xsb_error("incompatible types in the use of %s/%d (%x with %x)",
+		     get_name(psc), get_arity(psc), type, t_type);
     } else set_type(psc, type | t_type);  
   }
 }
