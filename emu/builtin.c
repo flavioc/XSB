@@ -165,7 +165,7 @@ extern xsbBool gen_retract_all(CTXTdecl), db_retract0(CTXTdecl),
 extern xsbBool db_get_last_clause(CTXTdecl);
 extern xsbBool db_build_prref(CTXTdecl), db_abolish0(CTXTdecl), 
 	       db_reclaim0(CTXTdecl), db_get_prref(CTXTdecl);
-extern xsbBool dynamic_code_function(CTXT);
+extern xsbBool dynamic_code_function(CTXTdecl);
 
 extern char *dirname_canonic(char *);
 extern xsbBool almost_search_module(CTXTdeclc char *);
