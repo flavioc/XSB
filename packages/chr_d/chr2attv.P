@@ -406,6 +406,7 @@ generate_check_constr_body(Off,AttrCnt,A,ArgId,Args,Mod,ArgCode) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
+
 % generate predicates to find a constraint of desired form
 generate_match_constr_clauses(Declarations,AttrCnt,Mod,MatchClauses) :-
 	generate_match_constr_clauses(1,Declarations,AttrCnt,Mod,MatchClauses).
@@ -460,6 +461,7 @@ generate_match_constr_body(Off,AttrCnt,A,ArgId,Args,Mod,ArgCode) :-
 
 
 /*
+% previous, slower version
 % generate predicates to find a constraint of desired form
 generate_match_constr_clauses(Declarations,AttrCnt,Mod,MatchClauses) :-
 	generate_match_constr_clauses(1,Declarations,AttrCnt,Mod,MatchClauses).
