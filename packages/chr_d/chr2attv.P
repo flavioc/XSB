@@ -306,6 +306,11 @@ generate_check_constr_clauses(Declarations,AttrCnt,Mod,CheckClauses) :-
 	generate_check_constr_clauses(1,Declarations,AttrCnt,Mod,CheckClauses).
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/*
+% generate clauses checking in all variables in the constraint term
+% -- slower, but more general - use if the following solution
+% gets into trouble on unification
 generate_check_constr_clauses(_,[],_,_,[]).
 generate_check_constr_clauses(Off,[F/A|FAs],AttrCnt,Mod,[C|Cs]) :-
 	generate_check_constr_clause(Off,AttrCnt,F,A,Mod,C),
@@ -339,50 +344,122 @@ generate_check_constr_body(Off,AttrCnt,F,A,ArgId,Args,Mod,CL,C) :-
 		    ; true),
 	append(CL,[ArgCode],CL1),
 	generate_check_constr_body(Off,AttrCnt,F,A,ArgNum,Args,Mod,CL1,C).
+*/
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-/*
 % generate clauses checking only in one variable in the constraint term
 % -- faster, but less general - when a variable in the term gets bound,
 % the results may get messed up
 generate_check_constr_clauses(_,[],_,_,[]).
-generate_check_constr_clauses(Off,[F/A|Cs],AttrCnt,Mod,CheckClauses) :-
-	fmt_write_string(HName, "check_%s", arg(F)),
-	generate_check_one_constr_clauses(Off,AttrCnt,F,A,1,HName,Mod,FClauses),
-	Off_A is Off + A,
-	generate_check_constr_clauses(Off_A,Cs,AttrCnt,Mod,CsClauses),
-	append(FClauses,CsClauses,CheckClauses).
-
+generate_check_constr_clauses(Off,[F/A|FAs],AttrCnt,Mod,[C|Cs]) :-
+	generate_check_constr_clause(Off,AttrCnt,F,A,Mod,C),
+	Off1 is Off + A,
+	generate_check_constr_clauses(Off1,FAs,AttrCnt,Mod,Cs).
 
 % generate code to check for constraint F/A
-generate_check_one_constr_clauses(_,_,_,A,A1,_,_,[]) :-
-	A1 is A + 1.
-generate_check_one_constr_clauses(Off,AttrCnt,F,A,ArgId,HN,Mod,[C|Cs]) :-
-	generate_check_one_constr_clause(Off,AttrCnt,A,ArgId,HN,Mod,C),
-	Off1 is Off + 1,
-	NextArg is ArgId + 1,
-	generate_check_one_constr_clauses(Off1,AttrCnt,F,A,NextArg,HN,Mod,Cs).
-
-generate_check_one_constr_clause(Off,AttrCnt,A,ArgId,HName,Mod,Clause) :-
+generate_check_constr_clause(Off,AttrCnt,F,A,Mod,Clause) :-
 	length(Args,A),
-	Head =.. [HName|Args],
-	delete_ith(ArgId,Args,Arg,OtherArgs),
+	fmt_write_string(HeadName, "check_%s", arg(F)),
+	Head =.. [HeadName|Args],
+	generate_check_constr_body(Off,AttrCnt,A,0,Args,Mod,Body),
+	Clause = (Head :- Body).
+
+generate_check_constr_body(Off,AttrCnt,A,ArgId,Args,Mod,ArgCode) :-
+	ArgNum is ArgId + 1,
+	ArgNum = A, !,
+	delete_ith(ArgNum,Args,Arg,OtherArgs),
 	
 	fmt_write_string(GetAttsName, "get_%s_atts", arg(Mod)),
-	length(ArgAtts,AttrCnt),
-	ith(Off,ArgAtts,IdAttr),
-	GetAttsCall =.. [GetAttsName,Arg|ArgAtts],
+	length(AllArgAtts,AttrCnt),
+	AttrNum is ArgId + Off,
+	ith(AttrNum,AllArgAtts,IdAttr),
+	GetAttsCall =.. [GetAttsName,Arg|AllArgAtts],
 	ArgAttr =.. ['attr'|OtherArgs],
 	
-	Body = (var(Arg),!,
-	       GetAttsCall,
-	       var_member(ArgAttr,IdAttr)),
-	Clause = (Head :- Body).
-*/
+	ArgCode = (var(Arg)
+		   -> GetAttsCall,
+		      var_member(ArgAttr,IdAttr)
+		    ; fail).
+generate_check_constr_body(Off,AttrCnt,A,ArgId,Args,Mod,ArgCode) :-
+	ArgNum is ArgId + 1,
+	delete_ith(ArgNum,Args,Arg,OtherArgs),
+	
+	fmt_write_string(GetAttsName, "get_%s_atts", arg(Mod)),
+	length(AllArgAtts,AttrCnt),
+	AttrNum is ArgId + Off,
+	ith(AttrNum,AllArgAtts,IdAttr),
+	GetAttsCall =.. [GetAttsName,Arg|AllArgAtts],
+	ArgAttr =.. ['attr'|OtherArgs],
+	
+	generate_check_constr_body(Off,AttrCnt,A,ArgNum,Args,Mod,NextArgCode),
+
+	ArgCode = (var(Arg)
+		   -> GetAttsCall,
+		      var_member(ArgAttr,IdAttr)
+		    ; NextArgCode).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
+% generate predicates to find a constraint of desired form
+generate_match_constr_clauses(Declarations,AttrCnt,Mod,MatchClauses) :-
+	generate_match_constr_clauses(1,Declarations,AttrCnt,Mod,MatchClauses).
+
+generate_match_constr_clauses(_,[],_,_,[]).
+generate_match_constr_clauses(Off,[F/A|FAs],AttrCnt,Mod,[C|Cs]) :-
+	generate_match_constr_clause(Off,AttrCnt,F,A,Mod,C),
+	Off1 is Off + A,
+	generate_match_constr_clauses(Off1,FAs,AttrCnt,Mod,Cs).
+
+% generate code to match constraint F/A
+generate_match_constr_clause(Off,AttrCnt,F,A,Mod,Clause) :-
+	length(Args,A),
+	fmt_write_string(HeadName, "match_%s", arg(F)),
+	Head =.. [HeadName|Args],
+	generate_match_constr_body(Off,AttrCnt,A,0,Args,Mod,Body),
+	Clause = (Head :- Body).
+
+generate_match_constr_body(Off,AttrCnt,A,ArgId,Args,Mod,ArgCode) :-
+	ArgNum is ArgId + 1,
+	ArgNum = A, !,
+	delete_ith(ArgNum,Args,Arg,OtherArgs),
+	
+	fmt_write_string(GetAttsName, "get_%s_atts", arg(Mod)),
+	length(AllArgAtts,AttrCnt),
+	AttrNum is ArgId + Off,
+	ith(AttrNum,AllArgAtts,IdAttr),
+	GetAttsCall =.. [GetAttsName,Arg|AllArgAtts],
+	ArgAttr =.. ['attr'|OtherArgs],
+	
+	ArgCode = (is_attv(Arg)
+		   -> GetAttsCall,
+		      member(ArgAttr,IdAttr)
+		    ; fail).
+generate_match_constr_body(Off,AttrCnt,A,ArgId,Args,Mod,ArgCode) :-
+	ArgNum is ArgId + 1,
+	delete_ith(ArgNum,Args,Arg,OtherArgs),
+	
+	fmt_write_string(GetAttsName, "get_%s_atts", arg(Mod)),
+	length(AllArgAtts,AttrCnt),
+	AttrNum is ArgId + Off,
+	ith(AttrNum,AllArgAtts,IdAttr),
+	GetAttsCall =.. [GetAttsName,Arg|AllArgAtts],
+	ArgAttr =.. ['attr'|OtherArgs],
+	
+	generate_match_constr_body(Off,AttrCnt,A,ArgNum,Args,Mod,NextArgCode),
+
+	ArgCode = (is_attv(Arg)
+		   -> GetAttsCall,
+		      member(ArgAttr,IdAttr)
+		    ; NextArgCode).
+
+
+/*
 % generate predicates to find a constraint of desired form
 generate_match_constr_clauses(Declarations,AttrCnt,Mod,MatchClauses) :-
 	generate_match_constr_clauses(1,Declarations,AttrCnt,Mod,MatchClauses).
@@ -420,7 +497,7 @@ generate_match_one_constr_clause(Off,AttrCnt,A,ArgId,HName,Mod,Clause) :-
 	       GetAttsCall,
 	       member(ArgAttr,IdAttr)),
 	Clause = (Head :- Body).
-
+*/
 
 
 
@@ -757,7 +834,7 @@ head2code_1(H,LastRule,OtherHs,_OtherIDs,Rule,F/A,RI,RN,Constrs,Mod,L,T) :-
 	).
 	
 	
-% same sa simpagation1 except for appending Head2 to OtherHs for matching/removal
+% same as simpagation1 except for appending Head2 to OtherHs for matching/removal
 % Head2 is empty here, so the append would be trivial and is not applied
 simplification_code(Head,LastRule,OtherHs,R,F/A,I,N,Constrs,L,T) :-
 	Head =.. [F|Args],
@@ -777,7 +854,7 @@ simplification_code(Head,LastRule,OtherHs,R,F/A,I,N,Constrs,L,T) :-
 	intermediate_head_arg_matches(HeadPairs,[],FirstMatching,VarDict),
 	
 	R = rule(_Head1,_Head2,Guard,Body),
-	list_copies([OtherHs,Guard,Body],VarDict,[OtherHsCp,GuardCp,BodyCp]),
+	list_copies([Head,OtherHs,Guard,Body],VarDict,[HeadCp,OtherHsCp,GuardCp,BodyCp]),
 
 	and2list(GuardCp,GuardL),
 	guards_join_order_l(HeadVs,GuardL,FreeParsGuardsL,BoundParGuardsL),
@@ -787,13 +864,13 @@ simplification_code(Head,LastRule,OtherHs,R,F/A,I,N,Constrs,L,T) :-
 	merge_heads_guards(HeadVs,HeadsCM,BoundParGuardsL,HeadsGuards),
 	list2and(HeadsGuards,HeadGuardCalls),
 
-	build_constr_remove(OtherHsCp,OtherHsRemove),
+	build_constr_remove([HeadCp|OtherHsCp],Constrs,HsRemove),
 
         RCode = (RHead :-
 		      (FirstMatching,
 		       FreeParsGuards,
 		       HeadGuardCalls
-		       -> OtherHsRemove,
+		       -> HsRemove,
 		          BodyCp
 		        ; ElseCall
 		      )
@@ -806,7 +883,7 @@ simplification_code(Head,LastRule,OtherHs,R,F/A,I,N,Constrs,L,T) :-
 %% SIMPAGATION
 %%
 
-% same as simplification except for ordered removal (WHY??)
+% same as simplification
 simpagation1_code(Head,LastRule,OtherHs,R,F/A,I,N,Constrs,L,T) :-
 	Head =.. [F|Args],
 	build_head(F/A,I,HeadVs,RHead),	
@@ -826,8 +903,8 @@ simpagation1_code(Head,LastRule,OtherHs,R,F/A,I,N,Constrs,L,T) :-
 	intermediate_head_arg_matches(HeadPairs,[],FirstMatching,VarDict),
 
 	R = rule(_Head1,Head2,Guard,Body),
-	list_copies([Head2,OtherHs,Guard,Body],VarDict,
-		    [Head2Cp,OtherHsCp,GuardCp,BodyCp]),
+	list_copies([Head,Head2,OtherHs,Guard,Body],VarDict,
+		    [HeadCp,Head2Cp,OtherHsCp,GuardCp,BodyCp]),
 	append(Head2Cp,OtherHsCp,RestHsCp),
 
 	and2list(GuardCp,GuardL),
@@ -837,10 +914,13 @@ simpagation1_code(Head,LastRule,OtherHs,R,F/A,I,N,Constrs,L,T) :-
 	build_constr_check_match_closure(HeadVs,Constrs,RestHsCp,HeadsCM),
 	merge_heads_guards(HeadVs,HeadsCM,BoundParGuardsL,HeadsGuards),
 	list2and(HeadsGuards,HeadGuardCalls),
-	
-	heads_join_order(HeadVs,OtherHsCp,FreeParRmHs,BoundParsRmHs),
-	append(FreeParRmHs,BoundParsRmHs,OrderedRmHs),
-	build_constr_remove(OrderedRmHs,RemoveCode),
+
+	% ordered removal ??
+%	heads_join_order(HeadVs,OtherHsCp,FreeParRmHs,BoundParsRmHs),
+%	append(FreeParRmHs,BoundParsRmHs,OrderedRmHs),
+%	build_constr_remove(OrderedRmHs,Constrs,RemoveCode),
+
+	build_constr_remove([HeadCp|OtherHsCp],Constrs,RemoveCode),
 
 	RCode = (RHead :-
 		    (FirstMatching,
@@ -924,7 +1004,7 @@ simpagation2_code(Head,LastRule,KeepHeads,R,F/A,I,N,Constrs,Mod,L,T) :-
 	
 	(GetNthAttrHeads = []
 	 -> abs_remove_same(RmHeadsCp,[HeadCp],RemoveHs,_CallHs),
-	    build_constr_remove(RemoveHs,RemoveCode),
+	    build_constr_remove(RemoveHs,Constrs,RemoveCode),
 
 	    RCode = (RHead :-
 		       (FirstMatching,
@@ -1009,7 +1089,7 @@ simpagation_worker_one(LastRule,HeadLabel,HeadArgs,I,N,A,[[Attr|Atts]|_],Constrs
 	list2and(HeadsGuards,HeadGuardCalls),
 	
 	abs_remove_same(RmHeadsCp,[HeadCp],RemoveHs,_CallHs),
-	build_constr_remove(RemoveHs,RemoveCode),
+	build_constr_remove(RemoveHs,Constrs,RemoveCode),
 
 	append(RecursiveHeadVs,[[AttrCp|AttsCp]],RecursiveArgs),
 	RecursiveHead =.. [HeadName|RecursiveArgs],
@@ -1119,7 +1199,7 @@ simpagation_worker_all(LastRule,HeadLabel,HeadArgs,I,N,A,[[Attr|Atts]|_AttrRest]
 	
 	(GetNthAttrHeads = []
 	 -> abs_remove_same(RemoveHsCp,[HeadCp],RemoveHeads,_CallHs),
-	    build_constr_remove(RemoveHeads,RemoveCode),
+	    build_constr_remove(RemoveHeads,Constrs,RemoveCode),
 
 	    RecursiveCase = (RecursiveHead :-
 			        (FirstMatching,
@@ -1999,17 +2079,21 @@ build_eq_checks([X|Xs],[Y|Ys],[X==Y|XYs]) :-
 	build_eq_checks(Xs,Ys,XYs).
 
 
-% build remove clauses for constraints in Heads list
-build_constr_remove(Heads,RmClauses) :-
-	build_constr_rm(Heads,RmList),
+% build remove clauses for stored constraints in Heads list
+build_constr_remove(Heads,Constrs,RmClauses) :-
+	build_constr_rm(Heads,Constrs,RmList),
 	list2and(RmList,RmClauses).
 
-build_constr_rm([],[]).
-build_constr_rm([H|Hs],[C|Cs]) :-
-	H =.. [F|Args],
-	fmt_write_string(CLabel, "remove_%s", arg(F)),
-	C =.. [CLabel|Args],
-	build_constr_rm(Hs,Cs).
+build_constr_rm([],_,[]).
+build_constr_rm([H|Hs],Constrs,Rms) :-
+	build_constr_rm(Hs,Constrs,Cs),
+	(all_stored_heads([H],Constrs)
+	 -> H =.. [F|Args],
+	    fmt_write_string(CLabel, "remove_%s", arg(F)),
+	    C =.. [CLabel|Args],
+	    Rms = [C|Cs]
+	  ; Rms = Cs
+	).
 
 
 % build add clauses for constraints in Heads list
@@ -2017,12 +2101,16 @@ build_constr_add(Heads,AddClauses) :-
 	build_constr_add_1(Heads,AddList),
 	list2and(AddList,AddClauses).
 
-build_constr_add_1([],[]).
-build_constr_add_1([H|Hs],[C|Cs]) :-
-	H =.. [F|Args],
-	fmt_write_string(CLabel, "add_%s", arg(F)),
-	C =.. [CLabel|Args],
-	build_constr_add_1(Hs,Cs).
+build_constr_add_1([],_,[]).
+build_constr_add_1([H|Hs],Constrs,Adds) :-
+	build_constr_add_1(Hs,Constrs,Cs),
+	(all_stored_heads([H],Constrs)
+	 -> H =.. [F|Args],
+	    fmt_write_string(CLabel, "add_%s", arg(F)),
+	    C =.. [CLabel|Args],
+	    Adds = [C|Cs]
+	  ; Adds = Cs
+	).
 
 
 

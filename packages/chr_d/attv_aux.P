@@ -115,11 +115,11 @@ ordered_before([X|Xs],[Y|Ys]) :-
 
 
 % set membership on variables
-var_member(V, [X|_Xs]) :-
-	V == X.
 var_member(V, [X|Xs]) :-
-	V \== X,
-	var_member(V,Xs).
+	(V == X
+	 -> true
+	  ; var_member(V,Xs)
+	).
 
 
 % check if any element of L is a variable

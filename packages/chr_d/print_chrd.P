@@ -148,7 +148,8 @@ print_chrd_ite(G,Space) :-
 		nl,
 		print_chrd3(B,Space2),nl,
 		tab(Space), put(0';), 
-		print_chrd_ite(C,Space)
+%		print_chrd_ite(C,Space)
+		nl, print_chrd3(C,Space2)
 	; G = (A -> B) ->
 		( simple_goal(A) ->
 			print_chrd3(A,2)
