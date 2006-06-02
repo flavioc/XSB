@@ -54,7 +54,8 @@ static void ReclaimDSandMarkReset(th_context *th, VariantSF to, int leader)
         }
 }
 
-static void reset_thread( th_context *th, th_context *ctxt, VariantSF sgf )
+static void reset_thread( th_context *th, th_context *ctxt, VariantSF sgf,
+			  VariantSF *resetsgf )
 {
 	CPtr tbreg ;
 	/* if the subgoal has not yet been computed, the
@@ -65,6 +66,7 @@ static void reset_thread( th_context *th, th_context *ctxt, VariantSF sgf )
 	}
 	ctxt->reset_thread = TRUE ;
 	sgf = bottom_leader(ctxt, sgf) ;
+        *resetsgf = sgf ;
 	ReclaimDSandMarkReset(ctxt, sgf, th->tid);
 	/* trick to use other thread's context */
 	th = ctxt ;
@@ -86,7 +88,8 @@ static void reset_thread( th_context *th, th_context *ctxt, VariantSF sgf )
 
 void reset_leader( th_context *th )
 {
-	reset_thread( th, th, compl_subgoal_ptr(openreg) );
+	VariantSF resetsgf ;
+	reset_thread( th, th, compl_subgoal_ptr(openreg), &resetsgf );
 	th->reset_thread = FALSE ;
 }
 				
@@ -94,14 +97,16 @@ void reset_leader( th_context *th )
 void reset_other_threads( th_context *th, th_context *ctxt, VariantSF sgf )
 {
 	th_context *next ;
-	reset_thread( th, ctxt, sgf );
+	VariantSF resetsgf ;
+	reset_thread( th, ctxt, sgf, &resetsgf );
         while( ctxt != th )
 	{	next = ctxt->waiting_for_thread;
-                if( next != th )
-                        reset_thread( th, next, ctxt->waiting_for_subgoal );
                 ctxt->deadlock_brk_leader = FALSE ;
-                ctxt->waiting_for_subgoal = NULL ;
-                ctxt->waiting_for_thread = NULL ;
+                ctxt->waiting_for_subgoal = resetsgf ;
+                ctxt->waiting_for_thread = th ;
+                if( next != th )
+                        reset_thread( th, next, ctxt->waiting_for_subgoal,
+					&resetsgf );
                 ctxt = next ;
 	}
 }

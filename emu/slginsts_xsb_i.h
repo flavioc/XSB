@@ -204,7 +204,6 @@ xsb_dbgmsg((LOG_DEBUG,"After variant call search AT: %x\n",answer_template));
         {       /* code for leader */
                 reset_other_threads( th, waiting_for_thread, producer_sf );
                 th->deadlock_brk_leader = TRUE ;
-                pthread_cond_broadcast(&completing_cond) ;
                 continue ;
         }
         th->waiting_for_subgoal = producer_sf ;
