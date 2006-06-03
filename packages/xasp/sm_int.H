@@ -44,25 +44,27 @@
 
 :- import '$sm_pos_compute'/1, '$sm_neg_compute'/1 from usermod.
 
-:- import smodelsInit/0, smodelsNumAtoms/1 from smodels.
-:- import smodelsCheckAtom/2 from smodels.
-:- import smodelsBeginBasicRule/0,smodelsBeginWeightRule/0 from smodels.
+:- import smodelsInit/0, smodelsNumAtoms/1 from xasppkg.
+:- import smodelsCheckAtom/2 from xasppkg.
+:- import smodelsBeginBasicRule/0,smodelsBeginWeightRule/0 from xasppkg.
 :- import smodelsBeginChoiceRule/0, smodelsBeginConstraintRule/0 
-                       from smodels.
-:- import smodelsAddHead/1 from smodels.
+                       from xasppkg.
+:- import smodelsAddHead/1 from xasppkg.
 :- import smodelsAddPosBody/1, smodelsAddWPosBody/2, 
-          smodelsAddNegBody/1, smodelsAddWNegBody/2  from smodels.
+          smodelsAddNegBody/1, smodelsAddWNegBody/2  from xasppkg.
 
-:- import smodelsSetBody/1, smodelsSetWeight/1 from smodels.
+:- import smodelsSetBody/1, smodelsSetWeight/1 from xasppkg.
 
-:- import smodelsEndRule/0 from smodels.
-:- import smodelsSetPosCompute/1, smodelsSetNegCompute/1 from smodels.
-:- import smodelsCommitRules/0 from smodels.
-:- import smodelsExistsModel/1 from smodels.
-:- import smodelsClose/0 from smodels.
+:- import smodelsEndRule/0 from xasppkg.
+:- import smodelsSetPosCompute/1, smodelsSetNegCompute/1 from xasppkg.
+:- import smodelsCommitRules/0 from xasppkg.
+:- import smodelsExistsModel/1 from xasppkg.
+:- import smodelsClose/0 from xasppkg.
 
 :- import conget/2, conset/2 from machine.
 :- import member/2 from basics.
+:- import writeln/1 from standard.
+:- import (dynamic)/1, retractall/1, assert/1 from assert.
 
 
 
