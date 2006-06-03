@@ -1,3 +1,5 @@
+:- ensure_loaded(xasp).
+
 :- import smcInit/0, smcAddRule/2, smcCommitProgram/0 from sm_int.
 :- import smComputeModel/0, smcExamineModel/1, smEnd/0 
 	from sm_int.

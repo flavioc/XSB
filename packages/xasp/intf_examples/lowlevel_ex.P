@@ -1,3 +1,5 @@
+:- ensure_loaded(xasp).
+
 initProgram :-
 	smodelsInit,
 	% number of atoms
