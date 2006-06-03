@@ -1,6 +1,9 @@
-:- import smrInit/1, smrAddBasicRule/3, smrCommitProgram/0 from smodelsops.
-:- import smComputeModel/0, smrExamineModel/2, smEnd/0 from smodelsops.
-:- import smodelsPrintProgram/0 from smodels.
+:- ensure_loaded(xasp).
+
+:- import smrInit/1, smrAddBasicRule/3, smrCommitProgram/0 from sm_int.
+:- import smComputeModel/0, smrExamineModel/2, smEnd/0 from sm_int.
+:- import smrSetPosCompute/1, smrSetNegCompute/1 from sm_int.
+:- import smodelsPrintProgram/0 from xasppkg.
 
 
 rawex_all :-
