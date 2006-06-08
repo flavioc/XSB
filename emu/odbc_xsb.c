@@ -955,14 +955,9 @@ RETCODE rc;
 		{
 		case 2:
 		  cur->BindLens[j] = strlen((char *)cur->BindList[j]);
-/*
-		if (cur->driver_code == 1)
+		  if (cur->driver_code == 1)
 		    rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,(char *)cur->BindList[j], 0, &SQL_NTSval);
 		  else rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,(char *)cur->BindList[j], cur->BindLens[j], &cur->BindLens[j]);
-*/
-// This isn't right, passing in the lenght through the column size, but it's the only thing that seems to work with TDS
-		  rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, strlen(cur->BindList[j]), 0,(char *)cur->BindList[j], 0, &SQL_NTSval);
-
 		  break;
 		case 3:
 			rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,NULL, 0, &SQL_NULL_DATAval);
@@ -991,14 +986,9 @@ RETCODE rc;
 		case 2:
 			/* we're sloppy here.  it's ok for us to use the default values*/
 		  cur->BindLens[j] = strlen((char *)cur->BindList[j]);
-/*
 		  if (cur->driver_code == 1)
 		    rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,(char *)cur->BindList[j], 0, &SQL_NTSval);
 		  else rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,(char *)cur->BindList[j], cur->BindLens[j], &cur->BindLens[j]);
-*/
-// This isn't right, passing in the lenght through the column size, but it's the only thing that seems to work with TDS
-		  rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, strlen(cur->BindList[j]), 0,(char *)cur->BindList[j], 0, &SQL_NTSval);
-
 		  break;
 		case 3:
 			rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,NULL, 0, &SQL_NULL_DATAval);
