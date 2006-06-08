@@ -66,6 +66,8 @@
 #define RESULT_EMPTY_BUT_REQUESTED 0
 #define RESULT_NONEMPTY_OR_NOT_REQUESTED 1
 #define TOO_MANY_RETURN_COLS 2
+#define INVALID_RETURN_LIST 3
+#define TOO_FEW_RETURN_COLS 4
 
 // **** the database value data structures ****
 

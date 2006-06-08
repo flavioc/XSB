@@ -65,7 +65,8 @@ db_query(Connhandle, QueryHandle, SQLQueryList, ReturnList) :-
 	-> true;
 	    !, 
 	    (exception(Number, Mesg)
-	    -> throw(xsb_error(database(Number), Mesg));
+	    ->  db_statement_close(QueryHandle),
+		throw(xsb_error(database(Number), Mesg));
 		fail)
 	).
 
@@ -125,7 +126,6 @@ db_canonise_term([X|List], [Z|CanonicalList]) :-
         ((compound(X) ; X == [])
 	-> term_to_atom(X, Y, [ignore_ops(canonical),quoted(true)]),
 	    atom_concat(DB_INTERFACE_TERM_SYMBOL,Y,Z)
-	    %%fmt_write_string(Z, '\255%s', a(Y))
 	; Z = X
 	),
 	db_canonise_term(List, CanonicalList).
