@@ -226,6 +226,8 @@ cc_options(CC_Name, Options, CC_Opts) :-
 	;  CC_Opts = CC_Opts2
 	).
 
+/* TLS: Problem somehow when debugging from gdb -- open_or_xpp_file
+   doesn't seem to return the right thing... havent figured it out. */
 compile_H(Modname, Base, Options, ExList, LdOption, CompComm, TempFile) :-
 	str_cat(Base, XSB_HDR_EXTENSION_ATOM, HFile),
 	( file_exists(HFile) ->
@@ -240,6 +242,8 @@ compile_H(Modname, Base, Options, ExList, LdOption, CompComm, TempFile) :-
 %%%	    see(HFile),
 	    repeat,
 	    open_or_xpp_file(HFile,CPPprocess),
+%%	    trace,
+%%	    writeln(read_clauses(Modname,ExList,'',LdOption,CompComm,TempFile)),
 	    read_clauses(Modname,ExList,'',LdOption,CompComm,TempFile), !,
 	    (	CPPprocess = none, ! 
 	    ;	
@@ -261,6 +265,8 @@ compile_H(Modname, Base, Options, ExList, LdOption, CompComm, TempFile) :-
 	    open(OFile,write,OStr),
 	    co_asmhead(OStr, Modname, LdOption, Count),
 	    co_asmsym(OStr, ExList),
+%	    writeln(co_asmhead(OStr, Modname, LdOption, Count)),
+%	    writeln(co_asmsym(OStr, ExList)),
 	    close(OStr),
 %%%	    told,
 	    tell(OldTell),
@@ -311,7 +317,9 @@ add_to_exlist((Pred, Preds), ListType) :- !,
         add_to_exlist(Preds, ListType).
 
 co_asmhead(OStr, Modname, LdOption, PSC_Count) :-
-	asm_magic(OStr,8),
+	xsb_configuration(engine_mode,Emode),
+	engine_mode_magic_num(Emode,LastDigit),
+	asm_magic(OStr,LastDigit),
 	str_len(Modname, Length),
 	file_put(OStr,Length),
 	write(OStr,Modname),
