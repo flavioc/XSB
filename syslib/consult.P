@@ -169,6 +169,7 @@ needs_recompile('c', Base, Obj) :-
           ; (str_sub('linux', OS_type) -> str_cat(Base, '.so', C_Obj))
 	  ; str_sub('windows', OS_type) -> str_cat(Base, '.dll', C_Obj)
 	  ; str_sub('cygwin', OS_type) -> str_cat(Base, '.dll', C_Obj)
+	  ; str_sub(darwin, OS_type) -> str_cat(Base, '.dylib', C_Obj)
 	  ; str_cat(Base, '.o', C_Obj)
 	  ),
 	  ( file_exists_here_or_configbin(C_Obj,CC_Obj) -> 
@@ -184,7 +185,8 @@ needs_recompile('c', Base, Obj) :-
 	  file_time(Obj, time(OTime1,OTime2)), 
 	  file_time(HFileName, time(HTime1,HTime2)), 
 	  time(OTime1,OTime2) @< time(HTime1,HTime2)
-	).
+	)
+        ; object_file_magic_mismatch(Obj).
 
 file_exists_here_or_configbin(C_Obj,CC_Obj) :-
 	(file_exists(C_Obj)
@@ -202,6 +204,26 @@ file_exists_here_or_configbin(C_Obj,CC_Obj) :-
 	    file_exists(CC_Obj)
 	).
 
+/* As of 6/06, magic numbers have the form 17 18 19 N, where N is 
+   6 if it is the start of a Prolog predicate block.
+   7 if the object file is Prolog code
+   8 if the object file is foreign code and was compiled by the seq engine
+   9 if the object file is foreign code and was compiled by the MT engine
+*/
+/* To be called only on .xwam files */
+object_file_magic_mismatch(Obj):- 
+	xsb_configuration(engine_mode,Emode),
+	engine_mode_magic_num(Emode,LastDigit),
+	get_magic_num(Obj,[_,_,_,Four]),
+	Four \== LastDigit.
+
+engine_mode_magic_num('slg-wam',8).
+engine_mode_magic_num('multi-threading',9).
+
+get_magic_num(ObjFile,[One,Two,Three,Four]) :- 
+	file_open(ObjFile,r,Istr),
+	file_get(Istr,One),file_get(Istr,Two),file_get(Istr,Three),file_get(Istr,Four),
+	file_close(Istr).
 
 /*======================================================================*/
 /*  search_module(+FileName, -Dir, -Mod, -SExt, -Base, -Obj)	        */
