@@ -1708,13 +1708,25 @@ contcase:     /* the main loop */
     call_sub(psc);
   XSB_End_Instr()
 
-  XSB_Start_Instr(call_forn,_call_forn)  /* PPP-L, maybe use userfun instr? */
+    /* If using the multi-threaded engine, call the function with the
+       single argument, CTXT; otherwise call a parameterless
+       funcion.  */
+    XSB_Start_Instr(call_forn,_call_forn) {
     Def1op
     Op1(get_xxxl);
     ADVANCE_PC(size_xxxX);
+#ifdef MULTI_THREAD
+    int (*fp)();
+    fp = op1;
+    if (fp(CTXT))  /* call foreign function */
+      lpcreg = cpreg;
+    else Fail1;
+#else
     if (((PFI)op1)())  /* call foreign function */
       lpcreg = cpreg;
     else Fail1;
+#endif
+  }
   XSB_End_Instr()
 
   XSB_Start_Instr(load_pred,_load_pred) /* PPP-S */

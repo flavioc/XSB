@@ -918,6 +918,7 @@ static byte *loader_foreign(char *filename, FILE *fd, int exp)
 
 static int warned_old_obj = 0;	/* warned the user about old object files ? */
 
+/* See description of magic numbers in foreign.P -- Is ...5 obsolete? */
 byte *loader(CTXTdeclc char *file, int exp)
 {
   FILE *fd;	      /* file descriptor */
@@ -942,7 +943,7 @@ byte *loader(CTXTdeclc char *file, int exp)
 
   if (magic_num == 0x11121307 || magic_num == 0x11121305)
     first_inst = loader1(CTXTc fd,exp);
-  else if (magic_num == 0x11121308) {
+  else if (magic_num == 0x11121308 || magic_num == 0x11121309) {
 #ifdef FOREIGN
     first_inst = loader_foreign(file, fd, exp);
 #else

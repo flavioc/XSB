@@ -157,7 +157,6 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
   
   /* (3) find address of function and data objects */
   search_ptr = (Pair)get_data(cur_mod);
-  
   while (search_ptr) {
     name = get_name(search_ptr->psc_ptr);
     
