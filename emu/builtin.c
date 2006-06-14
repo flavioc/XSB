@@ -530,10 +530,8 @@ Cell  val_to_hash(Cell term)
       //a hash value.
       value = (Cell)get_str_psc(term);
       break;
-    case XSB_STRING: /* The following test is a necessary nuisance caused  */
-      /* by the strange (dynamic) compilation of []/0 in an */
-      /* index position which should be fixed one fine day! */
-      value = (Cell)(isnil(term) ? 0 : string_val(term));
+    case XSB_STRING:
+      value = (Cell)(string_val(term));
       break;
     default: xsb_abort("[term_hash/3] Indexing on illegal argument");
       value = 0;

@@ -1616,6 +1616,7 @@ static int hash_val(int Ind, prolog_term Head, int TabSize )
 	    else stk[depth]++;
 	    XSB_Deref(term);
 	    switch (cell_tag(term)) {
+	      /* These must match what's done in val_to_hash, except it goes through structures */
 	    case XSB_FREE:
 	    case XSB_REF1:
 	    case XSB_ATTV:
@@ -1631,10 +1632,18 @@ static int hash_val(int Ind, prolog_term Head, int TabSize )
 	      term = (Cell)(list_pscPair); 
 	      break;
 	    case XSB_STRUCT:
-	      depth++;
-	      argsleft[depth] = get_arity(get_str_psc(term));
-	      stk[depth] = clref_val(term)+1;
-	      term = (Cell)get_str_psc(term);
+	      if (isboxedinteger(term)) {
+		term = (Cell)boxedint_val(term);
+	      } else if (isboxedfloat(term)) {
+		term = int_val(cell(clref_val(term)+1)) ^
+		  int_val(cell(clref_val(term)+2)) ^
+		  int_val(cell(clref_val(term)+3));
+	      } else {
+		depth++;
+		argsleft[depth] = get_arity(get_str_psc(term));
+		stk[depth] = clref_val(term)+1;
+		term = (Cell)get_str_psc(term);
+	      }
 	      break;
 	    case XSB_STRING:
 	      term = (Cell)string_val(term);
