@@ -1185,11 +1185,18 @@ contcase:     /* the main loop */
 	      op1 = (Cell)(list_pscPair); 
 	      break;
 	    case XSB_STRUCT:
-	      depth++;
-              argsleft[depth] = get_arity(get_str_psc(op1));
-              stk[depth] = clref_val(op1)+1;
-	      //op1 = (Cell)get_str_psc(op1);
-	      op1 = struct_hash_value(op1);
+	      if (isboxedinteger(op1)) op1 = (Cell)boxedint_val(op1);
+	      else if (isboxedfloat(op1)) 
+		op1 = int_val(cell(clref_val(op1)+1)) ^
+		  int_val(cell(clref_val(op1)+2)) ^
+		  int_val(cell(clref_val(op1)+3));
+	      else {
+		depth++;
+		argsleft[depth] = get_arity(get_str_psc(op1));
+		stk[depth] = clref_val(op1)+1;
+		//op1 = (Cell)get_str_psc(op1);
+		op1 = struct_hash_value(op1);
+	      }
 	      break;
 	    case XSB_STRING:
 	      op1 = (Cell)string_val(op1);
