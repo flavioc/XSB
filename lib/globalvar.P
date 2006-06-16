@@ -27,27 +27,29 @@
 
 :- import globalvar/1 from machine.
 :- import log_ith/3 from basics.
-:- import (dynamic)/1, assert/1 from assert.
-:- import set_arg/3, term_set_arg/4 from machine.
+:- import (dynamic)/1, assert/1, retract/1 from assert.
+:- import term_set_arg/4 from machine.
+:- import (index)/2 from standard.
 
-:- local '$globalvarmap'/2.
+:- local '$globalvarmap'/2, '$globalvarindex'/1.
 
-:- dynamic '$globalvarmap'/2.
+:- dynamic '$globalvarmap'(_,_).
+:- dynamic '$globalvarindex'(_).
+:- index('$globalvarindex'(_),0).
 
 globalvar(Name,Var) :-
-	globalvar(G),
-	('$globalvarmap'(Name,Index)
-	 ->	true
-	 ;	log_ith(1,G,MaxIndex),
-		(var(MaxIndex)
-		 ->	MaxIndex = maxindex(2),
-			Index = 2
-		 ;	MaxIndex = maxindex(OldIndex),
-			Index is OldIndex + 1,
-			set_arg(MaxIndex,1,Index)
+	( '$globalvarmap'(Name,Index) ->
+		true
+	;
+		( retract('$globalvarindex'(MaxIndex)) ->
+			Index is MaxIndex + 1
+		;
+			Index = 1  %% 0 is used directly by dbclause
 		),
+		assert('$globalvarindex'(Index)),
 		assert('$globalvarmap'(Name,Index))
 	),
+	globalvar(G),
 	log_ith(Index,G,Var).
 
 /* The following predicates are similar to the conset predicates from
