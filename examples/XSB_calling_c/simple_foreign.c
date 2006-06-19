@@ -1,34 +1,26 @@
 #include <stdio.h>
 #include <string.h>
 #include <alloca.h>
+#include <math.h>
 
 #include "cinterf.h"
-
-DllExport int call_conv minus_one(void)
-{
-   int	i;
-
-	i = ptoc_int(1);
-	ctop_int(2, i-1);
-	return TRUE;
-}
 
 /* call as: change_char(+String,+CharPos,+ReplacementString,-ResultString)
    Will take String and replace the character at position CharPos with the
    first character in ReplacementString. Both String and ReplacementString must
    be atoms.
 */
-DllExport int call_conv change_char(void)
+DllExport int call_conv change_char(CTXTdecl)
 {
    char	*str_in; 
    int	pos;
    char *c, *str_out;
 
-	str_in = (char *) ptoc_string(1);
+	str_in = (char *) extern_ptoc_string(1);
 	str_out = (char *) alloca(strlen(str_in)+1);
 	strcpy(str_out, str_in);
-	pos = ptoc_int(2);
-	c = (char *) ptoc_string(3);
+	pos = extern_ptoc_int(2);
+	c = (char *) extern_ptoc_string(3);
 	str_out[pos-1] = c[0];
 
 	/* Now that we have constructed a new symbol, we must ensure that it
@@ -39,10 +31,23 @@ DllExport int call_conv change_char(void)
 	   is no need to use string_find(). 
 	 */
 
-	ctop_string(4, (char *) string_find(str_out,4));
+	extern_ctop_string(4, (char *) string_find(str_out,4));
 
 	return TRUE;
 }
 
+int my_sqrt(CTXTdecl)
+{
+   int i = ptoc_int(1);
 
+   extern_ctop_float(2, (float) pow((double)i, 0.5));
+   return TRUE;
+}
+
+DllExport int call_conv minus_one(CTXTdecl)
+{
+  int i = extern_ptoc_int(1);
+  extern_ctop_int(2,i-1);
+  return TRUE;
+}
 
