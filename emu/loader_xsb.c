@@ -674,7 +674,7 @@ static xsbBool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
 	 get_data(temp_pair->psc_ptr) == NULL)) {
       set_data(temp_pair->psc_ptr, mod);
     }
-    env_type_set(temp_pair->psc_ptr, (t_env&(T_ENV|T_GLOBAL)), t_type, (xsbBool)is_new);
+    env_type_set(temp_pair->psc_ptr, (byte)(t_env&(T_ENV|T_GLOBAL)), t_type, (xsbBool)is_new);
 
     if (is_new || !get_shared(temp_pair->psc_ptr)) {
       if (!(get_ep(temp_pair->psc_ptr)) && (*(pb)get_ep(temp_pair->psc_ptr) == switchonthread))
