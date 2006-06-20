@@ -203,6 +203,10 @@ void total_stat(CTXTdeclc double elapstime) {
   printf("  permanent space %12ld bytes: %12ld in use, %12ld free\n",
 	 pspacetot + trieassert_alloc, pspacetot + trieassert_used,
 	 trieassert_alloc - trieassert_used);
+  if (trieassert_alloc > 0)
+    printf("    trie-asserted                     %12ld         %12ld\n",
+	   trieassert_used,trieassert_alloc-trieassert_used);
+
   for (i=0; i<NUM_CATS_SPACE; i++) 
     if (pspacesize[i] > 0 && i != TABLE_SPACE)
       printf("    %s                      %12ld\n",pspace_cat[i],pspacesize[i]);
@@ -228,7 +232,8 @@ void total_stat(CTXTdeclc double elapstime) {
 	 (unsigned long)complstack.size * K -
 	 ((unsigned long)COMPLSTACKBOTTOM - (unsigned long)top_of_complstk));
   printf("  SLG table space %12ld bytes: %12ld in use, %12ld free\n",
-	 pspacesize[TABLE_SPACE],  pspacesize[TABLE_SPACE]-(tablespace_alloc-tablespace_used),
+	 pspacesize[TABLE_SPACE]-trieassert_alloc,  
+	 pspacesize[TABLE_SPACE]-trieassert_alloc-(tablespace_alloc-tablespace_used),
 	 tablespace_alloc - tablespace_used);
   printf("\n");
 
@@ -401,11 +406,15 @@ void total_stat(CTXTdeclc double elapstime) {
   printf("  permanent space %12ld bytes: %12ld in use, %12ld free\n",
 	 pspacetot + trieassert_alloc, pspacetot + trieassert_used,
 	 trieassert_alloc - trieassert_used);
+  if (trieassert_alloc > 0)
+    printf("    trie-asserted                     %12ld         %12ld\n",
+	   trieassert_used,trieassert_alloc-trieassert_used);
   for (i=0; i<NUM_CATS_SPACE; i++) 
     if (pspacesize[i] > 0 && i != TABLE_SPACE)
       printf("    %s                      %12ld\n",pspace_cat[i],pspacesize[i]);
   printf("  SLG table space %12ld bytes: %12ld in use, %12ld free\n",
-	 pspacesize[TABLE_SPACE],  pspacesize[TABLE_SPACE]-(tablespace_alloc-tablespace_used),
+	 pspacesize[TABLE_SPACE]-trieassert_alloc,  
+	 pspacesize[TABLE_SPACE]-trieassert_alloc-(tablespace_alloc-tablespace_used),
 	 tablespace_alloc - tablespace_used);
   printf("Total             %12ld bytes: %12ld in use, %12ld free\n",
 	 total_alloc, total_used, total_alloc - total_used);
