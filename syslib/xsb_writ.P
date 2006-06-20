@@ -39,13 +39,13 @@
 		/**************************/
 
 % TLS: removed mutex as file_put is locked via file_function.
-% TLS: changed so that we dont use the imprecise and inefficient w_o_l 
-file_nl(File) :- 
-%		(windows_os_loader
-		(xsb_configuration(host_os,windows)
+file_nl(File) :- %xsb_sys_mutex_lock(MUTEX_IO),
+		(windows_os_loader
 		 ->  file_put(File, CH_RETURN), file_put(File, CH_NEWLINE)
 		 ;   file_put(File, CH_NEWLINE)
 		 ).
+%		xsb_sys_mutex_unlock(MUTEX_IO).
+
 
 		/**************************/
 		/*	file_write/2	  */

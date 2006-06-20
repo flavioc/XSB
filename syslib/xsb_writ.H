@@ -41,8 +41,7 @@
 
 %% We must import this from the loader, because this might be called
 %% for the first time before xsb_configuration configuration is loaded.
-%:- import windows_os_loader/0 from loader.
- :- import xsb_configuration/2 from xsb_configuration.
+:- import windows_os_loader/0 from loader.
 
 :- import conget/2, conset/2 from gensym.
 

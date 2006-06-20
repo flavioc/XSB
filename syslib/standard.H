@@ -112,9 +112,9 @@
      from error_handler.
 :- import  check_nonvar_list/3 from error_handler.
 :- import '_$load_undef'/1 from loader.
+:- import windows_os_loader/0 from loader.
 
-:- import xsb_configuration/2 from xsb_configuration.
-:- import call0/1, conname/2,
+ :- import call0/1, conname/2,
           expand_filename/2, gc_stuff/2,is_charlist/1,
           machine_file_exists/1, 
 	  psc_arity/2, psc_import/3, psc_insert/4,

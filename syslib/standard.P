@@ -234,14 +234,7 @@ nl(S_or_A) :-
 	check_open_stream_or_alias(S_or_A,nl/1,1,output,Str),
 	file_nl(Str).
 
-% TLS: changed so that we dont use the imprecise and inefficient w_o_l 
-/*
-| nl :- (windows_os_loader 
-|       ->  put(CH_RETURN), put(CH_NEWLINE)
-|       ;	  put(CH_NEWLINE) ).
-*/
-
-nl :- (xsb_configuration(host_os,windows)
+nl :- (windows_os_loader 
       ->  put(CH_RETURN), put(CH_NEWLINE)
       ;	  put(CH_NEWLINE) ).
 
