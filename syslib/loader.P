@@ -48,19 +48,25 @@
 #include "extensions_xsb.h"
 
 %% Provide tests for the respective OS.
-%% windows_os_loader is used only here and in parse.
+%% windows_os_loader is used only here and in parse (and in nl).
 %% All other modules use windows_os imported from xsb_configuration.
 %% The *_loader version is needed  here because we can''t import 
 %% them from xsb_configuration this early. 
 
+
 windows_os_loader :-  stat_flag(CONFIG_NAME, ConfigurationC),
 	%% convert C string to Prolog
 	intern_string(ConfigurationC, Configuration),
-	\+  str_match('darwin',Configuration,f,_,_),
-	(   str_match('win', Configuration, f, _, _)
-	;   str_match('-nt', Configuration, f, _, _)
-	;   str_match('w95', Configuration, f, _, _)
-	;   str_match('wnt', Configuration, f, _, _) ).
+	(str_match('darwin',Configuration,f,_,_)
+	 ->	fail
+	 ; str_match('win', Configuration, f, _, _)
+	 ->	true
+	 ; str_match('-nt', Configuration, f, _, _)
+	 ->	true
+	 ; str_match('w95', Configuration, f, _, _)
+	 ->	true
+	 ;	str_match('wnt', Configuration, f, _, _)
+	).
 
 %% we duplicate fmt_write_* here because they are used early on, in libpath()
 local_fmt_write_string(S,Fmt,A) :- formatted_io(FMT_WRITE_STRING, S,Fmt,A,_).
