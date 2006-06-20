@@ -323,7 +323,7 @@ VariantSF get_call(CTXTdeclc Cell callTerm, Cell *retTerm) {
 /* Stack for top-down traversing and freeing components of a trie
    -------------------------------------------------------------- */
 
-#define freeing_stack_increment 50
+#define freeing_stack_increment 1000
 
 #define push_node(node) {\
   if (node_stk_top >= freeing_stack_size) {\
@@ -396,7 +396,7 @@ void delete_variant_sf_and_answers(CTXTdeclc VariantSF pSF) {
   } /* free answer trie */
   free_answer_list(pSF);
   FreeProducerSF(pSF);
-  mem_dealloc(freeing_stack,freeing_stack_size,TABLE_SPACE);
+  mem_dealloc(freeing_stack,freeing_stack_size*sizeof(BTNptr),TABLE_SPACE);
 }
 
 /* 
@@ -483,7 +483,7 @@ static void delete_variant_table(CTXTdeclc BTNptr x) {
   }
   TRIE_W_UNLOCK();
 
-  mem_dealloc(freeing_stack,freeing_stack_size,TABLE_SPACE);
+  mem_dealloc(freeing_stack,freeing_stack_size*sizeof(BTNptr),TABLE_SPACE);
 
 }
 
