@@ -87,7 +87,7 @@ ith1([_|L],I1,I,X) :- I2 is I1+1, ith1(L,I2,I,X).
 % the portion of the list-tree structure it needs, so much of it can
 % remain unbound.  For example, after inserting a value into the Kth
 % location in a completely unbound list-tree, the structure constructed
-% is of order log K.
+% is of size of order log K.
 
 % log_ith(Index,ListStr,Element)
 log_ith(K,T,E) :- 
@@ -198,7 +198,7 @@ bintree3(K,[L|R],E,N) :-
 	).
 
 /* logk_ith(+KBase,+Index,?ListStr,?Element) is similar log_ith/3
-except it uses a user specified bake of KBase, which must be between 2
+except it uses a user specified base of KBase, which must be between 2
 and 255.  log_ith uses binary trees with a list cons at each node;
 logk_ith uses a term of arity KBase at each node.  KBase and Index
 must be bound to integers. */
