@@ -1148,7 +1148,7 @@ void init_machine(CTXTdeclc int glsize, int tcpsize,
   cp_ereg(breg) = ereg;
   cp_prevbreg(breg) = breg;               /* note ! */
   cp_pdreg(breg) = delayreg;
-
+  cp_prevtop(breg) = (CPtr)(tcpstack.high) - 1;
 
   /* init trie stuff */
 
