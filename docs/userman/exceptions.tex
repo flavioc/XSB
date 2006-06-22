@@ -272,6 +272,14 @@ as miscellaneous errors rather than as a designated ISO-error type.
 We are, however, in the process of reclassifying errors to their ISO
 types.
 
+When XSB generates a memory exception, it prints out a backtrace and
+exits.  This should be caused only by a bug in XSB or included code.
+The first predicate in the backtrace that is printed in these
+circumstances may be incorrect or redundant.  This is becasue the
+memory structures used to generate the backtrace are not always
+completely consistent, and so an interrupt at an unexpected point may
+result in the use of somewhat inconsistent information.
+
 %---------------------------------------------------------------------------------------
 \section{Predicates to Throw and Handle Errors}
 \label{sec:errorpredicates}
@@ -518,7 +526,7 @@ For users who write their own error handlers, the following predicates
 can be used to manipulate backtraces.
 
 \begin{description}
-\ournewitem{xsb\_backtrace(-Backtrace)}{error\_handler}
+\ournewitem{xsb\_backtrace(-Backtrace)}{machine}
 \index{\texttt{xsb\_backtrace/1}}
 Upon success {\tt Backtrace} is bound to a structure indicating the
 forward continuations for a point of execution.  This structure should
