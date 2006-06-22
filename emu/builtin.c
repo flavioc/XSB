@@ -2745,7 +2745,7 @@ void remove_prog_seg(byte *code_addr) {
   ubi_btNodePtr oldNodePtr;
 
   oldNodePtr = ubi_sptFind(RootPtr,&code_addr);
-  if (oldNodePtr == NULL) printf("Error: code to delete not found: %p\n", code_addr);
+  if (oldNodePtr == NULL) fprintf(stdout,"Error: code to delete not found: %p\n", code_addr);
   else {
     //    printf("Removing segment for: %s/%d\n",get_name(oldNodePtr->code_psc),get_arity(oldNodePtr->code_psc));
     if (oldNodePtr->i_count != 0)
@@ -2820,10 +2820,10 @@ int print_xsb_backtrace(CTXTdecl) {
   CPtr tmp_ereg, tmp_breg;
   if (xsb_profiling_enabled) {
     // print forward continuation
-    printf("Forward Continuation...\n");
+    fprintf(stdout,"Forward Continuation...\n");
     tmp_psc = psc_from_code_addr(pcreg);
-    if (tmp_psc) printf("... %s/%d,  pc=%p\n",get_name(tmp_psc),get_arity(tmp_psc),pcreg);
-    else printf("...unknown/?,  pc=%p\n",pcreg);
+    if (tmp_psc) fprintf(stdout,"... %s/%d,  pc=%p\n",get_name(tmp_psc),get_arity(tmp_psc),pcreg);
+    else fprintf(stdout,"...unknown/?,  pc=%p\n",pcreg);
     tmp_ereg = ereg;
     tmp_cpreg = cpreg;
     instruction = *(tmp_cpreg-2*sizeof(Cell));
@@ -2831,36 +2831,36 @@ int print_xsb_backtrace(CTXTdecl) {
       if (instruction == call) {
 	called_psc = *((Psc *)tmp_cpreg - 1);
 	if (called_psc != tmp_psc) {
-	  printf("..* %s/%d,  pc=%p\n",get_name(called_psc),get_arity(called_psc),get_ep(called_psc));
+	  fprintf(stdout,"..* %s/%d,  pc=%p\n",get_name(called_psc),get_arity(called_psc),get_ep(called_psc));
 	}
       }
       tmp_psc = psc_from_code_addr(tmp_cpreg);
-      if (tmp_psc) printf("... %s/%d,  pc=%p\n",get_name(tmp_psc),get_arity(tmp_psc),tmp_cpreg);
-      else printf("... unknown/?,  pc=%p\n",tmp_cpreg);
+      if (tmp_psc) fprintf(stdout,"... %s/%d,  pc=%p\n",get_name(tmp_psc),get_arity(tmp_psc),tmp_cpreg);
+      else fprintf(stdout,"... unknown/?,  pc=%p\n",tmp_cpreg);
       tmp_cpreg = *((byte **)tmp_ereg-1);
       tmp_ereg = *(CPtr *)tmp_ereg;
       instruction = *(tmp_cpreg-2*sizeof(Cell));
     }
 
     // print backward continuation
-    printf("Backward Continuation...\n");
+    fprintf(stdout,"Backward Continuation...\n");
     tmp_breg = breg;
     while (tmp_breg && tmp_breg != cp_prevbreg(tmp_breg)) {
       tmp_psc = psc_from_code_addr(cp_pcreg(tmp_breg));
-      if (tmp_psc) printf("... %s/%d,  pc=%p, hreg=%p\n",
+      if (tmp_psc) fprintf(stdout,"... %s/%d,  pc=%p, hreg=%p\n",
 			  get_name(tmp_psc),get_arity(tmp_psc),cp_pcreg(tmp_breg),cp_hreg(tmp_breg));
-      else printf("... unknown/?,  i=%x, pc=%p\n",*cp_pcreg(tmp_breg),cp_pcreg(tmp_breg));
+      else fprintf(stdout,"... unknown/?,  i=%x, pc=%p\n",*cp_pcreg(tmp_breg),cp_pcreg(tmp_breg));
       tmp_breg = cp_prevbreg(tmp_breg);
     }
   } else {
-    printf("Partial Forward Continuation...\n");
+    fprintf(stdout,"Partial Forward Continuation...\n");
     tmp_ereg = ereg;
     tmp_cpreg = cpreg;
     instruction = *(tmp_cpreg-2*sizeof(Cell));
     while (tmp_cpreg && (instruction == call || instruction == trymeorelse)) {
       if (instruction == call) {
 	called_psc = *((Psc *)tmp_cpreg - 1);
-	printf("... %s/%d\n",get_name(called_psc),get_arity(called_psc));
+	fprintf(stdout,"... %s/%d\n",get_name(called_psc),get_arity(called_psc));
       }
       tmp_cpreg = *((byte **)tmp_ereg-1);
       tmp_ereg = *(CPtr *)tmp_ereg;
