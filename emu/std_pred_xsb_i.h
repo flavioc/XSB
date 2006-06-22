@@ -129,7 +129,7 @@ inline static xsbBool arg_builtin(CTXTdecl)
     if ((disp = int_val(index)) > 0) {
       term = ptoc_tag(CTXTc 2);
       if (isnonvar(term)) {
-	if (isconstr(term)) {
+	if (isconstr(term) && !isboxedinteger(term) && !isboxedfloat(term)) {
 	  if (disp <= (int)get_arity(get_str_psc(term))) {
 	    return unify(CTXTc (Cell)(clref_val(term)+disp),
 			 ptoc_tag(CTXTc 3));
