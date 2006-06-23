@@ -194,7 +194,8 @@ extern "C" {
 
 #define extern_p2p_arg(term,argno) p2p_arg(term,argno)
 #define extern_p2p_car(term) p2p_car(term)
-#define extern_p2p_cdf(term) p2p_cdf(term)
+#define extern_p2p_cdr(term) p2p_cdr(term)
+#define extern_p2p_deref(term) p2p_deref(term)
 #define extern_p2p_new() p2p_new(CTXT)
 #define extern_p2p_unify(term1, term2) p2p_unify(CTXTc term1, term2)
 
