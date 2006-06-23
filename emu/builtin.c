@@ -542,6 +542,55 @@ Cell  val_to_hash(Cell term)
 
 /* -------------------------------------------------------------------- */
 
+Cell  det_val_to_hash(Cell term)
+{
+  Cell value;
+  Psc psc;
+
+  switch(cell_tag(term)) {
+    case XSB_INT:
+      value = (Cell)int_val(term);
+      break;
+    case XSB_FLOAT:
+      value = (Cell)int_val(term);
+      break;
+    case XSB_LIST:
+      value = (Cell)(list_pscPair);
+      break;
+    case XSB_STRUCT:
+      //to make a hash val for a boxed int, we take the int value inside the box and cast it
+      //to a Cell.
+      if (isboxedinteger(term))
+      {
+          value = (Cell)boxedint_val(term);
+          break;
+      }
+      //to make a hash val for a boxed float, we take the int values inside the 3 boxes for
+      //the float bits, and XOR them together
+      else if (isboxedfloat(term))
+      {
+          value = int_val(cell(clref_val(term)+1)) ^
+                    int_val(cell(clref_val(term)+2)) ^
+                    int_val(cell(clref_val(term)+3));
+          break;
+      }
+      //but if this structure isn't any special boxed representation, then we hash its name for
+      //a hash value.
+      psc = get_str_psc(term);
+      value = hash(get_name(psc),get_arity(psc),4194301);
+      break;
+    case XSB_STRING:
+      value = hash(string_val(term),0,4194301);
+      break;
+    default: xsb_abort("[term_hash/3] Indexing on illegal argument");
+      value = 0;
+      break;
+  }
+  return value;
+}
+
+/* -------------------------------------------------------------------- */
+
 static int ground(CTXTdeclc CPtr temp)
 {
  int j, arity;
@@ -1565,7 +1614,7 @@ int builtin_call(CTXTdeclc byte number)
   case TERM_HASH:		/* R1: +Term	*/
 				/* R2: +Size (of hash table) */
 				/* R3: -HashVal */
-    ctop_int(CTXTc 3, ihash(val_to_hash(ptoc_tag(CTXTc 1)),ptoc_int(CTXTc 2)));
+    ctop_int(CTXTc 3, ihash(det_val_to_hash(ptoc_tag(CTXTc 1)),ptoc_int(CTXTc 2)));
     break;
   case UNLOAD_SEG:	/* R1: -Code buffer */
     unload_seg((pseg)ptoc_int(CTXTc 1));
