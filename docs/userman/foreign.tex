@@ -237,27 +237,104 @@ no
 \end{small}
 
 Consider the function {\tt minus\_one()} above.  As discussed, it
-takes a context parameter, and returns an integer, and as can be seen
-the return values can be specified by the macros {\tt TRUE} and {\tt
-  FALSE}.  From the Prolog perspective the first argument to {\tt
-  minus\_one/2} is an (integer) input argument, while the second is an
-(integer) output argument.  Input arguments for basic C types are
-translated from their Prolog representation to a C representation by
-functions of the form \verb|extern\_ptoc\_<type>()| -- here {\tt
-  extern\_ctop\_int()}.  The single parameter of such a function is
-the number of the Prolog argument that is to be transformed and the
-function returns the C representation.  Output arguments are converted
-from C to Prolog by corresponding functions of the form
-\verb|extern\_ctop\_<type>()| -- here {\tt extern\_ctop\_int()}.  For
-coverting C back to Prolog, the first parameter of {\tt
-  extern\_ctop\_int()} is the number of the Prolog argument to be
-transformed and the second is the C value to be transformed.
+takes a context parameter (explained below), and returns an integer,
+and as can be seen the return values can be specified by the macros
+{\tt TRUE} and {\tt FALSE}.  From the Prolog perspective the first
+argument to {\tt minus\_one/2} is an (integer) input argument, while
+the second is an (integer) output argument.  Input arguments for basic
+C types are translated from their Prolog representation to a C
+representation by functions of the form \verb|extern\_ptoc\_<type>()|
+-- here {\tt extern\_ctop\_int()}.  The single parameter of such a
+function is the number of the Prolog argument that is to be
+transformed and the function returns the C representation.  Output
+arguments are converted from C to Prolog by corresponding functions of
+the form \verb|extern\_ctop\_<type>()| -- here {\tt
+  extern\_ctop\_int()}.  For coverting C back to Prolog, the first
+parameter of {\tt extern\_ctop\_int()} is the number of the Prolog
+argument to be transformed and the second is the C value to be
+transformed.
 
 The above example illustrates the exchange of {\em basic} types
 through the lower-level interface -- e.g. atoms, integers, and
 floating-point numbers.  The lower-level interface alsoallows a user
 to pass lists and terms between XSB and C as will be discussed in
 Section~\ref{extern_c2p_p2p_p2c}.
+
+\subsection{Context Parameters}
+
+When using the lower-level interface, {\em context parameters} must be
+added to many C functions in order for the functions to be used with
+XSB's multi-threaded engine.  In the multi-threaded engine, variables
+for Prolog's virtual machine, as well as for thread-private data
+structures are stored in a {\em context structure}.  This context
+structure must be passed to any functions that need to access elements
+of a thread's virtual machine -- including many of the functions that
+are used to exchange data between Prolog and C.  On the other hand, in
+the single-threaded engine virtual machine elements are kept in static
+variables, so that context parameters are not required.
+
+The lower-level C interface makes use of a set of macros to address
+the requirements of the different engines.  The data exchange
+functions discussed in this chapter, {\tt extern\_ptoc\_xxx}, {\tt
+  extern\_ctop\_xxx}, {\tt extern\_c2p\_xxx}, {\tt extern\_p2c\_xxx},
+and {\tt extern\_p2p\_xxx} usually, but not always, require
+information about a threads virtual machine state.  The {\tt extern}
+``functions'' of the lower-level API do not require context parameters
+themselves because they are actually macros to functions that use
+context parameters.  While a user of the lower-level C interface does
+not need to keep track of context parameters within the data exchange
+functions, it is import to note that {\em any C function that directly
+  or indirectly calls a data interchange function, must have a context
+  parameter in its declaration, calls, and prototypes} in order to be
+used by the multi-threaded engine.  These context parameters have the
+following forms:
+
+\begin{itemize}
+\item In function {\em declarations}, use the macro {\tt CTXTdecl} in
+  the code for a function that would otherwise be {\tt void}, and {\tt
+    CTXTdeclc} as the first argument in the code for a function with
+  parameters ({\tt CTXTdeclc} and {\tt CTXTdecl} are similar, except
+  that macro expansion of {\tt CTXTdeclc} for the multi-threaded
+  engine includes a comma).  The example for {\tt
+    minus\_one(CTXTdecl)} shows use of this macro.
+
+\item In function {\em calls} use the macro {\tt CTXT} in the code for
+  a function that would otherwise be {\tt void}, and {\tt CTXTc} as
+  the first argument in the code for a function with parameters.  As
+  an example, a call to {\tt minus\_one} would have the form {\tt
+    minus\_one(CTXT)}.
+
+\item In function {\em prototypes} use the macro {\tt CTXTdecltype} in
+  the code for a function that would otherwise be {\tt void}, and {\tt
+    CTXTdecltypec} as the first argument in the code for a function
+  with parameters.  As an example, a prototype for {\tt minus\_one}
+  would have the form {\tt minus\_one(CTXTdecltype)}.
+
+\end{itemize}
+
+Fortunately, when compiling with the multi-threaded engine, it is easy
+to determine at compile time whether context parameters are correct.
+If compilation of a function {\tt foo} gives an error along the lines
+of:
+%
+\begin{verbatim} 
+  foofile.c: In function `foo':
+  foofile.c:109: error: `th' undeclared (first use in this function)
+\end{verbatim}
+%
+Then the declaration of {\tt foo} omitted a context parameter.  If
+compilation gives an error along the lines of 
+%
+\begin{verbatim} 
+  foofile.c: In function `foo_caller':
+  :
+  foofile.c:149: error: too few arguments to function `foo'
+\end{verbatim}
+Then the call to {\tt foo} may have omitted a context parameter.
+
+Note that context parameters are {\em only} necessary if the
+lower-level interface is used.  The higher-level interface
+automatically generates any context parameters it needs.
 
 \subsection{Exchanging Basic Data Types}
 
