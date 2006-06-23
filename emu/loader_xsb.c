@@ -881,6 +881,9 @@ static byte *loader1(CTXTdeclc FILE *fd, int exp)
 /************************************************************************/
 
 #ifdef FOREIGN
+
+/* ldoption is specified in .H file and indicates library files, etc
+   that need to be loaded. */
 static byte *loader_foreign(char *filename, FILE *fd, int exp)
 {
   byte name_len, *instr;

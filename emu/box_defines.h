@@ -56,6 +56,6 @@
 		)										
 #define FLOAT_LOW_24_BITS(float) (((UInteger)(*(((UInteger *)((void *)(& float)))+1))) & LOW_24_BITS_MASK)
 
- #endif
+#endif
  
- #endif
+#endif

@@ -166,7 +166,8 @@ extern "C" {
 #define extern_ctop_abs(reg_num,val) ctop_abs(CTXTc reg_num,val) 
 #define extern_ctop_float(reg_num, val) ctop_float(CTXTc reg_num, val) 
 #define extern_ctop_int(reg_num,val) ctop_int(CTXTc reg_num,val) 
-#define extern_ctop_string(reg_num,val) ctop_string(CTXTc reg_num,val) 
+#define extern_ctop_string(reg_num,val) \
+  ctop_string(CTXTc reg_num,string_find(val,1)) 
 
 #define extern_ptoc_abs(reg_num) ptoc_abs(CTXTc reg_num) 
 #define extern_ptoc_float(reg_num) ptoc_float(CTXTc reg_num) 
@@ -174,18 +175,28 @@ extern "C" {
 #define extern_ptoc_longstring(reg_num) ptoc_longstring(CTXTc reg_num) 
 #define extern_ptoc_string(reg_num) ptoc_string(CTXTc reg_num) 
 
-  /* dont need p2c_functor, p2c_arity, p2p_arg */
-#define extern_c2p_functor(functor,arity,var) c2p_functor(CTXTc functor,arity,var)
+#define extern_c2p_chars(cstr, regs_to_protect, pterm) \
+  c2p_chars(CTXTc cstr, regs_to_protect, pterm) 
+#define extern_c2p_float(dbl, pterm)  c2p_float(CTXTc dbl, pterm)
+#define extern_c2p_functor(functor,arity,var) \
+  c2p_functor(CTXTc functor,arity,var)
+#define extern_c2p_int(pint,pterm) c2p_int(CTXTc pint, pterm)
 #define extern_c2p_list(var) c2p_list(CTXTc var)
 #define extern_c2p_nil(var) c2p_nil(CTXTc var)
 #define extern_c2p_string(val,var) c2p_string(CTXTc val,var)
 
 #define extern_p2c_arity(term) p2c_arity(term)
+#define extern_p2c_chars(term,cptr,pint) p2c_chars(CTXTc term,cptr,pint)
+#define extern_p2c_float(term) p2c_float(term)
 #define extern_p2c_functor(term) p2c_functor(term)
+#define extern_p2c_int(term) p2c_int(term)
+#define extern_p2c_string(term) p2c_string(term)
 
 #define extern_p2p_arg(term,argno) p2p_arg(term,argno)
-#define extern_p2p_unify(term1, term2) p2p_unify(CTXTc term1, term2)
+#define extern_p2p_car(term) p2p_car(term)
+#define extern_p2p_cdf(term) p2p_cdf(term)
 #define extern_p2p_new() p2p_new(CTXT)
+#define extern_p2p_unify(term1, term2) p2p_unify(CTXTc term1, term2)
 
 #define extern_print_pterm(Cell, int, VS) print_pterm(CTXTc Cell, int, VS)
 
