@@ -1,32 +1,32 @@
 ##############################################################################
-#									     #
-# This is a Makefile for making the XSB emu directory.			     #
-# It has two main entries: xsb and xsbora. The latter for generating	     #
-# executables with oracle support.					     #
-# The EXECUTABLE variable is set by the top make file, build/Makefile	     #
-#									     #
+#                                                                            #
+# This is a Makefile for making the XSB emu directory.                       #
+# It has two main entries: xsb and xsbora. The latter for generating         #
+# executables with oracle support.                                           #
+# The EXECUTABLE variable is set by the top make file, build/Makefile        #
+#                                                                            #
 ##############################################################################
 
 ## File:      emuMakefile.in
 ## Author(s): kifer (adapted from the original XSB makefile)
 ## Copyright (C) The Research Foundation of SUNY, 1998
-## 
+##
 ## XSB is free software; you can redistribute it and/or modify it under the
 ## terms of the GNU Library General Public License as published by the Free
 ## Software Foundation; either version 2 of the License, or (at your option)
 ## any later version.
-## 
+##
 ## XSB is distributed in the hope that it will be useful, but WITHOUT ANY
 ## WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 ## FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
 ## more details.
-## 
+##
 ## You should have received a copy of the GNU Library General Public License
 ## along with XSB; if not, write to the Free Software Foundation,
 ## Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 ##
 ## $Id$
-## 
+##
 
 
 CC=@CC@
@@ -50,11 +50,11 @@ JAVA_PLATFORM_HEADER_PATH=@JAVA_PLATFORM_HEADER_PATH@
 SHAREDLIB_EXTENSION=@DYNMOD_SHAREDLIB_EXTENSION@
 DYNMOD_LINKFLAGS=@DYNMOD_LINKFLAGS@
 
-# For mno-cygwin 
+# For mno-cygwin
 # -mdll option is needed so that MSVC files could link to dll
-# however for old cygwin versions -dll option is used  
+# however for old cygwin versions -dll option is used
 DLLNAME=xsb.dll
-DLL_LIBS=$(LDFLAGS) 
+DLL_LIBS=$(LDFLAGS)
 LIB_OBJECTS=xsb.o dllinit_xsb.o
 BASE_FILE=xsb.base
 DEF_FILE=$(arch_config_prefix)/saved.o/xsb.def
@@ -72,11 +72,11 @@ LINKFLAGS=@LINKFLAGS@
 @SET_MAKE@
 
 
-# just to be sure the sh is used 
+# just to be sure the sh is used
 SHELL=/bin/sh
 
 
-# The default location for installation. 
+# The default location for installation.
 prefix=@prefix@
 # where sources are
 srcdir=@topdir@
@@ -110,7 +110,7 @@ SRCS =	auxlry.c biassert.c builtin.c cinterf.c conc_compl.c \
 	heap_xsb.c init_xsb.c inst_xsb.c io_builtins_xsb.c \
 	loader_xsb.c main_xsb.c memory_xsb.c orient_xsb.c \
 	pathname_xsb.c psc_xsb.c random_xsb.c \
-        remove_unf.c residual.c rw_lock.c \
+		remove_unf.c residual.c rw_lock.c \
 	scc_xsb.c slgdelay.c socket_xsb.c string_xsb.c \
 	storage_xsb.c struct_manager.c sub_delete.c subp.c \
 	system_xsb.c table_stats.c tables.c \
@@ -130,7 +130,7 @@ OBJS =	auxlry.o biassert.o builtin.o cinterf.o conc_compl.o \
 	heap_xsb.o init_xsb.o inst_xsb.o io_builtins_xsb.o \
 	loader_xsb.o memory_xsb.o orient_xsb.o \
 	pathname_xsb.o psc_xsb.o random_xsb.o \
-        remove_unf.o residual.o rw_lock.o \
+		remove_unf.o residual.o rw_lock.o \
 	scc_xsb.o slgdelay.o socket_xsb.o string_xsb.o \
 	storage_xsb.o struct_manager.o sub_delete.o subp.o \
 	system_xsb.o table_stats.o tables.o \
@@ -146,17 +146,22 @@ ORAOBJS = $(OBJS) orastuff.o
 
 allORAOBJS = $(allOBJS) orastuff.o
 
-xsb:: $(allOBJS)
-	@echo ""; echo "Making XSB executable $(EXECUTABLE) "; echo ""
-	cd $(emudir); \
-	$(CC) -o $(EXECUTABLE) $(allOBJS) $(LDFLAGS) 
+init::
+	@echo -e "\nCompiling XSB with $(CC) using $(CFLAGS)\n"
 
-xsbora:: $(allORAOBJS)
+xsb:: init $(allOBJS)
+	@echo ""; echo "Making XSB executable $(EXECUTABLE) "; echo ""
+	@echo -e "\t[$(CC)] -o $(EXECUTABLE)"
+	@cd $(emudir); \
+		$(CC) -o $(EXECUTABLE) $(allOBJS) $(LDFLAGS)
+
+xsbora:: init $(allORAOBJS)
 	@echo ""; \
 	  echo "Making XSB executable $(EXECUTABLE) with support for Oracle"; \
 	  echo ""
-	cd $(emudir); \
-	$(CC) -o $(EXECUTABLE) $(allORAOBJS) $(LDFLAGS)
+	@echo -e "\t[$(CC)] -o $(EXECUTABLE)"
+	@cd $(emudir); \	
+		$(CC) -o $(EXECUTABLE) $(allORAOBJS) $(LDFLAGS)
 
 # Goal for making an XSB load module to be linked with external
 # C-drivers that pass queries to XSB
@@ -164,12 +169,12 @@ xsbmod:: $(OBJS) ${ODBCOBJ} ${INTERPROLOGOBJ}
 	@echo ""; \
 	   echo "Making a C-callable XSB module $(arch_config_objlibdir)/xsb.o"; \
 	   echo ""
-	@LD@ -o xsb.o $(LINKFLAGS) -r $(OBJS) ${ODBCOBJ} ${INTERPROLOGOBJ}
+	@@LD@ -o xsb.o $(LINKFLAGS) -r $(OBJS) ${ODBCOBJ} ${INTERPROLOGOBJ}
 	@cp xsb.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 xsbdynmod::
-	echo "Making XSB Shared Library $(bindir)/libxsb.$(SHAREDLIB_EXTENSION)"
-	@LD@ -o libxsb.$(SHAREDLIB_EXTENSION) $(DYNMOD_LINKFLAGS)  -faltivec -fPIC $(LINKFLAGS)  $(OBJS) ${ODBCOBJ} ${INTERPROLOGOBJ} -lm
+	@echo "Making XSB Shared Library $(bindir)/libxsb.$(SHAREDLIB_EXTENSION)"
+	@@LD@ -o libxsb.$(SHAREDLIB_EXTENSION) $(DYNMOD_LINKFLAGS)  -faltivec -fPIC $(LINKFLAGS)  $(OBJS) ${ODBCOBJ} ${INTERPROLOGOBJ} -lm
 	@cp libxsb.$(SHAREDLIB_EXTENSION) $(bindir) 2>/dev/null || echo ""
 
 # same as xsbmod, but with oracle support
@@ -177,12 +182,12 @@ xsboramod:: $(ORAOBJS)
 	@echo ""; \
 	   echo "Making a C-callable XSB module $(arch_config_objlibdir)/xsb.o with support for Oracle"; \
 	   echo ""
-	@LD@ -o xsb.o $(LINKFLAGS) -r $(ORAOBJS)
+	@@LD@ -o xsb.o $(LINKFLAGS) -r $(ORAOBJS)
 	@cp xsb.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 
 depend::
-	$(DEPEND) $(DEPENDFLAGS) -- -I$(arch_config_prefix)  -I$(JAVA_PLATFORM_HEADER_PATH) -I$(JAVA_HEADER_PATH) $(CFLAGS) -- $(SRCS) $(ODBCSRC) ${INTERPROLOGSRC}
+	@$(DEPEND) $(DEPENDFLAGS) -- -I$(arch_config_prefix)  -I$(JAVA_PLATFORM_HEADER_PATH) -I$(JAVA_HEADER_PATH) $(CFLAGS) -- $(SRCS) $(ODBCSRC) ${INTERPROLOGSRC}
 
 #
 # create a new DLL library in cygwin (compiled with -mno-cygwin) environment
@@ -199,16 +204,17 @@ dll: $(DLLTYPE)
 nodll:
 
 cygdll: $(allOBJS) $(HEADERS) xsbmod
-	chmod ugo+x $(arch_config_prefix)/makedef.sh
-	$(CC) -I$(arch_config_prefix) -c $(CFLAGS) dllinit_xsb.cc
+	@chmod ugo+x $(arch_config_prefix)/makedef.sh
+	@$(CC) -I$(arch_config_prefix) -c $(CFLAGS) dllinit_xsb.cc
 	@cp dllinit_xsb.o $(arch_config_objlibdir) 2> /dev/null || echo ""
-	$(arch_config_prefix)/makedef.sh $(allOBJS) dllinit_xsb.o
+	@$(arch_config_prefix)/makedef.sh $(allOBJS) dllinit_xsb.o
 	@mv out.def $(DEF_FILE)
-	$(CC) -mno-cygwin -shared -o $(DLLNAME) $(LIB_OBJECTS) $(DEF_FILE) -Wl,--out-implib=xsb.a $(DLL_LIBS) -e $(ENTRY_FUNCTION)
+	@$(CC) -mno-cygwin -shared -o $(DLLNAME) $(LIB_OBJECTS) $(DEF_FILE) -Wl,--out-implib=xsb.a $(DLL_LIBS) -e @$(ENTRY_FUNCTION)
 	@mv $(DLLNAME) $(bindir) 2> /dev/null || echo ""
 	@mv $(LIB_FILE) $(bindir) 2> /dev/null || echo ""
 	@rm -f $(BASE_FILE) 2> /dev/null || echo ""
-	$(CC) -o $(arch_config_prefix)/bin/xsb.exe  $(CFLAGS) \
+	@echo -e "\t[$(CC)] -o $(arch_config_prefix)/bin/xsb.exe"
+	@$(CC) -o $(arch_config_prefix)/bin/xsb.exe  $(CFLAGS) \
 		-I$(arch_config_prefix) -L$(arch_config_prefix)/bin \
 		main_xsb.c $(LINKFLAGS) $(DLL_LIBS) -lxsb
 
@@ -218,36 +224,44 @@ cygdll: $(allOBJS) $(HEADERS) xsbmod
 #=======================================================================
 
 interprolog_callback.o: interprolog_callback.c
-	$(CC) -c -I$(arch_config_prefix) -I$(JAVA_PLATFORM_HEADER_PATH) -I$(JAVA_HEADER_PATH) $(CFLAGS) interprolog_callback.c
+	@echo -e "\t[$(CC)] interprolog_callback.c"
+	@$(CC) -c -I$(arch_config_prefix) -I$(JAVA_PLATFORM_HEADER_PATH) -I$(JAVA_HEADER_PATH) $(CFLAGS) interprolog_callback.c
 	@cp interprolog_callback.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 init_xsb.o: init_xsb.c
-	$(CC) -I$(arch_config_prefix)  -c $(CFLAGS) init_xsb.c
+	@echo -e "\t[$(CC)] init_xsb.c"
+	@$(CC) -I$(arch_config_prefix)  -c $(CFLAGS) init_xsb.c
 	@cp init_xsb.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 dynload.o: dynload.c
-	$(CC) -I$(arch_config_prefix)  -c $(CFLAGS) dynload.c
+	@echo -e "\t[$(CC)] dynload.c"
+	@$(CC) -I$(arch_config_prefix)  -c $(CFLAGS) dynload.c
 	@cp dynload.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 emuloop.o: emuloop.c
-	$(CC) -I$(arch_config_prefix)  -c $(emuloopCFLAGS) emuloop.c
+	@echo -e "\t[$(CC)] emuloop.c using $(emuloopCFLAGS)"
+	@$(CC) -I$(arch_config_prefix)  -c $(emuloopCFLAGS) emuloop.c
 	@cp emuloop.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 # Higher optimization level has problem with some versions of gcc
 tr_utils.o: tr_utils.c
-	$(CC) -I$(arch_config_prefix)  -c $(trutilsCFLAGS) tr_utils.c
+	@echo -e "\t[$(CC)] tr_utils.c using $(trutilsCFLAGS)"
+	@$(CC) -I$(arch_config_prefix)  -c $(trutilsCFLAGS) tr_utils.c
 	@cp tr_utils.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 builtin.o: builtin.c
-	$(CC) -I$(arch_config_prefix)  -c $(builtinsCFLAGS) builtin.c
+	@echo -e "\t[$(CC)] builtin.c using $(builtinsCFLAGS)"
+	@$(CC) -I$(arch_config_prefix)  -c $(builtinsCFLAGS) builtin.c
 	@cp builtin.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 loader_xsb.o: loader_xsb.c
-	$(CC) -I$(arch_config_prefix)  -c $(loaderCFLAGS) loader_xsb.c
+	@echo -e "\t[$(CC)] loader_xsb.c using $(loaderCFLAGS)"
+	@$(CC) -I$(arch_config_prefix)  -c $(loaderCFLAGS) loader_xsb.c
 	@cp loader_xsb.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 .c.o:
-	$(CC) -I$(arch_config_prefix)  -c $(CFLAGS) $*.c
+	@echo -e "\t[$(CC)] $*.c"
+	@$(CC) -I$(arch_config_prefix)  -c $(CFLAGS) $*.c
 	@cp $*.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 
