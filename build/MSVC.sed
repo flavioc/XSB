@@ -11,13 +11,13 @@ s,/,\\,g
 s,^@@@\([^:]*\):,"$(OBJDIR)\\\1" : $(SOURCE),
 # prepend {$(INTDIR)} to every .h file -- seems unnecessary, so comment out
 #s, \([^ ]*\.h\), {$(INTDIR)}"\\\1",g
-s/$/ "$(INTDIR)"/
+s/$/\n/
 x
 G
 # append CPP line
-a\
-   $(CPP) $(CPP_PROJ) $(SOURCE)\
-\
+#a\
+#   $(CPP) $(CPP_PROJ) $(SOURCE)\
+#\
 
 }
 
