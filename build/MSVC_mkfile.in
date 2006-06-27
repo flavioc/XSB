@@ -17,59 +17,59 @@
 
 !IF "$(CFG)" == ""
 CFG=release
-!ENDIF 
+!ENDIF
 
 !IF "$(CFG)" != "release" && "$(CFG)" != "debug"
 !MESSAGE Invalid configuration "$(CFG)" specified.
 !MESSAGE You can specify a configuration when running NMAKE on this makefile
 !MESSAGE by defining the macro CFG on the command line.  For example:
-!MESSAGE 
+!MESSAGE
 !MESSAGE NMAKE /f "MS_VC_Mfile.mak" CFG="debug"
-!MESSAGE 
+!MESSAGE
 !MESSAGE Possible choices for configuration (CFG) are:
-!MESSAGE 
+!MESSAGE
 !MESSAGE "release"
 !MESSAGE "debug"
 !MESSAGE ""  (defaults to "release")
-!MESSAGE 
+!MESSAGE
 !ERROR An invalid configuration is specified.
-!ENDIF 
+!ENDIF
 
 !IF "$(DLL)" != "yes" && "$(DLL)" != "no" && "$(DLL)" != ""
 !MESSAGE Invalid macro DLL="$(DLL)" specified.
 !MESSAGE This macro controls whether you want XSB to be built as a DLL.
 !MESSAGE For example:
-!MESSAGE 
+!MESSAGE
 !MESSAGE NMAKE /f "MS_VC_Mfile.mak" CFG="debug" DLL="yes"
-!MESSAGE 
+!MESSAGE
 !MESSAGE Possible choices for the DLL macro are:
-!MESSAGE 
+!MESSAGE
 !MESSAGE "yes"
 !MESSAGE "no"
 !MESSAGE ""
-!MESSAGE 
+!MESSAGE
 !ERROR An invalid value for the DLL macro specified.
-!ENDIF 
+!ENDIF
 
 !IF "$(ORACLE)" != "yes" && "$(ORACLE)" != "no" && "$(ORACLE)" != ""
 !MESSAGE Invalid macro ORACLE="$(ORACLE)" specified.
 !MESSAGE This macro controls whether you want XSB to be built
 !MESSAGE with support for ORACLE. For example:
-!MESSAGE 
+!MESSAGE
 !MESSAGE NMAKE /f "MS_VC_Mfile.mak" CFG="release" && ORACLE="yes"
-!MESSAGE 
+!MESSAGE
 !MESSAGE Possible choices for the ORACLE macro are:
-!MESSAGE 
+!MESSAGE
 !MESSAGE "yes"
 !MESSAGE "no"
 !MESSAGE ""
-!MESSAGE 
+!MESSAGE
 !ERROR An invalid value for the ORACLE macro specified.
-!ENDIF 
+!ENDIF
 
 !IF "$(CALLCONV)" != "cdecl" && "$(CALLCONV)" != "stdcal" && "$(CALLCONV)" != ""
 !MESSAGE Invalid value for option CALLCONV specified.
-!MESSAGE This option controls the calling convention used for 
+!MESSAGE This option controls the calling convention used for
 !MESSAGE the XSB DLL and foreign-language predicates
 !MESSAGE
 !MESSAGE Valid choices are:
@@ -77,7 +77,7 @@ CFG=release
 !MESSAGE "stdcal" -> use the WINDOWS API native calling convention
 !MESSAGE
 !ERROR Invalid value for CALLCONV specified.
-!ENDIF 
+!ENDIF
 
 !IF "$(DLL)" == ""
 DLL=yes
@@ -93,9 +93,9 @@ ORACLE=no
 
 !IF "$(OS)" == "Windows_NT"
 NULL=
-!ELSE 
+!ELSE
 NULL=nul
-!ENDIF 
+!ENDIF
 
 ################################################################################
 # Begin Project
@@ -155,7 +155,7 @@ ALL:: "$(OUTDIR)\xsb.exe"
 
 SOCKET_LIBRARY=wsock32.lib
 
-CLEAN : 
+CLEAN :
 	-@erase "$(OBJDIR)\gpp.obj"
 	-@erase "$(OBJDIR)\auxlry.obj"
 	-@erase "$(OBJDIR)\biassert.obj"
@@ -224,7 +224,7 @@ CLEAN :
 	-@erase "$(OUTDIR)\gpp.exe"
 
 "$(OUTDIR)" :
-    if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
+	if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
 CPP_OBJS=$(OBJDIR)/
 CPP_SBRS=
@@ -285,7 +285,7 @@ DLL_LINK32_OBJS= \
 	"$(OBJDIR)/string_xsb.obj" \
 	"$(OBJDIR)/varstring.obj" \
 	"$(OBJDIR)/ubi_BinTree.obj" \
-	"$(OBJDIR)/ubi_SplayTree.obj" 
+	"$(OBJDIR)/ubi_SplayTree.obj"
 
 # DLLs don't use main_xsb.c
 !IF  "$(DLL)" == "no"
@@ -315,106 +315,114 @@ LINK32_OBJS=$(LINK32_OBJS) $(OBJDIR)/interprolog_callback.obj
 !IF  "$(CFG)" == "release"  &&  "$(DLL)" == "no"
 !MESSAGE Building XSB executable in Release mode $(ORACLE_MSG) $(INTERPROLOG_MSG)
 
-CPP_PROJ=/nologo /MT /W3 /EHsc /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE"\
- $(CONFIG_INCLUDE_FLAG) $(ORACLE_FLAG) $(INTERPROLOG_FLAG)\
-  /Fp"$(OBJDIR)/xsb.pch" /YX /Fo"$(OBJDIR)/" /c 
-
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
- advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
- odbccp32.lib $(SOCKET_LIBRARY) $(SITE_LIBS) /nologo /subsystem:console /incremental:no\
- /pdb:"$(OUTDIR)/xsb.pdb" /machine:I386 \
- /out:"$(OUTDIR)/xsb.exe" 
-
+DEBUG_CPP_FLAGS=/MT /O2 /D "NDEBUG"
+LINK_DEBUG_FLAGS=/incremental:no /debug
 
 !ELSEIF  "$(CFG)" == "debug"  &&  "$(DLL)" == "no"
 !MESSAGE Building XSB executable in Debug mode $(ORACLE_MSG) $(INTERPROLOG_MSG)
 
-CPP_PROJ=/nologo /MTd /W3 /Gm /EHsc /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE"\
- /D "DEBUG" $(CONFIG_INCLUDE_FLAG) $(ORACLE_FLAG) $(INTERPRLOG_FLAG)\
-  /Fp"$(OBJDIR)/xsb.pch" /YX /Fo"$(OBJDIR)/" /Fd"$(INTDIR)/" /c 
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
- advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
- odbccp32.lib $(SOCKET_LIBRARY) $(SITE_LIBS) /nologo /subsystem:console /incremental:yes\
- /pdb:"$(OUTDIR)/xsb.pdb" /debug /machine:I386\
- /out:"$(OUTDIR)\xsb.exe" 
-
+DEBUG_CPP_FLAGS=/MTd /Gm /Zi /Od /D "_DEBUG" /D "DEBUG" /Fd"$(INTDIR)/"
+LINK_DEBUG_FLAGS=/incremental:yes /debug
 
 !ELSEIF "$(CFG)" == "release" && "$(DLL)" == "yes"
 !MESSAGE Building XSB as a DLL in Release mode $(ORACLE_MSG) $(INTERPROLOG_MSG)
 
-CPP_PROJ=/nologo /MT /W3 /EHsc /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE"\
- /D "$(CALL_CONV)" $(CONFIG_INCLUDE_FLAG) $(ORACLE_FLAG) $(INTERPROLOG_FLAG)\
-  /Fp"$(OBJDIR)/xsb.pch" /YX /Fo"$(OBJDIR)/" /c 
-DLL_CPP_PROJ=/nologo /MT /W3 /EHsc /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS"\
-  /D "$(CALL_CONV)" $(CONFIG_INCLUDE_FLAG) $(ORACLE_FLAG)$(INTERPROLOG_FLAG)\
-   /Fp"$(OBJDIR)/xsb.pch" /YX /Fo"$(OBJDIR)/" /c 
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
- advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
- odbccp32.lib $(SOCKET_LIBRARY) $(SITE_LIBS) $(DLLDIR)"\xsb.lib"\
- /nologo /subsystem:console /incremental:no\
- /pdb:"$(OUTDIR)/xsb.pdb" /machine:I386 \
- /out:"$(OUTDIR)/xsb.exe" 
-DLL_LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
- advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
- odbccp32.lib $(SOCKET_LIBRARY) $(SITE_LIBS) \
- /nologo /subsystem:windows /dll /incremental:no\
- /pdb:"$(DLLDIR)/xsbdll.pdb" /machine:I386 /out:"$(DLLDIR)/xsb.dll"\
- /implib:"$(DLLDIR)/xsb.lib" 
+DEBUG_CPP_FLAGS=/MT /O2 /D "NDEBUG"
+DLL_CPP_FLAGS=/D "$(CALL_CONV)"
+LINK_DEBUG_FLAGS=$(DLLDIR)"\xsb.lib" /incremental:no
+DLL_LINK_DEBUG_FLAGS=/incremental:no
 
 !ELSEIF "$(CFG)" == "debug" &&  "$(DLL)" == "yes"
 !MESSAGE Building XSB as a DLL in Debug mode $(ORACLE_MSG) $(INTERPROLOG_MSG)
 
-DLL_CPP_PROJ=/nologo /MTd /W3 /Gm /EHsc /Zi /Od /D "WIN32" /D "_DEBUG"\
- /D "_WINDOWS"\ /D "DEBUG" $(CONFIG_INCLUDE_FLAG) $(ORACLE_FLAG) $(INTERPROLOG_FLAG)\
-  /D "$(CALL_CONV)" /Fp"$(OBJDIR)/xsb.pch" /YX\
- /Fo"$(OBJDIR)/" /Fd"$(INTDIR)/" /c 
+DEBUG_CPP_FLAGS=/MTd /Gm /Zi /Od /D "_DEBUG" /D "DEBUG" /Fd"$(INTDIR)/"
+DLL_CPP_FLAGS=/D "$(CALL_CONV)"
+LINK_DEBUG_FLAGS=/debug $(DLLDIR)"\xsb.lib" /incremental:yes
+DLL_LINK_DEBUG_FLAGS=/incremental:yes /debug
 
-DLL_LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
- advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
- odbccp32.lib $(SOCKET_LIBRARY) $(SITE_LIBS) /nologo /subsystem:windows /dll /incremental:yes\
- /pdb:"$(DLLDIR)/xsbdll.pdb" /debug /machine:I386\
- /out:"$(DLLDIR)\xsb.dll"\
- /implib:"$(DLLDIR)/xsb.lib"	 
-CPP_PROJ=/nologo /MTd /W3 /Gm /EHsc /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE"\
- /D "DEBUG" $(CONFIG_INCLUDE_FLAG) $(ORACLE_FLAG) $(INTERPROLOG_FLAG) /D "$(CALL_CONV)" \
-  /Fp"$(OBJDIR)/xsb.pch" /YX /Fo"$(OBJDIR)/" /Fd"$(INTDIR)/" /c 
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
- advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
- odbccp32.lib $(SOCKET_LIBRARY) $(SITE_LIBS) $(DLLDIR)"\xsb.lib"\
- /nologo /subsystem:console /incremental:yes\
- /pdb:"$(OUTDIR)/xsb.pdb" /debug /machine:I386\
- /out:"$(OUTDIR)\xsb.exe" 
+!ENDIF
 
-!ENDIF 
+CPP_PROJ=\
+	/nologo /W3 /EHsc /D "WIN32" /D "_CONSOLE" /c /Fp"$(OBJDIR)/xsb.pch" /YX \
+	/Fo"$(OBJDIR)/" \
+	$(CONFIG_INCLUDE_FLAG) $(ORACLE_FLAG) \
+	$(INTERPROLOG_FLAG) $(DEBUG_CPP_FLAGS) \
+	$(DLL_CPP_FLAGS)
 
+LINK32_FLAGS=\
+	/nologo \
+	/subsystem:console \
+	/machine:I386 \
+	$(LINK_DEBUG_FLAGS) \
+	$(SOCKET_LIBRARY) \
+	$(SITE_LIBS) \
+	kernel32.lib \
+	user32.lib \
+	gdi32.lib \
+	winspool.lib \
+	comdlg32.lib \
+	advapi32.lib \
+	shell32.lib \
+	ole32.lib \
+	oleaut32.lib \
+	uuid.lib \
+	odbc32.lib \
+	odbccp32.lib \
+	/pdb:"$(OUTDIR)/xsb.pdb" \
+	/out:"$(OUTDIR)/xsb.exe"
+
+DLL_CPP_PROJ=$(CPP_PROJ) /D "_WINDOWS"
+DLL_LINK32_FLAGS=\
+	/nologo \
+	/subsystem:windows \
+	/dll \
+	/machine:I386 \
+	$(SOCKET_LIBRARY) \
+	$(SITE_LIBS) \
+	kernel32.lib \
+	user32.lib \
+	gdi32.lib \
+	winspool.lib \
+	comdlg32.lib \
+	advapi32.lib \
+	shell32.lib \
+	ole32.lib \
+	oleaut32.lib \
+	uuid.lib \
+	odbc32.lib \
+	odbccp32.lib \
+	$(DLL_LINK_DEBUG_FLAGS) \
+	/implib:"$(DLLDIR)/xsb.lib" \
+	/pdb:"$(DLLDIR)/xsbdll.pdb" \
+	/out:"$(DLLDIR)/xsb.dll"
 
 "$(OUTDIR)\xsb.exe" : "$(OBJDIR)" $(DEF_FILE) $(LINK32_OBJS)
-    $(LINK32) @<<
+	-@$(LINK32) @<<
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<
 
 "$(DLLDIR)\xsb.dll" : "$(DLLDIR)" $(DEF_FILE) $(DLL_LINK32_OBJS)
-    $(LINK32) @<<
+	-@$(LINK32) @<<
   $(DLL_LINK32_FLAGS) $(DLL_LINK32_OBJS)
 <<
 
 .c{$(CPP_OBJS)}.obj:
-   $(CPP) $(CPP_PROJ) $<  
+   -@$(CPP) $(CPP_PROJ) $<
 
 .cpp{$(CPP_OBJS)}.obj:
-   $(CPP) $(CPP_PROJ) $<  
+   -@$(CPP) $(CPP_PROJ) $<
 
 .cxx{$(CPP_OBJS)}.obj:
-   $(CPP) $(CPP_PROJ) $<  
+   -@$(CPP) $(CPP_PROJ) $<
 
 .c{$(CPP_SBRS)}.sbr:
-   $(CPP) $(CPP_PROJ) $<  
+   -@$(CPP) $(CPP_PROJ) $<
 
 .cpp{$(CPP_SBRS)}.sbr:
-   $(CPP) $(CPP_PROJ) $<  
+   -@$(CPP) $(CPP_PROJ) $<
 
 .cxx{$(CPP_SBRS)}.sbr:
-   $(CPP) $(CPP_PROJ) $<  
+   -@$(CPP) $(CPP_PROJ) $<
 
 
 # Local Variables:
