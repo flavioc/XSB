@@ -271,13 +271,17 @@ static CPtr slide_heap(int num_marked)
     /* chain argument registers */
     /* will be automatic as aregisters were copied to the heap */
 
-    /* chain trail */
+    /* chain trail: (TLS) this means to go through the trail, and if a
+       trail cell points to the heap, then reverse it so that the heap
+       cell points to the trail cell, and set the CHAIN_BIT in the
+       corresponding cells of the trail and heap mark areas. */
     /* more precise traversal of trail possible */
 
     { CPtr endtr ;
       endtr = tr_top ;
       for (p = tr_bot; p <= endtr ; p++ ) 
 	{ contents = cell(p) ;
+	  /* TLS: why is the top of trail special? */
 #ifdef SLG_GC
 	if (!tr_marked(p-tr_bot))
 	  continue;
@@ -377,7 +381,11 @@ static CPtr slide_heap(int num_marked)
 #endif /* INDIRECTION_SLIDE */
       for (hptr = heap_top - 1 ; hptr >= heap_bot ; hptr--) {
 	if (h_marked(hptr - heap_bot)) {
-	  /* boxing */
+
+	  /* boxing: (TLS) apparently garbage is used to denote how
+	     long a segment of garbage is -- its put in the bottom
+	     cell of the garbage segment. */
+
 	  if (garbage) {
 	    *(hptr+1) = makeint(garbage) ;
 	    garbage = 0 ;

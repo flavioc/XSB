@@ -460,6 +460,11 @@ DllExport void call_conv ctop_string(CTXTdeclc int regnum, char *value)
     xsb_abort("[CTOP_STRING] Wrong type of argument: %lux", addr);
 }
 
+DllExport void call_conv extern_ctop_string(CTXTdeclc int regnum, char *value)
+{
+  ctop_string(CTXTc regnum,string_find(value,1)) ;
+}
+
 inline static void ctop_constr(CTXTdeclc int regnum, Pair psc_pair)
 {				/* from psc_pair ptr form an constr node */
   register Cell addr = cell(reg+regnum);
