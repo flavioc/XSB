@@ -31,7 +31,8 @@ DllExport int call_conv change_char(CTXTdecl)
 	   is no need to use string_find(). 
 	 */
 
-	extern_ctop_string(4, (char *) string_find(str_out,4));
+	//	extern_ctop_string(4, (char *) string_find(str_out,4));
+		extern_ctop_string(CTXTc 4, str_out);
 
 	return TRUE;
 }
