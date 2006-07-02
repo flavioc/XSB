@@ -5,6 +5,8 @@
 	from sm_int.
 :- import print_cache/0 from sm_int.
 
+test:- exchoice1,exchoice2,exchoice3,exchoice4.
+
 exchoice1 :-
 	smcInit,
 	smcAddRule(weightConst(1,[a,b],2),
