@@ -22,22 +22,33 @@ interface.  Before describing the interfaces themselves, we first
 describe aspects common to both the lower- and higher- level foreign
 lanauge interfaces.
 
+The foreign language interface can also support {\tt C++} programs.
+Since XSB is written in {\tt C}, the interface functions in the
+foreign {\tt C++} module must have the declaration {\tt extern ``C''},
+and a separate compiler option (e.g. specifying {\tt g++} rather than
+{\tt gcc}) may need to be given to ensure proper linkage, inclusion of
+{\tt C++} libraries, etc.  In addition, on certain platforms
+compilation may need to be done externally to XSB -- see the {\tt
+  xasp} package for a example of using the foreign language interface
+with {\tt C++} files.  For the rest of this chapter, we restrict our
+attention to foreign predicates written in {\tt C}.
+
 \section{Foreign Language Modules}
 
-Foreign predicates must always appear in modules, which can contain
-only foreign predicates.  The main difference between a normal module
-and a foreign module is the that the source file of the module
-implementation, which is in C, must appear in a {\tt *.c} file rather
-than a {\tt *.P} file (or {\tt .pl} file).  This {\tt *.c} file cannot
-contain a {\tt main()} function.  Furthermore, a {\tt *.P} file with
-the same name {\em must not} be present or else the {\tt *.c} file is
-ignored and the module is compiled as a regular Prolog module.  The
-interface part of a foreign module, which has the same syntax as that
-of a normal module, is written in Prolog and hence must appear in a
-{\tt *.H} file.  If the lower-level interface is used, this {\tt *.H}
-file contains explicit {\tt export/1} declarations for the the foreign
-predicates that are to be used by other modules; if the higher-level
-interface is used, the declarations have the form {\tt foreign\_pred/1}.
+Foreign predicates must always appear in modules, and these modules
+can contain only foreign predicates.  A foreign module differs from a
+Prolog module in that the foreign module's source file must appear in
+a {\tt *.c} file rather than a {\tt *.P} file (or {\tt .pl} file).
+This {\tt *.c} file cannot contain a {\tt main()} function.
+Furthermore, a {\tt *.P} file with the same name {\em must not} be
+present or else the {\tt *.c} file is ignored and the module is
+compiled as a regular Prolog module.  The interface part of a foreign
+module, which has the same syntax as that of a normal module, is
+written in Prolog and must appear in a {\tt *.H} file.  If the
+lower-level interface is used, this {\tt *.H} file contains explicit
+{\tt export/1} declarations for the the foreign predicates that are to
+be used by other modules; if the higher-level interface is used, the
+declarations have the form {\tt foreign\_pred/1}.
 
 The Prolog predicates attached to foreign functions are deterministic,
 in the sense that they succeed at most once for a given call and are
@@ -47,13 +58,13 @@ predicate into the part to be done on the first call and the part to
 be redone on backtracking.  Backtracking can then take place at the
 Prolog level where it is more naturally expressed.
 
-A foreign module can be {\tt compile}d or {\tt consult}ed just like a
-normal Prolog module.  Currently, predicates {\tt consult/[1,2]}
-recompile both the {\tt *.c} and the {\tt *.H} files of a foreign
-module when at least one of them has been changed from the time the
-corresponding object files have been created (see the section {\it
-  Compiling and Consulting} in Volume 1)~\footnote{In addition, if a C
-  module compiled by the single-threaded XSB engine is loaded by the
+A foreign module can be compiled or consulted just like a normal
+Prolog module.  Currently, predicates {\tt consult/[1,2]} recompile
+both the {\tt *.c} and the {\tt *.H} files of a foreign module when at
+least one of them has been changed from the time the corresponding
+object files have been created (see the section {\it Compiling and
+  Consulting} in Volume 1)~\footnote{In addition, if a C module
+  compiled by the single-threaded XSB engine is loaded by the
   multi-threaded engine, it will be recompiled, and vice-versa.}.  The
 C compiler used to compile the {\tt *.c} files can be set as a
 compilation option or defaults to that used for the configuration of
@@ -68,7 +79,7 @@ directories that will be searched for header files.
                  [cc(gcc), cc\_opts('-O2 -I/usr/local/X11/R6/include')]). }
 \end{center}
 If no C compiler options are specified, the compilation of the C-file
-defaults to $CC$~{\tt -c~file.c} where $CC$ is the name of the C
+defaults to $\$CC$~{\tt -c~file.c} where $\$CC$ is the name of the C
 compiler used to install XSB.  In addition, if XSB was compiled with
 the `-g' debugging option, then `-g' option will be automatically
 added to the C compiler options list for the foreign module.  Any
@@ -89,7 +100,6 @@ file of a foreign module \footnote{Mac OSX users with Panther should
   set the enviroment variable {\tt MACOSX\_DEPLOYMENT\_TARGET} to {\tt
     10.3} so that the compiler generates code that can be dynamically
   linked by XSB.}.
-
 %(Explain more about the directive.....).
 In Unix-derived systems, the foreign language interface of XSB uses
 {\tt ld} command that combines object programs to create an executable
@@ -117,19 +127,20 @@ that implement foreign predicates must return values of type {\tt
 a non-zero is returned, the foreign predicate succeeds; a zero return
 value means failure.
 
-At the C level, the function that implements the Prolog predicate in
-the must have the same name as the Prolog predicate (that is declared
-in the {\tt *.H} file), and must have a special {\em parameter macro}
-{\tt CTXTdecl}.  This parameter macro allows C functions to be used
-with both the single-threaded and multi-threaded engines.  The Prolog
-level arguments are converted to C data structures through several
+At the C level, the function that implements the Prolog predicate must
+have the same name as the Prolog predicate (that is declared in the
+{\tt *.H} file), and must have a special {\em context parameter}
+macro.  The context parameter macro allows C functions to be used with
+both the single-threaded and multi-threaded engines, and are described
+in detail in Section~\ref{sec:context-parameter}.  The Prolog level
+arguments are converted to C data structures through several
 predefined functions rather than through direct parameter
-passing~\footnote{The lower-level C interface has been changed in
-  \version .  C files written for previous versions of XSB continue to
-  work properly for the single-threaded engine in \version , but will
-  not work properly for the multi-threaded engine.}.  The C file {\tt
-  simple\_foreign.c} corresponding to the above {\tt .H} file is as
-follows.
+passing~\footnote{The inclusion of context parameters changes the
+  lower-level interface for Version 3.0.  C files written for previous
+  versions of XSB continue to work properly for the single-threaded
+  engine in, but will not work properly for the multi-threaded
+  engine.}.  The C file {\tt simple\_foreign.c} corresponding to the
+above {\tt .H} file is as follows.
 
 \begin{small}
 \begin{verbatim}
@@ -150,9 +161,9 @@ follows.
 
 int minus_one(CTXTdecl)
 {
-   int  i = extern_ptoc_int(1);
+   int  i = ptoc_int(CTXTc 1);
 
-   extern_ctop_int(2, i-1);
+   ctop_int(CTXTc 2, i-1);
    return TRUE;
 }
 
@@ -160,9 +171,9 @@ int minus_one(CTXTdecl)
 
 int my_sqrt(CTXTdecl)
 {
-   int i = extern_ptoc_int(1);
+   int i = ptoc_int(CTXTc 1);
 
-   extern_ctop_float(2, (float) pow((double)i, 0.5));
+   ctop_float(CTXTc 2, (float) pow((double)i, 0.5));
    return TRUE;
 }
 
@@ -175,17 +186,17 @@ int change_char(CTXTdecl)
    int c;
    char *str_out;
 
-   str_in = (char *) extern_ptoc_string(1);
+   str_in = (char *) ptoc_string(CTXTc 1);
    str_out = (char *) alloca(strlen(str_in)+1);
    strcpy(str_out, str_in);
-   pos = extern_ptoc_int(2);
-   c = extern_ptoc_int(3);
+   pos = ptoc_int(CTXTc (2);
+   c = ptoc_int(CTXTc (3);
    if (c < 0 || c > 255) /* not a character */
      return FALSE; /* this predicate will fail on the Prolog side */
 
    str_out[pos-1] = c;
 
-   extern_ctop_string(4, str_out);  
+   extern_ctop_string(CTXTc 4, str_out);  
    return TRUE;
 }
 
@@ -243,24 +254,27 @@ and as can be seen the return values can be specified by the macros
 argument to {\tt minus\_one/2} is an (integer) input argument, while
 the second is an (integer) output argument.  Input arguments for basic
 C types are translated from their Prolog representation to a C
-representation by functions of the form \verb|extern\_ptoc\_<type>()|
--- here {\tt extern\_ctop\_int()}.  The single parameter of such a
-function is the number of the Prolog argument that is to be
-transformed and the function returns the C representation.  Output
-arguments are converted from C to Prolog by corresponding functions of
-the form \verb|extern\_ctop\_<type>()| -- here {\tt
-  extern\_ctop\_int()}.  For coverting C back to Prolog, the first
-parameter of {\tt extern\_ctop\_int()} is the number of the Prolog
-argument to be transformed and the second is the C value to be
-transformed.
+representation by functions of the form \verb|ptoc\_<type>()| -- here
+{\tt ctop\_int()}.  The single parameter of such a function is the
+number of the Prolog argument that is to be transformed and the
+function returns the C representation.  Output arguments are converted
+from C to Prolog by corresponding functions of the form
+\verb|ctop_<type>()| -- here {\tt ctop\_int()}.  For coverting C back
+to Prolog, the first parameter of {\tt ctop\_int()} is the number of
+the Prolog argument to be transformed and the second is the C value to
+be transformed.  In the session output above, if an improper argument
+is given to {\tt minus\_one/2} it will emit a warning, and succeed.
+Also note that the call {\tt my\_sqrt(23,X)} succeeds once, but fails
+on backtracking since it is deterministic, as are all other foreign
+language functions.
 
 The above example illustrates the exchange of {\em basic} types
 through the lower-level interface -- e.g. atoms, integers, and
 floating-point numbers.  The lower-level interface alsoallows a user
 to pass lists and terms between XSB and C as will be discussed in
-Section~\ref{extern_c2p_p2p_p2c}.
+Section~\ref{c2p_p2p_p2c}.
 
-\subsection{Context Parameters}
+\subsection{Context Parameters} \label{sec:context-parameter}
 
 When using the lower-level interface, {\em context parameters} must be
 added to many C functions in order for the functions to be used with
@@ -275,19 +289,23 @@ variables, so that context parameters are not required.
 
 The lower-level C interface makes use of a set of macros to address
 the requirements of the different engines.  The data exchange
-functions discussed in this chapter, {\tt extern\_ptoc\_xxx}, {\tt
-  extern\_ctop\_xxx}, {\tt extern\_c2p\_xxx}, {\tt extern\_p2c\_xxx},
-and {\tt extern\_p2p\_xxx} usually, but not always, require
-information about a threads virtual machine state.  The {\tt extern}
-``functions'' of the lower-level API do not require context parameters
-themselves because they are actually macros to functions that use
-context parameters.  While a user of the lower-level C interface does
-not need to keep track of context parameters within the data exchange
-functions, it is import to note that {\em any C function that directly
-  or indirectly calls a data interchange function, must have a context
-  parameter in its declaration, calls, and prototypes} in order to be
-used by the multi-threaded engine.  These context parameters have the
-following forms:
+functions discussed in this chapter, {\tt ptoc\_xxx}, {\tt
+  ctop\_xxx}, {\tt c2p\_xxx}, {\tt p2c\_xxx},
+and {\tt p2p\_xxx} usually, but not always, require
+information about a threads virtual machine state.  
+%
+\comment{ The {\tt extern} ``functions'' of the lower-level API do
+  not require context parameters themselves because they are actually
+  macros to functions that use context parameters.  While a user of
+  the lower-level C interface does not need to keep track of context
+  parameters within the data exchange functions, it is import to note
+  that } 
+%
+If a C function directly or indirectly calls a data interchange
+function that requires a context parameter, the function must have a
+context parameter in its declaration, calls, and prototypes in order
+to be used by the multi-threaded engine.  These context parameters
+have the following forms:
 
 \begin{itemize}
 \item In function {\em declarations}, use the macro {\tt CTXTdecl} in
@@ -339,57 +357,66 @@ automatically generates any context parameters it needs.
 \subsection{Exchanging Basic Data Types}
 
 The basic interface assumes that correct modes ({\it i.e.}, input or
-output parameters) and types are being passed between C and the Prolog
-level.  As a result, output unification should be explicitly performed
-in the Prolog level.  The prototypes for the conversion functions
-between Prolog and C should be declared before the corresponding
-functions are used.  This is done by including the {\tt "cinterf.h"}
-header file.  Under Unix, the XSB foreign C interface automatically
-finds this file in the {\tt XSB/emu} directory. Under Windows
-(including Cygwin), the user must compile and create the DLL out of
-the C file manually, so the compiler option `\verb|/I...\XSB\emu|' is
-necessary.
+output parameters) and types are being passed between the C and Prolog
+levels.  As a result, output unification should be explicitly
+performed in the Prolog level.  The prototypes for the conversion
+functions between Prolog and C should be declared before the
+corresponding functions are used.  This is done by including the {\tt
+  "cinterf.h"} header file.  Under Unix, the XSB foreign C interface
+automatically finds this file in the {\tt XSB/emu} directory. Under
+Windows (including Cygwin), the user must compile and create the DLL
+out of the C file manually, so the compiler option
+`\verb|/I...\XSB\emu|' is necessary.
 
 The following C functions are used to convert basic types between
 Prolog and C.
 \begin{description}
-\desc{int extern\_ptoc\_int(int N)} {\tt N} is assumed to hold a Prolog
-integer representing the {\tt N}th argument of a Prolog predicate.
-This function returns the value of that argument in as a C {\tt int}.
+\desc{int ptoc\_int(CTXTdeclc int N)} {\tt CTXTdeclc} is a context
+parameter; {\tt N} is assumed to hold a Prolog integer corresponding
+to the {\tt N}th argument of a Prolog predicate.  This function
+returns the value of that argument in as a C {\tt int}.
 %
-\desc{double extern\_ptoc\_float(int N)} {\tt N} is assumed to hold a Prolog
-integer representing the {\tt N}th argument of a Prolog predicate.
-This function returns the value of that argument as a C {\tt double}.
-By default, XSB provides double precision, but if XSB was configured
-with {\tt --enable-fast-floats} less than single precision can be
+\desc{double ptoc\_float(CTXTdeclc int N)} {\tt CTXTdeclc} is a
+context parameter; {\tt N} is assumed to hold a Prolog integer
+corresponding to the {\tt N}th argument of a Prolog predicate.  This
+function returns the value of that argument as a C {\tt double}.  By
+default, XSB provides double precision, but if XSB was configured with
+{\tt --enable-fast-floats} less than single precision can be
 provided~\footnote{The fast float configuration option does represents
   floating point values as directly tagged single precision values
   rather than as indirectly tagged double precision values. Speed
   increases in arithmatic can be gained from this optimization, in
   exchange for significant precision loss on floating point numbers.}.
 %
-\desc{char *extern\_ptoc\_string(int N)} {\tt N} is assumed to hold a Prolog
-integer representing the {\tt N}th argument of a Prolog predicate.
-This function returns the value the C string (of type {\tt char *})
-that corresponds to this Prolog atom.
+\desc{char *ptoc\_string(CTXTdeclc int N)} {\tt CTXTdeclc} is a
+context parameter; {\tt N} is assumed to hold a Prolog integer
+corresponding to the {\tt N}th argument of a Prolog predicate.  This
+function returns the value the C string (of type {\tt char *}) that
+corresponds to this interned Prolog atom.  {\em WARNING: the string
+  should be copied before being manipulated in any way: otherwise
+  unexpected results may arise whenever the interned Prolog atom is
+  unified}.
 %
-\desc{void extern\_ctop\_int(int N, int V)} Argument {\tt N} is assumed to
-hold a Prolog free variable, and this function binds that variable to
-an integer of value {\tt V}.
+\desc{void ctop\_int(CTXTdeclc int N, int V)} {\tt CTXTdeclc} is a
+context parameter; argument {\tt N} is assumed to hold a Prolog free
+variable, and this function binds that variable to an integer of value
+{\tt V}.
 %
-\desc{void extern\_ctop\_float(int N, float V)} Argument {\tt N} is assumed to
-hold a Prolog free variable, and this function binds that variable to
-a floating point number of value {\tt V}.  
+\desc{void ctop\_float(CTXTdeclc int N, float V)} {\tt CTXTdeclc} is a
+context parameter; argument {\tt N} is assumed to hold a Prolog free
+variable, and this function binds that variable to a floating point
+number of value {\tt V}.
 %
-\desc{void extern\_ctop\_string(int N, char * V)} Argument {\tt N} is
-assumed to hold a Prolog free variable.  This function interns the
-string to which {\tt V} points as a Prolog atom and binds the variable
-in argument {\tt N} to that atom.
+\desc{void extern\_ctop\_string(CTXTdeclc int N, char * V)} {\tt
+  CTXTdeclc} is a context parameter; argument {\tt N} is assumed to
+hold a Prolog free variable.  If needed, this function interns the
+string to which {\tt V} points as a Prolog atom and then binds the
+variable in argument {\tt N} to that atom.
 \end{description}
 
 
 \subsection{Exchanging Complex Data Types}
-\label{extern_c2p_p2p_p2c}
+\label{c2p_p2p_p2c}
 
 If the lower-level interface is used, exchanging basic data types is
 sufficient for most applications.  Exchanging complex data types is
@@ -412,40 +439,39 @@ program in order to make the prototypes of the relevant functions
 known to the C compiler.
 
 The first set of functions is typically used to check the type of
-Prolog terms passed into the C program. 
-%%
+Prolog terms passed into the C program. %%
 \begin{description}
 \ouritem{xsbBool is\_attv((prolog\_term) T)} \index{\texttt{is\_attv}}
-    {\tt is\_attv(T)} returns TRUE if {\tt T} represents an XSB
-    attributed variable,  and FALSE otherwise.
+    {\tt is\_attv(T)} returns {\tt TRUE} if {\tt T} represents an XSB
+    attributed variable,  and {\tt FALSE} otherwise.
 
 \ouritem{xsbBool is\_float((prolog\_term) T)} \index{\texttt{is\_float}}
-    {\tt is\_float(T)} returns TRUE if {\tt T} represents an XSB
-    float value, and FALSE otherwise.
+    {\tt is\_float(T)} returns {\tt TRUE} if {\tt T} represents an XSB
+    float value, and {\tt FALSE} otherwise.
 
 \ouritem{xsbBool is\_functor((prolog\_term) T)} \index{\texttt{is\_functor}}
-    {\tt is\_functor(T)} returns TRUE if {\tt T} represents an
-    XSB structure value (not a list), and FALSE otherwise.
+    {\tt is\_functor(T)} returns {\tt TRUE} if {\tt T} represents an
+    XSB structure value (not a list), and {\tt FALSE} otherwise.
 
 \ouritem{xsbBool is\_int((prolog\_term) T)} \index{\texttt{is\_int}}
-    {\tt is\_int(T)} returns TRUE if {\tt T} represents an XSB
-    integer value, and FALSE otherwise.
+    {\tt is\_int(T)} returns {\tt TRUE} if {\tt T} represents an XSB
+    integer value, and {\tt FALSE} otherwise.
 
 \ouritem{xsbBool is\_list((prolog\_term) T)} \index{\texttt{is\_list}}
-    {\tt is\_list(T)} returns TRUE if {\tt T} represents an
-    XSB list value (not nil), and FALSE otherwise.
+    {\tt is\_list(T)} returns {\tt TRUE} if {\tt T} represents an
+    XSB list value (not nil), and {\tt FALSE} otherwise.
 
 \ouritem{xsbBool is\_nil((prolog\_term) T)} \index{\texttt{is\_nil}}
-    {\tt is\_nil(T)} returns TRUE if {\tt T} represents an XSB
-    \verb|[]| (nil) value, and FALSE otherwise.
+    {\tt is\_nil(T)} returns {\tt TRUE} if {\tt T} represents an XSB
+    \verb|[]| (nil) value, and {\tt FALSE} otherwise.
 
 \ouritem{xsbBool is\_string((prolog\_term) T)} \index{\texttt{is\_string}}
-    {\tt is\_string(T)} returns TRUE if {\tt T} represents an XSB
-    atom value, and FALSE otherwise.
+    {\tt is\_string(T)} returns {\tt TRUE} if {\tt T} represents an XSB
+    atom value, and {\tt FALSE} otherwise.
 
 \ouritem{xsbBool is\_var((prolog\_term) T)} \index{\texttt{is\_var}}
-    {\tt is\_var(T)} returns TRUE if {\tt T} represents an XSB
-    variable, and FALSE otherwise.
+    {\tt is\_var(T)} returns {\tt TRUE} if {\tt T} represents an XSB
+    variable, and {\tt FALSE} otherwise.
 
 \end{description}
 
@@ -457,71 +483,74 @@ arity.  Extraction of the components of a list and the arguments of a
 structured term is explained later.
 
 \begin{description}
-\ouritem{int extern\_p2c\_int((prolog\_term) V)}
-\index{\texttt{extern\_p2c\_int}} 
+\ouritem{int p2c\_int((prolog\_term) V)}
+\index{\texttt{p2c\_int}} 
 %
 The {\tt prolog\_term} parameter must represent a Prolog integer, and
-{\tt extern\_p2c\_int} returns the C representation of that integer.
+{\tt p2c\_int} returns the C representation of that integer.
 
-\ouritem{double extern\_p2c\_float((prolog\_term) V)}
-\index{\texttt{extern\_p2c\_float}} 
+\ouritem{double p2c\_float((prolog\_term) V)}
+\index{\texttt{p2c\_float}} 
 %
 The {\tt prolog\_term} parameter must represent a Prolog floating point
-number, and {\tt extern\_p2c\_float} returns the C representation of
+number, and {\tt p2c\_float} returns the C representation of
 that floating point number.
 
-\ouritem{char *extern\_p2c\_string((prolog\_term) V)}
-\index{\texttt{extern\_p2c\_string}} 
+\ouritem{char *p2c\_string((prolog\_term) V)}
+\index{\texttt{p2c\_string}} 
 %
 The {\tt prolog\_term} parameter must represent a (Prolog) atom, and
-{\tt extern\_p2c\_string} returns that atom as a C string. The pointer
+{\tt p2c\_string} returns that atom as a C string. The pointer
 returned points to the actual atom name in XSB 's atom table, and thus
 it must NOT be modified by the calling program.
 
-\ouritem{char *extern\_p2c\_functor((prolog\_term) V)} 
-\index{\texttt{extern\_p2c\_functor}}
+\ouritem{char *p2c\_functor((prolog\_term) V)} 
+\index{\texttt{p2c\_functor}}
 %
 The {\tt prolog\_term} parameter must represent a structured term (not a
-list).  {\tt extern\_p2c\_functor} returns the name of the main
+list).  {\tt p2c\_functor} returns the name of the main
 functor symbol of that term as a string. The pointer returned points
 to the actual functor name in XSB 's space, and thus it must NOT be
 modified by the calling program.
 
-\ouritem{int extern\_p2c\_arity((prolog\_term) V)}
-\index{\texttt{extern\_p2c\_arity}} 
+\ouritem{int p2c\_arity((prolog\_term) V)}
+\index{\texttt{p2c\_arity}} 
 %
 The {\tt prolog\_term} parameter must represent a structured term (not
-a list).  {\tt extern\_p2c\_arity} returns the arity of the main
+a list).  {\tt p2c\_arity} returns the arity of the main
 functor symbol of that term as a C {\tt int}.
 \end{description}
 %%
 
 The next batch of functions support conversion of data in the opposite
 direction: from basic C types to the type {\tt prolog\_term}.  These
-{\tt extern\_c2p\_*} functions all return a boolean value {\tt TRUE}
+{\tt c2p\_*} functions all return a boolean value {\tt TRUE}
 if successful and {\tt FALSE} if unsuccessful.  The XSB term argument
 must always contain an XSB variable, which will be bound to the
 indicated value as a side effect of the function call.
 
 \begin{description}
-\ouritem{xsbBool extern\_c2p\_int((int) N, (prolog\_term) V)}
-\index{\texttt{extern\_c2p\_int}}
+\ouritem{xsbBool c2p\_int(CTXTdeclc (int) N, (prolog\_term) V)}
+\index{\texttt{c2p\_int}}
 %
- {\tt extern\_c2p\_int} binds the {\tt prolog\_term} {\tt V} (which must be
- a variable) to the integer value N, creating a Prolog integer.
+ {\tt CTXTdeclc} is a context parameter; {\tt c2p\_int} binds the
+ {\tt prolog\_term} {\tt V} (which must be a variable) to the integer
+ value N, creating a Prolog integer.
 
-\ouritem{xsbBool extern\_c2p\_float((double) F, (prolog\_term) V)}
-\index{\texttt{extern\_c2p\_float}} {\tt extern\_c2p\_float} binds the
-      {\tt prolog\_term} {\tt V} (which must be a variable) to the (double)
-      float value F, creating a double Prolog float.
-
-\ouritem{xsbBool extern\_c2p\_string((char *) S, (prolog\_term) V)}
-\index{\texttt{extern\_c2p\_string}} 
+\ouritem{xsbBool c2p\_float(CTXTdeclc (double) F, (prolog\_term) V)}
+\index{\texttt{c2p\_float}} 
 %
-{\tt extern\_c2p\_string} binds the {\tt prolog\_term} {\tt V} (which
-must be a variable) to the Prolog atom corresponding to the {\tt char
-  *S}.  During this process the Prolog atom is interned into XSB's
-atom table.
+ {\tt CTXTdeclc} is a context parameter; {\tt c2p\_float} binds the
+ {\tt prolog\_term} {\tt V} (which must be a variable) to the (double)
+ float value F, creating a double Prolog float.
+
+\ouritem{xsbBool c2p\_string(CTXTdeclc (char *) S, (prolog\_term) V)}
+\index{\texttt{c2p\_string}} 
+%
+ {\tt CTXTdeclc} is a context parameter; {\tt c2p\_string} binds the
+ {\tt prolog\_term} {\tt V} (which must be a variable) to the Prolog
+ atom corresponding to the {\tt char *S}.  During this process the
+ Prolog atom is interned into XSB's atom table.
 \end{description}
 %%
 
@@ -530,30 +559,33 @@ program. This is usually done in order to pass these structures back to
 the Prolog side.
 %%
 \begin{description}
-\ouritem{xsbBool extern\_c2p\_functor((char *) S, (int) N,  (prolog\_term) V)} 
-\index{\texttt{extern\_c2p\_functor}} 
+\ouritem{xsbBool c2p\_functor(CTXTdeclc (char *) S, (int) N,  (prolog\_term) V)} 
+\index{\texttt{c2p\_functor}} 
 %
-{\tt extern\_c2p\_functor} binds the {\tt prolog\_term V} (which must
-be a variable) to an open term whose main functor symbol is given by
-{\tt S} (of type char *) and whose arity is {\tt N}.  An open term is
-one with all arguments as new distinct variables.
+ {\tt CTXTdeclc} is a context parameter; {\tt c2p\_functor} binds the
+ {\tt prolog\_term V} (which must be a variable) to an open term whose
+ main functor symbol is given by {\tt S} (of type char *) and whose
+ arity is {\tt N}.  An open term is one with all arguments as new
+ distinct variables.
 
-\ouritem{xsbBool extern\_c2p\_list((prolog\_term) V)} 
-\index{\texttt{extern\_c2p\_list}}
+\ouritem{xsbBool c2p\_list(CTXTdeclc (prolog\_term) V)} 
+\index{\texttt{c2p\_list}}
 %
-{\tt extern\_c2p\_list} binds the {\tt prolog\_term V} (which must be
-a variable) to an open list term, i.e., a list term with both car and
-cdr as new distinct variables. Note: to create an empty list use the
-function {\tt extern\_c2p\_nil} described below.
+ {\tt CTXTdeclc} is a context parameter; {\tt c2p\_list} binds the
+ {\tt prolog\_term V} (which must be a variable) to an open list term,
+ i.e., a list term with both car and cdr as new distinct
+ variables. Note: to create an empty list use the function {\tt
+   c2p\_nil} described below.
 
-\ouritem{xsbBool extern\_c2p\_nil((prolog\_term) V)} 
-\index{\texttt{extern\_c2p\_nil}}
+\ouritem{xsbBool c2p\_nil(CTXTdeclc (prolog\_term) V)} 
+\index{\texttt{c2p\_nil}}
 %
-{\tt extern\_c2p\_nil} binds the {\tt prolog\_term V} (which must be a
-variable) to the atom \verb|[]| (nil).
+ {\tt CTXTdeclc} is a context parameter; {\tt c2p\_nil} binds the {\tt
+   prolog\_term V} (which must be a variable) to the atom \verb|[]|
+ (nil).
 
-\ouritem{prolog\_term extern\_p2p\_new()} 
-\index{\texttt{extern\_p2p\_new}} 
+\ouritem{prolog\_term p2p\_new()} 
+\index{\texttt{p2p\_new}} 
 %
 Create a new Prolog variable. This is sometimes needed when you want
 to create a Prolog term on the C side and pass it to the Prolog side.
@@ -565,27 +597,27 @@ components of the structured Prolog terms.  This is done with the help
 of the following functions:
 
 \begin{description}
-\ouritem{prolog\_term extern\_p2p\_arg((prolog\_term) T, (int) A)}
-\index{\texttt{extern\_p2p\_arg}} 
+\ouritem{prolog\_term p2p\_arg((prolog\_term) T, (int) A)}
+\index{\texttt{p2p\_arg}} 
 %
 Parameter {\tt T} must be a {\tt prolog\_term} that is a structured
 term (but not a list).  A is a positive integer (no larger than the
 arity of the term) that specifies an argument position of the term
-{\tt T}.  {\tt extern\_p2p\_arg} returns the A$^{th}$ subfield of the
+{\tt T}.  {\tt p2p\_arg} returns the A$^{th}$ subfield of the
 term {\tt T}.
 
-\ouritem{prolog\_term extern\_p2p\_car((prolog\_term) T)} 
-\index{\texttt{extern\_p2p\_car}}
+\ouritem{prolog\_term p2p\_car((prolog\_term) T)} 
+\index{\texttt{p2p\_car}}
 %
 Parameter {\tt T} must be a {\tt prolog\_term} that is a list (not
-nil).  {\tt extern\_p2p\_car} returns the car (i.e., head of the list)
+nil).  {\tt p2p\_car} returns the car (i.e., head of the list)
 of the term T.
 
-\ouritem{prolog\_term extern\_p2p\_cdr((prolog\_term) T)} 
-\index{\texttt{extern\_p2p\_cdr}}
+\ouritem{prolog\_term p2p\_cdr((prolog\_term) T)} 
+\index{\texttt{p2p\_cdr}}
 %
 Parameter {\tt T} must be a {\tt prolog\_term} that is a list (not
-nil).  {\tt extern\_p2p\_cdr} returns the cdr (i.e., tail of the list)
+nil).  {\tt p2p\_cdr} returns the cdr (i.e., tail of the list)
 of the term T.
 \end{description}
 %%
@@ -603,18 +635,18 @@ For instance,
                structure;    /* something like f(a,b,c) */
    prolog_term tail, arg;
    ..........
-   tail = extern_p2p_cdr(plist);         /* get the list tail  */
-   arg  = extern_p2p_arg(structure, 2);  /* get the second arg */
+   tail = p2p_cdr(plist);         /* get the list tail  */
+   arg  = p2p_arg(structure, 2);  /* get the second arg */
 
    /* Assume that the list tail was supposed to be a prolog variable */
    if (is_var(tail))
-      extern_c2p_nil(tail);  /* terminate the list */
+      c2p_nil(CTXTc tail);  /* terminate the list */
    else {
       fprintf(stderr, "Something wrong with the list tail!");
       exit(1);
    }
    /* Assume that the argument was supposed to be a prolog variable */
-   extern_c2p_string("abcdef", arg);
+   c2p_string(CTXTc "abcdef", arg);
 \end{verbatim}
 %%
 
@@ -630,19 +662,21 @@ Prolog side of XSB. The first function is the only way to get a
 sometimes needed in order to pass complex structures from C into Prolog.
 %%
 \begin{description}
-  \ouritem{prolog\_term extern\_reg\_term((int) R)} 
-\index{\texttt{extern\_reg\_term}}
-  Parameter R is an argument number of the Prolog predicate
-  implemented by this C function (range 1 to 255). The function {\tt
-    extern\_reg\_term} returns the {\tt prolog\_term} in that predicate
-  argument.  
+  \ouritem{prolog\_term reg\_term(CTXTdeclc (int) R)} 
+\index{\texttt{reg\_term}}
+%
+  {\tt CTXTdeclc} is a context parameter.  Parameter R is an argument
+  number of the Prolog predicate implemented by this C function (range
+  1 to 255). The function {\tt reg\_term} returns the {\tt
+    prolog\_term} in that predicate argument.
 % 
-\ouritem{xsbBool extern\_p2p\_unify(prolog\_term T1, prolog\_term T2)} 
-\index{\texttt{extern\_p2p\_unify}} 
+\ouritem{xsbBool p2p\_unify(CTXTdeclc prolog\_term T1, prolog\_term T2)} 
+\index{\texttt{p2p\_unify}} 
 %
 Unify the two Prolog terms. This is useful when an argument of the
 Prolog predicate (implemented in C) is a structured term or a list,
-which acts both as input and output parameter.
+which acts both as input and output parameter.  {\tt CTXTdeclc} is a
+context parameter.
 \end{description}
 %%
 
@@ -653,18 +687,18 @@ which is implemented by a C function with the following fragment:
     prolog_term newterm, newvar, z_var, arg2;
     .....
     /* process argument 1 */
-    extern_c2p_functor("func",1,extern_reg_term(1));
-    extern_c2p_string("str",extern_p2p_arg(extern_reg_term(1),1));
+    c2p_functor(CTXTc "func",1,reg_term(CTXTc 1));
+    c2p_string(CTXTc "str",p2p_arg(reg_term(CTXTc 1),1));
     /* process argument 2 */
-    arg2 = reg_term(2);
-    z_var = extern_p2p_arg(arg2, 1);  /* get the var Z */
+    arg2 = reg_term(CTXTc 2);
+    z_var = p2p_arg(arg2, 1);  /* get the var Z */
     /* bind newterm to abc(V), where V is a new var */
-    extern_c2p_functor("abc", 1, newterm);
-    newvar = extern_p2p_arg(newterm, 1);
-    newvar = extern_p2p_new();
+    c2p_functor(CTXTc "abc", 1, newterm);
+    newvar = p2p_arg(newterm, 1);
+    newvar = p2p_new();
     ....
     /* return TRUE (success), if unify; FALSE (failure) otherwise */
-    return extern_p2p_unify(z_var, newterm);
+    return p2p_unify(CTXTc z_var, newterm);
 \end{verbatim}
 %%
 On exit, the variable {\tt X} will be bound to the term {\tt
@@ -676,7 +710,7 @@ as above, then on exit $Z$ will be bound to {\tt abc(\_h123)}, where
 \emph{fail} (fail as in Prolog, {\it i.e.}, it is not an error),
 because the term passed back, {\tt abc(\_h123)}, does not unify with
 {\tt f(1)} or {\tt f(Z,V)}. This effect is achieved by the use of {\tt
-  extern\_p2p\_unify} above.
+  p2p\_unify} above.
 
 We conclude with two real examples of functions that pass complex data
 in and out of the Prolog side of XSB. These functions are part of the
@@ -718,7 +752,7 @@ int do_regsubstitute__(CTXTdecl)
   char *output_ptr;
   int conversion_required=FALSE; /* from C string to Prolog char list */
 
-  input_term = reg_term(1);  /* Arg1: string to find matches in */
+  input_term = reg_term(CTXTc 1);  /* Arg1: string to find matches in */
   if (is_string(input_term)) /* check it */
     input_string = string_val(input_term);
   else if (is_list(input_term)) {
@@ -732,16 +766,16 @@ int do_regsubstitute__(CTXTdecl)
   input_len = strlen(input_string);
 
   /* arg 2: substring specification */
-  subst_spec_list_term = reg_term(2);
+  subst_spec_list_term = reg_term(CTXTc 2);
   if (!is_list(subst_spec_list_term) && !is_nil(subst_spec_list_term))
     xsb_abort("RE_SUBSTITUTE: Arg 2 must be a list [s(B1,E1),s(B2,E2),...]");
 
   /* handle substitution string */
-  subst_str_list_term = reg_term(3);
+  subst_str_list_term = reg_term(CTXTc 3);
   if (! is_list(subst_str_list_term))
     xsb_abort("RE_SUBSTITUTE: Arg 3 must be a list of strings");
 
-  output_term = reg_term(4);
+  output_term = reg_term(CTXTc 4);
   if (! is_var(output_term))
     xsb_abort("RE_SUBSTITUTE: Arg 4 (the output) must be an unbound variable");
 
@@ -759,12 +793,12 @@ int do_regsubstitute__(CTXTdecl)
   output_ptr = output_buffer;
 
   do {
-    subst_reg_term = extern_p2p_car(subst_spec_list_term1);
-    subst_spec_list_term1 = extern_p2p_cdr(subst_spec_list_term1);
+    subst_reg_term = p2p_car(subst_spec_list_term1);
+    subst_spec_list_term1 = p2p_cdr(subst_spec_list_term1);
 
     if (!is_nil(subst_str_list_term1)) {
-      subst_str_term = extern_p2p_car(subst_str_list_term1);
-      subst_str_list_term1 = extern_p2p_cdr(subst_str_list_term1);
+      subst_str_term = p2p_car(subst_str_list_term1);
+      subst_str_list_term1 = p2p_cdr(subst_str_list_term1);
 
       if (is_string(subst_str_term)) {
         subst_string = string_val(subst_str_term);
@@ -776,8 +810,8 @@ int do_regsubstitute__(CTXTdecl)
         xsb_abort("RE_SUBSTITUTE: Arg 3 must be a list of strings");
     }
 
-    beg_term = extern_p2p_arg(subst_reg_term,1);
-    end_term = extern_p2p_arg(subst_reg_term,2);
+    beg_term = p2p_arg(subst_reg_term,1);
+    end_term = p2p_arg(subst_reg_term,2);
 
     if (!is_int(beg_term) || !is_int(end_term))
       xsb_abort("RE_SUBSTITUTE: Non-integer in Arg 2");
@@ -817,12 +851,12 @@ int do_regsubstitute__(CTXTdecl)
   else
     /* DO NOT intern. When atom table garbage collection is in place, then
        replace the instruction with this:
-                  extern_c2p_string(output_buffer, output_term);
+                  c2p_string(CTXTc output_buffer, output_term);
        The reason for not interning is that in Web page
        manipulation it is often necessary to process the same string many
        times. This can cause atom table overflow. Not interning allows us to
        circumvent the problem.  */
-    ctop_string(4, output_buffer);
+    extern_ctop_string(CTXTc 4, output_buffer);
   
   return(TRUE);
 }
@@ -847,7 +881,7 @@ int do_bulkmatch__(CTXTdecl)
   /* Prolog args are first assigned to these, so we could examine the types
      of these objects to determine if we got strings or atoms. */
   prolog_term regexp_term, input_term, offset_term;
-  prolog_term output_term = extern_p2p_new();
+  prolog_term output_term = p2p_new();
   char *regexp_ptr=NULL;      /* regular expression ptr               */
   char *input_string=NULL;    /* string where matches are to be found */
   int ignorecase=FALSE;
@@ -859,7 +893,7 @@ int do_bulkmatch__(CTXTdecl)
   if (first_call)
     initialize_regexp_tbl();
 
-  regexp_term = reg_term(1);  /* Arg1: regexp */
+  regexp_term = reg_term(CTXTc 1);  /* Arg1: regexp */
   if (is_string(regexp_term)) /* check it */
     regexp_ptr = string_val(regexp_term);
   else if (is_list(regexp_term))
@@ -869,7 +903,7 @@ int do_bulkmatch__(CTXTdecl)
   else
     xsb_abort("RE_MATCH: Arg 1 (the regular expression) must be an atom or a character list");
 
-  input_term = reg_term(2);  /* Arg2: string to find matches in */
+  input_term = reg_term(CTXTc 2);  /* Arg2: string to find matches in */
   if (is_string(input_term)) /* check it */
     input_string = string_val(input_term);
   else if (is_list(input_term)) {
@@ -881,7 +915,7 @@ int do_bulkmatch__(CTXTdecl)
 
   input_len = strlen(input_string);
   
-  offset_term = reg_term(3); /* arg3: offset within the string */
+  offset_term = reg_term(CTXTc 3); /* arg3: offset within the string */
   if (! is_int(offset_term))
     xsb_abort("RE_MATCH: Arg 3 (the offset) must be an integer");
   offset = int_val(offset_term);
@@ -889,15 +923,15 @@ int do_bulkmatch__(CTXTdecl)
     xsb_abort("RE_MATCH: Arg 3 (=%d) must be between 0 and %d", input_len);
 
   /* If arg 4 is bound to anything, then consider this as ignore case flag */
-  if (! is_var(reg_term(4)))
+  if (! is_var(reg_term(CTXTc 4)))
     ignorecase = TRUE;
 
   last_pos = offset;
   /* returned result */
   listTail = output_term;
   while (last_pos < input_len) {
-    extern_c2p_list(listTail); /* make it into a list */
-    listHead = extern_p2p_car(listTail); /* get head of the list */
+    c2p_list(CTXTc listTail); /* make it into a list */
+    listHead = p2p_car(listTail); /* get head of the list */
 
     return_code = xsb_re_match(regexp_ptr, input_string+last_pos, ignorecase,
                                &match_array, &paren_number);
@@ -905,15 +939,15 @@ int do_bulkmatch__(CTXTdecl)
     if (! return_code) break;
 
     /* bind i-th match to listHead as match(beg,end) */
-    extern_c2p_functor("match", 2, listHead);
-    extern_c2p_int(match_array[0].rm_so+last_pos, extern_p2p_arg(listHead,1));
-    extern_c2p_int(match_array[0].rm_eo+last_pos, extern_p2p_arg(listHead,2));
+    c2p_functor(CTXTc "match", 2, listHead);
+    c2p_int(CTXTc match_array[0].rm_so+last_pos, p2p_arg(listHead,1));
+    c2p_int(CTXTc match_array[0].rm_eo+last_pos, p2p_arg(listHead,2));
 
-    listTail = extern_p2p_cdr(listTail);
+    listTail = p2p_cdr(listTail);
     last_pos = match_array[0].rm_eo+last_pos;
   }
-  extern_c2p_nil(listTail); /* bind tail to nil */
-  return extern_p2p_unify(output_term, reg_term(5));
+  c2p_nil(CTXTc listTail); /* bind tail to nil */
+  return p2p_unify(CTXTc output_term, reg_term(CTXTc 5));
 }
 \end{verbatim}
 }
