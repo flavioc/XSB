@@ -1,0 +1,404 @@
+\chapter{XASP: Answer Set Programming with XSB and Smodels}
+%===================================
+\label{xasp}
+
+\begin{center}
+{\Large {\bf By Luis Castro, Terrance Swift, David
+    S. Warren}~\footnote{ Thanks to Barry Evans for helping
+    resuscitate the XASP installation procedure.}}
+\end{center}
+
+The term {\em Answer Set Programming (ASP)} describes a paradigm in
+which logic programs are interpreted using the (extended) stable model
+semantics.  While the stable model semantics is quite elegant, it has
+radical differences from traditional program semantics based on
+Prolog.  First, stable model semantics applies only to ground
+programs; second stable model semantics is not goal-oriented --
+determining whether a stable model is true in a program involves
+examing each clause in a program, regardless of whether the goal would
+depends on the clause in a traditional evaluation.
+
+Despite (or perhaps because of) these differences, ASP has proven to
+be a useful paradigm for solving a variety of combinatorial programs.
+Indeed, determining a stable model for a logic program can be seen as
+an extension of the NP-complete problem of propositional
+satisfiability, so that satisfiability problems that can be naturally
+represented as logic programs can be solved using ASP.  
+
+The current generation of ASP systems are very efficient for
+determining whether a program has a stable model (analogous to whether
+the program, taken as a set of propositional axioms, is satisfiable).
+However, ASP systems have somewhat primitive file-based interfaces.
+XSB is a natural complement to ASP systems.  Its basis in Prolog
+provides a procedural couterpart for ASP, as described in Chapter 5 of
+Volume 1 of this manual; and XSB's computation of the Well-founded
+semantics has a well-defined relationship to stable model semantics.
+Furthermore, deductive-database-like capabilities of XSB allow it to
+be an efficient and flexible grounder for many ASP problems.
+
+The XASP package provides various mechanisms that allow tight linkage
+of XSB programs to the SModels \cite{smodels:engine} stable model
+generator.  The main interface is based on a store of clauses that can
+be incrementally asserted or deleted by an XSB program.  Clauses in
+this store can make use of all of the cardinality and weight
+constraint syntax supported by SModels, in addition to default
+negation.  When the user decides that the clauses in a store are a
+complete representation of a program whose stable model should be
+generated, the clauses are copied into SModels buffers.  Using the
+Smodels API, the generator is invoked, and information about any
+stable models generated are returned.  This use of XASP is roughly
+analagous to building up a constraint store in CLP, and periodically
+evaluating that store, but integration with the store is less
+transparent in XASP than in CLP.  In XASP, clauses must be explicitly
+added to a store and evaluated; furthermore clauses are not removed
+from the store upon backtracking, unlike constraints in CLP.
+
+The XNMR interpreter provides a second, somewhat more implicit use of
+XASP.  In the XNMR interface a query $Q$ is evaluated as is any other
+query in XSB.  However, conditional answers produced for $Q$ and for
+its subgoals, upon user request, can be considered as clauses and sent
+to SModels for evaluation.  In backtracking through answers for $Q$,
+the user backtracks not only through answer substitutions for
+variables of $Q$, but also through the stable models produced for the
+various bindings. 
+
+\section{Installing the Interface}
+
+Installing the Smodels interface of XASP sometimes can be tricky, for
+two reasons.  First, XSB must dynamically load the Smodels library,
+and dynamic loading introduces platform dependencies.  Second since
+Smodels is written in C++ and XSB is written in C, the load must
+ensure that names are properly resolved and that C++ libraries are
+loaded, steps that may addressed differently by different
+compilers~\footnote{XSB's compiler can automatically call foreign
+  compilers to compile modules written in C, but in \version{} of XSB
+  C++ modules must be compiled with external commands, such as the
+  {\tt make} command shown below.}.
+
+In order to use the Smodels interface, several steps must be
+performed.  {\em Note: this interface has not yet been ported to Windows
+Cygwin.}
+
+\begin{enumerate}
+\item {\em Creating a library for Smodels.} Smodels itself must be
+  compiled as a library and installed in the proper directory.  This
+  can be done in the {\tt \$SMODELS} directory (NOT the XASP
+  directory), using the Smodels makefile, possibly after modifing it.
+  On some platforms the command {\tt make libinstall} may work
+  properly, making and installing the Smodels library (by default
+  installed into {\tt /usr/local/lib}).  On other platforms, {\tt make
+    lib} may work properly, but the installation may need to be done
+  by hand.
+
+  If the compilation step ran successfully, there should be a file
+  {\tt libsmodels.so} (or {\tt libsomodels.dylib} on Mac OS X or {\tt
+    libsmodels.dll} on Windows...) in the appropriate directory.
+
+  The Smodels makefile included in version 2.31 can be problematic on
+  Mac OS X.  The directory {\tt \$XSBDIR/packages/xasp/makefiles} has
+  makefiles that work for Mac OS X 10.3 and 10.4.
+
+\item {\em Making the Smodels include files visible to XASP.}  This
+  step may not be necessary on all systems, but it is simple to do by
+  executing the command
+%
+\begin{verbatim}
+sh makelinks.sh <path-to-smodels>
+\end{verbatim}
+%
+which copies them to the XASP directory.
+
+\item {\em Compiling the XASP files} Compilation of the XASP files
+  depends on the {\tt smoMakefile} that is generated by XSB's
+  configuration procedure.  Thus, reconfigure XSB with the option
+\begin{verbatim}
+  --with-smodels=<path-to-smodels> 
+\end{verbatim}
+  along with any other desired options (Note: the Smodels interface
+  has not been tested with the multi-threaded engine, and Smodels
+  itself is not thread-safe).  The main reason for this configuration
+  is to make the {\tt smoMakefile}, so XSB does not need to be
+  recompiled -- although recompilation wont hurt.
+
+  Once the {\tt smoMakefile} is obtained, it should be moved into the
+  {\tt xasp} directory from \\ {\tt \$XSBDIR/config/<configuration+tag>}.
+  Then type the following two commands:
+%
+\begin{verbatim}
+  make -f smoMakefile module
+
+  make -f smoMakefile all
+\end{verbatim}
+%
+\item {\em Checking the Installation} 
+%
+To see if the installation is working properly, cd to the subdirectory
+{\tt tests} and type: 
+
+{\tt sh testsuite.sh <\$XSBDIR>}
+
+If the test suite succeeded it will print out a message along the lines of 
+
+\begin{small}
+{\tt PASSED testsuite for /Users/terranceswift/XSBNEW/XSB/config/powerpc-apple-darwi\
+n7.5.1/bin/xsb}
+\end{small}
+
+\end{enumerate}
+
+
+\section{The Smodels Interface}
+
+The Smodels interface contains two levels: the \emph{cooked} level and
+the \emph{raw} level.  The cooked level interns rules in an XSB
+\emph{clause store}, and translates general weight constraint rules
+\cite{SiNS02} into a \emph{normal form} that the Smodels engine can
+evaluate.  When the programmer has determined that enough clauses have
+been added to the store to form a semantically complete sub-program,
+the program is \emph{committed}.  This means that information in the
+clauses is copied to Smodels and interned using Smodels data
+structures so that stable models of the clauses can be computed and
+examined.  By convention, the cooked interface ensures that the atom
+{\tt true} is present in all stable models, and the atom {\tt false}
+is false in all stable models.  The raw level models closely the
+Smodels API, and demands, among other things, that each atom in a
+stable sub-program has been translated into a unique integer.  The raw
+level also does not provide translation of arbitrary weight constraint
+rules into the normal form requried by the Smodels engine.  As a
+result, the raw level is significantly more difficult to directly use
+than the cooked level.  While we make public the APIs for both the raw
+and cooked level, we provide support only for users of the cooked
+interface.
+
+As mentioned above Smodels extends normal programs to allow weight
+constraints, which can be useful for combinatorial problems.  However,
+the syntax used by Smodels for weight constraints does not follow ISO
+Prolog syntax so that the XSB syntax for weight constraints differs in
+some respects from that of Smodels.  Our syntax is defined as follows,
+where \emph{A} is a Prolog atom, \emph{N} a non-negative integer, and
+\emph{I} an arbitrary integer.
+
+\begin{itemize}
+
+\item {\em GeneralLiteral ::= WeightConstraint $|$ Literal }
+
+\item {\em WeightConstraint ::= weightConst(Bound,WeightList,Bound) }
+
+\item {\em WeightList ::= List of WeightLiterals }
+
+\item {\em WeightLiteral ::= Literal $|$ weight(Literal,N) }
+
+\item {\em Literal ::= A $|$ not(A) }
+
+\item {\em Bound ::== I $|$ {\tt undef} }
+
+\end{itemize}
+
+Thus an example of a weight constraint might be: 
+\begin{itemize}
+\item {\tt weightConst(1,[weight(a,1),weight(not(b),1)],2)}
+\end{itemize}
+We note that if a user does not wish to put an upper or lower bound on
+a weight constraint, she may simply set the bound to {\tt undef} or to
+an integer less than {\tt 0}.  
+ 
+The intuitive semantics of a weight constraint
+{\tt weightConst(Lower,WeightList,Upper)}, in which {\tt List} is is
+list of \emph{WeightLiterals} that it is true in a model \emph{M} whenever
+the sum of the weights of the literals in the constraint that are true
+in \emph{M} is between the lower {\tt Lower} and {\tt Upper}.  Any literal
+in a \emph{WeightList} that does not have a weight explicitly attached
+to it is taken to have a weight of \emph{1}.
+
+In a typical session, a user will initialize the Smodels interface,
+add rules to the clause store until it contains a semantically
+meaningful sub-problem.  He can then specify a compute statement if
+needed, commit the rules, and compute and examine stable models via
+backtracking.  If desired, the user can then re-initialize the
+interface, and add rules to or retract rules from the clause store
+until another semantically meaningful sub-program is defined; and then
+commit, compute and examine another stable model \footnote{Currently,
+only normal rules can be retracted.}.
+
+The process of adding information to a store and periodically
+evaluating it is vaguely reminiscent of the Constraint Logic
+Programming (CLP) paradigm, but there are important differences.  In
+CLP, constraints are part of the object language of a Prolog program:
+constraints are added to or projected out of a constraint store upon
+forward execution, removed upon backwards execution, and iteratively
+checked.  When using this interface, on the other hand, an XSB program
+essentially acts as a compiler for the clause store, which is treated
+as a target language.  Clauses must be explicitly added or removed
+from the store, and stable model computation cannot occur
+incrementally -- it must wait until all clauses have been added to the
+store.  We note in passing that the {\tt xnmr} module provides an
+elegant but specialized alternative.  {\tt xnmr} integrates stable
+models into the object language of XSB, by computing ""relevant""
+stable models from the the residual answers produced by query
+evaluation.  It does not however, support the weighted constriant
+rules, compute statements and so on that this module supports.
+
+Neither the raw nor the cooked interface currently supports explicit
+negation.
+
+Examples of use of the various interfaces can be found in the
+subdirectory {\tt intf\_examples}
+
+\begin{description}
+\ouritem{smcInit}
+\index{\texttt{smcInit/0}} 
+%
+Initializes the XSB clause store and the Smodels API.  This predicate
+must be executed before building up a clause store for the first time.
+The corresponding raw predicate, {\tt smrInit(Num)}, initializes the
+Smodels API assuming that it will require at most {\tt Num} atoms.
+
+\ouritem{smcReInit}
+\index{\texttt{smcReInit}} 
+%
+Reinitializes the Smodels API, but does \emph{not} affect the XSB
+clause store.  This predicate is provided so that a user can reuse
+rules in a clause store in the context of more than one sub-program.
+
+\ouritem{smcAddRule(+Head,+Body)}
+\index{\texttt{smcAddRule/2}} 
+%
+Interns a ground rule into the XSB clause store.  {\tt Head} must be a
+\emph{GeneralLiteral} as defined at the beginning of this section, and
+     {\tt Body} must be a list of \emph{GeneralLiterals}.  Upon
+     interning, the rule is translated into a normal form, if
+     necessary, and atoms are translated to unique integers.  The
+     corresponding raw predicates, {\tt smrAddBasicRule/3}, {\tt
+       smrAddChoiceRule/3}, {\tt smrAddConstraintRule/4}, and {\tt
+       smrAddWeightRule/3} can be used to add raw predicates
+     immediately into the SModels API.
+
+\ouritem{smcRetractRule(+Head,+Body)}
+\index{\texttt{smcRetractRule/2}} 
+%
+Retracts a ground (basic) rule from the XSB clause store.  Currently,
+this predicate cannot retract rules with weight constraints: {\tt
+  Head} must be a \emph{Literal} as defined at the beginning of this
+section, and {\tt Body} must be a list of \emph{GeneralLiterals}.
+
+\ouritem{smcSetCompute(+List)}
+\index{\texttt{smcCompute/1}} 
+%
+Requires that {\tt List} be a list of literals -- i.e. atoms or the
+default negation of atoms).  This predicate ensures that each literal
+in {\tt List} is present in the stable models returned by Smodels.  By
+convention the cooked interface ensures that {\tt true} is present and
+{\tt false} absent in all stable models.  After translating a literal
+it calls the raw interface predicates {\tt smrSetPosCompute/1} and
+{\tt smrSetNegCompute/1}
+
+\ouritem{smcCommitProgram}
+\index{\texttt{smcCommitProgram/0}} 
+%
+This predicate translates all of the clauses from the XSB clause store
+into the data structures of the Smodels API.  It then signals to the
+API that all clauses have been added, and initializes the Smodels
+computation.  The corresponding raw predicate, {\tt smrCommitProgram},
+performs only the last two of these features.
+
+\ouritem{smComputeModel}
+\index{\texttt{smcComputeModel/0}} 
+%
+This predicate calls Smodels to compute a stable model, and succeeds
+if a stable model can be computed.  Upon backtracking, the predicate
+will continue to succeed until all stable models for a given program
+cache have been computed.  {\tt smComputeModel/0} is used by both the
+raw and the cooked levels.
+
+\ouritem{smcExamineModel(+List,-Atoms)}
+\index{\texttt{smcExamineModel/2}} 
+%
+{\tt smcExamineModel/(+List,-Atoms)} filters the literals in {\tt
+  List} to determine which are true in the most recently computed
+stable model.  These true literals are returned in the list {\tt
+  Atoms}.  {\tt smrExamineModel(+N,-Atoms)} provides the corresponding
+raw interface in which integers from {\tt 0} to {\tt N}, true in the
+most recently computed stable model, are input and output.
+
+\ouritem{smEnd}
+\index{\texttt{smcEnd/0}} 
+%
+Reclaims all resources consumed by Smodels and the various APIs.  This
+predicate is used by both the cooked and the raw interfaces.
+
+\ouritem{print\_cache}
+\index{\texttt{print\_cache/0}} 
+%
+This predicate can be used to examine the XSB clause store, and may
+be useful for debugging.
+
+\end{description}
+
+\section{The xnmr\_int Interface}.
+
+This module provides the interface from the {\tt xnmr} module to
+Smodels.  It does not use the {\tt sm\_int} interface, but rather
+directly calls the Smodels C interface, and can be thought of as a
+special-purpose alternative to {\tt sm\_int}.
+
+\begin{description}
+\ouritem{init\_smodels(+Query)}
+\index{\texttt{init\_smodels/1}}
+%
+Initializes smodels with the residual program produced by evaluationg
+{\tt Query}.  {\tt Query} must be a call to a tabled predicate that is
+currently completely evaluated (and should have a delay list)
+
+\ouritem{atom\_handle(?Atom,?AtomHandle)} 
+\index{\texttt{atom\_handle/2}}
+% 
+The {\em handle} of an atom is set by {\tt init\_smodels/1} to be an
+integer uniquely identifying each atoms in the residual program (and
+thus each atom in the Herbrand base of the program for which the
+stable models are to be derived.  The initial query given to
+{\tt init\_smodels} has the atom-handle of 1.
+
+\ouritem{in\_all\_stable\_models(+AtomHandle,+Neg)}
+\index{\texttt{in\_all\_stable\_models/2}}
+%
+{\tt in\_all\_stable\_models/2} returns true if {\tt Neg} is 0 and the
+atom numbered {\tt AtomHandle} returns true in all stable models (of
+the residual program set by the previous call to {\tt
+  init\_smodels/1}).  If {\tt Neg} is nonzero, then it is true if the
+atom is in NO stable model.
+
+\ouritem{pstable\_model(+Query,-Model,+Flag)}
+\index{\texttt{pstable\_model/3}}
+%
+returns nondeterministically a list of atoms true in the partial
+stable model total on the atoms relevant to instances of {\tt Query},
+if {\tt Flag} is 0.  If {\tt Flag} is 1, it only returns models in
+which the instance of {\tt Query} is true.
+
+\ouritem{a\_stable\_model}
+\index{\texttt{a\_stable\_model/0}}
+%
+This predicate invokes Smodels to find a (new) stable model (of the
+program set by the previous invocation of {\tt init\_smodels/1}.)  It
+will compute all stable models through backtracking.  If there are no
+(more) stable models, it fails.  Atoms true in a stable model can be
+examined by {\tt in\_current\_stable\_model/1}.
+
+\ouritem{in\_current\_stable\_model(?AtomHandle)} 
+\index{\texttt{in\_current\_stable\_model/1}}
+%
+This predicate is true of handles of atoms true in the current stable
+model (set by an invocation of {\tt a\_stable\_model/0}.)
+
+\ouritem{current\_stable\_model(-AtomList)}
+\index{\texttt{current\_stable\_model/1}}
+%
+returns the list of atoms true in the current stable model.
+
+\ouritem{print\_current\_stable\_model}
+\index{\texttt{print\_current\_stable\_model/0}}
+%
+prints the current stable model to the stream to which answers are
+sent (i.e {\tt stdfbk})
+
+\end{description}
