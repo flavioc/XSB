@@ -189,7 +189,7 @@ typedef struct Deleted_Table_Frame {
    DTF_NextDTF(pDTF) = private_deltf_chain_begin;			\
    DTF_NextPredDTF(pDTF) = TIF_DelTF(pTIF);				\
    if (private_deltf_chain_begin)					\
-     DTF_PrevDTF(deltf_chain_begin) = pDTF;				\
+     DTF_PrevDTF(private_deltf_chain_begin) = pDTF;				\
    if (TIF_DelTF(pTIF))  DTF_PrevPredDTF(TIF_DelTF(pTIF)) = pDTF;	\
    private_deltf_chain_begin = pDTF;					\
    TIF_DelTF(pTIF) = pDTF;                                              \
