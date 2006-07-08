@@ -56,54 +56,10 @@
 #include "subp.h"
 #endif
 
-/*----------------------------------------------------------------------*/
-
-/* These variables are global, so in principle, you could run the
-   instruction debugger with multiple active threads.  It hasn't been
-   tested out, however. */
-
-int call_step_gl = 0;
-int hitrace_suspend_gl = 0;
-
-#ifdef DEBUG_VM
-int pil_step = 1;
-int compl_step = 0;
-int debug_ctr = 0;
-int print_hide = 0;
-int memory_watch_flag = 0;
-int register_watch_flag = 0;
-#endif
-
-/*----------------------------------------------------------------------*/
-
-extern int  xctr;
-
-/*======================================================================*/
-
-#ifdef DEBUG_VM
-static void debug_interact(CTXTdecl);
-#endif
-
-/*======================================================================*/
-/*  The following are possibly used both for tracing and by XSB		*/
-/*  developers during debugging.					*/
-/*======================================================================*/
-
-CPtr decode_ptr(Cell cell) {
-  return ( clref_val(cell) );
-}
-
-
-int decode_int(Cell cell) {
-  return ( int_val(cell) );
-}
-
-
-int decode_tag(Cell cell) {
-  return ( cell_tag(cell) );
-}
-
-/*----------------------------------------------------------------------*/
+/*=============================================================================*/
+/*  The first section of predicates are used for tracing as well as by XSB     */
+/*  developers during debugging.  They should always be defined		       */
+/*=============================================================================*/
 
 #define CAR		1
 #define CDR		0
@@ -200,14 +156,13 @@ static void print_term(FILE *fp, Cell term, byte car, int level)
   }
 }
 
-
 void printterm(FILE *fp, Cell term, int depth) {
 
   print_term(fp, term, CAR, depth);
   fflush(fp); 
 }
 
-/*----------------------------------------------------------------------*/
+/*------------------------------------------------------------------*/
 /* Used to print out call using WAM registers */
 
 static void print_call(CTXTdeclc Psc psc)
@@ -226,7 +181,13 @@ static void print_call(CTXTdeclc Psc psc)
   fflush(stddbg);
 }
 
-/*----------------------------------------------------------------------*/
+/*------------------------------------------------------------------*/
+/* These variables are global, so in principle, you could run the
+   instruction debugger with multiple active threads.  It hasn't been
+   tested out, however. */
+
+int call_step_gl = 0;
+int hitrace_suspend_gl = 0;
 
 void debug_call(CTXTdeclc Psc psc)
 {
@@ -238,9 +199,253 @@ void debug_call(CTXTdeclc Psc psc)
   } else if (!hitrace_suspend_gl) print_call(CTXTc psc);
 }
 
+/*=============================================================================*/
+/*  The second section of predicates I (TLS) use when debugging with gdb.      */
+/*  Please ensure they stay defined whenever we compile with -dbg option.      */
+/*=============================================================================*/
+
+/*----------------------------------------------------------------------*/ 
+/* This set of routines prints out the CP stack with stuff I happen to
+   want.  It has different information than print_cp() in gc_print.h, so
+   please keep it around. */
+
+#ifdef CP_DEBUG
+void print_cpf_pred(CPtr cpf)
+{
+  Psc psc;
+  
+  psc = cp_psc(cpf);
+  if (psc) {
+    switch(get_type(psc)) {
+    case T_PRED:
+      fprintf(stddbg,"choicepoint(address(%p),pred(%s/%d)).\n",
+	      cpf, get_name(psc), get_arity(psc));
+      break;
+    case T_DYNA:
+      fprintf(stddbg,"choicepoint(address(%p),dyna_pred(%s/%d)).\n",
+	      cpf, get_name(psc), get_arity(psc));
+      break;
+    case T_ORDI:
+      fprintf(stddbg,"choicepoint(address(%p),t_ordi).\n",
+	      cpf);
+      break;
+    case T_UDEF:
+      fprintf(stddbg,"choicepoint(address(%p),unloaded(%s/%d)).\n",
+	      cpf, get_name(psc), get_arity(psc));
+      break;
+    default:
+      fprintf(stddbg,"choicepoint(address(%p),unknown_pred).\n", cpf);
+      break;
+    }
+  } else
+    fprintf(stddbg,"choicepoint(address(%p),unknown_psc).\n", cpf);
+
+}
+
+void print_cp_backtrace()
+{
+  CPtr mycp;
+  mycp = (CPtr) breg;
+  while (mycp <= tcpstack.high - CP_SIZE -1 && mycp != (CPtr) cp_prevbreg(mycp)) {
+    print_cpf_pred(mycp);
+    mycp = cp_prevbreg(mycp);
+  }
+}
+
+void alt_print_cpf_pred(CPtr cpf,FILE* where)
+{
+  Psc psc;
+  
+  psc = * (Psc *)cpf;
+  if (psc) {
+    switch(get_type(psc)) {
+    case T_PRED:
+      fprintf(where,"   CP stack %p\t Static Predicate: \t%s/%d\n",
+	      cpf, get_name(psc), get_arity(psc));
+      break;
+    case T_DYNA:
+      fprintf(where,"   CP stack %p\t Dyna Predicate: \t%s/%d\n",
+	      cpf, get_name(psc), get_arity(psc));
+      break;
+    case T_ORDI:
+      fprintf(where,"CP stack %p\t ORDI Predicate: \t\n",
+	      cpf);
+      break;
+    case T_UDEF:
+      fprintf(where,"CP stack %p\t UNDEF Predicate: \t\n",
+	      cpf);
+      break;
+    default:
+      fprintf(where,"choicepoint(address(%p),unknown_pred).\n", cpf);
+      break;
+    }
+  } else
+    fprintf(where,"choicepoint(address(%p),unknown_psc).\n", cpf);
+}
+
+#endif CP_DEBUG
+
+/*-------------------------------------------*/ 
+
+static void print_common_cpf_part(CPtr cpf_addr, FILE* where) {
+
+  fprintf(where,"   CP stack %p:\tptr to next clause:\t%p\n",
+	     &(cp_pcreg(cpf_addr)), cp_pcreg(cpf_addr));
+  fprintf(where,"   CP stack %p:\tprev top:\t%p\n", 
+	     &(cp_prevtop(cpf_addr)), cp_prevtop(cpf_addr));
+#ifdef CP_DEBUG
+  if ( (int) cp_psc(cpf_addr) != 0) 
+    alt_print_cpf_pred((CPtr) &(cp_psc(cpf_addr)),where);
+#endif
+  fprintf(where,"   CP stack %p:\tprev env cap (ebreg):\t%p\n",
+	     &(cp_ebreg(cpf_addr)), cp_ebreg(cpf_addr));
+  fprintf(where,"   CP stack %p:\ttop of heap:\t\t%p\n", 
+	     &(cp_hreg(cpf_addr)), cp_hreg(cpf_addr));
+  fprintf(where,"   CP stack %p:\ttop of trail:\t\t%p\n",
+	     &(cp_trreg(cpf_addr)), cp_trreg(cpf_addr));
+  fprintf(where,"   CP stack %p:\tcontinuation pointer:\t%p\n", 
+	     &(cp_cpreg(cpf_addr)), cp_cpreg(cpf_addr));
+  fprintf(where,"   CP stack %p:\ttop of local stack:\t%p\n", 
+	     &(cp_ereg(cpf_addr)), cp_ereg(cpf_addr));
+  fprintf(where,"   CP stack %p:\tparent subgoal dreg:\t%p\n", 
+	     &(cp_pdreg(cpf_addr)), cp_pdreg(cpf_addr));
+  fprintf(where,"   CP stack %p:\troot subgoal:\t%p\n", 
+	     &(cp_ptcp(cpf_addr)), cp_ptcp(cpf_addr));
+  fprintf(where,"   CP stack %p:\tdynamic link:\t\t%p\n", 
+	     &(cp_prevbreg(cpf_addr)), cp_prevbreg(cpf_addr));
+ }
+
+static void print_cpf(CPtr cpf_addr, FILE* where) {
+
+  CPtr arg;
+  int i, num_of_args, cp_type = 0;
+  byte inst;
+
+  inst = * (byte *) * cpf_addr;
+
+  /* tableretry, tabletrust, check_complete */
+  if (inst == 0xc3 || inst == 0xc4 || inst == 0xc4) 
+    cp_type = GENERATOR_CP_FRAME;
+  /* retryme, trustme, retry, trust, dynretry, dyntrust, retrymeor, trustmeor */
+  else if (inst == 0xa1 || inst == 0xa2 || inst == 0xa4 
+	   || inst == 0xa5 || inst == 0xba || inst == 0xbb || inst == 0xb8 || inst == 0xb9)
+    cp_type = STANDARD_CP_FRAME;
+  else if (inst >= 0x5c && inst <= 0x77)  // tries
+    cp_type = STANDARD_CP_FRAME;
+  else if (inst == 0xc5) 
+    cp_type = CONSUMER_CP_FRAME;
+  else if (inst == 0xc6) 
+    cp_type = COMPL_SUSP_CP_FRAME;
+
+  switch (cp_type) {
+  case STANDARD_CP_FRAME:
+    fprintf(where,"Standard Choice Point Frame: (%s)\n",(char *)inst_table[inst][0]);
+
+    print_common_cpf_part(cpf_addr,where);
+
+    num_of_args = (cp_prevtop(cpf_addr) - cpf_addr) - CP_SIZE;
+    for (i = 1, arg = cpf_addr + CP_SIZE; i <= num_of_args; i++, arg++)
+      fprintf(where,"   CP stack %p:\tpredicate arg #%d:\t0x%p\n",
+		 arg, i, ref_val(*arg));
+    break;
+  case GENERATOR_CP_FRAME:
+    fprintf(where,"Generator Choice Point Frame:\n");
+    print_common_cpf_part(cpf_addr,where);
+    fprintf(where,"   CP stack %p:\ttemplate:\t0x%p", 
+	       &(tcp_template(cpf_addr)), tcp_template(cpf_addr));
+    fprintf(where,"   CP stack %p:\tsubgoal frame ptr:\t0x%p\n", 
+	       &(tcp_subgoal_ptr(cpf_addr)), tcp_subgoal_ptr(cpf_addr));
+    fprintf(where,"   CP stack %p:\tCh P  freeze register:\t0x%p\n", 
+	       &(tcp_bfreg(cpf_addr)), tcp_bfreg(cpf_addr));
+    fprintf(where,"   CP stack %p:\tHeap  freeze register:\t0x%p\n", 
+	       &(tcp_hfreg(cpf_addr)), tcp_hfreg(cpf_addr));
+    fprintf(where,"   CP stack %p:\tTrail freeze register:\t0x%p\n", 
+	       &(tcp_trfreg(cpf_addr)), tcp_trfreg(cpf_addr));
+    fprintf(where,"   CP stack %p:\tLo St freeze register:\t0x%p\n", 
+	       &(tcp_efreg(cpf_addr)), tcp_efreg(cpf_addr));
+#ifdef LOCAL_EVAL
+    fprintf(where,"   CP stack %p:\tlocal eval trie_return:\t0x%p\n",
+	       &(tcp_trie_return(cpf_addr)), tcp_trie_return(cpf_addr));
+#endif
+    num_of_args = (cp_prevtop(cpf_addr) - cpf_addr) - TCP_SIZE;
+    for (i = 1, arg = cpf_addr + TCP_SIZE; i <= num_of_args; i++, arg++)
+      fprintf(where,"   CP stack %p:\tpredicate arg #%d:\t0x%p\n",
+	      arg, i, ref_val(*arg));
+    break;
+  case CONSUMER_CP_FRAME:
+    fprintf(where,"Consumer Choice Point Frame:\n");
+    print_common_cpf_part(cpf_addr,where);
+    fprintf(where,"   CP stack %p:\ttemplate:\t0x%p", 
+	       &(nlcp_template(cpf_addr)), nlcp_template(cpf_addr));
+    fprintf(where,"   CP stack %p:\tsubgoal frame ptr:\t0x%p\n", 
+	       &(nlcp_subgoal_ptr(cpf_addr)), nlcp_subgoal_ptr(cpf_addr));
+    fprintf(where,"   CP stack %p:\tPrevlookup:\t0x%p\n", 
+	       &(nlcp_prevlookup(cpf_addr)), nlcp_prevlookup(cpf_addr));
+#ifdef LOCAL_EVAL
+    fprintf(where,"   CP stack %p:\tlocal eval trie_return:\t0x%p\n",
+	       &(nlcp_trie_return(cpf_addr)), nlcp_trie_return(cpf_addr));
+#endif
+    num_of_args = (cp_prevtop(cpf_addr) - cpf_addr) - NLCP_SIZE;
+    for (i = 1, arg = cpf_addr + NLCP_SIZE; i <= num_of_args; i++, arg++)
+      fprintf(where,"   CP stack %p:\tpredicate arg #%d:\t0x%p\n",
+		arg, i, ref_val(*arg));
+    break;
+    case COMPL_SUSP_CP_FRAME:
+    fprintf(where,"Completion Choice Point Frame:\n");
+    print_common_cpf_part(cpf_addr,where);
+    fprintf(where,"   CP stack %p:\tsubgoal frame ptr:\t0x%p\n", 
+	       &(csf_subgoal_ptr(cpf_addr)), csf_subgoal_ptr(cpf_addr));
+    fprintf(where,"   CP stack %p:\tPrevCSF:\t0x%p\n", 
+	       &(csf_prevcsf(cpf_addr)), csf_prevcsf(cpf_addr));
+    fprintf(where,"   CP stack %p:\tNeg Loop:\t%d\n",
+	    &(csf_neg_loop(cpf_addr)), (int) csf_neg_loop(cpf_addr));
+    num_of_args = (cp_prevtop(cpf_addr) - cpf_addr) - CSF_SIZE;
+    for (i = 1, arg = cpf_addr + CSF_SIZE; i <= num_of_args; i++, arg++)
+      fprintf(where,"   CP stack %p:\tpredicate arg #%d:\t0x%p\n",
+		arg, i, ref_val(*arg));
+    break;
+  default:
+    xsb_error("CP Type %d not handled yet...", cp_type);
+    break;
+  }
+}
+
+static int alt_printnum = 0 ;
+
+void alt_print_cp(CTXTdecl)
+{
+  CPtr startp, endp ;
+  char buf[100] ;
+  int  start ;
+  FILE *where ;
+
+  sprintf(buf,"ACP%d",alt_printnum) ;
+  alt_printnum++ ;
+  where = fopen(buf,"w") ;
+  if (! where)
+    { xsb_dbgmsg((LOG_GC, "could not open CP%d", printnum));
+      return;
+    }
+
+  start = 0 ;
+  startp = (CPtr)tcpstack.high - 1 ; 
+  endp = top_of_cpstack ; 
+
+  while ( startp > endp )
+  { fflush(where);
+    start++ ;
+    print_cpf(endp, where );
+
+    endp = cp_prevtop(endp);
+  }
+
+  fclose(where) ;
+} /* print_cp */
+
 /*======================================================================*/
-/*  The following till the end of file are used only by XSB developers	*/
-/*  during internal system debugging.					*/
+/*  The third set of routines should be useful with gdb.  They need to  */
+/*  be revised to get rid of the xsb_dbg stuff, and so that they're     */
+/*  defined whenever we configure with -dbg                             */
 /*======================================================================*/
 
 #if (defined(DEBUG_VERBOSE) || defined(DEBUG_VM))
@@ -262,68 +467,9 @@ static int count_producer_subgoals(void)
   return(i);
 }
 
-void print_help(void)
-{
-      fprintf(stddbg, "\n      a r/v/d/a <addr>: inspect the content of the address");
-      fprintf(stddbg, "\n      b <module> <name> <arity>: spy the predicate");
-      fprintf(stddbg, "\n      B <num>: print detailed Prolog choice points from the top");
-      fprintf(stddbg, "\n\tof the choice point stack with <num>-Cell overlap");
-      fprintf(stddbg, "\n      c <num>: print top of choice point stack with <num> overlap");
-      fprintf(stddbg, "\n      C <num>: print choice point stack (around bfreg) with <num> overlap");
-      fprintf(stddbg, "\n      d: print disassembled code for module");
-      fprintf(stddbg, "\n      D: print current value of delay list (pointed by delayreg)");
-      fprintf(stddbg, "\n      e <size>: expand trail/cp stack to <size> K-byte blocks");
-      fprintf(stddbg, "\n      E <num>: print top of environment (local) stack with <num> overlap");
-      fprintf(stddbg, "\n      g: leap to the next check_complete instruction");
-      fprintf(stddbg, "\n      G: same as 'g', but does not print intermediate info");
-      fprintf(stddbg, "\n      h: help");
-      fprintf(stddbg, "\n      H <num>: print top of heap with <num> overlap");
-      fprintf(stddbg, "\n      k <int>: print and skip <int> instructions");
-      fprintf(stddbg, "\n      K <int>: skip <int> instructions");
-      fprintf(stddbg, "\n      l: leap to the next spy point");
-      fprintf(stddbg, "\n      L: same as 'l', but does not print intermediate info");
-      fprintf(stddbg, "\n      M: print statistics");
-      fprintf(stddbg, "\n      n: leap to the next call");
-      fprintf(stddbg, "\n      N: nodebugging, continue to the end");
-      fprintf(stddbg, "\n      o: print completion stack");
-      fprintf(stddbg, "\n      P: print PDLSTK");
-      fprintf(stddbg, "\n      q: quit XSB");
-      fprintf(stddbg, "\n      r <num>: print register <num> as term");
-      fprintf(stddbg, "\n      R <num>: print register <num> as ptr");
-      fprintf(stddbg, "\n      S: print status registers");
-      fprintf(stddbg, "\n      T <num>: print top of trail with <num> overlap");
-      fprintf(stddbg, "\n      u <name> <arity>: unspy the predicate");
-      fprintf(stddbg, "\n      w <stack> <val>: watch <stack> register for <val>");
-      fprintf(stddbg, "\n      W <stack> <val>: watch memory area of <stack> for <val>");
-      fprintf(stddbg, "\n      1: print top of (persistent) subgoal stack");
-      fprintf(stddbg, "\n      2 <num>: print val of table pointer");
-      fprintf(stddbg, "\n      ?: help");
-      fprintf(stddbg, "\n");
-}
-
-/*--------------------------------------------------------------------------*/
-
-/*
- * Tries to make the interface more robust by cleaning-up any extra user
- * input supplied to a prompt.  Place a call to this function after any
- * input scan which doesn't take the whole input line (ie. which isn't a
- * `scanf("%s", &array);').
- */
-static void skip_to_nl(void)
-{
-  char c;
-
-  do {
-    c = getchar();
-  } while (c != '\n');
-}
-
-/*----------------------------------------------------------------------*/ 
-
 /*----- For table debugging --------------------------------------------*/ 
 
 static Cell cell_array[500];
-
 
 static void print_term_of_subgoal(FILE *fp, int *i)
 {
@@ -476,65 +622,6 @@ void print_delay_list(FILE *fp, CPtr dlist)
     }
   }
 }
-
-/*----------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------*/ 
-
-/*----------------------------------------------------------------------*/ 
-
-/*----------------------------------------------------------------------*/ 
-
-/*----- For table debugging --------------------------------------------*/ 
-
-static char *compl_stk_frame_field[] = {
-  "subgoal_ptr", "level_num",
-  "del_ret_list", "visited", 
-#ifndef LOCAL_EVAL
-"DG_edges", "DGT_edges"
-#endif
-};
-
-void print_completion_stack(CTXTdecl)
-{
-  int i = 0;
-  EPtr eptr;
-  VariantSF subg;
-  CPtr temp = openreg;
-
-  fprintf(stddbg,"openreg -> ");
-  while (temp < COMPLSTACKBOTTOM) {
-    if ((i % COMPLFRAMESIZE) == 0) {
-      fprintf(stddbg,EOFR);	/* end of frame */
-      subg = (VariantSF) *temp;
-      print_subg_header(subg);
-    }
-    fprintf(stddbg,"Completion Stack %p: %lx\t(%s)",
-	    temp, *temp, compl_stk_frame_field[(i % COMPLFRAMESIZE)]);
-    if ((i % COMPLFRAMESIZE) >= COMPLFRAMESIZE-2) {
-      for (eptr = (EPtr)*temp; eptr != NULL; eptr = next_edge(eptr)) {
-	fprintf(stddbg," --> %p", edge_to_node(eptr));
-      }
-    }
-    fprintf(stddbg,"\n");
-    temp++; i++;
-  }
-  fprintf(stddbg, EOS);
-}
-
-/*----------------------------------------------------------------------*/
-
-#ifdef DEBUG_VM
-static void print_pdlstack(CTXTdecl)
-{
-  CPtr temp = pdlreg;
-
-  while (temp <= (CPtr)(pdl.high) - 1) {
-    xsb_dbgmsg((LOG_DEBUG,"pdlstk %p: %lx", temp, *temp));
-    temp++;
-  }
-}
-#endif
 
 /*-------------------------------------------------------------------------*/
 
@@ -702,7 +789,148 @@ void print_tables(void)
   fprintf(stddbg, EOS);
 }
 
-/*----------------------------------------------------------------------*/ 
+#endif
+
+/*======================================================================*/
+/*  The final set of routines should be useful with the instruction-    */
+/*  level debugger.  This can be useful if you're adding a bunch of new */
+/*  instructions, but it hasnt been used for years, so it would need    */
+/*  some work to get it back into shape.  These routines should be      */
+/*  defined only with DEBUG_VM                                          */
+/*======================================================================*/
+
+#ifdef DEBUG_VM
+extern int  xctr;
+
+int pil_step = 1;
+int compl_step = 0;
+int debug_ctr = 0;
+int print_hide = 0;
+int memory_watch_flag = 0;
+int register_watch_flag = 0;
+#endif
+
+#ifdef DEBUG_VM
+static void debug_interact(CTXTdecl);
+
+CPtr decode_ptr(Cell cell) {
+  return ( clref_val(cell) );
+}
+
+int decode_int(Cell cell) {
+  return ( int_val(cell) );
+}
+
+int decode_tag(Cell cell) {
+  return ( cell_tag(cell) );
+}
+
+/*----------------------------------------------------------------------*/
+
+void print_help(void)
+{
+      fprintf(stddbg, "\n      a r/v/d/a <addr>: inspect the content of the address");
+      fprintf(stddbg, "\n      b <module> <name> <arity>: spy the predicate");
+      fprintf(stddbg, "\n      B <num>: print detailed Prolog choice points from the top");
+      fprintf(stddbg, "\n\tof the choice point stack with <num>-Cell overlap");
+      fprintf(stddbg, "\n      c <num>: print top of choice point stack with <num> overlap");
+      fprintf(stddbg, "\n      C <num>: print choice point stack (around bfreg) with <num> overlap");
+      fprintf(stddbg, "\n      d: print disassembled code for module");
+      fprintf(stddbg, "\n      D: print current value of delay list (pointed by delayreg)");
+      fprintf(stddbg, "\n      e <size>: expand trail/cp stack to <size> K-byte blocks");
+      fprintf(stddbg, "\n      E <num>: print top of environment (local) stack with <num> overlap");
+      fprintf(stddbg, "\n      g: leap to the next check_complete instruction");
+      fprintf(stddbg, "\n      G: same as 'g', but does not print intermediate info");
+      fprintf(stddbg, "\n      h: help");
+      fprintf(stddbg, "\n      H <num>: print top of heap with <num> overlap");
+      fprintf(stddbg, "\n      k <int>: print and skip <int> instructions");
+      fprintf(stddbg, "\n      K <int>: skip <int> instructions");
+      fprintf(stddbg, "\n      l: leap to the next spy point");
+      fprintf(stddbg, "\n      L: same as 'l', but does not print intermediate info");
+      fprintf(stddbg, "\n      M: print statistics");
+      fprintf(stddbg, "\n      n: leap to the next call");
+      fprintf(stddbg, "\n      N: nodebugging, continue to the end");
+      fprintf(stddbg, "\n      o: print completion stack");
+      fprintf(stddbg, "\n      P: print PDLSTK");
+      fprintf(stddbg, "\n      q: quit XSB");
+      fprintf(stddbg, "\n      r <num>: print register <num> as term");
+      fprintf(stddbg, "\n      R <num>: print register <num> as ptr");
+      fprintf(stddbg, "\n      S: print status registers");
+      fprintf(stddbg, "\n      T <num>: print top of trail with <num> overlap");
+      fprintf(stddbg, "\n      u <name> <arity>: unspy the predicate");
+      fprintf(stddbg, "\n      w <stack> <val>: watch <stack> register for <val>");
+      fprintf(stddbg, "\n      W <stack> <val>: watch memory area of <stack> for <val>");
+      fprintf(stddbg, "\n      1: print top of (persistent) subgoal stack");
+      fprintf(stddbg, "\n      2 <num>: print val of table pointer");
+      fprintf(stddbg, "\n      ?: help");
+      fprintf(stddbg, "\n");
+}
+
+/*--------------------------------------------------------------------------*/
+
+/*
+ * Tries to make the interface more robust by cleaning-up any extra user
+ * input supplied to a prompt.  Place a call to this function after any
+ * input scan which doesn't take the whole input line (ie. which isn't a
+ * `scanf("%s", &array);').
+ */
+static void skip_to_nl(void)
+{
+  char c;
+
+  do {
+    c = getchar();
+  } while (c != '\n');
+}
+
+/*----- For table debugging --------------------------------------------*/ 
+
+static char *compl_stk_frame_field[] = {
+  "subgoal_ptr", "level_num",
+  "del_ret_list", "visited", 
+#ifndef LOCAL_EVAL
+"DG_edges", "DGT_edges"
+#endif
+};
+
+void print_completion_stack(CTXTdecl)
+{
+  int i = 0;
+  EPtr eptr;
+  VariantSF subg;
+  CPtr temp = openreg;
+
+  fprintf(stddbg,"openreg -> ");
+  while (temp < COMPLSTACKBOTTOM) {
+    if ((i % COMPLFRAMESIZE) == 0) {
+      fprintf(stddbg,EOFR);	/* end of frame */
+      subg = (VariantSF) *temp;
+      print_subg_header(subg);
+    }
+    fprintf(stddbg,"Completion Stack %p: %lx\t(%s)",
+	    temp, *temp, compl_stk_frame_field[(i % COMPLFRAMESIZE)]);
+    if ((i % COMPLFRAMESIZE) >= COMPLFRAMESIZE-2) {
+      for (eptr = (EPtr)*temp; eptr != NULL; eptr = next_edge(eptr)) {
+	fprintf(stddbg," --> %p", edge_to_node(eptr));
+      }
+    }
+    fprintf(stddbg,"\n");
+    temp++; i++;
+  }
+  fprintf(stddbg, EOS);
+}
+
+/*----------------------------------------------------------------------*/
+
+static void print_pdlstack(CTXTdecl)
+{
+  CPtr temp = pdlreg;
+
+  while (temp <= (CPtr)(pdl.high) - 1) {
+    xsb_dbgmsg((LOG_DEBUG,"pdlstk %p: %lx", temp, *temp));
+    temp++;
+  }
+}
 
 /*----------------------------------------------------------------------*/ 
 /* TLS 10/05: now unused? */
@@ -721,62 +949,6 @@ void pofsprint(CPtr base, int arity)
 }
 
 /*----------------------------------------------------------------------*/ 
-
-/* TLS: CP_DEBUG needs to be specially defined in order to place a PSC
-   record in the various choice point frames */
-
-#ifdef CP_DEBUG
-void print_cpf_pred(CPtr cpf)
-{
-  char *lcpreg;
-  Psc psc;
-  
-  psc = cp_psc(cpf);
-  if (psc) {
-    switch(get_type(psc)) {
-    case T_PRED:
-      fprintf(stddbg,"choicepoint(address(%p),pred(%s/%d)).\n",
-	      cpf, get_name(psc), get_arity(psc));
-      break;
-    case T_DYNA:
-      fprintf(stddbg,"choicepoint(address(%p),dyna_pred(%s/%d)).\n",
-	      cpf, get_name(psc), get_arity(psc));
-      break;
-    case T_ORDI:
-      fprintf(stddbg,"choicepoint(address(%p),t_ordi).\n",
-	      cpf);
-      break;
-    case T_UDEF:
-      fprintf(stddbg,"choicepoint(address(%p),unloaded(%s/%p)).\n",
-	      cpf, get_name(psc), get_arity(psc));
-      break;
-    default:
-      fprintf(stddbg,"choicepoint(address(%p),unknown_pred).\n", cpf);
-      break;
-    }
-  } else
-    fprintf(stddbg,"choicepoint(address(%p),unknown_psc).\n", cpf);
-
-}
-void print_cp_backtrace()
-{
-  CPtr mycp;
-  mycp = breg;
-  while (mycp <= tcpstack.high - CP_SIZE -1 && mycp != cp_prevbreg(mycp)) {
-    print_cpf_pred(mycp);
-    mycp = cp_prevbreg(mycp);
-  }
-}
-
-#endif /* CP_DEBUG */
-
-
-#endif	/* DEBUG */
-
-#ifdef DEBUG_VM
-
-/* TLS: written many years ago, these may be overtaken by advances in
-   GDB and other general-purpose debuggers. */
 
 extern void dis(xsbBool);
 extern byte *print_inst(FILE *, byte *);
@@ -1159,100 +1331,6 @@ static void print_freeze_choice_points(CTXTdeclc int overlap)	/* CPs grow down *
   }
 }
 
-/*
- *  analyze choice point frame (in, out, out)
- */
-
-static void analyze_cpf(CPtr cpf_addr, int *length, int *cpf_type)
-{
-
-  /*
-   *  Tests to determine the type of choice point frame go here.
-   */
-
-  /* For now, we'll just assume that we have only standard CP Frames. */
-  /* The very bottom of the CP stack contains a standard choice point frame
-     whose dynamic link points to itself. */
-
-  *cpf_type = STANDARD_CP_FRAME;
-  if (cpf_addr == cp_prevbreg(cpf_addr))
-    *length = CP_SIZE;
-  else
-    *length = cp_prevbreg(cpf_addr) - cpf_addr;
-}
-
-
-/*----------------------------------------------------------------------*/ 
-
-/*
- *  print choice point frame (in, in, in)
- */
-
-static void print_common_cpf_part(CPtr cpf_addr) {
-
-  xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\tptr to next clause:\t0x%p",
-	     &(cp_pcreg(cpf_addr)), cp_pcreg(cpf_addr)));
-  xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\tprev env cap (ebreg):\t0x%p",
-	     &(cp_ebreg(cpf_addr)), cp_ebreg(cpf_addr)));
-  xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\ttop of heap:\t\t0x%p", 
-	     &(cp_hreg(cpf_addr)), cp_hreg(cpf_addr)));
-  xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\ttop of trail:\t\t0x%p",
-	     &(cp_trreg(cpf_addr)), cp_trreg(cpf_addr)));
-  xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\tcontinuation pointer:\t0x%p", 
-	     &(cp_cpreg(cpf_addr)), cp_cpreg(cpf_addr)));
-  xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\ttop of local stack:\t0x%p", 
-	     &(cp_ereg(cpf_addr)), cp_ereg(cpf_addr)));
-  xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\tdynamic link:\t\t0x%p", 
-	     &(cp_prevbreg(cpf_addr)), cp_prevbreg(cpf_addr)));
-  xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\tparent subgoal dreg:\t0x%p", 
-	     &(cp_pdreg(cpf_addr)), cp_pdreg(cpf_addr)));
-}
-
-static void print_cpf(CPtr cpf_addr, int length, int cpf_type) {
-
-  CPtr arg;
-  int i, num_of_args;
-
-  switch (cpf_type) {
-  case STANDARD_CP_FRAME:
-    xsb_dbgmsg((LOG_DEBUG,"Standard Choice Point Frame:"));
-    print_common_cpf_part(cpf_addr);
-
-    num_of_args = length - CP_SIZE;
-    for (i = 1, arg = cpf_addr + CP_SIZE; i <= num_of_args; i++, arg++)
-      xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\tpredicate arg #%d:\t0x%p",
-		 arg, i, ref_val(*arg)));
-    break;
-  case GENERATOR_CP_FRAME:
-    xsb_dbgmsg((LOG_DEBUG,"Generator Choice Point Frame:"));
-    print_common_cpf_part(cpf_addr);
-    xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\tparent tabled CP:\t0x%p", 
-	       &(tcp_ptcp(cpf_addr)), tcp_ptcp(cpf_addr)));
-    xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\tsubgoal frame ptr:\t0x%p", 
-	       &(tcp_subgoal_ptr(cpf_addr)), tcp_subgoal_ptr(cpf_addr)));
-    xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\tCh P  freeze register:\t0x%p", 
-	       &(tcp_bfreg(cpf_addr)), tcp_bfreg(cpf_addr)));
-    xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\tHeap  freeze register:\t0x%p", 
-	       &(tcp_hfreg(cpf_addr)), tcp_hfreg(cpf_addr)));
-    xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\tTrail freeze register:\t0x%p", 
-	       &(tcp_trfreg(cpf_addr)), tcp_trfreg(cpf_addr)));
-    xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\tLo St freeze register:\t0x%p", 
-	       &(tcp_efreg(cpf_addr)), tcp_efreg(cpf_addr)));
-#ifdef LOCAL_EVAL
-    xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\tlocal eval trie_return:\t0x%p",
-	       &(tcp_trie_return(cpf_addr)), tcp_trie_return(cpf_addr)));
-#endif
-    num_of_args = length - TCP_SIZE;
-    for (i = 1, arg = cpf_addr + TCP_SIZE; i <= num_of_args; i++, arg++)
-      xsb_dbgmsg((LOG_DEBUG,"   CP stack %p:\tpredicate arg #%d:\t0x%p",
-		arg, i, ref_val(*arg)));
-    break;
-  default:
-    xsb_error("CP Type %d not handled yet...", cpf_type);
-    break;
-  }
-}
-
 /*----------------------------------------------------------------------*/ 
 
 /*
@@ -1329,7 +1407,6 @@ static void print_choice_points(CTXTdeclc int overlap)
 
 /*----------------------------------------------------------------------*/ 
 
-#ifdef DEBUG_VERBOSE
 /* Needs to change when new xwam stacks are introduced.  */
 static void print_heap(int overlap)	/* Heap grows up */
 {
@@ -1358,7 +1435,6 @@ static void print_heap(int overlap)	/* Heap grows up */
     }
   }
 }
-#endif
 
 static void print_status(CTXTdecl)
 {

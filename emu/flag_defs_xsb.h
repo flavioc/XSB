@@ -46,8 +46,8 @@
 #define EXAMINE_DATA    11      /* examine data on GC                      */
 #define PROFFLAG        12
 #define TABLING_METHOD	13      /* Default method used to evaluate tabled */
-
-/* Flags 14-24 are reserved for future use */
+#define CLAUSE_GARBAGE_COLLECT 14 /* Turn clause gc on or off */
+/* Flags 14-24 are open to use */
 
 /*
  *  Flags 25-41 are reserved for Interrupt Handler PSCs.

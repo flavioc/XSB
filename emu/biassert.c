@@ -2586,12 +2586,15 @@ int sweep_dynamic(CTXTdeclc DelCFptr *chain_begin) {
 }
 
 /* Returns -1 in situations it cant handle: currently, calling with
- * frozen stacks or multiple threads
+ * frozen stacks or multiple threads.  Also returns -1 if clause gc
+ * has been turned off.
  */
 
 int gc_dynamic(CTXTdecl) 
 {
   int ctr = -1;
+
+  if (pflags[CLAUSE_GARBAGE_COLLECT] == 0) return -1;
 
 #ifdef MULTI_THREAD
   if (flags[NUM_THREADS] == 1 ) {
@@ -2823,11 +2826,13 @@ static void retract_clause(CTXTdeclc ClRef Clause, Psc psc ) {
   
   mark_for_deletion(CTXTc Clause);
 
-  if ((flags[NUM_THREADS] == 1 || !get_shared(psc))
-      && !dyntabled_incomplete(CTXTc psc)) {
+  if ((flags[NUM_THREADS] == 1 || !get_shared(psc)) 
+      && pflags[CLAUSE_GARBAGE_COLLECT] == 1  && !dyntabled_incomplete(CTXTc psc)) {
 
     if (!mark_cpstack_retract(CTXTc Clause) && 
 	determine_if_safe_to_delete(Clause)) {
+      //          fprintf(stderr,"Really deleting clause: %s/%d (%p)\n",
+      //		  get_name(psc),get_arity(psc),Clause);
       really_delete_clause(Clause);
       really_deleted = 1;
     }
@@ -3449,7 +3454,7 @@ int gen_retract_all(CTXTdecl/* R1: +PredEP , R2: +PSC */)
   gc_dynamic(CTXT);    // part of gc strategy -- dont know how good
 
   if ((flags[NUM_THREADS] == 1 || !get_shared(psc))
-      && !dyntabled_incomplete(CTXTc psc)) {
+      && pflags[CLAUSE_GARBAGE_COLLECT] == 1  && !dyntabled_incomplete(CTXTc psc)) {
     action = check_cpstack_retractall(CTXTc prref);
   }  else action = 1;
   if (!action) {
@@ -3558,7 +3563,7 @@ static void retractall_clause(CTXTdeclc ClRef Clause, Psc psc ) {
   mark_for_deletion(CTXTc Clause);
 
     if ((flags[NUM_THREADS] == 1 || !get_shared(psc))
-        && !dyntabled_incomplete(CTXTc psc)) {
+              && pflags[CLAUSE_GARBAGE_COLLECT] == 1  && !dyntabled_incomplete(CTXTc psc)) {
 
     if(!(clref_is_marked(Clause)) && 
 	determine_if_safe_to_delete(Clause)) {

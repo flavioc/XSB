@@ -218,6 +218,7 @@ static void init_flags(CTXTdecl)
 				      determines which banner isn't shown */
   flags[NUM_THREADS] = 1;          /* 1 thread will be run at start */
   pflags[BACKTRACE] = 1;           /* Backtrace on error by default */
+  pflags[CLAUSE_GARBAGE_COLLECT] = 1;           /* Clause GC on by default */
 }
 
 /*==========================================================================*/
@@ -1148,6 +1149,9 @@ void init_machine(CTXTdeclc int glsize, int tcpsize,
   cp_ereg(breg) = ereg;
   cp_prevbreg(breg) = breg;               /* note ! */
   cp_pdreg(breg) = delayreg;
+#ifdef CP_DEBUG
+  cp_psc(breg) = 0;
+#endif
   cp_prevtop(breg) = (CPtr)(tcpstack.high) - 1;
 
   /* init trie stuff */
