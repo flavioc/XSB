@@ -683,11 +683,15 @@ Section~\ref{sec-dcg-differences} for more details. Default is {\tt
 {\tt debugging} & {\tt on} iff debug mode is on; {\tt off} otherwise.
 This flag affects all threads in the process. \\ \hline
 %
-{\tt garbage\_collection} & {\tt indirection}, {\tt none}, {\tt
+{\tt heap\_garbage\_collection} & {\tt indirection}, {\tt none}, {\tt
   sliding}, or {\tt copying} depending on the heap garbage collection
 strategy that is currently being employed (see also
 Section~\ref{sec:EmuOptions}).  Default is {\tt indirection}.  This
 flag is private to each thread.  \\ \hline
+%
+{\tt clause\_garbage\_collection} & {\tt on} if garbage collection for
+retracted clauses is allowed, and off otherwise. Default is {\tt
+  on}.  This flag is private to each thread.  \\ \hline
 %
 {\tt goal} & the goal passed to XSB on command line with the
 `-e' switch; `{\tt true.}' if nothing is passed.  \\ \hline 
