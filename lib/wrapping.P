@@ -181,8 +181,8 @@ write_cargs(Listin,EngType) :-
 	write(Var).
 */
 
-write_cargs([],EngType) :- !.
-write_cargs(List,EngType) :-
+write_cargs([],_EngType) :- !.
+write_cargs(List,_EngType) :-
 	List = [carg(Var,Type)|Rest],
 	write_cargs0(Rest),
 	write(Type),
