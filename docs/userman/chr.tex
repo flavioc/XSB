@@ -631,3 +631,26 @@ and how to do so efficiently.
 \item \textbf{Multi-headed rules:}
       Multi-headed rules are executed more efficiently when the constraints share one or more variables.
 \end{itemize}
+
+\section{CHRd}
+
+An alternate implementation of CHR can be found in the CHRd package.
+The main objective of the CHRd package is to optimize processing of
+constraints in the environment where termination is guaranteed by the
+tabling engine, (and where termination benefits provided by the
+existing solver are not critical).  CHRd takes advantage of XSB's
+tabling to simplify CHR's underlying storage structures and solvers.
+Specifically, we entirely eliminate the thread-global constraint store
+in favor of a distributed one, realized as a collection of sets of
+constraints entirely associated with program variables.  This decision
+limits the applicability of CHRd to a restricted class of CHR
+programs, refered to as direct-indexed CHR,in which all constraints in
+the head of a rule are connected by shared variables.  Most CHR
+programs are direct-indexed, and other programs may be easily
+converted to fall into this class. Another advance of CHRd is its
+set-based semantics which removes the need to maintain the propagation
+history, thus allowing further simplicity in the representation of the
+constraints.  The CHRd package itself is described in \cite{SaSr06a},
+and both the semantics of CHRd and the class of direct-indexed CHR are
+formally defined in \cite{SaSR06b}.
+
