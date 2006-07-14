@@ -41,6 +41,7 @@
 % db_retract(+Head,+Body,+PredEP,+PSC) deletes clauses and reclaims space
 
 db_retract(Head,Body,PredEP,PSC) :-
+%	writeln(db_retract(Head,Body,PredEP,PSC)),
 	goal_cut_trans_a(Body,Tbody,_),
 	db_get_clauses(PredEP,0,Head,0,Clref,Typ,EntryP),
 	chk_if_trie_assert(Clref,Result,TrieNodeAddr),
@@ -56,6 +57,7 @@ db_retract(Head,Body,PredEP,PSC) :-
 /* TLS: passing down PSC now to check for shared/private */
 
 db_retractall(Call,PredEP,Psc) :-
+%	writeln(db_retractall(Call,PredEP,Psc)),
 	( is_most_general_term(Call) ->	db_retract_abol(PredEP,Psc)
  	;   db_retractall_1(Call,PredEP,Psc)
  	),
@@ -64,13 +66,13 @@ db_retractall(_,_,_).
 
 % Used within non-open retractall
 db_retractall_1(Head,PredEP, PSC) :-
-	dynamic_code_function(MARK_CPSTACK_RETRACTALL,_,_,_,_),
+	dynamic_code_function(MARK_CPSTACK_RETRACTALL,CantReclaim,_,_,_),
 	db_get_clauses(PredEP,0,Head,0,Clref,Typ,EntryP),
 	chk_if_trie_assert(Clref,Result,TrieNodeAddr),
 	(Result == trie
-	 ->	call_trie_retract(Head,_Body,Clref,TrieNodeAddr)
+	  ->	call_trie_retract(Head,_Body,Clref,TrieNodeAddr)
 	 ;	db_clause_match(Head,_Tbody,EntryP),
-		db_do_retractall(Typ,Clref,0,PSC)
+	        db_do_retractall(Typ,Clref,CantReclaim,PSC)
 	),
 	fail.
 db_retractall_1(_Head, _PredEP, _PSC):- 
@@ -145,8 +147,7 @@ db_abolish(Psc) :-
 %	db_retract_abol(PredEP,Psc).
         db_abolish0(PredEP,Psc).
 
-% db_clause(+Head,?Body,+PredEP,-Clref) retrieves a clause.
-
+% db_clause(+Head,?Body,+PredEP,-Clref) retrieves a clause, and implements clause/2.
 db_clause(Head,Body,PredEP,Clref) :-
 	goal_cut_trans_a(Body,Tbody,_),
 	db_get_clauses(PredEP,0,Head,0,Clref,Typ,EntryP),
@@ -303,3 +304,5 @@ call_trie_retract_nr(Head,true,NodeAddr) :-
 	 ->	true
 	 ;	!,fail
 	).
+
+?- dynamic_code_function(INIT_DBCLAUSE_CGC_BLOCKS,_,_,_,_).
