@@ -1,4 +1,3 @@
-
 /* File:      biassert.c
 ** Author(s): David S. Warren, Jiyang Xu
 ** Contact:   xsb-contact@cs.sunysb.edu
@@ -14,7 +13,7 @@
 ** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
 ** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 ** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License
-** for more details.
+** for more details.lo
 ** 
 ** You should have received a copy of the GNU Library General Public License
 ** along with XSB; if not, write to the Free Software Foundation,
@@ -67,6 +66,10 @@ extern int xsb_profiling_enabled;
 extern void add_prog_seg(Psc, byte *, long);
 extern void remove_prog_seg(byte *);
 PrRef clref_to_prref(ClRef clref);
+
+CPtr dbclause_cgc_block_gl = NULL;
+CPtr standard_cgc_block_begin_gl = NULL;
+CPtr standard_cgc_block_end_gl = NULL;
 
 /*======================================================================*/
 /* dbgen_inst: Generate an instruction in the buffer.			*/
@@ -1216,13 +1219,18 @@ typedef struct  {
 }	ClRefHdrI;
 
 
+#ifdef BITS64
+#define HIGHBIT 0x8000000000000000
+#else
+#define HIGHBIT 0x80000000
+#endif
 
 #define PredOpCode(P)		(cell_opcode(&(P)->Instr))
 
 typedef ClRef SOBRef ;
 
 #define ClRefAddr(Cl)		((CPtr)((ClRef)(Cl)-1))
-#define ClRefSize(Cl)		(((ClRef)(Cl))[-1].buflen & ~0x3)
+#define ClRefSize(Cl)		(((ClRef)(Cl))[-1].buflen & ~0x3 & ~HIGHBIT)
 #define ClRefType(Cl)		(((ClRef)(Cl))[-1].buflen & 0x3)
 #define SetClRefSize(Cl,len)	(((ClRef)(Cl))[-1].buflen |= \
 		(((ClRef)(Cl))[-1].buflen & 0x3) | ((len) & ~0x3))
@@ -2115,12 +2123,6 @@ Predicates for Clause Garbage Collecting and Safe Space Reclamation
    ClRef pointer.  At some point I'd like to change this, but this
    would be a rather delicate operation. */
 
-#ifdef BITS64
-#define HIGHBIT 0x8000000000000000
-#else
-#define HIGHBIT 0x80000000
-#endif
-
 #define mark_clref(pClRef)  \
   (ClRef_Buflen(pClRef -1) = ClRef_Buflen(pClRef - 1) | HIGHBIT)
 
@@ -2137,16 +2139,21 @@ ClRef clref_from_try_addr(ClRef code_addr) {
   return (ClRef)code_addr;
 }
 
-/* cf. mark_cpstack_retracall(), etc. */
+/* cf. mark_cpstack_retracall(), etc.  Traverses choice point stack to
+   mark any CLREFS that it sees.  If it finds something that is
+   difficult to reason about, (i.e. a ;/2 within a dynamic clause or a
+   get_db_clause pointer, it breaks out of the loop, returning a flag
+   that will prevent the retract from immediately reclaiming space */
+
 int mark_cpstack_retract(CTXTdeclc ClRef clref) {
-  CPtr cp_top,cp_bot ;
+  CPtr cp_top,cp_bot, cp_inst_addr ;
   byte cp_inst;
   int found_match;
   ClRef cp_clref;
 
   cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
 
-  cp_top = breg ;				 
+  cp_top = ((bfreg < breg)? bfreg : breg) ;		
   found_match = 0;
   while ( cp_top < cp_bot && !(found_match)) {
     cp_inst = *(byte *)*cp_top;
@@ -2158,6 +2165,15 @@ int mark_cpstack_retract(CTXTdeclc ClRef clref) {
       } 
       else {
 	mark_clref(cp_clref);
+      }
+    }
+    else {
+      cp_inst_addr = (CPtr) *cp_top;
+      if (cp_inst_addr == dbclause_cgc_block_gl
+	  || (cp_inst_addr > standard_cgc_block_begin_gl 
+	      && cp_inst_addr < standard_cgc_block_end_gl)) {
+	fprintf(stderr,"found dangling dbclause/; ptr in mc_retract\n");
+	found_match = 1;
       }
     }
     cp_top = cp_prevtop(cp_top);
@@ -2174,7 +2190,7 @@ void unmark_cpstack_retract(CTXTdecl) {
 
   cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
 
-  cp_top = breg ;				 
+  cp_top = ((bfreg < breg)? bfreg : breg) ;		
   while ( cp_top < cp_bot ) {
     cp_inst = *(byte *)*cp_top;
     if ( is_dynamic_clause_inst(cp_inst) ) {
@@ -2187,23 +2203,40 @@ void unmark_cpstack_retract(CTXTdecl) {
 
 /* * * * * * * * * */
 
-/* Used for ClRef-based retractalls */
-void mark_cpstack_retractall(CTXTdecl) {
-  CPtr cp_top,cp_bot ;
+/* Used for non-open ClRef-based retractalls.  Traverses choice point
+ stack to mark any Clrefs that it sees.  If it finds something that is
+ difficult to reason about, (i.e. a ';' choice point within a dynamic
+ clause or a get_db_clause pointer, it breaks out of the loop,
+ returning a flag that will prevent the retractall from immediately
+ reclaiming space for any of the retracted clauses.  */
+
+int mark_cpstack_retractall(CTXTdecl) {
+  CPtr cp_top,cp_bot,cp_inst_addr ;
   byte cp_inst;
   ClRef cp_clref;
+  int found_match = 0;
 
   cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
 
-  cp_top = breg ;				 
-  while ( cp_top < cp_bot) {
+  cp_top = ((bfreg < breg)? bfreg : breg) ;		
+  while ( cp_top < cp_bot && !found_match) {
     cp_inst = *(byte *)*cp_top;
     if ( is_dynamic_clause_inst(cp_inst) ) {
       cp_clref = clref_from_try_addr((ClRef)*cp_top);
       mark_clref(cp_clref);
     }
+    else {
+      cp_inst_addr = (CPtr) *cp_top;
+      if (cp_inst_addr == dbclause_cgc_block_gl
+	  || (cp_inst_addr > standard_cgc_block_begin_gl 
+	      && cp_inst_addr < standard_cgc_block_end_gl)) {
+	fprintf(stderr,"found dangling dbclause/; ptr in CLREF retra\n");
+	found_match = 1;
+      }
+    }
     cp_top = cp_prevtop(cp_top);
   }
+  return found_match;
 }
 
 /* * * * * * * * * */
@@ -2225,14 +2258,14 @@ static inline int dyntabled_incomplete(CTXTdeclc Psc psc) {
 
 int check_cpstack_retractall(CTXTdeclc PrRef prref) { 
 
-CPtr cp_top,cp_bot; 
-byte cp_inst; 
-int found_prref_match; 
-ClRef clref_ptr;
+  CPtr cp_top,cp_bot, cp_inst_addr; 
+  byte cp_inst; 
+  int found_prref_match; 
+  ClRef clref_ptr;
 
   cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
 
-  cp_top = breg ;				 
+  cp_top = ((bfreg < breg)? bfreg : breg) ;		
   found_prref_match = 0;
   while ( cp_top < cp_bot && !(found_prref_match)) {
     cp_inst = *(byte *)*cp_top;
@@ -2240,6 +2273,15 @@ ClRef clref_ptr;
     if ( is_dynamic_clause_inst(cp_inst) ) {
       clref_ptr = clref_from_try_addr((ClRef)*cp_top);
       if (prref == clref_to_prref(clref_ptr)) {
+	found_prref_match = 1;
+      }
+    }
+    else {
+      cp_inst_addr = (CPtr) *cp_top;
+      if (cp_inst_addr == dbclause_cgc_block_gl
+	  || (cp_inst_addr > standard_cgc_block_begin_gl 
+	      && cp_inst_addr < standard_cgc_block_end_gl)) {
+	fprintf(stderr,"found dangling dbclause/; ptr in gen retra\n");
 	found_prref_match = 1;
       }
     }
@@ -2512,15 +2554,16 @@ void mark_delcf_subchain(CTXTdeclc DelCFptr delcf,ClRef clref) {
 
 int mark_dynamic(CTXTdecl) 
 {
-  CPtr cp_top,cp_bot ;
+  CPtr cp_top,cp_bot, cp_inst_addr ;
   byte cp_inst;
   ClRef clref_ptr;
   PrRef prref_ptr;
+  int found_match = 0;
 
   cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
-  cp_top = breg ;				 
+  cp_top = ((bfreg < breg)? bfreg : breg) ;		
 
-  while ( cp_top < cp_bot ) {
+  while ( cp_top < cp_bot && !found_match) {
     cp_inst = *(byte *)*cp_top;
     if ( is_dynamic_clause_inst(cp_inst) ) {
       clref_ptr = clref_from_try_addr((ClRef)*cp_top);
@@ -2528,9 +2571,18 @@ int mark_dynamic(CTXTdecl)
       prref_ptr = clref_to_prref(clref_ptr);
       mark_delcf_subchain(CTXTc PrRef_DelCF(prref_ptr),clref_ptr);
     }
+    else {
+      cp_inst_addr = (CPtr) *cp_top;
+      if (cp_inst_addr == dbclause_cgc_block_gl
+	  || (cp_inst_addr > standard_cgc_block_begin_gl 
+	      && cp_inst_addr < standard_cgc_block_end_gl)) {
+	fprintf(stderr,"found dangling dbclause/; ptr in gc\n");
+	found_match = 1;
+      }
+    }
     cp_top = cp_prevtop(cp_top);
   }
-  return 0;
+  return found_match;
 }
 
 void gc_retractall(CTXTdeclc ClRef);
@@ -2586,8 +2638,9 @@ int sweep_dynamic(CTXTdeclc DelCFptr *chain_begin) {
 }
 
 /* Returns -1 in situations it cant handle: currently, calling with
- * frozen stacks or multiple threads.  Also returns -1 if clause gc
- * has been turned off.
+ * frozen stacks or multiple threads, or where there may be pointers
+ * to dynamic code that are difficult to reason about.  Also returns
+ * -1 if clause gc has been turned off.
  */
 
 int gc_dynamic(CTXTdecl) 
@@ -2599,20 +2652,23 @@ int gc_dynamic(CTXTdecl)
 #ifdef MULTI_THREAD
   if (flags[NUM_THREADS] == 1 ) {
     if (!delcf_chain_begin && !private_delcf_chain_begin) return 0;
-    mark_dynamic(CTXT);
-    ctr = sweep_dynamic(CTXTc &delcf_chain_begin) + 
-      sweep_dynamic(CTXTc &private_delcf_chain_begin);
+    if (!mark_dynamic(CTXT)) {
+      ctr = sweep_dynamic(CTXTc &delcf_chain_begin) + 
+	sweep_dynamic(CTXTc &private_delcf_chain_begin);
+    }
     unmark_cpstack_retract(CTXT);
   } else {
     if (!private_delcf_chain_begin) return 0;
-    mark_dynamic(CTXT);
-    ctr = sweep_dynamic(CTXTc &private_delcf_chain_begin);
+    if (!mark_dynamic(CTXT)) {
+      ctr = sweep_dynamic(CTXTc &private_delcf_chain_begin);
+    }
     unmark_cpstack_retract(CTXT);
   }
 #else 
     if (!delcf_chain_begin) return 0;
-    mark_dynamic(CTXT);
-    ctr = sweep_dynamic(CTXTc &delcf_chain_begin);
+    if (!mark_dynamic(CTXT)) {
+      ctr = sweep_dynamic(CTXTc &delcf_chain_begin);
+    }
     unmark_cpstack_retract(CTXT);
 #endif
   return ctr;
@@ -2903,12 +2959,14 @@ CPtr get_ClRefEntryPoint(ClRef Clause) {
   }
 }
 
-ClRef db_get_clause_code_space(PrRef Pred, ClRef Clause, CPtr *CodeBegAddr, CPtr *CodeEndAddr) {
+ClRef db_get_clause_code_space(PrRef Pred, ClRef Clause, CPtr *CodeBegAddr, 
+			       CPtr *CodeEndAddr) {
   int IndexArg = 0;
   int IndexLev = 0;
 
   do {
-    if (Clause == NULL) Clause = first_clref(Pred,(prolog_term)NULL,&IndexLev,&IndexArg);
+    if (Clause == NULL) 
+      Clause = first_clref(Pred,(prolog_term)NULL,&IndexLev,&IndexArg);
     else Clause = next_clref(Pred,Clause,(prolog_term)NULL,&IndexLev,&IndexArg);
   } while (Clause && !(ClRefNotRetracted(Clause)));
 
@@ -3451,10 +3509,11 @@ int gen_retract_all(CTXTdecl/* R1: +PredEP , R2: +PSC */)
     return TRUE;
   }
 
-  gc_dynamic(CTXT);    // part of gc strategy -- dont know how good
-
   if ((flags[NUM_THREADS] == 1 || !get_shared(psc))
       && pflags[CLAUSE_GARBAGE_COLLECT] == 1  && !dyntabled_incomplete(CTXTc psc)) {
+
+    gc_dynamic(CTXT);    // part of gc strategy -- dont know how good
+
     action = check_cpstack_retractall(CTXTc prref);
   }  else action = 1;
   if (!action) {
@@ -3556,14 +3615,16 @@ xsbBool db_abolish0(CTXTdecl/* R1: +PredEP , R2: +PSC */)
    efficiency.  In fact, the first condition could also be factored
    out, if we wanted to. */
 
-static void retractall_clause(CTXTdeclc ClRef Clause, Psc psc ) { 
+static void retractall_clause(CTXTdeclc ClRef Clause, Psc psc, int flag ) { 
   PrRef prref; 
   int really_deleted = 0;
+
   
   mark_for_deletion(CTXTc Clause);
 
     if ((flags[NUM_THREADS] == 1 || !get_shared(psc))
-              && pflags[CLAUSE_GARBAGE_COLLECT] == 1  && !dyntabled_incomplete(CTXTc psc)) {
+	&& pflags[CLAUSE_GARBAGE_COLLECT] == 1  
+	&& !dyntabled_incomplete(CTXTc psc) && !flag) {
 
     if(!(clref_is_marked(Clause)) && 
 	determine_if_safe_to_delete(Clause)) {
@@ -3594,23 +3655,45 @@ static void retractall_clause(CTXTdeclc ClRef Clause, Psc psc ) {
 void db_retractall0( CTXTdecl /* (Switch) ClRef, retract_nr */ )
 {
   ClRef clause = (ClRef)ptoc_int(CTXTc 2) ;
-  //  int retract_nr = (int)ptoc_int(CTXTc 3) ;
+  int cantReclaim = (int)ptoc_int(CTXTc 3) ;
   
   Psc psc = (Psc)ptoc_int(CTXTc 4);
-  retractall_clause(CTXTc clause, psc ) ;
+  retractall_clause(CTXTc clause, psc, cantReclaim ) ;
 }
+
+/* * * * * * * * * * * * */
 
 /* At some point should probably move some of the following into here: 
  DB_GET_LAST_CLAUSE  DB_RETRACT0   DB_GET_CLAUSE    DB_BUILD_PRREF	
  DB_ABOLISH0	 DB_RECLAIM0	 DB_GET_PRREF */
+
+void init_dbclause_cgc_blocks(void) {
+  Psc psc;
+  int new;
+
+  psc = ((Pair)insert("db_get_clauses1", 11, 
+		      pair_psc(insert_module(0, "dbclause")), &new)) -> psc_ptr;
+  dbclause_cgc_block_gl = (CPtr) (get_ep(psc) + 0xc8);
+}
+
+void init_standard_cgc_blocks(void) {
+  Psc psc;
+  int new;
+
+  psc = ((Pair)insert(";", 2, 
+		      pair_psc(insert_module(0, "standard")), &new))-> psc_ptr;
+  standard_cgc_block_begin_gl = (CPtr) (get_ep(psc));
+  standard_cgc_block_end_gl = (CPtr) (get_ep(psc) + 0x94);
+}
+
 
 xsbBool dynamic_code_function( CTXTdecl ) 
 {
   switch (ptoc_int(CTXTc 1)) {
 
   case MARK_CPSTACK_RETRACTALL: 
-    mark_cpstack_retractall(CTXT);
-  break;
+    ctop_int(CTXTc 2,mark_cpstack_retractall(CTXT));
+    break;
 
   case UNMARK_CPSTACK_RETRACT: 
     unmark_cpstack_retract(CTXT);
@@ -3619,6 +3702,15 @@ xsbBool dynamic_code_function( CTXTdecl )
   case DB_RETRACTALL0: 
     db_retractall0(CTXT);
     break;
+
+  case INIT_DBCLAUSE_CGC_BLOCKS:
+    init_dbclause_cgc_blocks();
+    break;
+
+  case INIT_STANDARD_CGC_BLOCKS:
+    init_standard_cgc_blocks();
+    break;
+
   }
 
   return TRUE;

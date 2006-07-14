@@ -48,24 +48,23 @@
 extern Cell builtin_table[BUILTIN_TBL_SZ][2];
 extern TIFptr get_tip_or_tdisp(Psc);
 
-/*static FILE *filedes ;*/
-#define filedes stdout
-
 /* Include these so that the Gnu C Compiler does not complain */
-static void dis_data(void);
-static void dis_text(void);
-static void dis_data_sub(Pair *, char *);
+void dis_data(FILE *);
+void dis_text(FILE *);
+static void dis_data_sub(FILE *, Pair *, char *);
 
 void dis(xsbBool distext)
 {  
-/*   filedes = fopen("stdout","w"); */
-   dis_data();
-   if (distext) dis_text();
-/*   fflush(filedes);
-   fclose(filedes); */
+  FILE *filedes ;
+
+   filedes = fopen("stdout","w"); 
+   dis_data(filedes);
+   if (distext) dis_text(filedes);
+   fflush(filedes);
+   fclose(filedes); 
 }
 
-static void dis_data(void)
+void dis_data(FILE *filedes)
 {
 	int i;
 	Pair *temp_ptr;
@@ -84,19 +83,19 @@ static void dis_data(void)
 	   	for(i=0; i < (int)symbol_table.size; i++) {
 		  if ( symbol_table.table[i] ) {
 /* 		    fprintf(filedes, "... ... BUCKET NO. %d\n", i); */
-		    dis_data_sub((Pair *)(symbol_table.table + i),modname);
+		    dis_data_sub(filedes, (Pair *)(symbol_table.table + i),modname);
 		  }
 		}
 	   else if (strcmp(modname,"usermod")==0) 
 	     fprintf(filedes, "equiv(usermod,global).\n");
 	   else 
-	     dis_data_sub((Pair *)&get_data(psc_ptr),modname);
+	     dis_data_sub(filedes, (Pair *)&get_data(psc_ptr),modname);
 	   fprintf(filedes, "\n");
 	   temp_ptr = &((*temp_ptr)->next);
 	}
 }
 
-static void dis_data_sub(Pair *chain_ptr, char* modname)
+static void dis_data_sub(FILE *filedes, Pair *chain_ptr, char* modname)
 {
    Psc temp;
 
@@ -230,7 +229,7 @@ CPtr print_inst(FILE *fd, CPtr inst_ptr)
 } /* print_inst */
 
 
-static void dis_text(void)
+void dis_text(FILE * filedes)
 {
    pseg   this_seg;
    pindex index_seg ;

@@ -442,6 +442,26 @@ void alt_print_cp(CTXTdecl)
   fclose(where) ;
 } /* print_cp */
 
+extern void dis_data(FILE *);
+extern void dis_text(FILE *);
+
+void alt_dis(CTXTdecl)
+{
+  FILE *where ;
+
+  alt_printnum++ ;
+  where = fopen("ALTDIS","w") ;
+  if (! where)
+    { xsb_dbgmsg((LOG_GC, "could not open ALTDIS"));
+      return;
+    }
+
+  dis_data(where);
+  dis_text(where);
+
+  fclose(where) ;
+} /* print_cp */
+
 /*======================================================================*/
 /*  The third set of routines should be useful with gdb.  They need to  */
 /*  be revised to get rid of the xsb_dbg stuff, and so that they're     */

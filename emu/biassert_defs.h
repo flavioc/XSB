@@ -21,6 +21,8 @@
 ** 
 */
 
-#define MARK_CPSTACK_RETRACTALL      0
-#define UNMARK_CPSTACK_RETRACT       1
-#define DB_RETRACTALL0               2
+#define MARK_CPSTACK_RETRACTALL                 0
+#define UNMARK_CPSTACK_RETRACT                  1
+#define DB_RETRACTALL0                          2
+#define INIT_DBCLAUSE_CGC_BLOCKS                3
+#define INIT_STANDARD_CGC_BLOCKS                4

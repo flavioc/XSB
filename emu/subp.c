@@ -296,10 +296,10 @@ void print_statistics(CTXTdeclc int amount) {
     break;
   case 5:
     dis(0); 
-    break;		/* output memory image; for debugging */
+    break;		/* output memory image - data only; for debugging */
   case 6:
     dis(1); 
-    break;		/* output memory image; for debugging */
+    break;		/* output memory image - data + text; for debugging */
 #ifdef CP_DEBUG
   case 7:
     print_cp_backtrace();

@@ -1141,7 +1141,7 @@ void init_machine(CTXTdeclc int glsize, int tcpsize,
   /* Place a base choice point frame on the CP Stack: this choice point
      is needed for cut -- make sure you initialize all its fields.
      ------------------------------------------------------------------ */
-  breg = (CPtr)(tcpstack.high) - CP_SIZE;
+  bfreg = breg = (CPtr)(tcpstack.high) - CP_SIZE;
   cp_pcreg(breg) = (pb) &halt_inst; 	  /* halt on last failure */
   cp_ebreg(breg) = ebreg;
   cp_hreg(breg) = hreg;
