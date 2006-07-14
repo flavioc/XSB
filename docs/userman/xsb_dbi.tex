@@ -11,18 +11,20 @@
 
 The XSB-DB interface is a package that allows XSB users to access
 databases through various drivers. Using this interface, information
-in different DBMSs can be accessed by SQL queries. The interface defines
-Prolog predicates which makes it easy to connect to databases, 
-query them, and disconnect from the databases. Central to the 
-concept of a connection to a database is the notion of a \emph{handle}.
-A connection handle describes a particular connection to a database.
+in different DBMSs can be accessed by SQL queries. The interface
+defines Prolog predicates which makes it easy to connect to databases,
+query them, and disconnect from the databases. Central to the concept
+of a connection to a database is the notion of a \emph{handle}.  A
+connection handle describes a particular connection to a database.
 Similar to a connection handle is the notion of a query handle which
-describes a particular query statement. As a consequence of the handles,
-it is possible to open multiple database connections (to the same or
-different databases) and keep alive multiple queries (again from the
-same or different connections). The interface also supports dynamic loading of
-drivers. As a result, it is possible to query databases using different drivers
-concurrently.
+describes a particular query statement. As a consequence of the
+handles, it is possible to open multiple database connections (to the
+same or different databases) and keep alive multiple queries (again
+from the same or different connections). The interface also supports
+dynamic loading of drivers. As a result, it is possible to query
+databases using different drivers concurrently~\footnote{In
+  \version{}, this package has not been ported to the multi-threaded
+  engine.}.
 
 \section{Configuring the Interface}
 

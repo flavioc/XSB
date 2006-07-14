@@ -16,7 +16,9 @@ Prolog.  First, stable model semantics applies only to ground
 programs; second stable model semantics is not goal-oriented --
 determining whether a stable model is true in a program involves
 examing each clause in a program, regardless of whether the goal would
-depends on the clause in a traditional evaluation.
+depends on the clause in a traditional evaluation~\footnote{In
+  \version{}, the Smodels API has not been tested with the
+  multi-threaded engine, and Smodels itself is not thread-safe.}.
 
 Despite (or perhaps because of) these differences, ASP has proven to
 be a useful paradigm for solving a variety of combinatorial programs.

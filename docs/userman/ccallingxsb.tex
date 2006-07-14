@@ -2,21 +2,31 @@
 %===================================
 \label{ccallingxsb}
 
-There are many situations in which it may be desirable to use
-\ourprolog\ as a rule-processing subcomponent of a larger system,
-which is written in another language.  To do this, one wants to be
-able to {\em call}\ \ourprolog\ from the host language, often C,
-providing queries for \ourprolog\ to evaluate and retrieving back the
-answers.  An interface for calling \ourprolog\ from C (or other
-language) is provided for this purpose and is described in this
-chapter~%
-\footnote{To call XSB from Visual Basic, a DLL is created as
-described in this chapter.  Additional declarations must be made in
-visual basic as described in the web page ``How to use XSB DLL from
-Visual Basic'' \url{http://xsb.sourceforge.net/vbdll.html}.}.
+There are many situations in which it may be desirable to use XSB as a
+rule-processing subcomponent of a larger system, which is written in
+another language.  To do this, one wants to be able to {\em call}\ XSB
+from the host language, providing queries for XSB to evaluate and
+retrieving back the answers.  An interface for calling XSB from C is
+provided for this purpose and is described in this chapter.  XSB can
+also be called from Java either through a {\tt jni} or a socket-based
+interface XSB, as described in the documentation for Interprolog,
+available through {\tt xsb.sourceforge.net}.  To call XSB from Visual
+Basic, a DLL is created as described in this chapter.  Additional
+declarations must be made in visual basic as described in the web page
+``How to use XSB DLL from Visual Basic''
+\url{http://xsb.sourceforge.net/vbdll.html}.  In general, the
+interface described in this chapter is quite flexible, and has also
+been extended to allow XSB to be called from Delphi and Ruby --
+contact the XSB development group for information about these
+extensions~\footnote{We note, however, that in \version{}, the
+  interface for C to call XSB has not yet been made thread-safe,
+  (unlike the interface for XSB to call C, described in
+  Chapter~\ref{foreign}.}.
+
+
 %
 Simple examples of the use of this interface are given in the {\tt
-XSB/examples/c\_calling\_XSB} subdirectory, in files {\tt cmain.c},
+  XSB/examples/c\_calling\_XSB} subdirectory, in files {\tt cmain.c},
 {\tt cmain2.c}, {\tt ctest.P}, and {\tt Makefile}.
 
 \section{C Functions for Calling XSB}

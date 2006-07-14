@@ -874,7 +874,9 @@ position movement to @var{N}, where @var{N} defaults to @key{SPC}.
 XSB has a number of powerful predicates that simplify the job of
 string manipulation. These predicates are especially powerful when
 they are combined with pattern-matching facilities provided by the
-{\tt regmatch} package described in Chapter~\ref{chap-posix}.
+{\tt regmatch} package described in
+Chapter~\ref{chap-posix}~\footnote{Not all string
+  manipulation predicates have been made thread-safe in \version{}.}.
 
 \begin{description}
 \ournewitem{str\_sub(+Sub, +Str, ?Pos)}{string}
@@ -2144,7 +2146,8 @@ allows the Prolog programmer to determine what proportion of time is
 spent executing code for each predicate.  To enable profiling, XSB
 must be started with the command line parameter of -p.  The module
 {\tt xsb\_profiling} contains the predicate {\tt profile\_call/1} that
-invokes profiling.
+invokes profiling~\footnote{The profiling library should only be used
+  with the single-threaded engine in \version{}.}.
 
 \begin{description}
 \ournewitem{profile\_call(+Goal)}{xsb\_profiling}\index{profile\_call/1}

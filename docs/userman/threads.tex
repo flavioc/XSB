@@ -16,12 +16,20 @@ found in \cite{LewB98,Bute97}.
 In Version 3.0 the default configuration of XSB does not include
 multi-threading.  This is partly because multi-threading is new, and
 despite our efforts, the multi-threaded engine may contain bugs not
-present in the single- threaded engine.  In addition, in Version 3.0,
-not all packages have yet been made thread-safe so that not all
-configurations are supported with multi-threading.  Currently ODBC is
-supported with the multi-threaded configuration, but {\tt dbdrivers},
-{\tt xpath}, {\tt iodbc}, {\tt interprolog}, {\tt smodels} and others
-have not been.
+present in the single- threaded engine.  However the main reason is
+because in Version 3.0, not all libraries and packages have yet been
+made thread-safe so that not all configurations are supported with
+multi-threading.  All XSB libraries have been ported to the
+multi-threaded engine {\em except} the profiling library and the {\tt
+  string} library (which is not yet thread-safe).  The XSB-calling-C
+interface is supported by the multi-threaded engine, but the
+C-calling-XSB is not yet fully supported.  The packages {\tt ODBC} and
+{\tt CHR}, and {\tt FLORA-2} are supported by the multi-threaded
+engine, but the packages {\tt dbdrivers}, {\tt xpath}, {\tt
+  interprolog}, {\tt smodels}, {\tt perlmatch}, {\tt regmatch}, {\tt
+  libwww} and {\tt posix} are not.  We note, however that all
+basic/ISO Prolog functionality is thread-safe (at least, as far as we
+know :-).
 
 With this in mind, making the multi-threaded engine is simple:
 configure and make XSB as in Chapter~\ref{chap:system}, but include

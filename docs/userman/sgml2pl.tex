@@ -8,16 +8,18 @@
 
 
 \section{Introduction}
-This suite of packages consists of the {\tt sgml} package, which can parse
-XML, HTML, XHTML, and even SGML documents and the {\tt xpath} package, which
-supports XPath queries on XML documents.  The {\tt sgml} package is an
-adaptation of a similar package in SWI Prolog and a port of SWI's codebase with
-some minor changes. The {\tt xpath} package provides an interface to the
-popular {\tt libxml2} library, which supports XPath and XML parsing, and is
-used in Mozilla based browsers. At present, the XML parsing capabilities of
-{\tt libxml2} are not utilized explicitly in XSB, but such support might be
-provided in the future. The {\tt sgml} package does not rely on {\tt
-  libxml2}.
+This suite of packages consists of the {\tt sgml} package, which can
+parse XML, HTML, XHTML, and even SGML documents and the {\tt xpath}
+package, which supports XPath queries on XML documents.  The {\tt
+  sgml} package is an adaptation of a similar package in SWI Prolog
+and a port of SWI's codebase with some minor changes. The {\tt xpath}
+package provides an interface to the popular {\tt libxml2} library,
+which supports XPath and XML parsing, and is used in Mozilla based
+browsers. At present, the XML parsing capabilities of {\tt libxml2}
+are not utilized explicitly in XSB, but such support might be provided
+in the future. The {\tt sgml} package does not rely on {\tt
+  libxml2}~\footnote{This package has not yet been tested for
+  thread-safety}.
 
 \paragraph{Installation and configuration.}
 The {\tt sgml} package does not require any installation steps under

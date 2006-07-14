@@ -6,12 +6,14 @@
 \end{center}
 
 XSB has an efficient interface to POSIX pattern regular expression and
-wildcard matching functions.  To take advantage of these features, you must
-build XSB using a C compiler that supports POSIX 1.0 (for regular
-expression matching) and the forthcoming POSIX 2.0 (for wildcard matching).
-The recent versions of GCC and SunPro compiler will do, as probably will
-many other compilers. This also works under Windows, provided you install
-Cygnus' CygWin and use GCC to compile.
+wildcard matching functions.  To take advantage of these features, you
+must build XSB using a C compiler that supports POSIX 1.0 (for regular
+expression matching) and the forthcoming POSIX 2.0 (for wildcard
+matching).  The recent versions of GCC and SunPro compiler will do, as
+probably will many other compilers. This also works under Windows,
+provided you install Cygnus' CygWin and use GCC to
+compile~\footnote{This package has not yet been ported to the
+  multi-threaded engine.}.
 
 \section{{\tt regmatch}: Regular Expression Matching and Substitution}
 
