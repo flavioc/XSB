@@ -2619,8 +2619,9 @@ int sweep_dynamic(CTXTdeclc DelCFptr *chain_begin) {
       else {
 	if (DTF_Type(delcf_ptr) == DELETED_CLREF) {
 	  if (determine_if_safe_to_delete(DCF_ClRef(delcf_ptr))) {
-	    fprintf(stderr,"Garbage Collecting Clause: %s/%d\n",
-		    get_name(DCF_PSC(delcf_ptr)),get_arity(DCF_PSC(delcf_ptr)));
+	    fprintf(stderr,"Garbage Collecting Clause: %s/%d (%p)\n",
+		    get_name(DCF_PSC(delcf_ptr)),get_arity(DCF_PSC(delcf_ptr)),
+		    DCF_ClRef(delcf_ptr));
 	    really_delete_clause(DCF_ClRef(delcf_ptr));
 	    prref = dynpredep_to_prref(CTXTc get_ep(DCF_PSC(delcf_ptr)));
 	    Free_DelCF(delcf_ptr,prref,*chain_begin);
@@ -3518,6 +3519,7 @@ int gen_retract_all(CTXTdecl/* R1: +PredEP , R2: +PSC */)
   }  else action = 1;
   if (!action) {
     SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
+    //    fprintf(stderr,"abolishing prref (gen_retra) %p\n",prref);
     retractall_prref(CTXTc prref);
     SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
   }
@@ -3594,9 +3596,12 @@ xsbBool db_abolish0(CTXTdecl/* R1: +PredEP , R2: +PSC */)
     } else fast_abolish_table_predicate(CTXTc psc);
   }
 
+  gc_dynamic(CTXT);    // part of gc strategy -- dont know how good
+
   action = check_cpstack_retractall(CTXTc prref);
   if (!action) {
     SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
+    // fprintf(stderr, "abolishing prref %p\n",prref);
     retractall_prref(CTXTc prref);
     db_remove_prref_1( CTXTc psc);
     SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
