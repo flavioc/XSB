@@ -2132,6 +2132,8 @@ Predicates for Clause Garbage Collecting and Safe Space Reclamation
 #define clref_is_marked(pClRef)  \
   (ClRef_Buflen(pClRef -1 ) & HIGHBIT)
 
+/* I think this is going back in the CLref through various
+   indexing chains to find the "base" of the Clref.*/
 ClRef clref_from_try_addr(ClRef code_addr) {
   while (cell_opcode((CPtr)code_addr - 2) == noop) {
     code_addr = (ClRef)((CPtr)code_addr - 4);
@@ -2160,7 +2162,7 @@ int mark_cpstack_retract(CTXTdeclc ClRef clref) {
     if ( is_dynamic_clause_inst(cp_inst) ) {
       cp_clref = clref_from_try_addr((ClRef)*cp_top);
       if (clref == cp_clref) {
-	fprintf(stderr,"found exact match\n");
+	//	fprintf(stderr,"found exact match\n");
 	found_match = 1;
       } 
       else {
@@ -2172,7 +2174,7 @@ int mark_cpstack_retract(CTXTdeclc ClRef clref) {
       if (cp_inst_addr == dbclause_cgc_block_gl
 	  || (cp_inst_addr > standard_cgc_block_begin_gl 
 	      && cp_inst_addr < standard_cgc_block_end_gl)) {
-	fprintf(stderr,"found dangling dbclause/; ptr in mc_retract\n");
+	//	fprintf(stderr,"found dangling dbclause/; ptr in mc_retract\n");
 	found_match = 1;
       }
     }
@@ -2230,7 +2232,7 @@ int mark_cpstack_retractall(CTXTdecl) {
       if (cp_inst_addr == dbclause_cgc_block_gl
 	  || (cp_inst_addr > standard_cgc_block_begin_gl 
 	      && cp_inst_addr < standard_cgc_block_end_gl)) {
-	fprintf(stderr,"found dangling dbclause/; ptr in CLREF retra\n");
+	//	fprintf(stderr,"found dangling dbclause/; ptr in CLREF retra\n");
 	found_match = 1;
       }
     }
@@ -2281,7 +2283,7 @@ int check_cpstack_retractall(CTXTdeclc PrRef prref) {
       if (cp_inst_addr == dbclause_cgc_block_gl
 	  || (cp_inst_addr > standard_cgc_block_begin_gl 
 	      && cp_inst_addr < standard_cgc_block_end_gl)) {
-	fprintf(stderr,"found dangling dbclause/; ptr in gen retra\n");
+	//	fprintf(stderr,"found dangling dbclause/; ptr in gen retra\n");
 	found_prref_match = 1;
       }
     }
@@ -2410,8 +2412,8 @@ void check_insert_global_delcf_pred(CTXTdeclc PrRef prref,Psc psc) {
   SYS_MUTEX_LOCK(MUTEX_DYNAMIC);
   while ( dcf != 0 ) {
     if (DCF_Type(dcf) == DELETED_CLREF) {
-      fprintf(stderr,"Prref over-riding clref for %s/%d\n",
-	      get_name(psc),get_arity(psc));
+      //      fprintf(stderr,"Prref over-riding clref for %s/%d\n",
+      //	      get_name(psc),get_arity(psc));
       Free_DelCF(dcf,prref,delcf_chain_begin);
     }
     dcf = DCF_NextPredDCF(dcf);
@@ -2426,8 +2428,8 @@ void check_insert_private_delcf_pred(CTXTdeclc PrRef prref,Psc psc) {
 
   while ( dcf != 0 ) {
     if (DCF_Type(dcf) == DELETED_CLREF) {
-      fprintf(stderr,"Prref over-riding clref for %s/%d\n",
-	      get_name(psc),get_arity(psc));
+      //      fprintf(stderr,"Prref over-riding clref for %s/%d\n",
+      //	      get_name(psc),get_arity(psc));
       Free_DelCF(dcf,prref,private_delcf_chain_begin);
     }
     dcf = DCF_NextPredDCF(dcf);
@@ -2445,14 +2447,14 @@ void check_insert_global_delcf_clause(CTXTdeclc PrRef prref,
   int found = 0;
 
   SYS_MUTEX_LOCK(MUTEX_DYNAMIC);
-  while ( dcf != 0 ) {
-    if (DCF_Type(dcf) == DELETED_CLREF && DCF_ClRef(dcf) == clref) {
-      fprintf(stderr,"Found clref for %s/%d\n",
-	      get_name(psc),get_arity(psc));
-      found = 1;
-    }
-    dcf = DCF_NextPredDCF(dcf);
-  }
+  //  while ( dcf != 0 ) {
+  //    if (DCF_Type(dcf) == DELETED_CLREF && DCF_ClRef(dcf) == clref) {
+      //      fprintf(stderr,"Found clref for %s/%d\n",
+      //      get_name(psc),get_arity(psc));
+  //      found = 1;
+  //    }
+  //    dcf = DCF_NextPredDCF(dcf);
+  //  }
   if (!found) {
     dcf = new_DelCF_clause(prref,psc,clref,&delcf_chain_begin);
   }
@@ -2465,14 +2467,14 @@ void check_insert_private_delcf_clause(CTXTdeclc PrRef prref,
   DelCFptr dcf = PrRef_DelCF(prref);
   int found = 0;
 
-  while ( dcf != 0 ) {
-    if (DCF_Type(dcf) == DELETED_CLREF && DCF_ClRef(dcf) == clref) {
-      fprintf(stderr,"Found clref for %s/%d\n",
-	      get_name(psc),get_arity(psc));
-      found = 1;
-    }
-    dcf = DCF_NextPredDCF(dcf);
-  }
+  //  while ( dcf != 0 ) {
+  //    if (DCF_Type(dcf) == DELETED_CLREF && DCF_ClRef(dcf) == clref) {
+      //      fprintf(stderr,"Found clref for %s/%d\n",
+      //      get_name(psc),get_arity(psc));
+  //      found = 1;
+  //    }
+  //    dcf = DCF_NextPredDCF(dcf);
+  //  }
   if (!found) {
     dcf = new_DelCF_clause(prref,psc,clref,&private_delcf_chain_begin);
   }
@@ -2525,17 +2527,17 @@ void mark_delcf_subchain(CTXTdeclc DelCFptr delcf,ClRef clref) {
   while (delcf) {
     if (dyntabled_incomplete(CTXTc DCF_PSC(delcf))) {
       DCF_Mark(delcf) = 1;
-      fprintf(stderr,"Marking DelCF for incomplete table: %s/%d\n",
-	      get_name(DCF_PSC(delcf)),get_arity(DCF_PSC(delcf)));
+      //      fprintf(stderr,"Marking DelCF for incomplete table: %s/%d\n",
+      //      get_name(DCF_PSC(delcf)),get_arity(DCF_PSC(delcf)));
     }
     if (DCF_Type(delcf) == DELETED_PRREF && prref == DCF_PrRef(delcf) ) {
       DCF_Mark(delcf) = 1;
-      fprintf(stderr,"Marking Pred DelCF for %s/%d\n",
-	      get_name(DCF_PSC(delcf)),get_arity(DCF_PSC(delcf)));
+      //      fprintf(stderr,"Marking Pred DelCF for %s/%d\n",
+      //      get_name(DCF_PSC(delcf)),get_arity(DCF_PSC(delcf)));
     } else if (DCF_Type(delcf) == DELETED_CLREF && DCF_ClRef(delcf) == clref) {
       DCF_Mark(delcf) = 1;
-      fprintf(stderr,"Marking Clause DelCF for %s/%d\n",
-	      get_name(DCF_PSC(delcf)),get_arity(DCF_PSC(delcf)) );
+      //      fprintf(stderr,"Marking Clause DelCF for %s/%d\n",
+      //      get_name(DCF_PSC(delcf)),get_arity(DCF_PSC(delcf)) );
     } 
     delcf = DCF_NextPredDCF(delcf);
   }
@@ -2576,7 +2578,7 @@ int mark_dynamic(CTXTdecl)
       if (cp_inst_addr == dbclause_cgc_block_gl
 	  || (cp_inst_addr > standard_cgc_block_begin_gl 
 	      && cp_inst_addr < standard_cgc_block_end_gl)) {
-	fprintf(stderr,"found dangling dbclause/; ptr in gc\n");
+	//	fprintf(stderr,"found dangling dbclause/; ptr in gc\n");
 	found_match = 1;
       }
     }
@@ -2603,15 +2605,15 @@ int sweep_dynamic(CTXTdeclc DelCFptr *chain_begin) {
   /* Free global deltcs */
   while (delcf_ptr) {
     if (DCF_Mark(delcf_ptr)) {
-      fprintf(stderr,"GC Sweep skipping marked %s/%d\n",
-	      get_name(DCF_PSC(delcf_ptr)),get_arity(DCF_PSC(delcf_ptr)));
+      //      fprintf(stderr,"GC Sweep skipping marked %s/%d\n",
+      //      get_name(DCF_PSC(delcf_ptr)),get_arity(DCF_PSC(delcf_ptr)));
       DCF_Mark(delcf_ptr) = 0;
       dcf_cnt++;
     }
     else {
       if (DCF_Type(delcf_ptr) == DELETED_PRREF) {
-	fprintf(stderr,"Garbage Collecting Predicate: %s/%d\n",
-	      get_name(DCF_PSC(delcf_ptr)),get_arity(DCF_PSC(delcf_ptr)));
+	//	fprintf(stderr,"Garbage Collecting Predicate: %s/%d\n",
+	//    get_name(DCF_PSC(delcf_ptr)),get_arity(DCF_PSC(delcf_ptr)));
 	gc_retractall(CTXTc DCF_ClRef(delcf_ptr));
 	prref = dynpredep_to_prref(CTXTc get_ep(DCF_PSC(delcf_ptr)));
 	Free_DelCF(delcf_ptr,prref,*chain_begin);
@@ -2619,16 +2621,16 @@ int sweep_dynamic(CTXTdeclc DelCFptr *chain_begin) {
       else {
 	if (DTF_Type(delcf_ptr) == DELETED_CLREF) {
 	  if (determine_if_safe_to_delete(DCF_ClRef(delcf_ptr))) {
-	    fprintf(stderr,"Garbage Collecting Clause: %s/%d (%p)\n",
-		    get_name(DCF_PSC(delcf_ptr)),get_arity(DCF_PSC(delcf_ptr)),
-		    DCF_ClRef(delcf_ptr));
+	    //	    fprintf(stderr,"Garbage Collecting Clause: %s/%d (%p)\n",
+	    //    get_name(DCF_PSC(delcf_ptr)),get_arity(DCF_PSC(delcf_ptr)),
+	    //		    DCF_ClRef(delcf_ptr));
 	    really_delete_clause(DCF_ClRef(delcf_ptr));
 	    prref = dynpredep_to_prref(CTXTc get_ep(DCF_PSC(delcf_ptr)));
 	    Free_DelCF(delcf_ptr,prref,*chain_begin);
 	  } else {
 	    dcf_cnt++;
-	    fprintf(stderr,"GC Sweep skipping unsafe: %s/%d\n",
-		    get_name(DCF_PSC(delcf_ptr)),get_arity(DCF_PSC(delcf_ptr)));
+	    //	    fprintf(stderr,"GC Sweep skipping unsafe: %s/%d\n",
+	    //    get_name(DCF_PSC(delcf_ptr)),get_arity(DCF_PSC(delcf_ptr)));
 	  }
 	}
       }
@@ -2898,8 +2900,8 @@ static void retract_clause(CTXTdeclc ClRef Clause, Psc psc ) {
   if (!really_deleted) {
     /* retracting only if unifying -- dont worry abt. NULL return for d_to_p */
     prref = dynpredep_to_prref(CTXTc get_ep(psc));
-    fprintf(stderr,"Delaying retract of clref in use: %s/%d\n",
-	    get_name(psc),get_arity(psc));
+    //    fprintf(stderr,"Delaying retract of clref in use: %s/%d\n",
+    //    get_name(psc),get_arity(psc));
 #ifndef MULTI_THREAD
     check_insert_private_delcf_clause(prref,psc,Clause);
 #else
