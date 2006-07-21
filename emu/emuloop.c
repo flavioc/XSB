@@ -421,6 +421,9 @@ int emuloop(CTXTdeclc byte *startaddr)
   DefGlobOps
   byte flag = READFLAG;  	/* read/write mode flag */
   int  restore_type;	/* 0 for retry restore; 1 for trust restore */ 
+#ifdef MULTI_THREAD
+    int (*fp)();
+#endif
 #if (defined(GC) && defined(GC_TEST))
 /* Used only in the garbage collection test; does not affect emulator o/w */
 #define GC_INFERENCES 66 /* make sure the garbage collection test is hard */
@@ -1723,7 +1726,6 @@ contcase:     /* the main loop */
     Op1(get_xxxl);
     ADVANCE_PC(size_xxxX);
 #ifdef MULTI_THREAD
-    int (*fp)();
     fp = op1;
     if (fp(CTXT))  /* call foreign function */
       lpcreg = cpreg;
