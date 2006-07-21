@@ -23,7 +23,7 @@
 ** 
 */
 
-:- compile_command 'make module'.
+%:- compile_command 'make module'.
 	
 :- foreign_pred smodelsInit from init(void):void.
 :- foreign_pred smodelsNumAtoms(+a) from numberAtoms(a:int):void.
