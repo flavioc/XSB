@@ -5,7 +5,8 @@
 \begin{center}
 {\Large {\bf By Luis Castro, Terrance Swift, David
     S. Warren}~\footnote{ Thanks to Barry Evans for helping
-    resuscitate the XASP installation procedure.}}
+    resuscitate the XASP installation procedure, and to Gon\c{c}alo Lopes
+    for the installation procedure on Windows.}}
 \end{center}
 
 The term {\em Answer Set Programming (ASP)} describes a paradigm in
@@ -39,14 +40,14 @@ Furthermore, deductive-database-like capabilities of XSB allow it to
 be an efficient and flexible grounder for many ASP problems.
 
 The XASP package provides various mechanisms that allow tight linkage
-of XSB programs to the SModels \cite{smodels:engine} stable model
+of XSB programs to the Smodels \cite{smodels:engine} stable model
 generator.  The main interface is based on a store of clauses that can
 be incrementally asserted or deleted by an XSB program.  Clauses in
 this store can make use of all of the cardinality and weight
-constraint syntax supported by SModels, in addition to default
+constraint syntax supported by Smodels, in addition to default
 negation.  When the user decides that the clauses in a store are a
 complete representation of a program whose stable model should be
-generated, the clauses are copied into SModels buffers.  Using the
+generated, the clauses are copied into Smodels buffers.  Using the
 Smodels API, the generator is invoked, and information about any
 stable models generated are returned.  This use of XASP is roughly
 analagous to building up a constraint store in CLP, and periodically
@@ -59,14 +60,14 @@ The XNMR interpreter provides a second, somewhat more implicit use of
 XASP.  In the XNMR interface a query $Q$ is evaluated as is any other
 query in XSB.  However, conditional answers produced for $Q$ and for
 its subgoals, upon user request, can be considered as clauses and sent
-to SModels for evaluation.  In backtracking through answers for $Q$,
+to Smodels for evaluation.  In backtracking through answers for $Q$,
 the user backtracks not only through answer substitutions for
 variables of $Q$, but also through the stable models produced for the
 various bindings. 
 
 \section{Installing the Interface}
 
-Installing the Smodels interface of XASP sometimes can be tricky, for
+Installing the Smodels interface of XASP sometimes can be tricky for
 two reasons.  First, XSB must dynamically load the Smodels library,
 and dynamic loading introduces platform dependencies.  Second since
 Smodels is written in C++ and XSB is written in C, the load must
@@ -75,11 +76,14 @@ loaded, steps that may addressed differently by different
 compilers~\footnote{XSB's compiler can automatically call foreign
   compilers to compile modules written in C, but in \version{} of XSB
   C++ modules must be compiled with external commands, such as the
-  {\tt make} command shown below.}.
+  {\tt make} command shown below.}.  However, by following the steps
+outlined below in the section for Unix or Windows, XASP should be
+running in a matter of minutes.
+
+\subsection{Installing the Interface under Unix}
 
 In order to use the Smodels interface, several steps must be
-performed.  {\em Note: this interface has not yet been ported to Windows
-Cygwin.}
+performed.  
 
 \begin{enumerate}
 \item {\em Creating a library for Smodels.} Smodels itself must be
@@ -142,15 +146,128 @@ To see if the installation is working properly, cd to the subdirectory
 If the test suite succeeded it will print out a message along the lines of 
 
 \begin{small}
-{\tt PASSED testsuite for /Users/terranceswift/XSBNEW/XSB/config/powerpc-apple-darwi\
-n7.5.1/bin/xsb}
+{\tt PASSED testsuite for /Users/terranceswift/XSBNEW/XSB/config/powerpc-apple-darwin7.5.1/bin/xsb}
 \end{small}
 
 \end{enumerate}
 
+\subsection{Installing XASP under Windosw using Cygwin}
+
+To install XASP under Windows, you must use \version{} of XSB or later
+and Version 2.31 or later of Smodels~\footnote{This section was
+  written by Goncalo Lopes.}.  You should also have a recent version
+of Cygwin (e.g. 1.5.20 or later) with all the relevant development
+packages installed, such as {\tt devel}, {\tt make}, {\tt automake},
+{\tt patchtools}, and possibly {\tt x11} (for {\tt makedepend})
+Without an appropriate Cygwin build environment many of these steps
+will simply fail, sometimes with quite cryptic error messages.
+
+\begin{enumerate}
+\item {\em Patch and Compile Smodels}\ First, uncompress {\tt
+  smodels-2.31.tar.gz} in some directory, (for presentation purposes
+  we use {\tt /cygdrive/c/smodels-2.31} --- that is,
+  \verb|c:\smodels-2.31|). After that, you must apply the patch
+  provided with this package. This patch enables the creation of a DLL
+  from Smodels. Below is a sample session (system output omitted) with
+  the required commands:
+%
+\begin{verbatim}
+$ cd /cygdrive/c/smodels-2.31
+$ cat $XSB/packages/xasp/patch-smodels-2.31 | patch -p1
+$ make lib
+\end{verbatim}
+%
+After that, you should have a file called {\tt smodels.dll} in the
+current directory, as well as a file called {\tt smodels.a}. You
+should make the former "visible" to Windows. Two alternatives are
+either (a) change the {\tt PATH} environment variable to contain
+\verb|c:\smodels-2.31|, or (b) copy {\tt smodels.dll} to some other
+directory in your PATH (such as \verb|c:\windows|, for instance).  One
+simple way to do this is to copy {\tt smodels.dll} to {\tt
+  \$XSB/config/i686-pc-cygwin/bin}, {\em after} the configure XSB step
+(step 2), since that directory has to be in your path in order to make
+XSB fully functional.
+
+\item{\em Configure XSB.}\ In order to properly configure XSB, you
+  must tell it where the Smodels sources and library (the {\tt
+    smodels.a} file) are. In addition, you must compile XSB such that
+  it doesn't use the Cygwin DLL (using the {\tt -mno-cygwin} option
+  for gcc). The following is a sample command:
+%
+\begin{verbatim}
+$ cd $XSB/build
+$ ./configure --enable-no-cygwin -with-smodels="/cygdrive/c/smodels-2.31''
+\end{verbatim}
+%
+You can optionally include the extended Cygwin w32 API using the
+configuration option \verb|--site-includes=<PATH_TO_API>|, (this
+allows XSB's build procedure to find {\tt makedepend} for instance),
+but you'll probably do fine with just the standard Cygwin apps.
+
+There are some compiler variables which may not be automatically set
+by the configure script in {\tt xsb\_config.h}, namely the
+configuration names and some activation flags. To correct this, do the
+following:
+
+\begin{enumerate}
+\item  cd to {\tt \$XSB/config/i686-pc-cygwin}
+\item  open the file {\tt xsb\_config.h} and add the following lines:
+\begin{verbatim}
+	#define CONFIGURATION "i686-pc-cygwin"
+	#define FULL_CONFIG_NAME "i686-pc-cygwin"
+	#define SLG_GC
+\end{verbatim}
+\end{enumerate}
+
+(Still more flags may be needed depending on Cygwin configuration)
+
+After applying these changes, cd back to the {\tt \$XSB/build}
+directory and compile XSB:
+%
+\begin{verbatim}
+$ ./makexsb
+\end{verbatim}
+%
+Now you should have in {\tt \$XSB/config/i686-pc-cygwin/bin} directory
+both a {\tt xsb.exe} and a {\tt xsb.dll}. 
+
+\item{\em Compiling XASP.}\ 
+First, go to the XASP directory and execute the {\tt makelinks.sh}
+script in order to make the headers and libraries in Smodels be
+accessible to XSB, i.e.:
+%
+\begin{verbatim}
+$ cd $XSB/packages/xasp
+$ sh makelinks.sh /cygdrive/c/smodels-2.31
+\end{verbatim}
+%
+Now you must copy the {\tt smoMakefile} from the {\tt config}
+directory to the {\tt xasp} directory and run both its directives:
+%
+\begin{verbatim}
+$ cp $XSB/config/i686-pc-cygwin/smoMakefile .
+$ make -f smoMakefile module
+$ make -f smoMakefile all
+\end{verbatim}
+%
+At this point, you can consult {\tt xnmr} as you can with any other
+package, or xsb with the {\tt xnmr} command line parameter, like this:
+(don't forget to add XSB bin directory to the {\tt \$PATH} environment
+variable)
+%
+\begin{verbatim}
+$ xsb xnmr
+\end{verbatim}
+%
+Lots of error messages will probably appear because of some runtime
+load compiler, but if everything goes well you can ignore all of them
+since your xasppkg will be correctly loaded and everything will be
+functioning smoothly from there on out.
+\end{enumerate}
+
 
 \section{The Smodels Interface}
-
+%
 The Smodels interface contains two levels: the \emph{cooked} level and
 the \emph{raw} level.  The cooked level interns rules in an XSB
 \emph{clause store}, and translates general weight constraint rules
@@ -337,12 +454,12 @@ be useful for debugging.
 \end{description}
 
 \section{The xnmr\_int Interface}.
-
+%
 This module provides the interface from the {\tt xnmr} module to
 Smodels.  It does not use the {\tt sm\_int} interface, but rather
 directly calls the Smodels C interface, and can be thought of as a
 special-purpose alternative to {\tt sm\_int}.
-
+%
 \begin{description}
 \ouritem{init\_smodels(+Query)}
 \index{\texttt{init\_smodels/1}}
