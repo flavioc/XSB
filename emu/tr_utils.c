@@ -1561,13 +1561,14 @@ TIFptr get_tif_for_answer_trie_cp(CTXTdeclc BTNptr pLeaf)
    deltf (it must be for this generation of the table)
 */
 void check_insert_global_deltf_pred(CTXTdeclc TIFptr tif) { 
-  DelTFptr dtf = TIF_DelTF(tif); 
+  DelTFptr dtf = TIF_DelTF(tif), next_dtf; 
   BTNptr call_trie = TIF_CallTrie(tif); 
   VariantSF subgoals = TIF_Subgoals(tif); 
   int found = 0;
 
   SYS_MUTEX_LOCK(MUTEX_TABLE);
   while ( dtf != 0 ) {
+    next_dtf = DTF_NextPredDTF(dtf);
     if (DTF_Type(dtf) == DELETED_PREDICATE && 
 	DTF_CallTrie(dtf) == call_trie && DTF_Subgoals(dtf) == subgoals)
       found = 1;
@@ -1576,7 +1577,7 @@ void check_insert_global_deltf_pred(CTXTdeclc TIFptr tif) {
 	      get_name(TIF_PSC(tif)),get_arity(TIF_PSC(tif)));
       Free_Global_DelTF_Subgoal(dtf,tif);
     }
-    dtf = DTF_NextPredDTF(dtf);
+    dtf = next_dtf;
   }
   if (!found) {
     New_Global_DelTF_Pred(dtf,tif);
@@ -2031,12 +2032,13 @@ void mark_private_tabled_preds(CTXTdecl) {
 
 #ifdef MULTI_THREAD
 int sweep_private_tabled_preds(CTXTdecl) {
-  DelTFptr deltf_ptr;
+  DelTFptr deltf_ptr, next_deltf_ptr;
   int dtf_cnt = 0;
   TIFptr tif_ptr;
 
   deltf_ptr = private_deltf_chain_begin;
   while (deltf_ptr) {
+    next_deltf_ptr = DTF_NextDTF(deltf_ptr);
     if (DTF_Mark(deltf_ptr)) {
       tif_ptr = subg_tif_ptr(DTF_Subgoals(deltf_ptr));
       fprintf(stderr,"Skipping: %s/%d\n",
@@ -2060,7 +2062,7 @@ int sweep_private_tabled_preds(CTXTdecl) {
 	  Free_Private_DelTF_Subgoal(deltf_ptr,tif_ptr);
 	}
     }
-    deltf_ptr = DTF_NextDTF(deltf_ptr);
+    deltf_ptr = next_deltf_ptr;
   }
   return dtf_cnt;
 }
@@ -2070,13 +2072,14 @@ int sweep_private_tabled_preds(CTXTdecl) {
    with one active thread */
 
 int sweep_tabled_preds(CTXTdecl) {
-  DelTFptr deltf_ptr;
+  DelTFptr deltf_ptr, next_deltf_ptr;
   int dtf_cnt = 0;
   TIFptr tif_ptr;
 
   /* Free global deltfs */
   deltf_ptr = deltf_chain_begin;
   while (deltf_ptr) {
+    next_deltf_ptr = DTF_NextDTF(deltf_ptr);
     if (DTF_Mark(deltf_ptr)) {
       tif_ptr = subg_tif_ptr(DTF_Subgoals(deltf_ptr));
       fprintf(stderr,"Skipping: %s/%d\n",
@@ -2100,7 +2103,7 @@ int sweep_tabled_preds(CTXTdecl) {
 	  Free_Global_DelTF_Subgoal(deltf_ptr,tif_ptr);
 	}
     }
-    deltf_ptr = DTF_NextDTF(deltf_ptr);
+    deltf_ptr = next_deltf_ptr;
   }
 
 #ifdef MULTI_THREAD
