@@ -1573,8 +1573,8 @@ void check_insert_global_deltf_pred(CTXTdeclc TIFptr tif) {
 	DTF_CallTrie(dtf) == call_trie && DTF_Subgoals(dtf) == subgoals)
       found = 1;
     if (DTF_Type(dtf) == DELETED_SUBGOAL) {
-      fprintf(stderr,"Predicate over-riding subgoal for %s/%d\n",
-	      get_name(TIF_PSC(tif)),get_arity(TIF_PSC(tif)));
+      //      fprintf(stderr,"Predicate over-riding subgoal for %s/%d\n",
+      //      get_name(TIF_PSC(tif)),get_arity(TIF_PSC(tif)));
       Free_Global_DelTF_Subgoal(dtf,tif);
     }
     dtf = next_dtf;
@@ -1622,8 +1622,8 @@ void check_insert_private_deltf_pred(CTXTdeclc TIFptr tif) {
 	DTF_CallTrie(dtf) == call_trie && DTF_Subgoals(dtf) == subgoals)
       found = 1;
     if (DTF_Type(dtf) == DELETED_SUBGOAL) {
-      fprintf(stderr,"Predicate over-riding subgoal for %s/%d\n",
-	      get_name(TIF_PSC(tif)),get_arity(TIF_PSC(tif)));
+      //      fprintf(stderr,"Predicate over-riding subgoal for %s/%d\n",
+      //      get_name(TIF_PSC(tif)),get_arity(TIF_PSC(tif)));
       Free_Private_DelTF_Subgoal(dtf,tif);
     }
     dtf = DTF_NextPredDTF(dtf);
@@ -1702,8 +1702,8 @@ int fast_abolish_table_predicate(CTXTdeclc Psc psc)
 
     delete_predicate_table(CTXTc tif);
   }  else {
-    fprintf(stderr,"Delaying abolish of table in use: %s/%d\n",
-	    get_name(psc),get_arity(psc));
+    //    fprintf(stderr,"Delaying abolish of table in use: %s/%d\n",
+    //    get_name(psc),get_arity(psc));
 #ifndef MULTI_THREAD
     check_insert_private_deltf_pred(CTXTc tif);
 #else
@@ -1829,8 +1829,8 @@ int abolish_table_call(CTXTdeclc VariantSF subgoal) {
       return TRUE;
     }
     else {
-      fprintf(stderr,"Delaying abolish of call in use for: %s/%d\n",
-	      get_name(psc),get_arity(psc));
+      //      fprintf(stderr,"Delaying abolish of call in use for: %s/%d\n",
+      //      get_name(psc),get_arity(psc));
 #ifndef MULTI_THREAD
       delete_branch(CTXTc subgoal->leaf_ptr, &tif->call_trie); /* delete call */
       check_insert_private_deltf_subgoal(CTXTc subgoal);
@@ -1925,8 +1925,8 @@ inline int abolish_table_predicate(CTXTdeclc Psc psc)
     return 1;
   }
   else {
-    fprintf(stderr,"Delaying abolish of table in use: %s/%d\n",
-	    get_name(psc),get_arity(psc));
+    //    fprintf(stderr,"Delaying abolish of table in use: %s/%d\n",
+    //    get_name(psc),get_arity(psc));
 #ifndef MULTI_THREAD
     check_insert_private_deltf_pred(CTXTc tif);
 #else
@@ -2041,23 +2041,23 @@ int sweep_private_tabled_preds(CTXTdecl) {
     next_deltf_ptr = DTF_NextDTF(deltf_ptr);
     if (DTF_Mark(deltf_ptr)) {
       tif_ptr = subg_tif_ptr(DTF_Subgoals(deltf_ptr));
-      fprintf(stderr,"Skipping: %s/%d\n",
-	      get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
+      //      fprintf(stderr,"Skipping: %s/%d\n",
+      //      get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
       DTF_Mark(deltf_ptr) = 0;
       dtf_cnt++;
     }
     else {
       if (DTF_Type(deltf_ptr) == DELETED_PREDICATE) {
 	tif_ptr = subg_tif_ptr(DTF_Subgoals(deltf_ptr));
-	fprintf(stderr,"Garbage Collecting Predicate: %s/%d\n",
-		get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
+	//	fprintf(stderr,"Garbage Collecting Predicate: %s/%d\n",
+	// get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
 	reclaim_deleted_predicate_table(CTXTc deltf_ptr);
 	Free_Private_DelTF_Pred(deltf_ptr,tif_ptr);
       } else 
 	if (DTF_Type(deltf_ptr) == DELETED_SUBGOAL) {
 	  tif_ptr = subg_tif_ptr(DTF_Subgoal(deltf_ptr));
-	  fprintf(stderr,"Garbage Collecting Subgoal: %s/%d\n",
-		  get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
+	  //	  fprintf(stderr,"Garbage Collecting Subgoal: %s/%d\n",
+	  //  get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
 	  delete_variant_sf_and_answers(CTXTc DTF_Subgoal(deltf_ptr)); 
 	  Free_Private_DelTF_Subgoal(deltf_ptr,tif_ptr);
 	}
@@ -2082,23 +2082,23 @@ int sweep_tabled_preds(CTXTdecl) {
     next_deltf_ptr = DTF_NextDTF(deltf_ptr);
     if (DTF_Mark(deltf_ptr)) {
       tif_ptr = subg_tif_ptr(DTF_Subgoals(deltf_ptr));
-      fprintf(stderr,"Skipping: %s/%d\n",
-	      get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
+      //      fprintf(stderr,"Skipping: %s/%d\n",
+      //      get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
       DTF_Mark(deltf_ptr) = 0;
       dtf_cnt++;
     }
     else {
       if (DTF_Type(deltf_ptr) == DELETED_PREDICATE) {
 	tif_ptr = subg_tif_ptr(DTF_Subgoals(deltf_ptr));
-	fprintf(stderr,"Garbage Collecting Predicate: %s/%d\n",
-		get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
+	//	fprintf(stderr,"Garbage Collecting Predicate: %s/%d\n",
+	//get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
 	reclaim_deleted_predicate_table(CTXTc deltf_ptr);
 	Free_Global_DelTF_Pred(deltf_ptr,tif_ptr);
       } else 
 	if (DTF_Type(deltf_ptr) == DELETED_SUBGOAL) {
 	  tif_ptr = subg_tif_ptr(DTF_Subgoal(deltf_ptr));
-	  fprintf(stderr,"Garbage Collecting Subgoal: %s/%d\n",
-		  get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
+	  //	  fprintf(stderr,"Garbage Collecting Subgoal: %s/%d\n",
+	  //  get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
 	  delete_variant_sf_and_answers(CTXTc DTF_Subgoal(deltf_ptr)); 
 	  Free_Global_DelTF_Subgoal(deltf_ptr,tif_ptr);
 	}

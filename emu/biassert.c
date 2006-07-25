@@ -3527,8 +3527,8 @@ int gen_retract_all(CTXTdecl/* R1: +PredEP , R2: +PSC */)
     SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
   }
   else {
-    fprintf(stderr,"Delaying retractall of prref in use: %s/%d\n",
-	    get_name(psc),get_arity(psc));
+    //    fprintf(stderr,"Delaying retractall of prref in use: %s/%d\n",
+    //    get_name(psc),get_arity(psc));
 #ifndef MULTI_THREAD
     check_insert_private_delcf_pred(prref,psc);
 #else
