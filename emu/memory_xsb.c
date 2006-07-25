@@ -215,10 +215,12 @@ void *mem_realloc_nocheck(void *addr, unsigned long oldsize, unsigned long newsi
 
 void mem_dealloc(void *addr, unsigned long size, int category)
 {
+  //  int i;
     size = (size+7) & ~0x7 ;	      /* round to 8 */
 #ifdef NON_OPT_COMPILE
     SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
 #endif
+    //    if (size > 0) for (i=0; i<size/4-1; i++) *((CPtr *)addr + i) = (CPtr)0xefefefef;
     pspacesize[category] -= size;
     free(addr);
 #ifdef NON_OPT_COMPILE
