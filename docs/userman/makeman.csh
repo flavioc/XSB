@@ -16,10 +16,12 @@ if ( ($#argv == 1) || ($2 == ps) ) then
 			#   is ok...
   latex ${manual}	# make that correct too
   dvips -t letter -o ${manual}.ps ${manual}.dvi
+  ps2pdf ${manual}.ps
+  gzip -c ${manual}.ps > ${manual}.ps.gz
 endif
 
 if ( ($#argv == 1) || ($2 == html) ) then
-  latex2html ${manual}
+  latex2html -local_icons -scalable_fonts -show_section_numbers ${manual}
 endif
 
 exit(0)
