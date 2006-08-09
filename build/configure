@@ -3368,7 +3368,7 @@ if test "${with_interprolog}" = "yes"; then
   else
         JAVA_HEADER_PATH=${java_path}
         JAVA_PLATFORM_HEADER_PATH=`ls ${JAVA_HEADER_PATH}/*/jni_md.h`
-        JAVA_PLATFORM_HEADER_PATH="${JAVA_PLATFORM_HEADER_PATH%jni_md.h}"
+        JAVA_PLATFORM_HEADER_PATH=`dirname ${JAVA_PLATFORM_HEADER_PATH}`
     echo "Obtaining Java header files form ${JAVA_HEADER_PATH} and ${JAVA_PLATFORM_HEADER_PATH}"
   fi
 else
