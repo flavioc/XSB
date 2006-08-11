@@ -2,14 +2,18 @@
 
 Starting with Version 3.0, XSB supports the use of Posix threads to
 perform separable computations, and in certain cases to parallelize
-them.  Posix threads have a simple and clear API, and are available on
-all Unixes and, by using open-source libraries, on Windoes as well (see
-Section~\ref{sec:mt-windows} to configure under Windows).  This
-chapter introduces how to program with threads in XSB through a series
-of examples.  Later sections discuss performance aspects of our
-implementation as well as describing relevant predicates.  A general
-knowledge of multi-threaded programming is assumed, such as can be
-found in \cite{LewB98,Bute97}.
+them~\footnote{\version{} of XSB is the first version to include
+  multi-threading, and is still under development.  Users who want to
+  develop XSB applications using multi-threading should consider
+  checking out the latest stable CVS version of XSB for extensions to
+  features and bug fixes.}.Posix threads have a simple and clear API,
+and are available on all Unixes and, by using open-source libraries,
+on Windoes as well (see Section~\ref{sec:mt-windows} to configure
+under Windows).  This chapter introduces how to program with threads
+in XSB through a series of examples.  Later sections discuss
+performance aspects of our implementation as well as describing
+relevant predicates.  A general knowledge of multi-threaded
+programming is assumed, such as can be found in \cite{LewB98,Bute97}.
 
 \section{Getting Started with Multi-Threading}
 %
@@ -684,73 +688,199 @@ platforms.
 \item 	{\tt misc\_error}
 \ei
 \ei
-
-\comment{
-\ournewitem{user\_mutex\_lock(MutexId)}{thread}
-\index{\texttt{user\_mutex\_lock/1}} 
-%
-Locks a user-mutex, currently numbered 0 through 9, with 0
-corresponding to the mutex that controls I/O to the console.  These
-mutexes are initialized automatically at process startup, and in
-addition each of the mutexes have a {\tt pthread\_mutexattr\_t} type
-of {\tt NORMAL}.
-
-{\bf Error Cases}
-\bi
-\item 	{\tt MutexId} is not an integer
-\bi
-\item 	{\tt type\_error(integer,MutexId)}
-\ei
-\item   {\tt MutexId} does is not the index of a user mutex
-\bi
-\item 	{\tt domain\_error(mutex\_id,MutexId)}
-\ei
-\item 	Locking {\tt MutexId} would lead to a deadlock
-\bi
-\item 	{\tt permission\_error('mutex lock','deadlocking mutex',MutexId)}
-\ei
-\ei
-
-\ournewitem{user\_mutex\_trylock(MutexId)}{thread}
-\index{\texttt{user_mutex_trylock/1}} 
-%
-If the user-mutex denoted by {\tt MutexId} is not busy, this predicate
-locks {\tt MutexId} and succeeds; if {\tt MutexId} is busy the
-predicate fails, rather than waiting for the lock as with {\tt
-  xsb\_user\_mutex\_trylock/1}
-
-{\bf Error Cases}
-\bi
-\item 	{\tt MutexId} is not an integer
-\bi
-\item 	{\tt type\_error(integer,MutexId)}
-\ei
-\item   {\tt MutexId} does is not the index of a user mutex
-\bi
-\item 	{\tt domain\_error(mutex\_id,MutexId)}
-\ei
-\ei
-
-\ournewitem{xsb\_user\_mutex\_unlock/0}{thread}
-\index{\texttt{xsb\_user\_mutex\_unlock/1}} 
-%
-Unlocks a user mutex (user mutexes are described above).
-
-{\bf Error Cases}
-\bi
-\item 	{\tt MutexId} is not an integer
-\bi
-\item 	{\tt type\_error(integer,MutexId)}
-\ei
-\item   {\tt MutexId} does is not the index of a user mutex
-\bi
-\item 	{\tt domain\_error(mutex\_id,MutexId)}
-\ei
-\item 	The thread calling {\tt xsb\_user\_mutex\_unlock/1} does not
-  own the lock for {\tt MutexId} 
-\bi
-\item 	{\tt permission\_error('mutex unlock',mutex,MutexId)}
-\ei
-\ei
-}
 \end{description}
+
+\subsection{Predicates for Thread Synchronization} \label{sec:mutex}
+
+While the XSB engine itself is thread-safe, thread synchronization may
+be needed when calling a package that is not itself thread safe (see
+the beginning of this chapter for a list of which packages are and are
+not thread-safe).  Synchronization may also be needed to protect data
+accessed by foreign function calls, or to coordinate responses to
+external events.  
+
+One of the simplest and most powerful primitives for thread
+synchronization are mutexes.  The mutexes provided by the following
+primitives are {\em recursive}: if a thread $T$ locks a recursive
+mutex $M$, any calls to {\tt mutex\_lock(M)} made by $T$ will
+immediately succeed without suspending while $M$ is locked.  Other
+threads that attempt to lock $M$ will suspend until $M$ is unlocked.
+To unlock $M$ after $n$ calls to {\tt mutex\_lock(M)}, $T$ must make
+$n$ calls to {\tt mutex\_unlock(M)}.
+
+When using mutexes in XSB, programmers must not only avoid explicitly
+creating deadlocks, but must also ensure that a mutex is unlocked when
+leaving a critical area, and destroyed when it is no longer needed.
+Making sure that this happens for successful goals, for failed goals
+and for goals that raise exceptions can sometimes be complicated.  The
+predicate {\tt with\_mutex/2} handles all of these cases.  We
+recommend using it if possible, and making use of lower-level calls to
+{\tt mutex\_lock/1}, {\tt mutex\_unlock/1} and {\tt mutex\_trylock/1}
+only when {\tt with\_mutex/2} is not applicable.
+
+\begin{description}
+\ournewitem{with\_mutex(+Mutex,?Goal)}{thread}
+\index{\texttt{with\_mutex/2}} 
+%
+Locks a current mutex {\tt Mutex}, executes {\tt Goal}
+deterministically, then unlocks {\tt Mutex}.  If {\tt Goal} leaves
+choice-points, these are destroyed.  {\tt Mutex} is unlocked
+regardless of whether {\tt Goal} succeeds, fails or raises an
+exception. Any exception thrown by {\tt Goal} is re-thrown after the
+mutex has been successfully unlocked.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Mutex} is not an atom
+\bi
+\item 	{\tt type\_error(atom,Mutex)}
+\ei
+\item 	{\tt Mutex} is not associated with a current mutex.
+\bi
+\item 	{\tt existence\_error(mutex,Mutex)}
+\ei
+\item 	{\tt Mutex} is locked
+\bi
+\item 	{\tt permission\_error(mutex,destroy,Mutex)}
+\ei
+\ei
+
+\ournewitem{mutex\_create(?Mutex)}{thread}
+\index{\texttt{mutex\_create/1}} 
+%
+Creates a user mutex, {\tt Mutex}.  If {\tt Mutex} is instantiated to
+an atom upon call, the mutex will have that name; if {\tt Mutex} is
+not instantiated at call, a system-generated atom {\tt mutex}$n$
+($N>0$) will be returned.  The mutex itself will be recursive.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Mutex} is not a variable or an atom
+\bi
+\item 	{\tt domain\_error(variable\_or\_atom,Mutex)}
+\ei
+\item 	{\tt Mutex} is already associated with a mutex.
+\bi
+\item 	{\tt permission\_error(create,mutex,Mutex)}
+\ei
+\ei
+
+\ournewitem{mutex\_destroy(+Mutex)}{thread}
+\index{\texttt{mutex\_destroy/1}} 
+%
+Destroys a current unlocked mutex {\tt Mutex} along with any memory it
+uses.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Mutex} is not an atom
+\bi
+\item 	{\tt type\_error(atom,Mutex)}
+\ei
+\item 	{\tt Mutex} is not associated with a current mutex.
+\bi
+\item 	{\tt existence\_error(mutex,Mutex)}
+\ei
+\item 	{\tt Mutex} is locked
+\bi
+\item 	{\tt permission\_error(mutex,destroy,Mutex)}
+\ei
+\ei
+
+\ournewitem{mutex\_lock(+Mutex)}{thread}
+\index{\texttt{mutex\_lock/1}} 
+%
+{\tt mutex\_lock(Mutex)} locks a (recursive) mutex. Locking and
+unlocking mutexes should be paired carefully in order to avoid
+deadlocks. In particular, a programmer needs to ensure that mutexes
+are properly unlocked even if the protected code fails or raises an
+exception.
+%For most common cases, the built-in predicate with mutex/2 (3.4.3)
+%provides a safer way for using mutexes.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Mutex} is not an atom
+\bi
+\item 	{\tt type\_error(atom,Mutex)}
+\ei
+\item 	{\tt Mutex} is not associated with a current mutex.
+\bi
+\item 	{\tt existence\_error(mutex,Mutex)}
+\ei
+\ei
+
+\ournewitem{mutex\_trylock(+Mutex)}{thread}
+\index{\texttt{mutex\_trylock/1}} 
+%
+Works as {\tt mutex\_lock/1} but fails immediately if {\tt Mutex} is
+held by another thread rather than suspending the calling thread.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Mutex} is not an atom
+\bi
+\item 	{\tt type\_error(atom,Mutex)}
+\ei
+\item 	{\tt Mutex} is not associated with a current mutex.
+\bi
+\item 	{\tt existence\_error(mutex,Mutex)}
+\ei
+\ei
+
+\ournewitem{mutex\_unlock(+Mutex)}{thread}
+\index{\texttt{mutex\_unlock/1}} 
+%
+Unlocks {\tt Mutex} when called by the same thread that locked the mutex.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Mutex} is not an atom
+\bi
+\item 	{\tt type\_error(atom,Mutex)}
+\ei
+\item 	{\tt Mutex} is not associated with a current mutex.
+\bi
+\item 	{\tt existence\_error(mutex,Mutex)}
+\ei
+\item 	{\tt Mutex} is not held by the calling thread
+\bi
+\item 	{\tt permission\_error(unlock,mutex,Mutex)}
+\ei
+\ei
+
+\ournewitem{mutex\_unlock\_all}{thread}
+\index{\texttt{mutex\_unlock\_all/0}} 
+%
+{\tt mutex\_unlock\_all/0} unlocks all user mutexes owned by the
+current thread.  It has no error cases.
+
+\ournewitem{mutex\_property(?Mutex,?Property)}{thread}
+\index{\texttt{mutex\_property/2}} 
+%
+If {\tt Mutex} is instantiated, unifies {\tt Property} with current
+properties of the mutex; if {\tt Mutex} is a variable, backtracks
+through all the current mutexes whose properties unify with {\tt
+  Property}.  If the mutex is locked, {\tt Property} will be a term of
+the form {\tt locked(ThreadId,NumLocks)} where {\tt ThreadId} is a
+thread id, and {\tt NumLocks} is the number of times the mutex has
+been locked.  If the mutex is unlocked, {\tt Property} will be a term
+of the form {\tt unlocked(NumLocks)} where {\tt NumLocks} is the
+number of times the mutex has been locked.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Mutex} is not an atom
+\bi
+\item 	{\tt type\_error(atom,Mutex)}
+\ei
+\ei
+
+\end{description}
+
+%--------------------------------------------------------------------
+\comment{
+mutex_statistics not yet implemented.
+}
+%--------------------------------------------------------------------
+

@@ -283,7 +283,12 @@ for Prolog's virtual machine, as well as for thread-private data
 structures are stored in a {\em context structure}.  This context
 structure must be passed to any functions that need to access elements
 of a thread's virtual machine -- including many of the functions that
-are used to exchange data between Prolog and C.  On the other hand, in
+are used to exchange data between Prolog and C.  We note in passing
+that when using the multi-threaded engine, a user must ensure that
+foreign-language functions are thread-safe, by using standard
+multi-threaded programming techniques, including XSB's mutex
+predicates (see the Section {\em Predicates for Thread
+  Synchronization} in Volume 1 of this manual).  On the other hand, in
 the single-threaded engine virtual machine elements are kept in static
 variables, so that context parameters are not required.
 
