@@ -54,10 +54,14 @@
 #define XSB_SET_INIT_COMPLSTACK_SIZE	19
 
 #define XSB_THREAD_PROPERTY             20
-#define XSB_THREAD_INTERRUPT             21
+#define XSB_THREAD_INTERRUPT            21
 
-#define ABOLISH_PRIVATE_TABLES        22
-#define ABOLISH_SHARED_TABLES        23
+#define ABOLISH_PRIVATE_TABLES          22
+#define ABOLISH_SHARED_TABLES           23
+
+#define GET_FIRST_MUTEX_PROPERTY        24
+#define GET_NEXT_MUTEX_PROPERTY         25
+#define MUTEX_UNLOCK_ALL                26
 
 #define MAX_THREADS		1024
 
@@ -112,7 +116,9 @@
 /* probably obsolete */
 #define MUTEX_DISPBLKHDR        23
 
-/* Some mutexes available to users */
+#define MUTEX_DYNMUT            24
+
+/* Some mutexes available to users (obsolete) */
 #define MUTEX_CONSOLE		30
 #define MUTEX_USER1		31
 #define MUTEX_USER2		32

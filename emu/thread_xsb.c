@@ -67,6 +67,8 @@ void set_init_complstack_size(int);
 Cell copy_term_from_thread( th_context *th, th_context *from, Cell arg1 );
 extern pthread_attr_t detached_attr_gl;
 
+pthread_mutexattr_t attr_rec_gl ;
+
 typedef struct
 {	
 	pthread_t	tid;
@@ -114,40 +116,20 @@ char *mutex_names[] = {
 "mutex_console","mutex_user1","mutex_user2","mutex_user3","mutex_user4",
 "mutex_user5","mutex_user6","mutex_user7","mutex_user9","mutex_user9"};
 
-void print_mutex_use() {
-  int i;
 
-  printf("Mutexes used since last statistics:\n");
-  for (i = 0; i < MAX_SYS_MUTEXES; i++) {
-    if (sys_mut[i].num_locks > 0) 
-      printf("Mutex %s (%d): %d\n",mutex_names[i],i,sys_mut[i].num_locks);
-  }
-  for (i = 0; i < MAX_SYS_MUTEXES; i++) {
-    sys_mut[i].num_locks = 0;
-  }
+/*-------------------------------------------------------------------------*/
+/* General Routines */
+
+th_context *find_context( int id )
+{
+	if (th_vec[id].valid)
+		return th_vec[id].ctxt;
+	else
+		return NULL;
 }
 
-
-/*
-static void show_policy(void) {
-  int my_policy;
-  struct sched_param my_param;
-  int status, min_priority, max_priority;
-
-  if ((status = pthread_getschedparam(pthread_self(),&my_policy,&my_param))) {
-    xsb_abort("bad scheduling status");
-  }
-  printf("thread routine running at %s/%d\n",
-	 (my_policy == SCHED_FIFO ? "FIFO" 
-	  : (my_policy == SCHED_RR ? "RR"
-	     : (my_policy == SCHED_OTHER ? "OTHER"
-		: "unknown") )),my_param.sched_priority);
-
-  printf("min %d max %d\n",sched_get_priority_min(my_policy),
-	 sched_get_priority_max(my_policy));
-  
-}
-*/
+/*-------------------------------------------------------------------------*/
+/* Thread Creation, Destruction, etc. */
 
 /* finds thread in the thread-vector, returning its index if found, -1
    otherwise */
@@ -208,44 +190,6 @@ static void th_delete( int i )
 	mem_dealloc(th_vec[i].tid_addr,sizeof(pthread_t),THREAD_SPACE);
 #endif	
 	th_vec[i].valid = 0;
-}
-
-void init_system_threads( th_context *ctxt )
-{
-  pthread_t tid = pthread_self();
-  th_new(P_PTHREAD_T_P, ctxt) ;
-}
-
-void init_system_mutexes( void )
-{
-	int i ;
-	pthread_mutexattr_t attr_rec ;
-	pthread_mutexattr_t attr_std ;
-
-/* make system mutex recursive, for there are recursive prolog calls	*/
-/* to stuff that must be executed in mutual exclusion			*/
-
-	pthread_mutexattr_init( &attr_rec ) ;
-	if( pthread_mutexattr_settype( &attr_rec, PTHREAD_MUTEX_RECURSIVE_NP )<0 )
-		xsb_abort( "[THREAD] Error initializing mutexes" ) ;
-
-	pthread_mutexattr_init( &attr_std ) ;
-
-	for( i = 0; i <=  LAST_REC_MUTEX ; i++ ) {
-	  pthread_mutex_init( MUTARRAY_MUTEX(i), &attr_rec ) ;
-	  MUTARRAY_OWNER(i) = -1;
-	}
-	for( i = LAST_REC_MUTEX + 1 ; i < MAX_SYS_MUTEXES ; i++ ) {
-	  pthread_mutex_init( MUTARRAY_MUTEX(i), &attr_std ) ;
-	  MUTARRAY_OWNER(i) = -1;
-	}
-
-#ifdef MULTI_THREAD_RWL
-	rw_lock_init(&trie_rw_lock);
-#endif
-
-	pthread_mutex_init( &completing_mut, &attr_std );
-	pthread_cond_init( &completing_cond, NULL );
 }
 
 /* calls _$thread_run/1 in thread.P */
@@ -335,16 +279,131 @@ static int xsb_thread_create(th_context *th)
 
   ctop_int( th, 3, id ) ;
   return rc ;
-}
+}  /* xsb_thread_create */
 
-th_context *find_context( int id )
+/*-------------------------------------------------------------------------*/
+/* System Initialization Stuff */
+
+void init_system_threads( th_context *ctxt )
 {
-	if (th_vec[id].valid)
-		return th_vec[id].ctxt;
-	else
-		return NULL;
+  pthread_t tid = pthread_self();
+  th_new(P_PTHREAD_T_P, ctxt) ;
 }
 
+/* * * * * * */
+void init_system_mutexes( void )
+{
+	int i ;
+	//	pthread_mutexattr_t attr_rec ;
+	pthread_mutexattr_t attr_std ;
+
+/* make system mutex recursive, for there are recursive prolog calls	*/
+/* to stuff that must be executed in mutual exclusion			*/
+
+	pthread_mutexattr_init( &attr_rec_gl ) ;
+	if( pthread_mutexattr_settype( &attr_rec_gl,
+				       PTHREAD_MUTEX_RECURSIVE_NP )<0 )
+		xsb_abort( "[THREAD] Error initializing mutexes" ) ;
+
+	pthread_mutexattr_init( &attr_std ) ;
+
+	for( i = 0; i <=  LAST_REC_MUTEX ; i++ ) {
+	  pthread_mutex_init( MUTARRAY_MUTEX(i), &attr_rec_gl ) ;
+	  MUTARRAY_OWNER(i) = -1;
+	}
+	for( i = LAST_REC_MUTEX + 1 ; i < MAX_SYS_MUTEXES ; i++ ) {
+	  pthread_mutex_init( MUTARRAY_MUTEX(i), &attr_std ) ;
+	  MUTARRAY_OWNER(i) = -1;
+	}
+
+#ifdef MULTI_THREAD_RWL
+	rw_lock_init(&trie_rw_lock);
+#endif
+
+	pthread_mutex_init( &completing_mut, &attr_std );
+	pthread_cond_init( &completing_cond, NULL );
+}
+
+/*-------------------------------------------------------------------------*/
+/* Routines for dynamic user mutexes. It may at first seem strange to
+   have MUTEX_DYNMUT guard the creation and deletion of mutexes, but
+   since the mutexes are held in a doubly linked list that is
+   traversed by various routines, we have to be careful.  However
+   mutex handling that affects a single user mutex (locking,
+   unlocking) does not need to synchronize with MUTEX_DYNMUT.  */
+
+/* Used only for sys mutexes -- I may fold this into mutex statistics
+   at some point.  */
+void print_mutex_use() {
+  int i;
+
+  printf("Mutexes used since last statistics:\n");
+  for (i = 0; i < MAX_SYS_MUTEXES; i++) {
+    if (sys_mut[i].num_locks > 0) 
+      printf("Mutex %s (%d): %d\n",mutex_names[i],i,sys_mut[i].num_locks);
+  }
+  for (i = 0; i < MAX_SYS_MUTEXES; i++) {
+    sys_mut[i].num_locks = 0;
+  }
+}
+
+DynMutPtr dynmut_chain_begin = NULL;
+
+DynMutPtr create_new_dynMutFrame() {
+  DynMutPtr new_dynmut = mem_alloc(sizeof(DynMutexFrame),THREAD_SPACE) ;
+  pthread_mutex_init( &(new_dynmut->th_mutex), &attr_rec_gl ) ;
+  new_dynmut->num_locks = 0;
+  new_dynmut->owner = -1;
+  if (dynmut_chain_begin != NULL) 
+    (*dynmut_chain_begin).prev_dynmut = new_dynmut;
+  new_dynmut->next_dynmut = dynmut_chain_begin;
+  new_dynmut->prev_dynmut = NULL;
+  dynmut_chain_begin = new_dynmut;
+  return new_dynmut;
+}
+
+void delete_dynMutFrame(DynMutPtr old_dynmut) {
+  if (old_dynmut->prev_dynmut != NULL)
+    (old_dynmut->prev_dynmut)->next_dynmut = old_dynmut->next_dynmut;
+  if (old_dynmut->next_dynmut != NULL)
+    (old_dynmut->next_dynmut)->prev_dynmut = old_dynmut->prev_dynmut;
+  mem_dealloc(old_dynmut,sizeof(DynMutexFrame),THREAD_SPACE) ;
+}
+  
+/* Need to make sure that owner is not over-written falsely.  This one
+   is for user mutexes.*/
+void unlock_mutex(CTXTdeclc DynMutPtr id) {
+
+  Integer rc ;
+
+  if ( id->owner == xsb_thread_id) 
+    id->owner = -1;
+  
+  rc = pthread_mutex_unlock( &(id->th_mutex) ) ;
+  if (rc == EINVAL) {
+    xsb_permission_error(CTXTc "unlock mutex","invalid mutex",
+			 reg[2],"xsb_mutex_unlock",2); 
+  } else if (rc == EPERM) { 
+    xsb_permission_error(CTXTc "unlock mutex",
+			 "mutex not held by thread",
+			 reg[2],"xsb_mutex_unlock",2); 
+  } 
+}
+
+/* This just unlocks the user mutexes held by a thread -- the name
+   comes from the ISO document. */
+void mutex_unlock_all(CTXTdecl) {
+  DynMutPtr dmp = dynmut_chain_begin;
+  while (dmp != NULL) {
+    if (dmp-> owner == xsb_thread_id) {
+      printf("unlocking %p\n",dmp);
+      unlock_mutex(CTXTc dmp);
+    }
+    dmp = dmp->next_dynmut;
+  }
+}
+
+/* Unlocks all system and user mutexes held by a thread */
 void release_held_mutexes(CTXTdecl) {
   int i;
 
@@ -360,7 +419,11 @@ void release_held_mutexes(CTXTdecl) {
     }
     pthread_mutex_unlock( MUTARRAY_MUTEX(i)) ;
   }
+
+  mutex_unlock_all(CTXT);
 }
+
+
 #else /* Not MULTI_THREAD */
 
 void print_mutex_use() {
@@ -369,6 +432,7 @@ void print_mutex_use() {
 
 #endif /* MULTI_THREAD */
 
+/* TLS: should probably rewrite and move. */
 int xsb_thread_self()
 {
 #ifdef MULTI_THREAD
@@ -383,6 +447,9 @@ int xsb_thread_self()
 	return 0;
 #endif
 }
+
+/*-------------------------------------------------------------------------*/
+/* Thread Requests  */
 
 extern void release_private_tabling_resources(CTXTdecl);
 extern void abolish_private_tables(CTXTdecl);
@@ -485,113 +552,102 @@ xsbBool xsb_thread_request( CTXTdecl )
 	 ctop_int( CTXTc 2, id ) ;
 	 break ;
 
-	case XSB_MUTEX_INIT:		{
-	  Integer arg = ptoc_int(CTXTc 2) ;
-	  pthread_mutexattr_t attr ;
-	  id = (Integer) mem_alloc( sizeof(pthread_mutex_t),THREAD_SPACE ) ;
-	  pthread_mutexattr_init( &attr ) ;
-	  switch(arg)
-	    {
-	    case XSB_FAST_MUTEX:
-	      pthread_mutexattr_settype( &attr, 
-					 PTHREAD_MUTEX_FAST_NP ) ;
-	      break ;
-	    case XSB_RECURSIVE_MUTEX:
-	      pthread_mutexattr_settype( &attr, 
-					 PTHREAD_MUTEX_RECURSIVE_NP ) ;
-	      break ;
-	    case XSB_ERRORCHECK_MUTEX:
-	      pthread_mutexattr_settype( &attr, 
-					 PTHREAD_MUTEX_ERRORCHECK_NP ) ;
-	      break ;
-	    default:
-	      pthread_mutexattr_settype( &attr, 
-					 PTHREAD_MUTEX_FAST_NP ) ;
-	      break ;
-	    }
-	  rc = pthread_mutex_init( (pthread_mutex_t *)id, &attr ) ;
-	  if (rc == ENOMEM) {
-	    xsb_resource_error(th,"memory","xsb_mutex_init",2);
+ 	case XSB_MUTEX_INIT:		
+	  ctop_int(CTXTc 2, (prolog_int) create_new_dynMutFrame());
+	  break;
+
+ /* TLS: obsolete old form
+| 	case XSB_MUTEX_INIT:		{
+| 	  Integer arg = ptoc_int(CTXTc 2) ;
+| 	  pthread_mutexattr_t attr ;
+| 	  id = (Integer) mem_alloc( sizeof(pthread_mutex_t),THREAD_SPACE ) ;
+| 	  pthread_mutexattr_init( &attr ) ;
+| 	  switch(arg)
+| 	    {
+| 	    case XSB_FAST_MUTEX:
+| 	      pthread_mutexattr_settype( &attr, 
+| 					 PTHREAD_MUTEX_FAST_NP ) ;
+| 	      break ;
+| 	    case XSB_RECURSIVE_MUTEX:
+| 	      pthread_mutexattr_settype( &attr, 
+| 					 PTHREAD_MUTEX_RECURSIVE_NP ) ;
+| 	      break ;
+| 	    case XSB_ERRORCHECK_MUTEX:
+| 	      pthread_mutexattr_settype( &attr, 
+| 					 PTHREAD_MUTEX_ERRORCHECK_NP ) ;
+| 	      break ;
+| 	    default:
+| 	      pthread_mutexattr_settype( &attr, 
+| 					 PTHREAD_MUTEX_FAST_NP ) ;
+| 	      break ;
+| 	    }
+| 	  rc = pthread_mutex_init( (pthread_mutex_t *)id, &attr ) ;
+| 	  if (rc == ENOMEM) {
+| 	    xsb_resource_error(th,"memory","xsb_mutex_init",2);
+| 	  }
+| 	  break ;
+| 	}
+	  */
+	case XSB_MUTEX_LOCK: {
+	  DynMutPtr id = (DynMutPtr) ptoc_int(CTXTc 2) ;
+	  rc = pthread_mutex_lock( &(id->th_mutex) ) ;
+	  id->num_locks++;
+	  id->owner = xsb_thread_id;
+	  if (rc == EINVAL) {
+	    xsb_permission_error(CTXTc "lock mutex","invalid mutex",
+				 reg[2],"xsb_mutex_lock",2); 
+	  } else if (rc == EDEADLK) { 
+	    xsb_permission_error(CTXTc "lock mutex","deadlocking mutex",
+				 reg[2],"xsb_mutex_lock",2); 
+	  } 
+	  break ;
+	}
+
+	case XSB_MUTEX_TRYLOCK: {
+	  DynMutPtr id = (DynMutPtr) ptoc_int(CTXTc 2) ;
+	  rc = pthread_mutex_trylock( &(id->th_mutex) ) ;
+	  if (rc == EINVAL) {
+	    xsb_permission_error(CTXTc "lock mutex","invalid mutex",
+				 reg[2],"xsb_mutex_lock",2); 
+	  } else success = ( rc != EBUSY ) ;
+	  break ;
+	}
+
+	case XSB_MUTEX_UNLOCK: {
+	  DynMutPtr id = (DynMutPtr) ptoc_int(CTXTc 2) ;
+	  unlock_mutex(CTXTc id);
+	  break ;
+	}
+
+	case XSB_MUTEX_DESTROY: {
+	  DynMutPtr id = (DynMutPtr) ptoc_int(CTXTc 2) ;
+	  rc = pthread_mutex_destroy( &(id->th_mutex) ) ;
+	  if (rc == EINVAL) {
+	    xsb_permission_error(CTXTc "destroy mutex","invalid mutex",
+				 reg[2],"xsb_mutex_destroy",1); 
+	  } else {
+	    if (rc == EBUSY) { 
+	      xsb_permission_error(CTXTc "destroy mutex","busy mutex",
+				   reg[2],"xsb_mutex_destroy",1); 
+	    } else 
+	      delete_dynMutFrame(id);
 	  }
 	  break ;
 	}
-                case XSB_MUTEX_LOCK:
-		  id = ptoc_int(CTXTc 2) ;
+	case XSB_SYS_MUTEX_LOCK:
+	  id = ptoc_int(CTXTc 2) ;
 #ifdef DEBUG_MUTEXES
-		  fprintf( stddbg, "LOCK(%x)\n", id ) ;
+	  fprintf( stddbg, "S LOCK(%ld)\n", (long)id ) ;
 #endif
-		  rc = pthread_mutex_lock( (pthread_mutex_t *)id ) ;
-		  if (rc == EINVAL) {
-		    xsb_permission_error(CTXTc "lock mutex","invalid mutex",
-				   reg[2],"xsb_mutex_lock",2); 
-		  } else if (rc == EDEADLK) { 
-		    xsb_permission_error(CTXTc "lock mutex","deadlocking mutex",
-				   reg[2],"xsb_mutex_lock",2); 
-		  } 
-		  break ;
-
-		case XSB_MUTEX_TRYLOCK:
-		  id = ptoc_int(CTXTc 2) ;
-		  rc = pthread_mutex_trylock( (pthread_mutex_t *)id ) ;
-		  if (rc == EINVAL) {
-		    xsb_permission_error(CTXTc "lock mutex","invalid mutex",
-				   reg[2],"xsb_mutex_lock",2); 
-		  } else success = ( rc != EBUSY ) ;
-			break ;
-
-		case XSB_MUTEX_UNLOCK:
-		  id = ptoc_int(CTXTc 2) ;
+	  rc = pthread_mutex_lock( MUTARRAY_MUTEX(id) ) ;
 #ifdef DEBUG_MUTEXES
-		  fprintf( stddbg, "UNLOCK(%x)\n", id ) ;
+	  fprintf( stddbg, "RC=%ld\n", (long)rc ) ;
 #endif
-		  rc = pthread_mutex_unlock( (pthread_mutex_t *)id ) ;
-		  if (rc == EINVAL) {
-		    xsb_permission_error(CTXTc "unlock mutex","invalid mutex",
-					 reg[2],"xsb_mutex_unlock",2); 
-		  } else if (rc == EPERM) { 
-		    xsb_permission_error(CTXTc "unlock mutex",
-					 "mutex not held by thread",
-					 reg[2],"xsb_mutex_unlock",2); 
-		  } 
-		  break ;
-
-		case XSB_MUTEX_DESTROY:
-		  id = ptoc_int(CTXTc 2) ;
-		  rc = pthread_mutex_destroy( (pthread_mutex_t *)id ) ;
-		  if (rc == EINVAL) {
-		    xsb_permission_error(CTXTc "destroy mutex","invalid mutex",
-					 reg[2],"xsb_mutex_destroy",1); 
-		  } else {
-		    if (rc == EBUSY) { 
-		      xsb_permission_error(CTXTc "destroy mutex",
-					   "busy mutex",
-					   reg[2],"xsb_mutex_destroy",1); 
-		    } else 
-		      mem_dealloc( (pthread_mutex_t *)id, sizeof(pthread_mutex_t),
-				   THREAD_SPACE ) ;
-		  }
-		  break ;
-
-		case XSB_SYS_MUTEX_LOCK:
-		  id = ptoc_int(CTXTc 2) ;
-#ifdef DEBUG_MUTEXES
-		  fprintf( stddbg, "S LOCK(%ld)\n", (long)id ) ;
-#endif
-		  rc = pthread_mutex_lock( MUTARRAY_MUTEX(id) ) ;
-#ifdef DEBUG_MUTEXES
-		  fprintf( stddbg, "RC=%ld\n", (long)rc ) ;
-#endif
-		  break ;
-		case XSB_SYS_MUTEX_UNLOCK:
-			id = ptoc_int(CTXTc 2) ;
-#ifdef DEBUG_MUTEXES
-			fprintf( stddbg, "S UNLOCK(%ld)\n", (long)id ) ;
-#endif
-			rc = pthread_mutex_unlock( MUTARRAY_MUTEX(id) ) ;
-#ifdef DEBUG_MUTEXES
-			fprintf( stddbg, "RC=%ld\n", (long)rc ) ;
-#endif
-			break ;
+	  break ;
+	case XSB_SYS_MUTEX_UNLOCK:
+	  id = ptoc_int(CTXTc 2) ;
+	  rc = pthread_mutex_unlock( MUTARRAY_MUTEX(id) ) ;
+	  break ;
 
 	case XSB_ENSURE_ONE_THREAD:
 	  ENSURE_ONE_THREAD() ;
@@ -670,6 +726,34 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  break;
 	}
 
+	case GET_FIRST_MUTEX_PROPERTY: {
+	  if (dynmut_chain_begin != NULL) {
+	    ctop_int(CTXTc 2 , (prolog_int) dynmut_chain_begin);
+	    ctop_int(CTXTc 3 , (*dynmut_chain_begin).num_locks);
+	    ctop_int(CTXTc 4 , (*dynmut_chain_begin).owner);
+	    ctop_int(CTXTc 5 , (prolog_int) (*dynmut_chain_begin).next_dynmut);
+	  }
+	  else {
+	    ctop_int(CTXTc 2 , 0);
+	    ctop_int(CTXTc 3 , 0);
+	    ctop_int(CTXTc 4 , 0);
+	    ctop_int(CTXTc 5 , 0);
+	  }
+	  break;
+	}
+
+	case GET_NEXT_MUTEX_PROPERTY: {
+	  DynMutPtr dmp = (DynMutPtr) ptoc_int(CTXTc 2);
+	  ctop_int(CTXTc 3 , (*dmp).num_locks);
+	  ctop_int(CTXTc 4 , (*dmp).owner);
+	  ctop_int(CTXTc 5 , (prolog_int) (*dmp).next_dynmut);
+	  break;
+	}
+
+	case MUTEX_UNLOCK_ALL: 
+	  mutex_unlock_all(CTXT);
+	  break;
+
 	default:
 	  rc = 0 ; /* Keep compiler happy */
 	  xsb_abort( "[THREAD] Invalid thread operation requested %d",request_num);
@@ -734,4 +818,25 @@ xsbBool mt_random_request( CTXTdecl )
     }
   return TRUE ;
 }
+
+/*
+static void show_policy(void) {
+  int my_policy;
+  struct sched_param my_param;
+  int status, min_priority, max_priority;
+
+  if ((status = pthread_getschedparam(pthread_self(),&my_policy,&my_param))) {
+    xsb_abort("bad scheduling status");
+  }
+  printf("thread routine running at %s/%d\n",
+	 (my_policy == SCHED_FIFO ? "FIFO" 
+	  : (my_policy == SCHED_RR ? "RR"
+	     : (my_policy == SCHED_OTHER ? "OTHER"
+		: "unknown") )),my_param.sched_priority);
+
+  printf("min %d max %d\n",sched_get_priority_min(my_policy),
+	 sched_get_priority_max(my_policy));
+  
+}
+*/
 

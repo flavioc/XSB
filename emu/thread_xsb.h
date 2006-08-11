@@ -20,7 +20,6 @@
 **
 */
 
-
 #ifndef __THREAD_XSB_H__
 
 #define __THREAD_XSB_H__
@@ -32,7 +31,6 @@
 xsbBool xsb_thread_request( CTXTdecl ) ;
 xsbBool mt_random_request( CTXTdecl ) ;
 int xsb_thread_self() ;
-
 
 #ifdef MULTI_THREAD
 
@@ -55,6 +53,15 @@ typedef struct Mutex_Frame {
   int num_locks;
   int owner;
 } MutexFrame;
+
+typedef struct Dynamic_Mutex_Frame *DynMutPtr;
+typedef struct Dynamic_Mutex_Frame {
+  pthread_mutex_t th_mutex; 
+  int             num_locks;
+  int             owner;
+  DynMutPtr       next_dynmut;
+  DynMutPtr       prev_dynmut;
+} DynMutexFrame;
 
 MutexFrame sys_mut[MAX_SYS_MUTEXES];
 
