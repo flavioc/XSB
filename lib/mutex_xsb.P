@@ -1,0 +1,127 @@
+/* File:      xsb_mutex.P
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** 
+*/
+
+:- compiler_options([xpp_on,sysmod]).
+#include "thread_defs_xsb.h"
+
+/* ==================================================================  */
+/* Proto-ISO Mutexes: see manual for documentation. */
+
+:- dynamic '_$user_mutex'/2.
+:- thread_shared('_$user_mutex'(_,_)).
+:- index('_$user_mutex'/2,[1,2]).
+
+mutex_create(MutOrAls):- 
+	(var(MutOrAls) -> 
+	    gensym(mutex,MutOrAls)
+	 ;  (atom(MutOrAls) -> 
+	       ('_$user_mutex'(MutOrAls,_) ->
+		   permission_error(create,mutex,MutOrAls,mutex_create/1)
+		 ;  true)
+	     ; type_error(mutex_or_alias,MutOrAls,mutex_create/1,1) ) ),
+	 thread_request( XSB_MUTEX_INIT,Ptr,_,_,_,_,_,_),
+	 assert('_$user_mutex'(MutOrAls,Ptr)).
+	
+mutex_lock(MutexOrAlias):- 
+	check_atom(MutexOrAlias,mutex_lock/1,1),
+	('_$user_mutex'(MutexOrAlias,Ptr) -> 
+	    thread_request( XSB_MUTEX_LOCK,Ptr,_,_,_,_,_,_)
+	 ;  existence_error(mutex_or_alias,MutexOrAlias,mutex_lock/1,1) ).
+
+mutex_unlock(MutexOrAlias):- 
+	check_atom(MutexOrAlias,mutex_unlock/1,1),
+	('_$user_mutex'(MutexOrAlias,Ptr) -> 
+	    thread_request( XSB_MUTEX_UNLOCK,Ptr,_,_,_,_,_,_)
+	 ;  existence_error(mutex_or_alias,MutexOrAlias,mutex_unlock/1,1) ).
+
+mutex_trylock(MutexOrAlias):- 
+	check_atom(MutexOrAlias,mutex_trylock/1,1),
+	('_$user_mutex'(MutexOrAlias,Ptr),
+	thread_request( XSB_MUTEX_TRYLOCK,Ptr,_,_,_,_,_,_)
+	 ;  existence_error(mutex_or_alias,MutexOrAlias,mutex_trylock/1,1) ).
+
+mutex_destroy(MutexOrAlias):- 
+	check_atom(MutexOrAlias,mutex_destroy/1,1),
+	('_$user_mutex'(MutexOrAlias,Ptr) -> 
+	    retractall('_$user_mutex'(MutexOrAlias,Ptr)),
+	    thread_request( XSB_MUTEX_DESTROY,Ptr,_,_,_,_,_,_)
+	 ;  existence_error(mutex_or_alias,MutexOrAlias,mutex_destroy/1,1) ).
+
+with_mutex(Mutex,Goal):- 
+	check_atom(Mutex,with_mutex/2,1),
+	mutex_lock(Mutex),
+	catch(Goal,Ball,with_mutex_handler(Ball,Mutex)),
+	!,
+	mutex_unlock(Mutex).
+with_mutex(Mutex,_Goal):- 
+	mutex_unlock(Mutex),fail.
+
+with_mutex_handler(Ball,Mutex):- 
+	mutex_unlock(Mutex),
+	throw(Ball).
+
+get_first_mutex_property(This,Locks,Owner,Next):-
+	thread_request( GET_FIRST_MUTEX_PROPERTY,This,Locks,Owner,Next,_,_,_).
+
+get_next_mutex_property(Ptr,Locks,Owner,Next):-
+	thread_request( GET_NEXT_MUTEX_PROPERTY,Ptr,Locks,Owner,Next,_,_,_).
+
+mutex_unlock_all:- 
+	thread_request( MUTEX_UNLOCK_ALL,_,_,_,_,_,_,_).
+
+mutex_property(Mutex,Property):-
+	(atom(Mutex) -> 
+	    mutex_property_atom(Mutex,Property)
+	 ;  (var(Mutex) ->
+   	        mutex_property_list(Mutex,Property)
+	     ;  type_error(mutex_or_alias,Mutex,mutex_property/2,1) ) ).
+
+
+/* Could optimize away a CP, but I dont think this pred will be used much...
+   (famous last words) */
+mutex_property_list(Mutex,Property):- 
+	get_first_mutex_property(This,Locks,Owner,Next),
+	This \== 0,
+	(   form_property(Owner,Locks,Property),
+            '_$user_mutex'(Mutex,This)
+          ; 
+	    Next \== 0,
+	    mutex_property_list_1(Next,Mutex,Property) ).
+
+form_property(Owner,Locks,Prop):- 
+	(Owner == -1 -> 
+	    Prop = unlocked(Locks)
+	 ;  Prop = locked(Owner,Locks) ).
+
+mutex_property_atom(Mutex,Property):-
+	'_$user_mutex'(Mutex,Ptr),
+	get_next_mutex_property(Ptr,Locks,Owner,_Next),
+	form_property(Owner,Locks,Property).
+
+mutex_property_list_1(This,Mutex,Property):- 
+	get_next_mutex_property(This,Locks,Owner,Next),
+	(   form_property(Owner,Locks,Property),
+            '_$user_mutex'(Mutex,This)
+          ; 
+	    Next \== 0,
+	    mutex_property_list_1(Next,Mutex,Property) ).
+
