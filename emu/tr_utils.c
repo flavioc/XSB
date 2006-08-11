@@ -796,7 +796,7 @@ void delete_trie(CTXTdeclc BTNptr iroot) {
     switch (delete_trie_op[trie_op_top--]) {
     case DT_DS:
       root = delete_trie_node[trie_node_top--];
-      SM_DeallocateStruct(*smBTN,root);
+      SM_DeallocateSharedStruct(*smBTN,root);
       break;
     case DT_HT:
       free_trie_ht(CTXTc delete_trie_hh[trie_hh_top--]);
