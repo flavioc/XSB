@@ -27,9 +27,6 @@
 #include "thread_defs_xsb.h"
 #include "flag_defs_xsb.h"
 
-%thread_request(A,B,C,D,E,F,G,H):- 
-%	thread_request(A,B,C,D,E).
-
 /* ==================================================================  */
 /* User-level API */
 
@@ -116,26 +113,75 @@ thread_join(Input, ExitCode) :-
 
 thread_join( ThreadId )	    :- thread_join( ThreadId, _).
 
+/*---------------*/
+
 thread_self( ThreadId )	    :- 
 	check_var(ThreadId,thread_self/1,1),
 	thread_request( XSB_THREAD_SELF, ThreadId, _, _, _, _, _, _ ).
+
+/*---------------*/
 
 thread_detach(ThreadId) :-
 	check_integer(ThreadId,thread_detach/1,1),
 	thread_request( XSB_THREAD_DETACH, ThreadId, _, _, _ , _, _, _).
 
+/*---------------*/
+
+thread_property(Id,Property) :- 
+	thread_request( XSB_THREAD_PROPERTY, Id,Prop1, _, _, _, _, _ ),
+	(Prop1 == 1 -> Property = detached ; Property = joinable).
+
+/*---------------*/
+
+thread_cancel(Id):- 
+	check_nonvar(Id,thread_cancel/1,1),
+	(Id == 0 -> 
+	    permission_error(cancel,main_thread,0,thread_cancel/1)
+	  ; true),
+	thread_request( XSB_THREAD_INTERRUPT, Id,_, _, _, _, _, _ ).
+	
+/*---------------*/
+
 thread_yield:-
 	thread_request( XSB_THREAD_YIELD, _,_,_, _, _, _, _).
 
+/*---------------*/
+
 abolish_private_tables:-
 	thread_request( ABOLISH_PRIVATE_TABLES, _,_,_, _, _, _, _).
+
+/*---------------*/
 
 abolish_shared_tables:-
 	thread_request( ABOLISH_SHARED_TABLES, _,_,_, _, _, _, _).
 
 /* ==================================================================  */
+/* Routines used internally. */
 
-/* Obsolescent */
+'_$thread_run'( Goal ) :-
+	(catch(call(Goal),Ball,(default_error_handler(Ball))), xsb_thread_exit
+	 ;
+	 xsb_thread_exit
+	).
+
+/* store thread flag predicate in THREAD_RUN flag */
+
+:- init_multi_threading.
+
+init_multi_threading:- 
+	term_psc('_$thread_run'(_), PSC), 
+	stat_set_flag(THREAD_RUN, PSC).
+
+xsb_show_mutexes:- 
+	thread_request( XSB_SHOW_MUTEXES, _,_,_, _,_,_,_).
+
+xsb_sys_mutex_lock(Id) :- 
+	thread_request( XSB_SYS_MUTEX_LOCK, Id, _, _, _, _, _, _ ).
+xsb_sys_mutex_unlock(Id) :- 
+	thread_request( XSB_SYS_MUTEX_UNLOCK, Id, _, _, _, _, _, _ ).
+
+/* ==================================================================  */
+/* Obsolescent, but may still be used in parts of the system.  */
 xsb_thread_create(One,Two,Three):- thread_create(One,Two,Three).
 xsb_thread_create(One,Two):- thread_create(One,Two).
 
@@ -155,99 +201,8 @@ xsb_thread_self(ThreadId):- thread_self(ThreadId).
 
 xsb_thread_yield:- thread_yield.
 
-/* ==================================================================  */
-
-/* System provided mutexes for users */
-user_mutex( N, N1, Call) :-
-	check_integer(N,Call,1),
-	(N1 is N + MUTEX_USER1 - 1,
-	 N1 >= MUTEX_USER1,
-	 N1 < MAX_SYS_MUTEXES -> 
-	   true
-         ; domain_error(user_mutex,N,Call,1,'') ).
-
-xsb_user_mutex_lock(N) :- 
-	user_mutex(N,N1,xsb_user_mutex_unlock/1), 
-	xsb_sys_mutex_lock(N1).
-xsb_user_mutex_unlock(N) :- 
-	user_mutex(N,N1,xsb_user_mutex_unlock/1), 
-	xsb_sys_mutex_unlock(N1).
-
-xsb_show_mutexes:- 
-	thread_request( XSB_SHOW_MUTEXES, _,_,_, _,_,_,_).
-
-xsb_mutex_init_np0( MutexId, KindNP) :-
-	thread_request( XSB_MUTEX_INIT, KindNP, MutexId, _, _,_,_,_ ).
-/* "mutex kind" is a non portable extension to POSIX */
-xsb_mutex_init(MutexId) :-
-	thread_request( XSB_MUTEX_INIT, XSB_FAST_MUTEX, MutexId, _, _,_,_,_).
-xsb_mutex_lock(MutexId) :-
-	thread_request( XSB_MUTEX_LOCK, MutexId, _, _, _, _, _, _ ).
-xsb_mutex_trylock(MutexId) :-
-	thread_request( XSB_MUTEX_TRYLOCK, MutexId, _, _, _, _, _, _).
-xsb_mutex_unlock(MutexId) :-
-	thread_request( XSB_MUTEX_UNLOCK, MutexId, _, _, _, _, _, _ ).
-xsb_mutex_destroy(MutexId) :-
-	thread_request( XSB_MUTEX_DESTROY, MutexId, _, _, _, _, _, _  ).
-
-xsb_mutex_init_np( fast, MutexId) :-
-	xsb_mutex_init_np0( MutexId, XSB_FAST_MUTEX).
-xsb_mutex_init_np( recursive, MutexId) :-
-	xsb_mutex_init_np0( MutexId, XSB_RECURSIVE_MUTEX).
-xsb_mutex_init_np( error_check, MutexId) :-
-	xsb_mutex_init_np0( MutexId, XSB_ERRORCHECK_MUTEX).
-
-xsb_sys_mutex_lock(Id) :- 
-	thread_request( XSB_SYS_MUTEX_LOCK, Id, _, _, _, _, _, _ ).
-xsb_sys_mutex_unlock(Id) :- 
-	thread_request( XSB_SYS_MUTEX_UNLOCK, Id, _, _, _, _, _, _ ).
-
-thread_property(Id,Property) :- 
-	thread_request( XSB_THREAD_PROPERTY, Id,Prop1, _, _, _, _, _ ),
-	(Prop1 == 1 -> Property = detached ; Property = joinable).
-
-thread_cancel(Id):- 
-	check_nonvar(Id,thread_cancel/1,1),
-	(Id == 0 -> 
-	    permission_error(cancel,main_thread,0,thread_cancel/1)
-	  ; true),
-	thread_request( XSB_THREAD_INTERRUPT, Id,_, _, _, _, _, _ ).
-	
-/* ==================================================================  */
-
-xsb_set_init_glstack_size(S) :-
-	thread_request( XSB_SET_INIT_GLSTACK_SIZE, S, _, _, _ ,_ , _, _).
-
-xsb_set_init_tcpstack_size(S) :-
-	thread_request( XSB_SET_INIT_TCPSTACK_SIZE, S, _, _, _ ,_,_,_).
-	  
-xsb_set_init_pdl_size(S) :-
-	thread_request( XSB_SET_INIT_PDL_SIZE, S, _, _, _ ,_,_,_).
-
-xsb_set_init_complstack_size(S) :-
-	thread_request( XSB_SET_INIT_COMPLSTACK_SIZE, S, _, _, _ ,_,_,_ ).
-
-/* ==================================================================  */
-
-/* private predicate that runs a thread */
-
-'_$thread_run'( Goal ) :-
-	(catch(call(Goal),Ball,(default_error_handler(Ball))), xsb_thread_exit
-	 ;
-	 xsb_thread_exit
-	).
-
-/* store thread flag predicate in THREAD_RUN flag */
-
-:- init_multi_threading.
-
-init_multi_threading:- 
-	term_psc('_$thread_run'(_), PSC), 
-	stat_set_flag(THREAD_RUN, PSC).
-
 /**************************************************************/
-
-/** Higher level stuff **/
+/** Higher level stuff (Rui) **/
 
 par_execute( GoalList ) :-
 	par_spawn( GoalList, ThreadList ),
@@ -268,24 +223,76 @@ par_spawn( [G|GL], [T|TL] ) :-
 par_wait( [] ).
 par_wait( [T|L] ) :- xsb_thread_join(T), par_wait(L).
 
-exmut_execute( G, M ) :-
-	xsb_user_mutex_lock(M), G, !, xsb_user_mutex_unlock(M).
-exmut_execute( _, M ) :- xsb_user_mutex_unlock(M).
-
-
-console_exmut( G ) :- 
-	xsb_user_mutex_lock(MUTEX_CONSOLE), 
-	G, !, xsb_user_mutex_unlock(MUTEX_CONSOLE).
-console_exmut( _ ) :- 
-	xsb_user_mutex_unlock(MUTEX_CONSOLE).
-
 end_of_file.
 
-xsb_thread_exit( ExitCode, ErrorVal ) :-
-	thread_request( XSB_THREAD_EXIT, ExitCode,_, _,_,_,_,_).
-
-xsb_thread_join( ThreadId, ExitCode, ErrorVal ) :-
-	thread_request( XSB_THREAD_JOIN, ThreadId, ExitCode, _, _,_,_,_ ).
-
+%------------------------------------------------------------------------------
+| xsb_thread_exit( ExitCode, ErrorVal ) :-
+| 	thread_request( XSB_THREAD_EXIT, ExitCode,_, _,_,_,_,_).
+| 
+| xsb_thread_join( ThreadId, ExitCode, ErrorVal ) :-
+| 	thread_request( XSB_THREAD_JOIN, ThreadId, ExitCode, _, _,_,_,_ ).
+| 
 %xsb_thread_create( Goal )	    :- xsb_thread_create( Goal, _, _ ).
+
+/* ==================================================================  
+| 
+| xsb_set_init_glstack_size(S) :-
+| 	thread_request( XSB_SET_INIT_GLSTACK_SIZE, S, _, _, _ ,_ , _, _).
+| 
+| xsb_set_init_tcpstack_size(S) :-
+| 	thread_request( XSB_SET_INIT_TCPSTACK_SIZE, S, _, _, _ ,_,_,_).
+| 	  
+| xsb_set_init_pdl_size(S) :-
+| 	thread_request( XSB_SET_INIT_PDL_SIZE, S, _, _, _ ,_,_,_).
+| 
+| xsb_set_init_complstack_size(S) :-
+| 	thread_request( XSB_SET_INIT_COMPLSTACK_SIZE, S, _, _, _ ,_,_,_ ).
+ ==================================================================  */
+
+%xsb_mutex_init_np0( MutexId, KindNP) :-
+%	thread_request( XSB_MUTEX_INIT, KindNP, MutexId, _, _,_,_,_ ).
+/* "mutex kind" is a non portable extension to POSIX */
+%xsb_mutex_init(MutexId) :-
+%	thread_request( XSB_MUTEX_INIT, XSB_FAST_MUTEX, MutexId, _, _,_,_,_).
+%xsb_mutex_lock(MutexId) :-
+%	thread_request( XSB_MUTEX_LOCK, MutexId, _, _, _, _, _, _ ).
+%xsb_mutex_trylock(MutexId) :-
+%	thread_request( XSB_MUTEX_TRYLOCK, MutexId, _, _, _, _, _, _).
+%xsb_mutex_unlock(MutexId) :-
+%	thread_request( XSB_MUTEX_UNLOCK, MutexId, _, _, _, _, _, _ ).
+%xsb_mutex_destroy(MutexId) :-
+%	thread_request( XSB_MUTEX_DESTROY, MutexId, _, _, _, _, _, _  ).
+
+%xsb_mutex_init_np( fast, MutexId) :-
+%	xsb_mutex_init_np0( MutexId, XSB_FAST_MUTEX).
+%xsb_mutex_init_np( recursive, MutexId) :-
+%	xsb_mutex_init_np0( MutexId, XSB_RECURSIVE_MUTEX).
+%xsb_mutex_init_np( error_check, MutexId) :-
+%	xsb_mutex_init_np0( MutexId, XSB_ERRORCHECK_MUTEX).
+
+% exmut_execute( G, M ) :-
+% 	xsb_user_mutex_lock(M), G, !, xsb_user_mutex_unlock(M).
+% exmut_execute( _, M ) :- xsb_user_mutex_unlock(M).
+
+% console_exmut( G ) :- 
+% 	xsb_user_mutex_lock(MUTEX_CONSOLE), 
+% 	G, !, xsb_user_mutex_unlock(MUTEX_CONSOLE).
+% console_exmut( _ ) :- 
+% 	xsb_user_mutex_unlock(MUTEX_CONSOLE).
+
+/* System provided mutexes for users */
+% user_mutex( N, N1, Call) :-
+% 	check_integer(N,Call,1),
+% 	(N1 is N + MUTEX_USER1 - 1,
+% 	 N1 >= MUTEX_USER1,
+% 	 N1 < MAX_SYS_MUTEXES -> 
+% 	   true
+%          ; domain_error(user_mutex,N,Call,1,'') ).
+
+% xsb_user_mutex_lock(N) :- 
+% 	user_mutex(N,N1,xsb_user_mutex_unlock/1), 
+% 	xsb_sys_mutex_lock(N1).
+% xsb_user_mutex_unlock(N) :- 
+% 	user_mutex(N,N1,xsb_user_mutex_unlock/1), 
+% 	xsb_sys_mutex_unlock(N1).
 
