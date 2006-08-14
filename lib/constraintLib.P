@@ -1,0 +1,231 @@
+/* File:      constraintLib.P
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1999
+** Copyright (C) ECRC, Germany, 1990
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** 
+*/
+
+:- export when/2, unifiable/3.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%	
+%	when(+Condition, :Goal)
+%
+%		Condition should be one of 
+%			?=(X,Y)
+%			nonvar(X)
+%			ground(X)
+%			(Condition,Condition)
+%			(Condition;Condition)
+%
+%	Author: 	Tom Schrijvers, K.U.Leuven
+% 	E-mail: 	Tom.Schrijvers@cs.kuleuven.ac.be
+%	Copyright:	2003-2004, K.U.Leuven
+%       Ported to XSB by Barry Evans, (?= port by TLS)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% History:
+% 
+%	Apr 9, 2004
+%	* JW: Supressed debugging this module
+%	* JW: Made when/2 module-aware.
+%	March 2006
+%	* Barry: XSB port; *TLS: added ?=
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Simple implementation. Does not clean up redundant attributes.
+% Now deals with cyclic terms.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- ensure_loaded(chr).
+:- import term_variables/2 from chr_interp.
+:- import check_var/3 from error_handler.
+
+:- import
+	get_attr/3,
+	put_attr/3,
+	del_attr/2,
+	install_verify_attribute_handler/4
+   from machine.
+
+:- import ground/1 from basics.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+when(Condition, Goal) :-
+	strip_module(Goal, M, G),
+	trigger(Condition, M:G).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+strip_module(RT, M, T) :-
+	strip_module(RT, T, M, usermod).
+
+strip_module(Module:RT2, T, M, _) :-
+	atom(Module), !,
+	strip_module(RT2, T, M, Module).
+
+strip_module(T, T, M, M).
+
+trigger(nonvar(X),Goal) :-
+	trigger_nonvar(X,Goal).
+
+trigger(ground(X),Goal) :-
+	trigger_ground(X,Goal).
+
+trigger(?=(X,Y),Goal) :-
+	trigger_determined(X,Y,Goal).
+
+trigger((G1,G2),Goal) :-
+	trigger_conj(G1,G2,Goal).
+
+trigger((G1;G2),Goal) :-
+	trigger_disj(G1,G2,Goal).
+
+trigger_nonvar(X,Goal) :-
+	( nonvar(X) ->
+		call(Goal)
+	;
+		suspend(X,trigger_nonvar(X,Goal))
+	).
+
+trigger_ground(X,Goal) :-
+	term_variables(X,Vs),
+	( Vs = [H|_] ->
+		suspend(H,trigger_ground(Vs,Goal))
+	;
+	call(Goal)
+	).
+
+trigger_conj(G1,G2,Goal) :-
+	trigger(G1,trigger(G2,Goal)).
+
+trigger_disj(G1,G2,Goal) :-
+	trigger(G1,check_disj(Disj,Goal)),
+	trigger(G2,check_disj(Disj,Goal)).
+
+check_disj(Disj,Goal) :-
+	( var(Disj) ->
+		Disj = (-),
+		call(Goal)
+	;
+		true
+	).
+
+
+trigger_determined(X,Y,Goal) :-
+	unifiable(X,Y,Unifier),
+	!,
+	( Unifier == [] ->
+		call(Goal)
+	;
+		put_attr(Det,when,det(trigger_determined(X,Y,Goal))),
+		suspend_list(Unifier,wake_det(Det))
+	).
+	
+trigger_determined(_,_,Goal) :-
+	call(Goal).
+
+
+wake_det(Det) :-
+	( var(Det) ->
+		get_attr(Det,when,Attr),
+		del_attr(Det,when),
+		Det = (-),
+		Attr = det(Goal),
+		call(Goal)
+	;
+		true
+	).
+
+suspend_list([],_Goal).
+suspend_list([V=W|Unifier],Goal) :-
+	suspend(V,Goal),
+	( var(W) -> suspend(W,Goal) ; true),
+	suspend_list(Unifier,Goal).
+
+
+
+suspend(V,Goal) :-
+	( get_attr(V,when,List) ->
+		put_attr(V,when,[Goal|List])
+	;
+		put_attr(V,when,[Goal])
+	).
+
+
+:- install_verify_attribute_handler(when,Attr,Other,attr_unify_hook(Attr,Other)).
+
+attr_unify_hook(List,Other) :-
+	is_list(List),
+	!,
+	attr_unify_hook1(Other,List2),
+	call_list(List),
+	call_list(List2).
+
+attr_unify_hook(_Attr,_Other).
+
+attr_unify_hook1(Other,List) :-
+	var(Other),
+	get_attr(Other,when,List),
+	del_attr(Other,when),
+	!.	
+
+attr_unify_hook1(_Other,[]).
+
+call_list([]) :- !.
+
+call_list([G|Gs]) :-
+	call(G),
+	!,
+	call_list(Gs).
+
+%
+%	Can't let a previous failed goal prevent the execution of a later one
+%	The goals on the list can be completely independent.
+%
+call_list([_G|Gs]) :-
+	call_list(Gs).
+
+
+/*****************************************************/
+
+unifiable(Term1,Term2,List):- 
+	check_var(List,unifiable/3,3),
+	unifiable_1(Term1,Term2,List,[]).
+
+unifiable_1(Term1,Term2,ListIn,ListOut):- 
+	(Term1 == Term2 ->
+	  ListIn = ListOut
+        ; (var(Term1) -> 
+	     ListIn = [Term1 = Term2|ListOut]
+	   ; (var(Term2) -> 
+	       ListIn = [Term2 = Term1|ListOut]
+	     ; (structure(Term1),structure(Term2) -> 
+	         Term1 =.. [Funct|Args1],
+		 Term2 =.. [Funct|Args2],
+		 unifiable_list(Args1,Args2,ListIn,ListOut) 
+	         ; Term1 = Term2) ) ) ).
+
+unifiable_list([],[],List,List).
+unifiable_list([Term1|R1],[Term2|R2],ListIn,ListOut):- 
+	unifiable_1(Term1,Term2,ListIn,ListMid),
+	unifiable_list(R1,R2,ListMid,ListOut).
+	
