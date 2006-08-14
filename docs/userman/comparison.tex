@@ -1,41 +1,56 @@
-\index{comparison of terms}
+\section{Unification and Comparison of Terms} \label{Comparison}
 \index{terms!comparison of}
-The evaluable predicates described in this section are meta-logical.
-They are used to compare and order terms, rather than to evaluate or 
-process them.  They treat uninstantiated variables as objects with values
-which may be compared, and they never instantiate those variables.
-Each of these predicates simply succeeds or fails; there is no 
-side-effect, substitution or error condition associated with them.
-The predicates described in this section should {\em not} be used when 
-what the user really wants is arithmetic comparison predicates
-%(see section~\ref{Arithmetic}) 
-or unification predicates (see section~\ref{Convenience}).
+\index{terms!unification of}
 
-The predicates described take into account a standard total ordering 
-of terms, which has as follows:
-	\[		variables 
-	   \ {\tt @<} \ floating \ point \ numbers
-	   \ {\tt @<} \ integers 
-	   \ {\tt @<} \ atoms 
-	   \ {\tt @<} \ compound \ terms \]
+The predicates described in this section allow unification and
+comparison of terms~\footnote{Arithmetic comparison predicates that
+may evaluate terms before comparing them are described in
+Section~\ref{???}.}.
+
+Like most Prologs, default unification in XSB does not perform a
+so-called {\em occurs check} --- it does not handle situations where a
+variable {\tt X} may be bound to a structure containing {\tt X} as a
+proper subterm.  For instance, in the goal
+
+{\tt X = f(X)}    {\em \% incorrect!}
+
+{\tt X} is bound to {\tt f(X)} creating a term that is either cyclic
+or infinite, depending on one's point of view.  Prologs in general
+perform unification without occurs check since without occurs check
+unification is linear in the size of the largest term to be unified,
+while unification with occurs check may be exponential in the size of
+the largest term to be unified.  Still, unification with occurs check
+can be important for certain applications, in particular when Prolog
+is used to implement theorem provers or sophisticated constraint
+handlers.  As a result XSB provides an ISO-style implementation of the
+predicate {\tt unify\_with\_occurs\_check/2} described below.
+
+As opposed to unification predicates, term comparison predicates
+described below take into account a standard total ordering of terms,
+which has as follows:
+%
+\[ 
+variables \ {\tt @<} \ floating \ point \ numbers \ {\tt @<} \ integers \ {\tt @<} \ atoms \ {\tt @<} \ compound \ terms 
+\] 
+%
 Within each one of the categories, the ordering is as follows:
 \begin{itemize}
-\item	variables are put in a standard order (roughly, the oldest first
-	--- the order is {\em not\/} related to the names of
-	variables).  Also, note that two anonymous variables are not
-	identical terms.  As with most WAM-based Prologs, the order of
-	variables may change as variables become bound to one another.
-	If the order is expected to be invariant across variable
-	bindings, other mechanisms, such as attributed variables,
-	should be used.
-%	Unfortunately in the current implementation of our system (\version) 
-%	variables ``tend to move'' rather quickly as a result of unification,
-%	and thus the ordering may not continue to hold if the variables get
-%	unified to some other variables.  We intend to ameliorate this bug in
-%	future releases.
-\item	floating point numbers and integers are put in numeric order, 
-	from $-\infty$ to $+\infty$.  Note that a floating point number is
-	always less than an integer, regardless of their numerical values.
+\item ordering of variables is based on their address within the
+  SLG-WAM --- the order is {\em not\/} related to the names of
+  variables.  Thus note that two variables are identical only if they
+  share the same address -- only if they have been unified or are the
+  same variable to begin with.  As a correlary, note that two
+  anonymous variables will not have the same address and so will not
+  be considered identical terms.  As with most WAM-based Prologs, the
+  order of variables may change as variables become bound to one
+  another.  If the order is expected to be invariant across variable
+  bindings, other mechanisms, such as attributed variables, should be
+  used.
+\item floating point numbers and integers are put in numeric order,
+  from $-\infty$ to $+\infty$.  Note that a floating point number is
+  always less than an integer, regardless of their numerical values.
+  If comparison is needed, a coversion should be performed
+  (e.g. through {\tt float/1}).
 \item	atoms are put in alphabetical (i.e.\ ASCII) order;
 \item	compound terms are ordered first by arity, then by the name of their
 	principal functor and then by their arguments (in a left-to-right 
@@ -43,47 +58,97 @@ Within each one of the categories, the ordering is as follows:
 \item	lists are compared as ordinary compound terms having arity 2 and 
 	functor {\tt '.'}.
 \end{itemize}
+
 For example, here is a list of terms sorted in increasing standard order:
 \begin{center}
 	{\tt [ X, 3.14, -9, fie, foe, fum(X), [X], X = Y, fie(0,2), fie(1,1) ]}
 \end{center}
-The basic predicates for comparison of arbitrary terms are:
+The basic predicates for unification and comparison of arbitrary terms are:
 \begin{description}
+
+\ouritem{X = Y}\index{\texttt{=/2}} 
+    Unifies {\tt X} and {\tt Y} without occur check.
+
+\ouritem{unify\_with\_occurs\_check(One,Two)} 
+\index{\texttt{unify\_with\_occurs\_check/2}}
+%
+Unifies {\tt One} and {\tt Two} using an occur check, and failing if
+{\tt One} is a proper subterm of {\tt Two} or if {\tt Two} is a proper
+subterm of {\tt One}.  
+
+{\bf Example:}
+    {\footnotesize
+     \begin{verbatim}
+                | ?- unify_with_occurs_check(f(1,X),f(1,a(X))).
+
+                no
+                | ?- unify_with_occurs_check(f(1,X),f(1,a(Y))).
+
+                X = a(_h165)
+                Y = _h165
+
+                yes
+                | ?- unify_with_occurs_check(f(1,a(X)),f(1,a(X))).
+
+                X = _h165
+
+                yes
+  \end{verbatim}}
+
 \ouritem{T1 == T2}
 \index{\texttt{==/2}}
     Tests if the terms currently instantiating {\tt T1} and {\tt T2}
     are literally identical (in particular, variables in equivalent positions
     in the two terms must be identical).
-    For example, the question:
+    For example, the goal:
 
-% JF
-%    \demo{\verb+|+ ?- X == Y.}
     \demo{$|$ ?- X == Y.}
 
     \noindent
     fails (answers no) because {\tt X} and {\tt Y} are distinct variables.
     However, the question
 
-% JF
-%    \demo{\verb+|+ ?- X = Y, X == Y.}
     \demo{$|$ ?- X = Y, X == Y.}
 
     \noindent
-    succeeds because the first goal unifies the two variables 
-    (see section~\ref{Convenience}).
+    succeeds because the first goal unifies the two variables.
+
+\ouritem{X $\backslash$\,= Y}\index{\texttt{$\backslash$=/2}}
+    Succeeds if~{\tt X} and~{\tt Y} are not unifiable,
+    fails if~{\tt X} and~{\tt Y} are unifiable.
+    It is thus equivalent to {\tt $\backslash$+}\/{\tt (X = Y)}.
 
 \ouritem{T1 {$\backslash$==} T2}
 \index{\texttt{$\backslash$==/2}}
     Tests if the terms currently instantiating {\tt T1} and {\tt T2}
     are not literally identical.
 
-% TLS: for some reason these @ comparison operators don't work.
+\ouritem{Term1 ?= Term2}
+\index{\texttt{?=/2}}
+%
+Succeeds if the equality of {\tt Term1} and {\tt Term2} can be
+compared safely, i.e. whether the result of {\tt Term1 = Term2} can
+change due to further instantiation of either term. It is defined as
+by {\tt ?=(A,B) :- (A==B ; A \= B), !.} 
+
+\ournewitem{unifiable(X, Y, -Unifier)}{constraintLib}
+\index{\texttt{unifiable/3}}
+%
+If {\tt X} and {\tt Y} can unify, succeeds unifing {\tt Unifier} with
+a list of terms of the form {\tt Var = Value} representing a most
+general unifier of {\tt X} and {\tt Y}.\  {\tt unifiable/3} can handle
+cyclic terms. Attributed variables are handles as normal
+variables. Associated hooks are not executed~\footnote{In \version ,
+  {\tt unifiable/3} is written as a Prolog predicate and so is slower
+  than many of the predicates in this section.}.
+
+% TLS: for some reason index statements for these @ comparison operators don't work.
 \ouritem{T1 @$<$ T2}
-\index{@$</2$}
+\index{@/2}
     Succeeds if term {\tt T1} is before term {\tt T2} in the standard order.
 
 \ouritem{T1 @$>$ T2}
-\index{@$>/2$}
+\index{\verb|@>/2|}
     Succeeds if term {\tt T1} is after term {\tt T2} in the standard order.
 
 \ouritem{T1 @$=<$ T2}
@@ -99,11 +164,6 @@ The basic predicates for comparison of arbitrary terms are:
     Succeeds if {\tt T1} and {\tt T2} are identical variables, or if
     the main strucure symbols of {\tt T1} and {\tt T2} are identical.
 
-\end{description}
-
-Some further predicates involving comparison of terms are:
-
-\begin{description}
 \ouritem{compare(?Op, +T1, +T2)}
 \index{\texttt{compare/3}}
     Succeeds if the result of comparing terms {\tt T1} and {\tt T2} 
@@ -116,6 +176,17 @@ Some further predicates involving comparison of terms are:
     Thus {\tt compare(=, T1, T2)} is equivalent to {\tt T1==T2}.
     Predicate {\tt compare/3} has no associated error conditions.
 
+\end{description}
+
+\subsection{Sorting of Terms}
+
+Sorting routines compare and order terms without instantiationg them.
+Users should be careful when comparing the value of uninstantiated
+variables.  The actual order of uninstantiated variables may change in
+the course of program evaluation due to variable aliasing, garbage
+collection, or other reasons.
+
+\begin{description}
 \ouritem{sort(+L1, ?L2)} 
 \index{\texttt{sort/2}}
     The elements of the list {\tt L1} are sorted into the standard order,

@@ -305,12 +305,76 @@ show_domain(X) :-                            % print out the domain of X
 \end{verbatim}
 \end{small}
 
+\section{{\tt constraintLib}: a library for CLP} \label{constraintLib}
+%====================================================================
+
+XSB supports constraint logic programming through its engine-level
+support of attributed variables
+(Section~\ref{sec:attributed-variables}), and its support for
+constraint handling rules (CHR) (Chapter~\ref{chr}).  The {\tt
+constraintLib} library includes routines for delaying and examining
+bindings that are commonly used to implement CHR and other constraint
+libraries.
+
+When processing constraints, it is often useful to delay a goal based
+on the instiation level of a term or set of terms.  For instance a
+{\tt 3 > X + Y} should be delayed until both {\tt X} and {\tt Y} are
+instantiated.  However the goal should be reinvoked as soon as
+possible after both are instantiated in order to prune search paths
+that may not be useful to pursue.  The predicate {\tt when/2} provides
+a useful mechanism to delay goals based on instantiation
+patterns~\footnote{Despite the similar name, this method of delaying
+is conceptually different from SLG {\sc delaying} discussed in Volume
+1 of this manual, which is used for resolving cycles of dependencies
+in computing the well-founded semantics, and is not based on the state
+of instantiation of a term.}.
+
+\begin{description}
+\ournewitem{when(+Condition,Goal)}{constriantLib}\index{\texttt{when/2}}
+%
+Delays the execution of {\tt Goal} until {\tt Condition} is satisfied,
+whereupon {\tt Goal} will be executed.  Condition can have the form
+\begin{itemize}
+\item {\tt ?=(Term1,Term2)}
+\item {\tt nonvar(Term)}
+\item {\tt ground(Term)}~\footnote{To use {\tt ground/1} in the
+condition, it must be imported into the file where it is used.}. 
+\item {\tt (Condition,Condition)}
+\item {\tt (Condition ; Condition)}
+\end{itemize}
+
+{\bf Example:} The following session illustrates the use of when/2 to
+delay a goal.
+%
+\begin{small}
+\begin{verbatim}
+|?- when(nonvar(X),writeln(test(1-2,nonvar))),writeln(test(1,nonvar)),X = f(_Y).
+
+test(1,nonvar)
+test(1 - 2,nonvar)
+
+X = f(_h245)
+\end{verbatim}
+\end{small}
+
+\ournewitem{unifiable(X, Y, -Unifier)}{constraintLib}
+\index{\texttt{unifiable/3}}
+%
+If {\tt X} and {\tt Y} can unify, succeeds unifing {\tt Unifier} with
+a list of terms of the form {\tt Var = Value} representing a most
+general unifier of {\tt X} and {\tt Y}.\  {\tt unifiable/3} can handle
+cyclic terms. Attributed variables are handles as normal
+variables. Associated hooks are not executed~\footnote{In \version ,
+  {\tt unifiable/3} is written as a Prolog predicate and so is slower
+  than many of the predicates in this section.}.
+
+\end{description}
+
 \section{Ground, Numbervars, Subsumption, Variant} \label{NumberVars}
 %====================================================================
 
 \begin{description}
 \ournewitem{ground(+X)}{basics}\index{\texttt{ground/1}}
-%\predindex{ground/1~(L)}
     Succeeds if {\tt X} is currently instantiated to a term that is 
     completely bound (has no uninstantiated variables in it); 
     otherwise it fails.  Predicate {\tt ground/1} has no associated 

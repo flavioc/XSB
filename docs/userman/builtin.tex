@@ -1855,58 +1855,7 @@ unless otherwise noted.
 \end{description}
 %%
 
-%-------------------------------------------------------------------------------
-\section{Unification with Occurs Check}
-\label{sec:uwoc} 
-
-Like most Prologs, default unification in XSB does not perform a
-so-called {\em occurs check} --- it does not handle situations where a
-variable {\tt X} may be bound to a structure containing {\tt X} as a
-proper subterm.  For instance, in the goal
-
-{\tt X = f(X)}    {\em \% incorrect!}
-
-{\tt X} is bound to f(X) creating a term that is either cyclic or
-infinite, depending on one's point of view.  Prologs in general
-perform unification without occurs check since without occurs check
-unification is linear in the size of the largest term to be unified,
-while unification with occurs check may be exponential in the size of
-the largest term to be unified.
-
-Still, unification with occurs check can be important for certain
-applications, in particular when Prolog is used to implement theorem
-provers or sophisticated constraint handlers.  As a result XSB
-provides an ISO-style implementation of the predicate {\tt
-  unify\_with\_occurs\_check/2}.
-
-\begin{description}
-  \ouritem{unify\_with\_occurs\_check(One,Two)} 
-  \index{\texttt{unify\_with\_occurs\_check/2}}
-
-Unifies {\tt One} and {\tt Two} using an occur check, and failing if
-{\tt One} is a proper subterm of {\tt Two} or if {\tt Two} is a proper
-subterm of {\tt One}.  
-
-    Example:
-    {\footnotesize
-     \begin{verbatim}
-                | ?- unify_with_occurs_check(f(1,X),f(1,a(X))).
-
-                no
-                | ?- unify_with_occurs_check(f(1,X),f(1,a(Y))).
-
-                X = a(_h165)
-                Y = _h165
-
-                yes
-                | ?- unify_with_occurs_check(f(1,a(X)),f(1,a(X))).
-
-                X = _h165
-
-                yes
-  \end{verbatim}}
-\end{description}
-
+%-----------------------------------------------------------------
 \section{Evaluating Arithmetic Expressions through {\tt is/2}}
 \label{Arithmetic} 
 
@@ -2136,14 +2085,6 @@ described only briefly.
 %\predindex{fail/0~(I)}
     Always fails.
 
-\ouritem{X = Y}\index{\texttt{=/2}} 
-%\predindex{=/2~(I)}
-    Defined as if by the clause ``Z=Z'', i.e.~{\tt X} and~{\tt Y} are unified.
-
-\ouritem{X $\backslash$\,= Y}\index{\texttt{$\backslash$=/2}}
-    Succeeds if~{\tt X} and~{\tt Y} are not unifiable,
-    fails if~{\tt X} and~{\tt Y} are unifiable.
-    It is thus equivalent to {\tt $\backslash$+}\/{\tt (X = Y)}.
 \end{description}
 
 %-----------------------------------------------------------------------------------------
@@ -2292,7 +2233,7 @@ regardless of whether {\tt +P} is ground or not.
 \end{description}
 
 %-------------------------------------------------------------------------
-\section{Comparison and Sorting} \label{Comparison}
+% Comparison and unification of terms.
 \input{comparison}
 
 %------------------------------------------------------------------------------------------------
@@ -3183,7 +3124,7 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
 \ourusage{atom\_concat(+Atom,+Atom,-Atom)}
 
 \ournewitem{term\_to\_atom(+Term,-Atom,+Options)}{string}
-\index{\texttt{ term\_to\_atom/3 }}
+\index{\texttt{term\_to\_atom/3 }}
 %
 Converts {\tt +Term} to an atomic form according to a list of write
 options, {\tt Options}, that are similar to those used by {\tt
