@@ -155,6 +155,7 @@ deactivate_op(T, S) :-
 '_$op1'(700,xfx,'>=').
 %'_$op1'(700,xfx,in).		% Not in the Prolog standard (used for domains)
 %'_$op1'(700,xfx,'/=').		% Not in the Prolog standard (used for domains)
+'_$op1'(700,xfx,'?=').
 '_$op1'(661,xfy,'.').		% Not in the Prolog standard /* !! */
 '_$op1'(600,xfy,':').		% As Quintus (Not as in the Prolog standard)
 '_$op1'(500,yfx,'+').

@@ -380,5 +380,6 @@ standard_symbol(('^'), 2, setof).
 
 standard_symbol((:-), 2, usermod).
 standard_symbol((-->), 2, usermod).
+standard_symbol(('?='),2,standard).
 
 /* ---------------------- end of file std_xsb.P ----------------------- */

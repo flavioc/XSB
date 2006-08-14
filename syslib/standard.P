@@ -1035,6 +1035,8 @@ X @>= Y :- X @>= Y.
 '=:='(X,Y) :- eval(X, X1), eval(Y, Y1), X1 =:= Y1.
 '=\='(X,Y) :- eval(X, X1), eval(Y, Y1), X1 =\= Y1.
 
+'?='(X,Y):- (X == Y ; X \= Y),!.
+
 
 			/*****************************/
 			/*   ARITHMETIC EVALUATION   */
