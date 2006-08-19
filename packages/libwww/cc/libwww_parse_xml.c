@@ -174,11 +174,12 @@ PRIVATE void xml_addText (void	         *userdata,
 
   /* put the text string into the elt term and then pop it */
   if (context->convert2list)
-    c2p_chars(pcdata_buf.string+shift,
-	      p2p_arg(STACK_TOP(userdata_obj).elt_term,3));
+    extern_c2p_chars(pcdata_buf.string+shift,
+		     4,
+		     extern_p2p_arg(STACK_TOP(userdata_obj).elt_term,3));
   else
-    c2p_string(pcdata_buf.string+shift,
-	       p2p_arg(STACK_TOP(userdata_obj).elt_term,3));
+    extern_c2p_string(pcdata_buf.string+shift,
+	       extern_p2p_arg(STACK_TOP(userdata_obj).elt_term,3));
 
   xml_pop_element(userdata_obj);
   return;
@@ -192,11 +193,11 @@ PRIVATE void collect_xml_attributes (prolog_term     elt_term,
 {
   static XSB_StrDefine(attrname);
   prolog_term
-    prop_list = p2p_arg(elt_term,2),
+    prop_list = extern_p2p_arg(elt_term,2),
     prop_list_tail = prop_list,
     prop_list_head;
 
-  c2p_list(prop_list_tail);
+  extern_c2p_list(prop_list_tail);
 
   while (attrs && *attrs) {
     XSB_StrEnsureSize(&attrname, strlen((char *)*attrs));
@@ -205,22 +206,22 @@ PRIVATE void collect_xml_attributes (prolog_term     elt_term,
 #ifdef LIBWWW_DEBUG_VERBOSE
     xsb_dbgmsg((LOG_DEBUG,"***attr=%s", attrname.string));
 #endif
-    prop_list_head = p2p_car(prop_list_tail);
-    c2p_functor("attval",2,prop_list_head);
-    c2p_string(attrname.string, p2p_arg(prop_list_head,1));
+    prop_list_head = extern_p2p_car(prop_list_tail);
+    extern_c2p_functor("attval",2,prop_list_head);
+    extern_c2p_string(attrname.string, extern_p2p_arg(prop_list_head,1));
     /* get value */
     attrs++;
     /* if *attrs=NULL, then it is an error: expat will stop */
     if (*attrs)
-      c2p_string((char *)*attrs, p2p_arg(prop_list_head, 2));
+      extern_c2p_string((char *)*attrs, extern_p2p_arg(prop_list_head, 2));
     
-    prop_list_tail = p2p_cdr(prop_list_tail);
-    c2p_list(prop_list_tail);
+    prop_list_tail = extern_p2p_cdr(prop_list_tail);
+    extern_c2p_list(prop_list_tail);
     attrs++;
   }
   
   /* Terminate the property list */
-  c2p_nil(prop_list_tail);
+  extern_c2p_nil(prop_list_tail);
   return;
 }
 
@@ -251,7 +252,7 @@ PRIVATE int xml_push_element (USERDATA    *userdata,
   CHECK_STACK_OVERFLOW(userdata);
 
   /* wire the new elt into where it should be in the content list */
-  STACK_TOP(userdata).elt_term = p2p_car(location);
+  STACK_TOP(userdata).elt_term = extern_p2p_car(location);
 
   STACK_TOP(userdata).tag = (XML_Char *)tag; /* cast to discard const
 						declaration */
@@ -264,11 +265,11 @@ PRIVATE int xml_push_element (USERDATA    *userdata,
   /* normal tags look like elt(tagname, attrlist, contentlist);
      pcdata tags are: elt(pcdata,[],text); */
   if (XSB_StrCmp(&lower_tagname, "pcdata")==0)
-    c2p_functor("elt",3,STACK_TOP(userdata).elt_term);
+    extern_c2p_functor("elt",3,STACK_TOP(userdata).elt_term);
   else /* normal elt */
-    c2p_functor("elt",3,STACK_TOP(userdata).elt_term);
+    extern_c2p_functor("elt",3,STACK_TOP(userdata).elt_term);
 
-  c2p_string(lower_tagname.string, p2p_arg(STACK_TOP(userdata).elt_term, 1));
+  extern_c2p_string(lower_tagname.string, extern_p2p_arg(STACK_TOP(userdata).elt_term, 1));
   collect_xml_attributes(STACK_TOP(userdata).elt_term, attrs);
   
 #ifdef LIBWWW_DEBUG_VERBOSE
@@ -279,8 +280,8 @@ PRIVATE int xml_push_element (USERDATA    *userdata,
   /* normal element */
   if (XSB_StrCmp(&lower_tagname, "pcdata")!=0) {
     STACK_TOP(userdata).content_list_tail =
-      p2p_arg(STACK_TOP(userdata).elt_term,3);
-    c2p_list(STACK_TOP(userdata).content_list_tail);
+      extern_p2p_arg(STACK_TOP(userdata).elt_term,3);
+    extern_c2p_list(STACK_TOP(userdata).content_list_tail);
   }
   return TRUE;
 }
@@ -297,18 +298,18 @@ PRIVATE void xml_pop_element(USERDATA *userdata)
 #endif
   /* close the property list, for normal elements */
   if (strcasecmp(STACK_TOP(userdata).tag, "pcdata")!=0) {
-    c2p_nil(STACK_TOP(userdata).content_list_tail);
+    extern_c2p_nil(STACK_TOP(userdata).content_list_tail);
   }
 
   /* insert new list cell into the tail and change content_list_tail to point
      to the new tail */
   if (userdata->stackptr > 0) {
     STACK_PREV(userdata).content_list_tail =
-      p2p_cdr(STACK_PREV(userdata).content_list_tail);
-    c2p_list(STACK_PREV(userdata).content_list_tail);
+      extern_p2p_cdr(STACK_PREV(userdata).content_list_tail);
+    extern_c2p_list(STACK_PREV(userdata).content_list_tail);
   } else {
-    userdata->parsed_term_tail = p2p_cdr(userdata->parsed_term_tail);
-    c2p_list(userdata->parsed_term_tail);
+    userdata->parsed_term_tail = extern_p2p_cdr(userdata->parsed_term_tail);
+    extern_c2p_list(userdata->parsed_term_tail);
   }
 
   userdata->stackptr--;
@@ -399,8 +400,8 @@ PRIVATE USERDATA *xml_create_userData(XML_Parser parser,
     me->target = target_stream;
     me->suppress_is_default = 
       ((REQUEST_CONTEXT *)HTRequest_context(request))->suppress_is_default;
-    me->parsed_term = p2p_new();
-    c2p_list(me->parsed_term);
+    me->parsed_term = extern_p2p_new();
+    extern_c2p_list(me->parsed_term);
     me->parsed_term_tail = me->parsed_term;
     SETUP_STACK(me);
   }
@@ -437,15 +438,15 @@ PRIVATE void xml_delete_userData(void *userdata)
   /* if the status code says the doc was loaded fine, but stackptr is != -1,
      it means the doc is ill-formed */
   if (me->stackptr >= 0 && (me->status == HT_LOADED)) {
-    c2p_int(WWW_DOC_SYNTAX,status_term);
+    extern_c2p_int(WWW_DOC_SYNTAX,status_term);
   }
 
   /* terminate the parsed prolog terms list */
-  c2p_nil(me->parsed_term_tail);
+  extern_c2p_nil(me->parsed_term_tail);
 
   /* pass the result to the outside world */
   if (is_var(me->parsed_term))
-    p2p_unify(parsed_result, me->parsed_term);
+    extern_p2p_unify(parsed_result, me->parsed_term);
   else
     xsb_abort("[LIBWWW_REQUEST] Request %s: Arg 4 (Result) must be unbound variable",
 	      RequestID(request));
@@ -637,11 +638,11 @@ PRIVATE prolog_term xml_push_dummy(USERDATA    *userdata)
      to the new tail */
   if (userdata->stackptr > 0) {
     STACK_PREV(userdata).content_list_tail =
-      p2p_cdr(STACK_PREV(userdata).content_list_tail);
-    c2p_list(STACK_PREV(userdata).content_list_tail);
+      extern_p2p_cdr(STACK_PREV(userdata).content_list_tail);
+    extern_c2p_list(STACK_PREV(userdata).content_list_tail);
   } else {
-    userdata->parsed_term_tail = p2p_cdr(userdata->parsed_term_tail);
-    c2p_list(userdata->parsed_term_tail);
+    userdata->parsed_term_tail = extern_p2p_cdr(userdata->parsed_term_tail);
+    extern_c2p_list(userdata->parsed_term_tail);
   }
 
   userdata->stackptr--;
@@ -681,15 +682,15 @@ int xml_entity_termination_handler(HTRequest   *request,
     XML_Parse(extParser,ext_entity_expansion,strlen(ext_entity_expansion),1);
     HT_FREE(ext_entity_expansion);
   } else {
-    prolog_term request_result = p2p_car(context->request_result);
+    prolog_term request_result = extern_p2p_car(context->request_result);
     char *uri = HTAnchor_address((HTAnchor *)HTRequest_anchor(request));
 #ifdef LIBWWW_DEBUG
     xsb_dbgmsg((LOG_DEBUG,"***In xml_entity_termination_handler(%s): request failed",
 		RequestID(request)));
 #endif
-    c2p_functor("unexpanded_entity",2,request_result);
-    c2p_string(uri,p2p_arg(request_result,1));
-    c2p_int(status,p2p_arg(request_result,2));
+    extern_c2p_functor("unexpanded_entity",2,request_result);
+    extern_c2p_string(uri,extern_p2p_arg(request_result,1));
+    extern_c2p_int(status,extern_p2p_arg(request_result,2));
   }
 
   report_asynch_subrequest_status(request, status);

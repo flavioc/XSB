@@ -99,8 +99,8 @@ DllExport int call_conv do_libwww_request___(void)
   while (is_list(request_list_tail) && !is_nil(request_list_tail)) {
     request_id++;
     total_number_of_requests++;
-    setup_request_structure(p2p_car(request_list_tail), request_id);
-    request_list_tail = p2p_cdr(request_list_tail);
+    setup_request_structure(extern_p2p_car(request_list_tail), request_id);
+    request_list_tail = extern_p2p_cdr(request_list_tail);
   }
 
   if (timeout_value <= 0)
@@ -213,16 +213,16 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
       /* set result status */
       if (is_var(context->status_term)) {
 	if (context->last_modtime <= 0)
-	  c2p_int(HT_ERROR, context->status_term);
+	  extern_c2p_int(HT_ERROR, context->status_term);
 	else
-	  c2p_int(WWW_EXPIRED_DOC, context->status_term);
+	  extern_c2p_int(WWW_EXPIRED_DOC, context->status_term);
       } else
 	libwww_abort_all("[LIBWWW_REQUEST] Request %s: Arg 5 (Status) must be unbound variable",
 			 RequestID(request));
       /* set the result params (header info); */
       extract_request_headers(header_req);
       /* terminate the result parameters list */
-      c2p_nil(context->result_params);
+      extern_c2p_nil(context->result_params);
 
       release_libwww_request(request);
       HT_FREE(uri);
@@ -331,12 +331,12 @@ PRIVATE void setup_request_structure(prolog_term req_term, int request_id)
 #endif
     total_number_of_requests--;
     if (is_var(context->status_term))
-      c2p_int(WWW_URI_SYNTAX, context->status_term);
+      extern_c2p_int(WWW_URI_SYNTAX, context->status_term);
     else
       libwww_abort_all("[LIBWWW_REQUEST] Request %s: Arg 5 (Status) must be unbound variable",
 		       RequestID(request));
 
-    c2p_nil(context->result_params);
+    extern_c2p_nil(context->result_params);
     release_libwww_request(request);
   }
   HT_FREE(uri);
@@ -391,11 +391,11 @@ PRIVATE void libwww_abort_all(char *msg, ...)
 
 void report_synch_subrequest_status(HTRequest *request, int status)
 {
-  prolog_term uri_term=p2p_new(), error_term=p2p_new();
+  prolog_term uri_term=extern_p2p_new(), error_term=extern_p2p_new();
   REQUEST_CONTEXT *context = (REQUEST_CONTEXT *)HTRequest_context(request);
   char *uri = HTAnchor_physical(HTRequest_anchor(request));
-  c2p_string(uri,uri_term);
-  c2p_int(status, error_term);
+  extern_c2p_string(uri,uri_term);
+  extern_c2p_int(status, error_term);
   add_result_param(&(context->result_params),
 		   "subrequest",2,uri_term,error_term);
 }
@@ -406,9 +406,9 @@ void report_asynch_subrequest_status(HTRequest *request, int status)
   REQUEST_CONTEXT *context = (REQUEST_CONTEXT *)HTRequest_context(request);
   char *uri = HTAnchor_physical(HTRequest_anchor(request));
 
-  c2p_functor("subrequest",2,context->result_params);
-  c2p_string(uri,p2p_arg(context->result_params,1));
-  c2p_int(status, p2p_arg(context->result_params,2));
+  extern_c2p_functor("subrequest",2,context->result_params);
+  extern_c2p_string(uri,extern_p2p_arg(context->result_params,1));
+  extern_c2p_int(status, extern_p2p_arg(context->result_params,2));
 }
 
 
@@ -451,16 +451,16 @@ PRIVATE REQUEST_CONTEXT *set_request_context(HTRequest *request,
   init_htable(&(context->stripped_tags_tbl),
 	      STRIPPED_TAGS_TBL_SIZE,context->type);
   /* output */
-  context->result_params = p2p_arg(req_term,3);
+  context->result_params = extern_p2p_arg(req_term,3);
   if(!is_var(context->result_params))
     libwww_abort_all("[LIBWWW_REQUEST] Request %d: Arg 3 (Result parameters) must be unbound variable", request_id);
-  c2p_list(context->result_params);
+  extern_c2p_list(context->result_params);
 
-  context->request_result = p2p_arg(req_term,4);
+  context->request_result = extern_p2p_arg(req_term,4);
   if(!is_var(context->request_result))
     libwww_abort_all("[LIBWWW_REQUEST] Request %d: Arg 4 (Result) must be unbound variable", request_id);
 
-  context->status_term = p2p_arg(req_term,5);
+  context->status_term = extern_p2p_arg(req_term,5);
   if(!is_var(context->status_term))
     libwww_abort_all("[LIBWWW_REQUEST] Request %d: Arg 5 (Status) must be unbound variable", request_id);
 
@@ -514,7 +514,7 @@ void strcpy_lower(char *to, const char *from)
 void print_prolog_term(prolog_term term, char *message)
 { 
   static XSB_StrDefine(StrArgBuf);
-  prolog_term term2 = p2p_deref(term);
+  prolog_term term2 = extern_p2p_deref(term);
   XSB_StrSet(&StrArgBuf,"");
   print_pterm(term2, 1, &StrArgBuf); 
 #ifdef LIBWWW_DEBUG
@@ -592,14 +592,14 @@ PRIVATE char *extract_uri(prolog_term req_term, HTRequest *request,
   char    *uri;
   prolog_term uri_term;
 
-  uri_term=p2p_arg(req_term,1);
+  uri_term=extern_p2p_arg(req_term,1);
   if (is_charlist(uri_term, &urilen)) {
     ((REQUEST_CONTEXT *)HTRequest_context(request))->convert2list=TRUE;
     /*
-    p2c_chars(uri_term, &uristr);
+    extern_p2c_chars(uri_term, &uristr);
     uri = uristr.string;
     */
-    p2c_chars(uri_term, uri, urilen);
+    extern_p2c_chars(uri_term, uri, urilen);
   } else if (is_string(uri_term))
     uri=string_val(uri_term);
   else {
@@ -621,7 +621,7 @@ PRIVATE void release_libwww_request(HTRequest *request)
 /* Extraction of individual parameters from the request_params argument */
 PRIVATE void get_request_params(prolog_term req_term, HTRequest *request)
 {
-  prolog_term param, req_params=p2p_arg(req_term,2);
+  prolog_term param, req_params=extern_p2p_arg(req_term,2);
   char *paramfunctor;
   REQUEST_CONTEXT *context = (REQUEST_CONTEXT *)HTRequest_context(request);
 
@@ -629,44 +629,44 @@ PRIVATE void get_request_params(prolog_term req_term, HTRequest *request)
     libwww_abort_all("[LIBWWW_REQUEST] Request %s: Arg 2 (Request params) must be a list or a variable",
 		     RequestID(request));
   while(is_list(req_params) && !is_nil(req_params)) {
-    param = p2p_car(req_params);
-    paramfunctor = p2c_functor(param);
+    param = extern_p2p_car(req_params);
+    paramfunctor = extern_p2c_functor(param);
 
     switch (paramfunctor[0]) {
     case 't': case 'T': /* user-specified timeout */ 
-      if (!is_int(p2p_arg(param, 1)))
+      if (!is_int(extern_p2p_arg(param, 1)))
 	libwww_abort_all("[LIBWWW_REQUEST] Request %s: Timeout parameter must be an integer",
 			 RequestID(request));
-      context->timeout = p2c_int(p2p_arg(param, 1)) * 1000;
+      context->timeout = extern_p2c_int(extern_p2p_arg(param, 1)) * 1000;
       if (context->timeout <= 0)
 	context->timeout = DEFAULT_TIMEOUT;
       break;
     case 'i': case 'I': /* if-modified-since */
-      if (!is_string(p2p_arg(param, 1)))
+      if (!is_string(extern_p2p_arg(param, 1)))
 	libwww_abort_all("[LIBWWW_REQUEST] Request %s: If_modified_since parameter must be a string",
 		  RequestID(request));
       context->user_modtime =
-	(long)HTParseTime(string_val(p2p_arg(param,1)), NULL, YES);
+	(long)HTParseTime(string_val(extern_p2p_arg(param,1)), NULL, YES);
       break;
     case 'a': case 'A': {  /* authorization */
-      prolog_term auth_head, auth_tail=p2p_arg(param,1);
+      prolog_term auth_head, auth_tail=extern_p2p_arg(param,1);
       AUTHENTICATION *auth_info = &(context->auth_info);
       
       do {
 	if (is_list(auth_tail)) {
-	  auth_head=p2p_car(auth_tail);
-	  auth_tail=p2p_cdr(auth_tail);
+	  auth_head=extern_p2p_car(auth_tail);
+	  auth_tail=extern_p2p_cdr(auth_tail);
 	} else auth_head = auth_tail;
 
-	if (is_string(p2p_arg(auth_head, 1)))
-	  auth_info->realm = p2c_string(p2p_arg(auth_head, 1));
+	if (is_string(extern_p2p_arg(auth_head, 1)))
+	  auth_info->realm = extern_p2c_string(extern_p2p_arg(auth_head, 1));
 	else auth_info->realm = NULL;
-	if (is_string(p2p_arg(auth_head, 2)))
-	  auth_info->uid = p2c_string(p2p_arg(auth_head, 2));
+	if (is_string(extern_p2p_arg(auth_head, 2)))
+	  auth_info->uid = extern_p2c_string(extern_p2p_arg(auth_head, 2));
 	else auth_info->uid = NULL;
 	/* passwd is always required in auth info */
-	if (is_string(p2p_arg(auth_head, 3)))
-	  auth_info->pw = p2c_string(p2p_arg(auth_head, 3));
+	if (is_string(extern_p2p_arg(auth_head, 3)))
+	  auth_info->pw = extern_p2c_string(extern_p2p_arg(auth_head, 3));
 	else auth_info->pw = NULL;
 
 	if (is_list(auth_tail) && !is_nil(auth_tail)) {
@@ -679,10 +679,10 @@ PRIVATE void get_request_params(prolog_term req_term, HTRequest *request)
       break;
     }
     case 'f': case 'F':  /* formdata: name/value pair list to fill out forms */
-      context->formdata = p2p_arg(param, 1);
+      context->formdata = extern_p2p_arg(param, 1);
       break;
     case 'm': case 'M': {  /* HTTP method: GET/POST/PUT */
-      char *method = p2c_string(p2p_arg(param, 1));
+      char *method = extern_p2c_string(extern_p2p_arg(param, 1));
       switch (method[1]) {
       case 'O': case 'o':
 	context->method = METHOD_POST;
@@ -698,11 +698,11 @@ PRIVATE void get_request_params(prolog_term req_term, HTRequest *request)
     }
     case 's': case 'S':  /* selection of tags to parse */
       /* tag selection: selection(chosen-list,suppressed-list,strip-list) */
-      if (p2c_arity(param)==3) {
+      if (extern_p2c_arity(param)==3) {
 	prolog_term
-	  select_term=p2p_arg(param,1),
-	  suppressed_term=p2p_arg(param,2),
-	  strip_term=p2p_arg(param,3);
+	  select_term=extern_p2p_arg(param,1),
+	  suppressed_term=extern_p2p_arg(param,2),
+	  strip_term=extern_p2p_arg(param,3);
 	
 	if (is_var(select_term))
 	  context->suppress_is_default=FALSE;
@@ -731,7 +731,7 @@ PRIVATE void get_request_params(prolog_term req_term, HTRequest *request)
     default:  /* ignore unknown params */
       break;
     }
-    req_params = p2p_cdr(req_params);
+    req_params = extern_p2p_cdr(req_params);
   } 
   return;
 }
@@ -750,14 +750,14 @@ PRIVATE HTAssocList *get_form_params(prolog_term form_params, int request_id)
     prolog_term head;
     char *string;
 
-    head = p2p_car(form_params);
+    head = extern_p2p_car(form_params);
     if (is_string(head))
-      string = p2c_string(head);
+      string = extern_p2c_string(head);
     else
       libwww_abort_all("[LIBWWW_REQUEST] Request %d: Non-string in form parameter list",
 		       request_id);
 
-    form_params = p2p_cdr(form_params);
+    form_params = extern_p2p_cdr(form_params);
 		
     /* create a list to hold the form arguments */
     if (!formfields) formfields = HTAssocList_new();
@@ -776,7 +776,7 @@ PRIVATE REQUEST_TYPE get_request_type(prolog_term req_term, int request_id)
     libwww_abort_all("[LIBWWW_REQUEST] Request %d: Bad request syntax",
 		     request_id);
   }
-  functor = p2c_functor(req_term);
+  functor = extern_p2c_functor(req_term);
 
   if (strncmp("fetch",functor,3)==0) return FETCH;
   if (strncmp("xmlparse",functor,3)==0) return XMLPARSE;
@@ -941,11 +941,11 @@ PRIVATE int request_termination_handler (HTRequest   *request,
     userdata->status = status;
   /* we should have checked already that status is a var */
   if (is_var(context->status_term))
-    c2p_int(status, context->status_term);
+    extern_c2p_int(status, context->status_term);
 
   extract_request_headers(request);
   /* terminate the result parameters list */
-  c2p_nil(context->result_params);
+  extern_c2p_nil(context->result_params);
 
   /* Clean Up */
   if (userdata) {
@@ -959,8 +959,8 @@ PRIVATE int request_termination_handler (HTRequest   *request,
 
     if (result_as_string) {
       if (context->convert2list)
-	c2p_chars(result_as_string, context->request_result);
-      else c2p_string(result_as_string, context->request_result);
+	extern_c2p_chars(result_as_string, 5, context->request_result);
+      else extern_c2p_string(result_as_string, context->request_result);
     }
     /* Note: HTChunk_toCString frees the chunk, and here we free the chank
        data. Thus, the chunk is completely cleared out. */
@@ -1011,8 +1011,8 @@ PRIVATE void init_tag_table(prolog_term tag_list, HASH_TABLE *tag_tbl)
   /* Save tag numbers in the table */
   tail=tag_list;
   while (is_list(tail) && !is_nil(tail) && i < tag_tbl->size) {
-    head= p2p_car(tail);
-    tail=p2p_cdr(tail);
+    head= extern_p2p_car(tail);
+    tail=extern_p2p_cdr(tail);
     tagname = string_val(head);
     if (tag_tbl->type == XMLPARSE)
       taghandle = (HKEY)tagname;
@@ -1042,22 +1042,22 @@ void add_result_param(prolog_term *result_param,
 
   XSB_Deref(*result_param);
   if (is_list(*result_param))
-    listHead = p2p_car(*result_param);
+    listHead = extern_p2p_car(*result_param);
   else {
     print_prolog_term(*result_param, "In add_result_param: result_param");
     libwww_abort_all("[LIBWWW_REQUEST] Bug: result_param is not a list");
   }
-  c2p_functor(functor, cnt, listHead);
+  extern_c2p_functor(functor, cnt, listHead);
   va_start(ap,cnt);
   for (i=0; i<cnt; i++)
-    p2p_unify(va_arg(ap, prolog_term), p2p_arg(listHead, i+1));
+    extern_p2p_unify(va_arg(ap, prolog_term), extern_p2p_arg(listHead, i+1));
   va_end(ap);
 
 #ifdef LIBWWW_DEBUG_VERBOSE
   print_prolog_term(listHead, "In add_result_param: listHead");
 #endif
-  *result_param = p2p_cdr(*result_param);
-  c2p_list(*result_param);
+  *result_param = extern_p2p_cdr(*result_param);
+  extern_c2p_list(*result_param);
 }
 
 
@@ -1069,13 +1069,13 @@ PRIVATE prolog_term get_result_param_stub(prolog_term *result_param)
 
   XSB_Deref(*result_param);
   if (is_list(*result_param))
-    listHead = p2p_car(*result_param);
+    listHead = extern_p2p_car(*result_param);
   else {
     print_prolog_term(*result_param, "In get_result_param_stub: result_param");
     libwww_abort_all("[LIBWWW_REQUEST] Bug: result_param is not a list");
   }
-  *result_param = p2p_cdr(*result_param);
-  c2p_list(*result_param);
+  *result_param = extern_p2p_cdr(*result_param);
+  extern_c2p_list(*result_param);
   return listHead;
 }
 
@@ -1086,7 +1086,7 @@ PRIVATE void extract_request_headers(HTRequest *request)
 {
   HTParentAnchor * anchor;
   HTAssocList * headers;
-  prolog_term paramvalue_term=p2p_new(), paramname_term=p2p_new();
+  prolog_term paramvalue_term=extern_p2p_new(), paramname_term=extern_p2p_new();
   REQUEST_CONTEXT *context = (REQUEST_CONTEXT *)HTRequest_context(request);
 
   anchor = HTRequest_anchor(request);
@@ -1099,8 +1099,8 @@ PRIVATE void extract_request_headers(HTRequest *request)
     while ((pres = (HTAssoc *) HTAssocList_nextObject(cur))) {
       paramname = HTAssoc_name(pres);
       paramvalue = HTAssoc_value(pres);
-      c2p_string(paramvalue, paramvalue_term);
-      c2p_string(paramname, paramname_term);
+      extern_c2p_string(paramvalue, paramvalue_term);
+      extern_c2p_string(paramname, paramname_term);
 
       add_result_param(&(context->result_params),
 		       "header",2,paramname_term,paramvalue_term);
@@ -1189,11 +1189,11 @@ REQUEST_CONTEXT *set_subrequest_context(HTRequest *request,
   /* output */
   context->result_params =
     get_result_param_stub(&parent_context->result_params);
-  //c2p_list(context->result_params);
+  //extern_c2p_list(context->result_params);
 
   context->request_result = result_term;
 
-  context->status_term = p2p_new();
+  context->status_term = extern_p2p_new();
 
   /* attach context to the request */
   HTRequest_setContext(subrequest, (void *) context);

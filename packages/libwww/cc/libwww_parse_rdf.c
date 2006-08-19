@@ -103,28 +103,28 @@ PRIVATE void rdf_new_triple_handler (HTRDF *rdfp, HTTriple *t, void *context)
 #endif
   /* create a new triple */
   if (rdfp && t) {
-    prolog_term ptriple = p2p_car(userdata->parsed_term_tail);
+    prolog_term ptriple = extern_p2p_car(userdata->parsed_term_tail);
 
-    c2p_functor("rdftriple",3,ptriple);
+    extern_c2p_functor("rdftriple",3,ptriple);
     if (HTTriple_predicate(t))
-      c2p_string(HTTriple_predicate(t), p2p_arg(ptriple,1));
+      extern_c2p_string(HTTriple_predicate(t), extern_p2p_arg(ptriple,1));
     else
-      c2p_string("rdfunknown", p2p_arg(ptriple,1));
+      extern_c2p_string("rdfunknown", extern_p2p_arg(ptriple,1));
     if (HTTriple_subject(t))
-      c2p_string(HTTriple_subject(t), p2p_arg(ptriple,2));
+      extern_c2p_string(HTTriple_subject(t), extern_p2p_arg(ptriple,2));
     else
-      c2p_string("rdfunknown", p2p_arg(ptriple,2));
+      extern_c2p_string("rdfunknown", extern_p2p_arg(ptriple,2));
     if (HTTriple_object(t))
-      c2p_string(HTTriple_object(t), p2p_arg(ptriple,3));
+      extern_c2p_string(HTTriple_object(t), extern_p2p_arg(ptriple,3));
     else
-      c2p_string("rdfunknown", p2p_arg(ptriple,3));
+      extern_c2p_string("rdfunknown", extern_p2p_arg(ptriple,3));
 
 #ifdef LIBWWW_DEBUG_VERBOSE
     print_prolog_term(userdata->parsed_term_tail, "Current result tail");
 #endif
 
-    userdata->parsed_term_tail = p2p_cdr(userdata->parsed_term_tail);
-    c2p_list(userdata->parsed_term_tail);
+    userdata->parsed_term_tail = extern_p2p_cdr(userdata->parsed_term_tail);
+    extern_c2p_list(userdata->parsed_term_tail);
   }
 }
 
@@ -155,8 +155,8 @@ PRIVATE USERDATA *rdf_create_userData(HTRDF     *parser,
     me->parser = parser;
     me->request = request;
     me->target = target_stream;
-    me->parsed_term = p2p_new();
-    c2p_list(me->parsed_term);
+    me->parsed_term = extern_p2p_new();
+    extern_c2p_list(me->parsed_term);
     me->parsed_term_tail = me->parsed_term;
   }
   
@@ -195,11 +195,11 @@ PRIVATE void rdf_delete_userData(void *userdata)
 #endif
 
   /* terminate the parsed prolog terms list */
-  c2p_nil(me->parsed_term_tail);
+  extern_c2p_nil(me->parsed_term_tail);
 
   /* pass the result to the outside world */
   if (is_var(me->parsed_term))
-    p2p_unify(parsed_result, me->parsed_term);
+    extern_p2p_unify(parsed_result, me->parsed_term);
   else
     xsb_abort("[LIBWWW_REQUEST] Request %s: Arg 4 (Result) must be unbound variable",
 	      RequestID(request));
