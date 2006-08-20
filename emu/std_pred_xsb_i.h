@@ -895,8 +895,8 @@ static inline xsbBool not_occurs_in(Cell Var, Cell Term) {
     return TRUE;
   }
   case XSB_LIST: {
-    return (not_occurs_in(Var,Term +1) 
-	    & not_occurs_in(Var, Term + 2));
+    return (not_occurs_in(Var,(Cell) clref_val(Term) )
+	    & not_occurs_in(Var, (Cell) (clref_val(Term) + 1)));
   }
   case XSB_STRUCT: {
     xsbBool Res = TRUE;
@@ -905,9 +905,7 @@ static inline xsbBool not_occurs_in(Cell Var, Cell Term) {
 
     for (i = 1; i <= get_arity(get_str_psc(Term)); i++) {
       arg = clref_val(Term) + i;
-      //      printf("Ref before %d\n",Res);
       Res = Res & not_occurs_in(Var,(Cell) (clref_val(Term) +i));
-      //      printf("Ref after %d\n",Res);
     }
     return Res;    
   }
@@ -936,10 +934,8 @@ xsbBool unify_with_occurs_check(CTXTdeclc Cell Term1, Cell Term2) {
   case XSB_STRING:
   case XSB_FLOAT: 
     return unify(CTXTc Term1,Term2);
-  case XSB_LIST:
-  case XSB_STRUCT: {
 
-/**********/
+  case XSB_LIST: {
     switch (cell_tag(Term2)) {
     case XSB_ATTV: 
     case XSB_REF: 
@@ -947,27 +943,42 @@ xsbBool unify_with_occurs_check(CTXTdeclc Cell Term1, Cell Term2) {
       if (not_occurs_in(Term2,Term1))
 	return unify(CTXTc Term1,Term2);
       else return FALSE;
-    case XSB_LIST:
+    case XSB_LIST: {
+      Res = (Res  
+	     & unify_with_occurs_check(CTXTc (Cell) clref_val(Term1) , 
+				       (Cell) clref_val(Term2) )
+	     & unify_with_occurs_check(CTXTc (Cell) (clref_val(Term1) + 1), 
+				       (Cell) (clref_val(Term2) + 1)) );
+      return Res;
+    }
+    default: 
+      return FALSE;
+    }
+  }
+
+  case XSB_STRUCT: {
+    switch (cell_tag(Term2)) {
+    case XSB_ATTV: 
+    case XSB_REF: 
+    case XSB_REF1: 
+      if (not_occurs_in(Term2,Term1))
+	return unify(CTXTc Term1,Term2);
+      else return FALSE;
     case XSB_STRUCT: {
       int i;
       int arity = get_arity(get_str_psc(Term1)); 
       if (arity == get_arity(get_str_psc(Term2))) {
 	for (i = 1; i <= arity; i++) {
-	  //	  printf("  struct Res before %d\n",Res);
 	  Res = Res & unify_with_occurs_check(CTXTc (Cell) (clref_val(Term1) + i), 
 					      (Cell) (clref_val(Term2) + i));
-	  //	  printf("  struct Res after %d\n",Res);
 	}
 	return Res;
       }
       else return FALSE;
     }
     }
-
-/**********/
-
   }
-  }
+    }
   return TRUE;  /* hush, little compiler */
-}
+  }
   
