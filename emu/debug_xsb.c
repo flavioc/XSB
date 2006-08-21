@@ -283,7 +283,7 @@ void alt_print_cpf_pred(CPtr cpf,FILE* where)
     fprintf(where,"choicepoint(address(%p),unknown_psc).\n", cpf);
 }
 
-#endif CP_DEBUG
+#endif /* CP_DEBUG */
 
 /*-------------------------------------------*/ 
 
