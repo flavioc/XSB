@@ -37,7 +37,6 @@ table_all_predicates([pred(Sym,_,_)|Preds]) :-
 	table_it(Sym),
 	table_all_predicates(Preds).
 
-
 /*======================================================================*/
 /* perform_auto_table(+Module)						*/
 /*	Runs the dependency graph of the predicates in the Module, and	*/
@@ -51,7 +50,6 @@ perform_auto_table(module(SymTab,_,CL0,_)) :-
 	table_preds_in_tabling_meta_preds(SymTab, CL0, CL1),
 	table_immediate_recursions(CL1, CL2),
 	table_to_break_all_loops(CL2).
-
 
 /*======================================================================*/
 /* table_preds_in_tabling_meta_preds(+SymTab, +PredsIn, -PredsOut)	*/
@@ -165,8 +163,10 @@ body_calls_sym(goal(GoalSym,GoalArgs), Sym) :-
 
 :- mode call_in_meta_pred(+,+).
 
-call_in_meta_pred([Arg|Args], Sym):-
-	( call_in_arg(Arg, Sym) -> true ; call_in_meta_pred(Args, Sym) ).
+call_in_meta_pred([Arg], Sym) :-       % call/1 and not/1
+	call_in_arg(Arg, Sym).
+call_in_meta_pred([_,Arg,_], Sym) :-   % findall/3, setof/3 and bagof/3
+	call_in_arg(Arg, Sym).
 
 :- mode call_in_arg(+,+).
 
@@ -315,16 +315,29 @@ path_in_body(goal(GoalSym,GoalArgs), Sym1, Sym, Preds) :-
 
 :- mode path_in_meta_pred_args(+,+,+,+).
 
-path_in_meta_pred_args([Arg|Args], Sym0, Sym, Preds) :-
-	( path_in_meta_pred_arg(Arg, Sym0, Sym, Preds) -> true
-	; path_in_meta_pred_args(Args, Sym0, Sym, Preds)
-	).
+path_in_meta_pred_args([Arg], Sym0, Sym, Preds) :-      % call/1 and not/1
+	path_in_meta_pred_arg(Arg, Sym0, Sym, Preds).
+path_in_meta_pred_args([_,Arg,_], Sym0, Sym, Preds) :-  % findall/3, setof/3
+	path_in_meta_pred_arg(Arg, Sym0, Sym, Preds).   % and bagof/3
 
 path_in_meta_pred_arg(constant(Sym1), Sym0, Sym, Preds) :-
-         path_in_body(goal(Sym1,_), Sym0, Sym, Preds).
+	path_in_body(goal(Sym1,[]), Sym0, Sym, Preds).
 path_in_meta_pred_arg(structure(Sym1,Args), Sym0, Sym, Preds) :-
-	( path_in_body(goal(Sym1,_), Sym0, Sym, Preds) -> true
-	; path_in_meta_pred_args(Args, Sym0, Sym, Preds)
+	sym_name(Sym1, Name, Arity),
+	( Name == ',', Arity =:= 2 ->
+	    Args = [A1,A2], % code below immitates path_in_boby(and(A1,A2), ...
+	    ( path_in_meta_pred_arg(A1, Sym0, Sym, Preds) -> true
+	    ; path_in_meta_pred_arg(A2, Sym0, Sym, Preds)
+	    )
+	; Name == ';', Arity =:= 2 ->
+	    Args = [A1,A2], % code below immitates path_in_boby(or(A1,A2), ...
+	    ( path_in_meta_pred_arg(A1, Sym0, Sym, Preds) -> true
+	    ; path_in_meta_pred_arg(A2, Sym0, Sym, Preds)
+	    )
+	; Name == 'not', Arity =:= 1 ->
+	    Args = [A1],    % code below immitates path_in_boby(not(A1), ...
+	    path_in_meta_pred_arg(A1, Sym0, Sym, Preds)
+	; path_in_body(goal(Sym1,Args), Sym0, Sym, Preds)
 	).
 
 /*----------------------------------------------------------------------*/
