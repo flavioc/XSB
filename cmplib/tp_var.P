@@ -230,10 +230,7 @@ alloc_reg(VPrag,Tin,Tout) :-
 	vprag_occ(VPrag, Occ), ( Occ == f; Occ == v ),
 	!,
 	vprag_loc(VPrag, R),
-	(var(R)
-	 ->	computil_find_reg(VPrag,Tin,R), hold(R, Tin, Tout)
-	 ;	true
-	),
+	( var(R) -> computil_find_reg(VPrag,Tin,R) ; true ),
 	hold(R, Tin, Tout).
 alloc_reg(_Prag,T,T).
 
@@ -254,10 +251,6 @@ computil_find_reg1([Reg|Rest],Tin,OReg) :-
 	 ;	OReg = Reg
 	).
 
-/***
-computil_find_reg1([Reg|_],Tin,Reg) :- \+ member2(Reg,Tin).
-computil_find_reg1([_|Rest],Tin,Reg) :- computil_find_reg1(Rest,Tin,Reg).
-***/
 /*======================================================================*/
 /* release_if_done(+Vid, +RegNo, +VarPrag, HoldR, +Tin, -Tout)		*/
 /*	Release the register RegNo if "done"				*/
@@ -313,7 +306,6 @@ release_if_done0(varocc(Vid,Prag),R,HoldR,Tin,Tout) :-
 	release_if_done(Vid,R,Prag,HoldR,Tin,Tout).
 release_if_done0(_Term,R,_,Tin,Tout) :-
 	release(R,Tin,Tout).
-
 
 /*======================================================================*/
 /*======================================================================*/
