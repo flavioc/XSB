@@ -239,9 +239,11 @@ alloc_reg(_Prag,T,T).
 
 computil_find_reg(VPrag,T,R) :-
 	vprag_use(VPrag, Use),	/* find reg in "use" list that's available */
-	computil_find_reg1(Use,T,R). !.
+	computil_find_reg1(Use,T,R),
+	!.
 computil_find_reg(VPrag,T,R) :-
-	vprag_nouse(VPrag, Nouse), !,
+	vprag_nouse(VPrag, Nouse),
+	!,
 	append(Nouse,T,T1),
 	getreg(T1,R).		/* find available reg not in "nouse" list */
 computil_find_reg(_VPrag,T,R) :- getreg(T,R).
