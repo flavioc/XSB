@@ -1,0 +1,67 @@
+test_arcs(List):- 
+	(test_arcs1(List) -> 
+	    nv_writeln('consistent '(List))
+	 ;  nv_writeln('inconsistent '(List))),
+	 fail.
+test_arcs(_).
+
+:- import numbervars/1 from num_vars.
+
+%nv_writeln(Term):- numbervars(Term),writeln(Term).
+nv_writeln(Term):- writeln(Term).
+
+test_arcs1([]).
+test_arcs1([H|T]):- 
+	call(H),
+	test_arcs1(T).
+
+test:- 
+	test_ii,
+	test_pp,
+	test_ip.
+
+test_ii:- 
+	test_arcs([arc([3,3],[3,3],[during],i-i)]),  % i
+	test_arcs([arc([3,3],[2,5],[during],i-i)]),  % c
+        test_arcs([arc([3,3],X,[during],i-i),X = [2,5]]),  % c
+	test_arcs([arc([3,3],X,[during],i-i),X = [2,3]]),  % i 
+	test_arcs([arc(X,Y,[during],i-i),arc(X,Y,[before],i-i)]), %i
+	test_arcs([arc(X,Y,[during],i-i),arc(Y,Z,[before],i-i),arc(Y,W,[after],i-i)]), %c
+        test_arcs([arc([3,4],X,[before],i-i),X = [5,6]]). %c
+
+test_pp:- 
+	test_arcs([arc(3,X,[4],p-p)]), % c
+	test_arcs([arc(3,X,[4],p-p), X = 7]),  %c
+	test_arcs([arc([3,4],X,[before],i-p),arc([3,4],Y,[after],i-p),
+	           arc(X,Y,[eq],p-p)]), %i
+        test_arcs([arc(X,Y,[9-11],p-p),X = 3,Y = 13]).
+
+test_ip:- 
+	test_arcs([arc([3,4],5,[before],i-p)]).  %c
+
+end_of_file.
+
+---------------------------------------------------------------
+Problems
+
+Had to get rid of findom stuff -- didnt work unless you have interval
+constraints.
+
+-- arc(X,Y,[9-11],p-p),X = 3,Y = 13.
+
+
+arc(3,X,[le],p-p),arc(X,2,[le],p-p),show_store(timeConstraints).
+
+succeeds.
+
+arc([3,3],X,[before],i-i),arc(X,[7,7],[before],i-i),show_store(timeConstra\
+ints).
+
+succeeds
+
+arc(3,X,[le],p-p),arc(X,2,[le],p-p),show_store(timeConstraints). -- no
+
+
+Won't take more than 1 interval.
+
+arc(X,Y,[9-11,15-17],p-p),X = 3,Y = 13.
