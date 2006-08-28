@@ -129,7 +129,20 @@
 
 :- install_verify_attribute_handler(locked,Attr,Value,locked_verify_attributes(Attr,Value)).
 
+/* 
+TLS: reconstruction
 
+For each constraint-module CHR-style constraints are kept in a data
+structure: v(BitMask,CL1,...,CLN)
+
+-- BitMask is a mask of which constraints functors exist for this module.
+(apparently we only get 32 constraqints per module).
+
+-- Each CLi is a list of constraint terms for a given constraint functor.
+
+
+
+*/
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 term_variables(Term, Vars) :-

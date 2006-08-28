@@ -93,6 +93,7 @@ unblocked_universal(N,L,T):-
 equality(L,T) :-
 	when((nonvar(L);nonvar(T)),time:unblocked_equality(L,T)).
 
+% TLS: probably dont need number(E) for is_quall
 unblocked_equality(L,i-i):- !, member(equals,L).
 unblocked_equality(L,s-s):- !, member(eq,L).
 unblocked_equality(L,p-p):-
@@ -469,16 +470,16 @@ check_pi(after,X,[_A,B]):- ((B<X)).
 
 
 
-check_ip(after,A-_B,X):- ((X<A)).
-check_ip(after,[A,_B],X):- ((X<A)).
-check_ip(started_by,A-_B,X):- ((X=:=A)).
-check_ip(started_by,[A,_B],X):- ((X=:=A)).
-check_ip(contains,A-B,X):- ((A<X,X<B)).
-check_ip(contains,[A,B],X):- ((A<X,X<B)).
-check_ip(finished_by,_A-B,X):- ((X=:=B)).
-check_ip(finished_by,[_A,B],X):- ((X=:=B)).
-check_ip(before,_A-B,X):- ((B<X)).
-check_ip(before,[_A,B],X):- ((B<X)).
+check_ip(after,A-_B,X):- number(X),((X<A)).
+check_ip(after,[A,_B],X):- number(X),((X<A)).
+check_ip(started_by,A-_B,X):- number(X),((X=:=A)).
+check_ip(started_by,[A,_B],X):- number(X),((X=:=A)).
+check_ip(contains,A-B,X):- number(X),((A<X,X<B)).
+check_ip(contains,[A,B],X):- number(X),((A<X,X<B)).
+check_ip(finished_by,_A-B,X):- number(X),((X=:=B)).
+check_ip(finished_by,[_A,B],X):- number(X),((X=:=B)).
+check_ip(before,_A-B,X):- number(X),((B<X)).
+check_ip(before,[_A,B],X):- number(X),((B<X)).
 
 % trans see itrans for INTERVAL
 

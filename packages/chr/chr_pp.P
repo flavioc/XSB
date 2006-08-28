@@ -571,6 +571,8 @@ generate_detach_a_constraint_1_1(CFct / CAty,Mod,Clause) :-
 	),
 	Clause = (Head :- Body).
 
+/* TLS: total is totol number of constraints in module; position is 
+   the index of this constraint. */
 generate_detach_a_constraint_t_p(Total,Position,CFct / CAty ,Mod,Clause) :-
 	concat_atom(['detach_',CFct, (/) ,CAty],Fct),
 	Args = [[Var|Vars],Susp],

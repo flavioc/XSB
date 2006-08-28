@@ -1,14 +1,42 @@
+
+%:- ensure_loaded(timeConstraints).
+:- ensure_loaded(globalvar).
+:- ensure_loaded(mutablevar).
+:- ensure_loaded(allentable).
+:- ensure_loaded(time).
+%:- ensure_loaded(constraintLib).
+
+:- import arc/4 from timeConstraints.
+:- import show_store/1 from chr_interp.
+
+/*
 test_arcs(List):- 
 	(test_arcs1(List) -> 
 	    nv_writeln('consistent '(List))
 	 ;  nv_writeln('inconsistent '(List))),
 	 fail.
 test_arcs(_).
+*/
+
+:- dynamic test_result/1.
+
+test_arcs(List):- 
+	retractall(test_result(_)),
+	test_arcs1(List),
+	assert(test_result(consistent)),
+	fail.
+test_arcs(List):-
+        (test_result(consistent) -> 
+	    nv_writeln('consistent '(List))
+	 ;  nv_writeln('inconsistent '(List))),
+	 fail.
+test_arcs(_).
+
 
 :- import numbervars/1 from num_vars.
 
-%nv_writeln(Term):- numbervars(Term),writeln(Term).
-nv_writeln(Term):- writeln(Term).
+nv_writeln(Term):- numbervars(Term),writeln(Term).
+%nv_writeln(Term):- writeln(Term).
 
 test_arcs1([]).
 test_arcs1([H|T]):- 
@@ -34,12 +62,23 @@ test_pp:-
 	test_arcs([arc(3,X,[4],p-p), X = 7]),  %c
 	test_arcs([arc([3,4],X,[before],i-p),arc([3,4],Y,[after],i-p),
 	           arc(X,Y,[eq],p-p)]), %i
-        test_arcs([arc(X,Y,[9-11],p-p),X = 3,Y = 13]).
+        test_arcs([arc(X,Y,[9-11],p-p),X = 3,Y = 13]). %c 
 
 test_ip:- 
 	test_arcs([arc([3,4],5,[before],i-p)]).  %c
 
+test_bad:- 
+	test_arcs([arc(3,X,[4],p-p), X = 7]),
+	test_arcs([arc([3,4],X,[before],i-p),arc([3,4],Y,[after],i-p),
+	           arc(X,Y,[eq],p-p)]).
+
+test_bad1:- 
+	test_arcs([arc([3,4],X,[before],i-p),arc([3,4],Y,[after],i-p),
+	           arc(X,Y,[eq],p-p)]).
+
 end_of_file.
+
+arc([3,4],X,[before],i-p),arc([3,4],Y,[after],i-p),arc(X,Y,[eq],p-p).
 
 ---------------------------------------------------------------
 Problems
