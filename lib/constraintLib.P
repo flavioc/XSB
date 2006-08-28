@@ -22,6 +22,7 @@
 */
 
 :- export when/2, unifiable/3.
+:- export globalize/1, unglobalize/1, var_compare/3, lookup_variable_id/2.
 
 :- import
 	get_attr/3,
@@ -34,8 +35,9 @@
 :- import term_variables/2 from chr_interp.
 
 :- import check_var/3 from error_handler.
-
 :- import ground/1 from basics.
+
+:- import gennum/2, conset/2 from gensym.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %	
@@ -226,3 +228,172 @@ unifiable_list([Term1|R1],[Term2|R2],ListIn,ListOut):-
 	unifiable_1(Term1,Term2,ListIn,ListMid),
 	unifiable_list(R1,R2,ListMid,ListOut).
 	
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Ordering 
+%% Ported to hProlog by Tom Schrijvers, tom.schrijvers@cs.kuleuven.ac.be
+%%
+%% XSB Version Barry EVANS
+%%
+
+% Preliminary support for some CHR handlers
+%
+% Define a stable ordering on variables
+% (Term/Var ordering changes under put_atts, delay, etc.)
+%
+% Bindings still brake our ordering!
+%
+%
+
+:- conset(ordering, 0).
+
+:- install_verify_attribute_handler(ordering,Attr,Other,attr_unify_hook_ordering(Attr,Other)).
+
+%
+% The exception mechanism copies the thrown term.
+% Thus we cannot pass the variable to the catcher ...
+%
+/*
+attr_unify_hook(id(Id),Other) :-
+	(var(Other) ->
+		(get_attr(Other,ordering,id(_)) ->
+			true
+		;
+			put_attr(Other,ordering,id(Id))
+		)
+	;
+		true
+	).
+*/
+attr_unify_hook_ordering(id(Id),Other) :-
+	var(Other),
+	!,
+	attr_unify_hook1(Id,Other).
+
+attr_unify_hook(_Attr,_Other).
+
+attr_unify_hook1(_Id,Other) :-
+	get_attr(Other,ordering,id(_)),
+	!.
+
+attr_unify_hook1(Id,Other) :-
+	put_attr(Other,ordering,id(Id)).
+
+%
+%	globalize(X)
+%
+globalize(Term) :-
+	term_variables(Term, Vars),
+	var_globalize(Vars).
+
+/*
+var_globalize(X) :-
+	var(X),
+	!,		% indexing only
+	(get_attr(X, ordering, id(_)) ->
+	    true
+	;
+	    put_attr(X, ordering, id(_))
+	).
+*/
+var_globalize(X) :-
+	var(X),
+	!,		% indexing only
+	var_globalize1(X).
+
+var_globalize([]).
+var_globalize([X|Xs]) :-
+	var_globalize(X),
+	var_globalize(Xs).
+
+var_globalize1(X) :-
+	get_attr(X, ordering, id(_)),	% Already got one...
+	!.
+
+var_globalize1(X) :-
+	gennum(ordering,Id),
+	put_attr(X, ordering, id(Id)).
+
+%
+%	unglobalize(X)
+%
+unglobalize(Term) :-
+	term_variables(Term, Vars),
+	var_unglobalize(Vars).
+
+var_unglobalize(X) :-
+	var(X),
+	!,		% indexing only
+	del_attr(X, ordering).
+
+var_unglobalize([]) :- !.
+
+var_unglobalize([X|Xs]) :-
+	var_unglobalize(X),
+	var_unglobalize(Xs).
+
+%
+%	var_compare(X)
+%
+/*
+var_compare(Rel, X, Y) :-
+	(var(X),get_attr(X, ordering, id(IdX)) ->
+	    true
+	;
+	    throw(not_globalized)
+	),
+	(var(Y),get_attr(Y, ordering, id(IdY)) ->
+	    true
+	;
+	    throw(not_globalized)
+	),
+	compare(Rel, IdX, IdY).
+*/
+
+var_compare(Rel, X, Y) :-
+	var(X),
+	var(Y),
+	var_compare1(Rel,X,Y).
+
+var_compare1(Rel,X,Y) :-
+	get_attr(X, ordering, id(IdX)),
+	!,
+	var_compare2(Rel,IdX,Y).
+
+var_compare1(_Rel,_X,_Y) :-
+	throw(not_globalized).
+
+var_compare2(Rel,IdX,Y) :-
+	get_attr(Y, ordering, id(IdY)),
+	!,
+	compare(Rel,IdX,IdY).
+
+var_compare2(_Rel,_IdX,_Y) :-
+	throw(not_globalized).
+
+%
+%	lookup_variable_id(Var,Id)
+%
+
+lookup_variable_id(Var,Id) :-
+	var(Var),
+	!,
+	lookup_variable_id1(Var,Id).
+
+lookup_variable_id(Var,_Id) :-
+	write('### ordering.pl lookup_variable_id '),
+	write(Var),
+	write(' Is not a variable. ###'),
+	nl,
+	fail.
+
+lookup_variable_id1(Var,Id) :-
+	get_attr(Var, ordering, id(Id)),
+	!.
+
+lookup_variable_id(Var,_Id) :-
+	write('### ordering.pl lookup_variable_id '),
+	write(Var),
+	write(' Does not have an Id assigned to it. It has not been globalized. ###'),
+	nl,
+	fail.
