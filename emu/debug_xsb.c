@@ -462,36 +462,13 @@ void alt_dis(CTXTdecl)
   fclose(where) ;
 } /* print_cp */
 
-/*======================================================================*/
-/*  The third set of routines should be useful with gdb.  They need to  */
-/*  be revised to get rid of the xsb_dbg stuff, and so that they're     */
-/*  defined whenever we configure with -dbg                             */
-/*======================================================================*/
-
-#if (defined(DEBUG_VERBOSE) || defined(DEBUG_VM))
-
-static int count_producer_subgoals(void)
-{
-  int i;
-  TIFptr tif;
-  VariantSF temp_ptr;
-
-  i = 0;
-
-  SYS_MUTEX_LOCK( MUTEX_TABLE );
-  for ( tif = tif_list.first;  IsNonNULL(tif);  tif = TIF_NextTIF(tif) )
-    for ( temp_ptr = TIF_Subgoals(tif);  IsNonNULL(temp_ptr);
-	  temp_ptr = (VariantSF)subg_next_subgoal(temp_ptr) )
-      i ++;
-  SYS_MUTEX_UNLOCK( MUTEX_TABLE );
-  return(i);
-}
-
 /*----- For table debugging --------------------------------------------*/ 
 
+#ifndef MULTI_THREAD
 static Cell cell_array[500];
+#endif
 
-static void print_term_of_subgoal(FILE *fp, int *i)
+static void print_term_of_subgoal(CTXTdeclc FILE *fp, int *i)
 {
   Cell term;
   int  j, args;
@@ -508,7 +485,7 @@ static void print_term_of_subgoal(FILE *fp, int *i)
     if (args > 0) fprintf(fp, "(");
     for (j = args; j > 0; j--) {
       (*i)--;
-      print_term_of_subgoal(fp, i);
+      print_term_of_subgoal(CTXTc fp, i);
       if (j > 1) fprintf(fp, ",");
     }
     if (args > 0) fprintf(fp, ")");
@@ -525,9 +502,9 @@ static void print_term_of_subgoal(FILE *fp, int *i)
      */
     fprintf(fp, "[");
     (*i)--;
-    print_term_of_subgoal(fp, i);
+    print_term_of_subgoal(CTXTc fp, i);
     (*i)--;
-    print_term_of_subgoal(fp, i);
+    print_term_of_subgoal(CTXTc fp, i);
     fprintf(fp, "]");
     break;
   case XSB_STRING:
@@ -549,7 +526,7 @@ static void print_term_of_subgoal(FILE *fp, int *i)
 
 /*----------------------------------------------------------------------*/
 
-void print_subgoal(FILE *fp, VariantSF subg)
+void print_subgoal(CTXTdeclc FILE *fp, VariantSF subg)
 {
   BTNptr leaf;
   int  i = 0;
@@ -563,7 +540,7 @@ void print_subgoal(FILE *fp, VariantSF subg)
   if (get_arity(psc) > 0) {
     fprintf(fp, "(");
     for (i = i-2; i >= 0 ; i--) {
-      print_term_of_subgoal(fp, &i);
+      print_term_of_subgoal(CTXTc fp, &i);
       if (i > 0) fprintf(fp, ", ");
     }
     fprintf(fp, ")");
@@ -572,7 +549,7 @@ void print_subgoal(FILE *fp, VariantSF subg)
 
 /*----------------------------------------------------------------------*/
 
-static void print_delay_element(FILE *fp, Cell del_elem)
+static void print_delay_element(CTXTdeclc FILE *fp, Cell del_elem)
 {
   Psc  psc = 0;
   CPtr cptr;
@@ -584,7 +561,7 @@ static void print_delay_element(FILE *fp, Cell del_elem)
     fprintf(fp, "%s(", get_name(psc));
     cptr = (CPtr)cs_val(del_elem);
     tmp_cell = cell(cptr + 1);
-    print_subgoal(fp, (VariantSF) addr_val(tmp_cell)); fprintf(fp, ",");
+    print_subgoal(CTXTc fp, (VariantSF) addr_val(tmp_cell)); fprintf(fp, ",");
     tmp_cell = cell(cptr + 2);
     fprintf(fp, "%p", (BTNptr) addr_val(tmp_cell)); fprintf(fp, ",");
     tmp_cell = cell(cptr + 3);
@@ -617,7 +594,7 @@ static void print_delay_element(FILE *fp, Cell del_elem)
 
 /*----------------------------------------------------------------------*/
 
-void print_delay_list(FILE *fp, CPtr dlist)
+void print_delay_list(CTXTdeclc FILE *fp, CPtr dlist)
 {
   CPtr cptr;
   
@@ -628,7 +605,7 @@ void print_delay_list(FILE *fp, CPtr dlist)
       fprintf(fp, "["); cptr = dlist;
       while (islist(cptr)) {
 	cptr = clref_val(cptr);
-	print_delay_element(fp, cell(cptr));
+	print_delay_element(CTXTc fp, cell(cptr));
 	cptr = (CPtr)cell(cptr+1);
 	if (islist(cptr)) fprintf(fp, ", ");
       }
@@ -641,6 +618,31 @@ void print_delay_list(FILE *fp, CPtr dlist)
       xsb_abort("Delay list with unknown type in print_delay_list()");
     }
   }
+}
+
+/*======================================================================*/
+/*  The third set of routines should be useful with gdb.  They need to  */
+/*  be revised to get rid of the xsb_dbg stuff, and so that they're     */
+/*  defined whenever we configure with -dbg                             */
+/*======================================================================*/
+
+#if (defined(DEBUG_VERBOSE) || defined(DEBUG_VM))
+
+static int count_producer_subgoals(void)
+{
+  int i;
+  TIFptr tif;
+  VariantSF temp_ptr;
+
+  i = 0;
+
+  SYS_MUTEX_LOCK( MUTEX_TABLE );
+  for ( tif = tif_list.first;  IsNonNULL(tif);  tif = TIF_NextTIF(tif) )
+    for ( temp_ptr = TIF_Subgoals(tif);  IsNonNULL(temp_ptr);
+	  temp_ptr = (VariantSF)subg_next_subgoal(temp_ptr) )
+      i ++;
+  SYS_MUTEX_UNLOCK( MUTEX_TABLE );
+  return(i);
 }
 
 /*-------------------------------------------------------------------------*/

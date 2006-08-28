@@ -68,6 +68,12 @@ typedef struct subgoal_frame *VariantSF;
 #define LOG_BD                 LOG_LOUD
 #define LOG_COMPLETION         LOG_LOUD
 
+#ifndef MULTI_THREAD
+extern void print_delay_list(FILE *, CPtr);
+#else
+extern void print_delay_list(struct th_context * ,FILE *, CPtr);
+#endif
+
 /* dbg_* macros */
 #ifdef DEBUG_VERBOSE
 /* in error_xsb.c */
@@ -92,11 +98,9 @@ typedef struct subgoal_frame *VariantSF;
    if (LOG_LEVEL <= cur_log_level)                    \
       dsPrint(DS,COMMENT)
 
-
 #define dbg_smPrint(LOG_LEVEL,SM_RECORD,STRING)       \
    if (LOG_LEVEL <= cur_log_level)                    \
       smPrint(SM_RECORD,STRING)
-
 
 /* in tst_utils.c */
 #define dbg_printTriePathType(LOG_LEVEL,FP,TYPE,LEAF) \
@@ -110,7 +114,6 @@ typedef struct subgoal_frame *VariantSF;
       printAnswerTemplate(FP,PAT,S)
 extern void print_completion_stack(void);
 extern void print_subgoal(FILE *, VariantSF);
-extern void print_delay_list(FILE *, CPtr);
 extern void printterm(FILE *, Cell, int);
 #else
 
@@ -118,6 +121,7 @@ extern void printterm(FILE *, Cell, int);
 #define dbg_print_subgoal(L,F,S)
 #define dbg_printterm(L,F,T,D)
 #define dbg_print_completion_stack(L)
+
 #define dbg_print_delay_list(L,F,D)
 #define dbg_dsPrint(L,D,C)
 #define dbg_smPrint(L,SR,ST)

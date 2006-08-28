@@ -324,8 +324,13 @@ unsigned long dec[8] = {0xffffffff,0xffffffff,0xffffffff,0xffffffff,
   if ( !(asynint_val) & !int_val(cell(interrupt_reg)) ) {   	        \
     lpcreg = (pb)get_ep(PSC);						\
   } else {								\
-    if (asynint_val) {							\
-      if (asynint_val & KEYINT_MARK) {					\
+    if (int_val(cell(interrupt_reg))) {					\
+      synint_proc(CTXTc PSC, MYSIG_ATTV);		                \
+      lpcreg = pcreg;							\
+    }									\
+    else {								\
+      if (asynint_val) {						\
+	if (asynint_val & KEYINT_MARK) {				\
         synint_proc(CTXTc PSC, MYSIG_KEYB);	                      	\
         lpcreg = pcreg;							\
         asynint_val = asynint_val & ~KEYINT_MARK;			\
@@ -348,10 +353,8 @@ unsigned long dec[8] = {0xffffffff,0xffffffff,0xffffffff,0xffffffff,
         lpcreg = (byte *)get_ep(PSC);					\
         asynint_val = 0;		         			\
       }									\
-    } else if (int_val(cell(interrupt_reg))) {				\
-        synint_proc(CTXTc PSC, MYSIG_ATTV);		                \
-        lpcreg = pcreg;							\
     }									\
+  }									\
   }									\
 }
 
