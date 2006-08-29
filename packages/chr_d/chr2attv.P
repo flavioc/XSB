@@ -437,7 +437,7 @@ generate_match_constr_body(Off,AttrCnt,A,ArgId,Args,Mod,ArgCode) :-
 	GetAttsCall =.. [GetAttsName,Arg|AllArgAtts],
 	ArgAttr =.. ['attr'|OtherArgs],
 	
-	ArgCode = (is_attv(Arg)
+	ArgCode = (var(Arg)
 		   -> GetAttsCall,
 		      member(ArgAttr,IdAttr)
 		    ; fail).
@@ -454,7 +454,7 @@ generate_match_constr_body(Off,AttrCnt,A,ArgId,Args,Mod,ArgCode) :-
 	
 	generate_match_constr_body(Off,AttrCnt,A,ArgNum,Args,Mod,NextArgCode),
 
-	ArgCode = (is_attv(Arg)
+	ArgCode = (var(Arg)
 		   -> GetAttsCall,
 		      member(ArgAttr,IdAttr)
 		    ; NextArgCode).
@@ -627,15 +627,15 @@ generate_show_atts_clause(Mod,ShowAttsClause) :-
 % Unification handler generation
 %
 
-generate_unification_handler(Declarations,Mod,[Clause]) :-
+generate_unification_handler(Declarations,Mod,Clauses) :-
 	length(Declarations,N),
 	(N = 1
 	 -> Declarations = [F/A],
-	    generate_unification_handler_one(F,A,Mod,Clause)
-	  ; generate_unification_handler_many(Declarations,Mod,Clause)
+	    generate_unification_handler_one(F,A,Mod,Clauses)
+	  ; generate_unification_handler_many(Declarations,Mod,Clauses)
 	).
 
-generate_unification_handler_one(F,A,Mod,Clause) :-
+generate_unification_handler_one(F,A,Mod,[Clause|Clauses]) :-
 	length(VAttrList,A),
 	VAtts =.. [v|VAttrList],
 	Head = attr_unify_hook(VAtts,Term),
@@ -645,18 +645,22 @@ generate_unification_handler_one(F,A,Mod,Clause) :-
 	fmt_write_string(GetAttrName, "get_%s_atts", arg(Mod)),
 	TermGetAttrCall =.. [GetAttrName,Term|TAttrList],
 
+	fmt_write_string(PoseConstrName, "pose_all_%s_constr", arg(Mod)),
+	PoseAttrConstrCall =.. [PoseConstrName,Term,AttrList],
+	PoseVAttrConstrCall =.. [PoseConstrName,Term,VAttrList],
 
 	Body = (var(Term)
 	        -> TermGetAttrCall,
 		   merge_attr_lists(VAttrList,TAttrList,AttrList),
-		   pose_all_constr([F/A],1,Term,AttrList)
-		 ; pose_all_constr([F/A],1,Term,VAttrList)
+		   PoseAttrConstrCall
+		 ; PoseVAttrConstrCall
 		),
 
-	Clause = (Head :- Body).
+	Clause = (Head :- Body),
+	generate_pose_constr_clauses(PoseConstrName,A,[F/A],Clauses).
 
 
-generate_unification_handler_many(Declarations,Mod,Clause) :-
+generate_unification_handler_many(Declarations,Mod,[Clause|Clauses]) :-
 	get_attr_cnt(Declarations,AttrCnt),
 	length(VarAttrList,AttrCnt),
 	VarAtts =.. [v|VarAttrList],
@@ -667,13 +671,18 @@ generate_unification_handler_many(Declarations,Mod,Clause) :-
 	fmt_write_string(GetAttrName, "get_%s_atts", arg(Mod)),
 	TermGetAttrCall =.. [GetAttrName,Term|TermAttrList],
 
+	fmt_write_string(PoseConstrName, "pose_all_%s_constr", arg(Mod)),
+	PoseAttrConstrCall =.. [PoseConstrName,Term,AttrList],
+	PoseVAttrConstrCall =.. [PoseConstrName,Term,VarAttrList],
+	
 	Body = (var(Term)
 	        -> TermGetAttrCall,
 		   merge_attr_lists(VarAttrList,TermAttrList,AttrList),
-		   pose_all_constr(Declarations,1,Term,AttrList)
-	         ; pose_all_constr(Declarations,1,Term,VarAttrList)
+		   PoseAttrConstrCall
+		 ; PoseVAttrConstrCall
 	       ),
-	Clause = (Head :- Body).
+	Clause = (Head :- Body),
+	generate_pose_constr_clauses(PoseConstrName,AttrCnt,Declarations,Clauses).
 
 
 
@@ -682,6 +691,65 @@ get_attr_cnt([_F/A|Ds],N) :-
 	get_attr_cnt(Ds,N1),
 	N is N1+A.
 
+
+generate_pose_constr_clauses(PoseConstrName,AttrCnt,Declarations,[Prelude|Clauses]) :-
+	generate_pose_constr_prelude(PoseConstrName,AttrCnt,Declarations,Prelude),
+	generate_pose_constr(Declarations,Clauses).
+
+generate_pose_constr_prelude(PoseConstrName,AttrCnt,Declarations,Prelude) :-
+	length(AttrList,AttrCnt),
+	Head =.. [PoseConstrName,Term,AttrList],
+	generate_pose_constr_prelude_body(Declarations,Term,AttrList,BodyClauses),
+	list2and(BodyClauses,Body),
+	Prelude = (Head :- Body).
+
+generate_pose_constr_prelude_body([],_,_,[]).
+generate_pose_constr_prelude_body([F/A|Fs],Term,AttrList,Clauses) :-
+	generate_pose_constr_prelude_body_1(F/A,Term,AttrList,0,FsAttrList,FClauses),
+	generate_pose_constr_prelude_body(Fs,Term,FsAttrList,FsClauses),
+	append(FClauses,FsClauses,Clauses).
+
+generate_pose_constr_prelude_body_1(_/A,_,AttrList,A,AttrList,[]).
+generate_pose_constr_prelude_body_1(F/A,Term,[Attr|Atts],I,AttrList,[Call|Calls]) :-
+	I < A,
+	Pos is I+1,
+	fmt_write_string(CallName, "pose_constr_%s_%d", arg(F,Pos)),
+	Call =.. [CallName,Term,Attr],
+	generate_pose_constr_prelude_body_1(F/A,Term,Atts,Pos,AttrList,Calls).
+
+
+generate_pose_constr([],[]).
+generate_pose_constr([F/A|Fs],Clauses) :-
+	generate_pose_constr_1(F/A,FClauses),
+	generate_pose_constr(Fs,FsClauses),
+	append(FClauses,FsClauses,Clauses).
+
+generate_pose_constr_1(F/A,Clauses) :-
+	generate_pose_constr_1(F/A,0,Clauses).
+
+generate_pose_constr_1(_/A,A,[]).
+generate_pose_constr_1(F/A,I,[BaseCase,RecCase|Clauses]) :-
+	I < A,
+	Pos is I+1,
+	fmt_write_string(Name, "pose_constr_%s_%d", arg(F,Pos)),
+
+	BaseCase =.. [Name,_,[]],
+
+	A1 is A-1,
+	length(CompList,A1),
+	CompTerm =.. [attr|CompList],
+	RecHead =.. [Name,Term,[CompTerm|CompTs]],
+
+	fmt_write_string(ConstrCallName, "%s_1", arg(F)),
+	delete_ith(Pos,AttrList,Term,CompList),
+	ConstrCall =.. [ConstrCallName|AttrList],
+	RecCall =.. [Name,Term,CompTs],
+	RecCase = (RecHead :-
+		      ConstrCall,
+		      RecCall
+		  ),
+	
+	generate_pose_constr_1(F/A,Pos,Clauses).
 
 
 %
@@ -701,14 +769,15 @@ constraints_code([C|Cs],Mod,Constrs,Rules,L,T) :-
 constraint_code(C,Mod,Constrs,Rules,L,T) :-
 	constraint_prelude(C,Constrs,Prelude),
 	L = [Prelude|L1],
-	rule_clauses(Rules,Mod,C,1,N,Constrs,L1,L2),
+	rule_clauses(Rules,Mod,C,false,1,N,Constrs,L1,L2),
 	(N = 1
 	 -> (member(C,Constrs)
 	     -> build_add_constr(C,N,L2,T)
 	      ; build_fail(C,N,L2,T)
 	    )
 	  ; T = L2
-	).	
+	),
+	true.
 
 
 constraint_prelude(F/A,Constrs,Clause) :-
@@ -752,24 +821,24 @@ build_fail(F/A,N,L,T) :-
 	L = [(Head :- fail)|T].
 
 
-	
-rule_clauses([],_Mod,_Constr,R,R,_Constrs,L,L).
-rule_clauses([R|Rs],Mod,Constr,RI,RN,Constrs,L,T) :-
+rule_clauses([],_Mod,_Constr,_,R,R,_Constrs,L,L).
+rule_clauses([R|Rs],Mod,Constr,AddedConstr,RI,RN,Constrs,L,T) :-
 	(\+ more_rules_for_constr(Constr,Rs,Constrs)
-	 -> rule_code(R,true,Constr,RI,RN,Constrs,Mod,L,T)
-	  ; rule_code(R,false,Constr,RI,RJ,Constrs,Mod,L,T1),
-	    rule_clauses(Rs,Mod,Constr,RJ,RN,Constrs,T1,T)
+	 -> rule_code(R,true,Constr,AddedConstr,_,RI,RN,Constrs,Mod,L,T)
+	  ; rule_code(R,false,Constr,AddedConstr,AddedConstrJ,RI,RJ,Constrs,Mod,L,T1),
+	    rule_clauses(Rs,Mod,Constr,AddedConstrJ,RJ,RN,Constrs,T1,T)
 	).
 
-rule_code(R,LastRule,F/A,RI,RN,Constrs,Mod,L,T) :-
+rule_code(R,LastRule,F/A,AddedI,AddedN,RI,RN,Constrs,Mod,L,T) :-
 	R = pragma(rule(Head1,Head2,_Guard,_Body),IDs,_Pragmas),
 	IDs = (IDs1,IDs2),
-	head1code(Head1,LastRule,[],IDs1,[],R,F/A,RI,RJ,Constrs,L,L1),
-	head2code(Head2,LastRule,[],IDs2,[],R,F/A,RJ,RN,Constrs,Mod,L1,T).	    
+	head1code(Head1,LastRule,AddedI,[],IDs1,[],R,F/A,RI,RJ,Constrs,L,L1),
+	head2code(Head2,LastRule,AddedJ,[],IDs2,[],R,F/A,RJ,RN,Constrs,Mod,L1,T),
+	logic_or(AddedI,AddedJ,AddedN).
 	    
 
-head1code([],_,_,_,_,_,_,I,I,_,L,L).
-head1code([H|Hs],LastRule,RestHs,[ID|IDs],RestIDs,R,F/A,I,N,Constrs,L,T) :-
+head1code([],_,_,_,_,_,_,_,I,I,_,L,L).
+head1code([H|Hs],LastRule,AddedF,RestHs,[ID|IDs],RestIDs,R,F/A,I,N,Constrs,L,T) :-
 	R = pragma(Rule,(_ID1s,ID2s),Pragmas),
 	Rule = rule(_Head1,Head2,_Guard,_Body),
 	(functor(H,F,A),
@@ -786,24 +855,24 @@ head1code([H|Hs],LastRule,RestHs,[ID|IDs],RestIDs,R,F/A,I,N,Constrs,L,T) :-
 	     -> LastFHead = false
 	      ; LastFHead = true
 	    ),
-	    and(LastRule,LastFHead,LastFOccurrence),
-	    head1code_1(H,LastFOccurrence,OtherRmHs,RmHsIDs,Rule,F/A,I,J,Constrs,L,L1)
+	    logic_and(LastRule,LastFHead,LastFOccurrence),
+	    head1code_1(H,LastFOccurrence,AddedF,OtherRmHs,RmHsIDs,Rule,F/A,I,J,Constrs,L,L1)
 	  ; J = I, L1 = L
 	),
-	head1code(Hs,LastRule,[H|RestHs],IDs,[ID|RestIDs],R,F/A,J,N,Constrs,L1,T).
+	head1code(Hs,LastRule,AddedF,[H|RestHs],IDs,[ID|RestIDs],R,F/A,J,N,Constrs,L1,T).
 
 
-head1code_1(H,LastRule,OtherHs,_OtherIDs,Rule,F/A,I,N,Constrs,L,T) :-
+head1code_1(H,LastRule,AddedF,OtherHs,_OtherIDs,Rule,F/A,I,N,Constrs,L,T) :-
 	Rule = rule(_Head1,Head2,_Guard,_Body),
 	(Head2 == []
-	 -> simplification_code(H,LastRule,OtherHs,Rule,F/A,I,N,Constrs,L,T)
-	  ; simpagation1_code(H,LastRule,OtherHs,Rule,F/A,I,N,Constrs,L,T)
+	 -> simplification_code(H,LastRule,AddedF,OtherHs,Rule,F/A,I,N,Constrs,L,T)
+	  ; simpagation1_code(H,LastRule,AddedF,OtherHs,Rule,F/A,I,N,Constrs,L,T)
 	).
 
 
 
-head2code([],_,_,[],_,_,_,I,I,_,_,L,L).
-head2code([H|Hs],LastRule,RestHs,[ID|IDs],RestIDs,R,F/A,RI,RN,Constrs,Mod,L,T) :-
+head2code([],_,_,_,[],_,_,_,I,I,_,_,L,L).
+head2code([H|Hs],LastRule,AddedF,RestHs,[ID|IDs],RestIDs,R,F/A,RI,RN,Constrs,Mod,L,T) :-
 	R = pragma(Rule,(ID1s,_ID2s),Pragmas),	
 	Rule = rule(Head1,_Head2,_Guard,_Body),
 	(functor(H,F,A),
@@ -819,13 +888,15 @@ head2code([H|Hs],LastRule,RestHs,[ID|IDs],RestIDs,R,F/A,RI,RN,Constrs,Mod,L,T) :
 	     -> LastFHead = false
 	      ; LastFHead = true
 	    ),
-	    and(LastRule,LastFHead,LastFOccurrence),
+	    AddedH = true,
+	    logic_and(LastRule,LastFHead,LastFOccurrence),
 	    append(Hs,RestHs,OtherKeepHs),
 	    append(IDs,RestIDs,KeepHsIDs),
 	    head2code_1(H,LastFOccurrence,OtherKeepHs,KeepHsIDs,Rule,F/A,RI,RJ,Constrs,Mod,L,L1)
-	  ; RJ = RI, L1 = L
+	  ; AddedH = false, RJ = RI, L1 = L
 	),
-	head2code(Hs,LastRule,[H|RestHs],IDs,[ID|RestIDs],R,F/A,RJ,RN,Constrs,Mod,L1,T).
+	head2code(Hs,LastRule,AddedHs,[H|RestHs],IDs,[ID|RestIDs],R,F/A,RJ,RN,Constrs,Mod,L1,T),
+	logic_or(AddedH,AddedHs,AddedF).
 
 
 head2code_1(H,LastRule,OtherHs,_OtherIDs,Rule,F/A,RI,RN,Constrs,Mod,L,T) :-
@@ -838,7 +909,7 @@ head2code_1(H,LastRule,OtherHs,_OtherIDs,Rule,F/A,RI,RN,Constrs,Mod,L,T) :-
 	
 % same as simpagation1 except for appending Head2 to OtherHs for matching/removal
 % Head2 is empty here, so the append would be trivial and is not applied
-simplification_code(Head,LastRule,OtherHs,R,F/A,I,N,Constrs,L,T) :-
+simplification_code(Head,LastRule,AddedF,OtherHs,R,F/A,I,N,Constrs,L,T) :-
 	Head =.. [F|Args],
 	build_head(F/A,I,HeadVs,RHead),
 	N is I+1,
@@ -866,7 +937,12 @@ simplification_code(Head,LastRule,OtherHs,R,F/A,I,N,Constrs,L,T) :-
 	merge_heads_guards(HeadVs,HeadsCM,BoundParGuardsL,HeadsGuards),
 	list2and(HeadsGuards,HeadGuardCalls),
 
-	build_constr_remove([HeadCp|OtherHsCp],Constrs,HsRemove),
+	(AddedF = true
+	 -> RmHs = [HeadCp|OtherHsCp]
+	  ; RmHs = OtherHsCp
+	),
+	build_constr_remove(RmHs,Constrs,HsRemove),
+%	build_constr_remove([HeadCp|OtherHsCp],Constrs,HsRemove),
 
         RCode = (RHead :-
 		      (FirstMatching,
@@ -886,7 +962,7 @@ simplification_code(Head,LastRule,OtherHs,R,F/A,I,N,Constrs,L,T) :-
 %%
 
 % same as simplification
-simpagation1_code(Head,LastRule,OtherHs,R,F/A,I,N,Constrs,L,T) :-
+simpagation1_code(Head,LastRule,AddedF,OtherHs,R,F/A,I,N,Constrs,L,T) :-
 	Head =.. [F|Args],
 	build_head(F/A,I,HeadVs,RHead),	
 	N is I+1,
@@ -922,7 +998,12 @@ simpagation1_code(Head,LastRule,OtherHs,R,F/A,I,N,Constrs,L,T) :-
 %	append(FreeParRmHs,BoundParsRmHs,OrderedRmHs),
 %	build_constr_remove(OrderedRmHs,Constrs,RemoveCode),
 
-	build_constr_remove([HeadCp|OtherHsCp],Constrs,RemoveCode),
+	(AddedF = true
+	 -> RmHs = [HeadCp|OtherHsCp]
+	  ; RmHs = OtherHsCp
+	),
+	build_constr_remove(RmHs,Constrs,RemoveCode),
+%	build_constr_remove([HeadCp|OtherHsCp],Constrs,RemoveCode),
 
 	RCode = (RHead :-
 		    (FirstMatching,
@@ -945,7 +1026,9 @@ simpagation2_code(Head,LastRule,KeepHeads,R,F/A,I,N,Constrs,Mod,L,T) :-
 	N is I+1,
 	
 	pairup(Args,HeadVs,HeadPairs),
-	intermediate_head_arg_matches(HeadPairs,[],FirstMatching,VarDict),
+%	intermediate_head_arg_matches(HeadPairs,[],FirstMatching,VarDict),
+	intermediate_head_arg_matches_(HeadPairs,[],FirstMatchList,VarDict),
+	list2and(FirstMatchList,FirstMatching),
 
 	R = rule(RmHeads,_KeepHeads,Guard,Body),
 	
@@ -954,6 +1037,31 @@ simpagation2_code(Head,LastRule,KeepHeads,R,F/A,I,N,Constrs,Mod,L,T) :-
 
 	guards_join_order(HeadVs,GuardCp,FreeParsGuards,BoundParGuards),
 
+	append(KeepHeadsCp,RmHeadsCp,AllHeadsCp),
+	heads_join_order(HeadVs,AllHeadsCp,FreeHeads,FreeBoundHeads,BoundHeads),
+	build_constr_check_match(HeadVs,Constrs,FreeHeads,FreeHeadsCheck),
+
+	(FreeBoundHeads = [FreeBoundHead|FreeBoundHs]
+	 -> (var_member(FreeBoundHead,RmHeadsCp)
+	     -> RecSearch = one
+	      ; RecSearch = all),
+	    GetNthAttrHeads = [FreeBoundHead],
+	    append(FreeBoundHs,BoundHeads,MatchHeads)
+	  ; (BoundHeads \= []
+	     -> writeln('Error -- rule is not direct-indexed:'),
+		writeln(R),
+		abort
+	      ; (BoundParGuards = true
+		 -> GetNthAttrHeads = []
+		  ; writeln('Error -- rule is not direct-indexed:'),
+		    writeln(R),
+		    abort
+		)
+	    )
+	),
+	
+
+/*	
 	heads_join_order(HeadVs,RmHeadsCp,FreeRmHeads,FreeBoundRmHeads,BoundRmHeads),
 	(FreeRmHeads \= [] -> RecSearch = one ; true),
 	heads_join_order(HeadVs,KeepHeadsCp,FreeKeepHeads,FreeBoundKeepHeads,BoundKeepHeads),
@@ -968,7 +1076,7 @@ simpagation2_code(Head,LastRule,KeepHeads,R,F/A,I,N,Constrs,Mod,L,T) :-
 	    append_lists([FreeBoundRmHs,FreeBoundKeepHeads,BoundHeads],
 			 FreeBoundHeads)
 	  ; (FreeBoundKeepHeads = [FreeBoundKeepH|FreeBoundKeepHs]
-	     -> RecSearch = all,
+	     -> (var(RecSearch) -> RecSearch = all ; true),
 		GetNthAttrHeads = [FreeBoundKeepH],
 		MatchRmHeads = BoundRmHeads,
 		append_lists([FreeBoundKeepHs,BoundKeepHeads],MatchKeepHeads)
@@ -985,6 +1093,8 @@ simpagation2_code(Head,LastRule,KeepHeads,R,F/A,I,N,Constrs,Mod,L,T) :-
 		)
 	    )
 	),
+*/
+	
 	build_head_arg_passive_head_match(HeadVs,GetNthAttrHeads,AttrVarMatches),
 	build_get_nth_attr_clauses(AttrVarMatches,Constrs,Mod,
 		          GetNthAttrClauseList,NthAtts,AttrLists,AttrChecks),
@@ -1028,6 +1138,7 @@ simpagation2_code(Head,LastRule,KeepHeads,R,F/A,I,N,Constrs,Mod,L,T) :-
 	    RCode = (RHead :-
 		       (FirstMatching,
 			FreeParsGuards,
+			FreeHeadsCheck,
 			GetNthAttrClauses
 		        -> AddCall,
 			   RecursiveCall
@@ -1037,11 +1148,19 @@ simpagation2_code(Head,LastRule,KeepHeads,R,F/A,I,N,Constrs,Mod,L,T) :-
 	    L = [RCode|L1],
 	    
 	    (RecSearch = one
-	     -> simpagation_worker_one(LastRule,F,HeadVs,I,1,A,AttrLists,Constrs,HeadCp,
-			      FreeBoundHeads,RmHeadsCp,BoundParGuards,BodyCp,L1,T)
-	      ; simpagation_worker_all(LastRule,F,HeadVs,I,1,A,AttrLists,AttrChecks,Constrs,Mod,
-					       HeadCp,MatchRmHeads,MatchKeepHeads,RmHeadsCp,
-					       BoundParGuards,BodyCp,L1,T)
+%	     -> simpagation_worker_one(LastRule,F,HeadVs,I,1,A,AttrLists,Constrs,HeadCp,
+%			      FreeBoundHeads,RmHeadsCp,BoundParGuards,BodyCp,L1,T)
+%	      ; simpagation_worker_all(LastRule,F,HeadVs,I,1,A,AttrLists,AttrChecks,Constrs,Mod,
+%					       HeadCp,MatchRmHeads,MatchKeepHeads,RmHeadsCp,
+%					       BoundParGuards,BodyCp,L1,T)
+	     -> simpagation_worker_one(LastRule,F,HeadVs,I,1,A,AttrLists,Constrs,HeadCp,FirstMatchList,
+				       FreeBoundHeads,RmHeadsCp,BoundParGuards,BodyCp,L1,T)
+%	      ; simpagation_worker_all(LastRule,F,HeadVs,I,1,A,AttrLists,AttrChecks,Constrs,Mod,
+%					       HeadCp,FirstMatchList,MatchRmHeads,MatchKeepHeads,RmHeadsCp,
+%					       BoundParGuards,BodyCp,L1,T)
+	      ; simpagation_worker_all(LastRule,F,HeadVs,I,1,A,AttrLists,AttrChecks,Constrs,Mod,HeadCp,
+				       FirstMatchList,MatchHeads,RmHeadsCp,BoundParGuards,BodyCp,L1,T)
+					       
 	    )
 	).
 
@@ -1049,7 +1168,7 @@ simpagation2_code(Head,LastRule,KeepHeads,R,F/A,I,N,Constrs,Mod,L,T) :-
 
 %% No more constraints to match -- call rule body
 simpagation_worker_one(LastRule,HeadLabel,HeadArgs,I,N,A,[[Attr|Atts]|_],Constrs,Head,
-		                             MatchHeads,RmHeads,Guard,Body,L,T) :-
+		                             FirstMatchList,MatchHeads,RmHeads,Guard,Body,L,T) :-
 	
 	fmt_write_string(HeadName,"%s_%d_%d", args(HeadLabel,I,N)),
 
@@ -1075,7 +1194,10 @@ simpagation_worker_one(LastRule,HeadLabel,HeadArgs,I,N,A,[[Attr|Atts]|_],Constrs
 	append(RecursiveHeadVs,AttrVs,AllVs),
 
 	pairup(AllArgs,AllVs,HeadPairs),	
-	intermediate_head_arg_matches(HeadPairs,[],FirstMatching,VarDict),
+%	intermediate_head_arg_matches(HeadPairs,[],FirstMatching,VarDict),
+	intermediate_head_arg_matches_(HeadPairs,[],MatchList,VarDict),
+	append(FirstMatchList,MatchList,AllMatchList),
+	list2and(AllMatchList,FirstMatching),
 
 	list_copies([Head,MatchHeads,RmHeads,Atts,Guard,Body],
 		    VarDict,
@@ -1118,13 +1240,19 @@ simpagation_worker_one(LastRule,HeadLabel,HeadArgs,I,N,A,[[Attr|Atts]|_],Constrs
 
 
 %% More constraints to match -- generate another level of recursion
+%simpagation_worker_all(LastRule,HeadLabel,HeadArgs,I,N,A,[[Attr|Atts]|_AttrRest],
+%                           [_AttrCheck|_AttrChecks],Constrs,Mod,Head,FirstMatchList,MatchRmHs,
+%			   MatchKeepHs,RemoveHs,Guard,Body,L,T) :-
 simpagation_worker_all(LastRule,HeadLabel,HeadArgs,I,N,A,[[Attr|Atts]|_AttrRest],
-                           [_AttrCheck|_AttrChecks],Constrs,Mod,Head,MatchRmHs,
-			   MatchKeepHs,RemoveHs,Guard,Body,L,T) :-
+                           [_AttrCheck|_AttrChecks],Constrs,Mod,Head,FirstMatchList,MatchHs,
+			   RemoveHs,Guard,Body,L,T) :-
 	
 	fmt_write_string(HeadName,"%s_%d_%d", args(HeadLabel,I,N)),
 
-	length(BaseHeadVs,A),
+	length(HeadArgs,BA),
+	
+%	length(BaseHeadVs,A),
+	length(BaseHeadVs,BA),
 	append(BaseHeadVs,[[]],BaseArgs),
 	BaseCaseHead =.. [HeadName|BaseArgs],
 	(LastRule = false,
@@ -1141,13 +1269,48 @@ simpagation_worker_all(LastRule,HeadLabel,HeadArgs,I,N,A,[[Attr|Atts]|_AttrRest]
 
 	append(HeadArgs,AttrArgs,AllArgs),
 
-	length(RecursiveHeadVs,A),
+%	length(RecursiveHeadVs,A),
+	length(RecursiveHeadVs,BA),
 	length(AttrVs,AA),
 	append(RecursiveHeadVs,AttrVs,AllVs),
 
 	pairup(AllArgs,AllVs,HeadPairs),	
-	intermediate_head_arg_matches(HeadPairs,[],FirstMatching,VarDict),
+%	intermediate_head_arg_matches(HeadPairs,[],FirstMatching,VarDict),
+	intermediate_head_arg_matches_(HeadPairs,[],MatchList,VarDict),
+	append(FirstMatchList,MatchList,AllMatchList),
+	list2and(AllMatchList,FirstMatching),
 
+
+
+	list_copies([Head,MatchHs,RemoveHs,Atts,Guard,Body],
+		    VarDict,
+	            [HeadCp,MatchHsCp,RemoveHsCp,AttsCp,GuardCp,BodyCp]),
+
+	AttrCp =.. [attr|AttrVs],
+
+	guards_join_order(AllVs,GuardCp,FreeParsGuards,BoundParGuards),
+	
+	heads_join_order(AllVs,MatchHsCp,FreeHeads,FreeBoundHeads,BoundHeads),
+	build_constr_check_match(AllVs,Constrs,FreeHeads,FreeHeadsCheck),
+
+	(FreeBoundHeads = [FreeBoundHead|FreeBoundHs]
+	 -> (var_member(FreeBoundHead,RemoveHsCp)
+	     -> RecSearch = one
+	      ; RecSearch = all),
+	    GetNthAttrHeads = [FreeBoundHead],
+	    append(FreeBoundHs,BoundHeads,MatchHeads)
+	  ; (BoundHeads \= []
+	     -> writeln('Error -- rule is not direct-indexed:'),
+		abort
+	      ; (BoundParGuards = true
+		 -> GetNthAttrHeads = []
+		  ; writeln('Error -- rule is not direct-indexed:'),
+		    abort
+		)
+	    )
+	),
+	
+/*	
 	list_copies([Head,MatchRmHs,MatchKeepHs,RemoveHs,Atts,Guard,Body],
 		    VarDict,
 	            [HeadCp,MatchRmHsCp,MatchKeepHsCp,RemoveHsCp,AttsCp,GuardCp,BodyCp]),
@@ -1170,7 +1333,7 @@ simpagation_worker_all(LastRule,HeadLabel,HeadArgs,I,N,A,[[Attr|Atts]|_AttrRest]
 	    append_lists([FreeBoundRmHs,FreeBoundKeepHeads,BoundHeads],
 			 FreeBoundHeads)
 	  ; (FreeBoundKeepHeads = [FreeBoundKeepH|FreeBoundKeepHs]
-	     -> RecSearch = all,
+	     -> (var(RecSearch) -> RecSearch = all ; true),
 		GetNthAttrHeads = [FreeBoundKeepH],
 		MatchRmHeads = BoundRmHeads,
 		append_lists([FreeBoundKeepHs,BoundKeepHeads],MatchKeepHeads)
@@ -1187,6 +1350,8 @@ simpagation_worker_all(LastRule,HeadLabel,HeadArgs,I,N,A,[[Attr|Atts]|_AttrRest]
 		)
 	    )
 	),
+*/
+
 	build_head_arg_passive_head_match(AllVs,GetNthAttrHeads,AttrVarMatches),
 	build_get_nth_attr_clauses(AttrVarMatches,Constrs,Mod,
 		          GetNthAttrClauseList,NthAtts,AttrLists,AttrChecks),
@@ -1213,7 +1378,7 @@ simpagation_worker_all(LastRule,HeadLabel,HeadArgs,I,N,A,[[Attr|Atts]|_AttrRest]
 				),
 				RecursiveNextHead
 			    ),
-	    L = [BaseCase,RecursiveCase]
+	    L = [BaseCase,RecursiveCase|T]
 	
 	  ; NextN is N+1,
 	    fmt_write_string(NextCaseHeadName,"%s_%d_%d", args(HeadLabel,I,NextN)),
@@ -1223,6 +1388,7 @@ simpagation_worker_all(LastRule,HeadLabel,HeadArgs,I,N,A,[[Attr|Atts]|_AttrRest]
 	    RecursiveCase = (RecursiveHead :-
 		               (FirstMatching,
 				FreeParsGuards,
+				FreeHeadsCheck,
 			        GetNthAttrClauses
 		                -> NextCaseHead
 		                 ; true
@@ -1235,10 +1401,12 @@ simpagation_worker_all(LastRule,HeadLabel,HeadArgs,I,N,A,[[Attr|Atts]|_AttrRest]
 	    length(NextHeadArgs,NextA),
 	    (RecSearch = one
 	     -> simpagation_worker_one(LastRule,HeadLabel,NextHeadArgs,I,NextN,NextA,AttrLists,Constrs,HeadCp,
-			      FreeBoundHeads,RemoveHsCp,BoundParGuards,BodyCp,L1,T)
+			      AllMatchList,FreeBoundHeads,RemoveHsCp,BoundParGuards,BodyCp,L1,T)
+%	    ; simpagation_worker_all(LastRule,HeadLabel,AllVs,I,NextN,A,AttrLists,AttrChecks,Constrs,Mod,
+%					       HeadCp,AllMatchList,MatchRmHeads,MatchKeepHeads,RemoveHsCp,
+%					       BoundParGuards,BodyCp,L1,T)
 	    ; simpagation_worker_all(LastRule,HeadLabel,AllVs,I,NextN,A,AttrLists,AttrChecks,Constrs,Mod,
-					       HeadCp,MatchRmHeads,MatchKeepHeads,RemoveHsCp,
-					       BoundParGuards,BodyCp,L1,T)
+				     HeadCp,AllMatchList,MatchHeads,RemoveHsCp,BoundParGuards,BodyCp,L1,T)
 	    )
 	).
 
@@ -1311,7 +1479,8 @@ propagation_mutli_head(Head,LastRule,OtherHs,R,F/A,I,N,Constrs,Mod,L,T) :-
 	N is I+1,
 	
 	pairup(Args,HeadVs,HeadPairs),
-	intermediate_head_arg_matches(HeadPairs,[],FirstMatching,VarDict),
+	intermediate_head_arg_matches_(HeadPairs,[],FirstMatchList,VarDict),
+	list2and(FirstMatchList,FirstMatching),
 
 	R = rule(_Head1,_Head2,Guard,Body),
 	list_copies([OtherHs,Guard,Body],VarDict,
@@ -1331,30 +1500,33 @@ propagation_mutli_head(Head,LastRule,OtherHs,R,F/A,I,N,Constrs,Mod,L,T) :-
 	    AddCall =.. [AddName|HeadVs]
 	  ; AddCall = true
 	),
+
+	(AttrLists = []
+	 -> ThenCall = BodyCp
+	  ; str_cat(RHeadLabel,'_1',RecursiveCallLabel),
+	    append(HeadVs,NthAtts,RecursiveArgs),
+	    ThenCall =.. [RecursiveCallLabel|RecursiveArgs]
+	),
 	
         (LastRule = true
 	 -> ElseCall = AddCall	    
 	  ; build_head(F/A,N,HeadVs,ElseCall)
 	),
 
-	str_cat(RHeadLabel,'_1',RecursiveCallLabel),
-	append(HeadVs,NthAtts,RecursiveArgs),
-	RecursiveCall =.. [RecursiveCallLabel|RecursiveArgs],
-	
 	RCode = (RHead :-
 		    (FirstMatching,
 		     FreeParsGuards,
 		     CheckAllFreeHsClauses,
 		     GetNthAttrClauses
 		     -> AddCall,
-			RecursiveCall
+			ThenCall
 		      ; ElseCall
 		    )
 		),
 
 	L = [RCode|L1],
-	propagation_recursive_code(F,I,LastRule,RHeadLabel,HeadVs,A,AttrLists,
-			Constrs,Mod,BoundParsHs,BoundParGuards,BodyCp,L1,T).
+	propagation_recursive_code(F,I,LastRule,RHeadLabel,HeadVs,FirstMatchList,A,AttrLists,
+				   Constrs,Mod,BoundParsHs,BoundParGuards,BodyCp,L1,T).
 
 
 
@@ -1365,16 +1537,16 @@ propagation_mutli_head(Head,LastRule,OtherHs,R,F/A,I,N,Constrs,Mod,L,T) :-
  * (all get_attr calls can be, and are, done in the top-level recursive clause)
  */
 
-propagation_recursive_code(F,OccurNum,LastRule,HeadLb,HeadVs,A,AttrLists,
-	                 Constrs,Mod,BoundParsHs,Guard,Body,L,T) :-
-	propagation_recursive_code(F,OccurNum,LastRule,HeadLb,HeadVs,1,A,
-			AttrLists,Constrs,Mod,BoundParsHs,Guard,Body,L,T).
+propagation_recursive_code(_,_,_,_,_,_,_,[],_,_,_,_,_,L,L) :- !.
 
-propagation_recursive_code(_,_,_,_,_,_,[],_,_,_,_,_,L,L).
+propagation_recursive_code(F,OccurNum,LastRule,HeadLb,HeadVs,FirstMatchList,A,
+			   AttrLists,Constrs,Mod,BoundParsHs,Guard,Body,L,T) :-
+	propagation_recursive_code(F,OccurNum,LastRule,HeadLb,HeadVs,FirstMatchList,1,
+				   A,AttrLists,Constrs,Mod,BoundParsHs,Guard,Body,L,T).
 
 
 %% No OtherHs ( == constraints to be matched) left -- call body
-propagation_recursive_code(F,OccurNum,LastRule,HeadLabel,HeadArgs,N,A,
+propagation_recursive_code(F,OccurNum,LastRule,HeadLabel,HeadArgs,FirstMatchList,N,A,
 			 [[Attr|Atts]],_Constrs,_Mod,[],Guard,Body,L,T) :-
 	fmt_write_string(HeadName,"%s_%d", args(HeadLabel,N)),
 
@@ -1400,7 +1572,9 @@ propagation_recursive_code(F,OccurNum,LastRule,HeadLabel,HeadArgs,N,A,
 	append(RecursiveHeadVs,AttrVs,AllVs),
 
 	pairup(AllArgs,AllVs,HeadPairs),
-	intermediate_head_arg_matches(HeadPairs,[],FirstMatching,VarDict),
+	intermediate_head_arg_matches_(HeadPairs,[],MatchList,VarDict),
+	append(FirstMatchList,MatchList,AllMatchList),
+	list2and(AllMatchList,FirstMatching),
 
 	list_copies([Atts,Guard,Body],VarDict,[AttsCp,GuardCp,BodyCp]),
 
@@ -1424,8 +1598,8 @@ propagation_recursive_code(F,OccurNum,LastRule,HeadLabel,HeadArgs,N,A,
 
 
 %% More constraints to match -- generate another level of recursion
-propagation_recursive_code(F,OccurNum,LastRule,HeadLabel,HeadArgs,N,A,
-		      [[Attr|Atts]],Constrs,Mod,OtherHs,Guard,Body,L,T) :-
+propagation_recursive_code(F,OccurNum,LastRule,HeadLabel,HeadArgs,FirstMatchList,
+			   N,A,[[Attr|Atts]],Constrs,Mod,OtherHs,Guard,Body,L,T) :-
 	fmt_write_string(HeadName,"%s_%d", args(HeadLabel,N)),
 
 	length(BaseHeadVs,A),
@@ -1450,7 +1624,9 @@ propagation_recursive_code(F,OccurNum,LastRule,HeadLabel,HeadArgs,N,A,
 	append(RecursiveHeadVs,AttrVs,AllVs),
 
 	pairup(AllArgs,AllVs,HeadPairs),
-	intermediate_head_arg_matches(HeadPairs,[],FirstMatching,VarDict),
+	intermediate_head_arg_matches_(HeadPairs,[],MatchList,VarDict),
+	append(FirstMatchList,MatchList,AllMatchList),
+	list2and(AllMatchList,FirstMatching),
 
 	list_copies([OtherHs,Atts,Guard,Body],VarDict,
 		    [OtherHsCp,AttsCp,GuardCp,BodyCp]),
@@ -1494,15 +1670,15 @@ propagation_recursive_code(F,OccurNum,LastRule,HeadLabel,HeadArgs,N,A,
 	append(RecursiveHeadVs,AttrVs,HeadArgs1),
 	A1 is A+AA,
 	
-	propagation_recursive_code(F,OccurNum,LastRule,HeadLabel,HeadArgs1,NextN,A1,
-		        AttrLists,Constrs,Mod,BoundParsHs,BoundParGuards,BodyCp,L1,T).
+	propagation_recursive_code(F,OccurNum,LastRule,HeadLabel,HeadArgs1,AllMatchList,NextN,A1,
+				   AttrLists,Constrs,Mod,BoundParsHs,BoundParGuards,BodyCp,L1,T).
 
 
 
 %% this may need two cases, for OtherHs empty and non-empty,
 %% similarly as the previous one
-propagation_recursive_code(F,OccurNum,LastRule,HeadLabel,HeadArgs,N,A,
-	     [[Attr|Atts]|AttrRest],Constrs,Mod,OtherHs,Guard,Body,L,T) :-
+propagation_recursive_code(F,OccurNum,LastRule,HeadLabel,HeadArgs,FirstMatchList,N,A,
+			   [[Attr|Atts]|AttrRest],Constrs,Mod,OtherHs,Guard,Body,L,T) :-
 	AttrRest \= [],
 	fmt_write_string(HeadName,"%s_%d", args(HeadLabel,N)),
 
@@ -1530,7 +1706,9 @@ propagation_recursive_code(F,OccurNum,LastRule,HeadLabel,HeadArgs,N,A,
 	append(RecursiveHeadVs,AttrVs,AllVs),
 
 	pairup(AllArgs,AllVs,HeadPairs),
-	intermediate_head_arg_matches(HeadPairs,[],FirstMatching,VarDict),
+	intermediate_head_arg_matches_(HeadPairs,[],MatchList,VarDict),
+	append(FirstMatchList,MatchList,AllMatchList),
+	list2and(AllMatchList,FirstMatching),
 
 	length(AttrRest2,RA),
 	list_copies([OtherHs,Atts,AttrRest,AttrRest2,Guard,Body],VarDict,
@@ -1577,8 +1755,8 @@ propagation_recursive_code(F,OccurNum,LastRule,HeadLabel,HeadArgs,N,A,
 	A1 is A+AA,
 	append(AttrLists,AttrRestCp,OtherAtts),
 	
-	propagation_recursive_code(F,OccurNum,LastRule,HeadLabel,HeadArgs1,NextN,
-		  A1,OtherAtts,Constrs,Mod,BoundParsHs,BoundParGuards,BodyCp,L1,T).
+	propagation_recursive_code(F,OccurNum,LastRule,HeadLabel,HeadArgs1,AllMatchList,NextN,A1,
+				   OtherAtts,Constrs,Mod,BoundParsHs,BoundParGuards,BodyCp,L1,T).
 	
 
 
@@ -1673,6 +1851,79 @@ head_split_guards(Vs,Head,Guards,AllFreeGs,HaveBoundGs) :-
 	split_guards(FixedVs,GPs,AllFreeGs,HaveBoundGs).
 
 
+order_heads(FixedVars,HPs,_,HPOrdering) :-
+	order_heads(FixedVars,HPs,HPOrdering).
+
+order_heads(FixedVars,HPs,HPOrdering) :-
+	get_list_head_param_subsets(FixedVars,HPs,NonFixedHPs,FixedHPs),
+	order_non_fixed(FixedVars,NonFixedHPs,OrderedHPs),
+	append(FixedHPs,OrderedHPs,HPOrdering).
+
+order_non_fixed(FixedVars,HPs,Ordering) :-
+	setof(P,permutation(HPs,P),HPOrds),
+	fixed_and_shared_cnt(FixedVars,HPOrds,HPOrds1),
+	keysort(HPOrds1,HPOrds2),
+	best_fixed_cnt(HPOrds2,HPOrds3),
+	keysort(HPOrds3,HPOrds4),
+	append(_,[_-Ordering],HPOrds4).
+
+
+fixed_and_shared_cnt(_,[],[]).
+fixed_and_shared_cnt(FixedVars,[HP|HPs],[Fixed-Shared-HP|HPCnts]) :-
+	fixed_and_shared_cnt_1(FixedVars,HP,Fixed,Shared),
+	fixed_and_shared_cnt(FixedVars,HPs,HPCnts).	
+
+fixed_and_shared_cnt_1(FixedVars,HP,Fixed,Shared) :-
+	length(HP,HeadCnt),
+	length(L,HeadCnt),
+	all_elems(L,HeadCnt,Fixed1),
+	fixed_and_shared_cnt_1(FixedVars,1,HeadCnt,Fixed1,HP,Fixed,Shared).
+
+fixed_and_shared_cnt_1(_,Pos,HCnt,Fixed,[],Fixed,[]) :-
+	Pos is HCnt+1.
+fixed_and_shared_cnt_1(FixedVars,Pos,HCnt,[FH|Fixed],[(_,Ps)|HPs],[FH1|Fixed1],[F|Shared]) :-
+	intersect(FixedVars,Ps,FixedParams),
+	length(FixedParams,F),
+	
+	(Pos < FH -> FH1 = Pos ; FH1 = FH),
+
+	append_unique(FixedVars,Ps,FixedVars1),
+	marked_fixed_at_pos(FixedVars1,Pos,Fixed,HPs,Fixed2),
+	
+	Pos1 is Pos+1,
+	fixed_and_shared_cnt_1(FixedVars1,Pos1,HCnt,Fixed2,HPs,Fixed1,Shared).
+
+
+all_elems([],_,[]).
+all_elems([_|Xs],Y,[Y|Ys]) :-
+	all_elems(Xs,Y,Ys).
+
+marked_fixed_at_pos(_,_,Fixed,[],Fixed).
+marked_fixed_at_pos(FixedVars,Pos,[F|Fs],[(_,Ps)|HPs],[F1|Fs1]) :-
+	(Pos < F,
+	 subset(Ps,FixedVars)
+	 -> F1 = Pos
+	  ; F1 = F
+	),
+	marked_fixed_at_pos(FixedVars,Pos,Fs,HPs,Fs1).
+
+best_fixed_cnt([F-S-HP|HPs],[S-HP|SHPs]) :-
+	best_fixed_cnt(F,HPs,SHPs).
+
+best_fixed_cnt(_,[],[]).
+best_fixed_cnt(F,[FH-S-HP|HPs],SHPs) :-
+	(FH = F
+	 -> best_fixed_cnt(F,HPs,HPs1),
+	    SHPs = [S-HP|HPs1]
+	  ; SHPs = []
+	).
+
+
+
+/*
+ * Working
+ */
+ /*
 order_heads(ParList,HPs,InHPs,OutHPs) :-
 	get_list_head_param_subsets(ParList,HPs,HP1s,HeadListHPs),
 	get_head_list_param_subsets(ParList,HP1s,HP2s,ListHeadHPs,NewParList),
@@ -1682,7 +1933,7 @@ order_heads(ParList,HPs,InHPs,OutHPs) :-
 	    append(OutHP1s,OutHP2s,OutHPs)
 	  ; order_heads(NewParList,HP2s,OutHP1s,OutHPs)
 	).
-
+*/
 get_list_head_param_subsets(_,[],[],[]).
 get_list_head_param_subsets(ParList,[(H,HP)|HPs],LeftHPs,SubsetHPs) :-
 	get_list_head_param_subsets(ParList,HPs,LeftHP1s,SubsetHP1s),
@@ -1887,6 +2138,25 @@ all_empty_lists([_|Ls],[[]|ELs]) :-
 
 build_head_arg_passive_head_match([],_,[]).
 build_head_arg_passive_head_match([V|Vs],Hs,[Match|Matches]) :-
+	head_arg_match(V,Hs,Hs1,M),
+	Match = in_passive_heads(V,M),
+	build_head_arg_passive_head_match(Vs,Hs1,Matches).
+
+head_arg_match(_,[],[],[]).
+head_arg_match(V,[H|Hs],Hs1,ML) :-
+	H =.. [F|HVs],
+	(abs_ith(I,HVs,V)
+	 -> delete_ith(I,HVs,V,OtherHVs),
+	    M = (H,F,I,OtherHVs),
+	    head_arg_match(V,Hs,Hs1,Ms),
+	    ML = [M|Ms]
+	  ; head_arg_match(V,Hs,Hs2,ML),
+	    Hs1 = [H|Hs2]
+	).
+
+/*
+build_head_arg_passive_head_match([],_,[]).
+build_head_arg_passive_head_match([V|Vs],Hs,[Match|Matches]) :-
 	head_arg_match(V,Hs,M),
 	Match = in_passive_heads(V,M),
 	build_head_arg_passive_head_match(Vs,Hs,Matches).
@@ -1901,7 +2171,7 @@ head_arg_match(V,[H|Hs],ML) :-
 	    ML = [M|Ms]
 	  ; head_arg_match(V,Hs,ML)
 	).
-	
+*/	
 
 
 abs_ith(Index,List,Element) :-
@@ -2275,8 +2545,12 @@ max(X,Y,Y) :-
 
 
 % conjunction
-and(true,true,true).
-and(_,_,false).
+logic_and(true,true,true) :- !.
+logic_and(_,_,false).
+
+% dysjunction
+logic_or(false,false,false) :- !.
+logic_or(_,_,true).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

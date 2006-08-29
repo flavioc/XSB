@@ -3,6 +3,7 @@
 	get_attributes/2, put_attributes/2 from machine.
 :- import length/2, member/2, append/3, ith/3 from basics.
 :- import delete_ith/4 from listutil.
+:- import subsumes_chk/2 from subsumes.
 
 %
 % Auxiliary predicates for attv constraint processing
@@ -144,6 +145,23 @@ get_nth_attr(V,Mod,N,Attr) :-
 	var(V),
 	get_attr(V,Mod,Atts),
 	arg(N,Atts,Attr).
+
+get_nth_attr(V,Mod,N,Pattern,Attr) :-
+	var(V),
+	get_attr(V,Mod,Atts),
+	arg(N,Atts,PosAtts),
+	match_pattern(PosAtts,Pattern,Attr),
+	Attr \= [].
+
+match_pattern([],_,[]).
+match_pattern([X|Xs],Pattern,Ys) :-
+	match_pattern(Xs,Pattern,Zs),
+%	(X = Pattern
+	(subsumes_chk(Pattern,X)
+	 -> Ys = [X|Zs]
+	  ; Ys = Zs
+	).
+
 
 % same non-failing
 nf_get_nth_attr(V,Mod,N,Attr) :-
