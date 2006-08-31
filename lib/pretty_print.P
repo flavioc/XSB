@@ -98,10 +98,10 @@ pretty_print1((H :- B)) :-
 pretty_print1(H):-
 	pretty_print2(H,true).
 
-pretty_print2(H,true) :- !, 	replacement_hook(H),write('.'),nl.
-pretty_print2(H,!) :- !, pretty_print3(H,0), write(' :- !').
+pretty_print2(H,true) :- !, 	replacement_hook(H),write(' .'),nl.
+pretty_print2(H,!) :- !, pretty_print3(H,0), write(' :- !.').
 pretty_print2(H,B) :- pretty_print3(H,0), write(' :-'), nl, pretty_print3(B,8),
-	                 writeln('.').
+	                 writeln(' .').
 
 pretty_print3((A,B),Space) :- !,
 	pretty_print3(A,Space),
