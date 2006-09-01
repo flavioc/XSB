@@ -268,15 +268,15 @@ attr_unify_hook(id(Id),Other) :-
 attr_unify_hook_ordering(id(Id),Other) :-
 	var(Other),
 	!,
-	attr_unify_hook1(Id,Other).
+	attr_unify_hook_ordering_1(Id,Other).
 
-attr_unify_hook(_Attr,_Other).
+attr_unify_hook_ordering(_Attr,_Other).
 
-attr_unify_hook1(_Id,Other) :-
+attr_unify_hook_ordering_1(_Id,Other) :-
 	get_attr(Other,ordering,id(_)),
 	!.
 
-attr_unify_hook1(Id,Other) :-
+attr_unify_hook_ordering_1(Id,Other) :-
 	put_attr(Other,ordering,id(Id)).
 
 %
