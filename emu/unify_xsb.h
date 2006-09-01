@@ -117,6 +117,7 @@
     }                                                        \
   {                                                          \
     int arity = get_arity(((Pair)(CPtr)op1)->psc_ptr);       \
+    if (arity == 0) {IFTHEN_SUCCEED;}			     \
     while (--arity)                                          \
       {                                                      \
 	op1 = (Cell)((CPtr)op1+1); op2 = (Cell)((CPtr)op2+1);\

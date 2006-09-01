@@ -307,13 +307,15 @@ copy_again : /* for tail recursion optimisation */
 	*pfirstel = newpsc; /* no need for trailing */
 	
 	*h += ar + 1 ;
-	while ( --ar )
-	  {
-	    from = *(++pfirstel) ; to++ ;
-	    findall_copy_to_heap(CTXTc from,to,h) ;
-	  }
-	from = *(++pfirstel) ; to++ ;
-	goto copy_again ;
+	if (ar>0) {
+	  while ( --ar )
+	    {
+	      from = *(++pfirstel) ; to++ ;
+	      findall_copy_to_heap(CTXTc from,to,h) ;
+	    }
+	  from = *(++pfirstel) ; to++ ;
+	  goto copy_again ;
+	} else return;
       }
   
   case XSB_ATTV: {
@@ -542,15 +544,17 @@ static int findall_copy_template_to_chunk(CTXTdeclc Cell from, CPtr to, CPtr *h)
 
 	  *h += ar + 1 ;
 	  size += ar + 1 ;
-	  while ( --ar )
-	    {
-	      from = *(++pfirstel) ; XSB_Deref(from) ; to++ ;
-	      s = findall_copy_template_to_chunk(CTXTc from,to,h) ;
-	      if (s < 0) return(-1) ;
-	      size += s ;
-	    }
-	  from = *(++pfirstel) ; XSB_Deref(from) ; to++ ;
-	  goto copy_again ;
+	  if (ar>0) {
+	    while ( --ar )
+	      {
+		from = *(++pfirstel) ; XSB_Deref(from) ; to++ ;
+		s = findall_copy_template_to_chunk(CTXTc from,to,h) ;
+		if (s < 0) return(-1) ;
+		size += s ;
+	      }
+	    from = *(++pfirstel) ; XSB_Deref(from) ; to++ ;
+	    goto copy_again ;
+	  } else return(size);
 	}
   
   case XSB_ATTV: {
@@ -928,13 +932,15 @@ copy_again : /* for tail recursion optimisation */
 	*pfirstel = newpsc; /* was trailed already */
 	
 	*h += ar + 1 ;
-	while ( --ar )
-	  {
-	    from = *(++pfirstel) ; XSB_Deref(from) ; to++ ;
-	    do_copy_term(CTXTc from,to,h) ;
-	  }
-	from = *(++pfirstel) ; XSB_Deref(from) ; to++ ;
-	goto copy_again ;
+	if (ar > 0) {
+	  while ( --ar )
+	    {
+	      from = *(++pfirstel) ; XSB_Deref(from) ; to++ ;
+	      do_copy_term(CTXTc from,to,h) ;
+	    }
+	  from = *(++pfirstel) ; XSB_Deref(from) ; to++ ;
+	  goto copy_again ;
+	} else return;
       }
 
     case XSB_ATTV:
