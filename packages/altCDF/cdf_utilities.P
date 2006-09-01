@@ -152,8 +152,12 @@ odbc_sql_local(Connection,Input,Statement,Output):-
 	conget('_dbctr',DbCtr),DbCtr1 is DbCtr + 1,conset('_dbctr',DbCtr1),
 	(DbCtr1 mod 100 =:= 0 -> display(',') ; true),
 %%	writeq(sQL(Statement,Input)),nl,
-	findall(Output,odbc_sql(Connection,Input,Statement,Output),Outputs1),
-	sort(Outputs1,Outputs),
+	findall(Output,odbc_sql(Connection,Input,Statement,Output),Outputs),
+
+	%sorting here will break expected sql output if ORDER BY was used and
+	%since we can use DISTINCT to remove duplicates sort should not be used - hs.
+	%sort(Outputs1,Outputs),
+
 	member(Output,Outputs).
 
 :- dynamic '_$conn_quote_char'/2.
