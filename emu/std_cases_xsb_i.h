@@ -24,51 +24,63 @@
 
 
   case IS_ATTV:	/* r1: ?term */
+    printf("is_attv in std_cases_xsb_i.h This should NOT occur! This code should now be unreachable\n");
     return isattv(ptoc_tag(CTXTc 1));
 
   case VAR:		/* r1: ?term */
+    printf("var in std_cases_xsb_i.h This should NOT occur! This code should now be unreachable\n");
     return isref(ptoc_tag(CTXTc 1));
     
   case NONVAR:	/* r1: ?term */
+    printf("nonvar in std_cases_xsb_i.h This should NOT occur! This code should now be unreachable\n");
     return isnonvar(ptoc_tag(CTXTc 1));
     
   case ATOM:		/* r1: ?term */
+    printf("atom in std_cases_xsb_i.h This should NOT occur! This code should now be unreachable\n");
     return isatom(ptoc_tag(CTXTc 1));
     
   case INTEGER:	/* r1: ?term */ {
       int tag = ptoc_tag(CTXTc 1);
+    printf("integer in std_cases_xsb_i.h This should NOT occur! This code should now be unreachable\n");
       return (isinteger(tag) || isboxedinteger(tag));
   }
     
   case REAL:		/* r1: ?term */
   {
     Cell term = ptoc_tag(CTXTc 1);
+    printf("real in std_cases_xsb_i.h This should NOT occur! This code should now be unreachable\n");
     return isofloat(term);
   }  
   case NUMBER:	/* r1: ?term */ {
       Cell tag = ptoc_tag(CTXTc 1);
+      printf("number in std_cases_xsb_i.h This should NOT occur! This code should now be unreachable\n");
       return (isnumber(tag) || isboxedinteger(tag) || isboxedfloat(tag));
   }
   case ATOMIC: {	/* r1: ?term */
     Cell term = ptoc_tag(CTXTc 1);
+    printf("atomic in std_cases_xsb_i.h This should NOT occur! This code should now be unreachable\n");
     return (isatomic(term) || isboxedinteger(term) || isboxedfloat(term));
   }
 
   case COMPOUND: {	/* r1: ?term */
     Cell term = ptoc_tag(CTXTc 1);
+    printf("compound in std_cases_xsb_i.h This should NOT occur! This code should now be unreachable\n");
     return (((isconstr(term) && get_arity(get_str_psc(term))) ||
 	    (islist(term))) && !isboxedfloat(term) && !isboxedinteger(term));
   }
 
   case CALLABLE: {	/* r1: ?term */
     Cell term = ptoc_tag(CTXTc 1);
+    printf("callable in std_cases_xsb_i.h This should NOT occur! This code should now be unreachable\n");
     return ((isconstr(term) && !isboxed(term)) || isstring(term) || islist(term));
   }
 
   case IS_LIST:	/* r1: ?term */
+    printf("is_list in std_cases_xsb_i.h This should NOT occur! This code should now be unreachable\n");
     return is_proper_list(ptoc_tag(CTXTc 1));
     
   case IS_MOST_GENERAL_TERM: /* r1: ?term */
+    printf("is_most_general_term in std_cases_xsb_i.h This should NOT occur! This code should now be unreachable\n");
     return is_most_general_term(ptoc_tag(CTXTc 1)); 
 
   case FUNCTOR:	/* r1: ?term; r2: ?functor; r3: ?arity (int)	*/
