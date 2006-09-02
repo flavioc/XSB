@@ -93,8 +93,60 @@ do { \
 #define cp_clear_mark(i)   cp_marks[i] &= ~MARKED
 
 /*=========================================================================*/
+/*
+hp_pointer_from_cell() returns the address,tag pair if a cell points
+to part of the heap.  The trail needs a special function for this
+because of pre-image trailing used for handling attributed variables.
+The pre-image mark is handled correctly by the garbage collectors --
+information about this is set in the array gc_marks in the marking
+phase so that subsequent phases deal with clean addresses.  However,
+the pre-image value may be a list (or structure) that is in the
+attv-interrupt vector rather than in the heap itself.  The new
+function thus double-checks to see whether structures or lists are
+actually in the heap.
+*/
 
 #ifdef GC
+inline static CPtr trail_hp_pointer_from_cell(Cell cell, int *tag)
+{
+  int t;
+  CPtr retp;
+
+  t = cell_tag(cell) ;
+
+  /* the use of if-tests rather than a switch is for efficiency ! */
+  /* as this function is very heavily used - do not modify */
+  if (t == XSB_LIST)
+    {
+      *tag = XSB_LIST;
+      retp = clref_val(cell);
+      if (points_into_heap(retp)) return(retp);
+    }
+  if (t == XSB_STRUCT)
+    {
+      *tag = XSB_STRUCT;
+      retp = (CPtr)(cs_val(cell));
+      if (points_into_heap(retp)) return(retp);
+    }
+  if ((t == XSB_REF) || (t == XSB_REF1))
+    {
+
+      *tag = t;
+      retp = (CPtr)cell ;
+      if (points_into_heap(retp)) return(retp);
+    }
+  if (t == XSB_ATTV)
+    {
+      *tag = XSB_ATTV;
+      retp = clref_val(cell);
+      testreturnit(retp);
+    }
+
+  return NULL;
+} /* trail_hp_pointer_from_cell */
+
+/********/
+
 inline static CPtr hp_pointer_from_cell(Cell cell, int *tag)
 {
   int t;
@@ -430,6 +482,13 @@ inline static int mark_region(CPtr beginp, CPtr endp)
 } /* mark_region */
 
 /*----------------------------------------------------------------------*/
+
+/* TLS: This function uses the PRE_IMAGE_MARK for the GC marking.  In
+    order to run through the trail, it is useful to know whether we
+    are dealing with a 3- or 4- cell frame.  If it is a 3-cell frame,
+    there won't be a PRE_IMAGE_MARK in the 3-rd cell; otherwise there
+    will be. */
+ 
 inline static unsigned long mark_trail_section(CPtr begintr, CPtr endtr)
 {
   CPtr a = begintr;
@@ -462,24 +521,32 @@ inline static unsigned long mark_trail_section(CPtr begintr, CPtr endtr)
 	{ i = trailed_cell - heap_bot ;
 	if (! h_marked(i))
 	  {
+
+	    /* TLS: if early reset is not done (and I'm not sure it
+ 	       still works) the tr_marks array will have one mark
+ 	       indicating that it needs a mark bit, but the address
+ 	       will be clean.  Thus the chaining/copying phase does
+ 	       not need to look at this bit, and it will be reset at
+ 	       the end of the pass. */
+
 #if (EARLY_RESET == 1)
-	    {
-	      /* instead of marking the word in the heap, 
-		 we make the trail cell point to itself */
-	      TO_BUFFER(trailed_cell);
-	      h_mark(i) ;
-	      marked++ ;
-	      
-#ifdef PRE_IMAGE_TRAIL
-	      if (pre_value) 
-		*trailed_cell = (Cell) pre_value;
-	      else
-#endif
-		bld_free(trailed_cell); /* early reset */
-	      
-	      /* could do trail compaction now or later */
-	      heap_early_reset++;
-	    }
+| 	    {
+| 	      /* instead of marking the word in the heap, 
+| 		 we make the trail cell point to itself */
+| 	      TO_BUFFER(trailed_cell);
+| 	      h_mark(i) ;
+| 	      marked++ ;
+|	      } 
+|#ifdef PRE_IMAGE_TRAIL
+|	      if (pre_value) 
+|		*trailed_cell = (Cell) pre_value;
+|	      else
+|#endif
+|		bld_free(trailed_cell); /* early reset */
+|	      
+|	      /* could do trail compaction now or later */
+|	      heap_early_reset++;
+|	    }
 #else
 	    {
 	      marked += mark_root((Cell)trailed_cell);
