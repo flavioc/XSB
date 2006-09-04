@@ -111,7 +111,7 @@
 	del_attr/2,
 	put_attr/3 from machine.
 
-:- import call/1,
+:- import call/1,call_c/1,
 	  arg/3,
 	  (=..)/2,
 	  compound/1,
@@ -209,7 +209,7 @@ run_suspensions_([S|Next] ) :-
 	    Generation is Gen+1,
 	    update_mutable( Generation, Gref),
 	    arg( 3, S, Goal),
-	    call( Goal),
+	    call_c( Goal),
 	    get_mutable( Post, Mref),
 	    ( Post==triggered ->
 		update_mutable( removed, Mref)

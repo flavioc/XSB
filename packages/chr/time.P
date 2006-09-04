@@ -43,6 +43,8 @@
 
 :- ensure_loaded('iso8601.P').
 
+:- import misc_error/1 from error_handler.
+
 %% domain specific predicates ------------------------------------------------
 
 
@@ -76,7 +78,7 @@ unblocked_universal(N,L,T):-
 		L=[A-B],(A=<Minf),(Inf=<B)
 		; 
 	T=p-p -> 		% 930212 to account for finite domains
-		sort(L,[eq, ge, le])
+		sort(L,[eq, gt, lt])
 		;
 		size(T,N)
 	),
@@ -201,6 +203,7 @@ unblocked_transl(A,B,C,T):-
 	),
 	!.	
 
+/*
   transl(L1,L2,L3,T,Q):- var(L3),!,
 	time_setof(C,A^B^(member(A,L1),member(B,L2),trans(A,B,C,T,Q)),L3N),
 	mergerel(L3N,L3,Q).
@@ -209,6 +212,19 @@ unblocked_transl(A,B,C,T):-
 	mergerel(L2N,L2,Q).
   transl(L1,L2,L3,T,Q):- var(L1),!,
 	time_setof(A,B^C^(member(B,L2),member(C,L3),trans(A,B,C,T,Q)),L1N),
+	mergerel(L1N,L1,Q).
+*/
+
+  transl(L1,L2,L3,T,Q):- var(L3),!,
+	time_setof(C,(member(A,L1),member(B,L2),trans(A,B,C,T,Q)),L3N),
+	mergerel(L3N,L3,Q).
+  transl(L1,L2,L3,T,Q):- var(L2),!,
+	time_setof(B,(member(A,L1),member(C,L3),
+%	              writeln(calling(trans(A,B,C,T,Q))),
+		      trans(A,B,C,T,Q)),L2N),
+	mergerel(L2N,L2,Q).
+  transl(L1,L2,L3,T,Q):- var(L1),!,
+	time_setof(A,(member(B,L2),member(C,L3),trans(A,B,C,T,Q)),L1N),
 	mergerel(L1N,L1,Q).
 
 	mergerel(L1,L2,Q):- 
@@ -278,9 +294,9 @@ quantqual(A,QA,A1):- 	% hacked for var-case (== versus = below!)
 		qualquant1(A,B),
 		qualquant(L1,L2).
 
-		qualquant1(le,A-B):- !, sup(A), inf(B).
+		qualquant1(lt,A-B):- !, sup(A), inf(B).
 		qualquant1(eq,0-0):- !.
-		qualquant1(ge,A-B):- !, minf(A), msup(B).
+		qualquant1(gt,A-B):- !, minf(A), msup(B).
 		% 930212 to treat single numbers 
 		qualquant1(N,A-A):- A is N.	% 'is' used to catch type error
 
@@ -292,9 +308,9 @@ quantqual(A,QA,A1):- 	% hacked for var-case (== versus = below!)
 
 		quantqual1(LI,eq):- 
 			once((member(I-J,LI), (I=<0),(0=<J))).
-		quantqual1(LI,le):-  
+		quantqual1(LI,lt):-  
 			once((member(_I-J,LI), (0<J))).
-		quantqual1(LI,ge):-  
+		quantqual1(LI,gt):-  
 			once((member(I-_J,LI), (I<0))).
 
 		% 930212 to treat single numbers 
@@ -357,12 +373,44 @@ interval_point([X,Y],overlapped_by,[U,V]):- ((U < X, X < V, V < Y)).
 interval_point(X-Y,equals,U-V):- ((X =:= U,Y =:= V)).
 interval_point([X,Y],equals,[U,V]):- ((X =:= U,Y =:= V)).
 
+/* 
+TLS: I'm not sure the original itrans/4 was working properly.  It made
+a heavy use of when, and thus would return many extra variables when
+called by time_setof.  However, it is called only by transl which
+ensures that 2 out of the three input arguments are bound.  Thus, the
+explicit instantiation check will prove much more efficient.
+*/
 
 itrans(U-V-W,A,B,C):-	
-		encode(U-V,A,X),encode(V-W,B,Y),encode(U-W,C,Z), 
-		cons_tri(X,Y,Z).
+	nonvar(A),nonvar(B),!,
+	encode(U-V,A,X),
+	encode(V-W,B,Y),
+	cons_tri(X,Y,Z),
+	encode(U-W,C,Z).
+itrans(U-V-W,A,B,C):-	
+	nonvar(A),nonvar(C),!,
+	encode(U-V,A,X),
+	encode(U-W,C,Z),
+	cons_tri(X,Y,Z),
+	encode(V-W,B,Y).
+itrans(U-V-W,A,B,C):-	
+	nonvar(B),nonvar(C),!,
+	encode(V-W,B,Y),
+	encode(U-W,C,Z),
+	cons_tri(X,Y,Z),
+	encode(U-V,A,X).
+itrans(U-V-W,A,B,C):-	
+	trace,
+	misc_error('Does not have proper instantiation'(itrans(U-V-W,A,B,C))).
 
 /*
+Old code.
+
+itrans(U-V-W,A,B,C):-	
+		encode(U-V,A,X),
+		encode(V-W,B,Y),
+		encode(U-W,C,Z), 
+		cons_tri(X,Y,Z).
 
 %:- block encode(?,-,-).
 %
@@ -383,18 +431,27 @@ encode(p-p,A,B):-!,pp_ii(A,B).
 % 930212
 check_pp(X,Y,A-B):- !, ((X+A<Y,Y<X+B)).
 check_pp(X,Y,N):- number(N),!, (X+N=:=Y).
-check_pp(_X,Y,T):- \+ member(T,[le,eq,ge]),!, Y=T.
+check_pp(_X,Y,T):- \+ member(T,[lt,eq,gt]),!, Y=T.
 check_pp(X,Y,R):- ((number(X),number(Y))->check_ppn(X,Y,R);check_ppt(X,Y,R)).
 
-check_ppn(X,Y,le):- (X<Y).
+check_ppn(X,Y,lt):- (X<Y).
 check_ppn(X,Y,eq):- (X=:=Y).
-check_ppn(X,Y,ge):- (X>Y).
+check_ppn(X,Y,gt):- (X>Y).
 
-check_ppt(X,Y,le):- (X@<Y).
+check_ppt(X,Y,lt):- (X@<Y).
 check_ppt(X,Y,eq):- (X=Y).
-check_ppt(X,Y,ge):- (X@>Y).
+check_ppt(X,Y,gt):- (X@>Y).
 
 prans(A,B,C):- (number(A);number(B);number(C)),!,qtrans(A-A,B-B,C-C).
+prans(lt,lt,lt).
+prans(lt,eq,lt).
+prans(eq,lt,lt).
+prans(eq,eq,eq).
+prans(eq,gt,gt).
+prans(gt,eq,gt).
+prans(gt,gt,gt).
+
+/* Original 
 prans(le,le,le).
 prans(le,eq,le).
 prans(le,ge,le).
@@ -408,7 +465,7 @@ prans(ge,le,eq).
 prans(ge,le,ge).
 prans(ge,eq,ge).
 prans(ge,ge,ge).
-
+*/
 
 % QUANTITATIVE  ---------------------------------------------------------
 
@@ -486,9 +543,13 @@ check_ip(before,[_A,B],X):- number(X),((B<X)).
 % pi_ii
 %:- block pi_ii(-,-).
 %
-pi_ii(A,B) :-
-	when((nonvar(A),nonvar(B)),time:unblocked_pi_ii(A,B)).
+%pi_ii(A,B) :-
+%	when((nonvar(A),nonvar(B)),time:unblocked_pi_ii(A,B)).
 
+pi_ii(A,B):- 
+	unblocked_pi_ii(A,B).
+
+:- index(unblocked_pi_ii/2,[1,2]).
 unblocked_pi_ii(before, before).
 unblocked_pi_ii(before, meets).
 unblocked_pi_ii(before, finished_by).
@@ -506,9 +567,13 @@ unblocked_pi_ii(after, after).
 % ip_ii (inversion of pi_ii)
 %:- block ip_ii(-,-).
 %
-ip_ii(A,B) :-
-	when((nonvar(A),nonvar(B)),time:unblocked_ip_ii(A,B)).
+%ip_ii(A,B) :-
+%	when((nonvar(A),nonvar(B)),time:unblocked_ip_ii(A,B)).
 
+ip_ii(A,B):- 
+	unblocked_ip_ii(A,B).
+
+:- index(unblocked_ip_ii/2,[1,2]).
 unblocked_ip_ii(before, before).
 unblocked_ip_ii(finished_by, meets).
 unblocked_ip_ii(contains, contains).
@@ -526,8 +591,10 @@ unblocked_ip_ii(after, after).
 % pp_pi
 %:- block pp_pi(-,-).
 %
-pp_pi(A,B) :-
-	when((nonvar(A),nonvar(B)),time:unblocked_pp_pi(A,B)).
+%pp_pi(A,B) :-
+%	when((nonvar(A),nonvar(B)),time:unblocked_pp_pi(A,B)).
+
+pp_pi(A,B) :-unblocked_pp_pi(A,B).
 
 unblocked_pp_pi(le, before).
 unblocked_pp_pi(eq, starts).
@@ -538,8 +605,10 @@ unblocked_pp_pi(ge, after).
 % pp_ii
 %:- block pp_ii(-,-).
 %
-pp_ii(A,B) :-
-	when((nonvar(A),nonvar(B)),time:unblocked_pp_ii(A,B)).
+%pp_ii(A,B) :-
+%	when((nonvar(A),nonvar(B)),time:unblocked_pp_ii(A,B)).
+
+pp_ii(A,B):- unblocked_pp_ii(A,B).
 
 unblocked_pp_ii(A,B):- pp_pi(A,C),pi_ii(C,B).
 
