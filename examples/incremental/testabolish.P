@@ -1,0 +1,85 @@
+/* Transitive Closure: definite datalog example */
+
+:- import incr_assert/1, incr_retract/1, update/1 from increval.
+
+:- table reach/2.
+:- incr reach/2.
+
+:- dynamic edge/2.
+:- incrdynamic edge/2.
+
+:- assert(edge(1,2)).
+:- assert(edge(5,2)).
+:- assert(edge(2,3)).
+
+
+
+reach(X,Y):- edge(X,Y).
+reach(X,Y):- edge(X,Z), reach(Z,Y).
+
+
+
+/*
+
+Let us consider the following cases:
+
+Case 1:
+
+Facts:
+:- assert(edge(1,2)).
+:- assert(edge(5,2)).
+:- assert(edge(2,3)).
+
+We call reach(1,X).
+
+This will create call edges 
+reach(1,X)-->reach(2,X)--->reach(3,X)
+
+say we abolish tabled call reach(1,X) using
+abolish_table_call(reach(1,X)). This will abolish reach(1,X),
+reach(2,X), and reach(3,X).
+
+Case 2:
+
+Facts:
+:- assert(edge(1,2)).
+:- assert(edge(5,2)).
+:- assert(edge(2,3)).
+
+
+We call reach(1,X) and reach(5,X).
+
+say we abolish tabled call reach(1,X) using
+abolish_table_call(reach(1,X)). This will only abolish
+reach(1,X). This wont abolish reach(2,X), and reach(3,X), bcoz
+reach(2,X) is supporting reach(5,X).
+
+Case 3:
+
+Facts:
+:- assert(edge(1,2)).
+:- assert(edge(2,3)).
+:- assert(edge(3,1)).
+
+Say we call reach(1,X). call graph
+reach(1,X)-->reach(2,X)-->reach(3,X)-->reach(1,X).
+ 
+and abolish_table_call(reach(1,X)). This will delete all the three
+calls.
+
+Case 4:
+
+:- assert(edge(1,2)).
+:- assert(edge(2,3)).
+:- assert(edge(3,1)).
+:- assert(edge(5,1)).
+
+Say we call reach(5,X). call graph
+reach(5,X)-->reach(1,X)-->reach(2,X)-->reach(3,X)-->reach(1,X).
+ 
+and abolish_table_call(reach(1,X)) won't delete any call.
+
+but abolish_table_call(reach(5,X)) will delete all calls. 
+
+
+*/

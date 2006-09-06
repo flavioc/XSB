@@ -112,6 +112,9 @@ deactivate_op(T, S) :-
 '_$op1'(1100,fx,(table)).	% Added for tabling
 '_$op1'(1100,fx,(use_variant_tabling)).		% Added for tabling
 '_$op1'(1100,fx,(use_subsumptive_tabling)).	% Added for tabling
+'_$op1'(1100,fx,(incr)).	% Added for incremental evaluation
+'_$op1'(1100,fx,(incrdynamic)).	% Added for incremental evaluation
+'_$op1'(1100,fx,(opaque)).	% Added for incremental evaluation
 '_$op1'(1100,fx,(thread_shared)).	% Added for threads
 '_$op1'(1100,fx,(thread_private)).	% Added for threads
 '_$op1'(1100,fx,(edb)).		% Added for tabling
@@ -329,6 +332,34 @@ retract_table(Spec) :-
 	term_psc(Call,Psc),
 	psc_set_tabled(Psc,0).  %% set it as non-tabled
 	
+
+
+
+/* incremental evaluation */
+
+add_incr_table(Spec) :-
+	mpa_to_skel(Spec,Call),
+	term_psc(Call,Psc),	
+	psc_set_incr(Psc,1).
+
+
+
+add_incr_dynamic(Spec) :-
+	mpa_to_skel(Spec,Call),
+	term_psc(Call,Psc),
+	psc_set_incr(Psc,1), %% set it as incremental
+	convert_to_dyna(Call,_,_).  
+
+add_opaque(Spec) :-
+	mpa_to_skel(Spec,Call),
+	term_psc(Call,Psc),
+	psc_set_incr(Psc,2). %% set it as opaque
+
+
+
+
+
+
 
 /*======================================================================*/
 /* mpa_to_skel(+MPAorSkel,-Skel) converts M:P/A or P/A to Skel 		*/

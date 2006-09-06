@@ -117,7 +117,9 @@ SRCS =	auxlry.c biassert.c builtin.c cinterf.c conc_compl.c \
 	thread_xsb.c timer_xsb.c token_xsb.c \
 	tr_utils.c trace_xsb.c trie_lookup.c trie_search.c tries.c \
 	tst_insert.c tst_retrv.c tst_unify.c tst_utils.c varstring.c \
-	ubi_BinTree.c ubi_SplayTree.c
+	ubi_BinTree.c ubi_SplayTree.c \
+ 	hashtable.c hashtable_itr.c \
+	incr_xsb.c call_graph_xsb.c
 
 
 ORASRCS = $(SRCS) orastuff.c
@@ -137,7 +139,9 @@ OBJS =	auxlry.o biassert.o builtin.o cinterf.o conc_compl.o \
 	thread_xsb.o timer_xsb.o token_xsb.o \
 	tr_utils.o trace_xsb.o trie_lookup.o trie_search.o tries.o \
 	tst_insert.o tst_retrv.o tst_unify.o tst_utils.o varstring.o \
-	ubi_BinTree.o ubi_SplayTree.o
+	ubi_BinTree.o ubi_SplayTree.o \
+	hashtable.o hashtable_itr.o \
+	incr_xsb.o call_graph_xsb.o 
 
 
 allOBJS = main_xsb.o ${OBJS} ${ODBCOBJ} ${INTERPROLOGOBJ}
@@ -160,7 +164,7 @@ xsbora:: init $(allORAOBJS)
 	  echo "Making XSB executable $(EXECUTABLE) with support for Oracle"; \
 	  echo ""
 	@echo -e "\t[$(CC)] -o $(EXECUTABLE)"
-	@cd $(emudir); \	
+	@cd $(emudir); \
 		$(CC) -o $(EXECUTABLE) $(allORAOBJS) $(LDFLAGS)
 
 # Goal for making an XSB load module to be linked with external

@@ -1,0 +1,243 @@
+/* File:      increval.P
+** Author(s): Diptikalyan Saha, C. R. Ramakrishnan
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1993-1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+:- compiler_options([xpp_on]).
+
+#include "builtin.h"
+#include "incr_xsb_defs.h"
+
+psc_set_incr(PSC, CODE):-
+	incr_eval_builtin(PSC_SET_INCR, PSC, CODE).
+
+print_call(SF):-
+	incr_eval_builtin(PRINT_CALL, SF).
+
+update(Y):- 
+ 	get_affected_calls(X),
+	reeval(X),
+	get_changed_calls(Y).
+
+
+imm_depends(X,Y):-	
+	(nonvar(X),var(Y)->
+	     imm_dependent_on_calls(X,Y);
+	(nonvar(Y),var(X)->
+	     imm_depend_calls(Y,X);
+	(nonvar(X),nonvar(Y)->
+	     imm_depend_calls(Y,Z),Z=X;	
+		writeln('Invalid Modes')))).	
+
+trans_depends(X,Y):-
+	(nonvar(X),var(Y)->
+	     trans_dependent_on_calls(X,Y);
+	(nonvar(Y),var(X)->
+	     trans_depend_calls(Y,X);
+	(nonvar(X),nonvar(Y)->
+	     trans_depend_calls(Y,Z),Z=X;	
+		writeln('Invalid Modes')))).	
+
+
+trans_dependent_on_calls(Call,Call2):-
+	abolish_table_pred(trans_dependent_on_call(_,_)),
+	trans_dependent_on_call(Call,Call2).
+
+:- table trans_dependent_on_call/2.
+trans_dependent_on_call(Call1,Call2):-
+	imm_dependent_on_calls(Call1,Call2).
+trans_dependent_on_call(Call1,Call2):-
+	trans_dependent_on_call(Call1,Call3),
+	imm_dependent_on_calls(Call3,Call2).
+
+
+
+
+
+
+trans_depend_calls(Call,Call2):-
+	abolish_table_pred(trans_depend_call(_,_)),
+	trans_depend_call(Call,Call2).
+
+:- table trans_depend_call/2.
+trans_depend_call(Call1,Call2):-
+	imm_depend_calls(Call1,Call2).
+trans_depend_call(Call1,Call2):-
+	trans_depend_call(Call1,Call3),
+	imm_depend_calls(Call3,Call2).
+
+
+
+
+imm_depend_calls(Call,Call2):-
+	get_call(Call,SF,_),
+	incr_eval_builtin(IMM_DEPEND_LIST, SF, CallList),
+	member(Call2,CallList).		
+
+imm_dependent_on_calls(Call,Call2):-
+	get_call(Call,SF,_),
+	incr_eval_builtin(IMM_DEPENDENT_ON_LIST, SF, CallList),
+	member(Call2,CallList).		
+
+
+
+
+get_affected_calls(X) :-
+	incr_eval_builtin(GET_AFFECTED_CALLS, X).
+
+
+get_changed_calls(X) :-
+	incr_eval_builtin(GET_CHANGED_CALLS, X).
+
+
+
+reeval([]).
+reeval([Call|CallList]):-
+	mycall(Call),
+	reeval(CallList).
+
+mycall(C):-
+	get_call(C,SF,_),
+	(incr_eval_builtin(IS_AFFECTED,SF)->	
+		(C, fail;true)
+	;
+	true
+	).
+
+get_call_graph:-
+	incr_eval_builtin(GET_CALL_GRAPH).
+
+invalidate_callnode(CALLNODEPTR):-
+	incr_eval_builtin(INVALIDATE_CALLNODE,CALLNODEPTR).
+
+invalidate_SF(SF):-
+	incr_eval_builtin(INVALIDATE_SF,SF).
+
+
+
+invalidate_call(Call):-
+	(get_calls(Call,SF,_),
+	invalidate_SF(SF),
+	fail;true).
+
+
+
+incr_statistics:-
+	incr_eval_builtin(INCR_STATISTICS).
+
+
+incr_assert(Term):-
+	assert(Term),
+	(get_calls_incr(Term,A),
+	invalidate_callnode(A),
+	fail
+	;
+	true).
+
+incr_retract(Term):-
+	retract(Term),
+	(get_calls_incr(Term,A),
+	invalidate_callnode(A),
+	fail
+	;
+	true).
+
+
+
+
+/*
+incr_assert(Term) :-
+	change_fact(Term,TermSkel),
+	(get_calls(TermSkel,_,_),
+	match(Term,TermSkel),
+	invalidate_call(TermSkel,2),
+	fail;true),
+	assert(Term).
+
+
+
+
+change_fact(Fact,FactSkel):-
+	Fact=..[A|Arg],
+	length(Arg,N),
+	create_var(N,Arg1),
+	FactSkel=..[A|Arg1].
+
+
+create_var(0,[]):-!.
+create_var(N,[_|L]):-
+	N1 is N-1,
+	create_var(N1,L).
+
+match(Fact,Call):-
+	not(Fact\=Call).
+
+incr_retract(Term):- 
+	change_fact(Term,TermSkel),
+	(get_calls(TermSkel,_,_),
+	match(Term,TermSkel),
+	invalidate_call(TermSkel,1),
+	fail;true),	
+	retract(Term).
+*/
+
+
+
+
+
+
+'_$$get_calls_incr'(CallTerm,CallNodePtr) :-
+	get_calls(CallTerm),
+	get_callnodeptr_incr(CallTerm, CallNodePtr).
+
+get_calls_incr(CallTerm, Handle) :-
+	findall('_$get_calls_incr'(CallTerm,Handle),
+		'_$$get_calls_incr'(CallTerm,Handle),
+		List),
+	member('_$get_calls_incr'(CallTerm,Handle),List).
+
+
+
+get_calls(_CallTerm) :- '_$builtin'(TRIE_UNIFY_CALL).
+
+get_callnodeptr_incr(CallTerm,CallNodePtr):-
+		incr_eval_builtin(GET_CALLNODEPTR_INCR, CallTerm, CallNodePtr).	
+
+
+
+incr_eval_builtin(_BuiltinNo) :-
+	'_$builtin'(INCR_EVAL_BUILTIN).
+incr_eval_builtin(_BuiltinNo, _A) :-
+	'_$builtin'(INCR_EVAL_BUILTIN).
+incr_eval_builtin(_BuiltinNo, _A, _B) :-
+	'_$builtin'(INCR_EVAL_BUILTIN).
+
+/*
+incr_eval_builtin(_BuiltinNo, _A, _B, _C) :-
+	'_$builtin'(INCR_EVAL_BUILTIN).
+
+incr_eval_builtin(_BuiltinNo, _A, _B, _C, _D) :-
+	'_$builtin'(INCR_EVAL_BUILTIN).
+incr_eval_builtin(_BuiltinNo, _A, _B, _C, _D, _E) :-
+	'_$builtin'(INCR_EVAL_BUILTIN).
+*/

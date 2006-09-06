@@ -684,6 +684,10 @@ typedef struct subgoal_frame {
   byte grabbed; 	  /* Subgoal is marked to be computed for leader in
 			     deadlock detection */
 #endif
+  
+ /* The following field is added for incremental evaluation: */
+  callnodeptr callnode;
+
 } variant_subgoal_frame;
 
 #define subg_sf_type(b)		((VariantSF)(b))->sf_type
@@ -699,6 +703,7 @@ typedef struct subgoal_frame {
 #define subg_cp_ptr(b)		((VariantSF)(b))->cp_ptr
 #define subg_deltf_ptr(b)     	((VariantSF)(b))->deltf_ptr
 #define subg_asf_list_ptr(b)	((VariantSF)(b))->asf_list_ptr
+#define subg_callnode_ptr(b)    ((VariantSF)(b))->callnode /* incremental evaluation */
 
 /* use this for mark as completed == 0 */
 #define subg_compl_stack_ptr(b)	((VariantSF)(b))->compl_stack_ptr
@@ -753,6 +758,14 @@ typedef struct SubsumedConsumerSubgoalFrame {
   ((subg_sf_type(pSF) & VARIANT_SUBSUMPTION_MASK) == SUBSUMPTIVE_PRODUCER_SFT)
 #define IsSubConsSF(pSF) \
   ((subg_sf_type(pSF) & VARIANT_SUBSUMPTION_MASK) == SUBSUMED_CONSUMER_SFT)
+
+/* incremental evaluation */
+#define IsIncrSF(pSF) \
+  (IsNonNULL(subg_callnode_ptr(pSF)))
+
+#define IsNonIncrSF(pSF) \
+  (IsNULL(subg_callnode_ptr(pSF)))
+
 
 #define IsPrivateSF(pSF) \
   ((subg_sf_type(pSF) & SHARED_PRIVATE_MASK) == PRIVATE_SFT)

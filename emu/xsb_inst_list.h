@@ -216,7 +216,9 @@ XSB_INST(0xc3, tabletrust, _tabletrust, PP, A, L,X);
 XSB_INST(0xc4, check_complete, _check_complete, PPP, X, X,X); 
 XSB_INST(0xc5, answer_return, _answer_return, PPP, X, X,X); 
 XSB_INST(0xc6, resume_compl_suspension, _resume_compl_suspension, PPP, X, X,X);
-XSB_INST(0xc7, no_inst, _no_inst, PPP,X,X,X);
+XSB_INST(0xc7, tabletrysinglenoanswers, _tabletrysinglenoanswers, PP, A, L,T);
+// incremental evaluation
+//XSB_INST(0xc7, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0xc8, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0xc9, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0xca, no_inst, _no_inst, PPP,X,X,X);

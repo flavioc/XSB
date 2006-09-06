@@ -47,6 +47,7 @@
 	ceil/2, floor/2, round/2,
 	(hilog)/1,	hilog_arg/3,	hilog_functor/3,
 	(index)/3,	(index)/2,      (table)/1,
+        (incr)/1, (incrdynamic)/1, (opaque)/1, /* incremental */
 	integer/1,	is/2,		is_attv/1,	is_list/1,
 	is_most_general_term/1,		
 	listing/0,	listing/1,	name/2,		nl/0, nl/1,
@@ -102,7 +103,7 @@
   check_stream_or_alias/4, check_open_stream_or_alias/5, add_alias/2,
   fd2iostream/3      from file_io.
 :- import add_ops/3, op_priority/1, op_specifier/1, add_index/3,
-  add_trie_index/1, add_table/1
+  add_trie_index/1, add_table/1, add_incr_table/1, add_incr_dynamic/1, add_opaque/1 /* incremental */
      from file_op.
 :- import '_$hilog_symbol'/1, add_hilog_symbol/1 from hilogsym.
 :- import retract0/1, assertz/1, clause/2, retractall/1 from assert.

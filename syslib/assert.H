@@ -24,7 +24,7 @@
 */
 
 
-:- export assert0/1, assert/1, asserta/1, assertz/1, 
+:- export convert_to_dyna/3,/* incremental evaluation */ assert0/1, assert/1, asserta/1, assertz/1, 
 	  asserti/2, assertai/2, assertzi/2, assert/3.
 :- export retract/1, retractall/1, abolish/1, abolish/2. 
 :- export retract0/1.	% used in standard.P (for multifile)

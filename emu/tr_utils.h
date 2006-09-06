@@ -59,6 +59,7 @@ extern void trie_undispose(CTXTdeclc long, BTNptr);
 extern int abolish_table_predicate(CTXTdeclc Psc);
 extern int fast_abolish_table_predicate(CTXTdeclc Psc);
 extern int abolish_table_call(CTXTdeclc VariantSF);
+extern int abolish_table_call_incr(CTXTdeclc VariantSF); /* incremental evaluation */
 extern void abolish_private_tables(CTXTdecl);
 extern void abolish_shared_tables(CTXTdecl);
 extern int gc_tabled_preds(CTXTdecl);

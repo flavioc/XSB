@@ -120,6 +120,10 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
   CPtr answer_template;
   int template_size, attv_num, tmp;
   TIFptr tip;
+
+  int incrflag = 0; /* for incremental evaluation */
+
+
 #ifdef SHARED_COMPL_TABLES
   byte * inst_addr = lpcreg;
   int table_tid ;
@@ -132,6 +136,10 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
   CPtr old_cptop;
 #endif
 #endif
+
+  /* incremental evaluation */
+  VariantSF parent_table_sf=NULL; /* used for creating call graph */
+  old_call=NULL;
 
   xwammode = 1;
   CallInfo_Arguments(callInfo) = reg + 1;
@@ -178,7 +186,28 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
   producer_sf = CallLUR_Subsumer(lookupResults);
   answer_template = CallLUR_VarVector(lookupResults);
 
-xsb_dbgmsg((LOG_DEBUG,"After variant call search AT: %x\n",answer_template));
+/* for incremental evaluation */
+
+/* Get parent table subgoalframe from ptcpreg */
+  if(IsNonNULL(ptcpreg)){
+    parent_table_sf=(VariantSF)ptcpreg;
+    if(IsIncrSF(parent_table_sf))
+      incrflag=1;
+  }
+ 
+/* adding called-by graph edge */
+  if((incrflag)&&(IsNonNULL(producer_sf))){
+    if(IsIncrSF(producer_sf)){
+      addcalledge(producer_sf->callnode,parent_table_sf->callnode);  
+    }else{
+      if(!get_opaque(TIF_PSC(CallInfo_TableInfo(callInfo))))
+	xsb_abort("Predicate %s/%d not defined incr\n", get_name(TIF_PSC(CallInfo_TableInfo(callInfo))),get_arity(TIF_PSC(CallInfo_TableInfo(callInfo))));       
+    }
+  }
+
+
+
+  xsb_dbgmsg((LOG_DEBUG,"After variant call search AT: %x\n",answer_template));
 
 #ifdef SHARED_COMPL_TABLES
 /* This allows sharing of completed tables.
@@ -257,6 +286,45 @@ xsb_dbgmsg((LOG_DEBUG,"After variant call search AT: %x\n",answer_template));
     subg_tid(producer_sf) = th->tid;
     subg_tag(producer_sf) = INCOMP_ANSWERS;
 #endif
+
+    /* for incremental evaluation - start */
+    
+    /* table_call_search tried to find the affected call, so if it has
+       found the answer table of the new call it is made same as the
+       answer table of the old call - so that we can check whether the
+       answers that will be generated for the new call are same as that for
+       the old call */
+    
+
+    if(IsNonNULL(old_call)){
+      producer_sf->callnode->prev_call=old_call;
+
+	 producer_sf->callnode->outedges=old_call->outedges;
+	 producer_sf->callnode->outcount=old_call->outcount;
+	 producer_sf->callnode->outedges->callnode=producer_sf->callnode;
+	 producer_sf->ans_root_ptr=old_answer_table;
+	 old_call->falsecount=0; /* this will stop propagation of unmarking */
+	 old_call->deleted=1; 
+	 old_call=NULL;
+	 old_answer_table=NULL;
+    }else
+      if(IsIncrSF(producer_sf))
+	initoutedges(producer_sf->callnode);
+    
+    /* adding called-by graph edge for new call */
+    if(incrflag){
+      if(IsIncrSF(producer_sf)){
+	addcalledge(producer_sf->callnode,parent_table_sf->callnode);  
+      }else{
+	if(!get_opaque(TIF_PSC(CallInfo_TableInfo(callInfo))))
+	  xsb_abort("Predicate %s/%d not defined incr\n", get_name(TIF_PSC(CallInfo_TableInfo(callInfo))),get_arity(TIF_PSC(CallInfo_TableInfo(callInfo))));       
+      }
+    }
+    /* for incremental evaluation - end */
+
+
+
+
     producer_cpf = answer_template;
     save_find_locx(ereg);
     save_registers(producer_cpf, CallInfo_CallArity(callInfo), rreg);
@@ -501,6 +569,94 @@ xsb_dbgmsg((LOG_DEBUG,"After variant call search AT: %x\n",answer_template));
   }
 XSB_End_Instr()
 
+
+/*
+ *  Instruction format:
+ *    1st word: opcode X X X
+ *
+ *  Description:
+ *    Returns to a consumer an answer if one is available, otherwise it
+ *    suspends.  Answer consumption is effected by unifying the consumer's
+ *    answer template with an answer.  This instruction is encountered only
+ *    by backtracking into a consumer choice point frame, either as a
+ *    result of WAM- style backtracking or having been resumed via a
+ *    check-complete instruction.  The CPF field "nlcp-trie-return" points
+ *    to the last answer consumed.  If none have yet been consumed, then it
+ *    points to the dummy answer.
+ */
+
+/* incremental evaluation */
+
+XSB_Start_Instr(tabletrysinglenoanswers,_tabletrysinglenoanswers) 
+    DefOps13
+  /*
+   *  Retrieve instruction arguments and test the system stacks for
+   *  overflow.  The local PCreg, "lpcreg", is incremented to point to
+   *  the instruction to be executed should this one fail.
+   */
+  
+  
+  TabledCallInfo callInfo;
+  CallLookupResults lookupResults;
+  VariantSF  sf;
+  TIFptr tip;
+  callnodeptr c;
+
+#ifdef MULTI_THREAD
+  xsb_abort("Incremental Maintenance of tables is not available for multithreaded engine.\n");
+#endif  
+  
+  xwammode = 1;
+  CallInfo_Arguments(callInfo) = reg + 1;
+  CallInfo_CallArity(callInfo) = get_xxa; 
+  LABEL = (CPtr)((byte *) get_xxxl);  
+  Op1(get_xxxxl);
+  tip =  (TIFptr) get_xxxxl;
+  
+  SET_TRIE_ALLOCATION_TYPE_TIP(tip); 
+
+  
+  CallInfo_TableInfo(callInfo) = tip;
+    
+  check_tcpstack_overflow;
+  CallInfo_VarVectorLoc(callInfo) = top_of_cpstack;
+
+  /*
+  if ( this_instr == tabletry ) {
+    continuation = lpcreg;
+  }
+  else 
+    continuation = (pb) &check_complete_inst;
+    
+  check_glstack_overflow(CallInfo_CallArity(callInfo),lpcreg,OVERFLOW_MARGIN);
+  */
+
+
+  table_call_search_incr(CTXTc &callInfo,&lookupResults);
+  
+  if(IsNonNULL(ptcpreg)){
+   sf=(VariantSF)ptcpreg;
+   if(IsIncrSF(sf)){
+     c=(callnodeptr)BTN_Child(CallLUR_Leaf(lookupResults));
+     if(IsNonNULL(c)){
+       addcalledge(c,sf->callnode);  
+     }
+   }else
+     xsb_abort("Predicate %s/%d should be defined incr\n", get_name(TIF_PSC(subg_tif_ptr(sf))),get_arity(TIF_PSC(subg_tif_ptr(sf))));      
+  }
+
+
+  ADVANCE_PC(size_xxx);
+  lpcreg = *(pb *)lpcreg;
+
+XSB_End_Instr()
+
+
+
+
+
+
+
 /*-------------------------------------------------------------------------*/
 
 /*
@@ -724,6 +880,11 @@ XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc)
 				     answer_template, &isNewAnswer );
 
   if ( isNewAnswer ) {   /* go ahead -- look for more answers */
+    /* incremental evaluation */
+    if(IsIncrSF(producer_sf))
+      subg_callnode_ptr(producer_sf)->no_of_answers++;
+    
+    
     delayreg = tcp_pdreg(producer_cpf);      /* restore delayreg of parent */
     if (is_conditional_answer(answer_leaf)) {	/* positive delay */
 #ifndef LOCAL_EVAL

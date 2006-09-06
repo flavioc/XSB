@@ -113,6 +113,9 @@
 
 #define STORAGE_BUILTIN	       	 77
 
+/* incremental evaluation */
+#define INCR_EVAL_BUILTIN        78
+
 #define GET_DATE                 80
 #define STAT_WALLTIME            81
 

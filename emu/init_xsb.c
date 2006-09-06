@@ -67,6 +67,8 @@
 #include "varstring_xsb.h"
 #include "struct_manager.h"
 #include "trie_internals.h"
+#include "call_graph_xsb.h" /* for incremental evaluation*/
+#include "incr_xsb.h" /* for incremental evaluation */
 /*-----------------------------------------------------------------------*/
 
 /* Sizes of the Data Regions in K-byte blocks
@@ -1137,6 +1139,9 @@ void init_machine(CTXTdeclc int glsize, int tcpsize,
   reset_freeze_registers;
   openreg = ((CPtr) complstack.high);
   delayreg = NULL;
+
+  /* for incremenatal evaluation */
+  affected = eneetq(); 
 
   /* Place a base choice point frame on the CP Stack: this choice point
      is needed for cut -- make sure you initialize all its fields.

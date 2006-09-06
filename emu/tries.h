@@ -509,6 +509,59 @@ struct tstCPStack_t {
   tstChoicePointFrame base[TST_CPSTACK_SIZE];
 };
 
+
+/*=========================================================================*/
+
+/* Called-by Graph: 
+   additional structures to handle incremental evaluation  
+*/
+
+
+typedef struct callnodetag* callnodeptr;
+typedef struct _calllist* calllistptr;
+typedef struct _call2list* call2listptr;
+typedef struct outedge* outedgeptr;
+
+
+typedef struct outedge{
+	struct hashtable* hasht; 
+	callnodeptr callnode;
+}OUTEDGE;
+
+typedef struct callnodetag{
+  outedgeptr  outedges;
+  calllistptr inedges; 
+  void* goal;
+  unsigned int no_of_answers;
+  unsigned int deleted:1, changed:1,falsecount:15,outcount:15;
+  callnodeptr prev_call;
+  ALNptr aln; 
+  int id; 
+}CALL_NODE;
+
+struct key{
+	int goal;
+}KEY;
+
+
+typedef struct _calllist{
+  union{
+    callnodeptr item;  /* when used in list as in nq */
+    outedgeptr prevnode; /* when used in inedges */
+    call2listptr item2; /* when used in abolishing*/
+  };
+  calllistptr next;
+}CALLLIST;
+
+
+typedef struct _call2list{
+  callnodeptr item;
+  call2listptr next;
+  call2listptr prev;
+}CALL2LIST;
+
+
+
 /* Prasad's changes */
 
 typedef struct InternGarbageRootFrame *IGRptr;

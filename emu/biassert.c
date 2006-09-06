@@ -128,7 +128,8 @@ PrRef dynpredep_to_prref(CTXTdeclc void *pred_ep) {
   }
   if (!pred_ep) return NULL;
 #endif
-  if (cell_opcode((CPtr)(pred_ep)) == tabletrysingle)
+  if ((cell_opcode((CPtr)(pred_ep)) == tabletrysingle)||(cell_opcode((CPtr)(pred_ep)) == tabletrysinglenoanswers)) /*incremental evaluation */
+    //if (cell_opcode((CPtr)(pred_ep)) == tabletrysingle)
     return (PrRef)((CPtr *)(pred_ep))[6];
   else return pred_ep;
 }
@@ -3139,8 +3140,8 @@ static inline void allocate_prref_tab(CTXTdeclc Psc psc, PrRef *prref, pb *new_e
 
   if (!(*prref = (PrRef)mem_alloc_nocheck(sizeof(PrRefData),ASSERT_SPACE))) 
     xsb_exit("++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory (PrRef)");
-  //  fprintf(stdout,"build_prref: %s/%d, shared=%d, prref=%p\n",
-  //          get_name(psc),get_arity(psc),get_shared(psc),prref);
+  //fprintf(stdout,"build_prref: %s/%d, shared=%d, prref=%p, incr=%d\n",
+  //          get_name(psc),get_arity(psc),get_shared(psc),prref,get_incr(psc));
 
   if (xsb_profiling_enabled)
     add_prog_seg(psc,(byte *)*prref,sizeof(PrRefData)); /* dsw profiling */
@@ -3153,7 +3154,7 @@ static inline void allocate_prref_tab(CTXTdeclc Psc psc, PrRef *prref, pb *new_e
   PrRef_Psc(*prref) = psc;        
   PrRef_Mark(*prref) = 0;
   PrRef_DelCF(*prref) = NULL;
-  if ( get_tabled(psc) )
+  if ( get_tabled(psc) || get_incr(psc) )  /* incremental evaluation */
     {
       TIFptr tip;
       CPtr tp;
@@ -3163,14 +3164,19 @@ static inline void allocate_prref_tab(CTXTdeclc Psc psc, PrRef *prref, pb *new_e
 	xsb_exit("++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory (PrRef)");
       }
       Loc = 0 ;
-      dbgen_inst_ppvww(tabletrysingle,get_arity(psc),(tp+3),tip,tp,&Loc) ;
+      if (get_incr(psc)) { /* incremental evaluation */
+	//printf("%s is incr %p\n",get_name(psc),*prref);
+	dbgen_inst_ppvww(tabletrysinglenoanswers,get_arity(psc),*prref,tip,tp,&Loc);
+      } else 
+	dbgen_inst_ppvww(tabletrysingle,get_arity(psc),(tp+3),tip,tp,&Loc) ;
       dbgen_inst_pvv(allocate_gc,3,3,tp,&Loc) ;
       dbgen_inst_ppv(getVn,2,tp,&Loc) ;  /* was getpbreg */
       dbgen_inst_ppvw(calld,3,*prref,tp,&Loc) ; /* *prref is *(tp+6), see remove_prref*/
       dbgen_inst_pvv(new_answer_dealloc,get_arity(psc),2,tp,&Loc) ;
       *new_ep = (pb)tp;
     }
-  else *new_ep = (pb)*prref;
+  else 
+    *new_ep = (pb)*prref;
 }
 
 
@@ -3272,7 +3278,8 @@ xsbBool db_get_prref( CTXTdecl /* PSC, -PrRef */ ) {
 
 void free_prref(CTXTdeclc CPtr *p, Psc psc) {
 
-    if ( *(pb)p == tabletrysingle )
+  /* incremental evaluation */
+    if ( *(pb)p == tabletrysingle ||(*(pb)p == tabletrysinglenoanswers))
       {
 	TIFptr mtTIF = (TIFptr) *(p+2);
 #ifdef MULTI_THREAD

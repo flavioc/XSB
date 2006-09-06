@@ -1,0 +1,27 @@
+/* Incremental evaluation in the context of normal tabled logic program */
+
+:- table p/1,q/1. 
+:- incr p/1.
+:- incr q/1. % cannot be defined as :- incr p/1, q/1.
+
+p(X):- q(X),not r(X).
+q(X):- c(X).
+
+
+:- table r/1.
+:- incr r/1.
+
+
+r(X):- a(X).
+r(X):- r(Y),b(Y,X).
+
+
+:- dynamic a/1, b/2, c/1.
+
+:- incrdynamic a/1.
+:- incrdynamic b/2.
+:- incrdynamic c/1.
+
+:- assert(a(1)).
+:- assert(b(1,2)).
+:- assert(c(3)).

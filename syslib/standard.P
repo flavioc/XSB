@@ -71,7 +71,8 @@ see(File) :-
 	open(File,read,Str),
 	set_input(Str).
 
-seeing(Str) :- stat_flag(CURRENT_INPUT, Str).
+seeing(Str) :- 
+	stat_flag(CURRENT_INPUT, Str).
 
 seen :- stat_flag(CURRENT_INPUT, Str),
 	(Str > 6 -> close(Str) ; true),
@@ -824,6 +825,42 @@ table(Ps) :-
 	),
 %%	dynamic(Ps1),		% implies dynamic....
 	add_table(Ps1).
+
+
+
+
+
+/* for incremental evaluation: add incremental tabled declaration */
+
+
+incr(Ps) :- 
+	check_nonvar(Ps,(incr)/1,1),
+	(Ps=P/S
+	 ->	nonvar(P),nonvar(S);
+		true	
+	),
+	add_incr_table(Ps).
+
+incrdynamic(Ps) :- 
+	check_nonvar(Ps,(incrdynamic)/1,1),
+	(Ps=P/S
+	 ->	nonvar(P),nonvar(S);
+		true	
+	),
+	add_incr_dynamic(Ps).
+
+
+opaque(Ps) :- 
+	check_nonvar(Ps,(opaque)/1,1),
+	(Ps=P/S
+	 ->	nonvar(P),nonvar(S);
+		true	
+	),
+	add_opaque(Ps).
+
+
+
+
 
 			/***********************/
 			/*  LOGIC and CONTROL  */

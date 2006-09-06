@@ -54,6 +54,7 @@
 #include "thread_xsb.h"
 #include "debug_xsb.h"
 #include "subp.h"
+#include "call_graph_xsb.h" /* for incremental evaluation */
 
 /*----------------------------------------------------------------------*/
 /* The following variables are used in other parts of the system        */
@@ -789,6 +790,9 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
   int ctr, attv_ctr;
   BTNptr Paren, *GNodePtrPtr;
 
+  byte choicepttype;  /* for incremental evaluation */ 
+  byte typeofinstr;   /* for incremental evaluation */ 
+
   ans_chk_ins++; /* Counter (answers checked & inserted) */
 
   VarEnumerator_trail_top = (CPtr *)(& VarEnumerator_trail[0]) - 1;
@@ -984,6 +988,42 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
     Instr(Paren) = trie_proceed;
   }
 
+  /* incremental evaluation: reinserting marked deleted node*/ 
+  /* If a new answer is inserted, the call is changed */
+  if(IsIncrSF(subgoal_ptr)){
+    if((IsNonNULL(subgoal_ptr->callnode->prev_call))&&(flag==0)){
+      subgoal_ptr->callnode->prev_call->changed=1;
+    }
+    
+    /* If the answer already exists and is marked deleted, which means
+       it is generating an old answer. In this case we remove the answer
+       marking and reduce no_of_answers */
+    
+    if((flag==1)&&(IsDeletedNode(Paren))){
+      
+      choicepttype = 0x3 &  BTN_Instr(Paren);
+      typeofinstr = (~0x3) & BTN_Status(Paren);
+      BTN_Instr(Paren) = choicepttype | typeofinstr;
+      MakeStatusValid(Paren);
+      
+      flag=0;
+      
+      subgoal_ptr->callnode->prev_call->no_of_answers--;
+      
+      New_ALN(subgoal_ptr,answer_node,Paren,NULL);
+      SF_AppendNewAnswer(subgoal_ptr,answer_node);	
+      
+    }else
+      if ( flag == 0 ) {
+	MakeLeafNode(Paren);
+	TN_UpgradeInstrTypeToSUCCESS(Paren,tag);
+	ans_inserts++;
+	
+	New_ALN(subgoal_ptr,answer_node,Paren,NULL);
+	SF_AppendNewAnswer(subgoal_ptr,answer_node);
+      }
+  }else
+    /* incremental eval end */
   /*
    *  If an insertion was performed, do some maintenance on the new leaf,
    *  and place the answer handle onto the answer list.

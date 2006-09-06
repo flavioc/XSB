@@ -122,6 +122,10 @@
 #include "debug_xsb.h"
 
 #include "thread_xsb.h"
+ /* incremental evaluation */
+
+#include "incr_xsb.h"
+#include "call_graph_xsb.h"
 
 int mem_flag;
 
@@ -839,6 +843,8 @@ void init_builtin_table(void)
   set_builtin_table(EXISTING_FILE_EXTENSION, "existing_file_extension");
 
   set_builtin_table(DO_ONCE, "do_once");
+
+  set_builtin_table(INCR_EVAL_BUILTIN, "incr_eval"); /* incremental evaluation */
 
   set_builtin_table(GET_DATE, "get_date");
   set_builtin_table(STAT_WALLTIME, "stat_walltime");
@@ -2145,8 +2151,13 @@ case WRITE_OUT_PROFILE:
   }
 
   case ABOLISH_TABLE_CALL: {
-    
-    return abolish_table_call(CTXTc (VariantSF) ptoc_int(CTXTc 1));
+    /* incremental evaluation */
+    VariantSF subg=(VariantSF) ptoc_int(CTXTc 1);
+    if(IsIncrSF(subg))
+      return abolish_table_call_incr(CTXTc (VariantSF) ptoc_int(CTXTc 1));
+    else
+      return abolish_table_call(CTXTc (VariantSF) ptoc_int(CTXTc 1));
+
   }
 
   case ABOLISH_MODULE_TABLES: {
@@ -2356,6 +2367,11 @@ case WRITE_OUT_PROFILE:
     break;
   }
 
+  case INCR_EVAL_BUILTIN: {     
+    incr_eval_builtin(CTXT);
+    break;
+  }
+   
   case BOTTOM_UP_UNIFY:
     return ( bottom_up_unify(CTXT) );
   case DELETE_TRIE:

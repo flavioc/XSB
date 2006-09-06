@@ -321,7 +321,7 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 #define check_complete		0xc4
 #define answer_return		0xc5
 #define resume_compl_suspension 0xc6
-
+#define tabletrysinglenoanswers	0xc7 /* incremental evaluations */
 #define check_interrupt		0xce
 #define new_answer_dealloc	0xcf
 

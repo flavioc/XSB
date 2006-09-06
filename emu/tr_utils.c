@@ -64,6 +64,8 @@
 #include "hash_xsb.h"
 #include "tables.h"
 
+#include "call_graph_xsb.h" /* incremental evaluation */
+
 /*----------------------------------------------------------------------*/
 
 #define MAX_VAR_SIZE	200
@@ -296,10 +298,23 @@ VariantSF get_call(CTXTdeclc Cell callTerm, Cell *retTerm) {
   if ( IsNULL(leaf) )
     return NULL;
   else {
+
     sf = CallTrieLeaf_GetSF(leaf);
+
+    /* incremental evaluation: check introduced as because of fact
+       predicates  */
+
+    if(IsNonNULL(sf) && IsNULL(sf->callnode)) 
+      return NULL;
+      
+    /* incremental evaluation end */
+
     if ( IsProperlySubsumed(sf) )
       construct_answer_template(CTXTc callTerm, conssf_producer(sf), callVars);
+
+
     *retTerm = build_ret_term(CTXTc callVars[0],&callVars[1]);
+
     return sf;
   }
 }
@@ -1685,6 +1700,12 @@ int fast_abolish_table_predicate(CTXTdeclc Psc psc)
 
   tif = get_tip(CTXTc psc);
 
+  /* incremental evaluation */
+  if(get_incr(psc))
+    xsb_warn("[abolish_table_pred] Abolish incremental table"
+		" of predicate %s/%d. This can cause unexpected behavior.\n", get_name(psc), get_arity(psc));
+
+
   if (IsVariantPredicate(tif) && IsNULL(TIF_CallTrie(tif))) {
     return 1;
   }
@@ -1801,6 +1822,15 @@ int abolish_table_call_cps_check(CTXTdeclc VariantSF subgoal)
   return found_subgoal_match;
 }
 
+/* incremental */
+int abolish_table_call_incr(CTXTdeclc VariantSF subgoal) {
+  if(IsIncrSF(subgoal))
+    abolish_incr(CTXTc subgoal->callnode);
+  
+  return TRUE;
+}
+
+
 int abolish_table_call(CTXTdeclc VariantSF subgoal) {
 
     TIFptr tif;
@@ -1902,6 +1932,12 @@ inline int abolish_table_predicate(CTXTdeclc Psc psc)
     xsb_abort("[abolish_table_pred] Attempt to delete non-tabled predicate (%s/%d)\n",
 	      get_name(psc), get_arity(psc));
   }
+  /* incremental */
+  if(get_incr(psc))
+    xsb_warn("[abolish_table_predicate] Abolish incremental table"
+		" of predicate %s/%d. This can cause unexpected behavior.\n", get_name(psc), get_arity(psc));
+
+
   if (IsVariantPredicate(tif) && IsNULL(TIF_CallTrie(tif))) {
     return 1;
   }

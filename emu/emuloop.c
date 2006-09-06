@@ -78,7 +78,7 @@
 #include "hash_xsb.h"
 #include "struct_manager.h"
 #include "builtin.h"
-
+#include "call_graph_xsb.h" /* incremental evaluation */
 /*
  * Variable ans_var_pos_reg is a pointer to substitution factor of an
  * answer in the heap.  It is used and set in function

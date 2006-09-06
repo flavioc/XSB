@@ -53,7 +53,8 @@
 
 #include "sub_tables_xsb_i.h"
 #include "debug_xsb.h"
-
+#include "call_graph_xsb.h" /* for incremental evaluation */
+#include "tr_utils.h"  /* for incremental evaluation */
 
 /*=========================================================================
      This file contains the interface functions to the tabling subsystem
@@ -141,6 +142,19 @@ VariantSF NewProducerSF(CTXTdeclc BTNptr Leaf,TIFptr TableInfo) {
    CallTrieLeaf_SetSF(Leaf,pNewSF);					    
    subg_ans_list_ptr(pNewSF) = empty_return_handle(pNewSF);		     
    subg_compl_stack_ptr(pNewSF) = openreg - COMPLFRAMESIZE;		    
+
+/* incremental evaluation start */
+
+if((get_incr(TIF_PSC(TableInfo))) &&(IsVariantPredicate(TableInfo))){
+  //  sfPrintGoal(stdout,pNewSF,NO);printf(" is marked incr\n");
+  subg_callnode_ptr(pNewSF) = makecallnode(pNewSF);                        
+ } else{
+  //sfPrintGoal(stdout,pNewSF,NO);printf(" is marked NON-incr %s/%d:%d:%u\n",get_name(TIF_PSC(TableInfo)),get_arity(TIF_PSC(TableInfo)),get_incr(TIF_PSC(TableInfo)),TIF_PSC(TableInfo));
+  subg_callnode_ptr(pNewSF) = NULL;
+ }
+/* incremental evaluation end */
+
+
    return (VariantSF)pNewSF;						  
 }
 
@@ -182,11 +196,63 @@ void table_call_search(CTXTdeclc TabledCallInfo *call_info,
 
   TIFptr tif;
 
+  /* for incremental evaluation begin */ 
+
+  int flag;
+  callnodeptr c;
+  VariantSF sf;
+  ALNptr pALN;
+  BTNptr leaf,Paren;  
+
+  /* for incremental evaluation end */     
+
+
+
   tif = CallInfo_TableInfo(*call_info);
   if ( IsNULL(TIF_CallTrie(tif)) )
     TIF_CallTrie(tif) = newCallIndex(CTXTc TIF_PSC(tif));
-  if ( IsVariantPredicate(tif) )
+  if ( IsVariantPredicate(tif) ){
     variant_call_search(CTXTc call_info,results);
+    /* incremental evaluation: checking whether falsecount is zero */
+    /*
+      In call check insert if a call is reinserted and was already
+      invalidated (falsecount>0) we mark all the answers deleted and
+      make sure this call is treated as a new call (flag=0) 
+      
+      If falsecount=0 that means the call is not affected then it
+      should fetch answers from the earlier answer table as any
+      completed call would do.
+    */
+
+    flag=CallLUR_VariantFound(*results);
+    Paren=CallLUR_Leaf(*results);
+    old_call=NULL;
+    old_answer_table=NULL;
+    if(flag!=0){
+      
+      sf=CallTrieLeaf_GetSF(Paren);
+      c=sf->callnode;
+      if(IsNonNULL(c)&&(c->falsecount!=0)){
+	old_call=c;      
+	flag=0;
+	if ( has_answers(sf) ) {
+	  pALN = subg_answers(sf);
+	  do {
+	    leaf=ALN_Answer(pALN);
+	    safe_delete_branch(leaf);      
+	    pALN = ALN_Next(pALN);
+	  } while ( IsNonNULL(pALN) );
+	}
+	c->aln=subg_answers(sf);
+	old_answer_table=sf->ans_root_ptr;
+	//reclaim_incomplete_table_structs(sf);
+	CallTrieLeaf_SetSF(Paren,NULL);            
+      }
+    }
+    CallLUR_Subsumer(*results) = CallTrieLeaf_GetSF(Paren);
+    CallLUR_VariantFound(*results) = flag;
+    /* incremental evaluation: end */
+  }
   else
     subsumptive_call_search(CTXTc call_info,results);
   {
@@ -232,6 +298,88 @@ void table_call_search(CTXTdeclc TabledCallInfo *call_info,
     CallLUR_VarVector(*results) = CallLUR_VarVector(*results) + size + 1;
   }
 }
+
+
+/* incremental evaluation */
+
+void table_call_search_incr(CTXTdeclc TabledCallInfo *call_info,
+		       CallLookupResults *results) {
+
+  TIFptr tif;
+  BTNptr leaf;
+  tif = CallInfo_TableInfo(*call_info);
+  if ( IsNULL(TIF_CallTrie(tif)) )
+    TIF_CallTrie(tif) = newCallIndex(CTXTc TIF_PSC(tif));
+
+  if ( IsVariantPredicate(tif) ){
+    variant_call_search(CTXTc call_info,results);
+    
+    leaf=CallLUR_Leaf(*results);
+    if (CallLUR_VariantFound(*results)==0){
+      /* new call */      
+      BTN_Child(leaf) = (BTNptr)makecallnode(NULL); 
+      initoutedges((callnodeptr)BTN_Child(leaf));
+    }
+  }
+  else
+    xsb_warn("Incremental and subsumptive do not match");
+  
+  {
+    /*
+     * Copy substitution factor from CPS to Heap.  The arrangement of
+     * this second s.f.  is similar to that in the CPS: the
+     * size of the vector is now at the high end, but the components
+     * are still arranged from high mem (first) to low (last) -- see
+     * picture at beginning of slginsts_xsb_i.h.  At the return of
+     * this function, each cell of the heap s.f. will have the same
+     * value as the corresponding cell in the CPS s.g.  This is done so
+     * that attvs can be analyzed upon interning answers -- see
+     * documentation at the beginning of variant_call_search().
+     */
+    /*
+    CPtr tmplt_component, tmplt_var_addr, hrg_addr;
+    int size, j;
+
+    tmplt_component = CallLUR_VarVector(*results);
+    size = int_val(*tmplt_component) & 0xffff;
+    xsb_dbgmsg((LOG_TRIE,
+		"done with vcs, answer_template %x\n",tmplt_component));
+
+  
+    if ((pb)top_of_localstk < (pb)top_of_heap + size +
+	OVERFLOW_MARGIN) {
+      xsb_abort("{table_call_search} Heap overflow copying answer template");
+    }
+
+    for ( j = size - 1, tmplt_component = tmplt_component + size;
+	  j >= 0;
+	  j--, tmplt_component-- ) {
+      tmplt_var_addr = (CPtr)*tmplt_component;
+      xsb_dbgmsg((LOG_TRIE,"in TSC, copying AT to heap At[%d]: %x val: %x",
+		  (size-(j)),tmplt_component,tmplt_var_addr));
+  
+      hrg_addr = hreg+j;
+      bld_copy(hrg_addr, (Cell)(tmplt_var_addr));
+    }
+    hreg += size;
+    bld_copy(hreg, cell(CallLUR_VarVector(*results)));
+    hreg++;
+    CallLUR_VarVector(*results) = CallLUR_VarVector(*results) + size + 1;
+    */
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 /*=========================================================================*/
 
@@ -468,6 +616,76 @@ void table_complete_entry(CTXTdeclc VariantSF producerSF) {
       dbg_smPrint(LOG_STRUCT_MANAGER, smTSIN, "  after chain reclamation");
     }
 
+  /* incremental  evaluation start */
+  
+  /* 
+     If a new call is complete we should compare that whether its
+     answer set is equal to the previous answer set. If no_of_answer
+     is >0 we know that not all answers are rederived. Also if a new
+     answer is added it is already marked as changed (see tries.c,
+     variant_answer_search). If both the conditions are not met that
+     means the call is unchanged i.e it produced the same set of
+     answers. This information has to be propagated to the calls
+     dependent on this call whose falsecount needs to be updated
+     (propagate_no_change). Also answers that are still marked are
+     deleted as those are not answers of the new call.
+     
+  */
+
+  if(IsIncrSF(producerSF)){
+    callnodeptr pc;
+    pc=producerSF->callnode->prev_call;
+    if(IsNonNULL(pc)){
+      /* old calls */
+      if (pc->no_of_answers>0)
+	pc->changed=1;
+      if (pc->changed==0){
+	unchanged_call++;
+	propagate_no_change(pc); /* defined in call_graph_xsb.c */
+      }else
+	nq(&changed,producerSF->callnode);
+      
+      
+    
+      producerSF->callnode->prev_call=NULL;
+    
+    	
+      if ( has_answers(producerSF) ) {
+	pALN = pc->aln;
+	while(IsNonNULL(pALN)) {
+	  if(IsDeletedNode(ALN_Answer(pALN)))
+	    delete_branch(CTXTc ALN_Answer(pALN),&subg_ans_root_ptr(producerSF));
+	  pALN = ALN_Next(pALN);
+	}
+      }else{
+	/* There is some memory leak here: I have to delete the answer
+	   table here: iterating delete_branch thru the answer trie
+	   gives error while deleting the last branch */
+	
+	producerSF->ans_root_ptr=NULL; 
+      }
+      deallocatecall(pc);
+      
+      
+    }else /* newly added calls */
+      nq(&changed,producerSF->callnode);
+    
+
+  
+    
+    if ( has_answers(producerSF) ) {
+      pALN = pRealAnsList = subg_answers(producerSF);
+      tag = UNCOND_ANSWERS;
+      do {
+	if ( is_conditional_answer(ALN_Answer(pALN)) ) {
+	  tag = COND_ANSWERS;
+	  break;
+	}
+	pALN = ALN_Next(pALN);
+      } while ( IsNonNULL(pALN) );
+    }
+  }    /* incremental  evaluation end */
+  else
   /* Reclaim Producer's Answer List
      ------------------------------ */
   if ( has_answers(producerSF) ) {
@@ -567,9 +785,11 @@ inline TIFptr New_TIF(CTXTdeclc Psc pPSC) {
       TIF_EvalMethod(pTIF) = VARIANT_EVAL_METHOD;			
    else if (get_tabled(pPSC)==T_TABLED_SUB) 				
      TIF_EvalMethod(pTIF) = SUBSUMPTIVE_EVAL_METHOD;			
-   else {								
-      xsb_warn("%s/%d not identified as tabled in .xwam file, Recompile (variant assumed)", \
-	get_name(pPSC),get_arity(pPSC));				
+   else {			
+     /* incremental evaluation */
+     if(!get_incr(pPSC))					
+       xsb_warn("%s/%d not identified as tabled in .xwam file, Recompile (variant assumed)", \
+		get_name(pPSC),get_arity(pPSC));				
       TIF_EvalMethod(pTIF) = VARIANT_EVAL_METHOD;			
       set_tabled(pPSC,T_TABLED_VAR);					
    }									
