@@ -124,6 +124,7 @@ static Psc make_psc_rec(char *name, char arity) {
   //  set_spy(temp, 0);
   //  set_shared(temp, 0);
   //  set_tabled(temp, 0);
+  temp->incr = 0;
   set_arity(temp, arity);
   set_data(temp, 0);
   set_ep(temp,(byte *)&(temp->load_inst));
