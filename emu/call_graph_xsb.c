@@ -238,7 +238,7 @@ void deallocatecall(callnodeptr callnode){
   calllistptr tmpin,in;
   
   struct key *ownkey;
-  callnodeptr  prevnode;
+  /*  callnodeptr  prevnode; */
   struct hashtable* hasht;
   SM_AllocateStruct(smKey, ownkey);
   ownkey->goal=callnode->id;	

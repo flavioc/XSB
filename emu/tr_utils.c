@@ -303,10 +303,10 @@ VariantSF get_call(CTXTdeclc Cell callTerm, Cell *retTerm) {
 
     /* incremental evaluation: check introduced as because of fact
        predicates  */
-
+    /*
     if(IsNonNULL(sf) && IsNULL(sf->callnode)) 
       return NULL;
-      
+    */
     /* incremental evaluation end */
 
     if ( IsProperlySubsumed(sf) )
