@@ -47,7 +47,7 @@
 #define PROFFLAG        12
 #define TABLING_METHOD	13      /* Default method used to evaluate tabled */
 #define CLAUSE_GARBAGE_COLLECT 14 /* Turn clause gc on or off */
-/* Flags 14-24 are open to use */
+/* Flags 15-24 are open to use */
 
 /*
  *  Flags 25-41 are reserved for Interrupt Handler PSCs.
@@ -117,6 +117,7 @@ interrupt flag
 #define ORA_INPUTARRAY_WIDTH      68   /* max size of each input value    */
 #define ORA_OUTPUTARRAY_LENGTH    69   /* max # simultaneous output tuples */
 
+#define STRING_GARBAGE_COLLECT    70 /* Turn string gc on or off */
 
 
 #define MAX_FLAGS		75

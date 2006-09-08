@@ -339,7 +339,7 @@ static int mark_cell(CPtr cell_ptr)
 #ifdef MULTI_THREAD
   if (flags[NUM_THREADS] == 1)
 #endif
-    if (gc_strings) {
+    if (gc_strings && (flags[STRING_GARBAGE_COLLECT] == 1)) {
       if (tag == XSB_STRING) {
 	char *astr = string_val(cell_val);
 	if (astr && (string_find_safe(astr) == astr))
@@ -425,7 +425,8 @@ static int mark_root(Cell cell_val)
       if (!points_into_heap(cell_ptr)) return(0) ;
       v = *cell_ptr ;
 #ifndef NO_STRING_GC
-      if (gc_strings) mark_if_string(v,"attv 1");
+      if (gc_strings && (flags[STRING_GARBAGE_COLLECT] == 1)) 
+	mark_if_string(v,"attv 1");
 #endif
       pointer_from_cell(v,&tag,&whereto) ;
       switch (tag) {
@@ -436,7 +437,8 @@ static int mark_root(Cell cell_val)
       }
       v = *(++cell_ptr) ;
 #ifndef NO_STRING_GC
-      if (gc_strings) mark_if_string(v,"attv 2");
+      if (gc_strings && (flags[STRING_GARBAGE_COLLECT] == 1))
+	mark_if_string(v,"attv 2");
 #endif
       pointer_from_cell(v,&tag,&whereto) ;
       switch (tag) {
@@ -455,7 +457,7 @@ static int mark_root(Cell cell_val)
 #ifdef MULTI_THREAD
   if (flags[NUM_THREADS] == 1)
 #endif
-    if (gc_strings) {
+    if (gc_strings && (flags[STRING_GARBAGE_COLLECT] == 1)) {
       char *sstr = string_val(cell_val);
       if (sstr && (string_find_safe(sstr) == sstr))
 	mark_string_safe(sstr,"mark_root");

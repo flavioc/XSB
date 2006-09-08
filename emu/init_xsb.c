@@ -221,6 +221,7 @@ static void init_flags(CTXTdecl)
   flags[NUM_THREADS] = 1;          /* 1 thread will be run at start */
   pflags[BACKTRACE] = 1;           /* Backtrace on error by default */
   pflags[CLAUSE_GARBAGE_COLLECT] = 1;           /* Clause GC on by default */
+  flags[STRING_GARBAGE_COLLECT] = 1;           /* String GC on by default */
 }
 
 /*==========================================================================*/

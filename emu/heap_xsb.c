@@ -326,6 +326,8 @@ static unsigned long total_collected = 0 ;
 static int num_gc = 0 ;
 #endif
 
+static int num_sgc = 0 ;
+
 /*----------------------------------------------------------------------*/
 /* marker bits in different areas.                                      */
 /*----------------------------------------------------------------------*/
@@ -777,8 +779,9 @@ int gc_heap(CTXTdeclc int arity, int ifStringGC)
 #ifdef MULTI_THREAD
   if (flags[NUM_THREADS] == 1) {
 #endif
-    if (gc_strings) {
+    if (gc_strings && (flags[STRING_GARBAGE_COLLECT] == 1)) {
       //      long beg_string_space_size = pspacesize[STRING_SPACE];
+      num_sgc++;
       begin_stringtime = cpu_time();
       mark_nonheap_strings(CTXT);
       free_unused_strings();

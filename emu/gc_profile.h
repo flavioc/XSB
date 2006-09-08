@@ -291,8 +291,8 @@ void print_gc_statistics(CTXTdecl)
 {
   char *which = (slide) ? "sliding" : "copying" ;
 
-  printf("%4d heap garbage collections by %s: collected %ld cells in %lf secs\n\n",
-	 num_gc, which, total_collected, total_time_gc);
+  printf("%4d heap (%3d string) garbage collections by %s: collected %ld cells in %lf secs\n\n",
+	 num_gc, num_sgc, which, total_collected, total_time_gc);
 }
 
 
