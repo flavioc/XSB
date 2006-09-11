@@ -24,7 +24,7 @@ reach(X,Y):- edge(X,Z),reach(Z,Y).
 :- incr_retract(edge(1,2)).
 :- update(_X).
 
-
+/*
 :- incr_assert(edge(1,2)).
 :- update(_X).
 :- incr_retract(edge(1,2)).
@@ -65,7 +65,7 @@ reach(X,Y):- edge(X,Z),reach(Z,Y).
 :- incr_assert(edge(2,4)).
 :- update(X).
 
-
+*/
 
 
 /* Sample Run 
