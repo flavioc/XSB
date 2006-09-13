@@ -24,7 +24,7 @@
 */
 
 
-:- export break/0, prompt/2, prompt/3.
+:- export break/0.
 
 :- import [] / 0 from usermod.	% just to make usermod typed "module"
 :- import xsb_flag/2 from curr_sym.
@@ -40,12 +40,12 @@
    gc_tables/1,gc_dynamic/1
      from standard.
 :- import '$$exception_ball'/2 from standard.
-:- import close_open_tables/0, conname/2, 
-          intern_string/2, is_xwammode/1, 
-          psc_prop/2, psc_set_prop/2, psc_set_type/2, 
+:- import close_open_tables/0,
+          is_xwammode/1, 
 	  stat_flag/2, stat_set_flag/2,
-	  slash/1, term_psc/2, trimcore/0,
-	  xwam_state/2
+	  slash/1, trimcore/0,
+	  xwam_state/2,
+	  prompt/2, prompt/3
      from machine.
 :- import file_open/3, file_close/1, file_get/2, fmt_write_string/3,
           file_flush/2, /*ioport2iostream/2,*/

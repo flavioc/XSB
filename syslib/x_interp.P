@@ -308,30 +308,6 @@ version_message :-
 %% The interpreter NEEDS this repeat: do not use the one in standard.
 x_interp_repeat :- true ; x_interp_repeat.
 
-prompt(New,Old) :- prompt(New,Old,'_$main_prompt'(_)).
-
-prompt(New,Old,Pstore) :- 
-	(Old == []
-	 ->	true
-	 ;	get_prompt(Pstore,Old)
-	),
-	(Old \== New
-	 ->	set_prompt(Pstore,New)
-	 ;	true
-	).
-
-get_prompt(Pstore,Prompt) :-
-	term_psc(Pstore, Psc),
-	psc_prop(Psc, Buff),	
-	intern_string(Buff, String),	%% temp solution, since ALIAS not work
-	Prompt = String.		%% for double word.
-
-set_prompt(Pstore,Prompt) :-
-	term_psc(Pstore, Psc),
-	psc_set_type(Psc, 8),			%% T_CSET
-	conname(Prompt, String),
-	psc_set_prop(Psc, String).
-
 print_debug_state :-
 	stat_flag(TRACE,Trace),
 	stat_flag(DEBUG_ON,Debug),
