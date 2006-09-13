@@ -39,8 +39,10 @@
 
 :- import gennum/2, conset/2 from gensym.
 
-:- import call/1, compare/3, ensure_loaded/1, nl/0, structure/1, throw/1, 
+:- import call/1, compare/3, nl/0, structure/1, throw/1, 
 	  write/1, '=..'/2 from standard.
+
+:- import ensure_loaded/1 from consult.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %	
