@@ -1280,6 +1280,36 @@ DllExport int call_conv xsb_init_string(CTXTdeclc char *cmdline_param) {
 
 /************************************************************************/
 /*                                                                      */
+/* pipe_xsb_stdin() splits XSB's stdin stream into a read end and a     */
+/* write end. The read end takes the place of the original stdin, and   */
+/* the write end is accessable through a call to write_to_xsb_stdin,    */
+/* another c interface routine. These two calls can be used to send     */
+/* input to a thread running xsb.dll code that is blocking on input,    */
+/* such as the top-level interpreter or trace debugger.                 */
+/*                                                                      */
+/************************************************************************/
+DllExport int call_conv pipe_xsb_stdin() {
+    extern int pipe_input_stream();
+    return pipe_input_stream();
+}
+
+/************************************************************************/
+/*                                                                      */
+/* writeln_to_xsb_stdin(char *) is to be called after a call to           */
+/* pipe_xsb_stdin, and writes a string of characters to the write end   */
+/* of xsb's piped stdin stream.                                         */
+/*                                                                      */
+/************************************************************************/
+DllExport int call_conv writeln_to_xsb_stdin(char * input){
+    extern FILE * input_write_stream;
+    fprintf(stdout, "\n"); 
+    fprintf(input_write_stream, "%s\n", input); 
+    fflush(input_write_stream);
+    return 0;
+}
+
+/************************************************************************/
+/*                                                                      */
 /* xsb_command() passes the command (i.e. query with no variables) to   */
 /* xsb.  The command must be put into xsb's register 1 as a term, by    */
 /* the caller who uses the c2p_* (and perhaps p2p_*) functions.         */
