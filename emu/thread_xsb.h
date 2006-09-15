@@ -63,7 +63,7 @@ typedef struct Dynamic_Mutex_Frame {
   DynMutPtr       prev_dynmut;
 } DynMutexFrame;
 
-MutexFrame sys_mut[MAX_SYS_MUTEXES];
+extern MutexFrame sys_mut[MAX_SYS_MUTEXES];
 
 #define MUTARRAY_MUTEX(i) &(sys_mut[(i)].th_mutex)
 #define MUTARRAY_NUMLOCKS(i) sys_mut[(i)].num_locks

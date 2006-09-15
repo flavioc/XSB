@@ -519,6 +519,10 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
       get_var_and_attv_nums(template_size, attv_num, tmp);
       answer_template--;
 
+      /* TLS 060913: need to initialize here, as it doesnt get
+	 initialized in all paths of table_consume_answer */
+      num_heap_term_vars = 0;
+
       table_consume_answer(CTXTc first_answer,template_size,attv_num,answer_template,
 			   CallInfo_TableInfo(callInfo));
 
