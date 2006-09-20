@@ -244,6 +244,9 @@ attv_unify(Var, Value) :-
 	;   Var = Value
 	).
 
+/* TLS: an attribute list has the form [Module1,Value1,Module2,Value2,...]
+   where there is a unique value for each module */
+
 put_attr(Var,Mod,Val) :-
       ( get_attributes(Var,Atts) ->
               '$put_attr'(Atts,Mod,Val,NAtts),
