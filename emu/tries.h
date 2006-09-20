@@ -539,9 +539,9 @@ typedef struct callnodetag{
   int id; 
 }CALL_NODE;
 
-struct key{
+typedef struct key{
 	int goal;
-}KEY;
+} KEY;
 
 
 typedef struct _calllist{

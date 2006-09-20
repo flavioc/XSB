@@ -108,22 +108,22 @@ Structure_Manager smOutEdge   =  SM_InitDecl(OUTEDGE,OUTEDGE_PER_BLOCK,"Outedge"
 
 
 
-DEFINE_HASHTABLE_INSERT(insert_some, struct key, CALL_NODE);
-DEFINE_HASHTABLE_SEARCH(search_some, struct key, callnodeptr);
-DEFINE_HASHTABLE_REMOVE(remove_some, struct key, callnodeptr);
-DEFINE_HASHTABLE_ITERATOR_SEARCH(search_itr_some, struct key);
+DEFINE_HASHTABLE_INSERT(insert_some, KEY, CALL_NODE);
+DEFINE_HASHTABLE_SEARCH(search_some, KEY, callnodeptr);
+DEFINE_HASHTABLE_REMOVE(remove_some, KEY, callnodeptr);
+DEFINE_HASHTABLE_ITERATOR_SEARCH(search_itr_some, KEY);
 
 
 /*****************************************************************************/
 static unsigned int hashfromkey(void *ky)
 {
-    struct key *k = (struct key *)ky;
+    KEY *k = (KEY *)ky;
     return (int)(k->goal);
 }
 
 static int equalkeys(void *k1, void *k2)
 {
-    return (0 == memcmp(k1,k2,sizeof(struct key)));
+    return (0 == memcmp(k1,k2,sizeof(KEY)));
 }
 
 
@@ -174,7 +174,7 @@ callnodeptr makecallnode(VariantSF sf){
 void deleteinedges(callnodeptr callnode){
   calllistptr tmpin,in;
   
-  struct key *ownkey;
+  KEY *ownkey;
   struct hashtable* hasht;
   SM_AllocateStruct(smKey, ownkey);
   ownkey->goal=callnode->id;	
@@ -237,7 +237,7 @@ void deallocatecall(callnodeptr callnode){
   
   calllistptr tmpin,in;
   
-  struct key *ownkey;
+  KEY *ownkey;
   /*  callnodeptr  prevnode; */
   struct hashtable* hasht;
   SM_AllocateStruct(smKey, ownkey);
@@ -351,7 +351,7 @@ static void inline ecall3(calllistptr *list, call2listptr item){
 
 void addcalledge(callnodeptr fromcn, callnodeptr tocn){
   
-  struct key *k1;
+  KEY *k1;
   SM_AllocateStruct(smKey, k1);
   k1->goal = tocn->id;
   
