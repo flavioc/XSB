@@ -23,7 +23,6 @@
 ** 
 */
 
-
 /*************************************************************************
  * This module provides:
 
@@ -209,7 +208,9 @@ static xsbBool slide;
 static const int fragmentation_only = 0;
 #endif
 		      
-/* choose to do early reset or not */
+/* choose to do early reset or not.  TLS: I doubt that EARLY_RESET
+   will work with the pre-image trail needed for attributed
+   variables */
 /* #define EARLY_RESET 1 */
 
 
