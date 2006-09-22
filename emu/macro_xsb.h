@@ -565,18 +565,16 @@ struct completion_stack_frame {
 #define prev_compl_frame(b)	(((CPtr)(b))+COMPLFRAMESIZE)
 #define next_compl_frame(b)	(((CPtr)(b))-COMPLFRAMESIZE)
 
-
 #define adjust_level(CS_FRAME) {					\
   int new_level = compl_level(CS_FRAME);				\
   if ( new_level < compl_level(openreg) ) {				\
     CPtr csf = CS_FRAME;						\
-    while ( (compl_level(csf) >= new_level) && (csf >= openreg) ) {	\
+    while ( (csf >= openreg) && (compl_level(csf) >= new_level) ) {	\
       compl_level(csf) = new_level;					\
       csf = next_compl_frame(csf);					\
     }									\
   }									\
 }
-
 
 /*
  *  The overflow test MUST be placed after the initialization of the

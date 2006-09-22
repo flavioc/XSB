@@ -1101,6 +1101,8 @@ void init_machine(CTXTdeclc int glsize, int tcpsize,
   extend_enc_dec_as_nec(glstack.low,glstack.high);
 #endif
 
+  initialize_glstack((CPtr) glstack.low, ((CPtr)glstack.high) - 1);
+
   if (tcpsize == 0) {
     tcpstack.low = (byte *)malloc(tcpstack.init_size * K);
   } else {
@@ -1187,12 +1189,14 @@ void init_machine(CTXTdeclc int glsize, int tcpsize,
   cp_ebreg(breg) = ebreg;
   cp_hreg(breg) = hreg;
   cp_trreg(breg) = trreg;
+  cp_cpreg(breg) = cpreg;
   cp_ereg(breg) = ereg;
   cp_prevbreg(breg) = breg;               /* note ! */
   cp_pdreg(breg) = delayreg;
 #ifdef CP_DEBUG
   cp_psc(breg) = 0;
 #endif
+  cp_ptcp(breg) = ptcpreg;
   cp_prevtop(breg) = (CPtr)(tcpstack.high) - 1;
 
   /* init trie stuff */

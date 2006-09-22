@@ -389,6 +389,16 @@ static unsigned long slide_buf_size = 0;
 */
 /*----------------------------------------------------------------------*/
 
+/* Dont initialize glstack.high: cf. stack_boundaries  */
+void initialize_glstack(CPtr from, CPtr to)
+{
+  CPtr p = (CPtr) from;
+  while (p <= (CPtr) to) {
+    *p = (CPtr) 0;
+    p++;
+  }
+}
+
 xsbBool glstack_realloc(CTXTdeclc int new_size, int arity)
 {
   CPtr   new_heap_bot ;       /* bottom of new Global Stack area */
@@ -463,6 +473,8 @@ xsbBool glstack_realloc(CTXTdeclc int new_size, int arity)
   memmove(ls_top + local_offset,             /* move to */
 	  ls_top + heap_offset,              /* move from */
 	  (ls_bot - ls_top + 1)*sizeof(Cell) );      /* number of bytes */
+
+  initialize_glstack(heap_top + heap_offset,ls_top+local_offset);
 
   /* Update the Heap links */
   for (cell_ptr = (CPtr *)(heap_top + heap_offset);
