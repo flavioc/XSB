@@ -77,6 +77,11 @@ extern int findall_init_c(CTXTdecl);
 int get_more_chunk(CTXTdecl)
 { CPtr newchunk ;
 
+  if (!current_findall) 
+    /* set remainder of "full" buffer to 0 so string gc doesn't access uninitted space */
+    while (current_findall->top_of_chunk < current_findall->current_chunk+FINDALL_CHUNCK_SIZE)
+      *(current_findall->top_of_chunk++) = (Cell)NULL;
+
   if (!(newchunk = (CPtr)mem_alloc(FINDALL_CHUNCK_SIZE * sizeof(Cell),FINDALL_SPACE)))
     xsb_exit("get_more_chunk failed");
 
