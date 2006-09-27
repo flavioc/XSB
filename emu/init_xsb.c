@@ -965,7 +965,7 @@ void init_thread_structures(CTXTdecl)
   total_collected = 0;
 
   token_too_long_warning = 1;
-
+  IGRhead = NULL;
   /***************/
 
 /* This is here just for the first thread - others initialize its xsb tid
@@ -973,6 +973,7 @@ void init_thread_structures(CTXTdecl)
   th->tid = 0 ;
 #ifdef SHARED_COMPL_TABLES
   th->waiting_for_thread = NULL ;
+  th->deadlock_brk_leader = FALSE;
 #endif
 #ifdef CONC_COMPL
   pthread_cond_init( &th->cond_var, NULL );

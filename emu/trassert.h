@@ -29,10 +29,18 @@ extern int trie_retract(CTXTdecl);
 extern int trie_retract_safe(CTXTdecl);
 
 
-#define switch_to_trie_assert {		\
-   smBTN = &smAssertBTN;		\
-   smBTHT = &smAssertBTHT;		\
+#ifdef MULTI_THREAD
+#define switch_to_trie_assert {\
+   threads_current_sm = PRIVATE_SM;\
+   smBTN = &smAssertBTN;\
+   smBTHT = &smAssertBTHT;\
 }
+#else
+#define switch_to_trie_assert {\
+   smBTN = &smAssertBTN;\
+   smBTHT = &smAssertBTHT;\
+}
+#endif
 
 #define switch_from_trie_assert {	\
    smBTN = &smTableBTN;			\

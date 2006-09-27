@@ -726,7 +726,12 @@ XSB_Start_Instr(answer_return,_answer_return)
     //    printf("answer_template %x size %d\n",answer_template,template_size);
     //    sfPrintGoal(CTXTdeclc stddbg, consumer_sf, FALSE);
 
-    table_consume_answer(CTXTc next_answer,template_size,attv_num,answer_template,
+
+    /* TLS 060927: need to initialize here, as it doesnt get
+       initialized in all paths of table_consume_answer */
+      num_heap_term_vars = 0;
+
+table_consume_answer(CTXTc next_answer,template_size,attv_num,answer_template,
 			 subg_tif_ptr(consumer_sf));
 
     if (is_conditional_answer(next_answer)) {
