@@ -82,7 +82,7 @@ int get_more_chunk(CTXTdecl)
     while (current_findall->top_of_chunk < current_findall->current_chunk+FINDALL_CHUNCK_SIZE)
       *(current_findall->top_of_chunk++) = (Cell)NULL;
 
-  if (!(newchunk = (CPtr)mem_alloc(FINDALL_CHUNCK_SIZE * sizeof(Cell),FINDALL_SPACE)))
+  if (!(newchunk = (CPtr)mem_calloc(FINDALL_CHUNCK_SIZE, sizeof(Cell),FINDALL_SPACE)))
     xsb_exit("get_more_chunk failed");
 
   *newchunk = 0 ;
@@ -127,7 +127,7 @@ int findall_init_c(CTXTdecl)
   thisfree = nextfree;
 	/* no checking - no trailing - just use findall_init correct :-) */
   p = findall_solutions + nextfree ;
-  if (!(w = (CPtr)mem_alloc(FINDALL_CHUNCK_SIZE * sizeof(Cell),FINDALL_SPACE)))
+  if (!(w = (CPtr)mem_calloc(FINDALL_CHUNCK_SIZE, sizeof(Cell),FINDALL_SPACE)))
 	xsb_abort("[FINDALL] Not enough memory");
 
   *w = 0 ;
