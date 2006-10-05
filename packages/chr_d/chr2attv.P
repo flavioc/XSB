@@ -60,7 +60,7 @@ write_content([C|Cs]) :-
 
 translate(CHR,Attv) :-
 	split_clauses(CHR, ConstrDeclarations, NeverStored, Rules, Other, Mod),
-	(var(Mod) -> Mod = user; true),
+	(var(Mod) -> Mod = chrd_module; true),
 	check_rules(Rules,ConstrDeclarations,_RCnt),
 	generate_attribute_declaration(ConstrDeclarations,AttrDecl),
 	select_stored_constraints(ConstrDeclarations,NeverStored,Declarations),
@@ -336,6 +336,7 @@ generate_check_constr_body(Off,AttrCnt,F,A,ArgId,Args,Mod,CL,C) :-
 	AttrNum is ArgId + Off,
 	ith(AttrNum,AllArgAtts,IdAttr),
 	GetAttsCall =.. [GetAttsName,Arg|AllArgAtts],
+%	make_attr_term(OtherArgs,ArgAttr),
 	ArgAttr =.. ['attr'|OtherArgs],
 	
 	ArgCode = (var(Arg)
@@ -369,6 +370,10 @@ generate_check_constr_clause(Off,AttrCnt,F,A,Mod,Clause) :-
 	generate_check_constr_body(Off,AttrCnt,A,0,Args,Mod,Body),
 	Clause = (Head :- Body).
 
+/*
+ * bss' version
+ */
+ /*
 generate_check_constr_body(Off,AttrCnt,A,ArgId,Args,Mod,ArgCode) :-
 	ArgNum is ArgId + 1,
 	ArgNum = A, !,
@@ -379,6 +384,7 @@ generate_check_constr_body(Off,AttrCnt,A,ArgId,Args,Mod,ArgCode) :-
 	AttrNum is ArgId + Off,
 	ith(AttrNum,AllArgAtts,IdAttr),
 	GetAttsCall =.. [GetAttsName,Arg|AllArgAtts],
+%	make_attr_term(OtherArgs,ArgAttr),
 	ArgAttr =.. ['attr'|OtherArgs],
 	
 	ArgCode = (var(Arg)
@@ -394,6 +400,7 @@ generate_check_constr_body(Off,AttrCnt,A,ArgId,Args,Mod,ArgCode) :-
 	AttrNum is ArgId + Off,
 	ith(AttrNum,AllArgAtts,IdAttr),
 	GetAttsCall =.. [GetAttsName,Arg|AllArgAtts],
+%	make_attr_term(OtherArgs,ArgAttr),
 	ArgAttr =.. ['attr'|OtherArgs],
 	
 	generate_check_constr_body(Off,AttrCnt,A,ArgNum,Args,Mod,NextArgCode),
@@ -402,11 +409,36 @@ generate_check_constr_body(Off,AttrCnt,A,ArgId,Args,Mod,ArgCode) :-
 		   -> GetAttsCall,
 		      var_member(ArgAttr,IdAttr)
 		    ; NextArgCode).
+*/
+
+/*
+ * CR's version
+ */
+% /*
+generate_check_constr_body(Off,AttrCnt,A,ArgId,Args,Mod,ArgCode) :-
+	ArgNum is ArgId + 1,
+	delete_ith(ArgNum,Args,Arg,OtherArgs),
+	
+	AttrNum is ArgId + Off,
+	GetAttsCall = get_nth_attr(Arg,Mod,AttrNum,IdAttr),
+%	make_attr_term(OtherArgs,ArgAttr),
+	ArgAttr =.. ['attr'|OtherArgs],
+
+	ArgCode = (var(Arg)
+		   -> GetAttsCall,
+		      var_member(ArgAttr,IdAttr)
+		    ; NextArgCode),
+	(ArgNum == A
+	 -> NextArgCode = fail
+	  ; generate_check_constr_body(Off,AttrCnt,A,ArgNum,Args,Mod,NextArgCode)
+	).
+%*/
+	
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-
+%/*
 % generate predicates to find a constraint of desired form
 generate_match_constr_clauses(Declarations,AttrCnt,Mod,MatchClauses) :-
 	generate_match_constr_clauses(1,Declarations,AttrCnt,Mod,MatchClauses).
@@ -424,7 +456,12 @@ generate_match_constr_clause(Off,AttrCnt,F,A,Mod,Clause) :-
 	Head =.. [HeadName|Args],
 	generate_match_constr_body(Off,AttrCnt,A,0,Args,Mod,Body),
 	Clause = (Head :- Body).
+%*/
 
+/*
+ * bss' version
+ */
+/*
 generate_match_constr_body(Off,AttrCnt,A,ArgId,Args,Mod,ArgCode) :-
 	ArgNum is ArgId + 1,
 	ArgNum = A, !,
@@ -435,6 +472,7 @@ generate_match_constr_body(Off,AttrCnt,A,ArgId,Args,Mod,ArgCode) :-
 	AttrNum is ArgId + Off,
 	ith(AttrNum,AllArgAtts,IdAttr),
 	GetAttsCall =.. [GetAttsName,Arg|AllArgAtts],
+%	make_attr_term(OtherArgs,ArgAttr),
 	ArgAttr =.. ['attr'|OtherArgs],
 	
 	ArgCode = (var(Arg)
@@ -450,6 +488,7 @@ generate_match_constr_body(Off,AttrCnt,A,ArgId,Args,Mod,ArgCode) :-
 	AttrNum is ArgId + Off,
 	ith(AttrNum,AllArgAtts,IdAttr),
 	GetAttsCall =.. [GetAttsName,Arg|AllArgAtts],
+%	make_attr_term(OtherArgs,ArgAttr),
 	ArgAttr =.. ['attr'|OtherArgs],
 	
 	generate_match_constr_body(Off,AttrCnt,A,ArgNum,Args,Mod,NextArgCode),
@@ -458,7 +497,30 @@ generate_match_constr_body(Off,AttrCnt,A,ArgId,Args,Mod,ArgCode) :-
 		   -> GetAttsCall,
 		      member(ArgAttr,IdAttr)
 		    ; NextArgCode).
+*/
 
+/*
+ * CR's version
+ */
+%/* 
+generate_match_constr_body(Off,AttrCnt,A,ArgId,Args,Mod,ArgCode) :-
+	ArgNum is ArgId + 1,
+	delete_ith(ArgNum,Args,Arg,OtherArgs),
+
+	AttrNum is ArgId + Off,
+	GetAttsCall = get_nth_attr(Arg,Mod,AttrNum,IdAttr),
+%	make_attr_term(OtherArgs,ArgAttr),
+	ArgAttr =.. ['attr'|OtherArgs],
+
+	ArgCode = (is_attv(Arg)
+		   -> GetAttsCall,
+		      member(ArgAttr,IdAttr)
+		    ; NextArgCode),
+	(ArgNum == A
+	 ->	NextArgCode = fail
+	 ;	generate_match_constr_body(Off,AttrCnt,A,ArgNum,Args,Mod,NextArgCode)
+	).
+%*/
 
 /*
 % previous, slower version
@@ -479,7 +541,7 @@ generate_match_constr_clauses(Off,[F/A|Cs],AttrCnt,Mod,MatchClauses) :-
 generate_match_one_constr_clauses(_,_,_,A,A1,_,_,[]) :-
 	A1 is A + 1.
 generate_match_one_constr_clauses(Off,AttrCnt,F,A,ArgId,HN,Mod,[C|Cs]) :-
-	generate_match_one_constr_clause(Off,AttrCnt,A,ArgId,HN,Mod,C),
+	generate_match_one_constr_clause(Off,AttrCnt,A,ArgId,HN,Mod,C),	
 	Off1 is Off + 1,
 	NextArg is ArgId + 1,
 	generate_match_one_constr_clauses(Off1,AttrCnt,F,A,NextArg,HN,Mod,Cs).
@@ -489,15 +551,20 @@ generate_match_one_constr_clause(Off,AttrCnt,A,ArgId,HName,Mod,Clause) :-
 	Head =.. [HName|Args],
 	delete_ith(ArgId,Args,Arg,OtherArgs),
 	
-	fmt_write_string(GetAttsName, "get_%s_atts", arg(Mod)),
-	length(ArgAtts,AttrCnt),
-	ith(Off,ArgAtts,IdAttr),
-	GetAttsCall =.. [GetAttsName,Arg|ArgAtts],
+%	AttrNum is ArgId + Off,
+%	GetAttsCall = get_nth_attr(Arg,Mod,AttrNum,IdAttr),
+	GetAttsCall = get_nth_attr(Arg,Mod,Off,IdAttr),
+
+%	fmt_write_string(GetAttsName, "get_%s_atts", arg(Mod)),
+%	length(ArgAtts,AttrCnt),
+%	ith(Off,ArgAtts,IdAttr),
+%	GetAttsCall =.. [GetAttsName,Arg|ArgAtts],
+%	make_attr_term(OtherArgs,ArgAttr),
 	ArgAttr =.. ['attr'|OtherArgs],
 	
 	Body = (var(Arg),
 	       GetAttsCall,
-	       member(ArgAttr,IdAttr)),
+	       member(ArgAttr,IdAttr)),	
 	Clause = (Head :- Body).
 */
 
@@ -543,6 +610,7 @@ generate_add_constr_body(Off,AttrCnt,F,A,ArgId,Args,Mod,CodeList,Code) :-
 	delete_ith(AttrNum,ArgAtts,IdAttr,RestArgAtts),
 	GetAttsCall =.. [GetAttsName,Arg|ArgAtts],
 
+%	make_attr_term(OtherArgs,ArgAttr),
 	ArgAttr =.. ['attr'|OtherArgs],
 	InsertCall = (NewIdAttr = [ArgAttr|IdAttr]),
 	% or, for sorted constraint storage
@@ -593,6 +661,7 @@ generate_remove_constr_body(Off,AttrCnt,F,A,ArgId,Args,Mod,CodeList,Code) :-
 	delete_ith(AttrNum,ArgAtts,IdAttr,RestArgAtts),
 	GetAttsCall =.. [GetAttsName,Arg|ArgAtts],
 
+%	make_attr_term(OtherArgs,ArgAttr),
 	ArgAttr =.. ['attr'|OtherArgs],
 
 	AbsRemoveCall =.. ['abs_remove',IdAttr,ArgAttr,NewIdAttr],
@@ -1508,9 +1577,17 @@ propagation_mutli_head(Head,LastRule,OtherHs,R,F/A,I,N,Constrs,Mod,L,T) :-
 	    ThenCall =.. [RecursiveCallLabel|RecursiveArgs]
 	),
 	
+%        (LastRule = true
+%	 -> ElseCall = AddCall	    
+%	  ; build_head(F/A,N,HeadVs,ElseCall)
+%	),
+
         (LastRule = true
-	 -> ElseCall = AddCall	    
-	  ; build_head(F/A,N,HeadVs,ElseCall)
+	 -> NextRuleCall = true,
+	    ElseCall = AddCall
+	  ; fmt_write_string(NextRuleName,"%s_%d", args(F,N)),
+	    NextRuleCall =.. [NextRuleName|HeadVs],
+	    ElseCall = true
 	),
 
 	RCode = (RHead :-
@@ -1521,7 +1598,8 @@ propagation_mutli_head(Head,LastRule,OtherHs,R,F/A,I,N,Constrs,Mod,L,T) :-
 		     -> AddCall,
 			ThenCall
 		      ; ElseCall
-		    )
+		    ),
+		    NextRuleCall
 		),
 
 	L = [RCode|L1],
@@ -2552,6 +2630,13 @@ logic_and(_,_,false).
 logic_or(false,false,false) :- !.
 logic_or(_,_,true).
 
+
+make_attr_term(Args, Attr) :-
+	(Args = [Var]
+	 ->	Attr = Var
+	 ;	Attr =.. ['attr'|Args]
+	).
+%	Attr =.. ['attr'|Args].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
