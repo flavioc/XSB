@@ -112,7 +112,7 @@ static char *pspace_cat[NUM_CATS_SPACE] =
    "foreign     ","table       ","findall     ","profile     ",
    "mt-private  ","buffer      ","gc temp     ","hash        ",
    "interprolog ","thread      ","read canon  ","leaking...  ",
-   "special     ","other       "};
+   "special     ","other       ","incr table  "};
 
 #ifndef MULTI_THREAD
 void total_stat(CTXTdeclc double elapstime) {
@@ -184,15 +184,17 @@ void total_stat(CTXTdeclc double elapstime) {
 
   pspacetot = 0;
   for (i=0; i<NUM_CATS_SPACE; i++) 
-    if (i != TABLE_SPACE) pspacetot += pspacesize[i];
+    if (i != TABLE_SPACE && i != INCR_TABLE_SPACE) pspacetot += pspacesize[i];
 
   total_alloc =
     pspacetot  +  trieassert_alloc  +  pspacesize[TABLE_SPACE] +
+    pspacesize[INCR_TABLE_SPACE] +
     (pdl.size + glstack.size + tcpstack.size + complstack.size) * K +
     de_space_alloc + dl_space_alloc;
 
   total_used  =
     pspacetot  +  trieassert_used  +  pspacesize[TABLE_SPACE]-(tablespace_alloc-tablespace_used) +
+    pspacesize[INCR_TABLE_SPACE] +
     (glstack.size * K - gl_avail) + (tcpstack.size * K - tc_avail) +
     de_space_used + dl_space_used;
 
@@ -208,7 +210,7 @@ void total_stat(CTXTdeclc double elapstime) {
 	   trieassert_used,trieassert_alloc-trieassert_used);
 
   for (i=0; i<NUM_CATS_SPACE; i++) 
-    if (pspacesize[i] > 0 && i != TABLE_SPACE)
+    if (pspacesize[i] > 0 && i != TABLE_SPACE && i != INCR_TABLE_SPACE)
       printf("    %s                      %12ld\n",pspace_cat[i],pspacesize[i]);
 
   printf("  glob/loc space  %12ld bytes: %12ld in use, %12ld free\n",
@@ -231,9 +233,13 @@ void total_stat(CTXTdeclc double elapstime) {
 	 (unsigned long)COMPLSTACKBOTTOM - (unsigned long)top_of_complstk,
 	 (unsigned long)complstack.size * K -
 	 ((unsigned long)COMPLSTACKBOTTOM - (unsigned long)top_of_complstk));
+  if (pspacesize[INCR_TABLE_SPACE] > 0)
+    printf("  Incr table space                    %12ld in use\n",
+	   pspacesize[INCR_TABLE_SPACE]);
   printf("  SLG table space %12ld bytes: %12ld in use, %12ld free\n",
-	 pspacesize[TABLE_SPACE]-trieassert_alloc,  
-	 pspacesize[TABLE_SPACE]-trieassert_alloc-(tablespace_alloc-tablespace_used),
+	 pspacesize[TABLE_SPACE]+pspacesize[INCR_TABLE_SPACE]-trieassert_alloc,  
+	 pspacesize[TABLE_SPACE]+pspacesize[INCR_TABLE_SPACE]-trieassert_alloc-
+	 	(tablespace_alloc-tablespace_used),
 	 tablespace_alloc - tablespace_used);
   printf("\n");
 

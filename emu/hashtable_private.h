@@ -44,7 +44,11 @@ indexFor(unsigned int tablelength, unsigned int hashvalue)
 */
 
 /*****************************************************************************/
-#define freekey(X) free(X)
+ /* hack for size to release,  this is what call_graph uses */
+typedef struct htlocalkey{
+	int goal;
+} HTLOCALKEY;
+#define freekey(X) mem_dealloc(X,sizeof(HTLOCALKEY),INCR_TABLE_SPACE)
 /*define freekey(X) ; */
 
 

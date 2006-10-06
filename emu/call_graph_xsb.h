@@ -22,10 +22,7 @@
 ** $$
 ** 
 */
-
 #ifndef PUBLIC_CALL_GRAPH_DEFS
-
-
 #define PUBLIC_CALL_GRAPH_DEFS
 #define INCR
 #define CALLNODE_PER_BLOCK 10000
@@ -33,8 +30,7 @@
 #define CALL2LIST_PER_BLOCK 1000
 #define KEY_PER_BLOCK 10000
 #define OUTEDGE_PER_BLOCK 100
-#define HASH_TABLE_SIZE 500
-
+#define HASH_TABLE_SIZE 1
 
 extern int maximum_dl,factcount;
 extern calllistptr affected,changed,leader;
@@ -44,7 +40,6 @@ extern int callqptr;
 extern int saved_call,unchanged_call;
 extern BTNptr old_answer_table;
 extern int call_node_count,call_edge_count;
-
 extern void initoutedges(callnodeptr cn);
 extern callnodeptr makecallnode(VariantSF);
 extern void deallocatecall(callnodeptr);
@@ -60,6 +55,4 @@ extern int imm_dependent_on_list(CTXTdeclc callnodeptr call1);
 extern void print_call_node(callnodeptr);
 extern void nq(calllistptr *,callnodeptr);
 extern void abolish_incr(CTXTdeclc callnodeptr);
-
-
 #endif

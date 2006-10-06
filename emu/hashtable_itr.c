@@ -1,11 +1,16 @@
 /* Copyright (C) 2002, 2004 Christopher Clark  <firstname.lastname@cl.cam.ac.uk> */
 
+#include "xsb_config.h"
+#include "xsb_debug.h"
+
 #include <stdlib.h> /* defines NULL */
 
 #include "hashtable.h"
 #include "hashtable_private.h"
 #include "hashtable_itr.h"
 
+#include "auxlry.h"
+#include "memory_xsb.h"
 
 /*****************************************************************************/
 /* hashtable_iterator    - iterator constructor */
@@ -15,7 +20,7 @@ hashtable1_iterator(struct hashtable *h)
 {
     unsigned int i, tablelength;
     struct hashtable_itr *itr = (struct hashtable_itr *)
-        malloc(sizeof(struct hashtable_itr));
+      mem_alloc(sizeof(struct hashtable_itr),INCR_TABLE_SPACE);
     if (NULL == itr) return NULL;
     itr->h = h;
     itr->e = NULL;
@@ -121,7 +126,7 @@ hashtable1_iterator_remove(struct hashtable_itr *itr)
     remember_parent = itr->parent;
     ret = hashtable1_iterator_advance(itr);
     if (itr->parent == remember_e) { itr->parent = remember_parent; }
-    free(remember_e);
+    mem_dealloc(remember_e,sizeof(struct entry),INCR_TABLE_SPACE);
     return ret;
 }
 

@@ -134,9 +134,10 @@ extern System_Stack pdl,            /* PDL                        */
 #define LEAK_SPACE		15
 #define SPECIAL_SPACE		16
 #define OTHER_SPACE		17
+#define INCR_TABLE_SPACE	18
 // VARSTRING_SPACE??  some other to thread?
 
-#define NUM_CATS_SPACE		18
+#define NUM_CATS_SPACE		19
 
 /* Program and Symbol Tables Space (in Bytes)
    ------------------------------------------ */
