@@ -50,19 +50,29 @@ compile0(Path, _) :-
 	file_write0(STDERR, 'Cannot find the file/module '),
 	file_write0(STDERR, Path), file_nl(STDERR), fail.
 
-compile_f(XSB_SRC_EXTENSION_ATOM_SANS_DOT, Base, Opts, ExList, Mod, _) :- 
+compile_f(XSB_SRC_EXTENSION_ATOM_SANS_DOT, Base, Opts, ExList, Mod, _) :- !,
 	compile(Mod, Base, XSB_SRC_EXTENSION_ATOM, Opts, ExList).
-compile_f(pl, Base, Opts, ExList, Mod, _) :- 
+compile_f(pl, Base, Opts, ExList, Mod, _) :- !,
 	compile(Mod, Base, '.pl', Opts, ExList).
-compile_f('c', Base, Opts, ExList, Mod, Dir) :- 
+compile_f('c', Base, Opts, ExList, Mod, Dir) :- !,
 	compile_cH(Mod, Base, '.c ',Opts, ExList, Dir).
-compile_f('cpp', Base, Opts, ExList, Mod, Dir) :- 
+compile_f('cpp', Base, Opts, ExList, Mod, Dir) :- !,
 	compile_cH(Mod, Base, '.cpp ', Opts, ExList, Dir).
-compile_f('', Base, Opts, ExList, Mod, _) :-
+compile_f('', Base, Opts, ExList, Mod, _) :- !,
 	str_cat(Base, XSB_SRC_EXTENSION_ATOM, FileName),
-	sys_link(Base, FileName, _Result),
+	make_filecopy(Base, FileName),
 	compile(Mod, Base, XSB_SRC_EXTENSION_ATOM, Opts, ExList),
 	rm(FileName).
+
+make_filecopy(OFileName,NFileName) :-
+	xsb_configuration(os_type, OS_type),
+	(is_wind(OS_type)
+	 ->	sys_filecopy(OFileName,NFileName,_)
+	 ;	sys_link(OFileName,NFileName,_)
+	).
+
+is_wind(OS_type) :- str_sub('windows',OS_type), !.
+is_wind(OS_type) :- str_sub('cygwin',OS_type).
 
 /*======================================================================*/
 /* Predicates consult/[1,2] are thereafter similar to reconsult/[1,2].	*/
@@ -241,13 +251,27 @@ get_magic_num(ObjFile,[One,Two,Three,Four]) :-
 /*======================================================================*/
 
 search_module(FileName, Dir, Mod, Ext, Base, Obj) :-
-	almost_search_module(FileName, D, Mod, E, B),
-	( D == '', (FileName == Mod ; E == XSB_SRC_EXTENSION_ATOM_SANS_DOT)
+	almost_search_module(FileName, D, M, E, B),
+	( D == '', (FileName == M ; E == XSB_SRC_EXTENSION_ATOM_SANS_DOT)
 	 ->	% only a module name was given
-	    real_search_module(Mod, Dir, Base, Ext)
-	; Dir = D, Ext = E, Base = B
+		Mod = M,
+		real_search_module(Mod, Dir, Base, Ext)
+	 ; acceptable_extension(E)
+	 ->	Dir = D, Mod = M, Ext = E, Base = B
+	 ;	Dir = D,
+		Ext = '',
+		str_cat(B,'.',B1),
+		str_cat(B1,E,Base),
+		Mod = Base
 	),
 	str_cat(Base, XSB_OBJ_EXTENSION_ATOM, Obj).
+
+acceptable_extension('').
+acceptable_extension('P').
+acceptable_extension('p').
+acceptable_extension('pl').
+acceptable_extension('c').
+acceptable_extension('cpp').
 
 /*======================================================================*/
 /* real_search_module(+ModName, -Dir, -Base, -Ext)			*/
