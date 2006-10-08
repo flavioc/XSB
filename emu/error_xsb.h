@@ -131,6 +131,6 @@ void call_conv xsb_type_error(CTXTdeclc char *,Cell , char *,int, int) ;
 
 extern void call_conv xsb_memory_error(char *, char *);
 
-DllExport void call_conv xsb_throw(CTXTdeclc prolog_term, unsigned long);
+DllExport void call_conv xsb_throw(CTXTdeclc prolog_term);
 
 extern prolog_term build_xsb_backtrace(CTXTdecl);

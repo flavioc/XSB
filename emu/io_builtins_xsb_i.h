@@ -497,7 +497,7 @@ inline static xsbBool file_function(CTXTdecl)
     else if (isstring(pterm))
       addr = string_val(pterm);
     else {
-      xsb_abort("[FILE_WRITE_LINE] Outmput arg must be an atom or a char list");
+      xsb_abort("[FILE_WRITE_LINE] Output arg must be an atom or a char list");
       addr = NULL;
     }
     offset = ptoc_int(CTXTc 4);

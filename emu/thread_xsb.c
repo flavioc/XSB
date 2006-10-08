@@ -382,11 +382,11 @@ void unlock_mutex(CTXTdeclc DynMutPtr id) {
   rc = pthread_mutex_unlock( &(id->th_mutex) ) ;
   if (rc == EINVAL) {
     xsb_permission_error(CTXTc "unlock mutex","invalid mutex",
-			 reg[2],"xsb_mutex_unlock",2); 
+			 xsb_thread_id,"xsb_mutex_unlock",2); 
   } else if (rc == EPERM) { 
     xsb_permission_error(CTXTc "unlock mutex",
 			 "mutex not held by thread",
-			 reg[2],"xsb_mutex_unlock",2); 
+			 xsb_thread_id,"xsb_mutex_unlock",2); 
   } 
 }
 

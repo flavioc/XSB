@@ -81,7 +81,7 @@ extern void print_cp_backtrace();
 
 /* TLS: now frees Ball, which was assumed to be malloced.  Use
    mem_alloc_nocheck to avoid problems when thowing a memory error. */
-DllExport void call_conv xsb_throw(CTXTdeclc prolog_term Ball, unsigned long Ball_len)
+DllExport void call_conv xsb_throw_internal(CTXTdeclc prolog_term Ball, unsigned long Ball_len)
 {
   Psc exceptballpsc;
   PrRef Prref;
@@ -90,6 +90,7 @@ DllExport void call_conv xsb_throw(CTXTdeclc prolog_term Ball, unsigned long Bal
   Cell *tptr;
   prolog_term term_to_assert;
   Cell *space_for_ball_assert;
+
   unsigned long space_for_ball_assert_len = 3*sizeof(Cell);
 
   space_for_ball_assert = (Cell *) mem_alloc_nocheck(space_for_ball_assert_len,
@@ -113,7 +114,44 @@ DllExport void call_conv xsb_throw(CTXTdeclc prolog_term Ball, unsigned long Bal
   mem_dealloc(cs_val(Ball),Ball_len,LEAK_SPACE);
   mem_dealloc(space_for_ball_assert,space_for_ball_assert_len,LEAK_SPACE);
   /* reset WAM emulator state to Prolog catcher */
+  if (unwind_stack(CTXT)) xsb_exit("Unwind_stack failed in xsb_throw_internal!");
+  /* Resume main emulator instruction loop */
+  longjmp(xsb_abort_fallback_environment, (Integer) &fail_inst);
+}
+
+DllExport void call_conv xsb_throw(CTXTdeclc prolog_term Ball)
+{
+  Psc exceptballpsc;
+  PrRef Prref;
+  int isnew;
+  ClRef clause;
+  Cell *tptr;
+  prolog_term term_to_assert;
+  Cell *space_for_ball_assert = 0;
+
+  if (!space_for_ball_assert) {
+    /* 3 cells needed for term */
+    space_for_ball_assert = (Cell *) mem_alloc(3*sizeof(Cell),LEAK_SPACE);
+    if (!space_for_ball_assert) xsb_exit("out of memory in xsb_throw!");
+  }
+
+  exceptballpsc = pair_psc((Pair)insert("$$exception_ball", (byte)2, 
+					pair_psc(insert_module(0,"standard")), 
+					&isnew));
+  tptr = space_for_ball_assert;
+  term_to_assert = makecs(tptr);
+  bld_functor(tptr, exceptballpsc); tptr++;
+  bld_int(tptr, xsb_thread_self()); tptr++;
+  cell(tptr) = Ball; 
+
+  assert_code_to_buff_p(CTXTc term_to_assert);
+  /* need arity of 3, for extra cut_to arg */
+  Prref = (PrRef)get_ep(exceptballpsc);
+  assert_buff_to_clref_p(CTXTc term_to_assert,3,Prref,0,makeint(0),0,&clause);
+  mem_dealloc(space_for_ball_assert,3*sizeof(Cell),LEAK_SPACE);
+  /* reset WAM emulator state to Prolog catcher */
   if (unwind_stack(CTXT)) xsb_exit("Unwind_stack failed in xsb_throw!");
+
   /* Resume main emulator instruction loop */
   longjmp(xsb_abort_fallback_environment, (Integer) &fail_inst);
 }
@@ -156,7 +194,7 @@ void call_conv xsb_domain_error(CTXTdeclc char *valid_domain,Cell culprit,
   if (culprit == (Cell)NULL) bld_int(tptr,0); 
   else bld_ref(tptr,culprit);
 
-  xsb_throw(CTXTc ball_to_throw,ball_len);
+  xsb_throw_internal(CTXTc ball_to_throw,ball_len);
 
 }
 
@@ -192,7 +230,7 @@ void call_conv xsb_existence_error(CTXTdeclc char *object,Cell culprit,
   if (culprit == (Cell)NULL) bld_int(tptr,0); 
   else bld_ref(tptr,culprit);
 
-  xsb_throw(CTXTc ball_to_throw, ball_len);
+  xsb_throw_internal(CTXTc ball_to_throw, ball_len);
 
 }
 
@@ -225,7 +263,7 @@ void call_conv xsb_instantiation_error(CTXTdeclc char *predicate,int arity,
   tptr++;
   bld_copy(tptr,build_xsb_backtrace(CTXT));
 
-  xsb_throw(CTXTc ball_to_throw,ball_len);
+  xsb_throw_internal(CTXTc ball_to_throw,ball_len);
 
 }
 
@@ -264,7 +302,7 @@ void call_conv xsb_permission_error(CTXTdeclc
   if (culprit == (Cell)NULL) bld_int(tptr,0); 
   else bld_ref(tptr,culprit);
 
-  xsb_throw(CTXTc ball_to_throw,ball_len);
+  xsb_throw_internal(CTXTc ball_to_throw,ball_len);
 
 }
 
@@ -319,7 +357,7 @@ void call_conv xsb_resource_error(CTXTdeclc char *resource,
 
   bld_string(tptr,FlagBuf.string);
 
-  xsb_throw(CTXTc ball_to_throw, ball_len);
+  xsb_throw_internal(CTXTc ball_to_throw, ball_len);
 
 }
 
@@ -380,7 +418,7 @@ void call_conv xsb_resource_error_nopred(CTXTdeclc char *resource,char *message)
 
   bld_string(tptr,FlagBuf.string);
 
-  xsb_throw(CTXTc ball_to_throw, ball_len);
+  xsb_throw_internal(CTXTc ball_to_throw, ball_len);
 
 }
 
@@ -418,7 +456,7 @@ void call_conv xsb_table_error(CTXTdeclc char *message)
 #endif
   tptr++;
   bld_copy(tptr,build_xsb_backtrace(CTXT));
-  xsb_throw(CTXTc ball_to_throw,ball_len);
+  xsb_throw_internal(CTXTc ball_to_throw,ball_len);
 }			       
 
 /**************/
@@ -453,7 +491,7 @@ void call_conv xsb_type_error(CTXTdeclc char *valid_type,Cell culprit,
   if (culprit == (Cell)NULL) bld_int(tptr,0); 
   else bld_ref(tptr,culprit);
 
-  xsb_throw(CTXTc ball_to_throw, ball_len);
+  xsb_throw_internal(CTXTc ball_to_throw, ball_len);
 
 }
 
@@ -488,7 +526,7 @@ void call_conv xsb_basic_abort(char *message)
 #endif
   tptr++;
   bld_copy(tptr,build_xsb_backtrace(CTXT));
-  xsb_throw(CTXTc ball_to_throw,ball_len);
+  xsb_throw_internal(CTXTc ball_to_throw,ball_len);
 }
 
 DllExport void call_conv xsb_abort(char *description, ...)
