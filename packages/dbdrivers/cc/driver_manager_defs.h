@@ -73,8 +73,8 @@
 
 union xsb_value
 {
-  int* i_val;
-  double* f_val;
+  int i_val;
+  double f_val;
   char* str_val;
 };
 

@@ -97,27 +97,20 @@ DllExport int call_conv openConnection(void)
     return FALSE;
 
   cHandle = (struct xsb_connectionHandle *)malloc(sizeof(struct xsb_connectionHandle));
-  cHandle->handle = (char *)malloc((strlen(handle) + 1) * sizeof(char));
-  strcpy(cHandle->handle, handle);
-  cHandle->driver = (char *)malloc((strlen(driver) + 1) * sizeof(char));
-  strcpy(cHandle->driver, driver);
+  cHandle->handle = handle;
+  cHandle->driver = driver;
   if (strlen(server) == 0) {
-    cHandle->dsn = (char *)malloc((strlen(dsn) + 1) * sizeof(char));
-    strcpy(cHandle->dsn, dsn);
+    cHandle->dsn = dsn;
     cHandle->server = NULL;
     cHandle->database = NULL;
   }
   else {
-    cHandle->server = (char *)malloc((strlen(server) + 1) * sizeof(char));
-    strcpy(cHandle->server, server);
-    cHandle->database = (char *)malloc((strlen(database) + 1) * sizeof(char));
-    strcpy(cHandle->database, database);
+    cHandle->server = server;
+    cHandle->database = database;
     cHandle->dsn = NULL;
   }
-  cHandle->user = (char *)malloc((strlen(user) + 1) * sizeof(char));
-  strcpy(cHandle->user, user);
-  cHandle->password = (char *)malloc((strlen(password) + 1) * sizeof(char));
-  strcpy(cHandle->password, password);
+  cHandle->user = user;
+  cHandle->password = password;
 
   CHandles[numCHandles++] = cHandle;
   if ((val = connectDriver(cHandle)) != SUCCESS) {
@@ -175,7 +168,7 @@ DllExport int call_conv closeConnection(void)
 	    return FALSE;
 	  }
 	  freeQueryHandle(QHandles[j], j);
-	  break;
+	  j--;
 	}
       }
       freeConnectionHandle(CHandles[i], i);
@@ -238,11 +231,9 @@ DllExport int call_conv queryConnection(void)
   else if ((cHandle = isConnectionHandle(chandle)) != NULL) {
     sqlQuery = buildSQLQuery(sqlQueryList);
     qHandle = (struct xsb_queryHandle *)malloc(sizeof(struct xsb_queryHandle));
-    qHandle->handle = (char *)malloc((strlen(qhandle) + 1) * sizeof(char));
-    strcpy(qHandle->handle, qhandle);
+    qHandle->handle = qhandle;
     qHandle->connHandle = cHandle;
-    qHandle->query = (char *)malloc((strlen(sqlQuery) + 1) * sizeof(char));
-    strcpy(qHandle->query, sqlQuery);
+    qHandle->query = sqlQuery;
     qHandle->state = QUERY_BEGIN;
     QHandles[numQHandles++] = qHandle;
 
@@ -267,6 +258,8 @@ DllExport int call_conv queryConnection(void)
   if (val == TOO_MANY_RETURN_COLS || val == TOO_FEW_RETURN_COLS || val == INVALID_RETURN_LIST)
     return FALSE;
 
+
+  
   if ((cHandle = isConnectionHandle(chandle)) != NULL) {
     if (getDriverFunction(cHandle->driver, ERROR_MESG) != NULL)
       errorMesgDriver =
@@ -314,10 +307,8 @@ DllExport int call_conv prepareStatement(void)
 
   qHandle = (struct xsb_queryHandle *)malloc(sizeof(struct xsb_queryHandle));
   qHandle->connHandle = cHandle;
-  qHandle->query = (char *)malloc((strlen(sqlQuery) + 1) * sizeof(char));
-  strcpy(qHandle->query, sqlQuery);
-  qHandle->handle = (char *)malloc((strlen(qhandle) + 1) * sizeof(char));
-  strcpy(qHandle->handle, qhandle);
+  qHandle->query = sqlQuery;
+  qHandle->handle = qhandle;
   qHandle->state = QUERY_BEGIN;
   
   if (getDriverFunction(cHandle->driver, PREPARE) != NULL)
@@ -353,8 +344,7 @@ DllExport int call_conv executePreparedStatement(void)
   struct xsb_data** result;
   prolog_term bindList, returnList, element;
   char *queryHandle, *chandle;
-  double temp_float;
-  int i, temp_int, val;
+  int i, val;
 
   queryHandle = ptoc_string(1);
   bindList = reg_term(2);
@@ -365,7 +355,7 @@ DllExport int call_conv executePreparedStatement(void)
     errorNumber = "XSB_DBI_005";
     return FALSE;
   }
-  
+ 
   if (qHandle->state == QUERY_BEGIN) {
     bindValues =
       (struct xsb_data **)malloc(qHandle->numParams * sizeof(struct xsb_data *));
@@ -381,23 +371,17 @@ DllExport int call_conv executePreparedStatement(void)
 	bindValues[i]->type = STRING_TYPE;
 	bindValues[i]->length = strlen(p2c_string(element));
 	bindValues[i]->val = (union xsb_value *)malloc(sizeof(union xsb_value));
-	bindValues[i]->val->str_val =
-	  (char *)malloc((strlen(p2c_string(element)) + 1) * sizeof(char));
-	strcpy(bindValues[i]->val->str_val, p2c_string(element));
+	bindValues[i]->val->str_val = p2c_string(element);
       }
       else if (is_int(element)) {
 	bindValues[i]->type = INT_TYPE;
 	bindValues[i]->val = (union xsb_value *)malloc(sizeof(union xsb_value));
-	bindValues[i]->val->i_val = (int *)malloc(sizeof(int));
-	temp_int = p2c_int(element);
-	bindValues[i]->val->i_val = &temp_int;
+	bindValues[i]->val->i_val = p2c_int(element);
       }
       else if (is_float(element)) {
 	bindValues[i]->type = FLOAT_TYPE;
 	bindValues[i]->val = (union xsb_value *)malloc(sizeof(union xsb_value));
-	bindValues[i]->val->f_val = (double *)malloc(sizeof(double));
-	temp_float = p2c_float(element);
-	bindValues[i]->val->f_val = &temp_float;
+	bindValues[i]->val->f_val = p2c_float(element);
       }
       else if (is_functor(element)) {
       }
@@ -491,7 +475,6 @@ static char* buildSQLQuery(prolog_term sqlQueryList)
   prolog_term element;
   char* sqlQuery;
   char* temp;
-  char* t1;
   int i, cnt;
 
   sqlQuery = (char *)malloc(QUERY_SIZE * sizeof(char));
@@ -500,38 +483,39 @@ static char* buildSQLQuery(prolog_term sqlQueryList)
     element = p2p_car(sqlQueryList);
     sqlQueryList = p2p_cdr(sqlQueryList);
     if (is_string(element)) {
-      t1 = (char *)malloc(ELEMENT_SIZE * sizeof(char));
-      sprintf(t1, "%s", p2c_string(element));
-      if (t1[0] == TERM_CHAR) {
+      if (p2c_string(element)[0] == TERM_CHAR) {
 	cnt = 0;
 	temp = (char *)malloc(ELEMENT_SIZE * sizeof(char));
 	temp[cnt++] = '\'';
 	/* protect inner quotes in Prolog terms */
-	for (i = 0 ; i < strlen(t1) ; i++) {
-	  if (t1[i] == '\'') {
+	for (i = 0 ; i < strlen(p2c_string(element)) ; i++) {
+	  if (p2c_string(element)[i] == '\'') {
 	    temp[cnt++] = '\\';
-	    temp[cnt++] = t1[i];
+	    temp[cnt++] = p2c_string(element)[i];
 	  }
 	  else {
-	    temp[cnt++] = t1[i];
+	    temp[cnt++] = p2c_string(element)[i];
 	  }
 	}
 	temp[cnt++] = '\'';
 	strcat(sqlQuery, temp);
+	free(temp);
       }
       else {
-	strcat(sqlQuery, t1);            
+	strcat(sqlQuery, p2c_string(element));
       }
     }
     else if (is_int(element)) {
       temp = (char *)malloc(ELEMENT_SIZE * sizeof(char));
       sprintf(temp, "%d", p2c_int(element));
       strcat(sqlQuery, temp);
+      free(temp);
     }
     else if (is_float(element)) {
       temp = (char *)malloc(ELEMENT_SIZE * sizeof(char));
       sprintf(temp, "%f", p2c_float(element));			
       strcat(sqlQuery, temp);
+      free(temp);
     }
     else if (is_var(element)) {
       errorMesg = "XSB_DBI ERROR: Unbound variable in parameter list";
@@ -594,6 +578,7 @@ static int bindReturnList(prolog_term returnList, struct xsb_data** result, stru
 	    temp[strlen(result[i]->val->str_val) - 1] = '\0';
 	    c2p_functor("term", 1, element);
 	    c2p_string(temp, p2p_arg(element, 1));
+	    free(temp);
 	  }
 	  else {
 	    c2p_string(result[i]->val->str_val, element);	    
@@ -601,9 +586,9 @@ static int bindReturnList(prolog_term returnList, struct xsb_data** result, stru
 	}
       }
       else if (is_var(element) && result[i]->type == INT_TYPE)
-	c2p_int(*(result[i]->val->i_val), element);
+	c2p_int(result[i]->val->i_val, element);
       else if (is_var(element) && result[i]->type == FLOAT_TYPE)
-	c2p_float(*(result[i]->val->f_val), element);
+	c2p_float(result[i]->val->f_val, element);
       returnList = p2p_cdr(returnList);
       i++;
     }
@@ -625,7 +610,7 @@ static void freeConnectionHandle(struct xsb_connectionHandle* cHandle, int pos)
 {
   int j;
   
-  free(cHandle->handle);
+  /*free(cHandle->handle);
   free(cHandle->driver);
   if (cHandle->server == NULL)
     free(cHandle->dsn);
@@ -634,7 +619,7 @@ static void freeConnectionHandle(struct xsb_connectionHandle* cHandle, int pos)
     free(cHandle->database);
   }
   free(cHandle->user);
-  free(cHandle->password);
+  free(cHandle->password);*/
   free(cHandle);
   for (j = pos + 1 ; j < numCHandles ; j++)
     CHandles[j-1] = CHandles[j];
@@ -681,7 +666,7 @@ static void freeQueryHandle(struct xsb_queryHandle* qHandle, int pos)
 {
   int j;
   
-  free(qHandle->handle);
+  //free(qHandle->handle);
   free(qHandle->query);
   free(qHandle);
   for (j = pos + 1 ; j < numQHandles ; j++)

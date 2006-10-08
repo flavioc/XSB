@@ -234,8 +234,7 @@ static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* quer
     }
     else if (driverODBC_getXSBType(query->resultmeta->types[i]->type) == INT_TYPE) {
       result[i]->type = INT_TYPE;
-      result[i]->val->i_val = (int *)malloc(sizeof(int));
-      val = SQLBindCol(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_C_SLONG, (SQLPOINTER *)result[i]->val->i_val, 0, pcbValues[i]);
+      val = SQLBindCol(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_C_SLONG, (SQLPOINTER *)&result[i]->val->i_val, 0, pcbValues[i]);
       if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
 	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
 	return NULL;
@@ -243,8 +242,7 @@ static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* quer
     }
     else if (driverODBC_getXSBType(query->resultmeta->types[i]->type) == FLOAT_TYPE) {
       result[i]->type = FLOAT_TYPE;
-      result[i]->val->f_val = (double *)malloc(sizeof(double));
-      val = SQLBindCol(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_C_DOUBLE, (SQLPOINTER *)result[i]->val->f_val, 0, pcbValues[i]);
+      val = SQLBindCol(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_C_DOUBLE, (SQLPOINTER *)&result[i]->val->f_val, 0, pcbValues[i]);
       if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
 	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
 	return NULL;
@@ -350,17 +348,17 @@ struct xsb_data** driverODBC_execPrepareStatement(struct xsb_data** param, struc
       break;
     }
   }
-	
+  
   if (handle->state == QUERY_RETRIEVE)
     return driverODBC_getNextRow(query, 0);
-	
+
   for (i = 0 ; i < query->parammeta->numCols ; i++) {
     if (param[i]->type == STRING_TYPE) 
       val = SQLBindParameter(query->hstmt, (SQLUSMALLINT)(i + 1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, strlen(param[i]->val->str_val) + 1, 0, (SQLPOINTER)param[i]->val->str_val, 0, NULL);
     else if (param[i]->type == INT_TYPE)
-      val = SQLBindParameter(query->hstmt, (SQLUSMALLINT)(i + 1), SQL_PARAM_INPUT, SQL_C_DEFAULT, SQL_INTEGER, 0, 0, (SQLPOINTER)param[i]->val->i_val, 0, NULL);
+      val = SQLBindParameter(query->hstmt, (SQLUSMALLINT)(i + 1), SQL_PARAM_INPUT, SQL_C_DEFAULT, SQL_INTEGER, 0, 0, (SQLPOINTER)&param[i]->val->i_val, 0, NULL);
     else if (param[i]->type == FLOAT_TYPE)	
-      val = SQLBindParameter(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_PARAM_INPUT, SQL_C_DEFAULT, SQL_DOUBLE, 0, 0, (SQLPOINTER)param[i]->val->f_val, 0, NULL);
+      val = SQLBindParameter(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_PARAM_INPUT, SQL_C_DEFAULT, SQL_DOUBLE, 0, 0, (SQLPOINTER)&param[i]->val->f_val, 0, NULL);
     if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
       driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
       return NULL;
