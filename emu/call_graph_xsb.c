@@ -479,10 +479,11 @@ int create_call_list(CTXTdecl){
   TIFptr tif;
   int j,count=0,arity;
   Psc psc;
-  CPtr oldhreg=NULL, head;
-  Cell term;
+  CPtr oldhreg=NULL;
   
   reg[3] = makelist(hreg);  // reg 3 first not-used, use reg in case of stack expanson
+  new_heap_free(hreg);   // make heap consistent
+  new_heap_free(hreg);
   while((call1 = dq(&affected)) != EMPTY){
     subgoal = (VariantSF) call1->goal;      
     if(IsNULL(subgoal)){ /* fact predicates */
@@ -494,12 +495,11 @@ int create_call_list(CTXTdecl){
     psc = TIF_PSC(tif);
     arity = get_arity(psc);
     check_glstack_overflow(3,pcreg,2+arity*200); // don't know how much for build_subgoal_args...
-    oldhreg = hreg;
+    oldhreg = hreg-2;
     if(arity>0){
-      head = hreg+2;
-      sreg = head;
-      follow(oldhreg++) = term = makecs(head);
-      hreg += arity + 3;  // had 10, why 10?  why not 3? 2 for list, 1 for functor (dsw)
+      sreg = hreg;
+      follow(oldhreg++) = makecs(sreg);
+      hreg += arity + 1;  // had 10, why 10?  why not 3? 2 for list, 1 for functor (dsw)
       new_heap_functor(sreg, psc);
       for (j = 1; j <= arity; j++) {
 	new_heap_free(sreg);
@@ -508,9 +508,10 @@ int create_call_list(CTXTdecl){
       build_subgoal_args(subgoal);		
     }else{
       follow(oldhreg++) = makestring(get_name(psc));
-      hreg += 2;	
     }
     follow(oldhreg) = makelist(hreg);
+    new_heap_free(hreg);
+    new_heap_free(hreg);
   }
   if(count > 0)
     follow(oldhreg) = makenil;
@@ -542,10 +543,11 @@ int create_changed_call_list(CTXTdecl){
   TIFptr tif;
   int j, count = 0,arity;
   Psc psc;
-  CPtr oldhreg = NULL, head;
-  Cell term;
+  CPtr oldhreg = NULL;
 
   reg[3] = makelist(hreg);
+  new_heap_free(hreg);   // make heap consistent
+  new_heap_free(hreg);
   while ((call1 = dq(&changed)) != EMPTY){
     count++;
     subgoal = (VariantSF) call1->goal;      
@@ -553,12 +555,11 @@ int create_changed_call_list(CTXTdecl){
     psc = TIF_PSC(tif);
     arity = get_arity(psc);
     check_glstack_overflow(3,pcreg,2+arity*200); // don't know how much for build_subgoal_args...
-    oldhreg = hreg;
+    oldhreg = hreg-2;
     if(arity>0){
-      head = hreg+2;
-      sreg = head;
-      follow(oldhreg++) = term = makecs(head);
-      hreg += arity + 3;
+      sreg = hreg;
+      follow(oldhreg++) = makecs(hreg);
+      hreg += arity + 1;
       new_heap_functor(sreg, psc);
       for (j = 1; j <= arity; j++) {
 	new_heap_free(sreg);
@@ -567,9 +568,10 @@ int create_changed_call_list(CTXTdecl){
       build_subgoal_args(subgoal);		
     }else{
       follow(oldhreg++) = makestring(get_name(psc));
-      hreg+=2;	
     }
     follow(oldhreg) = makelist(hreg);
+    new_heap_free(hreg);   // make heap consistent
+    new_heap_free(hreg);
   }
   if (count>0)
     follow(oldhreg) = makenil;
@@ -600,13 +602,15 @@ int imm_depend_list(CTXTdeclc callnodeptr call1){
   TIFptr tif;
   int j, count = 0,arity;
   Psc psc;
-  CPtr oldhreg = NULL, head;
+  CPtr oldhreg = NULL;
   Cell term;
   struct hashtable *h;	
   struct hashtable_itr *itr;
   callnodeptr cn;
     
   reg[4] = makelist(hreg);
+  new_heap_free(hreg);
+  new_heap_free(hreg);
   
   if(IsNonNULL(call1)){ /* This can be called from some non incremental predicate */
     h=call1->outedges->hasht;
@@ -622,12 +626,11 @@ int imm_depend_list(CTXTdeclc callnodeptr call1){
 	  psc = TIF_PSC(tif);
 	  arity = get_arity(psc);
 	  check_glstack_overflow(4,pcreg,2+arity*200); // don't know how much for build_subgoal_args...
-	  oldhreg=hreg;
+	  oldhreg=hreg-2;
 	  if(arity>0){
-	    head = hreg+2;
-	    sreg = head;
-	    follow(oldhreg++) = term = makecs(head);
-	    hreg += arity + 3;
+	    sreg = hreg;
+	    follow(oldhreg++) = term = makecs(sreg);
+	    hreg += arity + 1;
 	    new_heap_functor(sreg, psc);
 	    for (j = 1; j <= arity; j++) {
 	      new_heap_free(sreg);
@@ -636,15 +639,13 @@ int imm_depend_list(CTXTdeclc callnodeptr call1){
 	    build_subgoal_args(subgoal);		
 	  }else{
 	    follow(oldhreg++) = makestring(get_name(psc));
-	    hreg += 2;	
 	  }
 	  follow(oldhreg) = makelist(hreg);
+	  new_heap_free(hreg);
+	  new_heap_free(hreg);
 	}
       } while (hashtable1_iterator_advance(itr));
     }
-    
-    
-    
     if (count>0)
       follow(oldhreg) = makenil;
     else
@@ -675,14 +676,14 @@ int imm_dependent_on_list(CTXTdeclc callnodeptr call1){
   TIFptr tif;
   int j, count = 0,arity;
   Psc psc;
-  CPtr oldhreg = NULL, head;
-  Cell term;
+  CPtr oldhreg = NULL;
   calllistptr cl;
+
   reg[4] = makelist(hreg);
-  
+  new_heap_free(hreg);
+  new_heap_free(hreg);
   if(IsNonNULL(call1)){ /* This can be called from some non incremental predicate */
     cl= call1->inedges;
-    
     
     while(IsNonNULL(cl)){
       subgoal = (VariantSF) cl->prevnode->callnode->goal;    
@@ -691,29 +692,27 @@ int imm_dependent_on_list(CTXTdeclc callnodeptr call1){
 	tif = (TIFptr) subgoal->tif_ptr;
 	psc = TIF_PSC(tif);
 	arity = get_arity(psc);
-		check_glstack_overflow(4,pcreg,2+arity*200); // don't know how much for build_subgoal_args...
-		oldhreg = hreg;
-		if(arity>0){
-			head = hreg+2;
-			sreg = head;
-			follow(oldhreg++) = term = makecs(head);
-			hreg += arity + 3;
-			new_heap_functor(sreg, psc);
-			for (j = 1; j <= arity; j++) {
-				new_heap_free(sreg);
-				cell_array1[arity-j] = cell(sreg-1);
-			}		
-			build_subgoal_args(subgoal);		
-		}else{
-			follow(oldhreg++) = makestring(get_name(psc));
-			hreg += 2;	
-		}
-		follow(oldhreg) = makelist(hreg);
+	check_glstack_overflow(4,pcreg,2+arity*200); // don't know how much for build_subgoal_args...
+	oldhreg = hreg-2;
+	if(arity>0){
+	  sreg = hreg;
+	  follow(oldhreg++) = makecs(hreg);
+	  hreg += arity + 1;
+	  new_heap_functor(sreg, psc);
+	  for (j = 1; j <= arity; j++) {
+	    new_heap_free(sreg);
+	    cell_array1[arity-j] = cell(sreg-1);
+	  }		
+	  build_subgoal_args(subgoal);		
+	}else{
+	  follow(oldhreg++) = makestring(get_name(psc));
+	}
+	follow(oldhreg) = makelist(hreg);
+	new_heap_free(hreg);
+	new_heap_free(hreg);
       }
       cl=cl->next;
     }
-
-  
     if (count>0)
       follow(oldhreg) = makenil;
     else
