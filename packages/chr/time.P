@@ -41,7 +41,7 @@
 :- ensure_loaded(constraintLib).
 :- import when/2 from constraintLib.
 
-:- ensure_loaded('iso8601.P').
+%:- ensure_loaded('iso8601.P').
 
 :- import misc_error/1 from error_handler.
 
