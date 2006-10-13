@@ -420,7 +420,9 @@ void delete_variant_sf_and_answers(CTXTdeclc VariantSF pSF) {
  * TLS: since this deallocates from SMs, make sure
  * trie_allocation_type is set before using.
  */
-static void delete_variant_table(CTXTdeclc BTNptr x) {
+extern void hashtable1_destroy(void *, int);
+
+static void delete_variant_table(CTXTdeclc BTNptr x, int incr) {
 
   int node_stk_top = 0, call_nodes_top = 0;
   BTNptr node, rnod, *Bkp; 
@@ -489,6 +491,8 @@ static void delete_variant_table(CTXTdeclc BTNptr x) {
 	      }
 	    }
 	  } /* free answer trie */
+	  /* this following is unsafe, if there are pointers to it... */
+	  if (incr) hashtable1_destroy(pSF->callnode->outedges->hasht,0);
 	  free_answer_list(pSF);
 	  FreeProducerSF(pSF);
 	} /* is leaf */
@@ -511,7 +515,7 @@ void delete_predicate_table(CTXTdeclc TIFptr tif) {
       smBTHT, &smTableBTHT,private_smTableBTHT);*/
   if ( TIF_CallTrie(tif) != NULL ) {
     if ( IsVariantPredicate(tif) ) {
-      delete_variant_table(CTXTc TIF_CallTrie(tif));
+      delete_variant_table(CTXTc TIF_CallTrie(tif),get_incr(TIF_PSC(tif)));
     }
     else
       delete_subsumptive_table(CTXTc tif);
@@ -525,15 +529,16 @@ void delete_predicate_table(CTXTdeclc TIFptr tif) {
 void reclaim_deleted_subsumptive_table(CTXTdeclc DelTFptr);
 
 void reclaim_deleted_predicate_table(CTXTdeclc DelTFptr deltf_ptr) {
+  TIFptr tif = subg_tif_ptr(DTF_Subgoals(deltf_ptr));
 
   /*  printf("smBTN %x smTableBTN %x private_smTableBTN %x\n",
       smBTN, &smTableBTN,private_smTableBTN);
       printf("smBTHT %x smTableBTHT %x private_smTableBTHT %x\n",
       smBTHT, &smTableBTHT,private_smTableBTHT);*/
 
-  if ( IsVariantPredicate(subg_tif_ptr(DTF_Subgoals(deltf_ptr))) ) {
-      delete_variant_table(CTXTc DTF_CallTrie(deltf_ptr));
-    } else reclaim_deleted_subsumptive_table(CTXTc deltf_ptr);
+  if ( IsVariantPredicate(tif) ) {
+    delete_variant_table(CTXTc DTF_CallTrie(deltf_ptr), get_incr(TIF_PSC(tif)));
+  } else reclaim_deleted_subsumptive_table(CTXTc deltf_ptr);
 }
 
 /*----------------------------------------------------------------------*/
@@ -1702,12 +1707,6 @@ int fast_abolish_table_predicate(CTXTdeclc Psc psc)
 
   tif = get_tip(CTXTc psc);
 
-  /* incremental evaluation */
-  if(get_incr(psc))
-    xsb_warn("[abolish_table_pred] Abolish incremental table"
-		" of predicate %s/%d. This can cause unexpected behavior.\n", get_name(psc), get_arity(psc));
-
-
   if (IsVariantPredicate(tif) && IsNULL(TIF_CallTrie(tif))) {
     return 1;
   }
@@ -1715,6 +1714,12 @@ int fast_abolish_table_predicate(CTXTdeclc Psc psc)
   if ( ! is_completed_table(tif) ) {
       xsb_abort("[abolish_table_pred] Cannot abolish incomplete table"
 		" of predicate %s/%d\n", get_name(psc), get_arity(psc));
+  }
+
+  /* incremental evaluation */
+  if(get_incr(psc)) {
+    xsb_warn("[abolish_table_pred] Abolish incremental table"
+		" of predicate %s/%d. This can cause unexpected behavior.\n", get_name(psc), get_arity(psc));
   }
 
   if (!TIF_Mark(tif) && (!get_shared(psc) || flags[NUM_THREADS] == 1)) {
@@ -1827,7 +1832,7 @@ int abolish_table_call_cps_check(CTXTdeclc VariantSF subgoal)
 /* incremental */
 int abolish_table_call_incr(CTXTdeclc VariantSF subgoal) {
   if(IsIncrSF(subgoal))
-    abolish_incr(CTXTc subgoal->callnode);
+    abolish_incr_call(CTXTc subgoal->callnode);
   
   return TRUE;
 }
@@ -1923,6 +1928,8 @@ int abolish_table_pred_cps_check(CTXTdeclc Psc psc)
  "abolished" tables in deltf frames.  Need to do gc tables for
   that. */
 
+extern void hashtable1_destroy_all(int);
+
 inline int abolish_table_predicate(CTXTdeclc Psc psc)
 {
   TIFptr tif;
@@ -1935,10 +1942,11 @@ inline int abolish_table_predicate(CTXTdeclc Psc psc)
 	      get_name(psc), get_arity(psc));
   }
   /* incremental */
-  if(get_incr(psc))
+  if(get_incr(psc)) {
     xsb_warn("[abolish_table_predicate] Abolish incremental table"
 		" of predicate %s/%d. This can cause unexpected behavior.\n", get_name(psc), get_arity(psc));
-
+    free_incr_hashtables(tif);
+  }
 
   if (IsVariantPredicate(tif) && IsNULL(TIF_CallTrie(tif))) {
     return 1;
@@ -2432,6 +2440,7 @@ void abolish_table_info(CTXTdecl)
 
   reset_freeze_registers;
   openreg = COMPLSTACKBOTTOM;
+  hashtable1_destroy_all(0);  /* free all incr hashtables in use */
   release_all_tabling_resources(CTXT);
   abolish_wfs_space(CTXT); 
 }

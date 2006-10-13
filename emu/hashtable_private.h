@@ -20,6 +20,8 @@ struct hashtable {
     unsigned int entrycount;
     unsigned int loadlimit;
     unsigned int primeindex;
+    struct hashtable *next;
+    struct hashtable *prev;
     unsigned int (*hashfn) (void *k);
     int (*eqfn) (void *k1, void *k2);
 };
@@ -44,12 +46,8 @@ indexFor(unsigned int tablelength, unsigned int hashvalue)
 */
 
 /*****************************************************************************/
- /* hack for size to release,  this is what call_graph uses */
-typedef struct htlocalkey{
-	int goal;
-} HTLOCALKEY;
-#define freekey(X) mem_dealloc(X,sizeof(HTLOCALKEY),INCR_TABLE_SPACE)
-/*define freekey(X) ; */
+ /* #define freekey(X) mem_dealloc(X,sizeof(HTLOCALKEY),INCR_TABLE_SPACE) */
+#define freekey(X) ;
 
 
 /*****************************************************************************/

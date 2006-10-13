@@ -29,7 +29,10 @@ static const unsigned int primes[] = {
 805306457, 1610612741
 };
 const unsigned int prime_table_length = sizeof(primes)/sizeof(primes[0]);
-const float max_load_factor = 0.65;
+const double max_load_factor = 0.65;
+
+/* maintain chain of all hashtables in incr, for use when deleting all tables */
+static struct hashtable *hashtable_chain = NULL;
 
 /*****************************************************************************/
 struct hashtable *
@@ -56,6 +59,9 @@ create_hashtable1(unsigned int minsize,
     h->hashfn       = hashf;
     h->eqfn         = eqf;
     h->loadlimit    = (unsigned int) ceil(size * max_load_factor);
+    h->prev         = NULL;
+    h->next         = hashtable_chain;
+    hashtable_chain = h;
     return h;
 }
 
@@ -245,12 +251,23 @@ hashtable1_destroy(struct hashtable *h, int free_values)
         {
             e = table[i];
             while (NULL != e)
-	      { f = e; e = e->next; freekey(f->k); 
-		mem_dealloc(f,sizeof(struct entry),INCR_TABLE_SPACE); }
+	      { f = e; e = e->next;
+		// freekey(f->k); 
+		mem_dealloc(f,sizeof(struct entry),INCR_TABLE_SPACE); 
+	      }
         }
     }
+    if (h->prev != NULL) (h->prev)->next = h->next; else hashtable_chain = h->next;
+    if (h->next != NULL) (h->next)->prev = h->prev;
     mem_dealloc(h->table,h->tablelength*sizeof(struct entry *),INCR_TABLE_SPACE);
     mem_dealloc(h,sizeof(struct hashtable),INCR_TABLE_SPACE);
+}
+
+void
+hashtable1_destroy_all(int free_values) {
+  while (hashtable_chain != NULL) {
+    hashtable1_destroy(hashtable_chain,free_values);
+  }
 }
 
 /*

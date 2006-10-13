@@ -535,7 +535,23 @@ int create_call_list(CTXTdecl){
 }
 
 
+int in_reg2_list(Psc psc) {
+  Cell list,term;
 
+  list = reg[2];
+  XSB_Deref(list);
+  while (!isnil(list)) {
+    term = cell(clref_val(list));
+    XSB_Deref(term);
+    if (isconstr(term)) {
+      if (psc == get_str_psc(term)) return TRUE;
+    } else if (isstring(term)) {
+      if (get_name(psc) == string_val(term)) return TRUE;
+    }
+    list = cell(clref_val(list)+1);
+  }
+  return FALSE;
+}
 
 int create_changed_call_list(CTXTdecl){
   callnodeptr call1;
@@ -545,41 +561,43 @@ int create_changed_call_list(CTXTdecl){
   Psc psc;
   CPtr oldhreg = NULL;
 
-  reg[3] = makelist(hreg);
+  reg[4] = makelist(hreg);
   new_heap_free(hreg);   // make heap consistent
   new_heap_free(hreg);
   while ((call1 = dq(&changed)) != EMPTY){
-    count++;
     subgoal = (VariantSF) call1->goal;      
     tif = (TIFptr) subgoal->tif_ptr;
     psc = TIF_PSC(tif);
-    arity = get_arity(psc);
-    check_glstack_overflow(3,pcreg,2+arity*200); // don't know how much for build_subgoal_args...
-    oldhreg = hreg-2;
-    if(arity>0){
-      sreg = hreg;
-      follow(oldhreg++) = makecs(hreg);
-      hreg += arity + 1;
-      new_heap_functor(sreg, psc);
-      for (j = 1; j <= arity; j++) {
-	new_heap_free(sreg);
-	cell_array1[arity-j] = cell(sreg-1);
+    if (in_reg2_list(psc)) {
+      count++;
+      arity = get_arity(psc);
+      check_glstack_overflow(4,pcreg,2+arity*200); // don't know how much for build_subgoal_args...
+      oldhreg = hreg-2;
+      if(arity>0){
+	sreg = hreg;
+	follow(oldhreg++) = makecs(hreg);
+	hreg += arity + 1;
+	new_heap_functor(sreg, psc);
+	for (j = 1; j <= arity; j++) {
+	  new_heap_free(sreg);
+	  cell_array1[arity-j] = cell(sreg-1);
+	}
+	build_subgoal_args(subgoal);		
+      }else{
+	follow(oldhreg++) = makestring(get_name(psc));
       }
-      build_subgoal_args(subgoal);		
-    }else{
-      follow(oldhreg++) = makestring(get_name(psc));
+      follow(oldhreg) = makelist(hreg);
+      new_heap_free(hreg);   // make heap consistent
+      new_heap_free(hreg);
     }
-    follow(oldhreg) = makelist(hreg);
-    new_heap_free(hreg);   // make heap consistent
-    new_heap_free(hreg);
   }
   if (count>0)
     follow(oldhreg) = makenil;
   else
-    reg[3] = makenil;
+    reg[4] = makenil;
     
  
-  return unify(CTXTc reg_term(CTXTc 2),reg_term(CTXTc 3));
+  return unify(CTXTc reg_term(CTXTc 3),reg_term(CTXTc 4));
 
   /*
     int i;
@@ -756,7 +774,7 @@ void check_assumption_list(void);
 void delete_calls(CTXTdecl);
 call2listptr create_cdbllist(void);
 
-void abolish_incr(CTXTdeclc callnodeptr p){
+void abolish_incr_call(CTXTdeclc callnodeptr p){
 
 
   marked_list=create_cdbllist();
@@ -943,4 +961,7 @@ void check_assumption_list(void){
   return;
 }
 
+void free_incr_hashtables(TIFptr tif) {
+  printf("free incr hash tables not implemented, memory leak\n");
+}
 
