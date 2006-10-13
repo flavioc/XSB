@@ -21,24 +21,22 @@
 ** $Id$
 ** 
 */
-
-
 :- compiler_options([xpp_on]).
-
 #include "builtin.h"
 #include "incr_xsb_defs.h"
-
 psc_set_incr(PSC, CODE):-
 	incr_eval_builtin(PSC_SET_INCR, PSC, CODE).
 
 print_call(SF):-
 	incr_eval_builtin(PRINT_CALL, SF).
 
-update(Y):- 
- 	get_affected_calls(X),
-	reeval(X),
-	get_changed_calls(Y).
+update(Y) :-
+	update([],Y).
 
+update(FiltList,Changed):- 
+ 	get_affected_calls(Affected),
+	reeval(Affected),
+	get_changed_calls(FiltList,Changed).
 
 imm_depends(X,Y):-	
 	(nonvar(X),var(Y)->
@@ -47,8 +45,7 @@ imm_depends(X,Y):-
 	     imm_depend_calls(Y,X);
 	(nonvar(X),nonvar(Y)->
 	     imm_depend_calls(Y,Z),Z=X;	
-		writeln('Invalid Modes')))).	
-
+		writeln(userout,'Invalid Modes')))).	
 trans_depends(X,Y):-
 	(nonvar(X),var(Y)->
 	     trans_dependent_on_calls(X,Y);
@@ -56,25 +53,17 @@ trans_depends(X,Y):-
 	     trans_depend_calls(Y,X);
 	(nonvar(X),nonvar(Y)->
 	     trans_depend_calls(Y,Z),Z=X;	
-		writeln('Invalid Modes')))).	
+		writeln(userout,'Invalid Modes')))).	
 
-
+:- table trans_dependent_on_call/2.
 trans_dependent_on_calls(Call,Call2):-
 	abolish_table_pred(trans_dependent_on_call(_,_)),
 	trans_dependent_on_call(Call,Call2).
-
-:- table trans_dependent_on_call/2.
 trans_dependent_on_call(Call1,Call2):-
 	imm_dependent_on_calls(Call1,Call2).
 trans_dependent_on_call(Call1,Call2):-
 	trans_dependent_on_call(Call1,Call3),
 	imm_dependent_on_calls(Call3,Call2).
-
-
-
-
-
-
 trans_depend_calls(Call,Call2):-
 	abolish_table_pred(trans_depend_call(_,_)),
 	trans_depend_call(Call,Call2).
@@ -86,9 +75,6 @@ trans_depend_call(Call1,Call2):-
 	trans_depend_call(Call1,Call3),
 	imm_depend_calls(Call3,Call2).
 
-
-
-
 imm_depend_calls(Call,Call2):-
 	get_call(Call,SF,_),
 	incr_eval_builtin(IMM_DEPEND_LIST, SF, CallList),
@@ -99,27 +85,32 @@ imm_dependent_on_calls(Call,Call2):-
 	incr_eval_builtin(IMM_DEPENDENT_ON_LIST, SF, CallList),
 	member(Call2,CallList).		
 
-
-
-
 get_affected_calls(X) :-
 	incr_eval_builtin(GET_AFFECTED_CALLS, X).
 
-
-get_changed_calls(X) :-
-	incr_eval_builtin(GET_CHANGED_CALLS, X).
-
-
-
+get_changed_calls(Filt,X) :-
+	incr_eval_builtin(GET_CHANGED_CALLS, Filt, X).
+/*
 reeval([]).
 reeval([Call|CallList]):-
 	mycall(Call),
 	reeval(CallList).
+**/
+reeval(Calls) :-
+	(member(Call,Calls),
+	 mycall(Call),
+	 fail
+	 ;
+	 true
+	).
 
 mycall(C):-
 	get_call(C,SF,_),
-	(incr_eval_builtin(IS_AFFECTED,SF)->	
-		(C, fail;true)
+	(incr_eval_builtin(IS_AFFECTED,SF)
+	 ->	(call_c(C), fail
+		 ;
+		 true
+		)
 	;
 	true
 	).
@@ -133,18 +124,13 @@ invalidate_callnode(CALLNODEPTR):-
 invalidate_SF(SF):-
 	incr_eval_builtin(INVALIDATE_SF,SF).
 
-
-
 invalidate_call(Call):-
 	(get_calls(Call,SF,_),
 	invalidate_SF(SF),
 	fail;true).
 
-
-
 incr_statistics:-
 	incr_eval_builtin(INCR_STATISTICS).
-
 
 incr_assert(Term):-
 	assert(Term),
@@ -161,10 +147,6 @@ incr_retract(Term):-
 	fail
 	;
 	true).
-
-
-
-
 /*
 incr_assert(Term) :-
 	change_fact(Term,TermSkel),
@@ -173,25 +155,17 @@ incr_assert(Term) :-
 	invalidate_call(TermSkel,2),
 	fail;true),
 	assert(Term).
-
-
-
-
 change_fact(Fact,FactSkel):-
 	Fact=..[A|Arg],
 	length(Arg,N),
 	create_var(N,Arg1),
 	FactSkel=..[A|Arg1].
-
-
 create_var(0,[]):-!.
 create_var(N,[_|L]):-
 	N1 is N-1,
 	create_var(N1,L).
-
 match(Fact,Call):-
 	not(Fact\=Call).
-
 incr_retract(Term):- 
 	change_fact(Term,TermSkel),
 	(get_calls(TermSkel,_,_),
@@ -200,12 +174,6 @@ incr_retract(Term):-
 	fail;true),	
 	retract(Term).
 */
-
-
-
-
-
-
 '_$$get_calls_incr'(CallTerm,CallNodePtr) :-
 	get_calls(CallTerm),
 	get_callnodeptr_incr(CallTerm, CallNodePtr).
@@ -216,14 +184,10 @@ get_calls_incr(CallTerm, Handle) :-
 		List),
 	member('_$get_calls_incr'(CallTerm,Handle),List).
 
-
-
 get_calls(_CallTerm) :- '_$builtin'(TRIE_UNIFY_CALL).
 
 get_callnodeptr_incr(CallTerm,CallNodePtr):-
 		incr_eval_builtin(GET_CALLNODEPTR_INCR, CallTerm, CallNodePtr).	
-
-
 
 incr_eval_builtin(_BuiltinNo) :-
 	'_$builtin'(INCR_EVAL_BUILTIN).
@@ -231,11 +195,10 @@ incr_eval_builtin(_BuiltinNo, _A) :-
 	'_$builtin'(INCR_EVAL_BUILTIN).
 incr_eval_builtin(_BuiltinNo, _A, _B) :-
 	'_$builtin'(INCR_EVAL_BUILTIN).
-
+	
 /*
 incr_eval_builtin(_BuiltinNo, _A, _B, _C) :-
 	'_$builtin'(INCR_EVAL_BUILTIN).
-
 incr_eval_builtin(_BuiltinNo, _A, _B, _C, _D) :-
 	'_$builtin'(INCR_EVAL_BUILTIN).
 incr_eval_builtin(_BuiltinNo, _A, _B, _C, _D, _E) :-

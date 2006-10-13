@@ -38,7 +38,7 @@ ALL =	assert${OBJEXT} basics${OBJEXT} consult${OBJEXT} \
 	string${OBJEXT} subsumes${OBJEXT} sysinitrc${OBJEXT} tables${OBJEXT}  \
 	term_exp${OBJEXT} thread${OBJEXT} \
 	unix${OBJEXT} x_interp${OBJEXT} xsb_hook${OBJEXT} xsb_read${OBJEXT}  \
-	xsb_writ${OBJEXT} xcallxsb${OBJEXT}
+	xsb_writ${OBJEXT} xcallxsb${OBJEXT} increval${OBJEXT}
 
 EMU_INCLUDES = ../emu/builtin.h ../emu/celltags_xsb.h ../emu/flag_defs_xsb.h \
 	../emu/io_defs_xsb.h ../emu/syscall_xsb.h ../emu/sig_xsb.h \
