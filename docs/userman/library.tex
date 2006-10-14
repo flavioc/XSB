@@ -206,53 +206,65 @@ hProlog \footnote{In \version, the implementation of attributed
 
 \subsection{Lowlevel Interface}
 %
-Attributes of variables are pairs of module names and values. A module
-name can be any atom.  A value can be any XSB value (term, variable,
-atom, \ldots). Any variable has at most one attribute for a particular
-module.
+Attributes of variables are pairs of attribute module names and
+values.  An attribute module name can be any atom.  A value can be any
+XSB value (term, variable, atom, \ldots). Any variable has at most one
+attribute for a particular attribute module.  Attribute modules are
+distinct from XSB modules: although it is most efficient to keep each
+handlers for each attribute module in their own XSB module.
 
 Attributes can be manipulated with the following three predicates
 (\texttt{get\_attr/3}, \texttt{put\_attr/3} and \texttt{del\_attr/2})
 defined in the module \texttt{machine}.
 
 \begin{description}
-\ournewitem{get\_attr(-Var,+Mod, ?Val)}{machine}\index{\texttt{get\_attr/3}}
-   Gets the value of the attribute of \texttt{Var} in module \texttt{Mod}. Non-variable
-   terms in \texttt{Var} cause a type error. \texttt{Val} will be unified with the
-   value of the attribute, if it exists. Otherwise the predicate fails.
+\ournewitem{get\_attr(-Var,+Mod, ?Val)}{machine}\index{\texttt{get\_attr/3}} 
+%
+Gets the value of the attribute of \texttt{Var} in attribute module
+\texttt{Mod}. Non-variable terms in \texttt{Var} cause a type
+error. \texttt{Val} will be unified with the value of the attribute,
+if it exists. Otherwise the predicate fails.
 
 \ournewitem{put\_attr(-Var,+Mod, ?Val)}{machine}\index{\texttt{put\_attr/3}}
-   Sets the value of the attribute of \texttt{Var} in module \texttt{Mod}. Non-variable
-   terms in \texttt{Var} cause a type error. The previous value of the attribute is
-   overwritten, if it exists.
+%
+Sets the value of the attribute of \texttt{Var} in attribute module
+\texttt{Mod}. Non-variable terms in \texttt{Var} cause a type
+error. The previous value of the attribute is overwritten, if it
+exists.
 
-\ournewitem{del\_attr(-Var, +Mod)}{machine}\index{\texttt{del\_attr/2}}
-   Removes the attribute of \texttt{Var} in module \texttt{Mod}. Non-variable
-   terms in \texttt{Var} cause a type error. The previous value of the attribute
-   is removed, if it exists. 
+\ournewitem{del\_attr(-Var,  +Mod)}{machine}\index{\texttt{del\_attr/2}} 
+%
+Removes the attribute of \texttt{Var} in attribute module
+\texttt{Mod}. Non-variable terms in \texttt{Var} cause a type
+error. The previous value of the attribute is removed, if it exists.
 \end{description}
 
-One has to extend the default unification algorithm for used attributes by installing
-a handler in the following way:
+One has to extend the default unification algorithm for used
+attributes by installing a handler in the following way:
 
 \demo{:- install\_verify\_attribute\_handler($+Mod, -AttrValue, -Target, +Handler$)}
 
-\noindent The \texttt{install\_verify\_attribute\_handler/4}\index{\texttt{install\_verify\_attribute\_handler/4}} 
-predicate is defined in module \texttt{machine}. $Mod$ is the attribute Module
-and $Handler$ is a term with arguments $AttrValue$ and $Target$. The $Handler$
-term has to correspond to a handler predicate that takes the value of the
-attribute ($AttrValue$) and the term that the attributed value is bound to
-($Target$) as arguments.
+\noindent The
+\texttt{install\_verify\_attribute\_handler/4}\index{\texttt{install\_verify\_attribute\_handler/4}}
+predicate is defined in module \texttt{machine}. $Mod$ is the
+attribute {\tt Module} and $Handler$ is a term with arguments
+$AttrValue$ and $Target$. The $Handler$ term has to correspond to a
+handler predicate that takes the value of the attribute ($AttrValue$)
+and the term that the attributed value is bound to ($Target$) as
+arguments.  To get good efficiency, it is usually best to keep the
+handlers for each attribute module in separate XSB modules.
 
-The handler is called after the unification of an attributed variable with a
-term or other attributed variable, if the attributed variable has an attribute
-in the corresponding module. The two arguments of the unification are already
-bound at the time the handler is called, i.e. the handler is a post-unify handler.
+The handler is called after the unification of an attributed variable
+with a term or other attributed variable, if the attributed variable
+has an attribute in the corresponding module. The two arguments of the
+unification are already bound at the time the handler is called,
+i.e. the handler is a post-unify handler.
 
-Here, by giving the implementation of a simple finite domain constraint
-solver (see the file \texttt{fd.P} below), we show how these lowlevel predicates
-for attributed variables can be used.  In this example, an attribute in the module
-\texttt{fd} is used and the value of this attribute is a list of terms.
+Here, by giving the implementation of a simple finite domain
+constraint solver (see the file \texttt{fd.P} below), we show how
+these lowlevel predicates for attributed variables can be used.  In
+this example, an attribute in the module \texttt{fd} is used and the
+value of this attribute is a list of terms.
 
 \begin{small}
 \begin{verbatim}
@@ -2654,6 +2666,7 @@ programs that define their own meta-predicates.
 currently equivalent to {\tt checkImpExps([],FileNameList)}.
 \end{description}
 
+%=======================================================================
 \section{Miscellaneous Predicates}
 
 \begin{description}
