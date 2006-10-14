@@ -28,7 +28,7 @@ OBJEXT=.xwam
 ALL = 	aggregs${OBJEXT} array${OBJEXT} array1${OBJEXT} assoc_xsb${OBJEXT} \
 	basic_props${OBJEXT} lists${OBJEXT} constraintLib${OBJEXT} \
 	directry${OBJEXT} foreign${OBJEXT} format${OBJEXT} \
-	intern${OBJEXT} iso8601${OBJEXT} mttestutils${OBJEXT} mutex_xsb${OBJEXT} \
+	intern${OBJEXT} mttestutils${OBJEXT} mutex_xsb${OBJEXT} \
 	obsolete${OBJEXT} odbc_call${OBJEXT} \
 	ordsets${OBJEXT} ora_call${OBJEXT} \
 	packaging${OBJEXT} random${OBJEXT} scrptutl${OBJEXT} \
