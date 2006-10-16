@@ -535,7 +535,7 @@ int create_call_list(CTXTdecl){
 }
 
 
-int in_reg2_list(Psc psc) {
+int in_reg2_list(CTXTdeclc Psc psc) {
   Cell list,term;
 
   list = reg[2];
@@ -568,7 +568,7 @@ int create_changed_call_list(CTXTdecl){
     subgoal = (VariantSF) call1->goal;      
     tif = (TIFptr) subgoal->tif_ptr;
     psc = TIF_PSC(tif);
-    if (in_reg2_list(psc)) {
+    if (in_reg2_list(CTXTc psc)) {
       count++;
       arity = get_arity(psc);
       check_glstack_overflow(4,pcreg,2+arity*200); // don't know how much for build_subgoal_args...

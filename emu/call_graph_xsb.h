@@ -55,5 +55,5 @@ extern int imm_dependent_on_list(CTXTdeclc callnodeptr call1);
 extern void print_call_node(callnodeptr);
 extern void nq(calllistptr *,callnodeptr);
 extern void abolish_incr_call(CTXTdeclc callnodeptr);
-extern void free_incr_hashtables(CTXTdeclc TIFptr);
+extern void free_incr_hashtables(TIFptr);
 #endif
