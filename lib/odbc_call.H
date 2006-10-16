@@ -57,10 +57,10 @@
 
 % import some necessary predicates from library.
 
-:- import call0/1, odbc_exec_query/6,xsb_backtrace/1 from machine.
+:- import call0/1, xsb_backtrace/1 from machine.
 :- import conset/2, conget/2, coninc/1 from gensym.
 :- import length/2, append/3, member/2, copy_term/2, memberchk/2 from basics.
-:- import misc_error/1,domain_error/4 from error_handler.
+:- import domain_error/4 from error_handler.
 
 :- import (dynamic)/1, retractall/1, abolish/1, asserta/1, assert/1,
 	retract/1
@@ -70,6 +70,8 @@
         atom/1, number_codes/2, name/2, number/1, integer/1, nl/0,
 	'\='/2, functor/3, abort/1, structure/1, throw/1
 	from standard.
+
+ :- import concat_atom/2 from string.
 
 :- import findall/3, setof/3, bagof/3
 	from setof.

@@ -22,6 +22,10 @@
 **
 */
 
+:- compiler_options([sysmod,xpp_on]).
+
+#include "builtin.h"
+
 :- dynamic attribute(_FldNo,_Pred,_Attr,_Type,_ConnHdl).
 :- dynamic relation(_Pred,_PredArity,_Tab,_ConnHdl).
 :- dynamic attributeX(_Tab,_Attr,_Type,_ConnHdl).
@@ -1238,23 +1242,23 @@ odbc_open(Server,Name,Passwd) :-
 	odbc_open(Server,Name,Passwd,defaultConnection).
 
 odbc_open(Server,Name,Passwd,Connection) :-
-	odbc_connect(Server,Name,Passwd,ConnHandle),
-	(ConnHandle =\= 0
+	odbc_connect(Server,Name,Passwd,ConnHandle,RetCode),
+	(RetCode == 0
 	 ->	odbc_newconnection(Connection,ConnHandle)
-	 ;	odbc_error('Connection failed.'),
+	 ;	odbc_error(RetCode),
 		fail
 	).
 
 %%% pass whole Connect string, e.g.
-%%%'DRIVER={Microsoft Access Driver (*.mdb)};DBQ=C:\xsb-tests\sutures.mdb;UID=;PWD=;'
+%%%'DRIVER={Microsoft Access Driver (*.mdb)};DBQ=C:\\xsb-tests\\sutures.mdb;UID=;PWD=;'
 odbc_open(ConnectIn) :-
 	odbc_open(ConnectIn,defaultConnection).
 
 odbc_open(ConnectIn,Connection) :-
-	odbc_driver_connect(ConnectIn,ConnHandle),
-	(ConnHandle =\= 0
+	odbc_driver_connect(ConnectIn,ConnHandle,RetCode),
+	(RetCode == 0
 	 ->	odbc_newconnection(Connection,ConnHandle)
-	 ;	odbc_error('Connection failed.'),
+	 ;	odbc_error(RetCode),
 		fail
 	).
 
@@ -1262,15 +1266,20 @@ odbc_newconnection(Connection,ConnHandle) :-
 	(odbc_connection(_,_)	% init if first connection
 	 ->	true
 	 ;	init_gensym(table1),init_gensym(null),
-		assert(odbc_error_flg(fail)),
-		assert(odbc_show_query(on))
+		(odbc_error_flg(_)
+		 ->	true
+		 ;	assert(odbc_error_flg(fail))
+		),
+		(odbc_show_query(_)
+		 ->	true
+		 ;	assert(odbc_show_query(on))
+		)
 	),
 	(var(Connection)
 	 ->	asserta(odbc_connection(ConnHandle,ConnHandle))
 	 ;	(odbc_connection(Connection, _)
-		 ->	odbc_error('Connection handle is already in use.'), fail
-			 %fail after odbc_error becuase by default odbc_error_flg is off.
-
+		 ->	odbc_error('Connection handle is already in use.'),
+			fail
 		 ;	asserta(odbc_connection(Connection,ConnHandle))
 	    )
 	).
@@ -1286,7 +1295,11 @@ odbc_shutdown :-
 	),
 	retractall(odbc_error_flg(_)),
 	retractall(odbc_show_query(_)),
-	odbc_disconnect(0).
+	odbc_disconnect(0,RetCode),
+	(RetCode \== 0
+	 ->	odbc_error(RetCode)
+	 ;	true
+	).
 
 
 odbc_close :-
@@ -1301,7 +1314,11 @@ odbc_close.
 odbc_close(Connection) :-
 	odbc_connection_check(Connection,ConnHandle),
 	!,
-	odbc_disconnect(ConnHandle),
+	odbc_disconnect(ConnHandle,RetCode),
+	(RetCode \== 0
+	 ->	odbc_error(RetCode)
+	 ;	true
+	),
 	retractall(odbc_connection(Connection,ConnHandle)),
 	retract_import_info(ConnHandle).
 
@@ -1336,9 +1353,11 @@ odbc_sql_cnt(Connection,BindVals,SQLStmt,Count) :-
 	odbc_sql_ic(ConnHandle,BindVals,SQLStmt,Count).
 
 odbc_connection_check(Connection,ConnHandle):- 
-	(odbc_connection(Connection,ConnHandle) -> 
-	    true
-	 ;  misc_error([Connection,' is not a valid ODBC connection.'])).
+	(odbc_connection(Connection,ConnHandle)
+	 ->	true
+	 ;	concat_atom(['Invalid ODBC connection: ',Connection],Msg),
+		odbc_error(odbc_error('XXXXX',Msg))
+	).
 
 findall_odbc_sql(BindVals,SQLStmt,Result) :-
 	findall_odbc_sql(defaultConnection,BindVals,SQLStmt,Result).
@@ -1360,22 +1379,26 @@ odbc_sql_i(ConnHandle,BindVals,SQLStmt,Result) :-
 	(BindVals == []
 	 ->	true
 	 ;	length(BindVals,NumBindVals),
-		set_bind_table_size(Cursor,NumBindVals),
+		set_bind_table_size(Cursor,NumBindVals,SBRetVal),
+		(SBRetVal \== 0
+		 ->	odbc_error(SBRetVal)
+		 ;	true
+		),
 		set_def_bindvar_table(BindVals,Cursor)
 	),
 	parse(Cursor,RetVal0),
-	(RetVal0 =:=0
+	(RetVal0 == 0
 	 ->	odbc_describe_select(Cursor,RetVal),
-		(RetVal =:= 0
+		(RetVal == 0
 		 ->	fetch(Cursor,Result)
-		 ; RetVal =:= 2
+		 ; RetVal == 2
 		 ->	odbc_deactivate_cursor(Cursor),
 			Result = []
 		 ;	odbc_deactivate_cursor(Cursor),
 			odbc_error('DescribeSelect error.')
 		)
 	 ;      odbc_deactivate_cursor(Cursor),
-		odbc_error('Parse error.')
+		odbc_error(RetVal0)
 	).
 
 odbc_sql_ic(ConnHandle,BindVals,SQLStmt,Result) :-
@@ -1383,29 +1406,33 @@ odbc_sql_ic(ConnHandle,BindVals,SQLStmt,Result) :-
 	(BindVals == []
 	 ->	true
 	 ;	length(BindVals,NumBindVals),
-		set_bind_table_size(Cursor,NumBindVals),
+		set_bind_table_size(Cursor,NumBindVals,SBRetVal),
+		(SBRetVal \== 0
+		 ->	odbc_error(SBRetVal)
+		 ;	true
+		),
 		set_def_bindvar_table(BindVals,Cursor)
 	),
 	parse(Cursor,RetVal0),
-	(RetVal0 =:= 0
+	(RetVal0 == 0
 	 ->	odbc_describe_select(Cursor,RetVal),
-		(RetVal =:= 0
+		(RetVal == 0
 		 ->	odbc_deactivate_cursor(Cursor),
 			odbc_error('Invalid SQL statement type for count.')
-		 ; RetVal =:= 2
+		 ; RetVal == 2
 		 ->	odbc_deactivate_cursor(Cursor),
 			odbc_get_row_count(Cursor,Count,Ret3),
-			(Ret3 =:= 0
+			(Ret3 == 0
 			 ->	odbc_deactivate_cursor(Cursor),
 				Result = Count
 			 ;	odbc_deactivate_cursor(Cursor),
-				odbc_error('Unable to get SQL row count.')
+				odbc_error(Ret3)
 			)
 		 ;	odbc_deactivate_cursor(Cursor),
-			odbc_error('DescribeSelect error.')
+			odbc_error(RetVal)
 		)
 	 ;      odbc_deactivate_cursor(Cursor),
-		odbc_error('Parse error.')
+		odbc_error(RetVal0)
 	).
 
 %---------------------------------------------------------------------------------
@@ -1515,17 +1542,16 @@ set_def_bindvar_table([Val|BindVals],Cursor,I) :-
 %%% nondeterministically return all columns of all tuples
 fetch(Cursor,Row) :-
 	fetch_next_row(Cursor,RetVal),
-	(RetVal =:= 0
+	(RetVal == 0
 	 ->	(get_all_columns(Cursor,0,Row)
 		 ;
 		 fetch(Cursor,Row)
 		)
-	 ; RetVal =:= 1
+	 ; RetVal == 1
 	 ->	odbc_deactivate_cursor(Cursor),
 		fail
-	 ; RetVal =:= 2
-	 ->	odbc_deactivate_cursor(Cursor),
-		odbc_error('Fetch Failed'),
+	 ;	odbc_deactivate_cursor(Cursor),
+		odbc_error(RetVal),
 		fail
 	).
 
@@ -1534,11 +1560,11 @@ fetch(Cursor,Row) :-
 get_all_columns(Cursor,Col,Row) :-
 	(Row = [X|Row1],nonvar(X)
 	 ->	get_column(Cursor,Col,X,RetVal),
-		RetVal =:= 0,
+		RetVal == 0,
 		NCol is Col + 1,
 		get_all_columns(Cursor,NCol,Row1)
 	 ;	get_column(Cursor,Col,X,RetVal),
-		(RetVal =:= 0
+		(RetVal == 0
 		 ->	Row = [X|Row1],
 			NCol is Col + 1,
 			get_all_columns(Cursor,NCol,Row1)
@@ -1549,13 +1575,12 @@ get_all_columns(Cursor,Col,Row) :-
 %%% fetch only indicated columns (numbered from 0)
 fetch(Columns,Cursor,Row) :-
 	fetch_next_row(Cursor,RetVal),
-	(RetVal =:= 0
+	(RetVal == 0
 	 ->	(get_some_columns(Columns,Cursor,Row)
 		 ;
 		 fetch(Columns,Cursor,Row)
 		)
-	 ; RetVal =:= 2
-	 ->	odbc_error('Fetch Failed'),
+	 ; 	odbc_error(RetVal),
 		fail
 	).
 
@@ -1563,9 +1588,9 @@ fetch(Columns,Cursor,Row) :-
 get_some_columns([],_Cursor,[]).
 get_some_columns([Col|Columns],Cursor,[X|Row]) :-
 	get_column(Cursor,Col,X,RetVal),
-	(RetVal =:= 0
+	(RetVal == 0
 	 ->	get_some_columns(Columns,Cursor,Row)
-	 ;	odbc_error('Attempt to fetch a nonexistent column')
+	 ;	odbc_error(RetVal)
 	).
 
 %%% assert rule to intercept any call and redirect to DB
@@ -1916,23 +1941,23 @@ odbc_get_attr(ConnHandle,Tab,Col,Type) :-
 	find_free_cursor(ConnHandle,'GET ATTRIBUTES',Cursor),
 	%%writeln(cursor(Cursor)),
 	odbc_columns(Cursor,Tab,RetVal0),
-	(RetVal0 =:=0
+	(RetVal0 == 0
 	 ->	odbc_describe_select(Cursor,RetVal),
-		(RetVal =:= 0
+		(RetVal == 0
 		 ->	(fetch([3,5],Cursor,[Col,Type])
 			 ;
 			 odbc_deactivate_cursor(Cursor),
 			 odbc_set_cursor_close(Cursor),
 			 fail
 			)
-		 ; RetVal =:= 2
+		 ; RetVal == 2
 		 ->	odbc_deactivate_cursor(Cursor),
 			odbc_error('Error getting attribute names.')
 		 ;	odbc_deactivate_cursor(Cursor),
-			odbc_error('Parse error.')
+			odbc_error(RetVal)
 		)
 	 ;      odbc_deactivate_cursor(Cursor),
-		odbc_error('Parse error.')
+		odbc_error(RetVal0)
 	).
 
 
@@ -1940,18 +1965,18 @@ odbc_accessible_tables(ConnHandle,User,Tab,TabType) :-
 	find_free_cursor(ConnHandle,'GET TABLES',Cursor),
 	%%writeln(cursor(Cursor)),
 	odbc_tables(Cursor,RetVal0),
-	(RetVal0 =:=0
+	(RetVal0 == 0
 	 ->	odbc_describe_select(Cursor,RetVal),
-		(RetVal =:= 0
+		(RetVal == 0
 		 ->	fetch([1,2,3],Cursor,[User,Tab,TabType])
-		 ; RetVal =:= 2
+		 ; RetVal == 2
 		 ->	odbc_deactivate_cursor(Cursor),
 			odbc_error('Getting All Tables.')
 		 ;	odbc_deactivate_cursor(Cursor),
-			odbc_error('Parse error.')
+			odbc_error(RetVal)
 		)
 	 ;      odbc_deactivate_cursor(Cursor),
-		odbc_error('Parse error.')
+		odbc_error(RetVal0)
 	).
 
 
@@ -1965,18 +1990,18 @@ odbc_user_tables(ConnHandle,Tab) :-
 	find_free_cursor(ConnHandle,'GET USER TABLES',Cursor),
 	%%writeln(cursor(Cursor)),
 	odbc_usertables(Cursor,RetVal0),
-	(RetVal0 =:=0
+	(RetVal0 == 0
 	 ->	odbc_describe_select(Cursor,RetVal),
-		(RetVal =:= 0
+		(RetVal == 0
 		 ->	fetch([1,2],Cursor,[dbo,Tab])
-		 ; RetVal =:= 2
+		 ; RetVal == 2
 		 ->	odbc_deactivate_cursor(Cursor),
 			odbc_error('Getting User Tables.')
 		 ;	odbc_deactivate_cursor(Cursor),
-			odbc_error('Parse error.')
+			odbc_error(RetVal)
 		)
 	 ;      odbc_deactivate_cursor(Cursor),
-		odbc_error('Parse error.')
+		odbc_error(RetVal0)
 	).
 
 
@@ -2006,13 +2031,13 @@ odbc_get_info(Connection, InfoType, Info) :-
 	(integer(InfoType)
 	 ->	(var(Info)
 		 ->	odbc_get_info(ConnHandle, InfoType, I, Ret),
-			(Ret =:= 0
+			(Ret == 0
 			->	Info = I
-			; Ret =:= -2
+			; Ret == -2
 			->	odbc_error('Not implemented by this connection.')
-			; Ret =:= -1
+			; Ret == -1
 			->	odbc_error('Unkown InfoType requested.')
-			; Ret =:= 1
+			; Ret == 1
 			->	odbc_error('Error retrieving information.')
 			; 	true
 			)
@@ -2054,22 +2079,25 @@ odbc_deactivate_cursor(Cursor) :-
 
 odbc_error(ErrMsg) :-
 	write('ERR - ODBC: '),writeln(ErrMsg),
-	(odbc_error_flg(ignore) -> 
-	       true
-	    ; (odbc_error_flg(fail) -> fail
-	     ; xsb_backtrace(Bt),throw(error(odbc_error,ErrMsg,Bt)) ) ).
+	(odbc_error_flg(ignore)
+	 ->	true
+	 ; odbc_error_flg(fail)
+	 ->	fail
+	 ;	xsb_backtrace(Bt),
+		throw(error(odbc_error,ErrMsg,Bt))
+	).
 
-odbc_connect(Server,Name,Passwd,ConnHandle) :-
-	odbc_exec_query(1,0,Server,Name,Passwd,ConnHandle).
+odbc_connect(Server,Name,Passwd,ConnHandle,RetCode) :-
+	odbc_exec_query(1,0,Server,Name,Passwd,ConnHandle,RetCode).
 
-odbc_driver_connect(ConnectIn,ConnHandle) :-
-	odbc_exec_query(1,1,ConnectIn,_,_,ConnHandle).
+odbc_driver_connect(ConnectIn,ConnHandle,RetCode) :-
+	odbc_exec_query(1,1,ConnectIn,_,_,ConnHandle,RetCode).
 
 parse(Cursor, RetVal) :-
 	odbc_exec_query(2,Cursor, RetVal).
 
-set_bind_table_size(Cursor,Blen) :-
-	odbc_exec_query(3,Cursor,Blen).
+set_bind_table_size(Cursor,Blen,RetCode) :-
+	odbc_exec_query(3,Cursor,Blen,RetCode).
 
 fetch_next_row(Cursor,RetVal) :-
 	odbc_exec_query(4,Cursor,RetVal).
@@ -2078,18 +2106,22 @@ get_column(Cursor,Col,X,RetVal) :-
 	odbc_exec_query(5,Cursor,Col,X,RetVal).
 
 set_bind(Cursor,BindId,H1) :-
-	odbc_exec_query(6,Cursor,BindId,H1,_Ret).
+	odbc_exec_query(6,Cursor,BindId,H1,Ret),
+	(Ret == 0
+	 ->	true
+	 ;	odbc_error(Ret)
+	).
 
 find_free_cursor(ConnHandle,SQLStmt,Cursor) :-
-	odbc_exec_query(7,ConnHandle,SQLStmt,Cursor),
+	odbc_exec_query(7,ConnHandle,SQLStmt,Cursor,RetCode),
 %%	writeln(active(Cursor)),
-	(Cursor =:= 0
-	 ->	odbc_error('No more cursors left.'),
+	(RetCode \== 0
+	 ->	odbc_error(RetCode),
 		fail
 	 ;	asserta(odbc_active_cursors(Cursor))
 	).
 
-odbc_disconnect(ConnHandle) :- odbc_exec_query(8,ConnHandle).
+odbc_disconnect(ConnHandle,RetCode) :- odbc_exec_query(8,ConnHandle,RetCode).
 
 odbc_set_cursor_close(Cursor) :- odbc_exec_query(9,Cursor).
 
@@ -2117,8 +2149,14 @@ odbc_connect_option(ConnHandle,GetSet,Attr,Value,RetVal) :-
 	odbc_exec_query(16,ConnHandle,GetSet,Attr,Value,RetVal).
 
 %%odbc_exec_query(A) :- odbc_exec_query(A,_,_,_,_).
-odbc_exec_query(A,B) :- odbc_exec_query(A,B,_,_,_).
+/**odbc_exec_query(A,B) :- odbc_exec_query(A,B,_,_,_).
 odbc_exec_query(A,B,C) :- odbc_exec_query(A,B,C,_,_).
 odbc_exec_query(A,B,C,D) :- odbc_exec_query(A,B,C,D,_).
-odbc_exec_query(A,B,C,D,E) :- odbc_exec_query(A,B,C,D,E,_).
+odbc_exec_query(A,B,C,D,E) :- odbc_exec_query(A,B,C,D,E,_).**/
 
+odbc_exec_query(_A,_B) :- '_$builtin'(ODBC_EXEC_QUERY).
+odbc_exec_query(_A,_B,_C) :- '_$builtin'(ODBC_EXEC_QUERY).
+odbc_exec_query(_A,_B,_C,_D) :- '_$builtin'(ODBC_EXEC_QUERY).
+odbc_exec_query(_A,_B,_C,_D,_E) :- '_$builtin'(ODBC_EXEC_QUERY).
+odbc_exec_query(_A,_B,_C,_D,_E,_F) :- '_$builtin'(ODBC_EXEC_QUERY).
+odbc_exec_query(_A,_B,_C,_D,_E,_F,_G) :- '_$builtin'(ODBC_EXEC_QUERY).

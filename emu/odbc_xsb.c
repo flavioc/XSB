@@ -67,6 +67,8 @@
 #define MAXVARSTRLEN                    65000
 #define MAXI(a,b)                       ((a)>(b)?(a):(b))
 
+extern xsbBool unify(CTXTdecltypec Cell, Cell);
+
 static Psc     nullFctPsc = NULL;
 /* static int      numberOfCursors = 0; */
 static long      SQL_NTSval = SQL_NTS;
@@ -366,7 +368,7 @@ int GetInfoTypeType(int SQL_INFO_TYPE)
 /*     PrintErrorMsg() prints out the error message that associates*/
 /*     with the statement handler of cursor i.*/
 /*-----------------------------------------------------------------------------*/
-int PrintErrorMsg(struct Cursor *cur)
+Cell PrintErrorMsg(CTXTdeclc struct Cursor *cur)
 {
   UCHAR FAR *szsqlstate;
   SDWORD FAR *pfnativeerror;
@@ -374,6 +376,8 @@ int PrintErrorMsg(struct Cursor *cur)
   SWORD cberrormsgmax;
   SWORD FAR *pcberrormsg;
   RETCODE rc;
+  Cell term;
+  int isnew;
 
   szsqlstate=(UCHAR FAR *)malloc(sizeof(UCHAR FAR)*10);
   pfnativeerror=(SDWORD FAR *)malloc(sizeof(SDWORD FAR));
@@ -387,14 +391,30 @@ int PrintErrorMsg(struct Cursor *cur)
     rc = SQLError(SQL_NULL_HENV, NULL, SQL_NULL_HSTMT, szsqlstate,
 		  pfnativeerror, szerrormsg,cberrormsgmax,pcberrormsg);
   if ((rc == SQL_SUCCESS) || (rc == SQL_SUCCESS_WITH_INFO)) {
-    printf("ODBC SYSCALL ERROR (CODE %s): %s\n", szsqlstate, szerrormsg);
+    term = makecs(hreg);
+    bld_functor(hreg++, pair_psc(insert("odbc_error",2,(Psc)flags[CURRENT_MODULE],&isnew)));
+    bld_string(hreg++,string_find(szsqlstate,1)); 
+    bld_string(hreg++,string_find(szerrormsg,1)); 
+  } else {
+    term = makestring(string_find("Unknown ODBC Error",1));
   }
   free(szsqlstate);
   free(pfnativeerror);
   free(szerrormsg);
   free(pcberrormsg);
-  return 1;
+  return term;
 }
+
+/*------------------------------------------------------------------------------*/
+/*  FUNCTION NAME:								*/
+/*     GenErrorMsgBall()							*/
+/*  PARAMETERS:									*/
+/*     char * - error message to put into ball					*/
+/*------------------------------------------------------------------------------*/
+Cell GenErrorMsgBall(char *errmsg) {
+  return makestring(string_find(errmsg,1));
+}
+
 
 /*-----------------------------------------------------------------------------*/
 /*  FUNCTION NAME:*/
@@ -446,7 +466,8 @@ void SetCursorClose(struct Cursor *cur)
 /*     R3: Server or connection_string*/
 /*     R4: User name or don't care*/
 /*     R5: Password or don't care*/
-/*     R6: var, for returned Connection ID.*/
+/*     R6: var, for returned Connection ID, or 0 if error.*/
+/*     R7: RetCode: 0 => Successful, otw error.*/
 /*  NOTES:*/
 /*     This function is called when a user wants to start a db session,*/
 /*     assuming that she doesn't have one open.  It initializes system*/
@@ -455,7 +476,7 @@ void SetCursorClose(struct Cursor *cur)
 /*     tries to connect to the database, either by server,userid,pw if R2=0,*/
 /*     or thrugh a driver by using r3 as the connections tring, if R2=1. */
 /*     If any of these allocations or connection fails, function returns a*/
-/*     failure code 1.  Otherwise 0. */
+/*     connection code 0.  Otherwise, the connection ID. */
 /*-----------------------------------------------------------------------------*/
 void ODBCConnect(CTXTdecl)
 {
@@ -466,16 +487,17 @@ void ODBCConnect(CTXTdecl)
   HDBC hdbc = NULL;
   RETCODE rc;
   int new;
+  char errmsg[200];
 
   /* if we don't yet have an environment, allocate one.*/
+  //locked to prevent two threads from fighting over who creates the env.
+  SYS_MUTEX_LOCK( MUTEX_ODBC) ;
   if (!henv) {
-    //locked to prevent two threads from fighting over who creates the env.
-    SYS_MUTEX_LOCK( MUTEX_ODBC) ;
     /* allocate environment handler*/
     rc = SQLAllocEnv(&henv);
     if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
-      xsb_error("Environment allocation failed");
       ctop_int(CTXTc 6, 0);
+      unify(CTXTc reg_term(CTXTc 7), makestring(string_find("Environment allocation failed",1)));
       return;
     }
     /*    SQLSetEnvAttr(henv, SQL_ATTR_ODBC_VERSION, (SQLPOINTER)SQL_OV_ODBC2,
@@ -486,14 +508,14 @@ void ODBCConnect(CTXTdecl)
     FCurNum = NULL;
     if (nullFctPsc == NULL)
         nullFctPsc = pair_psc(insert("NULL",1,global_mod,&new));
-    SYS_MUTEX_UNLOCK( MUTEX_ODBC) ;
   }
+  SYS_MUTEX_UNLOCK( MUTEX_ODBC) ;
 
   /* allocate connection handler*/
   rc = SQLAllocConnect(henv, &hdbc);
   if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
-    xsb_error("Connection Resources Allocation Failed");
     ctop_int(CTXTc 6, 0);
+    unify(CTXTc reg_term(CTXTc 7), makestring(string_find("Connection Resources Allocation Failed",1)));
     return;
   }
 
@@ -507,8 +529,9 @@ void ODBCConnect(CTXTdecl)
     rc = SQLConnect(hdbc, server, SQL_NTS, uid, SQL_NTS, pwd, SQL_NTS);
     if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
       SQLFreeConnect(hdbc);
-      xsb_error("Connection to server %s failed", server);
+      sprintf(errmsg, "Connection to server %s failed", server);
       ctop_int(CTXTc 6, 0);
+      unify(CTXTc reg_term(CTXTc 7), makestring(string_find(errmsg,1)));
       return;
     }
   } else {
@@ -517,13 +540,15 @@ void ODBCConnect(CTXTdecl)
     rc = SQLDriverConnect(hdbc, NULL, connectIn, SQL_NTS, NULL, 0, NULL,SQL_DRIVER_NOPROMPT);
     if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
       SQLFreeConnect(hdbc);
-      xsb_error("Connection to driver failed: %s", connectIn);
+      sprintf(errmsg,"Connection to driver failed: %s", connectIn);
       ctop_int(CTXTc 6, 0);
+      unify(CTXTc reg_term(CTXTc 7), makestring(string_find(errmsg,1)));
       return;
     }
   }
   
   ctop_int(CTXTc 6, (long)hdbc);
+  ctop_int(CTXTc 7, 0);
   return;
 }
 
@@ -534,6 +559,7 @@ void ODBCConnect(CTXTdecl)
 /*     R1: 2*/
 /*     R2: hdbc if closing a particular connection*/
 /*         0 if closing entire ODBC session.*/
+/*     R3: var RetCode 0 if OK, != if error */
 /*  NOTES:*/
 /*     Disconnect us from the server and free all the system resources we*/
 /*     allocated for the session - statement handlers, connection handler,*/
@@ -549,13 +575,17 @@ void ODBCDisconnect(CTXTdecl)
 
   rc = SQLTransact(henv,hdbc,SQL_COMMIT);
   if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
-    xsb_abort("[ODBC] Error committing transactions");
+    unify(CTXTc reg_term(CTXTc 3), GenErrorMsgBall("Error committing transactions"));
+    return;
   }
 
   if (hdbc == NULL) {  /* close entire connection*/
-    if (FCursor != NULL)
-      xsb_abort("[ODBC] Must close all connections before shutting down");
+    if (FCursor != NULL) {
+      unify(CTXTc reg_term(CTXTc 3), GenErrorMsgBall("Must close all connections before shutting down"));
+      return;
+    }
     SQLFreeEnv(henv);
+    ctop_int(CTXTc 3, 0);
     return;
   }
 
@@ -592,6 +622,7 @@ void ODBCDisconnect(CTXTdecl)
   SQLDisconnect(hdbc);
   SQLFreeConnect(hdbc);
   /*  SQLFreeEnv(henv);*/
+  ctop_int(CTXTc 3, 0);
 }
 
 /*-----------------------------------------------------------------------------*/
@@ -602,6 +633,7 @@ void ODBCDisconnect(CTXTdecl)
 /*     R2: Connection Handle*/
 /*     R3: SQL Statement*/
 /*     R4: var, in which Cursor addr is returned*/
+/*     R5: var, Retcode 0->OK, otw error*/
 /*  NOTES:*/
 /*     Find a free statement handler and return its index number into the*/
 /*     global cursor table.  It gives priority to a closed cursor with same*/
@@ -642,6 +674,7 @@ void FindFreeCursor(CTXTdecl)
 	    curi->Status = 2;
 	    ctop_int(CTXTc 4, (long)curi);
 	    /*printf("reuse cursor: %p\n",curi);*/
+	    ctop_int(CTXTc 5, 0);
 	    return;
 	  } else {
 	    curk = curi;                      /* otherwise just record it*/
@@ -683,7 +716,9 @@ void FindFreeCursor(CTXTdecl)
 	  (rc==SQL_SUCCESS_WITH_INFO))) {
       free(curi);
       /*      numberOfCursors--; */
-      xsb_abort("[ODBC] ERROR while trying to allocate ODBC statement\n");
+      ctop_int(CTXTc 4, 0);
+      unify(CTXTc reg_term(CTXTc 5), GenErrorMsgBall("ERROR while trying to allocate ODBC statement"));
+      return;
     }
 
     num->CursorCount++;
@@ -692,6 +727,7 @@ void FindFreeCursor(CTXTdecl)
     }
     else if (curk == NULL) {  /* no cursor left*/
       ctop_int(CTXTc 4, 0);
+      unify(CTXTc reg_term(CTXTc 5), GenErrorMsgBall("No Cursors Left"));
       return;
     }
     else {                    /* steal a cursor*/
@@ -719,10 +755,14 @@ void FindFreeCursor(CTXTdecl)
 
   curi->hdbc = hdbc;
   curi->Sql = (UCHAR *)strdup(Sql_stmt);
-  if (!curi->Sql)
-    xsb_abort("[ODBC] Not enough memory for SQL stmt in FindFreeCursor!\n");
+  if (!curi->Sql) {
+    ctop_int(CTXTc 4, 0);
+    unify(CTXTc reg_term(CTXTc 5), GenErrorMsgBall("Not enough memory for SQL stmt in FindFreeCursor!"));
+    return;
+  }
   curi->Status = 3;
   ctop_int(CTXTc 4, (long)curi);
+  ctop_int(CTXTc 5, 0);
   return;
 }
 
@@ -733,6 +773,7 @@ void FindFreeCursor(CTXTdecl)
 /*     R1: 3*/
 /*     R2: Cursor Address*/
 /*     R3: Number of bind values*/
+/*     R4: RetCode - 0=> OK, otw error */
 /*  NOTES:*/
 /*     set the number of bind variables.  Note that the memory to*/
 /*     store their values is not allocated here since we don't know*/
@@ -748,22 +789,32 @@ void SetBindVarNum(CTXTdecl)
   int NumBindVars = ptoc_int(CTXTc 3);
 
   if (cur->Status == 2) {
-    if (cur->NumBindVars != NumBindVars)
-      xsb_abort("[ODBC] Number of Bind values provided does not agree with query\n");
+    if (cur->NumBindVars != NumBindVars) {
+      unify(CTXTc reg_term(CTXTc 4), GenErrorMsgBall("Number of Bind values provided does not agree with query"));
+      return;
+    }
+    ctop_int(CTXTc 4, 0);
     return;
   }
 
   cur->NumBindVars = NumBindVars;
   cur->BindList = malloc(sizeof(UCHAR *) * NumBindVars);
-  if (!cur->BindList)
-    xsb_abort("[ODBC] Not enough memory for cur->BindList!");
+  if (!cur->BindList) {
+    unify(CTXTc reg_term(CTXTc 4), GenErrorMsgBall("Not enough memory for cur->BindList!"));
+    return;
+  }
   cur->BindTypes = malloc(sizeof(int) * NumBindVars);
-  if (!cur->BindTypes)
-    xsb_abort("[ODBC] Not enough memory for cur->BindTypes!");
+  if (!cur->BindTypes) {
+    unify(CTXTc reg_term(CTXTc 4), GenErrorMsgBall("Not enough memory for cur->BindTypes!"));
+    return;
+  }
   cur->BindLens = malloc(sizeof(SQLINTEGER) * NumBindVars);
-  if (!cur->BindLens)
-    xsb_abort("[ODBC] Not enough memory for cur->BindLens!");
+  if (!cur->BindLens) {
+    unify(CTXTc reg_term(CTXTc 4), GenErrorMsgBall("Not enough memory for cur->BindLens!"));
+    return;
+  }
 
+  ctop_int(CTXTc 4, 0);
 }
 
 DllExport void call_conv write_canonical_term(CTXTdeclc Cell prologterm, int letterflag);
@@ -815,9 +866,12 @@ void SetBindVal(CTXTdecl)
   struct Cursor *cur = (struct Cursor *)ptoc_int(CTXTc 2);
   int j = ptoc_int(CTXTc 3);
   Cell BindVal = ptoc_tag(CTXTc 4);
+  char errmsg[200];
 
-  if (!((j >= 0) && (j < cur->NumBindVars)))
-    xsb_abort("[ODBC] Abnormal argument in SetBindVal!");
+  if (!((j >= 0) && (j < cur->NumBindVars))){
+    unify(CTXTc reg_term(CTXTc 5), GenErrorMsgBall("Abnormal argument in SetBindVal"));
+    return;
+  }
 
   /* if we're reusing an opened cursor w/ the statement number*/
   /* reallocate BindVar if type has changed (May not be such a good idea?)*/
@@ -829,7 +883,7 @@ void SetBindVal(CTXTdecl)
 	cur->BindTypes[j] = 0;
 	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_SLONG, SQL_INTEGER, 0, 0, (int *)(cur->BindList[j]), 0, NULL);
 	if (rc != SQL_SUCCESS) {
-	  ctop_int(CTXTc 5,PrintErrorMsg(cur));
+	  unify(CTXTc reg_term(CTXTc 5),PrintErrorMsg(CTXTc cur));
 	  SetCursorClose(cur);
 	  return;
 	}
@@ -843,7 +897,7 @@ void SetBindVal(CTXTdecl)
 	cur->BindTypes[j] = 1;
 	rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_FLOAT, SQL_FLOAT, 0, 0, (float *)(cur->BindList[j]), 0, NULL);
 	if (rc != SQL_SUCCESS) {
-	  ctop_int(CTXTc 5,PrintErrorMsg(cur));
+	  unify(CTXTc reg_term(CTXTc 5),PrintErrorMsg(CTXTc cur));
 	  SetCursorClose(cur);
 	  return;
 	}
@@ -877,7 +931,12 @@ void SetBindVal(CTXTdecl)
 	cur->BindList[j] = term_string[j];
       }
     } else {
-      xsb_abort("[ODBC] Unknown bind variable type, %d", cur->BindTypes[j]);
+      if (!cur->BindTypes[j]) unify(CTXTc reg_term(CTXTc 5), GenErrorMsgBall("Bind variable cannot be free"));
+      else {
+	sprintf(errmsg,"Unknown bind variable type: %d", cur->BindTypes[j]);
+	unify(CTXTc reg_term(CTXTc 5), GenErrorMsgBall(errmsg));
+      }
+      return;
     }
     ctop_int(CTXTc 5,0);
     return;
@@ -887,14 +946,18 @@ void SetBindVal(CTXTdecl)
   if (isinteger(BindVal)) {
     cur->BindTypes[j] = 0;
     cur->BindList[j] = (UCHAR *)malloc(sizeof(int));
-    if (!cur->BindList[j])
-      xsb_abort("[ODBC] Not enough memory for an int in SetBindVal!");
+    if (!cur->BindList[j]) {
+      unify(CTXTc reg_term(CTXTc 5), GenErrorMsgBall("Not enough memory for an int in SetBindVal"));
+      return;
+    }
     *((int *)cur->BindList[j]) = oint_val(BindVal);
   } else if (isofloat(BindVal)) {
     cur->BindTypes[j] = 1;
     cur->BindList[j] = (UCHAR *)malloc(sizeof(float));
-    if (!cur->BindList[j])
-      xsb_abort("[ODBC] Not enough memory for a float in SetBindVal!");
+    if (!cur->BindList[j]) {
+      unify(CTXTc reg_term(CTXTc 5), GenErrorMsgBall("Not enough memory for a float in SetBindVal"));
+      return;
+    }
     *((float *)cur->BindList[j]) = (float)ofloat_val(BindVal);
   } else if (isstring(BindVal)) {
     cur->BindTypes[j] = 2;
@@ -916,7 +979,12 @@ void SetBindVal(CTXTdecl)
       cur->BindList[j] = term_string[j];
     }
   } else {
-    xsb_abort("[ODBC] Unknown bind variable type, %d", cur->BindTypes[j]);
+    if (!cur->BindTypes[j]) unify(CTXTc reg_term(CTXTc 5), GenErrorMsgBall("Bind variable cannot be free"));
+    else {
+      sprintf(errmsg,"Unknown bind variable type: %d", cur->BindTypes[j]);
+      unify(CTXTc reg_term(CTXTc 5), GenErrorMsgBall(errmsg));
+    }
+    return;
   }
   ctop_int(CTXTc 5,0);
   return;
@@ -929,7 +997,7 @@ void SetBindVal(CTXTdecl)
 /*  PARAMETERS:*/
 /*     R1: 2*/
 /*     R2: the SQL statement for the cursor*/
-/*     R3: var, returned cursor address*/
+/*     R3: var, 0 or error*/
 /*  NOTES:*/
 /*     parse the sql statement and submit it to DBMS to execute.  if all these*/
 /*     succeed, then prepare for resulting row fetching.  this includes*/
@@ -944,7 +1012,7 @@ RETCODE rc;
   if (cur->Status == 2) { /* reusing opened cursor*/
     rc = SQLFreeStmt(cur->hstmt,SQL_CLOSE);
     if ((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO)) {
-      ctop_int(CTXTc 3, PrintErrorMsg(cur));
+      unify(CTXTc reg_term(CTXTc 3), PrintErrorMsg(CTXTc cur));
       SetCursorClose(cur);
       return;
     }
@@ -967,7 +1035,7 @@ RETCODE rc;
   } else {
     if (SQL_SUCCESS != (rc = SQLPrepare(cur->hstmt, cur->Sql, SQL_NTS)))
 		{
-		ctop_int(CTXTc 3,PrintErrorMsg(cur));
+		unify(CTXTc reg_term(CTXTc 3),PrintErrorMsg(CTXTc cur));
 		SetCursorClose(cur);
 		return;
 		}
@@ -994,20 +1062,20 @@ RETCODE rc;
 			rc = SQLBindParameter(cur->hstmt, (short)(j+1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, 0, 0,NULL, 0, &SQL_NULL_DATAval);
 			break;
 		default:
-			xsb_abort("[ODBC] illegal BindVal");
-			rc = 0;
+			unify(CTXTc reg_term(CTXTc 3), GenErrorMsgBall("illegal BindVal"));
+			return;
 		}
       if (rc != SQL_SUCCESS)
 		{
-		ctop_int(CTXTc 3,PrintErrorMsg(cur));
-		SetCursorClose(cur);
-		return;
+		  unify(CTXTc reg_term(CTXTc 3),PrintErrorMsg(CTXTc cur));
+		  SetCursorClose(cur);
+		  return;
 		}
     }
   }
   /* submit it for execution*/
   if (SQLExecute(cur->hstmt) != SQL_SUCCESS) {
-    ctop_int(CTXTc 3,PrintErrorMsg(cur));
+    unify(CTXTc reg_term(CTXTc 3),PrintErrorMsg(CTXTc cur));
     SetCursorClose(cur);
     return;
   }
@@ -1037,8 +1105,9 @@ void ODBCCommit(CTXTdecl)
       cur = cur->NCursor;
     }
     ctop_int(CTXTc 3,0);
-  } else
-    ctop_int(CTXTc 3,PrintErrorMsg(NULL));
+  } else {
+    unify(CTXTc reg_term(CTXTc 3),PrintErrorMsg(CTXTc NULL));
+  }
   return;
 }
 
@@ -1065,7 +1134,7 @@ void ODBCRollback(CTXTdecl)
     }
     ctop_int(CTXTc 3,0);
   } else
-    ctop_int(CTXTc 3, PrintErrorMsg(NULL));
+    unify(CTXTc reg_term(CTXTc 3), PrintErrorMsg(CTXTc NULL));
   return;
 }
 
@@ -1101,7 +1170,7 @@ void ODBCColumns(CTXTdecl)
       (rc == SQL_SUCCESS_WITH_INFO)) {
     ctop_int(CTXTc 4,0);
   } else {
-    ctop_int(CTXTc 4,PrintErrorMsg(cur));
+    unify(CTXTc reg_term(CTXTc 4),PrintErrorMsg(CTXTc cur));
     SetCursorClose(cur);
   }
   return;
@@ -1123,7 +1192,7 @@ void ODBCTables(CTXTdecl)
   if (cur->Status == 2) { /* reusing opened cursor*/
     rc = SQLFreeStmt(cur->hstmt,SQL_CLOSE);
     if ((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO)) {
-      ctop_int(CTXTc 3, PrintErrorMsg(cur));
+      unify(CTXTc reg_term(CTXTc 3), PrintErrorMsg(CTXTc cur));
       SetCursorClose(cur);
       return;
     }
@@ -1137,7 +1206,7 @@ void ODBCTables(CTXTdecl)
       (rc == SQL_SUCCESS_WITH_INFO)) {
     ctop_int(CTXTc 3,0);
   } else {
-    ctop_int(CTXTc 3,PrintErrorMsg(cur));
+    unify(CTXTc reg_term(CTXTc 3),PrintErrorMsg(CTXTc cur));
     SetCursorClose(cur);
   }
   return;
@@ -1161,8 +1230,8 @@ void ODBCUserTables(CTXTdecl)
   /* we check it first*/
   SQLGetFunctions(cur->hdbc,SQL_API_SQLTABLEPRIVILEGES,&TablePrivilegeExists);
   if (!TablePrivilegeExists) {
-    printf("Privilege concept does not exist in this DVMS: you probably can access any of the existing tables\n");
-    ctop_int(CTXTc 3, 2);
+    unify(CTXTc reg_term(CTXTc 3), 
+	  GenErrorMsgBall("Privilege concept does not exist in this DVMS: you probably can access any of the existing tables"));
     return;
   }
   if (((rc=SQLTablePrivileges(cur->hstmt,
@@ -1172,7 +1241,7 @@ void ODBCUserTables(CTXTdecl)
       (rc == SQL_SUCCESS_WITH_INFO))
     ctop_int(CTXTc 3,0);
   else {
-    ctop_int(CTXTc 3,PrintErrorMsg(cur));
+    unify(CTXTc reg_term(CTXTc 3),PrintErrorMsg(CTXTc cur));
     SetCursorClose(cur);
   }
   return;
@@ -1206,20 +1275,20 @@ UDWORD DisplayColSize(SWORD coltype, UDWORD collen, UCHAR *colname)
   case SQL_C_FLOAT:
     return sizeof(float *);
   default:
-    printf("Illegal ODBC Type: %d\n",coltype);
+    fprintf(stderr,"Illegal ODBC Type: %d\n",coltype);
     return 0;
   }
 }
-extern xsbBool unify(CTXTdecltypec Cell, Cell);
 
 /*-----------------------------------------------------------------------------*/
 /*  FUNCTION NAME:*/
 /*     ODBCDataSources()*/
 /*  PARAMETERS:*/
-/*     R1: 1 - first call; 2 - subsequent calls */
-/*     R2: var, returns DSN */
-/*     R3: var, returns DS description */
-/*     R4: var, returns status */
+/*     R1: 17 */
+/*     R2: 1 - first call; 2 - subsequent calls */
+/*     R3: var, returns DSN */
+/*     R4: var, returns DS description */
+/*     R5: var, returns status */
 /*  NOTES:*/
 /*-----------------------------------------------------------------------------*/
 void ODBCDataSources(CTXTdecl)
@@ -1238,8 +1307,7 @@ void ODBCDataSources(CTXTdecl)
     /* allocate environment handler*/
     rc = SQLAllocEnv(&henv);
     if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
-      xsb_error("Environment allocation failed");
-      ctop_int(CTXTc 5,1);
+      unify(CTXTc reg_term(CTXTc 5), GenErrorMsgBall("Environment allocation failed"));
       return;
     }
     LCursor = FCursor = NULL;
@@ -1260,8 +1328,7 @@ void ODBCDataSources(CTXTdecl)
       return;
     }
     if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
-      xsb_error("Environment allocation failed");
-      ctop_int(CTXTc 5,1);
+      unify(CTXTc reg_term(CTXTc 5),GenErrorMsgBall("Environment allocation failed"));
       return;
     }
   } else {
@@ -1274,8 +1341,7 @@ void ODBCDataSources(CTXTdecl)
       return;
     }
     if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
-      xsb_error("Environment allocation failed");
-      ctop_int(CTXTc 5,1);
+      unify(CTXTc reg_term(CTXTc 5),GenErrorMsgBall("Environment allocation failed"));
       return;
     }
   }
@@ -1287,8 +1353,7 @@ void ODBCDataSources(CTXTdecl)
     unify(CTXTc op2, cellStr);
   }
   else {
-    xsb_error("[ODBCDataSources] Param 2 should be a free variable.");
-    ctop_int(CTXTc 5,1);
+    unify(CTXTc reg_term(CTXTc 5),GenErrorMsgBall("[ODBCDataSources] Param 2 should be a free variable."));
     return;
   }
   XSB_Deref(op3);
@@ -1297,8 +1362,7 @@ void ODBCDataSources(CTXTdecl)
     unify(CTXTc op3, makestring(string_find(Description,1)));
   }
   else {
-    xsb_error("[ODBCDataSources] Param 3 should be a free variable.");
-    ctop_int(CTXTc 5,1);
+    unify(CTXTc reg_term(CTXTc 5),GenErrorMsgBall("[ODBCDataSources] Param 3 should be a free variable."));
     return;
   }
   ctop_int(CTXTc 5,0);
@@ -1342,23 +1406,31 @@ void ODBCDescribeSelect(CTXTdecl)
   if (cur->Status != 2) {
     cur->ColTypes =
       (SWORD *)malloc(sizeof(SWORD) * cur->NumCols);
-    if (!cur->ColTypes)
-      xsb_abort("[ODBC] Not enough memory for ColTypes!");
+    if (!cur->ColTypes) {
+      unify(CTXTc reg_term(CTXTc 3),GenErrorMsgBall("Not enough memory for ColTypes!"));
+      return;
+    }
 
     cur->Data =
       (UCHAR **)malloc(sizeof(char *) * cur->NumCols);
-    if (!cur->Data)
-      xsb_abort("[ODBC] Not enough memory for Data!");
+    if (!cur->Data) {
+      unify(CTXTc reg_term(CTXTc 3),GenErrorMsgBall("Not enough memory for Data!"));
+      return;
+    }
 
     cur->OutLen =
       (UDWORD *)malloc(sizeof(UDWORD) * cur->NumCols);
-    if (!cur->OutLen)
-      xsb_abort("[ODBC] Not enough memory for OutLen!");
+    if (!cur->OutLen) {
+      unify(CTXTc reg_term(CTXTc 3),GenErrorMsgBall("Not enough memory for OutLen!"));
+      return;
+    }
 
     cur->ColLen =
       (UDWORD *)malloc(sizeof(UDWORD) * cur->NumCols);
-    if (!cur->ColLen)
-      xsb_abort("[ODBC] Not enough memory for ColLen!");
+    if (!cur->ColLen) {
+      unify(CTXTc reg_term(CTXTc 3),GenErrorMsgBall("Not enough memory for ColLen!"));
+      return;
+    }
 
     for (j = 0; j < cur->NumCols; j++) {
       SQLDescribeCol(cur->hstmt, (short)(j+1), (UCHAR FAR*)colname,
@@ -1376,13 +1448,17 @@ void ODBCDescribeSelect(CTXTdecl)
 	cur->NumCols = j; /* set so close frees memory allocated thus far*/
 	SetCursorClose(cur);
 	/*	return(1);*/
-	ctop_int(CTXTc 3,1);
+	unify(CTXTc reg_term(CTXTc 3),GenErrorMsgBall("Error in column lengths"));
 	return;
       }
       cur->Data[j] =
 	(UCHAR *) malloc(((unsigned) cur->ColLen[j]+1)*sizeof(UCHAR));
-      if (!cur->Data[j])
-	xsb_abort("[ODBC] Not enough memory for Data[j]!");
+      if (!cur->Data[j]) {
+	char errmsg[200];
+	sprintf(errmsg,"Not enough memory for Data[%d]!",j);
+	unify(CTXTc reg_term(CTXTc 3),GenErrorMsgBall(errmsg));
+	return;
+      }
     }
   }
   /* bind them*/
@@ -1463,7 +1539,7 @@ void ODBCConnectOption(CTXTdecl)
   }
   if ((rc == SQL_SUCCESS) || (rc == SQL_SUCCESS_WITH_INFO))
     ctop_int(CTXTc 6,0);
-  else ctop_int(CTXTc 6,PrintErrorMsg(NULL));
+  else unify(CTXTc reg_term(CTXTc 6),PrintErrorMsg(CTXTc NULL));
 }
 
 //extern xsbBool glstack_realloc(CTXTc int,int);
@@ -1634,7 +1710,7 @@ void ODBCGetInfo(CTXTdecl)
 			ctop_string(CTXTc 4,string_find(strValue,1));
 			ctop_int(CTXTc 5,0);
   		} else {
-			ctop_int(CTXTc 5,1);
+		  ctop_int(CTXTc 5,1);
 		}
 		break;
 	  case 1:
@@ -1682,7 +1758,7 @@ void ODBCRowCount(CTXTdecl) {
   rc = SQLRowCount(cur->hstmt, &count);
   if ((rc != SQL_SUCCESS) && (rc != SQL_SUCCESS_WITH_INFO)) {
     ctop_int(CTXTc 3, 0);
-    ctop_int(CTXTc 4, PrintErrorMsg(cur));
+    unify(CTXTc reg_term(CTXTc 4), PrintErrorMsg(CTXTc cur));
     return;
   }
 
