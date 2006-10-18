@@ -106,7 +106,6 @@
 
 /* Non-recursive */
 #define MUTEX_STRING		15
-#define MUTEX_ATOM_BUF		16
 #define MUTEX_SM		17
 #define MUTEX_STACKS		18
 #define MUTEX_SOCKETS		19

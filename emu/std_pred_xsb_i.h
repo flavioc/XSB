@@ -295,16 +295,14 @@ inline static xsbBool atom_to_list(CTXTdeclc int call_type)
   int i, len;
   long c;
   char *atomname, *atomnamelast;
-  static char *atomnameaddr = NULL;
-  static int atomnamelen;
+  char *atomnameaddr = NULL;
+  int atomnamelen;
   char tmpstr[2], *tmpstr_interned;
   Cell heap_addr, term, term2;
   Cell list, new_list;
   CPtr top = 0;
   char *call_name = (call_type == ATOM_CODES ? "atom_codes" : "atom_chars");
   char *elt_type = (call_type == ATOM_CODES ? "ASCII code" : "character atom");
-
-  SYS_MUTEX_LOCK(MUTEX_ATOM_BUF);
 
   term = ptoc_tag(CTXTc 1);
   list = ptoc_tag(CTXTc 2);
@@ -329,7 +327,7 @@ inline static xsbBool atom_to_list(CTXTdeclc int call_type)
 	    xsb_type_error(CTXTc elt_type,list,call_name,2,2); 
 	  }
 	  else err(INSTANTIATION, 2, call_name, 2);
-  	  SYS_MUTEX_UNLOCK(MUTEX_ATOM_BUF);
+	  mem_dealloc(atomnameaddr,atomnamelen,LEAK_SPACE);
 	  return FALSE;	/* fail */
 	}
 	if (isinteger(heap_addr))
@@ -339,7 +337,7 @@ inline static xsbBool atom_to_list(CTXTdeclc int call_type)
 
 	if (c < 0 || c > 255) {
 	  err_handle(CTXTc RANGE, 2, call_name, 2, "ASCII code", heap_addr);
-  	  SYS_MUTEX_UNLOCK(MUTEX_ATOM_BUF);
+	  mem_dealloc(atomnameaddr,atomnamelen,LEAK_SPACE);
 	  return FALSE;	/* fail */
 	}
 	if (atomname >= atomnamelast) {
@@ -354,13 +352,12 @@ inline static xsbBool atom_to_list(CTXTdeclc int call_type)
       } else {
 	if (isref(term2)) err(INSTANTIATION, 2, call_name, 2);
 	else xsb_type_error(CTXTc "list",term2,call_name,2,2);  /* atom_chars(X,[1]) */
-  	SYS_MUTEX_UNLOCK(MUTEX_ATOM_BUF);
+	mem_dealloc(atomnameaddr,atomnamelen,LEAK_SPACE);
 	return FALSE;	/* fail */
       }
     } while (1);
     bind_string((CPtr)(term), (char *)string_find((char *)atomnameaddr, 1));
     mem_dealloc(atomnameaddr,atomnamelen,LEAK_SPACE);
-    SYS_MUTEX_UNLOCK(MUTEX_ATOM_BUF);
     return TRUE;
   } else {	/* use is: ATOM --> CODES/CHARS */
     if (isstring(term)) {
@@ -369,11 +366,9 @@ inline static xsbBool atom_to_list(CTXTdeclc int call_type)
       if (len == 0) {
 	if (!isnonvar(list)) {
 	  bind_nil((CPtr)(list)); 
-          SYS_MUTEX_UNLOCK(MUTEX_ATOM_BUF);
 	  return TRUE;
 	}
-	else 
-	{ SYS_MUTEX_UNLOCK(MUTEX_ATOM_BUF);
+	else { 
 	  return isnil(list);
 	}
       } else {
@@ -396,12 +391,10 @@ inline static xsbBool atom_to_list(CTXTdeclc int call_type)
 	  follow(top) = makelist(hreg);
 	}
 	follow(top) = makenil;
-	SYS_MUTEX_UNLOCK(MUTEX_ATOM_BUF);
 	return unify(CTXTc list, new_list);
       } 
     } else xsb_type_error(CTXTc "atom",term,call_name,2,1);  /* atom_codes(1,F) */
   }
-  SYS_MUTEX_UNLOCK(MUTEX_ATOM_BUF);
   return TRUE;
 }
 
