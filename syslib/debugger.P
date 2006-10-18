@@ -454,23 +454,28 @@ deb_writepref(cpu) :- ll_write('..').
 
 %% Print debugger prompt, take user input
 deb_prompt(Type, Spy, C) :- 
-	(   leashed(Type,Spy)	% interactive
-	->  ll_flush,
-	    deb_getonechar(C1),
-	    (	leg_r(C1,Type)
-	    ->	C = C1, deb_ug(C)
-	    ;	deb_prompt(Type,Spy,C)
-	    )
-	;   ll_nl,    	     % non-interactive
-	    C=CH_NEWLINE
+	(leashed(Type,Spy)	% interactive
+	 ->	ll_flush,
+		deb_getonechar(C1),
+		(leg_r(C1,Type)
+		 ->	C = C1,
+			deb_ug(C)
+		 ;	deb_prompt(Type,Spy,C)
+		)
+	 ;      ll_nl,	% non-interactive
+		C=CH_NEWLINE
 	).
 
 
 % legal responses to prompt:
 leg_r(CH_NEWLINE,_).          leg_r(CH_a,_).  leg_r(CH_b,_).
 leg_r(CH_c,_).  leg_r(CH_e,_).  leg_r(CH_f,_).  leg_r(CH_l,_).
-leg_r(CH_n,_).  leg_r(CH_q,_).  leg_r(CH_r,'Fail').  leg_r(CH_s,'Call').
+leg_r(CH_n,_).  leg_r(CH_q,_).
+leg_r(CH_r,'Fail').
+leg_r(CH_s,'Call').
+leg_r(CH_s,'Redo').
 leg_r(CH_S,'Call').  % verbose skip
+leg_r(CH_S,'Redo').
 
 deb_ug(CH_NEWLINE) :- !,stat_set_flag(TRACE, 1). %  <cr>: creep (trace = 1)
 deb_ug(CH_a) :- !,stat_set_flag(SKIPPING, 0),	 %  a: abort 
