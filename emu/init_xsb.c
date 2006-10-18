@@ -966,6 +966,12 @@ void init_thread_structures(CTXTdecl)
 
   token_too_long_warning = 1;
   IGRhead = NULL;
+
+  {int i;
+    for (i=0; i<MAX_BIND_VALS; i++) {
+      term_string[i] = NULL;
+    }
+  }
   /***************/
 
 /* This is here just for the first thread - others initialize its xsb tid

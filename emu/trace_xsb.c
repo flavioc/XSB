@@ -112,7 +112,7 @@ static char *pspace_cat[NUM_CATS_SPACE] =
    "foreign     ","table       ","findall     ","profile     ",
    "mt-private  ","buffer      ","gc temp     ","hash        ",
    "interprolog ","thread      ","read canon  ","leaking...  ",
-   "special     ","other       ","incr table  "};
+   "special     ","other       ","incr table  ","odbc        "};
 
 #ifndef MULTI_THREAD
 void total_stat(CTXTdeclc double elapstime) {

@@ -346,6 +346,9 @@ struct Cursor *_FCursor;  /* root of curser chain*/
 struct Cursor *_LCursor;  /* tail of curser chain*/
 struct NumberofCursors *_FCurNum;
 
+#define MAX_BIND_VALS 30
+char *_term_string[MAX_BIND_VALS];
+
 /* Private flags */
 
 Cell _pflags[MAX_PRIVATE_FLAGS];
@@ -578,6 +581,7 @@ typedef struct th_context th_context ;
 #define FCursor (th->_FCursor)
 #define LCursor (th->_LCursor)
 #define FCurNum (th->_FCurNum)
+#define term_string (th->_term_string)
 
 #define  pflags			(th->_pflags)
 
