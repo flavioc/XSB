@@ -2078,11 +2078,11 @@ odbc_deactivate_cursor(Cursor) :-
 	).
 
 odbc_error(ErrMsg) :-
-	write('ERR - ODBC: '),writeln(ErrMsg),
 	(odbc_error_flg(ignore)
-	 ->	true
+	 ->	write('ERR - ODBC: '),writeln(ErrMsg)
 	 ; odbc_error_flg(fail)
-	 ->	fail
+	 ->	write('ERR - ODBC: '),writeln(ErrMsg),
+		fail
 	 ;	xsb_backtrace(Bt),
 		throw(error(odbc_error,ErrMsg,Bt))
 	).
@@ -2147,12 +2147,6 @@ odbc_get_row_count(Cursor,Count,Ret) :- odbc_exec_query(19,Cursor,Count,Ret).
 %%Attr: SQL_AUTOCOMMIT(102) Val: on(1), off(0);
 odbc_connect_option(ConnHandle,GetSet,Attr,Value,RetVal) :-
 	odbc_exec_query(16,ConnHandle,GetSet,Attr,Value,RetVal).
-
-%%odbc_exec_query(A) :- odbc_exec_query(A,_,_,_,_).
-/**odbc_exec_query(A,B) :- odbc_exec_query(A,B,_,_,_).
-odbc_exec_query(A,B,C) :- odbc_exec_query(A,B,C,_,_).
-odbc_exec_query(A,B,C,D) :- odbc_exec_query(A,B,C,D,_).
-odbc_exec_query(A,B,C,D,E) :- odbc_exec_query(A,B,C,D,E,_).**/
 
 odbc_exec_query(_A,_B) :- '_$builtin'(ODBC_EXEC_QUERY).
 odbc_exec_query(_A,_B,_C) :- '_$builtin'(ODBC_EXEC_QUERY).
