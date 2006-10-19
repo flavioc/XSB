@@ -1583,11 +1583,15 @@ propagation_mutli_head(Head,LastRule,OtherHs,R,F/A,I,N,Constrs,Mod,L,T) :-
 %	),
 
         (LastRule = true
-	 -> NextRuleCall = true,
-	    ElseCall = AddCall
-	  ; fmt_write_string(NextRuleName,"%s_%d", args(F,N)),
-	    NextRuleCall =.. [NextRuleName|HeadVs],
-	    ElseCall = true
+	 -> ElseCall = AddCall,
+	    NextRuleCall = true
+	  ; (AttrLists = []
+	     -> ElseCall = true,
+	        fmt_write_string(NextRuleName,"%s_%d", args(F,N)),
+		NextRuleCall =.. [NextRuleName|HeadVs]		
+	      ; build_head(F/A,N,HeadVs,ElseCall),
+		NextRuleCall = true
+	    )
 	),
 
 	RCode = (RHead :-
@@ -2382,7 +2386,7 @@ build_cms(ActiveVs,Constrs,[C|Cs],CMs) :-
 	C =.. [F|PassiveVs],
 	length(PassiveVs,A),
 	member(F/A,Constrs),!,
-	intersect(PassiveVs,ActiveVs,SameVs),
+	intersect(ActiveVs,PassiveVs,SameVs),
 	
 	length(SameVs,SL),
 	(SL = 0
