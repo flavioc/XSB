@@ -35,8 +35,8 @@ thread_create( Goal, ThreadId , Options) :-
 	check_callable(Goal,thread_create/2,1),
 	check_var(ThreadId,thread_create/2,2),
 	check_options_list(Options,GLSize,TCSize,ComplSize,PDLSize,Detached),
-	writeln(thread_request( XSB_THREAD_CREATE, Goal, ThreadId, 
-	                GLSize,TCSize,ComplSize,PDLSize,Detached)),
+%	writeln(thread_request( XSB_THREAD_CREATE, Goal, ThreadId, 
+%	                GLSize,TCSize,ComplSize,PDLSize,Detached)),
 	thread_request( XSB_THREAD_CREATE, Goal, ThreadId, 
 	                GLSize,TCSize,ComplSize,PDLSize,Detached).
 
@@ -218,10 +218,10 @@ n_list( X, N, [X|L] ) :- N1 is N - 1, n_list( X, N1, L ).
 
 par_spawn( [], [] ).
 par_spawn( [G|GL], [T|TL] ) :- 
-	xsb_thread_create( G, T ), par_spawn( GL, TL ).
+	thread_create( G, T ), par_spawn( GL, TL ).
 
 par_wait( [] ).
-par_wait( [T|L] ) :- xsb_thread_join(T), par_wait(L).
+par_wait( [T|L] ) :- thread_join(T), par_wait(L).
 
 end_of_file.
 
