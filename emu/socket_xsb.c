@@ -76,6 +76,7 @@
 #include "psc_xsb.h"
 #include "register.h"
 #include "memory_xsb.h"
+#include "context.h"
 
 #ifdef WIN_NT
 typedef int socklen_t;
@@ -94,12 +95,12 @@ extern FILE *fdopen(int fildes, const char *type);
 
 /* declare the utility functions for select calls (bodies of these functions are below) */
 static void init_connections(CTXTdecl);
-static void set_sockfd(int count);
+static void set_sockfd(CTXTdeclc int count);
 static xsbBool list_sockfd(prolog_term list, fd_set *fdset, int *max_fd,
 			   int **fds, int * size);
 static void test_ready(CTXTdeclc prolog_term *avail_sockfds, fd_set *fdset,
 		       int *fds, int size);
-static void select_destroy(char *connection_name);
+static void select_destroy(CTXTdeclc char *connection_name);
 static int getsize (prolog_term list);
 static int checkslot (void);
 
@@ -694,6 +695,7 @@ xsbBool xsb_socket_request(CTXTdecl)
 	  /* initialize the array of connect_t structure for select call */	
 	  init_connections(CTXT); 
     
+     	  SYS_MUTEX_LOCK(MUTEX_SOCKETS);
 	  /* check whether the same connection name exists */
 	  for (i=0;i<MAXCONNECT;i++) {
 	       if ((connections[i].empty_flag==FALSE) &&
@@ -726,6 +728,7 @@ xsbBool xsb_socket_request(CTXTdecl)
 		    xsb_abort("[SOCKET_SET_SELECT] All connections are busy!");
 	  } else
 	       xsb_abort("[SOCKET_SET_SELECT] Max number of collections exceeded!");
+     	  SYS_MUTEX_UNLOCK(MUTEX_SOCKETS);
     
 	  return TRUE;
      }
@@ -748,6 +751,7 @@ xsbBool xsb_socket_request(CTXTdecl)
 	  int connectname_found = FALSE;
 	  int count=0;			
 
+     	  SYS_MUTEX_LOCK(MUTEX_SOCKETS);
 	  /* specify the time out */
 	  timeout_term = reg_term(CTXTc 3);
 	  if (isinteger(timeout_term)|isboxedinteger(timeout_term)) {
@@ -795,7 +799,7 @@ xsbBool xsb_socket_request(CTXTdecl)
 	  maxfd = connections[count].maximum_fd + 1;
 
 	  /* FD_SET all sockets */
-	  set_sockfd( count );
+	  set_sockfd( CTXTc count );
 
 	  /* test whether the socket fd is available */
 	  rc = select(maxfd, &connections[count].readset, 
@@ -821,6 +825,7 @@ xsbBool xsb_socket_request(CTXTdecl)
 	       test_ready(CTXTc &Avail_esockfds_tail,&connections[count].exceptionset,
 			  connections[count].exception_fds,connections[count].sizee);
 	  }
+     	  SYS_MUTEX_UNLOCK(MUTEX_SOCKETS);
 
 	  if (tv) mem_dealloc((struct timeval *)tv,sizeof(struct timeval),LEAK_SPACE);
 	  return set_error_code(CTXTc ecode, 7, "SOCKET_SELECT");
@@ -829,7 +834,7 @@ xsbBool xsb_socket_request(CTXTdecl)
      case SOCKET_SELECT_DESTROY:  { 
 	  /*socket_request(SOCKET_SELECT_DESTROY, +connection_name) */
 	  char *connection_name = ptoc_string(CTXTc 2);
-	  select_destroy(connection_name);
+	  select_destroy(CTXTc connection_name);
 	  return TRUE;
      }
 
@@ -890,10 +895,11 @@ static void init_connections(CTXTdecl)
 }
 
 /* FD_SET the socket fds */
-static void set_sockfd(int count)
+static void set_sockfd(CTXTdeclc int count)
 {
      int i;
   
+     SYS_MUTEX_LOCK(MUTEX_SOCKETS);
      FD_ZERO(&connections[count].readset);
      FD_ZERO(&connections[count].writeset);
      FD_ZERO(&connections[count].exceptionset);
@@ -913,6 +919,7 @@ static void set_sockfd(int count)
 	  FD_SET(connections[count].exception_fds[i],
 		 &connections[count].exceptionset);
      }
+     SYS_MUTEX_UNLOCK(MUTEX_SOCKETS);
 }
 
 /* utility function to take the user specified fds in and prepare for
@@ -963,11 +970,12 @@ static void test_ready(CTXTdeclc prolog_term *avail_sockfds, fd_set *fdset,
 }
 
 /* utility function to destroy a select call */
-static void select_destroy(char *connection_name)
+static void select_destroy(CTXTdeclc char *connection_name)
 {
      int i;
      int connectname_found = FALSE;
 
+     SYS_MUTEX_LOCK(MUTEX_SOCKETS);
      for (i=0; i < MAXCONNECT; i++) {
 	  if(connections[i].empty_flag==FALSE) {
 	       /* find the matching connection_name to destroy */
@@ -996,6 +1004,7 @@ static void select_destroy(char *connection_name)
 	       }
 	  }
      }
+     SYS_MUTEX_UNLOCK(MUTEX_SOCKETS);
   
      /* if no matching connection_name */
      if (!connectname_found)

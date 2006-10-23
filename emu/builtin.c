@@ -2599,9 +2599,7 @@ case WRITE_OUT_PROFILE:
 #ifdef HAVE_SOCKET
     case SOCKET_REQUEST: {
       xsbBool xsb_socket_request_return;
-      SYS_MUTEX_LOCK( MUTEX_SOCKETS ) ;
       xsb_socket_request_return = xsb_socket_request(CTXT);
-      SYS_MUTEX_UNLOCK( MUTEX_SOCKETS ) ;
       return xsb_socket_request_return;
     }
 #endif /* HAVE_SOCKET */	    
