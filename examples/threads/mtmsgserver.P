@@ -25,7 +25,7 @@
 :- thread_shared loop_id/1.
 
 %% Port on which the server is listening
-xsb_port(6006).
+xsb_port(6118).
 
 server :-
 	socket(Sockfd0),
@@ -50,6 +50,7 @@ serve_client(Sockfd) :-
 	   socket(_), 
 	   Goal = end_of_file
 	 ),
+    writeln(received(Goal)),
     (Goal==end_of_file -> 
         writeln('End of file or communication error'),
 	writeln('Client quits...'),
@@ -69,7 +70,7 @@ serve_client(Sockfd) :-
 	    call(Goal), writeln(answer(Goal)),
 	    socket_send_term(Sockfd, Goal)
 	;   write('Invalid goal: '), writeln(Goal),
-	    socket_send(Sockfd, invalid_goal(Goal))
+	    socket_send_term(Sockfd, invalid_goal(Goal))
 	),
 	fail
     ).

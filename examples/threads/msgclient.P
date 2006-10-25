@@ -20,7 +20,7 @@ machine(localhost).
 
 %% Port on which the server is listening
 %% Server must bind to this port
-xsb_port(6006).
+xsb_port(6118).
 
 client :-
 	writeln('started client...'),
@@ -45,7 +45,7 @@ client_loop(Sockfd) :-
       socket_close(Sockfd),
       writeln('Exiting.'), true
   ;   
-      nl,writeln(send(Goal)),
+      nl,
       socket_send_term(Sockfd, Goal), 
       writeln('Answers: '),
       repeat,
