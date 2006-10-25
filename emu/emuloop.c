@@ -1725,7 +1725,7 @@ contcase:     /* the main loop */
     Op1(get_xxxl);
     ADVANCE_PC(size_xxxX);
 #ifdef MULTI_THREAD
-    fp = op1;
+    fp = (int(*)())op1;
     if (fp(CTXT))  /* call foreign function */
       lpcreg = cpreg;
     else Fail1;

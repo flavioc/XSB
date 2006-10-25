@@ -344,7 +344,7 @@ unsigned long dec[8] = {0xffffffff,0xffffffff,0xffffffff,0xffffffff,
         intercept(CTXTc PSC);						\
         lpcreg = pcreg;							\
       } else if (asynint_val & THREADINT_MARK) {			\
-	printf("Entered thread cancel: call_sub\n");			\
+	/*printf("Entered thread cancel: call_sub\n");*/		\
         synint_proc(CTXTc PSC, THREADSIG_CANCEL);			\
         lpcreg = pcreg;							\
         asynint_val = 0;						\
@@ -376,7 +376,7 @@ unsigned long dec[8] = {0xffffffff,0xffffffff,0xffffffff,0xffffffff,
        lpcreg = cpreg;							\
        asynint_code = 0;						\
      } else if (asynint_val & THREADINT_MARK) {				\
-       printf("Entered thread cancel: proceed\n");			\
+       /*printf("Entered thread cancel: proceed\n");*/			\
         synint_proc(CTXTc true_psc, THREADSIG_CANCEL);			\
         lpcreg = pcreg;							\
         asynint_val = 0;						\

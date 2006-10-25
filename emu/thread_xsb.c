@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
+#include <signal.h>
 
 #include "xsb_debug.h"
 #include "xsb_config.h"
@@ -708,6 +709,8 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  if (th_vec[i].valid) {
 	    ctxt_ptr = th_vec[i].ctxt;
 	    ctxt_ptr->_asynint_val |= THREADINT_MARK;
+	    PTHREAD_KILL( th_vec[i].tid, SIGINT );
+
 	  } else {
 	    bld_int(reg+2,i);
 	    xsb_permission_error(CTXTc "thread_interrupt","invalid_thread",
