@@ -17,6 +17,12 @@
 	socket_set_option/3 from socket.
 
 :- import thread_create/3 from thread.
+:- import thread_join/2 from thread.
+:- import thread_cancel/1 from thread.
+:- import thread_exit/1 from thread.
+
+
+:- thread_shared loop_id/1.
 
 %% Port on which the server is listening
 xsb_port(6006).
@@ -27,7 +33,9 @@ server :-
 	xsb_port(XSBPort),
 	socket_bind(Sockfd0, XSBPort),
 	socket_listen(Sockfd0,Q_LENGTH),
-	server_loop(Sockfd0).
+	thread_create(server_loop(Sockfd0),X,[]),
+	assert(loop_id(X)),
+	thread_join(X,_).
 
 server_loop(Sockfd0) :-
 	socket_accept(Sockfd0, Sockfd0_out1),
@@ -48,6 +56,15 @@ serve_client(Sockfd) :-
 	socket_close(Sockfd)
     ;	
 	writeln(goal(Goal)),
+	(
+	Goal=exit ->
+		retract(loop_id(Tid)),
+		thread_cancel(Tid),
+		socket_close(Sockfd),
+		thread_exit(0)
+	;
+		true
+	),
 	((Goal=h(_); Goal=g(_)) ->
 	    call(Goal), writeln(answer(Goal)),
 	    socket_send_term(Sockfd, Goal)

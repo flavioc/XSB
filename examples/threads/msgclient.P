@@ -31,8 +31,15 @@ client :-
       
 
 client_loop(Sockfd) :-  
-  nl, write('Please enter goal: g(X). or h(X).  Type e. to finish. Goal: '), 
+  nl, write('Please enter goal: g(X). or h(X).  Type e. to finish.'), 
+  nl, write('Type exit. to stop the server. Goal: '), 
   read_canonical(Goal),
+  ( Goal == exit ->
+      socket_send_term(Sockfd, Goal), 
+      socket_close(Sockfd),
+      fail
+  ; true
+  ),
   ((Goal == 'e' ; Goal == end_of_file) ->
       !,
       socket_close(Sockfd),
@@ -42,7 +49,10 @@ client_loop(Sockfd) :-
       socket_send_term(Sockfd, Goal), 
       writeln('Answers: '),
       repeat,
-      socket_recv_term(Sockfd, Answer),
+      catch( socket_recv_term(Sockfd, Answer),
+	     socket(_),
+	     Answer=end_of_file
+	   ),
       (Answer==end_of_file 
       -> !, true
       ;  (   Answer == 'end' 
@@ -54,6 +64,7 @@ client_loop(Sockfd) :-
 	  )
       )
    ).
+client_loop(_).
  
 
  %% Open socket and connect
