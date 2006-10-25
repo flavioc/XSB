@@ -38,12 +38,44 @@ typedef struct  {
   int eof_action;
 #ifdef MULTI_THREAD
   pthread_mutex_t stream_mutex;
+  int stream_mutex_owner;
 #endif  
 } stream_record;
 
 extern stream_record open_files[];      /* Table of file pointers for open files */
 
 #define OPENFILES_MUTEX(i) &(open_files[i].stream_mutex) 
+#define OPENFILES_MUTEX_OWNER(i) (open_files[i].stream_mutex_owner) 
+
+#ifdef MULTI_THREAD
+#define XSB_STREAM_LOCK(index) { \
+  if (index >= 0) \
+  {	pthread_mutex_lock(OPENFILES_MUTEX(index)); \
+	OPENFILES_MUTEX_OWNER(index) = xsb_thread_id; \
+  }\
+  else\
+  {\
+	if ( iostrs[iostrdecode(index)]->owner != xsb_thread_id )\
+		xsb_error( "trying to access other threads str" );\
+  }\
+}
+#define XSB_STREAM_UNLOCK(index) { \
+  if (index >= 0) \
+  {	pthread_mutex_unlock(OPENFILES_MUTEX(index)); \
+	OPENFILES_MUTEX_OWNER(index) = -1; \
+  }\
+  else\
+  {\
+	if ( iostrs[iostrdecode(index)]->owner != xsb_thread_id )\
+		xsb_error( "trying to access other threads str" );\
+  }\
+}
+#else
+#define XSB_STREAM_LOCK(index) 
+#define XSB_STREAM_UNLOCK(index) 
+#endif
+
+extern void strclose( int ) ;
 
 extern int xsb_intern_fileptr(FILE *file,char *c,char *c2,char *c3);
 extern int xsb_intern_file(char *c1,char *c2,int *i,char *strmode,int opennew);

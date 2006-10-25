@@ -28,7 +28,6 @@
 
 #include "token_defs_xsb.h"
 
- 
 #define strgetc(p) (--(p)->strcnt>=0? ((int)*(p)->strptr++): -1)
 #define strpeekc(p) ((p)->strcnt>=0? ((int)*(p)->strptr): -1)
 
@@ -38,6 +37,9 @@ struct strbuf {
   int strcnt;
   char *strptr;
   char *strbase;
+#ifdef MULTI_THREAD
+  int owner;
+#endif
 };
 
 #define STRFILE struct strbuf

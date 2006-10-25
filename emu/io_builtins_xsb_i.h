@@ -43,7 +43,7 @@ STRFILE *iostrs[MAXIOSTRS] = {NULL,NULL,NULL,NULL,NULL};
 extern char   *expand_filename(char *filename);
 extern int xsb_intern_fileptr(FILE *, char *, char *, char *);
 
-static FILE *stropen(char *str)
+static FILE *stropen(CTXTdeclc char *str)
 {
   int i, len;
   STRFILE *tmp;
@@ -63,10 +63,13 @@ static FILE *stropen(char *str)
   tmp->strcnt = len;
   tmp->strptr = stringbuff;
   tmp->strbase = stringbuff;
+#ifdef MULTI_THREAD
+  tmp->owner = xsb_thread_id;
+#endif
   return (FILE *)iostrdecode(i);
 }
 
-static void strclose(int i)
+void strclose(int i)
 {
   i = iostrdecode(i);
   if (iostrs[i] != NULL) {
@@ -75,20 +78,6 @@ static void strclose(int i)
     iostrs[i] = NULL;
   }
 }
-
-#ifdef MULTI_THREAD
-#define XSB_STREAM_LOCK(index) { \
-  if (index >= 0) pthread_mutex_lock(OPENFILES_MUTEX(index)); \
-  else pthread_mutex_lock(OPENFILES_MUTEX(iostrdecode(index))); \
-}
-#define XSB_STREAM_UNLOCK(index) { \
-  if (index >= 0) pthread_mutex_unlock(OPENFILES_MUTEX(index)); \
-  else pthread_mutex_unlock(OPENFILES_MUTEX(iostrdecode(index))); \
-}
-#else
-#define XSB_STREAM_LOCK(index) 
-#define XSB_STREAM_UNLOCK(index) 
-#endif
 
 /* TLS: these are ports, rather than file descriptors, therefore using
    the Prolog defines.  Should they be moved into a different .h file? 
@@ -259,7 +248,7 @@ inline static xsbBool file_function(CTXTdecl)
     case OWRITE:  strmode = "wb"; break; /* WRITE_MODE */
     case OAPPEND: strmode = "ab"; break; /* APPEND_MODE */
     case OSTRINGR:
-      if ((fptr = stropen(tmpstr))) {
+      if ((fptr = stropen(CTXTc tmpstr))) {
 	ctop_int(CTXTc 5, (Integer)fptr);
       } else {
 	ctop_int(CTXTc 5, -1000);
@@ -300,9 +289,7 @@ inline static xsbBool file_function(CTXTdecl)
       int rtrn; 
       io_port = ptoc_int(CTXTc 2);
       if (io_port < 0) {
-	XSB_STREAM_LOCK(io_port);
 	strclose(io_port);
-	XSB_STREAM_UNLOCK(io_port);
       }
       else {
 	XSB_STREAM_LOCK(io_port);
@@ -321,8 +308,8 @@ inline static xsbBool file_function(CTXTdecl)
 	  { pflags[CURRENT_INPUT] = STDIN;}
 	if (pflags[CURRENT_OUTPUT] == (Cell) io_port) 
 	  { pflags[CURRENT_OUTPUT] = STDOUT;}
+        XSB_STREAM_UNLOCK(io_port);
       }
-      XSB_STREAM_UNLOCK(io_port);
       break;
     }
   case FILE_GET:	/* file_function(6, +IOport, -IntVal) */

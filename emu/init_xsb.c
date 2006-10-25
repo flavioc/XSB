@@ -320,6 +320,7 @@ static void init_open_files(void)
 
   for( i = 0; i < MAX_OPEN_FILES ; i++ ) {
     pthread_mutex_init(OPENFILES_MUTEX(i) , &attr_std ) ;
+    OPENFILES_MUTEX_OWNER(i) = -1;
   }
 #endif
 }
@@ -1299,7 +1300,7 @@ void init_symbols(void)
   temp = (Pair) insert("error",3,global_mod,&new_indicator);
   temp = (Pair) insert("resource_error",1,global_mod,&new_indicator);
 
-  #ifdef MULTI_THREAD
+#ifdef MULTI_THREAD
   status = pthread_attr_init(&detached_attr_gl);
   if (status != 0) 
     xsb_exit("Cannot init pthread attr detached state during system initialization");
@@ -1308,7 +1309,7 @@ void init_symbols(void)
   if (status != 0) 
     xsb_exit("Cannot set pthread attr detached state during system initialization");
 
-  #endif
+#endif
 
 }
 

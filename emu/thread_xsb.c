@@ -42,6 +42,9 @@
 #include "flags_xsb.h"
 #endif
 
+#include "io_defs_xsb.h"
+#include "io_builtins_xsb.h"
+#include "token_xsb.h"
 #include "flag_defs_xsb.h"
 #include "deref.h"
 #include "ptoc_tag_xsb_i.h"
@@ -420,8 +423,19 @@ void release_held_mutexes(CTXTdecl) {
     }
     pthread_mutex_unlock( MUTARRAY_MUTEX(i)) ;
   }
+  for( i = 0; i < MAX_OPEN_FILES; i++ )
+	if( OPENFILES_MUTEX_OWNER(i) == xsb_thread_id )
+		pthread_mutex_unlock(OPENFILES_MUTEX(i));
 
   mutex_unlock_all(CTXT);
+}
+
+void close_str(CTXTdecl)
+{
+  int i;
+  for( i = 0; i < MAXIOSTRS; i++ )
+	if( iostrs[i] && iostrs[i]->owner == xsb_thread_id )
+		strclose( iostrdecode(i) ) ;
 }
 
 
@@ -484,6 +498,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  release_held_mutexes(CTXT);
 	  release_private_tabling_resources(CTXT);
 	  release_private_dynamic_resources(CTXT);
+	  close_str(CTXT) ;
 	  cleanup_thread_structures(CTXT) ;
 	  mem_dealloc(th,sizeof(th_context),THREAD_SPACE) ;
 	  flags[NUM_THREADS]-- ;
