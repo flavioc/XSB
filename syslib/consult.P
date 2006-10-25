@@ -43,9 +43,12 @@ compile(Path, Options) :- \+ (\+ (compile0(Path,Options))).
 compile0(Path, Options) :-
 	atom(Path),
 	search_module(Path, Dir, Mod, SExt, Base, _Obj),
-	SExt \== XSB_OBJ_EXTENSION_ATOM_SANS_DOT,
 	!,
-	compile_f(SExt, Base, Options, _, Mod, Dir).
+	(SExt \== XSB_OBJ_EXTENSION_ATOM_SANS_DOT
+	 ->	compile_f(SExt, Base, Options, _, Mod, Dir)
+	 ;	file_write0(STDERR, 'Cannot compile a file with .xwam extension'),
+		fail
+	).
 compile0(Path, _) :-
 	file_write0(STDERR, 'Cannot find the file/module '),
 	file_write0(STDERR, Path), file_nl(STDERR), fail.
@@ -267,7 +270,9 @@ search_module(FileName, Dir, Mod, Ext, Base, Obj) :-
 	str_cat(Base, XSB_OBJ_EXTENSION_ATOM, Obj).
 
 acceptable_extension('').
-acceptable_extension('P').
+%%acceptable_extension('P').
+acceptable_extension(XSB_SRC_EXTENSION_ATOM_SANS_DOT).
+acceptable_extension(XSB_OBJ_EXTENSION_ATOM_SANS_DOT).
 acceptable_extension('p').
 acceptable_extension('pl').
 acceptable_extension('c').
