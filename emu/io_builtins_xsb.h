@@ -48,15 +48,18 @@ extern stream_record open_files[];      /* Table of file pointers for open files
 #define OPENFILES_MUTEX_OWNER(i) (open_files[i].stream_mutex_owner) 
 
 #ifdef MULTI_THREAD
+#define CHECK_IOS_OWNER(index)\
+  {\
+	if ( iostrs[iostrdecode(index)]->owner != xsb_thread_id )\
+		xsb_error( "trying to access other threads iostrs entry" );\
+  }
 #define XSB_STREAM_LOCK(index) { \
   if (index >= 0) \
   {	pthread_mutex_lock(OPENFILES_MUTEX(index)); \
 	OPENFILES_MUTEX_OWNER(index) = xsb_thread_id; \
   }\
   else\
-  {\
-	if ( iostrs[iostrdecode(index)]->owner != xsb_thread_id )\
-		xsb_error( "trying to access other threads str" );\
+  {	CHECK_IOS_OWNER(index);\
   }\
 }
 #define XSB_STREAM_UNLOCK(index) { \
@@ -64,13 +67,9 @@ extern stream_record open_files[];      /* Table of file pointers for open files
   {	pthread_mutex_unlock(OPENFILES_MUTEX(index)); \
 	OPENFILES_MUTEX_OWNER(index) = -1; \
   }\
-  else\
-  {\
-	if ( iostrs[iostrdecode(index)]->owner != xsb_thread_id )\
-		xsb_error( "trying to access other threads str" );\
-  }\
 }
 #else
+#define CHECK_IOS_OWNER(index)
 #define XSB_STREAM_LOCK(index) 
 #define XSB_STREAM_UNLOCK(index) 
 #endif
