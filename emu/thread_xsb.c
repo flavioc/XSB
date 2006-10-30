@@ -724,8 +724,11 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  if (th_vec[i].valid) {
 	    ctxt_ptr = th_vec[i].ctxt;
 	    ctxt_ptr->_asynint_val |= THREADINT_MARK;
+#ifdef WIN_NT
+	    PTHREAD_KILL( th_vec[i].tid_addr, SIGINT );
+#else
 	    PTHREAD_KILL( th_vec[i].tid, SIGINT );
-
+#endif
 	  } else {
 	    bld_int(reg+2,i);
 	    xsb_permission_error(CTXTc "thread_interrupt","invalid_thread",
