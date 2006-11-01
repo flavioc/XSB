@@ -757,6 +757,8 @@ proc_directive(table_all) :- !,
 	warning('table_all directive ignored. Use table/n explicitly').
 proc_directive(thread_shared(Preds)) :- !,
 	thread_shared(Preds).
+proc_directive(thread_private(Preds)) :- !,
+	thread_private(Preds).
 proc_directive(op(P,T,S)) :- !, op(P,T,S).
 proc_directive(hilog(X)) :- !, add_hilog_symbol(X).
 %proc_directive(multifile(P/A)) :- !,
@@ -820,6 +822,14 @@ thread_shared(PredSpec) :-
 	mpa_to_skel(PredSpec,Skel),
 	term_psc(Skel,PSC),
 	psc_set_shared(PSC,1).
+
+thread_private((Pred, Preds)) :- !,
+	thread_private(Pred),
+	thread_private(Preds).
+thread_private(PredSpec) :- 
+	mpa_to_skel(PredSpec,Skel),
+	term_psc(Skel,PSC),
+	psc_set_private(PSC,1).
 
 ensure_loaded(File,Dir):- 
 	check_nonvar(Dir,ensure_loaded/2,1),

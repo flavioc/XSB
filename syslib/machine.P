@@ -68,7 +68,8 @@ psc_data(PSC, Data) :- psc_data(PSC, Data).
 
 psc_set_shared(PSC, Bool) :-
 	psc_get_env(PSC, Det, T_SHARED_DET),
-	(Det =:= 1
+	psc_get_env(PSC, Shared, T_SHARED),
+	((Det =:= 1, Shared =\= Bool)
 	 ->	write('WARNING: Cannot change SHARED/PRIVATE status for '),
 		psc_name(PSC,Name), psc_arity(PSC,Arity),
 		writeln(Name/Arity), fail
@@ -76,7 +77,7 @@ psc_set_shared(PSC, Bool) :-
 		psc_set_env(PSC, 1, T_SHARED_DET)
 	).
 psc_shared(PSC, Bool) :- psc_get_env(PSC, Bool, T_SHARED).
-psc_set_private(PSC, IBool) :- RBool = \(IBool), psc_set_env(PSC, RBool, T_SHARED).
+psc_set_private(PSC, IBool) :- RBool is \(IBool), psc_set_shared(PSC, RBool).
 psc_set_tabled(PSC, Bool) :-
 	psc_get_set_env_byte(PSC,255,0,Res),
 	(Res =:= 0 %% Do only if not yet set
