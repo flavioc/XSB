@@ -15,13 +15,17 @@
 #include "thread_xsb.h"
 #include "trie_internals.h"
 
+long int num_deadlocks = 0;
+
 int would_deadlock( th_context *t1, th_context *t2 )
 {
         th_context * t = t1 ;
                                                                                 
         while( t != NULL )
                 if( t == t2 )
+		{	num_deadlocks++;
                         return TRUE ;
+		}
                 else
                         t = t->waiting_for_thread;
                                                                                 

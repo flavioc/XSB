@@ -70,6 +70,7 @@
 #include "trie_internals.h"
 #include "call_graph_xsb.h" /* for incremental evaluation*/
 #include "incr_xsb.h" /* for incremental evaluation */
+#include "deadlock.h"
 /*-----------------------------------------------------------------------*/
 
 /* Sizes of the Data Regions in K-byte blocks
@@ -436,6 +437,9 @@ char *init_para(CTXTdeclc int argc, char *argv[])
 #ifdef MULTI_THREAD
   init_system_mutexes() ;
   init_system_threads(th) ;
+#endif
+#ifdef SHARED_COMPL_TABLES
+  num_deadlocks = 0;
 #endif
 
   init_open_files();
