@@ -1240,7 +1240,9 @@ void init_symbols(void)
   int  i, new_indicator;
 #ifdef MULTI_THREAD
   int status;
+#ifdef DEBUG
   size_t stack_size;
+#endif
 #endif
 
   inst_begin_gl = 0;
@@ -1309,22 +1311,22 @@ void init_symbols(void)
     xsb_exit("Cannot set pthread attr detached state during system initialization");
 
   /* set minimal stack size to a reasonable value */
-  pthread_attr_setstacksize(&detached_attr_gl,512*K);
+  pthread_attr_setstacksize(&detached_attr_gl,512*K*ZOOM_FACTOR);
   status = pthread_attr_init(&normal_attr_gl);
   if (status != 0) 
     xsb_exit("Cannot init pthread attr during system initialization");
   /* set minimal stack size to a reasonable value */
-  status = pthread_attr_setstacksize(&normal_attr_gl,512*K);
+  status = pthread_attr_setstacksize(&normal_attr_gl,512*1024*K*ZOOM_FACTOR);
+#ifdef DEBUG
   if (status != 0) 
   {
   	status = pthread_attr_getstacksize(&normal_attr_gl,&stack_size);
   	if (status != 0) 
     		xsb_exit("Cannot determine thread stack size during system initialization");
-#ifdef DEBUG
 	else
 		printf( "Minimum thread stack size set to %d\n", stack_size ) ;
-#endif
   }
+#endif
 #endif
 
 }
