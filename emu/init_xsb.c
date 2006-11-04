@@ -1316,7 +1316,7 @@ void init_symbols(void)
   if (status != 0) 
     xsb_exit("Cannot init pthread attr during system initialization");
   /* set minimal stack size to a reasonable value */
-  status = pthread_attr_setstacksize(&normal_attr_gl,512*1024*K*ZOOM_FACTOR);
+  status = pthread_attr_setstacksize(&normal_attr_gl,512*K*ZOOM_FACTOR);
 #ifdef DEBUG
   if (status != 0) 
   {
