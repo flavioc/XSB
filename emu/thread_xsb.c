@@ -69,7 +69,12 @@ void set_init_tcpstack_size(int);
 void set_init_pdl_size(int);
 void set_init_complstack_size(int);
 Cell copy_term_from_thread( th_context *th, th_context *from, Cell arg1 );
-extern pthread_attr_t detached_attr_gl;
+
+/* Used to create detached thread -- process global. */
+pthread_attr_t detached_attr_gl;
+/* Used to create thread with reasonable stack size -- process global. */
+pthread_attr_t normal_attr_gl;
+
 
 pthread_mutexattr_t attr_rec_gl ;
 
@@ -251,7 +256,7 @@ static int xsb_thread_create(th_context *th)
 			 (void *)new_th_ctxt ) ;
   }
   else {
-    rc = pthread_create(thr, NULL, &xsb_thread_run, (void *)new_th_ctxt ) ;
+    rc = pthread_create(thr, &normal_attr_gl, &xsb_thread_run, (void *)new_th_ctxt ) ;
   }
 
 #else
@@ -261,7 +266,7 @@ static int xsb_thread_create(th_context *th)
 			 (void *)new_th_ctxt ) ;
   }
   else {
-    rc = pthread_create( &thr, NULL, &xsb_thread_run, (void *)new_th_ctxt ) ;
+    rc = pthread_create( &thr, &normal_attr_gl, &xsb_thread_run, (void *)new_th_ctxt ) ;
   }
 
 #endif

@@ -424,8 +424,8 @@ xsbBool xsb_socket_request(CTXTdecl)
      SOCKADDR_IN socket_addr;
      struct linger sock_linger_opt;
      int rc;
-     char *message_buffer;
-     unsigned long msg_len;
+     char *message_buffer = NULL; /* initialized to keep compiler happy */
+     unsigned long msg_len = 0;	  /* initialized to keep compiler happy */
      char char_read;
 
      switch (ptoc_int(CTXTc 1)) {

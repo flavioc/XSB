@@ -394,7 +394,7 @@ void initialize_glstack(CPtr from, CPtr to)
 {
   CPtr p = (CPtr) from;
   while (p <= (CPtr) to) {
-    *p = (CPtr) 0;
+    *p = 0;
     p++;
   }
 }

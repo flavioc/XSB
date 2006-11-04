@@ -77,6 +77,9 @@ extern void release_held_mutexes(CTXTdecl);
 extern pthread_mutex_t completing_mut;
 extern pthread_cond_t completing_cond;
 
+extern pthread_attr_t detached_attr_gl;
+extern pthread_attr_t normal_attr_gl;
+
 #define PROFILE_MUTEXES 1
 #ifdef PROFILE_MUTEXES
 
