@@ -1083,21 +1083,22 @@ void init_machine(CTXTdeclc int glsize, int tcpsize,
   /* Allocate Stack Spaces and set Boundary Parameters
      ------------------------------------------------- */
 
-  if (pdlsize == 0) {
+  if (pdlsize != 0)
+	pdl.init_size = pdlsize ;
+  if (glsize != 0)
+	glstack.init_size = glsize ;
+  if (tcpsize != 0)
+	tcpstack.init_size = tcpsize ;
+  if (complstacksize != 0)
+	complstack.init_size = complstacksize ;
+
   pdl.low = (byte *)malloc(pdl.init_size * K);
-  } else {
-    pdl.low = (byte *)malloc(pdlsize * K);
-  }
   if (!pdl.low)
     xsb_exit("Not enough core for the PDL Stack!");
   pdl.high = pdl.low + pdl.init_size * K;
   pdl.size = pdl.init_size;
 
-  if (glsize == 0) {
-    glstack.low = (byte *)malloc(glstack.init_size * K);
-  } else {
-    glstack.low = (byte *)malloc(glsize * K);
-  }    
+  glstack.low = (byte *)malloc(glstack.init_size * K);
   if (!glstack.low)
     xsb_exit("Not enough core for the Global and Local Stacks!");
   glstack.high = glstack.low + glstack.init_size * K;
@@ -1109,21 +1110,13 @@ void init_machine(CTXTdeclc int glsize, int tcpsize,
 
   initialize_glstack((CPtr) glstack.low, ((CPtr)glstack.high) - 1);
 
-  if (tcpsize == 0) {
-    tcpstack.low = (byte *)malloc(tcpstack.init_size * K);
-  } else {
-    tcpstack.low = (byte *)malloc(tcpsize * K);
-  }    
+  tcpstack.low = (byte *)malloc(tcpstack.init_size * K);
   if (!tcpstack.low)
     xsb_exit("Not enough core for the Trail and Choice Point Stack!");
   tcpstack.high = tcpstack.low + tcpstack.init_size * K;
   tcpstack.size = tcpstack.init_size;
 
-  if (complstacksize == 0) {
-    complstack.low = (byte *)malloc(complstack.init_size * K);
-  } else {
-    complstack.low = (byte *)malloc(complstacksize * K);
-  }
+  complstack.low = (byte *)malloc(complstack.init_size * K);
   if (!complstack.low)
     xsb_exit("Not enough core for the Completion Stack!");
   complstack.high = complstack.low + complstack.init_size * K;
