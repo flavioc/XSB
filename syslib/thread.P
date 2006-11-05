@@ -159,9 +159,9 @@ abolish_shared_tables:-
 /* Routines used internally. */
 
 '_$thread_run'( Goal ) :-
-	(catch(call(Goal),Ball,(default_error_handler(Ball))), xsb_thread_exit
+	(catch(call(Goal),Ball,(default_error_handler(Ball))), thread_exit
 	 ;
-	 xsb_thread_exit
+	 thread_exit
 	).
 
 /* store thread flag predicate in THREAD_RUN flag */
