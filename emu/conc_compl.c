@@ -202,7 +202,9 @@ int MayHaveAnswers( th_context * th )
     	{   tid1 = GetDepTid(dep1) ;
 	    th1 = find_context(tid1) ;
 	    if( GetDepLast(dep1) < th1->last_ans )
+	    {   pthread_cond_signal( &dep_th->cond_var ) ;
 		rc = TRUE ;
+	    }
 	    dep1 = GetNextDep(&dep_th->TDL, dep1); 
 	}
 	dep = GetNextDep(&th->TDL, dep); 

@@ -421,8 +421,8 @@ extern TIFptr New_TIF(Psc);
    Free_Private_TIF */
 
 #ifdef MULTI_THREAD
-#define free_call_trie_mutex(pTIF) \
-{ pthread_mutex_destroy(&TIF_CALL_TRIE_LOCK(pTIF) ); }
+#define free_call_trie_mutex(pTIF) 					\
+{	pthread_mutex_destroy(&TIF_CALL_TRIE_LOCK(pTIF) );	}
 #else
 #define free_call_trie_mutex(pTIF)
 #endif
@@ -462,7 +462,6 @@ extern TIFptr New_TIF(Psc);
       TIF_NextTIF(tTIF) = TIF_NextTIF((pTIF));				\
     }									\
     delete_predicate_table(CTXTc pTIF);					\
-    free_call_trie_mutex(pTIF);						\
     mem_dealloc((pTIF),sizeof(TableInfoFrame),TABLE_SPACE);		\
   }
 
@@ -692,6 +691,9 @@ typedef struct subgoal_frame {
 #endif
 #ifdef CONC_COMPL
   ALNptr tag;		  /* Tag can't be stored in answer list in conc compl */
+  pthread_mutex_t lock;	  /* Lock for the lists on the producer: */
+			  /* the answer return list in the trie and */
+			  /* the consumer cp list */
 #endif
 #ifdef SHARED_COMPL_TABLES
   byte grabbed; 	  /* Subgoal is marked to be computed for leader in
@@ -703,29 +705,44 @@ typedef struct subgoal_frame {
 
 } variant_subgoal_frame;
 
-#define subg_sf_type(b)		((VariantSF)(b))->sf_type
-#define subg_is_complete(b)	((VariantSF)(b))->is_complete
-#define subg_is_reclaimed(b)	((VariantSF)(b))->is_reclaimed
-#define subg_prev_subgoal(b)	((VariantSF)(b))->prev_subgoal
-#define subg_next_subgoal(b)	((VariantSF)(b))->next_subgoal
-#define subg_tif_ptr(b)		((VariantSF)(b))->tif_ptr
-#define subg_leaf_ptr(b)	((VariantSF)(b))->leaf_ptr
-#define subg_ans_root_ptr(b)	((VariantSF)(b))->ans_root_ptr
-#define subg_ans_list_ptr(b)	((VariantSF)(b))->ans_list_ptr
-#define subg_ans_list_tail(b)	((VariantSF)(b))->ans_list_tail
-#define subg_cp_ptr(b)		((VariantSF)(b))->cp_ptr
-#define subg_deltf_ptr(b)     	((VariantSF)(b))->deltf_ptr
-#define subg_asf_list_ptr(b)	((VariantSF)(b))->asf_list_ptr
-#define subg_callnode_ptr(b)    ((VariantSF)(b))->callnode /* incremental evaluation */
+#define subg_sf_type(b)		( ((VariantSF)(b))->sf_type )
+#define subg_is_complete(b)	( ((VariantSF)(b))->is_complete )
+#define subg_is_reclaimed(b)	( ((VariantSF)(b))->is_reclaimed )
+#define subg_prev_subgoal(b)	( ((VariantSF)(b))->prev_subgoal )
+#define subg_next_subgoal(b)	( ((VariantSF)(b))->next_subgoal )
+#define subg_tif_ptr(b)		( ((VariantSF)(b))->tif_ptr )
+#define subg_leaf_ptr(b)	( ((VariantSF)(b))->leaf_ptr )
+#define subg_ans_root_ptr(b)	( ((VariantSF)(b))->ans_root_ptr )
+#define subg_ans_list_ptr(b)	( ((VariantSF)(b))->ans_list_ptr )
+#define subg_ans_list_tail(b)	( ((VariantSF)(b))->ans_list_tail )
+#define subg_cp_ptr(b)		( ((VariantSF)(b))->cp_ptr )
+#define subg_deltf_ptr(b)     	( ((VariantSF)(b))->deltf_ptr )
+#define subg_asf_list_ptr(b)	( ((VariantSF)(b))->asf_list_ptr )
+#define subg_callnode_ptr(b)    ( ((VariantSF)(b))->callnode ) /* incremental evaluation */
 
 /* use this for mark as completed == 0 */
-#define subg_compl_stack_ptr(b)	((VariantSF)(b))->compl_stack_ptr
-#define subg_compl_susp_ptr(b)	((VariantSF)(b))->compl_suspens_ptr
-#define subg_nde_list(b)	((VariantSF)(b))->nde_list
+#define subg_compl_stack_ptr(b)	( ((VariantSF)(b))->compl_stack_ptr )
+#define subg_compl_susp_ptr(b)	( ((VariantSF)(b))->compl_suspens_ptr )
+#define subg_nde_list(b)	( ((VariantSF)(b))->nde_list )
 
-#define subg_tid(b)		((VariantSF)(b))->tid
-#define subg_tag(b)		((VariantSF)(b))->tag
-#define subg_grabbed(b)		((VariantSF)(b))->grabbed
+#define subg_tid(b)		( ((VariantSF)(b))->tid )
+#define subg_tag(b)		( ((VariantSF)(b))->tag )
+#define subg_grabbed(b)		( ((VariantSF)(b))->grabbed )
+#define subg_lock(b)		( ((VariantSF)(b))->lock )
+
+#ifdef CONC_COMPL
+#define SUBGOAL_LOCK(pSF)						\
+{	if( IsSharedSF(pSF) )						\
+		pthread_mutex_lock( &subg_lock(pSF) );			\
+}
+#define SUBGOAL_UNLOCK(pSF)						\
+{	if( IsSharedSF(pSF) ) 						\
+		pthread_mutex_unlock( &subg_lock(pSF) );		\
+}
+#else
+#define SUBGOAL_LOCK(pSF)
+#define SUBGOAL_UNLOCK(pSF)
+#endif
 
 /* Subsumptive Producer Subgoal Frame
    ---------------------------------- */
@@ -875,11 +892,19 @@ extern struct Structure_Manager smConsSF;
 
 /* NewProducerSF() is now a function, in tables.c */
 
+#ifdef CONC_COMPL
+#define Free_sf_lock(SF)					\
+{	pthread_mutex_destroy( &subg_lock(SF) );	}
+#else
+#define Free_sf_lock(SF)
+#endif
+
 #define FreeProducerSF(SF) {					\
    subg_dll_remove_sf(SF,TIF_Subgoals(subg_tif_ptr(SF)),	\
 		      TIF_Subgoals(subg_tif_ptr(SF)));		\
    if ( IsVariantSF(SF) ) {					\
      if (IsSharedSF(SF)) {					\
+       Free_sf_lock(SF);					\
        SM_DeallocateSharedStruct(smVarSF,SF);			\
      } else {							\
        SM_DeallocateStruct(smVarSF,SF);				\

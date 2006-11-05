@@ -101,7 +101,7 @@ XSB_Start_Instr(check_complete,_check_complete)
 	{	
 
 		if( MayHaveAnswers(th) )
-			WakeOtherThreads(th) ;
+			;
 		else if( CheckForSCC(th) )
 		{
 			CompleteOtherThreads(th);

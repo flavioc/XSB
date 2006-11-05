@@ -941,7 +941,6 @@ subsumptive tables, which are private in the MT engine.
   }
 #endif
 
-/* Rui: please check this to see if its ok */
 #ifndef CONC_COMPL
 #ifndef MULTI_THREAD
 #define free_answer_list(SubgoalFrame) {			\
@@ -973,11 +972,17 @@ subsumptive tables, which are private in the MT engine.
 #endif
 #else /* CONC COMPL */
 #define free_answer_list(SubgoalFrame) {			\
-   if ( !IsNULL(subg_answers(SubgoalFrame)) )			\
-     SM_DeallocateStructList(smALN,				\
-			     subg_ans_list_ptr(SubgoalFrame),	\
-			     subg_ans_list_tail(SubgoalFrame))	\
- }
+    if (IsSharedSF(SubgoalFrame)) {				\
+    /* Can't deallocate answer return list in CONC_COMPL shared tables */\
+    } else {								\
+      if ( subg_answers(SubgoalFrame) > COND_ANSWERS )			\
+	SM_DeallocateStructList(*private_smALN,				\
+				subg_ans_list_ptr(SubgoalFrame),	\
+				subg_ans_list_tail(SubgoalFrame))	\
+	else								\
+	  SM_DeallocateStruct(*private_smALN,subg_ans_list_ptr(SubgoalFrame)); \
+    }									\
+  }
 #endif
 
 /*===========================================================================*/

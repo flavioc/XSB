@@ -156,6 +156,7 @@ static CPtr find_fixpoint(CTXTdeclc CPtr leader_csf, CPtr producer_cpf)
     /* check if all answers have been resolved for this subgoal */
 
     /* if there are unresolved answers for currSubg */
+    SUBGOAL_LOCK(currSubg) ;
 #ifdef CONC_COMPL
     if ( IsNonNULL(compl_ext_cons(complFrame)) )
     	last_cons=tmp_sched=sched_external(CTXTc compl_ext_cons(complFrame));
@@ -175,6 +176,7 @@ static CPtr find_fixpoint(CTXTdeclc CPtr leader_csf, CPtr producer_cpf)
       if( last_cons == NULL ) printf("lc NULL");
       prev_sched = last_cons;
     }
+    SUBGOAL_UNLOCK(currSubg) ;
     complFrame = prev_compl_frame(complFrame);	
   }  /* while */
 
