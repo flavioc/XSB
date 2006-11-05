@@ -268,6 +268,32 @@ void call_conv xsb_instantiation_error(CTXTdeclc char *predicate,int arity,
 }
 
 /*****************/
+void call_conv xsb_misc_error(CTXTdeclc char *inmsg,char *predicate,int arity)
+{
+  prolog_term ball_to_throw;
+  int isnew;
+  Cell *tptr; char message[255];
+  unsigned long ball_len = 10*sizeof(Cell);
+
+  sprintf(message," in predicate %s/%d: %s",predicate,arity,inmsg);
+
+  tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
+
+  ball_to_throw = makecs(tptr);
+  bld_functor(tptr, pair_psc(insert("error",3,
+				    (Psc)flags[CURRENT_MODULE],&isnew)));
+  tptr++;
+  bld_string(tptr,string_find("misc_error",1));
+  tptr++;
+  bld_string(tptr,string_find(message,1));
+  tptr++;
+  bld_copy(tptr,build_xsb_backtrace(CTXT));
+
+  xsb_throw_internal(CTXTc ball_to_throw,ball_len);
+
+}
+
+/*****************/
 /* Operation/Object_type/Culprit */
 void call_conv xsb_permission_error(CTXTdeclc
 				    char *operation,char *object,Cell culprit, 
