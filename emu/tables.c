@@ -799,6 +799,7 @@ inline TIFptr New_TIF(CTXTdeclc Psc pPSC) {
    TIF_Subgoals(pTIF) = NULL;						
    TIF_NextTIF(pTIF) = NULL;						
 #ifdef MULTI_THREAD
+   pthread_mutex_init( &TIF_CALL_TRIE_LOCK(pTIF), NULL );
    if (get_shared(pPSC)) {
      SYS_MUTEX_LOCK( MUTEX_TABLE );				
      if ( IsNonNULL(tif_list.last) )					

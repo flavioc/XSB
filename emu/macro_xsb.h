@@ -365,6 +365,9 @@ typedef struct Table_Info_Frame {
   BTNptr call_trie;		/* pointer to the root of the call trie */
   VariantSF subgoals;		/* chain of predicate's subgoals */
   TIFptr next_tif;		/* pointer to next table info frame */
+#ifdef MULTI_THREAD
+  pthread_mutex_t call_trie_lock;
+#endif
 } TableInfoFrame;
 
 #define TIF_PSC(pTIF)		   ( (pTIF)->psc_ptr )
@@ -374,6 +377,9 @@ typedef struct Table_Info_Frame {
 #define TIF_CallTrie(pTIF)	   ( (pTIF)->call_trie )
 #define TIF_Subgoals(pTIF)	   ( (pTIF)->subgoals )
 #define TIF_NextTIF(pTIF)	   ( (pTIF)->next_tif )
+#ifdef MULTI_THREAD
+#define TIF_CALL_TRIE_LOCK(pTIF)   ( (pTIF)->call_trie_lock )
+#endif
 
 #define	cps_check_mark_tif(pTIF)   TIF_Mark(pTIF) = 0x1
 #define	cps_check_unmark_tif(pTIF)   TIF_Mark(pTIF) = 0x0
@@ -413,6 +419,13 @@ extern TIFptr New_TIF(Psc);
 /* shared tifs use the global structure tif_list.  Thus, the
    sequential engine uses Free_Shared_Tif rather than
    Free_Private_TIF */
+
+#ifdef MULTI_THREAD
+#define free_call_trie_mutex(pTIF) \
+{ pthread_mutex_destroy(&TIF_CALL_TRIE_LOCK(pTIF) ); }
+#else
+#define free_call_trie_mutex(pTIF)
+#endif
    
 #define Free_Shared_TIF(pTIF) {						\
     TIFptr tTIF;							\
@@ -431,6 +444,7 @@ extern TIFptr New_TIF(Psc);
     }									\
     SYS_MUTEX_UNLOCK( MUTEX_TABLE );					\
     delete_predicate_table(CTXTc pTIF);					\
+    free_call_trie_mutex(pTIF);						\
     mem_dealloc((pTIF),sizeof(TableInfoFrame),TABLE_SPACE);		\
   }
 
@@ -448,6 +462,7 @@ extern TIFptr New_TIF(Psc);
       TIF_NextTIF(tTIF) = TIF_NextTIF((pTIF));				\
     }									\
     delete_predicate_table(CTXTc pTIF);					\
+    free_call_trie_mutex(pTIF);						\
     mem_dealloc((pTIF),sizeof(TableInfoFrame),TABLE_SPACE);		\
   }
 
