@@ -254,6 +254,14 @@ void tcpstack_realloc(CTXTdeclc long new_size) {
   ComplStackFrame csf_ptr;    /* for stepping through the ComplStack */
   VariantSF subg_ptr;         /* and altering the CP ptrs in the SGFs */
 
+#ifdef CONC_COMPL
+  if( flags[NUM_THREADS] > 1 && openreg < COMPLSTACKBOTTOM )
+	xsb_exit( 
+"Concurrent Completion doesn't yet support choice point stack expansion\n\
+Please use -c N or cpsize(N) to start with a larger choice point stack"
+	);
+#endif
+
   if (new_size == tcpstack.size)
     return;
 
