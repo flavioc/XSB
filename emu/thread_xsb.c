@@ -358,14 +358,16 @@ void print_mutex_use() {
 
 DynMutPtr dynmut_chain_begin = NULL;
 
+/* Add new dynmutframe to beginning of chain */
+
 DynMutPtr create_new_dynMutFrame() {
   DynMutPtr new_dynmut = mem_alloc(sizeof(DynMutexFrame),THREAD_SPACE) ;
   pthread_mutex_init( &(new_dynmut->th_mutex), &attr_rec_gl ) ;
   new_dynmut->num_locks = 0;
   new_dynmut->owner = -1;
+  new_dynmut->next_dynmut = dynmut_chain_begin;
   if (dynmut_chain_begin != NULL) 
     (*dynmut_chain_begin).prev_dynmut = new_dynmut;
-  new_dynmut->next_dynmut = dynmut_chain_begin;
   new_dynmut->prev_dynmut = NULL;
   dynmut_chain_begin = new_dynmut;
   return new_dynmut;
