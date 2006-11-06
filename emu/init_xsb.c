@@ -976,9 +976,11 @@ void init_thread_structures(CTXTdecl)
 /* This is here just for the first thread - others initialize its xsb tid
    on xsb_thread_run - the first thread has always tid = 0 */
   th->tid = 0 ;
+
 #ifdef SHARED_COMPL_TABLES
   th->waiting_for_thread = NULL ;
   th->deadlock_brk_leader = FALSE;
+  th->reset_thread = FALSE;
 #endif
 #ifdef CONC_COMPL
   pthread_cond_init( &th->cond_var, NULL );

@@ -376,6 +376,8 @@ void delete_dynMutFrame(DynMutPtr old_dynmut) {
     (old_dynmut->prev_dynmut)->next_dynmut = old_dynmut->next_dynmut;
   if (old_dynmut->next_dynmut != NULL)
     (old_dynmut->next_dynmut)->prev_dynmut = old_dynmut->prev_dynmut;
+  if (dynmut_chain_begin == old_dynmut)
+    dynmut_chain_begin = old_dynmut->next_dynmut;
   mem_dealloc(old_dynmut,sizeof(DynMutexFrame),THREAD_SPACE) ;
 }
   
