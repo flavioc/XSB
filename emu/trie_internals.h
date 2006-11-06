@@ -975,7 +975,7 @@ subsumptive tables, which are private in the MT engine.
     if (IsSharedSF(SubgoalFrame)) {				\
     /* Can't deallocate answer return list in CONC_COMPL shared tables */\
     } else {								\
-      if ( subg_answers(SubgoalFrame) > COND_ANSWERS )			\
+      if ( subg_tag(SubgoalFrame) > COND_ANSWERS )			\
 	SM_DeallocateStructList(*private_smALN,				\
 				subg_ans_list_ptr(SubgoalFrame),	\
 				subg_ans_list_tail(SubgoalFrame))	\

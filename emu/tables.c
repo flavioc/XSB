@@ -122,7 +122,7 @@ VariantSF NewProducerSF(CTXTdeclc BTNptr Leaf,TIFptr TableInfo) {
 	SM_AllocateSharedStruct(smVarSF,pNewSF);				
 	pNewSF = memset(pNewSF,0,sizeof(variant_subgoal_frame));		
 	subg_sf_type(pNewSF) = SHARED_VARIANT_PRODUCER_SFT;	
-#ifdef CONC_COMPL
+#ifdef CONC_COMPL_SFL
 	pthread_mutex_init( &subg_lock(pNewSF), NULL ) ;
 #endif
       }									

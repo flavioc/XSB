@@ -691,6 +691,8 @@ typedef struct subgoal_frame {
 #endif
 #ifdef CONC_COMPL
   ALNptr tag;		  /* Tag can't be stored in answer list in conc compl */
+#endif
+#ifdef CONC_COMPL_SFL
   pthread_mutex_t lock;	  /* Lock for the lists on the producer: */
 			  /* the answer return list in the trie and */
 			  /* the consumer cp list */
@@ -730,7 +732,7 @@ typedef struct subgoal_frame {
 #define subg_grabbed(b)		( ((VariantSF)(b))->grabbed )
 #define subg_lock(b)		( ((VariantSF)(b))->lock )
 
-#ifdef CONC_COMPL
+#ifdef CONC_COMPL_SFL
 #define SUBGOAL_LOCK(pSF)						\
 {	if( IsSharedSF(pSF) )						\
 		pthread_mutex_lock( &subg_lock(pSF) );			\
@@ -892,7 +894,7 @@ extern struct Structure_Manager smConsSF;
 
 /* NewProducerSF() is now a function, in tables.c */
 
-#ifdef CONC_COMPL
+#ifdef CONC_COMPL_SFL
 #define Free_sf_lock(SF)					\
 {	pthread_mutex_destroy( &subg_lock(SF) );	}
 #else
