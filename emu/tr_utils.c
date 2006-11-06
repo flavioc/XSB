@@ -462,7 +462,12 @@ static void delete_variant_table(CTXTdeclc BTNptr x, int incr) {
 	  a delay list: may overstate problems but will warn for any
 	  possible corruption. */
 
+
+#ifndef CONC_COMPL
 	  if ( subg_answers(pSF) == COND_ANSWERS ) {
+#else
+	  if ( subg_tag(pSF) == COND_ANSWERS ) {
+#endif
 	    xsb_warn("abolish_table_pred/1 is deleting a table with conditional\
                       answers: delay dependencies may be corrupted.\n");
 	  }
