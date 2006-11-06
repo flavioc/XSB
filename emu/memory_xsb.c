@@ -333,10 +333,12 @@ Please use -c N or cpsize(N) to start with a larger choice point stack"
 	 trail_link > (CPtr *)new_trail;
 	 trail_link = trail_link - 3) {
       *trail_link = (CPtr)((byte *)*trail_link + trail_offset);
-      /* Check if this is a 4 word trail frame (also keep valgrind quiet) */
+      /* Check if this is a 4 word trail frame */
       if (((Cell)*(trail_link-2) & PRE_IMAGE_MARK)) trail_link--;
     }
   }
+  /* Also have to fix the bottommost trail frame - not done in the above
+     cycle because of the trail_link-2 check */
   *trail_link = (CPtr)((byte *)*trail_link + trail_offset);
 
   /* Update the pointers in the CP Stack
