@@ -318,7 +318,8 @@ void CompleteTop( th_context * th, CPtr leader )
     if( !is_completed(compl_subg) )
     {
     	mark_as_completed(compl_subg);
-    	WakeDependentThreads(th, compl_subg);
+	if( IsSharedSF(compl_subg) )
+    		WakeDependentThreads(th, compl_subg);
     }
     reclaim_incomplete_table_structs(compl_subg);
     ComplStkFrame = next_compl_frame(ComplStkFrame);

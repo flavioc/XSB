@@ -713,11 +713,13 @@ void table_complete_entry(CTXTdeclc VariantSF producerSF) {
     if ( IsNULL(subg_ans_list_tail(producerSF)) ||
 	 IsNonNULL(ALN_Next(subg_ans_list_tail(producerSF))) )
       xsb_abort("Answer-List exception: Tail pointer incorrectly maintained");
-#ifndef CONC_COMPL
 #ifdef MULTI_THREAD
     if (IsSharedSF(producerSF)) {				
+#ifndef CONC_COMPL
+      /* Can't deallocate answer return list for CONC_COMPL shared tables */
       SM_DeallocateSharedStructList(smALN,pRealAnsList,
 			      subg_ans_list_tail(producerSF));
+#endif
     } else {
       SM_DeallocateStructList(*private_smALN,pRealAnsList,
 			      subg_ans_list_tail(producerSF));
@@ -725,7 +727,6 @@ void table_complete_entry(CTXTdeclc VariantSF producerSF) {
 #else
       SM_DeallocateStructList(smALN,pRealAnsList,
 			      subg_ans_list_tail(producerSF));
-#endif
     subg_ans_list_tail(producerSF) = NULL;
 #endif
 

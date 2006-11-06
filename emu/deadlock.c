@@ -4,6 +4,7 @@
                                                                                 
 #include "context.h"
 #include "basicdefs.h"
+#include "basictypes.h"
 #include "cell_xsb.h"
 #include "choice.h"
 #include "cut_xsb.h"
@@ -15,7 +16,8 @@
 #include "thread_xsb.h"
 #include "trie_internals.h"
 
-long int num_deadlocks = 0;
+counter num_deadlocks = 0;
+counter num_suspends = 0;
 
 int would_deadlock( th_context *t1, th_context *t2 )
 {
@@ -29,6 +31,7 @@ int would_deadlock( th_context *t1, th_context *t2 )
                 else
                         t = t->waiting_for_thread;
                                                                                 
+	num_suspends++;
         return FALSE ;
 }
 

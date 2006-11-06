@@ -380,7 +380,8 @@ static void batched_compute_wfs(CTXTdeclc CPtr leader_compl_frame,
       if( !is_completed(curr_subg) )
       {
         mark_as_completed(curr_subg);
-        WakeDependentThreads(th, curr_subg);
+	if( IsSharedSF( curr_subg ) )
+        	WakeDependentThreads(th, curr_subg);
       }
 #else
       mark_as_completed(curr_subg);
@@ -514,7 +515,8 @@ static void batched_compute_wfs(CTXTdeclc CPtr leader_compl_frame,
       if( !is_completed(curr_subg) )
       {
         mark_as_completed(curr_subg);
-        WakeDependentThreads(th, curr_subg);
+	if( IsSharedSF( curr_subg ) )
+        	WakeDependentThreads(th, curr_subg);
       }
 #else
       mark_as_completed(curr_subg);

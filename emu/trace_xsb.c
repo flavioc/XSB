@@ -486,7 +486,8 @@ void total_stat(CTXTdeclc double elapstime) {
   }
 
 #ifdef SHARED_COMPL_TABLES
-  printf("%ld deadlocks have occured\n\n", num_deadlocks );
+  printf("%lu thread suspensions have occured\n\n", num_suspends );
+  printf("%lu deadlocks have occured\n\n", num_deadlocks );
 #endif
 
   printf("%ld active user thread%s.\n",flags[NUM_THREADS],
@@ -521,6 +522,7 @@ void perproc_reset_stat(void)
    subg_chk_ins = subg_inserts = 0;
    time_start = cpu_time();
 #ifdef SHARED_COMPL_TABLES
+   num_suspends = 0;
    num_deadlocks = 0;
 #endif
 }

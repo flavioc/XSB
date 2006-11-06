@@ -23,7 +23,8 @@
 
 #ifdef SHARED_COMPL_TABLES
 
-extern long int num_deadlocks;
+extern counter num_deadlocks;
+extern counter num_suspends;
                                                                                 
 int would_deadlock( th_context *t1, th_context *t2 ) ;
 void reset_leader( th_context *th ) ;

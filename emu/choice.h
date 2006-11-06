@@ -144,7 +144,7 @@ typedef struct tabled_choice_point {
 #define tcp_ptcp(b)		((TChoice)(b))->ptcp
 #define tcp_subgoal_ptr(b)	((TChoice)(b))->subgoal_ptr
 #ifdef CONC_COMPL
-#define tcp_compl_stack_ptr(b)	((TChoice)(b))->compl_stack_ptr
+#define tcp_compl_stack_ptr(b) ((TChoice)(b))->compl_stack_ptr
 #endif
 
 #ifdef CP_DEBUG
@@ -180,11 +180,17 @@ typedef struct tabled_choice_point {
 
 /* The following macro is used to perform early completion */
 #ifdef CONC_COMPL
-#define perform_early_completion(ProdSF,ProdCPF)
+/* can't perform early completion for CONC_COMPL shared tables */
+#define perform_early_completion(ProdSF,ProdCPF)	    	\
+    if( IsPrivateSF(ProdSF) )					\
+    {   if (tcp_pcreg(ProdCPF) != (byte *) &answer_return_inst) \
+      	    tcp_pcreg(ProdCPF) = (byte *) &check_complete_inst; \
+        mark_as_completed(ProdSF)				\
+    }
 #else
-#define perform_early_completion(ProdSF,ProdCPF)	    \
-    if (tcp_pcreg(ProdCPF) != (byte *) &answer_return_inst) \
-      tcp_pcreg(ProdCPF) = (byte *) &check_complete_inst;   \
+#define perform_early_completion(ProdSF,ProdCPF)	    	\
+    if (tcp_pcreg(ProdCPF) != (byte *) &answer_return_inst) 	\
+      tcp_pcreg(ProdCPF) = (byte *) &check_complete_inst;   	\
     mark_as_completed(ProdSF)
 #endif
 

@@ -971,18 +971,27 @@ subsumptive tables, which are private in the MT engine.
   }
 #endif
 #else /* CONC COMPL */
-#define free_answer_list(SubgoalFrame) {			\
-    if (IsSharedSF(SubgoalFrame)) {				\
-    /* Can't deallocate answer return list in CONC_COMPL shared tables */\
+#define free_answer_list(SubgoalFrame) {				\
+    if (IsSharedSF(SubgoalFrame)) {					\
+      if ( subg_answers(SubgoalFrame) != NULL && 			\
+	   subg_tag(SubgoalFrame) > COND_ANSWERS )			\
+      /* we really should delete a shared answer list in CONC_COMPL */  \
+      /* but it seems like this is only called in "safe" places...  */  \
+	SM_DeallocateStructList(smALN,					\
+				subg_ans_list_ptr(SubgoalFrame),	\
+				subg_ans_list_tail(SubgoalFrame))	\
+	else								\
+	  SM_DeallocateSharedStruct(smALN,subg_ans_list_ptr(SubgoalFrame)); \
     } else {								\
-      if ( subg_tag(SubgoalFrame) > COND_ANSWERS )			\
+      if ( subg_answers(SubgoalFrame) != NULL &&			\
+	   subg_tag(SubgoalFrame) > COND_ANSWERS )			\
 	SM_DeallocateStructList(*private_smALN,				\
 				subg_ans_list_ptr(SubgoalFrame),	\
 				subg_ans_list_tail(SubgoalFrame))	\
 	else								\
 	  SM_DeallocateStruct(*private_smALN,subg_ans_list_ptr(SubgoalFrame)); \
     }									\
-  }
+}
 #endif
 
 /*===========================================================================*/
