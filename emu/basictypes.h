@@ -68,7 +68,7 @@ typedef short  xsbBool;
 #ifndef __RPCNDR_H__
 typedef unsigned char byte;
 #endif
-typedef unsigned int counter;
+typedef unsigned long int counter;
 typedef unsigned long word;
 typedef byte *pb;
 typedef word *pw;

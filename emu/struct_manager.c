@@ -51,10 +51,10 @@ void smPrint(Structure_Manager smRecord, char *string) {
 
   fprintf(stddbg,
 	  "  Structure Manager for %s (%s)\n"
-	  "\tCurBlock: %p\t\tTotal Blocks: %u\n"
+	  "\tCurBlock: %p\t\tTotal Blocks: %lu\n"
 	  "\tNextStr:  %p\t\tFree List:   %p\n"
 	  "\tLastStr:  %p\t\tAlloc List:  %p\n"
-	  "\tStructs per block: %u\t\tStruct size: %u bytes\n",
+	  "\tStructs per block: %lu\t\tStruct size: %u bytes\n",
 	  SM_StructName(smRecord),	string,
 	  SM_CurBlock(smRecord),	nBlocks,
 	  SM_NextStruct(smRecord),	SM_FreeList(smRecord),
@@ -111,7 +111,7 @@ void smPrintBlocks(Structure_Manager *pSM) {
 
   void *pCurBlock, *pNextBlock;
 
-  printf("blocks for SM %p size %d\n",pSM,SM_NewBlockSize(*pSM));
+  printf("blocks for SM %p size %lu\n",pSM,SM_NewBlockSize(*pSM));
   pCurBlock = SM_CurBlock(*pSM);
   while ( IsNonNULL(pCurBlock) ) {
     printf("Block %p\n",pCurBlock);

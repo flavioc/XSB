@@ -60,7 +60,7 @@
 /* The following variables are used in other parts of the system        */
 /*----------------------------------------------------------------------*/
 
-long subg_chk_ins, subg_inserts, ans_chk_ins, ans_inserts; /* statistics */
+counter subg_chk_ins, subg_inserts, ans_chk_ins, ans_inserts; /* statistics */
 
 #ifndef MULTI_THREAD
 int  num_heap_term_vars;

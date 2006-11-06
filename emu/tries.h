@@ -401,7 +401,7 @@ extern int  global_num_vars;
 #endif
 
 /* used for statistics */
-extern long subg_chk_ins, subg_inserts, ans_chk_ins, ans_inserts;
+extern counter subg_chk_ins, subg_inserts, ans_chk_ins, ans_inserts;
 
 /* trie routine variables */
 extern BTNptr Last_Nod_Sav, Paren;

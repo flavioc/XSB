@@ -266,19 +266,19 @@ void total_stat(CTXTdeclc double elapstime) {
   }
 
   printf("Tabling Operations\n");
-  printf("  %u subsumptive call check/insert ops: %u producers, %u variants,\n"
-	 "  %u properly subsumed (%u table entries), %u used completed table.\n"
-	 "  %u relevant answer ident ops.  %u consumptions via answer list.\n",
+  printf("  %lu subsumptive call check/insert ops: %lu producers, %lu variants,\n"
+	 "  %lu properly subsumed (%lu table entries), %lu used completed table.\n"
+	 "  %lu relevant answer ident ops.  %lu consumptions via answer list.\n",
 	 NumSubOps_CallCheckInsert,		NumSubOps_ProducerCall,
 	 NumSubOps_VariantCall,			NumSubOps_SubsumedCall,
 	 NumSubOps_SubsumedCallEntry,		NumSubOps_CallToCompletedTable,
 	 NumSubOps_IdentifyRelevantAnswers,	NumSubOps_AnswerConsumption);
   {
-    long ttl_ops = ans_chk_ins + NumSubOps_AnswerCheckInsert,
-	 ttl_ins = ans_inserts + NumSubOps_AnswerInsert;
+    unsigned long ttl_ops = ans_chk_ins + NumSubOps_AnswerCheckInsert,
+	 	  ttl_ins = ans_inserts + NumSubOps_AnswerInsert;
 
-    printf("  %ld variant call check/insert ops: %ld producers, %ld variants.\n"
-	   "  %ld answer check/insert ops: %ld unique inserts, %ld redundant.\n",
+    printf("  %lu variant call check/insert ops: %lu producers, %lu variants.\n"
+	   "  %lu answer check/insert ops: %lu unique inserts, %lu redundant.\n",
 	   subg_chk_ins, subg_inserts, subg_chk_ins - subg_inserts,
 	   ttl_ops, ttl_ins, ttl_ops - ttl_ins);
   }
@@ -459,19 +459,19 @@ void total_stat(CTXTdeclc double elapstime) {
 */
 
   printf("Tabling Operations (shared and all private tables)\n");
-  printf("  %u subsumptive call check/insert ops: %u producers, %u variants,\n"
-	 "  %u properly subsumed (%u table entries), %u used completed table.\n"
-	 "  %u relevant answer ident ops.  %u consumptions via answer list.\n",
+  printf("  %lu subsumptive call check/insert ops: %lu producers, %lu variants,\n"
+	 "  %lu properly subsumed (%lu table entries), %lu used completed table.\n"
+	 "  %lu relevant answer ident ops.  %lu consumptions via answer list.\n",
 	 NumSubOps_CallCheckInsert,		NumSubOps_ProducerCall,
 	 NumSubOps_VariantCall,			NumSubOps_SubsumedCall,
 	 NumSubOps_SubsumedCallEntry,		NumSubOps_CallToCompletedTable,
 	 NumSubOps_IdentifyRelevantAnswers,	NumSubOps_AnswerConsumption);
   {
-    long ttl_ops = ans_chk_ins + NumSubOps_AnswerCheckInsert,
-	 ttl_ins = ans_inserts + NumSubOps_AnswerInsert;
+    unsigned long ttl_ops = ans_chk_ins + NumSubOps_AnswerCheckInsert,
+	  	  ttl_ins = ans_inserts + NumSubOps_AnswerInsert;
 
-    printf("  %ld variant call check/insert ops: %ld producers, %ld variants.\n"
-	   "  %ld answer check/insert ops: %ld unique inserts, %ld redundant.\n",
+    printf("  %lu variant call check/insert ops: %lu producers, %lu variants.\n"
+	   "  %lu answer check/insert ops: %lu unique inserts, %lu redundant.\n",
 	   subg_chk_ins, subg_inserts, subg_chk_ins - subg_inserts,
 	   ttl_ops, ttl_ins, ttl_ops - ttl_ins);
   }
