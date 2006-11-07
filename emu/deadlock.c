@@ -82,10 +82,14 @@ static void reset_thread( th_context *th, th_context *ctxt, VariantSF sgf,
 	tbreg = breg ;
 	openreg = prev_compl_frame(subg_compl_stack_ptr(sgf)) ;
         switch_envs(tbreg);
-	ptcpreg = tcp_subgoal_ptr(tbreg);
-	delayreg = NULL;
+  	ptcpreg = tcp_ptcp(tbreg);
+  	delayreg = tcp_pdreg(tbreg);
         reclaim_stacks(tbreg) ;
 	restore_some_wamregs(tbreg, ereg);
+  	/* restore_trail_condition_registers */
+	ebreg = cp_ebreg(tcp_prevbreg(tbreg));
+  	hbreg = cp_hreg(tcp_prevbreg(tbreg));
+
         pcreg = (byte *)tcp_reset_pcreg(tbreg) ;
 	table_restore_registers(tbreg, pcreg[3], reg);
 
