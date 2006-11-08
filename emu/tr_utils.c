@@ -1583,6 +1583,19 @@ TIFptr get_tif_for_answer_trie_cp(CTXTdeclc BTNptr pLeaf)
 
 /* - - - - - */
 
+BTNptr get_call_trie_from_subgoal_frame(CTXTdeclc VariantSF subgoal)
+{
+  
+  BTNptr pLeaf = subg_leaf_ptr(subgoal);
+
+  while ( IsNonNULL(BTN_Parent(pLeaf)) ) {
+    pLeaf = BTN_Parent(pLeaf);
+  }
+  return pLeaf;
+}
+
+/* - - - - - */
+
 /* If there is a deltf with same subgoals and arity (can this be) dont
    add; otherwise if there is a subgoal for this pred, delete the
    deltf (it must be for this generation of the table)
@@ -1638,11 +1651,16 @@ void check_insert_global_deltf_subgoal(CTXTdeclc VariantSF subgoal) {
 
 #ifdef MULTI_THREAD
 
+// extern void printTIF(TIFptr);
+
 void check_insert_private_deltf_pred(CTXTdeclc TIFptr tif) {
   DelTFptr dtf = TIF_DelTF(tif);
   BTNptr call_trie = TIF_CallTrie(tif);
   VariantSF subgoals = TIF_Subgoals(tif);	
   int found = 0;
+
+  //  printf("\n.........starting cipdp\n");
+  //  printTIF(tif);
 
   while ( dtf != 0 ) {
     if (DTF_Type(dtf) == DELETED_PREDICATE && 
@@ -1660,6 +1678,8 @@ void check_insert_private_deltf_pred(CTXTdeclc TIFptr tif) {
   }
   TIF_CallTrie(tif) = NULL;
   TIF_Subgoals(tif) = NULL;
+  //  printf(".........ending\n");
+  //  printTIF(tif);
 }
 
 #define check_insert_shared_deltf_pred(context, tif)	\
@@ -1940,8 +1960,11 @@ inline int abolish_table_predicate(CTXTdeclc Psc psc)
   TIFptr tif;
   int action;
 
-  gc_tabled_preds(CTXT);
+  //  printf("\n.........starting atp\n");
   tif = get_tip(CTXTc psc);
+  //  printTIF(tif);
+  //  print_private_deltfs(CTXT);
+  gc_tabled_preds(CTXT);
   if ( IsNULL(tif) ) {
     xsb_abort("[abolish_table_pred] Attempt to delete non-tabled predicate (%s/%d)\n",
 	      get_name(psc), get_arity(psc));
@@ -1976,8 +1999,8 @@ inline int abolish_table_predicate(CTXTdeclc Psc psc)
     return 1;
   }
   else {
-    //    fprintf(stderr,"Delaying abolish of table in use: %s/%d\n",
-    //    get_name(psc),get_arity(psc));
+        fprintf(stderr,"Delaying abolish of table in use: %s/%d\n",
+        get_name(psc),get_arity(psc));
 #ifndef MULTI_THREAD
     check_insert_private_deltf_pred(CTXTc tif);
 #else
@@ -2007,7 +2030,8 @@ void mark_tabled_preds(CTXTdecl) {
   CPtr cp_top,cp_bot ; byte cp_inst;
   TIFptr tif;
   VariantSF subgoal;
-  
+  BTNptr call_trie;
+
   cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
 
   cp_top = breg ;				 
@@ -2021,10 +2045,23 @@ void mark_tabled_preds(CTXTdecl) {
 
 	/* Check for predicate DelTFs */
 	tif = get_tif_for_answer_trie_cp(CTXTc (BTNptr) *cp_top);
-	if (TIF_CallTrie(tif) == NULL && TIF_Subgoals(tif) == NULL) {
-	  dtf = TIF_DelTF(tif);
-	  DTF_Mark(dtf) = 1;
+
+	subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc (BTNptr) *cp_top);
+	call_trie = get_call_trie_from_subgoal_frame(CTXTc subgoal);
+	//	printf("subgoal %p call_trie %p\n",subgoal,call_trie);
+	
+	dtf = TIF_DelTF(tif);
+	while (dtf) {
+	  if (DTF_CallTrie(dtf) == call_trie) {
+	    DTF_Mark(dtf) = 1;
+	    dtf = NULL;
+	  } else dtf = DTF_NextPredDTF(dtf);
 	}
+
+	//	if (TIF_CallTrie(tif) == NULL && TIF_Subgoals(tif) == NULL) {
+	//	  dtf = TIF_DelTF(tif);
+	//	  DTF_Mark(dtf) = 1;
+	//	}
 	
 	/* Now check for subgoal DelTFs */
 	subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc (BTNptr) *cp_top);
@@ -2047,6 +2084,7 @@ void mark_private_tabled_preds(CTXTdecl) {
   CPtr cp_top,cp_bot ; byte cp_inst;
   TIFptr tif;
   VariantSF subgoal;
+  BTNptr call_trie;
   
   cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
 
@@ -2061,6 +2099,22 @@ void mark_private_tabled_preds(CTXTdecl) {
 
 	/* Check for predicate DelTFs */
 	tif = get_tif_for_answer_trie_cp(CTXTc (BTNptr) *cp_top);
+
+	if (!get_shared(TIF_PSC(tif))) {
+	  subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc (BTNptr) *cp_top);
+	  call_trie = get_call_trie_from_subgoal_frame(CTXTc subgoal);
+	  //	printf("subgoal %p call_trie %p\n",subgoal,call_trie);
+	
+	  dtf = TIF_DelTF(tif);
+	  while (dtf) {
+	    if (DTF_CallTrie(dtf) == call_trie) {
+	      DTF_Mark(dtf) = 1;
+	      dtf = NULL;
+	    } else dtf = DTF_NextPredDTF(dtf);
+	  }
+
+	}
+
 	if (TIF_CallTrie(tif) == NULL && TIF_Subgoals(tif) == NULL 
 	    && !get_shared(TIF_PSC(tif))) { 
 	  dtf = TIF_DelTF(tif);
@@ -2092,23 +2146,23 @@ int sweep_private_tabled_preds(CTXTdecl) {
     next_deltf_ptr = DTF_NextDTF(deltf_ptr);
     if (DTF_Mark(deltf_ptr)) {
       tif_ptr = subg_tif_ptr(DTF_Subgoals(deltf_ptr));
-      //      fprintf(stderr,"Skipping: %s/%d\n",
-      //      get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
+           fprintf(stderr,"Skipping: %s/%d\n",
+           get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
       DTF_Mark(deltf_ptr) = 0;
       dtf_cnt++;
     }
     else {
       if (DTF_Type(deltf_ptr) == DELETED_PREDICATE) {
 	tif_ptr = subg_tif_ptr(DTF_Subgoals(deltf_ptr));
-	//	fprintf(stderr,"Garbage Collecting Predicate: %s/%d\n",
-	// get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
+		fprintf(stderr,"Garbage Collecting Predicate: %s/%d\n",
+	 get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
 	reclaim_deleted_predicate_table(CTXTc deltf_ptr);
 	Free_Private_DelTF_Pred(deltf_ptr,tif_ptr);
       } else 
 	if (DTF_Type(deltf_ptr) == DELETED_SUBGOAL) {
 	  tif_ptr = subg_tif_ptr(DTF_Subgoal(deltf_ptr));
-	  //	  fprintf(stderr,"Garbage Collecting Subgoal: %s/%d\n",
-	  //  get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
+	  	  fprintf(stderr,"Garbage Collecting Subgoal: %s/%d\n",
+	    get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
 	  delete_variant_sf_and_answers(CTXTc DTF_Subgoal(deltf_ptr)); 
 	  Free_Private_DelTF_Subgoal(deltf_ptr,tif_ptr);
 	}

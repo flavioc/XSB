@@ -620,53 +620,12 @@ void print_delay_list(CTXTdeclc FILE *fp, CPtr dlist)
   }
 }
 
-/*======================================================================*/
-/*  The third set of routines should be useful with gdb.  They need to  */
-/*  be revised to get rid of the xsb_dbg stuff, and so that they're     */
-/*  defined whenever we configure with -dbg                             */
-/*======================================================================*/
-
-#if (defined(DEBUG_VERBOSE) || defined(DEBUG_VM))
-
-static int count_producer_subgoals(void)
-{
-  int i;
-  TIFptr tif;
-  VariantSF temp_ptr;
-
-  i = 0;
-
-  SYS_MUTEX_LOCK( MUTEX_TABLE );
-  for ( tif = tif_list.first;  IsNonNULL(tif);  tif = TIF_NextTIF(tif) )
-    for ( temp_ptr = TIF_Subgoals(tif);  IsNonNULL(temp_ptr);
-	  temp_ptr = (VariantSF)subg_next_subgoal(temp_ptr) )
-      i ++;
-  SYS_MUTEX_UNLOCK( MUTEX_TABLE );
-  return(i);
-}
-
 /*-------------------------------------------------------------------------*/
 
 /*
  *			TableInfoFrame Printing
  *			-----------------------
  */
-
-char *stringTabledEvalMethod(TabledEvalMethod method) {
-
-  switch(method) {
-    // to be fixed when have time..... dsw
-    //  case VARIANT_TEM:
-    //    return ("variant");
-    //    break;
-    //  case SUBSUMPTIVE_TEM:
-    //    return ("subsumption");
-    //    break;
-  default:
-    return ("unknown");
-    break;
-  }
-}
 
 /*
  * Run the doubly-linked list of Subgoal Frames to the end, then back to
@@ -695,27 +654,79 @@ void subg_dll_length(VariantSF dll, counter *forward, counter *back) {
   *back = b;
 }
 
-
 void printTIF(TIFptr tif) {
 
   counter forward, back;
 
   printf("TableInfoFrame  %p\n"
 	 "{ psc_ptr = %p  (%s/%d)\n"
-	 "  method = %s\n"
 	 "  call_trie = %p\n"
 	 "  subgoals = %p  ",
 	 tif,
 	 TIF_PSC(tif), get_name(TIF_PSC(tif)), get_arity(TIF_PSC(tif)),
-	 stringTabledEvalMethod(TIF_EvalMethod(tif)),
+	 //	 stringTabledEvalMethod(TIF_EvalMethod(tif)),
 	 TIF_CallTrie(tif),
 	 TIF_Subgoals(tif));
   subg_dll_length(TIF_Subgoals(tif),&forward,&back);
   if ( forward == back )
-    printf("(%d total)", forward);
+    printf("(%d total)", (int) forward);
   else
-    printf("(chain length mismatch: %d forward, %d back)", forward, back);
+    printf("(chain length mismatch: %d forward, %d back)", (int) forward, (int) back);
   printf("\n  next_tif = %p }\n", TIF_NextTIF(tif));
+}
+
+void printDelTF(DelTFptr dtf) {
+  printf("DelTF %p\n"
+	 "{ call_trie = %p\n"
+	 "  subgoals = %p\n"
+	 "  type = %d\n"
+	 "  mark = %d\n"
+	 "  next_delTF = %p\n"
+	 "  next_pred_delTF = %p\n"
+	 "  prev_delTF = %p\n"
+	 "  prev_pred_delTF = %p\n",
+	 dtf,DTF_CallTrie(dtf),DTF_Subgoals(dtf),DTF_Type(dtf),DTF_Mark(dtf),
+	 DTF_NextDTF(dtf),DTF_PrevDTF(dtf),DTF_PrevDTF(dtf),DTF_PrevPredDTF(dtf));
+}
+
+#ifdef MULTI_THREAD
+void print_private_deltfs(CTXTdecl) {
+  printf("========================== private deltf chain\n");
+  DelTFptr dtf =   private_deltf_chain_begin;
+  while (dtf != NULL) {
+    printDelTF(dtf);
+    printf("\n");
+    dtf = DTF_NextDTF(dtf);
+  }
+  printf("==========================\n");
+}
+#endif
+
+
+
+/*======================================================================*/
+/*  The third set of routines should be useful with gdb.  They need to  */
+/*  be revised to get rid of the xsb_dbg stuff, and so that they're     */
+/*  defined whenever we configure with -dbg                             */
+/*======================================================================*/
+
+#if (defined(DEBUG_VERBOSE) || defined(DEBUG_VM))
+
+static int count_producer_subgoals(void)
+{
+  int i;
+  TIFptr tif;
+  VariantSF temp_ptr;
+
+  i = 0;
+
+  SYS_MUTEX_LOCK( MUTEX_TABLE );
+  for ( tif = tif_list.first;  IsNonNULL(tif);  tif = TIF_NextTIF(tif) )
+    for ( temp_ptr = TIF_Subgoals(tif);  IsNonNULL(temp_ptr);
+	  temp_ptr = (VariantSF)subg_next_subgoal(temp_ptr) )
+      i ++;
+  SYS_MUTEX_UNLOCK( MUTEX_TABLE );
+  return(i);
 }
 
 /*----------------------------------------------------------------------*/ 
