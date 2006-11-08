@@ -461,6 +461,7 @@ extern TIFptr New_TIF(Psc);
       if ((pTIF) == private_tif_list.last) private_tif_list.last = tTIF; \
       TIF_NextTIF(tTIF) = TIF_NextTIF((pTIF));				\
     }									\
+    SET_TRIE_ALLOCATION_TYPE_PRIVATE();					\
     delete_predicate_table(CTXTc pTIF);					\
     mem_dealloc((pTIF),sizeof(TableInfoFrame),TABLE_SPACE);		\
   }

@@ -155,39 +155,45 @@
    in this version, and check should be made by loader.*/
 
 #ifdef MULTI_THREAD
-#define SET_TRIE_ALLOCATION_TYPE_TIP(pTIF)	\
-  if (isPrivateTIF(pTIF)) {			\
-    smBTN = private_smTableBTN;			\
-    smBTHT = private_smTableBTHT;			\
+#define SET_TRIE_ALLOCATION_TYPE_PRIVATE()	\
+{   smBTN = private_smTableBTN;			\
+    smBTHT = private_smTableBTHT;		\
     threads_current_sm = PRIVATE_SM;		\
-  } else {					\
-    smBTN = &smTableBTN;			\
+}
+
+#define SET_TRIE_ALLOCATION_TYPE_SHARED()	\
+{   smBTN = &smTableBTN;			\
     smBTHT = &smTableBTHT;			\
     threads_current_sm = SHARED_SM;		\
+}
+
+#define SET_TRIE_ALLOCATION_TYPE_TIP(pTIF)	\
+  if (isPrivateTIF(pTIF)) 			\
+  {	SET_TRIE_ALLOCATION_TYPE_PRIVATE();	\
+  }						\
+  else						\
+  {	SET_TRIE_ALLOCATION_TYPE_SHARED();	\
   }
 
 #define SET_TRIE_ALLOCATION_TYPE_PSC(pPSC)	\
-  if (get_shared(pPSC)) {			\
-    smBTN = &smTableBTN;			\
-    smBTHT = &smTableBTHT;			\
-    threads_current_sm = SHARED_SM;		\
-  } else {					\
-    smBTN = private_smTableBTN;			\
-    smBTHT = private_smTableBTHT;			\
-    threads_current_sm = PRIVATE_SM;		\
+  if (get_shared(pPSC)) 			\
+  {	SET_TRIE_ALLOCATION_TYPE_SHARED();	\
+  }						\
+  else						\
+  {	SET_TRIE_ALLOCATION_TYPE_PRIVATE();	\
   }
 
-#define SET_TRIE_ALLOCATION_TYPE_SF(pSF) \
-  if (!(pSF->sf_type & SHARED_PRIVATE_MASK)) {	\
-    smBTN = private_smTableBTN;			\
-    smBTHT = private_smTableBTHT;		\
-    threads_current_sm = PRIVATE_SM;		\
-  } else {					\
-      smBTN = &smTableBTN;			\
-      smBTHT = &smTableBTHT;			\
-      threads_current_sm = SHARED_SM;		\
-    }
+#define SET_TRIE_ALLOCATION_TYPE_SF(pSF)	\
+  if (!(pSF->sf_type & SHARED_PRIVATE_MASK)) 	\
+  {	SET_TRIE_ALLOCATION_TYPE_PRIVATE();	\
+  }						\
+  else						\
+  {	SET_TRIE_ALLOCATION_TYPE_SHARED();	\
+  }
+
 #else
+#define SET_TRIE_ALLOCATION_TYPE_PRIVATE()
+#define SET_TRIE_ALLOCATION_TYPE_SHARED()
 #define SET_TRIE_ALLOCATION_TYPE_TIP(pTIF) 
 #define SET_TRIE_ALLOCATION_TYPE_SF(pSF) 
 #define SET_TRIE_ALLOCATION_TYPE_PSC(pPSC)	
