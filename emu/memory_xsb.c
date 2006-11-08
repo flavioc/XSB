@@ -507,6 +507,12 @@ void complstack_realloc (CTXTdeclc long new_size) {
        csf_ptr < (ComplStackFrame)new_bottom;
        csf_ptr++) {
     subg_ptr = compl_subgoal_ptr(csf_ptr);
+#ifdef CONC_COMPL
+    /* In CONC_COMPL there might be completion stack frames pointing to
+       subgoal frames owned by other threads which in turn point
+       to the other thread's completion stack */
+    if( subg_tid(subg_ptr) == th->tid )
+#endif
     subg_compl_stack_ptr(subg_ptr) =
       (CPtr)((byte *)subg_compl_stack_ptr(subg_ptr) + bottom_offset);
   } 
