@@ -1676,9 +1676,21 @@ int GetColumn(CTXTdecl)
     if (strcmp(string_val(op),cur->Data[ColCurNum])) return FALSE;
     return TRUE;
   case SQL_C_SLONG:
-    return unify(CTXTc op,makeint(*(long *)(cur->Data[ColCurNum])));
+    if (int_overflow(*(long *)(cur->Data[ColCurNum]))) {
+      CPtr h = hreg++;
+      bld_boxedint(h,*(long *)(cur->Data[ColCurNum]));
+      return unify(CTXTc op, *h);
+    } else return unify(CTXTc op,makeint(*(long *)(cur->Data[ColCurNum])));
   case SQL_C_FLOAT:
+#ifndef FAST_FLOATS
+    {
+      CPtr h = hreg++;
+      bld_boxedfloat(CTXTc h,*(float *)(cur->Data[ColCurNum]));
+      return unify(CTXTc op, *h);
+    }
+#else
     return unify(CTXTc op,makefloat(*(float *)(cur->Data[ColCurNum])));
+#endif
   }
   return FALSE;
 }
