@@ -115,7 +115,7 @@ VariantSF NewProducerSF(CTXTdeclc BTNptr Leaf,TIFptr TableInfo) {
     if ( IsVariantPredicate(TableInfo) ) {				
 #ifdef MULTI_THREAD								
       if (threads_current_sm == PRIVATE_SM) {				
-	SM_AllocateStruct(smVarSF,pNewSF);				
+	SM_AllocateStruct(*private_smVarSF,pNewSF);				
 	pNewSF = memset(pNewSF,0,sizeof(variant_subgoal_frame));		
 	subg_sf_type(pNewSF) = PRIVATE_VARIANT_PRODUCER_SFT;		
       } else {								
