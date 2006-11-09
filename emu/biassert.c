@@ -3389,7 +3389,9 @@ static void abolish_trie_asserted_stuff(CTXTdeclc PrRef prref) {
    b = (CPtr)prref->FirstClRef;
    pRoot = (BTNptr)*(b + 3);
    switch_to_trie_assert;
+   SYS_MUTEX_LOCK(MUTEX_TRIE);
    delete_trie(CTXTc pRoot);
+   SYS_MUTEX_UNLOCK(MUTEX_TRIE);
    switch_from_trie_assert;
    *(pb)prref = fail;
    mem_dealloc((pb)(b-2),6*sizeof(Cell),ASSERT_SPACE);  /* allocated in trie_assert */
@@ -3828,7 +3830,9 @@ int trie_assert(CTXTdecl)
   else
     inst_node_ptr = (BTNptr)*(Trie_Asserted_Clref +3);
 
+  SYS_MUTEX_LOCK(MUTEX_TRIE);
   one_term_chk_ins(CTXTc (CPtr)Clause,inst_node_ptr,&found);
+  SYS_MUTEX_UNLOCK(MUTEX_TRIE);
   SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
   switch_from_trie_assert;	
   ctop_int(CTXTc 5,found);
@@ -3879,7 +3883,9 @@ int trie_retract(CTXTdecl)
     xsb_dbgmsg((LOG_DEBUG, 
 	       " Before: Child of Instrn Node %p", Child(inst_node_ptr)));
     switch_to_trie_assert;
+    SYS_MUTEX_LOCK(MUTEX_TRIE);
     delete_branch(CTXTc Last_Nod_Sav, &(Child(inst_node_ptr)));
+    SYS_MUTEX_UNLOCK(MUTEX_TRIE);
     switch_from_trie_assert;
     xsb_dbgmsg((LOG_DEBUG,
 	       " After : Child of Instrn Node %p", Child(inst_node_ptr)));

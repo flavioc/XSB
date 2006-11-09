@@ -167,14 +167,6 @@
     threads_current_sm = SHARED_SM;		\
 }
 
-#define SET_TRIE_ALLOCATION_TYPE_TIP(pTIF)	\
-  if (isPrivateTIF(pTIF)) 			\
-  {	SET_TRIE_ALLOCATION_TYPE_PRIVATE();	\
-  }						\
-  else						\
-  {	SET_TRIE_ALLOCATION_TYPE_SHARED();	\
-  }
-
 #define SET_TRIE_ALLOCATION_TYPE_PSC(pPSC)	\
   if (get_shared(pPSC)) 			\
   {	SET_TRIE_ALLOCATION_TYPE_SHARED();	\
@@ -182,6 +174,9 @@
   else						\
   {	SET_TRIE_ALLOCATION_TYPE_PRIVATE();	\
   }
+
+#define SET_TRIE_ALLOCATION_TYPE_TIP(pTIF)	\
+  SET_TRIE_ALLOCATION_TYPE_PSC(TIF_PSC(pTIF));
 
 #define SET_TRIE_ALLOCATION_TYPE_SF(pSF)	\
   if (!(pSF->sf_type & SHARED_PRIVATE_MASK)) 	\
@@ -194,9 +189,9 @@
 #else
 #define SET_TRIE_ALLOCATION_TYPE_PRIVATE()
 #define SET_TRIE_ALLOCATION_TYPE_SHARED()
+#define SET_TRIE_ALLOCATION_TYPE_PSC(pPSC)	
 #define SET_TRIE_ALLOCATION_TYPE_TIP(pTIF) 
 #define SET_TRIE_ALLOCATION_TYPE_SF(pSF) 
-#define SET_TRIE_ALLOCATION_TYPE_PSC(pPSC)	
 #endif
 
 typedef struct Structure_Manager {

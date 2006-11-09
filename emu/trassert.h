@@ -31,7 +31,7 @@ extern int trie_retract_safe(CTXTdecl);
 
 #ifdef MULTI_THREAD
 #define switch_to_trie_assert {\
-   threads_current_sm = PRIVATE_SM;\
+   threads_current_sm = SHARED_SM;\
    smBTN = &smAssertBTN;\
    smBTHT = &smAssertBTHT;\
 }

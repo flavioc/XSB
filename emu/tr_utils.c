@@ -1148,7 +1148,9 @@ void trie_intern(CTXTdecl)
   xsb_dbgmsg((LOG_INTERN, "In trie with root %d", RootIndex));
 
   switch_to_trie_assert;
+  SYS_MUTEX_LOCK(MUTEX_TRIE);
   Leaf = whole_term_chk_ins(CTXTc term,&(Set_ArrayPtr[RootIndex]),&flag);
+  SYS_MUTEX_UNLOCK(MUTEX_TRIE);
   switch_from_trie_assert;
   
   ctop_int(CTXTc 3,(Integer)Leaf);
@@ -1225,7 +1227,9 @@ void trie_dispose(CTXTdecl)
 
   Rootidx = ptoc_int(CTXTc 1);
   Leaf = (BTNptr)ptoc_int(CTXTc 2);
+  SYS_MUTEX_LOCK(MUTEX_TRIE);
   switch_to_trie_assert;
+  SYS_MUTEX_UNLOCK(MUTEX_TRIE);
   delete_branch(CTXTc Leaf, &(Set_ArrayPtr[Rootidx]));
   switch_from_trie_assert;
 }
@@ -1242,7 +1246,9 @@ void delete_interned_trie(CTXTdeclc Integer tmpval) {
   if ((Set_ArrayPtr[tmpval] != NULL) &&
       (!((Integer) Set_ArrayPtr[tmpval] & 0x3))) {
     switch_to_trie_assert;
+    SYS_MUTEX_LOCK(MUTEX_TRIE);
     delete_trie(CTXTc Set_ArrayPtr[tmpval]);
+    SYS_MUTEX_UNLOCK(MUTEX_TRIE);
     switch_from_trie_assert;
     /*
      * Save the value of first_free_set into Set_ArrayPtr[tmpval].
@@ -1404,7 +1410,9 @@ void trie_dispose_nr(CTXTdecl)
   Rootidx = ptoc_int(CTXTc 1);
   Leaf = (BTNptr)ptoc_int(CTXTc 2);
   switch_to_trie_assert;
+  SYS_MUTEX_LOCK(MUTEX_TRIE);
   insertLeaf(getIGRnode(CTXTc Rootidx), Leaf);
+  SYS_MUTEX_UNLOCK(MUTEX_TRIE);
   safe_delete_branch(Leaf);
   switch_from_trie_assert;
 }
@@ -1430,7 +1438,9 @@ void reclaim_uninterned_nr(CTXTdeclc long rootidx)
     mem_dealloc(l,sizeof(InternGarbageLeaf),TABLE_SPACE);
     switch_to_trie_assert;
     if(IsDeletedNode(leaf)) {
+      SYS_MUTEX_LOCK(MUTEX_TRIE);
       delete_branch(CTXTc leaf, &(Set_ArrayPtr[rootidx]));
+      SYS_MUTEX_UNLOCK(MUTEX_TRIE);
     } else {
       /* This is allowed:
 	 If we backtrack over a delete, the node that was marked for deletion
