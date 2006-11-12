@@ -2425,6 +2425,7 @@ void release_private_tabling_resources(CTXTdecl) {
 
 /*
  * Frees all the tabling space resources (with a hammer)
+ * WFS stuff released elsewhere -- including smASI.
  */
 
 void release_all_tabling_resources(CTXTdecl) {
