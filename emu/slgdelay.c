@@ -56,7 +56,7 @@ Structure_Manager smASI      = SM_InitDecl(ASI_Node, ASIs_PER_BLOCK,
 
 #define create_as_info(ANS, SUBG)				\
   {								\
-    SM_AllocateStruct(smASI,((void *) asi));			\
+    SM_AllocateStruct(smASI,asi);				\
     Child(ANS) = (NODEptr) asi;					\
     asi_pdes(asi) = NULL;					\
     asi_subgoal(asi) = SUBG;					\
