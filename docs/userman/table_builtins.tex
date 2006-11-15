@@ -881,14 +881,49 @@ Exceptions:
 \label{sec:TablePred:Deleting}
 \index{tabling!table deletion}
 
+The following predicates are used to semantically invalidate tables
+and/or reclaim their space.  These predicates share similar
+characteristics.  In the single-threaded XSB eng¶ine, incomplete
+tables may not be abolished by the user, a restriction that is made to
+ensure correct evaluations.  Accordingly, calling an {\tt
+  abolish\_xxx} predicate when tables are incomplete raises an error.
 
-The following predicates succeed whenever the table(s) in question are
-\emph{complete}.  In order to ensure correct evaluations, incomplete
-tables may not be removed by the user.  Note that incomplete tables
-are abolished \emph{automatically} by the system on exceptions and
-when the interpreter level is resumed.  In addition, tables private to
-a thread are abolished automatically when the thread exits (by normal
-termination or via an exception).
+Second, if the current execution environment contains a choice point
+into information that is being abolished, space for the abolished
+information is not immediately reclaimed.  More precisely, if the
+current execution envonment has a choice point that points to an
+answer $A$ we say that $A$ is {\em active in the current environment}.
+If a tabled predicate $P$ or subgoal $S$ to be abolished has an answer
+that is active in the current environment, reclamation of space for
+$P$ or $S$ will be delayed until no answers for $P$ or $S$ are active.
+New calls to $P$ or $S$, however, will derive a new table, rather than
+using the abolished information.
+
+When conditional answers are present, abolishing a specific table or
+call may lead to semantic or implementational complications.  Consider
+a conditional answer {\tt p(a):- q(b)|}.  If the predicate {\tt q/2)}
+(or subgoal {\tt q(b)}) is abolished and later rederived, the
+rederivation of {\tt q(b)} may have different semantics than the
+original derivation (e.g. if {\tt q(b)} depends on a dynamic predicate
+whose definition has changed).  As a separate issue, in \version{}, if
+space for {\tt q(b)} is reclaimed, then the call {\tt
+  get\_residual(p(a),X)} may core dump.  Accordingly, users of programs
+that give rise to conditional answers in completed tables are urged
+either to use one of the {\tt abolish\_all\_xxx} predicates, or to
+ensure that groups of mutually dependent tables are abolished
+together.
+
+In the multi-threaded engine abolishing tables private to a thread
+behaves exactly as in the sequential engine, regardless of whether the
+tables are complete or incomplete, or contain conditional answers.
+However, abolishing shared tables can only be done when there is a
+single active thread.  In addition, tables private to a thread are
+abolished automatically and their space reclaimed when the thread
+exits (by normal termination or via an exception).
+
+Finally, we note that any incomplete tables are abolished
+\emph{automatically} by the system on exceptions (by the default
+system error handler) when the interpreter level is resumed.
 
 \vspace{2ex}
 
@@ -896,16 +931,198 @@ termination or via an exception).
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-\ournewitem{abolish\_all\_tables}{Tabling}
-\index{\texttt{abolish\_all\_tables/0}}
+\ournewitem{abolish\_table\_pred(+Pred)}{Tabling}
+\index{\texttt{abolish\_table\_pred/1}}
 %
-Removes the tables presently in the system and frees all the memory
-held by XSB for these structures.  Predicates which have been declared
-tabled remain so, but their table entries, if any, are deleted.
+Invalidates all entries from the table for the predicate denoted by
+the predicate or term indicator \code{Pred}.  If the table for {\tt
+  Pred} contains an answer $A$ that is active in the current
+enviornment, {\tt Pred} space reclamation for $A$ will be delayed
+until $A$ is no longer active; otherwise the space for {\tt Pred} will
+be reclaimed immediately.  If {\tt Pred} contains a conditional
+answer, the warning
+
+{\tt abolish\_table\_pred/1 is deleting a table with conditional\ answers: \\
+delay dependencies may be corrupted.}
+
+will be issued (cf. the notes at the beginning of this section).  
+
+In the multi-threaded engine, if {\tt Pred} is shared reclamation for
+{\tt Pred} will be delayed until there is a single active thread and
+no answer in {\tt Pred} is active in the current execution
+environment.  Otherwise, the behavior of {\tt abolish\_table\_pred/1}
+is the same as in the sequential engine.
 
 {\bf Error Cases}
 \bi
-\item There are currently incomplete tables.
+%
+\item {\tt Pred} is not instantiated
+ \bi 
+ \item 	{\tt instantiation\_error}
+ \ei
+%
+\item {\tt PredSpec} is not a predicate\_indicator or a term\_indicator
+ \bi
+ \item 	{\tt domain\_error(predicate\_or\_term\_indicator,Pred)}
+ \ei
+%
+\item {\tt PredSpec} does not indicate a tabled predicate
+ \bi
+ \item 	{\tt table\_error}
+ \ei
+%
+\item There is currently an incomplete table for a atomic subgoal of
+  {\tt Pred}
+ \bi
+ \item 	{\tt table\_error}
+ \ei
+%
+\ei
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\ournewitem{abolish\_table\_call(+CallTerm)}{Tabling}
+\index{\texttt{abolish\_table\_call/1}}
+%
+Invalidates all entries from the table for the any subgoals that unify
+with {\tt CallTerm}.  If a subgoal $S$ unifying with {\tt CallTerm}
+contains an answer $A$ that is active in the current enviornment, the
+table entry for $S$ will not be reclaimed until $A$ is no longer
+active; otherwise the space for $S$ will be reclaimed immediately.  If
+$S$ contains a conditional answer, the warning
+
+{\tt abolish\_table\_call/1 is deleting a table with conditional\ answers: \\ 
+delay dependencies may be corrupted.}
+
+will be issued (cf. the notes at the beginning of this section).  
+
+In the multi-threaded engine, if $S$ is a subgoal for a predicate that
+is shared, reclamation for $S$ will be delayed until there is a single
+active thread and no answer in $S$ is active in the current execution
+environment.  Otherwise, the behavior of {\tt abolish\_table\_call/1}
+is the same as in the sequential engine.
+
+
+Removes all table entries for the subgoals that unify with
+\code{CallTerm}, should any exist.  With regard to handling subgoals
+with answers active in the current environment, incomplete tables, and
+multi-threading the predicate acts as {\tt abolish\_table\_pred/1}.
+
+{\bf Error Cases}
+\bi
+\item The term spec {\tt CallTerm} does not correspond to a tabled predicate:
+\bi
+\item 	{\tt table\_error}
+\ei
+\item {\tt CallTerm} unifies with a table that is incomplete, or is
+  formed from a predicate that does not use variant tabling.
+\bi
+\item 	{\tt table\_error}
+\ei
+\ei
+%
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\ournewitem{abolish\_all\_tables}{Tabling}
+\index{\texttt{abolish\_all\_tables/0}}
+%
+In the single-threaded engine, removes all tables presently in the
+system and frees all the memory held by XSB for these structures,
+including space for conditional answers.  Predicates which have been
+declared tabled remain so, but information in their table is deleted.
+{\tt abolish\_all\_tables/0} works directly on the memory structures
+allocated for table space.  This makes it very fast for abolishing a
+large amount of tables, and to maintain its speed it throws an error
+if any completed answer $A$ is active in the current execution
+environment.  
+
+In the multi-threaded engine {\tt abolish\_all\_tables/0} raises an
+error unless it is called when there is a single active thread.  In
+that case, all shared tables are abolished as well as all private
+tables for the main thread.  An error will be thrown if there any
+completed answer $A$ is active in the current environment, regardless
+of whether $A$ is thread-private or thread-shared.
+
+{\bf Error Cases}
+\bi
+\item There are incomplete tables at the time of the predicate's call;
+\bi
+\item 	{\tt table\_error}
+\ei
+\item The current execution environment has an active answer $A$
+\bi
+\item 	{\tt table\_error}
+\ei
+\item (Multi-threaded engine only) More than one thread is active:
+\bi
+\item 	{\tt table\_error}
+\ei
+%
+%
+\ei
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\ournewitem{abolish\_all\_private\_tables}{Tabling}
+\index{\texttt{abolish\_all\_private\_tables/0}}
+%
+In the multi-threaded engine, removes all tables private to the thread
+and frees all the memory held by XSB for these structures, including
+space for conditional answers.  Predicates which have been declared
+tabled remain so, but information in their table is deleted.  {\tt
+  abolish\_all\_private\_tables/0} works directly on the memory
+structures allocated for table space.  This makes it very fast for
+abolishing a large amount of tables, and to maintain its speed it
+throws an error if any completed answer $A$ for a private table is
+active in the current execution environment.
+
+%In the single-threaded engine, {\tt abolish\_all\_private\_tables/0}
+%is defined as {\tt abolish\_all\_tables/0}.
+
+{\bf Error Cases}
+\bi
+\item There are incomplete tables at the time of the predicate's call;
+\bi
+\item 	{\tt table\_error}
+\ei
+\item The current execution environment for the thread has an active
+  answer $A$ for a private table.  
+\bi
+\item 	{\tt table\_error}
+\ei
+%
+\ei
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+\ournewitem{abolish\_all\_shared\_tables}{Tabling}
+\index{\texttt{abolish\_all\_shared\_tables/0}}
+%
+In the multi-threaded engine, removes all tables private to the thread
+and frees all the memory held by XSB for these structures, including
+space for conditional answers.  Predicates that have been declared
+tabled remain so, but information in their table is deleted.  {\tt
+  abolish\_all\_private\_tables/0} works directly on the memory
+structures allocated for table space.  This makes it very fast for
+abolishing a large amount of tables, and to maintain its speed it
+throws an error if any completed answer $A$ for a private table is
+active in the current execution environment.  {\tt
+  abolish\_all\_shared\_tables/0} raises an error unless it is called
+when there is a single active thread.  In that case, all shared tables
+are abolished, but private tables for the main thread are unaffected.
+
+{\bf Error Cases}
+\bi
+\item There are incomplete tables at the time of the predicate's call;
+\bi
+\item 	{\tt table\_error}
+\ei
+\item The current execution environment has an active answer $A$
+\bi
+\item 	{\tt table\_error}
+\ei
+\item More than one thread is active:
 \bi
 \item 	{\tt table\_error}
 \ei
@@ -953,73 +1170,25 @@ abolishes all tables that are private {\em or} in the module {\tt cdf}
 {\em or} have been created by calls to the predicate {\tt f/2}.
 }
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-
-\ournewitem{abolish\_table\_call(+CallTerm)}{Tabling}
-\index{\texttt{abolish\_table\_call/1}}
-%
-Removes all table entries for the subgoals that unify with
-\code{CallTerm}, should any exist, and manages space reclamation for
-the removed tables.  The predicate remains tabled and all of its other
-table entries remain intact.
-
-{\bf Error Cases}
-\bi
-\item {\tt CallTerm} unifies with a table that is incomplete, or is
-  formed from a predicate that does not use variant tabling.
-\bi
-\item 	{\tt table\_error}
-\ei
-\ei
-%
-
-% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-\ournewitem{abolish\_table\_pred(+Pred)}{Tabling}
-\index{\texttt{abolish\_table\_pred/1}}
-%
-Removes all entries from the table for the predicate denoted by the
-predicate or term indicator \code{Pred}.  The predicate remains tabled
-but the memory held by its former table entries is returned to XSB for
-future use.
-
-{\bf Error Cases}
-\bi
-%
-\item {\tt Pred} is not instantiated
- \bi 
- \item 	{\tt instantiation\_error}
- \ei
-%
-\item {\tt PredSpec} is not a predicate\_indicator or a term\_indicator
- \bi
- \item 	{\tt domain\_error(predicate\_or\_term\_indicator,Pred)}
- \ei
-%
-\item There is currently an incomplete table for a atomic subgoal of
-  {\tt Pred}
- \bi
- \item 	{\tt table\_error}
- \ei
-%
-\ei
-
-% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 \ournewitem{abolish\_module\_tables(+Module)}{Tabling}
 \index{\texttt{abolish\_module\_tables/1}}
 %
 Given a module name (or the default module, {\tt usermod}), this
 predicate abolishes all tables for each tabled predicate in {\tt
-  Module}.
+  Module}.  It is implemented using a series of calls to {\tt
+  abolish\_table\_pred/1} and so inherits the behavior of that
+predicate.
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\comment{
 \ournewitem{abolish\_private\_tables}{Tabling}
 \index{\texttt{abolish\_private\_tables/0}}
 %
 Abolishes all private tables for the calling thread.  This predicate
 is defined only in the multi-threaded configuration.
-
+}
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\comment{
 \ournewitem{abolish\_shared\_tables}{Tabling}
 \index{\texttt{abolish\_shared\_tables/0}}
 %
@@ -1027,7 +1196,7 @@ Abolishes all shared tables for the calling thread.  This predicate is
 defined only in the multi-threaded configuration.  If called when more
 than 1 thread is active, the tables will be removed immediately, but
 space reclamation will be deferred until a single thread is active.
-
+}
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 \ournewitem{gc\_tables(-Number)}{Tabling}
@@ -1077,7 +1246,7 @@ a table is no longer valid and to use the {\tt abolish\_table\_*}
 primitives to delete any table when its contents become invalid.
 
 This predicate gives the XSB programmer some support in managing
-tables and deleting them when they bcome invalid.  To use this
+tables and deleting them when they become invalid.  To use this
 predicate, the user must have previously added clauses to the dynamic
 predicate, {\tt invalidate\_table\_for/2}.  That predicate should be
 defined to take a goal for a dynamic predicate and a mode indicator

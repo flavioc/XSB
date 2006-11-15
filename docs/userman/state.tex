@@ -933,12 +933,13 @@ Displays usage information on the current output stream, including:
 \item {\tt thread} space allocated for the thread table
 %
 \item the space occupied by subgoal and answer tables (in the form of
-  tries) \cite{RRSSW98}.  In the multi-threaded configuration this
-  includes all private and shared tables.
+  tries) \cite{RRSSW98,CuSW99b,TST99}.  In the multi-threaded
+  configuration process level table space includes shared tables but
+  not private tables.
 \end{itemize}
 
 \item Thread-specific information about allocation of memory
-  including the  
+  for the calling thread including the  
 \begin{itemize} 
 \item Global stack (heap) and local (environment) stack (see e.g.
   \cite{AitK90}) for the calling thread. Memory for these two WAM
@@ -968,6 +969,9 @@ Displays usage information on the current output stream, including:
   per tabled subgoal \cite{SaSw98} but the size of these frames is
   version-dependent.
 %
+\item the space occupied by private subgoal and answer tables for the
+  calling thread. 
+
 \end{itemize}
 In XSB's single-threaded configuration, maximum space used by each of
 will be output if the {\tt '-s'} command-line option is used
@@ -1029,39 +1033,39 @@ Section~\ref{sec:EmuOptions}).
 
     {\footnotesize
      \begin{verbatim}
-     | ?- statistics.
-
-Memory (total)         1941216 bytes:       238120 in use,      1703096 free
-  permanent space       237280 bytes:       237280 in use,            0 free
-  glob/loc space        786432 bytes:          524 in use,       785908 free
-    global                                     284 bytes
-    local                                      240 bytes
-  trail/cp space        786432 bytes:          316 in use,       786116 free
-    trail                                       24 bytes
-    choice point                               292 bytes
+| ?- statistics.
+Memory (total)         2429504 bytes:       726696 in use,      1702808 free
+  permanent space       645520 bytes:       645520 in use,            0 free
+    atom                                    120328
+    string                                  156872
+    asserted                                  3184
+    compiled                                358216
+    other                                     6920
+  glob/loc space        786432 bytes:          652 in use,       785780 free
+    global                                     456 bytes
+    local                                      196 bytes
+  trail/cp space        786432 bytes:          476 in use,       785956 free
+    trail                                       88 bytes
+    choice point                               388 bytes
   SLG unific. space      65536 bytes:            0 in use,        65536 free
   SLG completion         65536 bytes:            0 in use,        65536 free
-  SLG table space            0 bytes:            0 in use,            0 free
+  SLG table space        80048 bytes:        80048 in use,            0 free
 
-        Maximum stack used: global 224, local 1384, trail 240, cp 492,
-                            SLG completion 0 (0 subgoals)
-        Maximum table space used:  0 bytes
+  Maximum stack used: global 436724, local 14780, trail 27304, cp 20292,
+                      SLG completion 0 (0 subgoals)
+  Maximum table space used:  0 bytes
 
 Tabling Operations
-  Call Subsumption Subgoal Operations:
-            0 call check/insert ops: 0 producers, 0 variants,
-            0 properly subsumed. 0 used completed table, 
-            0 table entries overall.
-  Call Subsumption Answer Operations:
-            0 relevant answer ident ops.  0 consumptions via answer list.
-  Call Variance Subgoal Operations: 
-            0 call check/insert ops: 0 generators, 0 consumers.
-  Total Answer Operations: 
-            0 answer check/insert ops: 0 unique inserts, 0 redundant.
+  0 subsumptive call check/insert ops: 0 producers, 0 variants,
+  0 properly subsumed (0 table entries), 0 used completed table.
+  0 relevant answer ident ops.  0 consumptions via answer list.
+  0 variant call check/insert ops: 0 producers, 0 variants.
+  0 answer check/insert ops: 0 unique inserts, 0 redundant.
 
-{GC}    0 heap garbage collections by copying: collected 0 cells in 0.000000 millisecs
 
-      0.570 sec. cputime, 5.088 sec. elapsetime 
+   0 heap (  0 string) garbage collections by copying: collected 0 cells in 0.000000 secs
+
+Time: 0.190 sec. cputime,  13.921 sec. elapsetime
 \end{verbatim}} 
 
 %===================
@@ -1079,8 +1083,9 @@ for various tabling operations.
 \item {\tt statistics(atom)} Outputs statistics about both the atom
 and symbol tables.  An example is: 
 %
+{\footnotesize
 \begin{verbatim}
-| ?- statistics(8).
+| ?- statistics(atom).
 
 Symbol table statistics:
 ------------------------
@@ -1097,13 +1102,18 @@ Total Strings:	1702
             used buckets:              1598  (range: [0, 16373])
             unused buckets:            14783
             maximum bucket size:       3  (#: 2318)
-\end{verbatim}
+\end{verbatim}}
 %
 \item {\tt statistics(table)} Outputs {\em very} detailed statistics
-about table space, including breakdowns into variant and subsumptive
-call- and answer- trie nodes and hash tables; as well as answer return
-list nodes (cf. \cite{SaSw98, RRSSW98, TST99}).  This option is not
-available in the multi-threaded configuration.
+  about table space, including breakdowns into variant and subsumptive
+  call- and answer- trie nodes and hash tables; answer return list
+  nodes, and structures for conditional answers (cf. \cite{SaSw98,
+    RRSSW98, TST99, CuSW99a}).  In the multi-threaded engine, these
+  data structures are reported both for shared tables and for private
+  tables of the calling thread.
+
+  While this option is intended primarily for developers, it can also
+  provide valuable information for the serious user of tabling.
 \end{itemize}
 
 \end{description}

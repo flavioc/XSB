@@ -29,7 +29,7 @@ and a separate compiler option (e.g. specifying {\tt g++} rather than
 {\tt gcc}) may need to be given to ensure proper linkage, inclusion of
 {\tt C++} libraries, etc.  In addition, on certain platforms
 compilation may need to be done externally to XSB -- see the {\tt
-  xasp} package for a example of using the foreign language interface
+  xasp} 1package for a example of using the foreign language interface
 with {\tt C++} files.  For the rest of this chapter, we restrict our
 attention to foreign predicates written in {\tt C}.
 
@@ -1017,6 +1017,7 @@ The above predicate can be used as follows:
 \end{verbatim}
 %%
 
+%======================================================================
 \section{Higher-Level Foreign Language Interface}
 
 The high-level foreign predicate interface was designed to release the
@@ -1230,9 +1231,162 @@ In VC++, make sure you check off the ``No precompiled headers'' box as part
 of the ``Precompiled headers'' specification. All these options are
 available through the {\tt Project>>Settings} menu item.
 
+%======================================================================
+\section{Functions for Use in Foreign Code}
 
+In addition to functions for passing data between Prolog an C, XSB
+contains other functions that may be useful in Foreign C code.  We
+mention a few here that pertain to throwing exceptions from C code
+(cf. Volume 1 Chapter 8: {\em Exception Handling}).  These functions
+can be used by code that uses either the lower- or higher-level
+interface.
 
-%%% Local Variables: 
-%%% mode: latex
-%%% TeX-master: "manual2"
-%%% End: 
+\begin{description}
+\ouritem{void xsb\_domain\_error(CTXTdeclc char *valid\_domain,Cell culprit,char *pred,int arity,int arg)}
+\index{\texttt{xsb\_domain\_error()}}
+%
+Used to throw an ISO-style domain error from foreign code, indicating
+that {\tt culprit} is not in domain {\tt valid\_domain} in argument
+{\tt arg} of {\tt pred/arity}.
+
+{\bf Example}: The code fragment
+%
+\begin{verbatim}
+    Cell num;
+    : 
+    xsb_domain_error(CTXTc "not_less_than_zero",num,"atom_length",2,2);
+\end{verbatim}
+in {\tt atom\_length/2} gives rise to the behavior
+%
+\begin{verbatim}
+| ?- atom_length(abcde,-1).
+++Error[XSB/Runtime/P]: [Domain (-1 not in domain not_less_than_zero)] 
+             in arg 2 of predicate atom_length/2)
+\end{verbatim}
+
+%----------------
+
+\ouritem{void xsb\_existence\_error(CTXTdeclc char *objType,Cell culprit,char *pred,int arity,int arg)}\index{\texttt{xsb\_existence\_error()}}
+%
+Used to throw an ISO-style existence error from foreign code,
+indicating that an object {\tt culprit} of type {\tt objType} does not
+exist, in argument {\tt arg} of {\tt pred/arity}.
+
+{\bf Example}: The code fragment
+%
+\begin{verbatim}
+    Cell tid;
+    :
+    xsb_existence_error(CTXTc "thread",reg[2],"xsb_thread_join",1,1); 
+\end{verbatim}
+in {\tt thread\_join/1} gives rise to a the behavior
+\begin{verbatim}
+| ?- thread_join(7).
+++Error[XSB/Runtime/P]: [Existence (No thread 1 exists)] 
+             in arg 1 of predicate thread_join/1)
+\end{verbatim}
+if a thread with thread id {\tt 7} does not exist.
+
+%----------------
+
+\ouritem{void xsb\_instantiation\_error(CTXTdeclc char *pred,int
+  arity,int arg,char *state) } \index{\texttt{xsb\_instantiation\_error()}} 
+%
+Used to throw an ISO-style instantiation error from foreign code.  If
+{\tt state} is a {\tt NULL} pointer, the message indicates that there
+is an instantation error for argument {\tt arg} of of {\tt
+  pred/arity}.  If {\tt state} is non-{\tt NULL}, the message
+additionally indicates that argument {\tt arg} must be {\tt state}.
+
+{\bf Example}: The code fragment
+%
+\begin{verbatim}
+    xsb_instantiation_error(CTXTc "atom_length",2,1,NULL);
+\end{verbatim}
+in {\tt atom\_length/2} gives rise to a the behavior
+\begin{verbatim}
+| ?- atom_length(X,Y).
+++Error[XSB/Runtime/P]: [Instantiation]  in arg 1 of predicate atom_length/2
+\end{verbatim}
+
+%----------------
+
+\ouritem{void xsb\_misc\_error(CTXTdeclc char *message,char *pred,int arity)} \index{\texttt{xsb\_misc\_error()}} 
+%
+Used to throw a non ISO-error from foreign code, printing {\tt
+  message} and indicating that the error arose in {\tt pred/arity}.
+
+%----------------
+
+\ouritem{void xsb\_permission\_error(CTXTdeclc char *op,char *obj,Cell culprit,char *pred,int arity)}\index{\texttt{xsb\_permission\_error()}}
+%
+Used to throw an ISO-style permission error from foreign code,
+indicating that an operation of type {\tt op} on type {\tt obj} is not
+permitted on {\tt culprit}, in argument {\tt arg} of {\tt pred/arity}.
+
+{\bf Example}: The code fragment
+%
+\begin{verbatim}
+xsb_permission_error(CTXTc "unlock mutex","mutex not held by thread",
+                     xsb_thread_id,"mutex_unlock",2);
+\end{verbatim}
+in {\tt mutex\_unlock/1} gives rise to a the behavior
+\begin{verbatim}
+| ?- mutex_unlock(mymut).
+++Error[XSB/Runtime/P]: [Permission (Operation) unlock mutex on mutex not held
+ by thread: 0] in predicate mutex_unlock/1)
+\end{verbatim}
+if thread {\tt 0} does not own mutex {\tt mymut}.
+
+%----------------
+
+\ouritem{void xsb\_resource\_error(CTXTdeclc char *resource,char *pred,int arity) } \index{\texttt{xsb\_resource\_error()}}
+%
+Used to indicate that there are not sufficient resources of type {\tt
+  resource} for {\tt pred/arity} to succeed.
+
+{\bf Example}: The code fragment
+%
+\begin{verbatim}
+xsb_resource_error(th,"system threads","thread_create",2);
+\end{verbatim}
+in {\tt thread\_create/1} gives rise to a the behavior
+\begin{verbatim}
+| ?- thread_create(X).
+++Error[XSB/Runtime/P]: [Resource (system threads))] in predicate thread_create/2)
+\end{verbatim}
+If the number of system threads has been exceeded.
+
+%----------------
+\ouritem{void xsb\_type\_error(CTXTdeclc char *valid\_type,Cell culprit,char *pred,int arity,int arg) }\index{\texttt{xsb\_type\_error()}}
+%
+Used to throw an ISO-style type error from foreign code, indicating
+that {\tt culprit} is not in ISO type {\tt valid\_type} in argument
+{\tt arg} of {\tt pred/arity}.
+
+{\bf Example}: The code fragment
+%
+\begin{verbatim}
+    Cell num;
+    : 
+    if (!isinteger(num)) xsb_type_error(CTXTc "integer",num,"atom_length",2,2);
+\end{verbatim}
+in {\tt atom\_length/2} gives rise to the behavior
+%
+\begin{verbatim}
+| ?- atom_length(foo,a).
+++Error[XSB/Runtime/P]: [Type (a in place of integer)] in arg 2 
+of predicate atom_length/2)
+\end{verbatim}
+
+%----------------
+
+\ouritem{void xsb\_throw(CTXTdeclc prolog\_term Ball)}\index{\texttt{xsb\_throw()}}
+%
+Used to throw a Prolog term from C code, when an ISO-style error is
+not required.  The term can be caught and handled by the Prolog
+predicate {\tt catch/3} just as any other thrown term; however if it
+is not caught, XSB's default error handler will treat it as an
+unhandled exception.
+
+\end{description}
