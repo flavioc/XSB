@@ -460,7 +460,7 @@ static DE intern_delay_element_private(CTXTdeclc Cell delay_elem)
   else
     return NULL;
 }
-#endif (MULTI_THREAD)
+#endif // (MULTI_THREAD)
 
 /*
  * Construct a delay list according to dlist.  Assign an entry in the
