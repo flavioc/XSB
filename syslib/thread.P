@@ -40,8 +40,6 @@ thread_create( Goal, ThreadId , Options) :-
 	thread_request( XSB_THREAD_CREATE, Goal, ThreadId, 
 	                GLSize,TCSize,ComplSize,PDLSize,Detached).
 
-:- import writeln/1 from standard.
-
 check_options_list(Options,_GLSize,_TCSize,_ComplSize,_PDLSize,_Detached):- 
 	check_nonvar(Options,thread_create/3,3),
 	fail.
@@ -150,10 +148,16 @@ thread_yield:-
 abolish_private_tables:-
 	thread_request( ABOLISH_PRIVATE_TABLES, _,_,_, _, _, _, _).
 
+abolish_all_private_tables:-
+	thread_request( ABOLISH_ALL_PRIVATE_TABLES, _,_,_, _, _, _, _).
+
 /*---------------*/
 
 abolish_shared_tables:-
 	thread_request( ABOLISH_SHARED_TABLES, _,_,_, _, _, _, _).
+
+abolish_all_shared_tables:-
+	thread_request( ABOLISH_ALL_SHARED_TABLES, _,_,_, _, _, _, _).
 
 /* ==================================================================  */
 /* Routines used internally. */

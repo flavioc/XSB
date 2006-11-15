@@ -34,6 +34,7 @@
    thread_yield/0.
 
 :- export abolish_private_tables/0,abolish_shared_tables/0.
+:- export abolish_all_private_tables/0,abolish_all_shared_tables/0.
 
 /* All obsolete -- try not to use */
 :- export xsb_thread_cancel/1,
