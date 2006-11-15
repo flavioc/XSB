@@ -327,9 +327,25 @@ struct random_seeds_t *_random_seeds;	/* struct containing seeds for random num 
   Structure_Manager *_private_smProdSF;
   Structure_Manager *_private_smConsSF;
   Structure_Manager *_private_smALN;
+  Structure_Manager *_private_smASI;
 
   int    _threads_current_sm;
   
+  char *_private_current_de_block;
+  char *_private_current_dl_block;
+  char *_private_current_pnde_block;
+
+  DE _private_released_des;
+  DL _private_released_dls;	
+  PNDE _private_released_pndes;
+
+  DE _private_next_free_de;	
+  DL _private_next_free_dl;	
+  PNDE _private_next_free_pnde;	
+
+  DE _private_current_de_block_top;     
+  DL _private_current_dl_block_top;     
+  PNDE _private_current_pnde_block_top; 
 
   /********** Error handling  **********/
 
@@ -542,10 +558,27 @@ typedef struct th_context th_context ;
 #define private_smProdSF        (th-> _private_smProdSF)
 #define private_smConsSF        (th-> _private_smConsSF)
 #define private_smALN           (th-> _private_smALN)
+#define private_smASI           (th-> _private_smASI)
 
 #define subsumptive_smALN       (*private_smALN)
 #define subsumptive_smBTN       (*private_smTableBTN)
 #define subsumptive_smBTHT      (*private_smTableBTHT)
+
+#define private_current_de_block    (th-> _private_current_de_block)
+#define private_current_dl_block    (th-> _private_current_dl_block)
+#define private_current_pnde_block  (th-> _private_current_pnde_block)
+
+#define private_released_des       (th-> _private_released_des)
+#define private_released_dls       (th-> _private_released_dls) 
+#define private_released_pndes     (th-> _private_released_pndes)
+
+#define private_next_free_de  	   (th-> _private_next_free_de)
+#define private_next_free_dl	   (th-> _private_next_free_dl)
+#define private_next_free_pnde	   (th-> _private_next_free_pnde)
+
+#define private_current_de_block_top     (th-> _private_current_de_block_top)
+#define private_current_dl_block_top     (th-> _private_current_dl_block_top)
+#define private_current_pnde_block_top   (th-> _private_current_pnde_block_top)
 
 #define threads_current_sm      (th->_threads_current_sm)
 

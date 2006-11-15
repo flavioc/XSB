@@ -63,6 +63,9 @@
 #define GET_NEXT_MUTEX_PROPERTY         25
 #define MUTEX_UNLOCK_ALL                26
 
+#define ABOLISH_ALL_PRIVATE_TABLES      27
+#define ABOLISH_ALL_SHARED_TABLES       28
+
 #define MAX_THREADS		1024
 
 

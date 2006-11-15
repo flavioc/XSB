@@ -427,7 +427,8 @@ static void delete_variant_table(CTXTdeclc BTNptr x, int incr) {
   int node_stk_top = 0, call_nodes_top = 0;
   BTNptr node, rnod, *Bkp; 
   BTHTptr ht;
-  
+  xsbBool should_warn = TRUE;
+
   BTNptr *freeing_stack = NULL;
   int freeing_stack_size = 0;
 
@@ -466,10 +467,12 @@ static void delete_variant_table(CTXTdeclc BTNptr x, int incr) {
 #ifndef CONC_COMPL
 	  if ( subg_answers(pSF) == COND_ANSWERS ) {
 #else
-	  if ( subg_tag(pSF) == COND_ANSWERS ) {
+	  if ( subg_tag(pSF) == COND_ANSWERS && should_warn) {
 #endif
-	    xsb_warn("abolish_table_pred/1 is deleting a table with conditional\
-                      answers: delay dependencies may be corrupted.\n");
+	    xsb_warn("abolish_table_pred/1 is deleting a table entry for %s/%d with conditional\
+                      answers: delay dependencies may be corrupted.\n",	    
+		     get_name(TIF_PSC(subg_tif_ptr(pSF))),get_arity(TIF_PSC(subg_tif_ptr(pSF))));
+	    should_warn = FALSE;
 	  }
 
 	  if ( IsNonNULL(subg_ans_root_ptr(pSF)) ) {
@@ -2330,23 +2333,84 @@ int abolish_module_tables(CTXTdeclc const char *module_name)
 /* abolish_private/shared_tables() and supporting code */
 /*------------------------------------------------------------------*/
 
+#define check_for_incomplete_tables(PredName) \
+  {					    \
+    CPtr csf;						 \
+    for ( csf = top_of_complstk;  csf != COMPLSTACKBOTTOM;	\
+	  csf = csf + COMPLFRAMESIZE )				\
+      if ( ! is_completed(compl_subgoal_ptr(csf)) ) {		   \
+	xsb_table_error(CTXTc "["PredName"] Illegal table operation"	\
+			"\n\t Cannot abolish incomplete tables");	\
+      }									\
+  }
+
 #ifdef MULTI_THREAD
 
-/* will not reclaim space if more than one thread (via fast_atp) */
+int abolish_mt_tables_cps_check(CTXTdecl,xsbBool isPrivate) 
+{
+  CPtr cp_top,cp_bot ;
+  byte cp_inst;
+  int found_match;
+
+  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
+  cp_top = breg ;				 
+  found_match = 0;
+  while ( cp_top < cp_bot && !(found_match)) {
+    cp_inst = *(byte *)*cp_top;
+    // Want trie insts, but will need to distinguish from
+    // asserted and interned tries
+    if ( is_trie_instruction(cp_inst) ) {
+      // Below we want basic_answer_trie_tt, ts_answer_trie_tt
+      if (IsInAnswerTrie(((BTNptr) *cp_top))) {
+	if (get_private(get_psc_for_answer_trie_cp(CTXTc (BTNptr) *cp_top)) == isPrivate) {
+	  found_match = 1;
+	}
+      }
+    }
+    cp_top = cp_prevtop(cp_top);
+  }
+  return found_match;
+}
+
+/* will not reclaim space if more than one thread */
 void abolish_shared_tables(CTXTdecl) {
   TIFptr abol_tif;
 
   mark_cp_tables(CTXT);
 
-  SYS_MUTEX_LOCK( MUTEX_TABLE );				
   for (abol_tif = tif_list.first ; abol_tif != NULL
 	 ; abol_tif = TIF_NextTIF(abol_tif) ) {
       fast_abolish_table_predicate(CTXTc TIF_PSC(abol_tif));
   }
-  SYS_MUTEX_UNLOCK( MUTEX_TABLE );				
 
   unmark_cp_tables(CTXT);
 
+}
+
+/* will not reclaim space if more than one thread (via fast_atp) */
+void abolish_all_shared_tables(CTXTdecl) {
+
+  // FALSE means we found a shared table
+  if (flags[NUM_THREADS] != 1) {
+    xsb_table_error(CTXTc 
+		    "abolish_all_shared_tables/1 called with more than one active thread.");
+  } else {
+    
+    check_for_incomplete_tables("abolish_all_shared_tables/0");
+    if ( abolish_mt_tables_cps_check(CTXTc FALSE) ) 
+      xsb_abort("[abolish_all_shared_tables/0] Illegal table operation"
+		"\n\t Backtracking through tables to be abolished.");
+    else {
+      SM_ReleaseResources(smTableBTN);
+      TrieHT_FreeAllocatedBuckets(smTableBTHT);
+      SM_ReleaseResources(smTableBTHT);
+      SM_ReleaseResources(smALN);
+      SM_ReleaseResources(smVarSF);
+      SM_ReleaseResources(smASI);
+      
+      abolish_wfs_space(CTXT);
+    }
+  }
 }
 
 void abolish_private_tables(CTXTdecl) {
@@ -2361,6 +2425,32 @@ void abolish_private_tables(CTXTdecl) {
 
   unmark_cp_tables(CTXT);
 
+}
+
+void abolish_all_private_tables(CTXTdecl) {
+
+  check_for_incomplete_tables("abolish_all_private_tables/0");
+
+  // TRUE means we found a private table
+  if ( abolish_mt_tables_cps_check(CTXTc TRUE) ) 
+    xsb_abort("[abolish_all_private_tables/0] Illegal table operation"
+		  "\n\t Backtracking through tables to be abolished.");
+  else {
+    SM_ReleaseResources(*private_smTableBTN);
+    TrieHT_FreeAllocatedBuckets(*private_smTableBTHT);
+    SM_ReleaseResources(*private_smTableBTHT);
+    SM_ReleaseResources(*private_smTSTN);
+    TrieHT_FreeAllocatedBuckets(*private_smTSTHT);
+    SM_ReleaseResources(*private_smTSTHT);
+    SM_ReleaseResources(*private_smTSIN);
+    SM_ReleaseResources(*private_smALN);
+    SM_ReleaseResources(*private_smVarSF);
+    SM_ReleaseResources(*private_smProdSF);
+    SM_ReleaseResources(*private_smConsSF);
+    SM_ReleaseResources(*private_smASI);
+
+    abolish_private_wfs_space(CTXT);
+  }
 }
 
 extern struct TDispBlkHdr_t tdispblkhdr; // defined in loader
@@ -2415,6 +2505,7 @@ void release_private_tabling_resources(CTXTdecl) {
   SM_ReleaseResources(*private_smVarSF);
   SM_ReleaseResources(*private_smProdSF);
   SM_ReleaseResources(*private_smConsSF);
+  SM_ReleaseResources(*private_smASI);
 }
 
 #endif
@@ -2440,6 +2531,7 @@ void release_all_tabling_resources(CTXTdecl) {
   SM_ReleaseResources(smVarSF);
   SM_ReleaseResources(smProdSF);
   SM_ReleaseResources(smConsSF);
+  SM_ReleaseResources(smASI);
 }
 
 /* TLS: Unlike the other abolishes, "all" aborts if it detects the
@@ -2478,15 +2570,9 @@ inline
 #endif
 void abolish_table_info(CTXTdecl)
 {
-  CPtr csf;
   TIFptr pTIF;
 
-  for ( csf = top_of_complstk;  csf != COMPLSTACKBOTTOM;
-	csf = csf + COMPLFRAMESIZE )
-    if ( ! is_completed(compl_subgoal_ptr(csf)) ) {
-      xsb_table_error(CTXTc "[abolish_all_tables/0] Illegal table operation"
-		"\n\t Cannot abolish incomplete tables");
-    }
+  check_for_incomplete_tables("abolish_all_shared_tables/0");
 
   if (flags[NUM_THREADS] == 1) {
     abolish_all_tables_cps_check(CTXT) ;

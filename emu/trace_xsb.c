@@ -44,6 +44,7 @@
 #include "thread_xsb.h"
 #include "trace_xsb.h"
 #include "deadlock.h"
+#include "slgdelay.h"
 
 /*======================================================================*/
 /* Process-level information: keep this global */
@@ -126,7 +127,8 @@ void total_stat(CTXTdeclc double elapstime) {
     tsi,		/* Time Stamp Indices (Index Entries/Nodes) */
     varsf,		/* Variant Subgoal Frames */
     prodsf,		/* Subsumptive Producer Subgoal Frames */
-    conssf;		/* Subsumptive Consumer Subgoal Frames */
+    conssf,		/* Subsumptive Consumer Subgoal Frames */
+    asi;		/* Answer Subst Info for conditional answers */
 
   HashStats
     tbtht,		/* Table Basic Trie Hash Tables */
@@ -140,11 +142,12 @@ void total_stat(CTXTdeclc double elapstime) {
     gl_avail, tc_avail,
     de_space_alloc, de_space_used,
     dl_space_alloc, dl_space_used,
+    pnde_space_alloc, pnde_space_used,
     pspacetot;
 
   int
-    num_de_blocks, num_dl_blocks,
-    de_count, dl_count,
+    num_de_blocks, num_dl_blocks, num_pnde_blocks,
+    de_count, dl_count, 
     i;
 
   tbtn = node_statistics(&smTableBTN);
@@ -156,11 +159,12 @@ void total_stat(CTXTdeclc double elapstime) {
   tstn = node_statistics(&smTSTN);
   tstht = hash_statistics(&smTSTHT);
   tsi = node_statistics(&smTSIN);
+  asi = node_statistics(&smASI);
 
   tablespace_alloc = CurrentTotalTableSpaceAlloc(tbtn,tbtht,varsf,prodsf,
-						 conssf,aln,tstn,tstht,tsi);
+						 conssf,aln,tstn,tstht,tsi,asi);
   tablespace_used = CurrentTotalTableSpaceUsed(tbtn,tbtht,varsf,prodsf,
-					       conssf,aln,tstn,tstht,tsi);
+					       conssf,aln,tstn,tstht,tsi,asi);
 
   abtn = node_statistics(&smAssertBTN);
   abtht = hash_statistics(&smAssertBTHT);
@@ -169,19 +173,25 @@ void total_stat(CTXTdeclc double elapstime) {
   trieassert_used =
     NodeStats_SizeUsedNodes(abtn) + HashStats_SizeUsedTotal(abtht);
 
-  gl_avail = (top_of_localstk - top_of_heap - 1) * sizeof(Cell);
-  tc_avail = (top_of_cpstack - (CPtr)top_of_trail - 1) * sizeof(Cell);
-  
-  de_space_alloc = allocated_de_space(& num_de_blocks);
+  de_space_alloc = allocated_de_space(current_de_block_gl,&num_de_blocks);
   de_space_used = de_space_alloc - unused_de_space();
   de_count = (de_space_used - num_de_blocks * sizeof(Cell)) /
 	     sizeof(struct delay_element);
 
-  dl_space_alloc = allocated_dl_space(& num_dl_blocks);
+  dl_space_alloc = allocated_dl_space(current_dl_block_gl,&num_dl_blocks);
   dl_space_used = dl_space_alloc - unused_dl_space();
   dl_count = (dl_space_used - num_dl_blocks * sizeof(Cell)) /
 	     sizeof(struct delay_list);
 
+  pnde_space_alloc = allocated_pnde_space(current_pnde_block_gl,&num_pnde_blocks);
+  pnde_space_used = pnde_space_alloc - unused_pnde_space();
+
+  tablespace_alloc = tablespace_alloc + de_space_alloc + dl_space_alloc + pnde_space_alloc;
+
+  tablespace_used = tablespace_used + de_space_used + dl_space_used + pnde_space_used;
+
+  gl_avail = (top_of_localstk - top_of_heap - 1) * sizeof(Cell);
+  tc_avail = (top_of_cpstack - (CPtr)top_of_trail - 1) * sizeof(Cell);
 
   pspacetot = 0;
   for (i=0; i<NUM_CATS_SPACE; i++) 
@@ -191,7 +201,7 @@ void total_stat(CTXTdeclc double elapstime) {
     pspacetot  +  trieassert_alloc  +  pspacesize[TABLE_SPACE] +
     pspacesize[INCR_TABLE_SPACE] +
     (pdl.size + glstack.size + tcpstack.size + complstack.size) * K +
-    de_space_alloc + dl_space_alloc;
+    de_space_alloc + dl_space_alloc  + pnde_space_alloc;
 
   total_used  =
     pspacetot  +  trieassert_used  +  pspacesize[TABLE_SPACE]-(tablespace_alloc-tablespace_used) +
@@ -244,10 +254,6 @@ void total_stat(CTXTdeclc double elapstime) {
 	 tablespace_alloc - tablespace_used);
   printf("\n");
 
-/* TLS: Max stack stuff is probably not real useful with multiple
-   threads -- to even get it to work correcly you'd have to use locks.
-*/
-
   if (flags[TRACE_STA]) {
     /* Report Maximum Usages
        --------------------- */
@@ -259,7 +265,7 @@ void total_stat(CTXTdeclc double elapstime) {
 	   (ttt.maxopenstack_count/sizeof(struct completion_stack_frame)));
 
     update_maximum_tablespace_stats(&tbtn,&tbtht,&varsf,&prodsf,&conssf,
-				    &aln,&tstn,&tstht,&tsi);
+				    &aln,&tstn,&tstht,&tsi,&asi);
     printf("  Maximum table space used:  %ld bytes\n",
 	   maximum_total_tablespace_usage());
     printf("\n");
@@ -312,10 +318,12 @@ void total_stat(CTXTdeclc double elapstime) {
     abtn,		/* Asserted Basic Trie Nodes */
     aln,		/* Answer List Nodes */
     varsf,		/* Variant Subgoal Frames */
+    asi,		/* Answer Substitution Info */
 
     pri_tbtn,		/* Private Table Basic Trie Nodes */
     pri_tstn,		/* Private Time Stamp Trie Nodes */
     pri_aln,		/* Private Answer List Nodes */
+    pri_asi,		/* Private Answer Substitution Info */
     pri_tsi,		/* Private Time Stamp Indices (Index Entries/Nodes) */
     pri_varsf,		/* Private Variant Subgoal Frames */
     pri_prodsf,		/* Private Subsumptive Producer Subgoal Frames */
@@ -337,38 +345,44 @@ void total_stat(CTXTdeclc double elapstime) {
     gl_avail, tc_avail,
     de_space_alloc, de_space_used,
     dl_space_alloc, dl_space_used,
+    pnde_space_alloc, pnde_space_used,
+    private_de_space_alloc, private_de_space_used,
+    private_dl_space_alloc, private_dl_space_used,
+    private_pnde_space_alloc, private_pnde_space_used,
     pspacetot;
 
   int
-    num_de_blocks, num_dl_blocks,
-    de_count, dl_count,
+    num_de_blocks,num_dl_blocks,num_pnde_blocks,
+    private_num_de_blocks,private_num_dl_blocks,
+    de_count, dl_count, private_de_count, private_dl_count, 
     i;
 
   tbtn = node_statistics(&smTableBTN);
   tbtht = hash_statistics(&smTableBTHT);
   varsf = subgoal_statistics(CTXTc &smVarSF);
   aln = node_statistics(&smALN);
+  asi = node_statistics(&smASI);
 
   pri_tbtn = node_statistics(private_smTableBTN);
   pri_tbtht = hash_statistics(private_smTableBTHT);
   pri_varsf = subgoal_statistics(CTXTc private_smVarSF);
+  pri_aln = node_statistics(private_smALN);
+  pri_asi = node_statistics(private_smASI);
   pri_prodsf = subgoal_statistics(CTXTc private_smProdSF);
   pri_conssf = subgoal_statistics(CTXTc private_smConsSF);
-  pri_aln = node_statistics(private_smALN);
   pri_tstn = node_statistics(private_smTSTN);
   pri_tstht = hash_statistics(private_smTSTHT);
   pri_tsi = node_statistics(private_smTSIN);
 
-  shared_tablespace_alloc = CurrentSharedTableSpaceAlloc(tbtn,tbtht,varsf,aln);
+  private_tablespace_alloc = CurrentPrivateTableSpaceAlloc(pri_tbtn,pri_tbtht,pri_varsf,
+							   pri_prodsf,
+				  pri_conssf,pri_aln,pri_tstn,pri_tstht,pri_tsi,pri_asi);
+  private_tablespace_used = CurrentPrivateTableSpaceUsed(pri_tbtn,pri_tbtht,pri_varsf,
+							 pri_prodsf,
+				 pri_conssf,pri_aln,pri_tstn,pri_tstht,pri_tsi,pri_asi);
 
-  private_tablespace_alloc = 
-    CurrentPrivateTableSpaceAlloc(pri_tbtn,pri_tbtht,pri_varsf,pri_prodsf,
-			  pri_conssf,pri_aln,pri_tstn,pri_tstht,pri_tsi);
-  private_tablespace_used = 
-    CurrentPrivateTableSpaceUsed(pri_tbtn,pri_tbtht,pri_varsf,pri_prodsf,
-			  pri_conssf,pri_aln,pri_tstn,pri_tstht,pri_tsi);
-
-  shared_tablespace_used = CurrentSharedTableSpaceUsed(tbtn,tbtht,varsf,aln);
+  shared_tablespace_alloc = CurrentSharedTableSpaceAlloc(tbtn,tbtht,varsf,aln,asi);
+  shared_tablespace_used = CurrentSharedTableSpaceUsed(tbtn,tbtht,varsf,aln,asi);
 
   tablespace_alloc = shared_tablespace_alloc + private_tablespace_alloc;
   tablespace_used =  shared_tablespace_used + private_tablespace_used;
@@ -383,16 +397,43 @@ void total_stat(CTXTdeclc double elapstime) {
   gl_avail = (top_of_localstk - top_of_heap - 1) * sizeof(Cell);
   tc_avail = (top_of_cpstack - (CPtr)top_of_trail - 1) * sizeof(Cell);
   
-  de_space_alloc = allocated_de_space(& num_de_blocks);
+  de_space_alloc = allocated_de_space(current_de_block_gl,&num_de_blocks);
   de_space_used = de_space_alloc - unused_de_space();
   de_count = (de_space_used - num_de_blocks * sizeof(Cell)) /
 	     sizeof(struct delay_element);
 
-  dl_space_alloc = allocated_dl_space(& num_dl_blocks);
+  dl_space_alloc = allocated_dl_space(current_dl_block_gl,&num_dl_blocks);
   dl_space_used = dl_space_alloc - unused_dl_space();
   dl_count = (dl_space_used - num_dl_blocks * sizeof(Cell)) /
 	     sizeof(struct delay_list);
 
+  pnde_space_alloc = allocated_pnde_space(current_pnde_block_gl,&num_pnde_blocks);
+  pnde_space_used = pnde_space_alloc - unused_pnde_space();
+
+  private_de_space_alloc = allocated_de_space(private_current_de_block,&num_de_blocks);
+  private_de_space_used = private_de_space_alloc - unused_de_space_private(CTXT);
+  private_de_count = (private_de_space_used - private_num_de_blocks * sizeof(Cell)) /
+	     sizeof(struct delay_element);
+
+  private_dl_space_alloc = allocated_dl_space(private_current_dl_block,&num_dl_blocks);
+  private_dl_space_used = private_dl_space_alloc - unused_dl_space_private(CTXT);
+  private_dl_count = (private_dl_space_used - private_num_dl_blocks * sizeof(Cell)) /
+	     sizeof(struct delay_list);
+
+  private_pnde_space_alloc = allocated_pnde_space(private_current_pnde_block,&num_pnde_blocks);
+  private_pnde_space_used = private_pnde_space_alloc - unused_pnde_space_private(CTXT);
+
+  tablespace_alloc = tablespace_alloc + de_space_alloc + dl_space_alloc + pnde_space_alloc;
+  tablespace_used =  tablespace_used + de_space_used + dl_space_used + pnde_space_alloc;
+
+  shared_tablespace_alloc = shared_tablespace_alloc + de_space_alloc + dl_space_alloc + pnde_space_alloc;
+  shared_tablespace_used =  shared_tablespace_used + de_space_used + dl_space_used + pnde_space_used;
+
+  private_tablespace_alloc = private_tablespace_alloc + private_de_space_alloc + 
+    private_dl_space_alloc + private_pnde_space_alloc;
+
+  private_tablespace_used = private_tablespace_used + private_de_space_used + 
+    private_dl_space_used + private_pnde_space_used;
 
   pspacetot = 0;
   for (i=0; i<NUM_CATS_SPACE; i++) 
@@ -400,7 +441,7 @@ void total_stat(CTXTdeclc double elapstime) {
 
   total_alloc =
     pspacetot  +  trieassert_alloc  +  pspacesize[TABLE_SPACE] +
-    de_space_alloc + dl_space_alloc;
+    de_space_alloc + dl_space_alloc + pnde_space_alloc; 
 
   total_used  =
     pspacetot  +  trieassert_used  + 
@@ -409,7 +450,7 @@ void total_stat(CTXTdeclc double elapstime) {
 
 
   printf("\n");
-  printf("Non-stack memory for process:\n");
+  printf("Thread-shared memory for process:\n");
   printf("  permanent space %12ld bytes: %12ld in use, %12ld free\n",
 	 pspacetot + trieassert_alloc, pspacetot + trieassert_used,
 	 trieassert_alloc - trieassert_used);
@@ -423,11 +464,14 @@ void total_stat(CTXTdeclc double elapstime) {
 	 pspacesize[TABLE_SPACE]-trieassert_alloc,  
 	 pspacesize[TABLE_SPACE]-trieassert_alloc-(tablespace_alloc-tablespace_used),
 	 tablespace_alloc - tablespace_used);
+  printf("  Shared SLG table space %12ld bytes: %12ld in use, %12ld free\n",
+	 shared_tablespace_alloc,shared_tablespace_used,
+	 shared_tablespace_alloc - shared_tablespace_used);
   printf("Total             %12ld bytes: %12ld in use, %12ld free\n",
 	 total_alloc, total_used, total_alloc - total_used);
   printf("\n");
 
-  printf("Stack info for thread %d:\n",xsb_thread_id);
+  printf("Thread-private memory thread %d:\n",xsb_thread_id);
   printf("  glob/loc space  %12ld bytes: %12ld in use, %12ld free\n",
 	 glstack.size * K, glstack.size * K - gl_avail, gl_avail);
   printf("    global                            %12ld bytes\n",
@@ -448,6 +492,9 @@ void total_stat(CTXTdeclc double elapstime) {
 	 (unsigned long)COMPLSTACKBOTTOM - (unsigned long)top_of_complstk,
 	 (unsigned long)complstack.size * K -
 	 ((unsigned long)COMPLSTACKBOTTOM - (unsigned long)top_of_complstk));
+  printf("  Private SLG table space %12ld bytes: %12ld in use, %12ld free\n",
+	 private_tablespace_alloc,private_tablespace_used,
+	 private_tablespace_alloc - private_tablespace_used);
   printf("\n");
 #ifdef GC
   print_gc_statistics(CTXT);

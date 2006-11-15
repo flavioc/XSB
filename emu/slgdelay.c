@@ -54,28 +54,22 @@ static void simplify_pos_unconditional(CTXTdeclc NODEptr);
 Structure_Manager smASI      = SM_InitDecl(ASI_Node, ASIs_PER_BLOCK,
 					    "Answer Substitution Info Node");
 
-#define create_as_info(ANS, SUBG)				\
-  {								\
-    SM_AllocateStruct(smASI,asi);				\
-    Child(ANS) = (NODEptr) asi;					\
-    asi_pdes(asi) = NULL;					\
-    asi_subgoal(asi) = SUBG;					\
-    asi_dl_list(asi) = NULL;					\
-  }
-
 /*
- * Some new global variables ...
+ * Global variables for shared/sequential tables.
  */
 
 /* Constants */
+/* If you change the size of the blocks, please update info in
+   trie_internals.h also */
+
 static unsigned long de_block_size_glc = 2048 * sizeof(struct delay_element);
 static unsigned long dl_block_size_glc = 2048 * sizeof(struct delay_list);
 static unsigned long pnde_block_size_glc = 2048 *sizeof(struct pos_neg_de_list);
 
 /* Rest of globals protected by MUTEX_DELAY (I hope) */
-static char *current_de_block_gl = NULL;
-static char *current_dl_block_gl = NULL;
-static char *current_pnde_block_gl = NULL;
+char *current_de_block_gl = NULL;
+char *current_dl_block_gl = NULL;
+char *current_pnde_block_gl = NULL;
 
 static DE released_des_gl = NULL;	/* the list of released DEs */
 static DL released_dls_gl = NULL;	/* the list of released DLs */
@@ -103,6 +97,9 @@ static PNDE current_pnde_block_top_gl = NULL; /* the top of current PNDE block*/
  * 	     ENTRY_TYPE,           -- type of the entry (eg. DE)
  * 	     BLOCK_SIZE,           -- block size (for malloc a new block)
  * 	     ABORT_MESG)           -- xsb_abort mesg when no enough memory
+ *
+ * No mutexes needed at this level, as shared structures will be
+ * protected by MUTEX_DELAY.
  */
 
 #define new_entry(NEW_ENTRY,						\
@@ -138,6 +135,8 @@ static PNDE current_pnde_block_top_gl = NULL; /* the top of current PNDE block*/
   RELEASED = ENTRY_TO_BE_RELEASED;					\
 }
 
+/* * * * */
+
 /*
  * remove_pnde(PNDE_HEAD, PNDE_ITEM) removes PNDE_ITEM from the
  * corresponding doubly-linked PNDE list.  If PNDE_ITEM is the first one
@@ -163,40 +162,57 @@ static PNDE current_pnde_block_top_gl = NULL; /* the top of current PNDE block*/
   release_entry(PNDE_ITEM, released_pndes_gl, pnde_next);	\
 }
 
+/* * * * */
+
+/* 
+ * TLS: AS info had been using malloc directly, so I changed it to use
+ * the structure managers that are more common to the rest of the
+ * system, rather than the new_entry/release_entry methods. 
+ *
+ * Allocate shared structure is not needed, as shared structures will be
+ * protected by MUTEX_DELAY.
+ */
+
+#define create_as_info(ST_MAN,ANS, SUBG)			\
+  {								\
+    SM_AllocateStruct(ST_MAN,( asi));				\
+    Child(ANS) = (NODEptr) asi;					\
+    asi_pdes(asi) = NULL;					\
+    asi_subgoal(asi) = SUBG;					\
+    asi_dl_list(asi) = NULL;					\
+  }
+
 /*
  * The following functions are used for statistics.  If changing their
  * usage pattern, make sure you adjust the mutexes.  (MUTEX_DELAY is
  * non-recursive.)   Use of NOERROR mutexes is ok here.
  */
 
-unsigned long allocated_de_space(int * num_blocks)
+
+unsigned long allocated_de_space(char * current_de_block,int * num_blocks)
 {
   int size = 0;
-  char *t = current_de_block_gl;
+  char *t = current_de_block;
 
   *num_blocks = 0;
-  SYS_MUTEX_LOCK_NOERROR( MUTEX_DELAY ) ;
   while (t) {
     (*num_blocks)++;
     size =+ (de_block_size_glc + sizeof(Cell));
     t = *(char **)t;
   }
-  SYS_MUTEX_UNLOCK_NOERROR( MUTEX_DELAY ) ;
   return size;
 }
 
-static int released_de_num(void)
+static int released_de_num(DE released_des)
 {
   int i = 0;
   DE p;
 
-  p = released_des_gl;
-  SYS_MUTEX_LOCK_NOERROR( MUTEX_DELAY ) ;
+  p = released_des;
   while (p != NULL) {
     i++;
     p = de_next(p);
   }
-  SYS_MUTEX_UNLOCK_NOERROR( MUTEX_DELAY ) ;
   return(i);
 }
 
@@ -204,38 +220,44 @@ unsigned long unused_de_space(void)
 {
   return (current_de_block_top_gl
 	  - next_free_de_gl
-	  + released_de_num()) * sizeof(struct delay_element);
+	  + released_de_num(released_des_gl)) * sizeof(struct delay_element);
 }
 
+#ifdef MULTI_THREAD
+unsigned long unused_de_space_private(CTXTdecl)
+{
+  return (private_current_de_block_top
+	  - private_next_free_de
+	  + released_de_num(private_released_des)) * sizeof(struct delay_element);
+}
+#endif
 
-unsigned long allocated_dl_space(int * num_blocks)
+/* * * * * */
+
+unsigned long allocated_dl_space(char * current_dl_block,int * num_blocks)
 {
   int size = 0;
-  char *t = current_dl_block_gl;
+  char *t = current_dl_block;
 
   *num_blocks = 0;
-  SYS_MUTEX_LOCK_NOERROR( MUTEX_DELAY ) ;
   while (t) {
     (*num_blocks)++;
     size =+ (dl_block_size_glc + sizeof(Cell));
     t = *(char **)t;
   }
-  SYS_MUTEX_UNLOCK_NOERROR( MUTEX_DELAY ) ;
   return size;
 }
 
-static int released_dl_num(void)
+static int released_dl_num(DL released_dls)
 {
   int i = 0;
   DL p;
 
-  p = released_dls_gl;
-  SYS_MUTEX_LOCK_NOERROR( MUTEX_DELAY ) ;
+  p = released_dls;
   while (p != NULL) {
     i++;
     p = dl_next(p);
   }
-  SYS_MUTEX_UNLOCK_NOERROR( MUTEX_DELAY ) ;
   return(i);
 }
 
@@ -243,13 +265,67 @@ unsigned long unused_dl_space(void)
 {
   return (current_dl_block_top_gl
 	  - next_free_dl_gl
-	  + released_dl_num()) * sizeof(struct delay_list);
+	  + released_dl_num(released_dls_gl)) * sizeof(struct delay_list);
 }
 
-/*
+#ifdef MULTI_THREAD
+unsigned long unused_dl_space_private(CTXTdecl)
+{
+  return (private_current_dl_block_top
+	  - private_next_free_dl
+	  + released_dl_num(private_released_dls)) * sizeof(struct delay_list);
+}
+#endif
+
+/* * * * * */
+
+unsigned long allocated_pnde_space(char * current_pnde_block, int * num_blocks)
+{
+  int size = 0;
+  char *t = current_pnde_block;
+
+  *num_blocks = 0;
+  while (t) {
+    (*num_blocks)++;
+    size =+ (pnde_block_size_glc + sizeof(Cell));
+    t = *(char **)t;
+  }
+  return size;
+}
+
+static int released_pnde_num(PNDE released_pndes)
+{
+  int i = 0;
+  PNDE p;
+
+  p = released_pndes;
+  while (p != NULL) {
+    i++;
+    p = dl_next(p);
+  }
+  return(i);
+}
+
+unsigned long unused_pnde_space(void)
+{
+  return (current_pnde_block_top_gl
+	  - next_free_pnde_gl
+	  + released_pnde_num(released_pndes_gl)) * sizeof(struct pos_neg_de_list);
+}
+
+#ifdef MULTI_THREAD
+unsigned long unused_pnde_space_private(CTXTdecl)
+{
+  return (private_current_pnde_block_top
+	  - private_next_free_pnde
+	  + released_pnde_num(private_released_pndes)) * sizeof(struct pos_neg_de_list);
+}
+#endif
+
+/* * * * * * * * * * * * * * * * * * * * ** * * * * * * * * * * * * *
  * Assign one entry for delay_elem in the current DE (Delay Element)
- * block.  A new block will be allocate if necessary.
- */
+ * block.  A new block will be allocated if necessary.
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
   
 static DE intern_delay_element(CTXTdeclc Cell delay_elem)
 {
@@ -284,14 +360,6 @@ static DE intern_delay_element(CTXTdeclc Cell delay_elem)
     ret_n = (CPtr) cs_val(tmp_cell);
     arity = get_arity((Psc) get_str_psc(cell(cptr + 3)));
   }
-
-#ifdef DEBUG_DELAYVAR
-  xsb_dbgmsg((LOG_DEBUG,">>>> "));
-  dbg_print_delay_list(LOG_DEBUG,stddbg, delayreg);
-  xsb_dbgmsg((LOG_DEBUG, "\n"));
-  xsb_dbgmsg((LOG_DEBUG, ">>>> (Intern ONE de) arity of answer subsf = %d\n", 
-	     arity));
-#endif
 
   if (!was_simplifiable(subgoal, ans_subst)) {
     new_entry(de,
@@ -329,6 +397,71 @@ static DE intern_delay_element(CTXTdeclc Cell delay_elem)
     return NULL;
 }
 
+/* * * * * *
+ * Private version of above predicate (took out ignore/debug
+ * delayvars)
+ * * * * * */
+
+#ifdef MULTI_THREAD
+static DE intern_delay_element_private(CTXTdeclc Cell delay_elem)
+{
+  DE de;
+  CPtr cptr = (CPtr) cs_val(delay_elem);
+  /*
+   * All the following information about delay_elem is set in
+   * delay_negatively() or delay_positively().  Note that cell(cptr) is
+   * the delay_psc ('DL').
+   */
+  VariantSF subgoal;
+  NODEptr ans_subst;
+  CPtr ret_n = 0;
+  int arity;
+  Cell tmp_cell;
+
+  tmp_cell = cell(cptr + 1);
+  subgoal = (VariantSF) addr_val(tmp_cell);
+  tmp_cell = cell(cptr + 2);
+  ans_subst = (NODEptr) addr_val(tmp_cell);
+  tmp_cell = cell(cptr + 3);
+  
+  /*
+   * cell(cptr + 3) can be one of the following:
+   *   1. integer 0 (NEG_DELAY), for a negative DE;
+   *   2. string "ret", for a positive DE with arity 0;
+   *   3. constr ret/n, for a positive DE with arity >=1.
+   */
+  if (isinteger(tmp_cell) || isstring(tmp_cell))
+    arity = 0;
+  else {
+    ret_n = (CPtr) cs_val(tmp_cell);
+    arity = get_arity((Psc) get_str_psc(cell(cptr + 3)));
+  }
+
+  if (!was_simplifiable(subgoal, ans_subst)) {
+    new_entry(de,
+	      private_released_des,
+	      private_next_free_de,
+	      private_current_de_block,
+	      private_current_de_block_top,
+	      de_next,
+	      DE,
+	      de_block_size_glc,
+	      "Not enough memory to expand DE space");
+    de_subgoal(de) = subgoal;
+    de_ans_subst(de) = ans_subst; /* Leaf of the answer (substitution) trie */
+
+    if (arity != 0) {
+      CPtr hook = NULL;
+      de_subs_fact_leaf(de) = delay_chk_insert(CTXTc arity, ret_n + 1,
+					       &hook);
+    }
+    return de;
+  }
+  else
+    return NULL;
+}
+#endif (MULTI_THREAD)
+
 /*
  * Construct a delay list according to dlist.  Assign an entry in the
  * current DL block for it.  A new DL block will be allocated if
@@ -364,6 +497,38 @@ static DL intern_delay_list(CTXTdeclc CPtr dlist) /* assumes that dlist != NULL	
   }
   else return NULL;
 }
+
+#ifdef MULTI_THREAD
+static DL intern_delay_list_private(CTXTdeclc CPtr dlist) /* assumes that dlist != NULL	*/
+{
+  DE head = NULL, de;
+  DL dl = NULL;
+
+  while (islist(dlist)) {
+    dlist = clref_val(dlist);
+    if ((de = intern_delay_element_private(CTXTc cell(dlist))) != NULL) {
+      de_next(de) = head;
+      head = de;
+    }
+    dlist = (CPtr) cell(dlist+1);
+  }
+  if (head) {
+    new_entry(dl,
+	      private_released_dls,
+	      private_next_free_dl,
+	      private_current_dl_block,
+	      private_current_dl_block_top,
+	      dl_next,
+	      DL,
+	      dl_block_size_glc,
+	      "Not enough memory to expand DL space");
+    dl_de_list(dl) = head;
+    dl_asl(dl) = NULL;
+    return dl;
+  }
+  else return NULL;
+}
+#endif
 
 /*
  * For each delay element de in delay list dl, do one of the following
@@ -431,6 +596,47 @@ static void record_de_usage(DL dl)
   }
 }
 
+/* * * * * *
+ * Private version of above predicate (took out ignore/debug
+ * delayvars)
+ * * * * * */
+#ifdef MULTI_THREAD
+static void record_de_usage_private(CTXTdeclc DL dl)
+{
+  DE de;
+  PNDE pnde, current_first;
+  NODEptr as_leaf;
+ 
+  de = dl_de_list(dl);
+  while (de) {
+    new_entry(pnde,private_released_pndes,
+	      private_next_free_pnde,private_current_pnde_block,
+	      private_current_pnde_block_top,pnde_next,
+	      PNDE,pnde_block_size_glc,
+	      "Not enough memory to expand PNDE space");
+    pnde_dl(pnde) = dl;
+    pnde_de(pnde) = de;
+    pnde_prev(pnde) = NULL;
+    if ((as_leaf = de_ans_subst(de)) == NULL) {	/* a negative DE */
+      current_first = subg_nde_list(de_subgoal(de));
+      pnde_next(pnde) = current_first;
+      if (current_first)
+	pnde_prev(current_first) = pnde;
+      subg_nde_list(de_subgoal(de)) = pnde;
+    }
+    else {					/* a positive DE */
+      current_first = asi_pdes(Delay(as_leaf));
+      pnde_next(pnde) = current_first;
+      if (current_first)
+	pnde_prev(current_first) = pnde;
+      asi_pdes(Delay(as_leaf)) = pnde;
+    }
+    de_pnde(de) = pnde;	/* record */
+    de = de_next(de);
+  }
+}
+#endif
+
 /*
  * For predicates using call variance, do_delay_stuff() is called in
  * table_answer_search(), immediately after variant_answer_search(),
@@ -460,39 +666,59 @@ static void record_de_usage(DL dl)
  *
  * When the delay trie has been created, and a pointer in the delay
  * element (saved in the answer trie) has been set, we can say the
- * conditional answer is now tabled.
+ * conditional answer is tabled.
  * 
  * TLS: moved mutexes into conditionals.  This avoids locking the
  * delay mutex when adding an answer for a LRD stratified program.
  * For non-LRD programs the placement of mutexes may mean that we lock
  * the mutex more than once per answer, but such cases will be
  * uncommon for the most part (as two of the cases engender
- * simplification).  And in any case, if we optimize non-LRD programs
- * for MT, we'd probably want to deal with shared and non-shared DL/DE
- * alloction along the lines of structure managers.  Finally, I'm not
- * completely sure that simplification requires a mutex -- I need to
- * figure this out.
+ * simplification).  
  */
 
-void do_delay_stuff(CTXTdeclc NODEptr as_leaf, VariantSF subgoal, xsbBool sf_exists)
+void do_delay_stuff_shared(CTXTdeclc NODEptr as_leaf, VariantSF subgoal, xsbBool sf_exists)
 {
     ASI	asi;
     DL dl = NULL;
 
-#ifdef DEBUG_DELAYVAR
-    xsb_dbgmsg((LOG_DEBUG, ">>>> Start do_delay_stuff ...\n"));
-    xsb_dbgmsg((LOG_DEBUG, ">>>> The delay list for this subgoal itself is:\n"));
-    xsb_dbgmsg((LOG_DEBUG, ">>>> ")); 
-    dbg_print_delay_list(LOG_DEBUG,stddbg, delayreg);
-    xsb_dbgmsg((LOG_DEBUG, "\n"));
-#endif
-
+    SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
     if (delayreg && (!sf_exists || is_conditional_answer(as_leaf))) {
       if ((dl = intern_delay_list(CTXTc delayreg)) != NULL) {
-	SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
-	mark_conditional_answer(as_leaf, subgoal, dl);
+	mark_conditional_answer(as_leaf, subgoal, dl, smASI);
 	record_de_usage(dl);
-	SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
+      }
+    }
+    SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
+    /*
+     * Check for the derivation of an unconditional answer.
+     */
+    if (sf_exists && is_conditional_answer(as_leaf) &&
+	(!delayreg || !dl)) {
+      /*
+       * Initiate positive simplification in places where this answer
+       * substitution has already been returned.
+       */
+      SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
+      simplify_pos_unconditional(CTXTc as_leaf);
+      SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
+    }
+    if (is_unconditional_answer(as_leaf) && subg_nde_list(subgoal)) {
+      SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
+      simplify_neg_succeeds(CTXTc subgoal);
+      SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
+    }
+}
+
+#ifdef MULTI_THREAD
+void do_delay_stuff_private(CTXTdeclc NODEptr as_leaf, VariantSF subgoal, xsbBool sf_exists)
+{
+    ASI	asi;
+    DL dl = NULL;
+
+    if (delayreg && (!sf_exists || is_conditional_answer(as_leaf))) {
+      if ((dl = intern_delay_list_private(CTXTc delayreg)) != NULL) {
+	mark_conditional_answer(as_leaf, subgoal, dl, *private_smASI);
+	record_de_usage_private(CTXTc dl);
       }
     }
     /*
@@ -513,6 +739,22 @@ void do_delay_stuff(CTXTdeclc NODEptr as_leaf, VariantSF subgoal, xsbBool sf_exi
       simplify_neg_succeeds(CTXTc subgoal);
       SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
     }
+}
+#endif
+
+void do_delay_stuff(CTXTdeclc NODEptr as_leaf, VariantSF subgoal, xsbBool sf_exists)
+{
+
+#ifdef MULTI_THREAD  
+  if (threads_current_sm == PRIVATE_SM) {
+    do_delay_stuff_private(CTXTc as_leaf, subgoal, sf_exists);
+  } else {
+    do_delay_stuff_shared(CTXTc as_leaf, subgoal, sf_exists);
+    }
+#else
+  do_delay_stuff_shared(CTXTc as_leaf, subgoal, sf_exists);
+#endif
+
 }
 
 /*----------------------------------------------------------------------*/
@@ -879,8 +1121,6 @@ void abolish_wfs_space(CTXTdecl)
 #endif
 
   /* clear DE blocks */
-
-    //    SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
   while (current_de_block_gl) {
     last_block = *(char **) current_de_block_gl;
     mem_dealloc(current_de_block_gl,de_block_size_glc + sizeof(Cell),TABLE_SPACE);
@@ -888,7 +1128,6 @@ void abolish_wfs_space(CTXTdecl)
   }
 
   /* clear DL blocks */
-
   while (current_dl_block_gl) {
     last_block = *(char **) current_dl_block_gl;
     mem_dealloc(current_dl_block_gl,dl_block_size_glc + sizeof(Cell),TABLE_SPACE);
@@ -896,7 +1135,6 @@ void abolish_wfs_space(CTXTdecl)
   }
 
   /* clear PNDE blocks */
-  
   while (current_pnde_block_gl) {
     last_block = *(char **) current_pnde_block_gl;
     mem_dealloc(current_pnde_block_gl,pnde_block_size_glc + sizeof(Cell),TABLE_SPACE);
@@ -922,8 +1160,59 @@ void abolish_wfs_space(CTXTdecl)
 #ifndef LOCAL_EVAL
     abolish_edge_space();
 #endif
-    //    SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
 }
+
+#ifdef MULTI_THREAD
+void abolish_private_wfs_space(CTXTdecl)
+{
+  char *last_block;
+
+// #ifndef LOCAL_EVAL
+//    extern void abolish_edge_space();
+// #endif
+
+  /* clear DE blocks */
+  while (private_current_de_block) {
+    last_block = *(char **) private_current_de_block;
+    mem_dealloc(private_current_de_block,de_block_size_glc + sizeof(Cell),TABLE_SPACE);
+    private_current_de_block = last_block;
+  }
+
+  /* clear DL blocks */
+  while (private_current_dl_block) {
+    last_block = *(char **) private_current_dl_block;
+    mem_dealloc(private_current_dl_block,dl_block_size_glc + sizeof(Cell),TABLE_SPACE);
+    private_current_dl_block = last_block;
+  }
+
+  /* clear PNDE blocks */
+  while (private_current_pnde_block) {
+    last_block = *(char **) private_current_pnde_block;
+    mem_dealloc(private_current_pnde_block,pnde_block_size_glc + sizeof(Cell),TABLE_SPACE);
+    private_current_pnde_block = last_block;
+  }
+
+  SM_ReleaseResources(*private_smASI);
+
+  /* reset some pointers */
+  private_released_des = NULL;
+  private_released_dls = NULL;
+  private_released_pndes = NULL;
+
+  private_next_free_de = NULL;
+  private_next_free_dl = NULL;
+  private_next_free_pnde = NULL;
+
+  private_current_de_block_top = NULL;
+  private_current_dl_block_top = NULL;
+  private_current_pnde_block_top = NULL;
+
+  // #ifndef LOCAL_EVAL
+  //    abolish_edge_space();
+  //#endif
+}
+
+#endif
 
 /*
  * Two functions added for builtin force_truth_value/2.

@@ -586,8 +586,10 @@ void table_complete_entry(CTXTdeclc VariantSF producerSF) {
   dbg_print_subgoal(LOG_STRUCT_MANAGER, stddbg, producerSF);
   xsb_dbgmsg((LOG_STRUCT_MANAGER, " complete... reclaiming structures.\n"));
 
+#ifndef MULTI_THREAD
   if (flags[TRACE_STA])
     compute_maximum_tablespace_stats(CTXT);
+#endif
 
   /* Reclaim Auxiliary Structures from the TST
      ----------------------------------------- */

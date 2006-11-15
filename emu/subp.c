@@ -271,13 +271,8 @@ void print_statistics(CTXTdeclc int amount) {
     break;
 
   case 2:		    /* Print Detailed Table Usage */
-#ifndef MULTI_THREAD
     print_detailed_tablespace_stats(CTXT);
     break;
-#else
-    fprintf(stdwarn,"statistics(2) not yet implemented for MT engine\n");
-    break;
-#endif
 
   case 3:		    /* Print Detailed Table, Stack, and CPUtime */
 #ifndef MULTI_THREAD

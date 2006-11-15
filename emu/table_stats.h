@@ -121,63 +121,50 @@ HashStats hash_statistics(Structure_Manager *);
    ------------------------- */
 
 #ifndef MULTI_THREAD
-#define CurrentTotalTableSpaceAlloc(BTN,BTHT,VARSF,PRODSF,CONSSF,	    \
-				    ALN,TSTN,TSTHT,TSI)			    \
+
+#define CurrentTotalTableSpaceAlloc(BTN,BTHT,VARSF,PRODSF,CONSSF,	\
+				    ALN,TSTN,TSTHT,TSI,ASI)		\
   ( NodeStats_SizeAllocNodes(BTN)  +  HashStats_SizeAllocTotal(BTHT)  +	    \
     NodeStats_SizeAllocNodes(VARSF)  +  NodeStats_SizeAllocNodes(PRODSF)  + \
     NodeStats_SizeAllocNodes(CONSSF)  +  NodeStats_SizeAllocNodes(ALN)  +   \
     NodeStats_SizeAllocNodes(TSTN)  +  HashStats_SizeAllocTotal(TSTHT)  +   \
-    NodeStats_SizeAllocNodes(TSI) )
+    NodeStats_SizeAllocNodes(TSI)   +  NodeStats_SizeAllocNodes(ASI) )
 
 #define CurrentTotalTableSpaceUsed(BTN,BTHT,VARSF,PRODSF,CONSSF,	  \
-				   ALN,TSTN,TSTHT,TSI) 			  \
+				   ALN,TSTN,TSTHT,TSI,ASI)		\
   ( NodeStats_SizeUsedNodes(BTN)  +  HashStats_SizeUsedTotal(BTHT)  +	  \
     NodeStats_SizeUsedNodes(VARSF)  +  NodeStats_SizeUsedNodes(PRODSF)  + \
     NodeStats_SizeUsedNodes(CONSSF)  +  NodeStats_SizeUsedNodes(ALN)  +	  \
     NodeStats_SizeUsedNodes(TSTN)  +  HashStats_SizeUsedTotal(TSTHT)  +   \
-    NodeStats_SizeUsedNodes(TSI) )
+    NodeStats_SizeUsedNodes(TSI)   +  NodeStats_SizeUsedNodes(ASI) )
 
 #else
 
-#define CurrentTotalTableSpaceAlloc(BTN,BTHT,VARSF,PRODSF,CONSSF,	    \
-				    ALN,TSTN,TSTHT,TSI)			    \
-  ( NodeStats_SizeAllocNodes(BTN)  +  HashStats_SizeAllocTotal(BTHT)  +	    \
-    NodeStats_SizeAllocNodes(VARSF)  +  NodeStats_SizeAllocNodes(PRODSF)  + \
-    NodeStats_SizeAllocNodes(CONSSF)  +  NodeStats_SizeAllocNodes(ALN)  +   \
-    NodeStats_SizeAllocNodes(TSTN)  +  HashStats_SizeAllocTotal(TSTHT)  +   \
-    NodeStats_SizeAllocNodes(TSI) )
-
-#define CurrentTotalTableSpaceUsed(BTN,BTHT,VARSF,PRODSF,CONSSF,	  \
-				   ALN,TSTN,TSTHT,TSI) 			  \
-  ( NodeStats_SizeUsedNodes(BTN)  +  HashStats_SizeUsedTotal(BTHT)  +	  \
-    NodeStats_SizeUsedNodes(VARSF)  +  NodeStats_SizeUsedNodes(PRODSF)  + \
-    NodeStats_SizeUsedNodes(CONSSF)  +  NodeStats_SizeUsedNodes(ALN)  +	  \
-    NodeStats_SizeUsedNodes(TSTN)  +  HashStats_SizeUsedTotal(TSTHT)  +   \
-    NodeStats_SizeUsedNodes(TSI) )
-
-#define CurrentSharedTableSpaceAlloc(BTN,BTHT,VARSF,ALN)		\
-  ( NodeStats_SizeAllocNodes(BTN)  +  HashStats_SizeAllocTotal(BTHT)  +	    \
-    NodeStats_SizeAllocNodes(VARSF)  +  NodeStats_SizeAllocNodes(ALN) )
+#define CurrentSharedTableSpaceAlloc(BTN,BTHT,VARSF,ALN,ASI)		\
+  ( NodeStats_SizeAllocNodes(BTN)  +  HashStats_SizeAllocTotal(BTHT)  +	\
+    NodeStats_SizeAllocNodes(VARSF)  +  NodeStats_SizeAllocNodes(ALN)	\
+    + NodeStats_SizeAllocNodes(ASI) )
 
 #define CurrentPrivateTableSpaceAlloc(BTN,BTHT,VARSF,PRODSF,CONSSF,	    \
-				    ALN,TSTN,TSTHT,TSI)			    \
+				      ALN,TSTN,TSTHT,TSI,ASI)		\
   ( NodeStats_SizeAllocNodes(BTN)  +  HashStats_SizeAllocTotal(BTHT)  +	    \
     NodeStats_SizeAllocNodes(VARSF)  +  NodeStats_SizeAllocNodes(PRODSF)  + \
     NodeStats_SizeAllocNodes(CONSSF)  +  NodeStats_SizeAllocNodes(ALN)  +   \
     NodeStats_SizeAllocNodes(TSTN)  +  HashStats_SizeAllocTotal(TSTHT)  +   \
-    NodeStats_SizeAllocNodes(TSI) )
+    NodeStats_SizeAllocNodes(TSI) + NodeStats_SizeAllocNodes(ASI) )
 
-#define CurrentSharedTableSpaceUsed(BTN,BTHT,VARSF,ALN)			\
+#define CurrentSharedTableSpaceUsed(BTN,BTHT,VARSF,ALN,ASI)		\
   ( NodeStats_SizeUsedNodes(BTN)  +  HashStats_SizeUsedTotal(BTHT)  +	\
-    NodeStats_SizeUsedNodes(VARSF) + NodeStats_SizeUsedNodes(ALN) )
+    NodeStats_SizeUsedNodes(VARSF) + NodeStats_SizeUsedNodes(ALN)	\
+    + NodeStats_SizeUsedNodes(ASI) )
 
-#define CurrentPrivateTableSpaceUsed(BTN,BTHT,VARSF,PRODSF,CONSSF,	  \
-				   ALN,TSTN,TSTHT,TSI) 			  \
+#define CurrentPrivateTableSpaceUsed(BTN,BTHT,VARSF,PRODSF,CONSSF,	\
+				     ALN,TSTN,TSTHT,TSI,ASI)		\
   ( NodeStats_SizeUsedNodes(BTN)  +  HashStats_SizeUsedTotal(BTHT)  +	  \
     NodeStats_SizeUsedNodes(VARSF)  +  NodeStats_SizeUsedNodes(PRODSF)  + \
     NodeStats_SizeUsedNodes(CONSSF)  +  NodeStats_SizeUsedNodes(ALN)  +	  \
     NodeStats_SizeUsedNodes(TSTN)  +  HashStats_SizeUsedTotal(TSTHT)  +   \
-    NodeStats_SizeUsedNodes(TSI) )
+    NodeStats_SizeUsedNodes(ASI) + NodeStats_SizeUsedNodes(ASI) )
 
 #endif
 
@@ -205,7 +192,7 @@ void update_maximum_tablespace_stats(NodeStats *btn, HashStats *btht,
 				     NodeStats *varsf, NodeStats *prodsf,
 				     NodeStats *conssf, NodeStats *aln,
 				     NodeStats *tstn, HashStats *tstht,
-				     NodeStats *tsi);
+				     NodeStats *tsi,NodeStats *asi);
 
 /* Read Currently Recorded Maximum Values
    -------------------------------------- */

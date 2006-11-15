@@ -478,6 +478,8 @@ int xsb_thread_self()
 extern void release_private_tabling_resources(CTXTdecl);
 extern void abolish_private_tables(CTXTdecl);
 extern void abolish_shared_tables(CTXTdecl);
+extern void abolish_all_private_tables(CTXTdecl);
+extern void abolish_all_shared_tables(CTXTdecl);
 
 xsbBool xsb_thread_request( CTXTdecl ) 
 {
@@ -506,6 +508,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  rval = ptoc_int(CTXTc 2 ) ;
 	  release_held_mutexes(CTXT);
 	  release_private_tabling_resources(CTXT);
+	  abolish_private_wfs_space(CTXT);
 	  release_private_dynamic_resources(CTXT);
 	  close_str(CTXT) ;
 	  cleanup_thread_structures(CTXT) ;
@@ -783,6 +786,16 @@ xsbBool xsb_thread_request( CTXTdecl )
 	case MUTEX_UNLOCK_ALL: 
 	  mutex_unlock_all(CTXT);
 	  break;
+
+	case ABOLISH_ALL_PRIVATE_TABLES: {
+	  abolish_all_private_tables(CTXT);
+	  break;
+	}
+
+	case ABOLISH_ALL_SHARED_TABLES: {
+	  abolish_all_shared_tables(CTXT);
+	  break;
+	}
 
 	default:
 	  rc = 0 ; /* Keep compiler happy */

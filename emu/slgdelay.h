@@ -103,12 +103,12 @@ typedef struct AS_info ASI_Node;
 #define ASIs_PER_BLOCK  256
 
 /*
-#define create_as_info(ANS, SUBG)		\
-    asi = (ASI) mem_alloc(sizeof(struct AS_info),TABLE_SPACE);	\
-    Child(ANS) = (NODEptr) asi;			\
-    asi_pdes(asi) = NULL;			\
-    asi_subgoal(asi) = SUBG;			\
-    asi_dl_list(asi) = NULL
+| #define create_as_info(ANS, SUBG)		\
+|     asi = (ASI) mem_alloc(sizeof(struct AS_info),TABLE_SPACE);	\
+|     Child(ANS) = (NODEptr) asi;			\
+|     asi_pdes(asi) = NULL;			\
+|     asi_subgoal(asi) = SUBG;			\
+|     asi_dl_list(asi) = NULL
 */
 
 /*--------------------------------------------------------------------*/
@@ -203,9 +203,9 @@ struct pos_neg_de_list {
  * a pointer to the list of DLs for ANS.
  */
 
-#define mark_conditional_answer(ANS, SUBG, NEW_DL)			\
+#define mark_conditional_answer(ANS, SUBG, NEW_DL,STRUCT_MGR)		\
   if (Child(ANS) == NULL) {						\
-    create_as_info(ANS, SUBG);						\
+    create_as_info(STRUCT_MGR,ANS, SUBG);				\
   }									\
   else {								\
     asi = Delay(ANS);							\
@@ -243,20 +243,29 @@ extern void do_delay_stuff(NODEptr, VariantSF, xsbBool);
 #else
 struct th_context;
 extern void abolish_wfs_space(struct th_context *);
+extern void abolish_private_wfs_space(struct th_context *);
 extern void simplify_neg_fails(struct th_context *, VariantSF);
 extern void do_delay_stuff(struct th_context *, NODEptr, VariantSF, xsbBool);
 #endif
-extern unsigned long allocated_de_space(int * num_blocks);
 extern unsigned long unused_de_space(void);
-extern unsigned long allocated_dl_space(int * num_blocks);
 extern unsigned long unused_dl_space(void);
+extern unsigned long unused_pnde_space(void);
+extern unsigned long allocated_de_space(char *,int * num_blocks);
+extern unsigned long allocated_dl_space(char *,int * num_blocks);
+extern unsigned long allocated_pnde_space(char *,int * num_blocks);
 #ifndef MULTI_THREAD
 extern void simplify_pos_unsupported(NODEptr);
 #else
+extern unsigned long unused_de_space_private(struct th_context *);
+extern unsigned long unused_dl_space_private(struct th_context *);
+extern unsigned long unused_pnde_space_private(struct th_context *);
 extern void simplify_pos_unsupported(struct th_context *, NODEptr);
 #endif
 extern void release_all_dls(ASI);
 
+extern char *current_pnde_block_gl;
+extern char *current_de_block_gl;
+extern char *current_dl_block_gl;
 
 /*---------------------- end of file slgdelay.h ------------------------*/
 

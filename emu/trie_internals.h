@@ -1078,5 +1078,12 @@ extern TSTNptr tst_insert(CTXTdeclc TSTNptr root, TSTNptr start, Cell firstSym,
 
 /*===========================================================================*/
 
+/* defined here, because its difficult to include slgdelay.h everywhere I want. */
+
+extern Structure_Manager smASI;
+
+#define DLS_PER_BLOCK  2048
+#define DES_PER_BLOCK  2048
+#define PNDES_PER_BLOCK  2048
 
 #endif
