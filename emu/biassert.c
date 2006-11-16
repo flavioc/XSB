@@ -2881,6 +2881,43 @@ static void mark_for_deletion(CTXTdeclc ClRef Clause)
    we can actually delete the clause.  Otherwise, we make a frame on
    the delcf list. */
 
+// #define RETRACT_EXPERIMENT 1
+
+#ifdef RETRACT_EXPERIMENT
+unsigned long retract_num = 0;
+
+#define time_to_dyngc \
+  ((((CPtr) tcpstack.high - top_of_cpstack) < 100000) ? \
+   !(retract_num && 0x15): !(retract_num && 0x255))
+
+static void retract_clause(CTXTdeclc ClRef Clause, Psc psc ) { 
+  PrRef prref; 
+
+  retract_num++;
+
+  if (time_to_dyngc) {
+    gc_dynamic(CTXT);    // part of gc strategy -- dont know how good
+  }
+
+  mark_for_deletion(CTXTc Clause);
+
+// retracting only if unifying -- dont worry abt. NULL return for d_to_p 
+  prref = dynpredep_to_prref(CTXTc get_ep(psc));
+  //    fprintf(stderr,"Delaying retract of clref in use: %s/%d\n",
+  //    get_name(psc),get_arity(psc));
+
+#ifndef MULTI_THREAD
+  check_insert_private_delcf_clause(prref,psc,Clause);
+#else
+  if (!get_shared(psc)) {
+    check_insert_private_delcf_clause(CTXT, prref,psc,Clause);
+  }
+  else {
+    check_insert_shared_delcf_clause(CTXT, prref,psc,Clause);
+  }
+#endif
+}
+#else
 static void retract_clause(CTXTdeclc ClRef Clause, Psc psc ) { 
   PrRef prref; 
   int really_deleted = 0;
@@ -2916,7 +2953,7 @@ static void retract_clause(CTXTdeclc ClRef Clause, Psc psc ) {
 #endif
   }
 }
-
+#endif
 
 /***
  *** Entry points for CLAUSE/RETRACT predicates
