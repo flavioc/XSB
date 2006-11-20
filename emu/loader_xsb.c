@@ -975,11 +975,11 @@ byte *loader(CTXTdeclc char *file, int exp)
 | 
 |   SYS_MUTEX_LOCK( MUTEX_TABLE );
 |   for (tdispblk=tdispblkhdr.firstDB ; tdispblk != NULL ; tdispblk=tdispblk->NextDB) {
-|     if (th->tid <= tdispblk->MaxThread) {
-|       tip = (&(tdispblk->Thread0))[th->tid];
+|     if (xsb_thread_entry <= tdispblk->MaxThread) {
+|       tip = (&(tdispblk->Thread0))[xsb_thread_entry];
 |       if (tip) {
 | 	delete_predicate_table(CTXTc tip);
-| 	(&(tdispblk->Thread0))[th->tid] = (TIFptr) NULL;
+| 	(&(tdispblk->Thread0))[xsb_thread_entry] = (TIFptr) NULL;
 |       }
 |     }
 |   }

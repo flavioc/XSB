@@ -50,6 +50,14 @@ typedef pthread_t pthread_t_p;
 #define PTHREAD_KILL(a,s) pthread_kill(a,s);
 #endif
 
+#define INC_MASK_RIGHT			0x3ff
+#define INC_MASK			0x3ff00000
+#define ENTRY_MASK			0x000fffff
+
+#define THREAD_ENTRY(TID)		((TID)&ENTRY_MASK)
+#define THREAD_INCARN(TID)		(((TID)&INC_MASK)>>20)
+#define SET_THREAD_INCARN(TID,INC)	((TID) = ((TID & ~INC_MASK) | (((INC)<<20) & INC_MASK)))
+
 typedef struct Mutex_Frame {
   pthread_mutex_t th_mutex; 
   int num_locks;
@@ -78,7 +86,7 @@ extern pthread_mutex_t completing_mut;
 extern pthread_cond_t completing_cond;
 
 extern pthread_attr_t detached_attr_gl;
-extern pthread_attr_t normal_attr_gl;
+extern pthread_attr_t normal_attr_gl; 
 
 #define PROFILE_MUTEXES 1
 #ifdef PROFILE_MUTEXES
@@ -153,18 +161,3 @@ th_context *find_context( int tid );
 #endif
 
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

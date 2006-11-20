@@ -5,7 +5,8 @@
 #define _CONC_COMPL_H_
 
 #ifdef CONC_COMPL
-#define MAX_TDEP_LIST 100
+
+#define MAX_THREAD_DEPS		256
 
 struct subgoal_frame ;
 
@@ -19,7 +20,7 @@ ThreadDep ;
 typedef
 struct {
 int		NumDeps ;
-ThreadDep 	Deps[MAX_TDEP_LIST];
+ThreadDep 	Deps[MAX_THREAD_DEPS];
 } ThreadDepList ;
 
 int EmptyThreadDepList( ThreadDepList *TDL ) ; 

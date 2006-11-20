@@ -86,7 +86,7 @@ static CPtr sched_answers(CTXTdeclc VariantSF producer_sf, CPtr *last_consumer)
     else
       while ( IsNonNULL(consumer_cpf) ) {
 #ifdef CONC_COMPL
-	if( int_val(nlcp_tid(consumer_cpf)) != th->tid )
+	if( int_val(nlcp_tid(consumer_cpf)) != xsb_thread_id )
 		;
 	else
 #endif

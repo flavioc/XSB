@@ -68,13 +68,13 @@ static void reset_thread( th_context *th, th_context *ctxt, VariantSF sgf,
 	/* if the subgoal has not yet been computed, the
 	   thread should not be reset */
 	if( subg_grabbed(sgf) )
-	{	subg_tid(sgf) = th->tid ;
+	{	subg_tid(sgf) = xsb_thread_id ;
 		return ;
 	}
 	ctxt->reset_thread = TRUE ;
 	sgf = bottom_leader(ctxt, sgf) ;
         *resetsgf = sgf ;
-	ReclaimDSandMarkReset(ctxt, sgf, th->tid);
+	ReclaimDSandMarkReset(ctxt, sgf, xsb_thread_id);
 	/* trick to use other thread's context */
 	th = ctxt ;
         /* reset the stacks by restoring the generator cp of this sg */

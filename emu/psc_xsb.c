@@ -224,10 +224,10 @@ TIFptr get_tip(CTXTdeclc Psc psc) {
   if (TIF_EvalMethod(*tip) != DISPATCH_BLOCK) return *tip;
   /* *tip points to 3rd word in TDispBlk, so get addr of TDispBlk */
   { struct TDispBlk_t *tdispblk = (struct TDispBlk_t *) (*tip);
-    TIFptr rtip = (TIFptr)((&(tdispblk->Thread0))[th->tid]);
+    TIFptr rtip = (TIFptr)((&(tdispblk->Thread0))[xsb_thread_entry]);
     if (!rtip) {
       rtip = New_TIF(CTXTc psc);
-      (&(tdispblk->Thread0))[th->tid] = rtip;
+      (&(tdispblk->Thread0))[xsb_thread_entry] = rtip;
     }
     return rtip; 
   }

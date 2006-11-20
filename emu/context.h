@@ -402,6 +402,7 @@ typedef struct th_context th_context ;
 
 
 #define xsb_thread_id           (th -> tid)
+#define xsb_thread_entry        (THREAD_ENTRY(th -> tid))
 
 #define call_intercept		(th->_call_intercept)
 

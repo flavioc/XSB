@@ -242,14 +242,14 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
      {  
         /* if is leader and subgoal is marked to be computed by leader */
         if( th->deadlock_brk_leader && subg_grabbed(producer_sf) )
-        {       subg_tid(producer_sf) = th->tid ;
+        {       subg_tid(producer_sf) = xsb_thread_id ;
                 subg_grabbed(producer_sf) = FALSE ;
                 grabbed = TRUE ;
                 break ;
         }
 	table_tid = subg_tid(producer_sf) ;
         /* if the thread owns the table, proceed */
-	if (table_tid == th->tid) 
+	if (table_tid == xsb_thread_id) 
 		break ;
 	waiting_for_thread = find_context(table_tid) ;
 	if( would_deadlock( waiting_for_thread, th ) )
@@ -283,7 +283,7 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
     {
       producer_sf = NewProducerSF(CTXTc CallLUR_Leaf(lookupResults),
 				   CallInfo_TableInfo(callInfo));
-      subg_tid(producer_sf) = th->tid;
+      subg_tid(producer_sf) = xsb_thread_id;
       subg_grabbed(producer_sf) = 0;
       UNLOCK_CALL_TRIE() ;
     }
@@ -300,7 +300,7 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
 				 CallInfo_TableInfo(callInfo));
 #endif /* !SHARED_COMPL_TABLES */
 #ifdef CONC_COMPL
-    subg_tid(producer_sf) = th->tid;
+    subg_tid(producer_sf) = xsb_thread_id;
     subg_tag(producer_sf) = INCOMP_ANSWERS;
 #endif
     UNLOCK_CALL_TRIE() ;
@@ -463,7 +463,7 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
 
     /* with variant tabling and thus in CONC_COMPL shared tables, 
        producer_sf == consumer_sf */
-    if( subg_tid(producer_sf) == th->tid )
+    if( subg_tid(producer_sf) == xsb_thread_id )
     {
 #endif
     adjust_level(subg_compl_stack_ptr(producer_sf));
@@ -505,9 +505,9 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
 		breg,nlcp_prevbreg(breg)));
 
 #ifdef CONC_COMPL
-    nlcp_tid(consumer_cpf) = makeint(th->tid);
+    nlcp_tid(consumer_cpf) = makeint(xsb_thread_id);
 
-    if( subg_tid(producer_sf) != th->tid )
+    if( subg_tid(producer_sf) != xsb_thread_id )
     {
 	push_completion_frame(producer_sf);
 	compl_ext_cons(openreg) = consumer_cpf;

@@ -85,6 +85,7 @@ typedef struct
 	pthread_t *	tid_addr;
 #endif
 	int		valid;
+	unsigned int	incarn;
 	int		detached ;
 	th_context *	ctxt ;
 } xsb_thread_t ;
@@ -131,10 +132,21 @@ char *mutex_names[] = {
 
 th_context *find_context( int id )
 {
-	if (th_vec[id].valid)
-		return th_vec[id].ctxt;
+	if (th_vec[THREAD_ENTRY(id)].valid && th_vec[THREAD_ENTRY(id)].incarn == THREAD_INCARN(id))
+		return th_vec[THREAD_ENTRY(id)].ctxt;
 	else
 		return NULL;
+}
+
+static void init_thread_table(void)
+{
+	int i ;
+	for( i = 0; i < MAX_THREADS; i++ )
+	{
+		th_vec[i].valid = 0;
+		th_vec[i].incarn = INC_MASK_RIGHT;
+//		th_vec[i].incarn = 0;
+	}
 }
 
 /*-------------------------------------------------------------------------*/
@@ -171,6 +183,7 @@ static int th_new( pthread_t_p t, th_context *ctxt )
 
 	pos->ctxt = ctxt ;
 	pos->valid = 1;
+	pos->incarn = (pos->incarn+1) & (INC_MASK_RIGHT);
 #ifdef WIN_NT
 	pos->tid = *t;
 	pos->tid_addr = t;
@@ -206,12 +219,15 @@ static void *xsb_thread_run( void *arg )
 {
         pthread_t tid;
 	th_context *ctxt = (th_context *)arg ;
+	int pos ;
 
 	pthread_mutex_lock( &th_mutex );
 	tid = pthread_self();
 /* if the xsb thread id was just created we need to re-initialize it on the
    thread context */
-	ctxt->tid = th_new( P_PTHREAD_T_P, ctxt ) ;
+	ctxt->tid = pos = th_new( P_PTHREAD_T_P, ctxt ) ;
+	SET_THREAD_INCARN(ctxt->tid, th_vec[pos].incarn ) ;
+
 	pthread_mutex_unlock( &th_mutex );
 	emuloop( ctxt, get_ep((Psc)flags[THREAD_RUN]) ) ;
 
@@ -235,7 +251,7 @@ static int xsb_thread_create(th_context *th)
   Cell goal ;
   th_context *new_th_ctxt ;
   pthread_t_p thr ;
-  Integer id ;
+  Integer id, pos ;
        
   goal = ptoc_tag(th, 2) ;
   new_th_ctxt = mem_alloc(sizeof(th_context),THREAD_SPACE) ;
@@ -280,9 +296,10 @@ static int xsb_thread_create(th_context *th)
 
 /* This repetition of the call to th_new is need for concurrency reasons */
   pthread_mutex_lock( &th_mutex );
-  id = th_new( thr, new_th_ctxt ) ;
+  id = pos = th_new( thr, new_th_ctxt ) ;
+  SET_THREAD_INCARN(id, th_vec[pos].incarn ) ;
 
-  if (is_detached) th_vec[id].detached = 1;
+  if (is_detached) th_vec[pos].detached = 1;
 
   pthread_mutex_unlock( &th_mutex );
 
@@ -296,6 +313,8 @@ static int xsb_thread_create(th_context *th)
 void init_system_threads( th_context *ctxt )
 {
   pthread_t tid = pthread_self();
+
+  init_thread_table();
   th_new(P_PTHREAD_T_P, ctxt) ;
 }
 
@@ -460,11 +479,12 @@ void print_mutex_use() {
 int xsb_thread_self()
 {
 #ifdef MULTI_THREAD
-	int id;
+	int pos, id;
         pthread_t tid = pthread_self();
 
         pthread_mutex_lock( &th_mutex );
-        id = th_find( P_PTHREAD_T_P ) ;
+        id = pos = th_find( P_PTHREAD_T_P ) ;
+	SET_THREAD_INCARN( id, th_vec[pos].incarn ) ;
         pthread_mutex_unlock( &th_mutex );
 	return id;
 #else
@@ -531,7 +551,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 	case XSB_THREAD_JOIN: {
 	  id = ptoc_int( CTXTc 2 ) ;
 	  pthread_mutex_lock( &th_mutex );
-	  tid = th_get( id ) ;
+	  tid = th_get( THREAD_ENTRY(id) ) ;
 	  pthread_mutex_unlock( &th_mutex );
 	  if( tid == (pthread_t_p)0 )
 	    xsb_existence_error(CTXTc "thread",reg[2],"xsb_thread_join",1,1); 
@@ -549,7 +569,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  }
 
 	  pthread_mutex_lock( &th_mutex );
-	  th_delete(id);
+	  th_delete(THREAD_ENTRY(id));
 	  pthread_mutex_unlock( &th_mutex );
 	  ctop_int( CTXTc 3, rval ) ;
 	  break ;
@@ -558,7 +578,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 	case XSB_THREAD_DETACH:
 	  id = ptoc_int( CTXTc 2 ) ;
 	  pthread_mutex_lock( &th_mutex );
-	  tid = th_get( id ) ;
+	  tid = th_get( THREAD_ENTRY(id) ) ;
 	  if( tid == (pthread_t_p)0 )
 	    xsb_abort( "[THREAD] Thread detach - invalid thread id" );
 	  pthread_mutex_unlock( &th_mutex );
@@ -572,7 +592,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 				  "xsb_thread_detach",1,1); 
 	    }
 	  }
-	  th_vec[id].detached = 1;
+	  th_vec[THREAD_ENTRY(id)].detached = 1;
 	  break ;
 
        case XSB_THREAD_SELF:
@@ -724,7 +744,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 
 	  /* TLS: may generalize -- right now, just detached/joinable */
 	case XSB_THREAD_PROPERTY: 
-	  ctop_int(CTXTc 3, th_vec[ ptoc_int(CTXTc 2) ].detached);
+	  ctop_int(CTXTc 3, th_vec[ THREAD_ENTRY(ptoc_int(CTXTc 2)) ].detached);
 	  break;
 
 	  /* for now, one interrupt, but possibly we should allow
@@ -733,13 +753,13 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  th_context *	ctxt_ptr ;
 
 	  i = ptoc_int(CTXTc 2);
-	  if (th_vec[i].valid) {
-	    ctxt_ptr = th_vec[i].ctxt;
+	  if (th_vec[THREAD_ENTRY(i)].valid) {
+	    ctxt_ptr = th_vec[THREAD_ENTRY(i)].ctxt;
 	    ctxt_ptr->_asynint_val |= THREADINT_MARK;
 #ifdef WIN_NT
-	    PTHREAD_KILL( th_vec[i].tid_addr, SIGINT );
+	    PTHREAD_KILL( th_vec[THREAD_ENTRY(i)].tid_addr, SIGINT );
 #else
-	    PTHREAD_KILL( th_vec[i].tid, SIGINT );
+	    PTHREAD_KILL( th_vec[THREAD_ENTRY(i)].tid, SIGINT );
 #endif
 	  } else {
 	    bld_int(reg+2,i);

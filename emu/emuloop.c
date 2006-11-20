@@ -96,19 +96,19 @@ CPtr	ans_var_pos_reg;
 Creates a log-file for each thread, and
 Logs calls and executes to it.
 */
-FILE *th_log_file[100] = {NULL};
-int th_log_cnt[100] = {0};
+FILE *th_log_file[MAX_THREADS] = {NULL};
+int th_log_cnt[MAX_THREADS] = {0};
 
 void open_th_log_file(int tid) {
   char fname[100];
   sprintf(fname,"temp_th_log_file_%d",tid);
-  th_log_file[tid] = fopen(fname,"w");
+  th_log_file[THREAD_ENTRY(tid)] = fopen(fname,"w");
   return;
 }
 
 void log_rec(CTXTdeclc Psc psc, char *ctype) {
-    if (!th_log_file[th->tid]) open_th_log_file(th->tid);
-    fprintf(th_log_file[th->tid],"inst(%d,%s,'%s',%d).\n",++th_log_cnt[th->tid],ctype,get_name(psc),get_arity(psc));
+    if (!th_log_file[xsb_thread_id]) open_th_log_file(xsb_thread_id);
+    fprintf(th_log_file[xsb_thread_entry],"inst(%d,%s,'%s',%d).\n",++th_log_cnt[xsb_thread_entry],ctype,get_name(psc),get_arity(psc));
     return;
 }
 #endif
@@ -1245,9 +1245,9 @@ contcase:     /* the main loop */
 #ifdef MULTI_THREAD
     Def1op
     Op1(get_xxxl);
-    if (th->tid > *((long *)op1+2)) Fail1;
+    if (xsb_thread_entry > *((long *)op1+2)) Fail1;
     //    fprintf(stderr,"switchonthread to %p\n",(pb)(*((long *)op1+3+(th->tid))));
-    if (!(lpcreg = (pb)(*((long *)op1+3+(th->tid))))) Fail1;
+    if (!(lpcreg = (pb)(*((long *)op1+3+(xsb_thread_entry))))) Fail1;
 #else
     xsb_exit("Not configured for Multithreading");
 #endif

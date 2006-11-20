@@ -55,7 +55,7 @@ static int check_ins_subg( ThreadDepList *TDL, VariantSF subg )
 		else
 			i++ ;
 	}
-	if( TDL->NumDeps == MAX_TDEP_LIST - 1 )
+	if( TDL->NumDeps == MAX_THREAD_DEPS - 1 )
 		xsb_abort( "Too many inter-thread dependencies" );
 
 	GetDepSubgoal(&TDL->Deps[TDL->NumDeps++]) = subg ;
@@ -115,7 +115,7 @@ static void PropagateDeps( th_context *th, th_context *dep_th,
     dep = GetInitDep(&dep_th->TDL); 
     while( dep != NULL )
     {   sgf = GetDepSubgoal(dep) ;
-	if( subg_tid(sgf) == th->tid )
+	if( subg_tid(sgf) == xsb_thread_id )
 	{
 	    if( subg_compl_stack_ptr(sgf) > *leader )
 		*leader = subg_compl_stack_ptr(sgf) ;

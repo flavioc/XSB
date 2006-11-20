@@ -106,9 +106,9 @@ struct DispBlkHdr_t {
    table wrapper */
 
 CPtr dynpredep_to_prortb(CTXTdeclc void *pred_ep) {
-    if (th->tid > (((struct DispBlk_t **)pred_ep)[1])->MaxThread) 
+    if (xsb_thread_entry > (((struct DispBlk_t **)pred_ep)[1])->MaxThread) 
       xsb_abort("Dynamic Dispatch block too small");
-    return (CPtr) ((&((struct DispBlk_t **)pred_ep)[1]->Thread0)[th->tid]);
+    return (CPtr) ((&((struct DispBlk_t **)pred_ep)[1]->Thread0)[xsb_thread_entry]);
 }
 #endif
 
@@ -122,9 +122,9 @@ CPtr dynpredep_to_prortb(CTXTdeclc void *pred_ep) {
 PrRef dynpredep_to_prref(CTXTdeclc void *pred_ep) {
 #ifdef MULTI_THREAD
   if (cell_opcode((CPtr)(pred_ep)) == switchonthread) {
-    if (th->tid > (((struct DispBlk_t **)pred_ep)[1])->MaxThread) 
+    if (xsb_thread_entry > (((struct DispBlk_t **)pred_ep)[1])->MaxThread) 
       xsb_abort("Dynamic Dispatch block too small");
-    pred_ep = (pb) (&((struct DispBlk_t **)pred_ep)[1]->Thread0)[th->tid];
+    pred_ep = (pb) (&((struct DispBlk_t **)pred_ep)[1]->Thread0)[xsb_thread_entry];
   }
   if (!pred_ep) return NULL;
 #endif
@@ -2731,16 +2731,16 @@ void thread_free_dyn_blks(CTXTdecl) {
   //  printf("Enter thread_free_dyn_blks\n");
   SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
   for (dispblk=DispBlkHdr.firstDB ; dispblk != NULL ; dispblk=dispblk->NextDB) {
-    if (th->tid <= dispblk->MaxThread) {
-      prref0 = (PrRef)(&(dispblk->Thread0))[th->tid];
+    if (xsb_thread_entry <= dispblk->MaxThread) {
+      prref0 = (PrRef)(&(dispblk->Thread0))[xsb_thread_entry];
       if (prref0) {
 	if (cell_opcode((CPtr *)prref0) == tabletrysingle) 
 	  prref = (PrRef)((CPtr *)prref0)[6];
 	else prref = prref0;
 	retractall_prref(CTXTc prref);
 	free_private_prref(CTXTc (CPtr *)prref0);
-	//	printf("set prref free for thread %d\n",th->tid);
-       	(&(dispblk->Thread0))[th->tid] = (CPtr) NULL;
+	//	printf("set prref free for thread %d\n",xsb_thread_id);
+       	(&(dispblk->Thread0))[xsb_thread_entry] = (CPtr) NULL;
       }
     }
   }
@@ -3262,8 +3262,8 @@ PrRef build_prref( CTXTdeclc Psc psc )
       /* add to dispblock if room, extending if nec */
       dispblk = (struct DispBlk_t *)*((CPtr)get_ep(psc)+1);
     }
-    if (dispblk->MaxThread >= th->tid) {
-      (&(dispblk->Thread0))[th->tid] = (CPtr)new_ep;
+    if (dispblk->MaxThread >= xsb_thread_entry) {
+      (&(dispblk->Thread0))[xsb_thread_entry] = (CPtr)new_ep;
     } else xsb_exit("must expand dispatch-block");
   } else set_ep(psc,new_ep);
 #else
@@ -3291,8 +3291,8 @@ PrRef get_prref(CTXTdeclc Psc psc) {
       pb new_ep;
       struct DispBlk_t *dispblk = ((struct DispBlk_t **)get_ep(psc))[1];
       allocate_prref_tab(CTXTc psc,&prref,&new_ep);
-      if (dispblk->MaxThread >= th->tid) {
-	(&(dispblk->Thread0))[th->tid] = (CPtr) new_ep;
+      if (dispblk->MaxThread >= xsb_thread_entry) {
+	(&(dispblk->Thread0))[xsb_thread_entry] = (CPtr) new_ep;
       } else {
 	//      SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
 	xsb_exit("must expand dispatch-block");

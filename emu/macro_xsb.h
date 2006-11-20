@@ -491,10 +491,10 @@ struct TDispBlk_t { /* first two fields must be same as Table_Info_Frame for coe
 };
 typedef struct TDispBlk_t *TDBptr;
  
-#define TIF_DispatchBlock(pTIF)	   ((TDBptr) (pTIF)->psc_ptr )
-#define TDB_MaxThread(pTDB)	   ( (pTDB)->MaxThread )
-#define TDB_TIFArray(pTDB)         ( (&(pTDB)->Thread0) )
-#define TDB_PrivateTIF(pTDB,tid)    ( TDB_TIFArray(pTDB)[(tid)] )
+#define TIF_DispatchBlock(pTIF)	   	((TDBptr) (pTIF)->psc_ptr )
+#define TDB_MaxThread(pTDB)	   	( (pTDB)->MaxThread )
+#define TDB_TIFArray(pTDB)         	( (&(pTDB)->Thread0) )
+#define TDB_PrivateTIF(pTDB,tid_pos)    ( TDB_TIFArray(pTDB)[(tid_pos)] )
 
 struct TDispBlkHdr_t {
   struct TDispBlk_t *firstDB;
@@ -507,13 +507,13 @@ struct TDispBlkHdr_t {
   if ( isPrivateTIF(tip) ) {						\
     TDBptr tdispblk;							\
     tdispblk = (TDBptr) tip;						\
-    if (th->tid > TDB_MaxThread(tdispblk))				\
+    if (xsb_thread_entry > TDB_MaxThread(tdispblk))				\
       xsb_abort("Table Dispatch block too small");			\
-    tip = TDB_PrivateTIF(tdispblk,th->tid);				\
+    tip = TDB_PrivateTIF(tdispblk,xsb_thread_entry);				\
     if (!tip) {								\
       /* this may not be possible, as it may always be initted in get_tip? */\
       tip = New_TIF(CTXTc tdispblk->psc_ptr);			\
-      TDB_PrivateTIF(tdispblk,th->tid) = tip;				\
+      TDB_PrivateTIF(tdispblk,xsb_thread_entry) = tip;				\
     }									\
   }
 
