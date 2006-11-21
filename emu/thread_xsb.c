@@ -92,7 +92,8 @@ typedef struct xsb_thread_s
 	th_context *		ctxt ;		/* NULL if invalid thread */
 } xsb_thread_t ;
 
-#define VALID_ENTRY(tid)	(th_vec[THREAD_ENTRY(tid)].incarn == THREAD_INCARN(tid)\
+#define VALID_THREAD(tid)	( tid >= 0 &&\
+				th_vec[THREAD_ENTRY(tid)].incarn == THREAD_INCARN(tid)\
 				&& th_vec[THREAD_ENTRY(tid)].ctxt != NULL)
 
 static xsb_thread_t *th_vec;
@@ -220,6 +221,9 @@ static pthread_t_p th_get( int i )
 {
 	int pos;
 	unsigned int incarn ;
+
+	if( i < 0 )
+		return (pthread_t_p)0 ;
 
 	pos    = THREAD_ENTRY(i) ;
 	incarn = THREAD_INCARN(i) ;
@@ -366,7 +370,7 @@ void init_system_threads( th_context *ctxt )
   init_thread_table();
   pos = th_new(P_PTHREAD_T_P, ctxt) ;
   if( pos != 0 )
-	xsb_abort( "[THREAD] Invalid Id for main thread" );
+	xsb_abort( "[THREAD] Error initializing thread table" );
 
 }
 
@@ -787,28 +791,28 @@ xsbBool xsb_thread_request( CTXTdecl )
 
 	case XSB_SET_INIT_GLSTACK_SIZE:
 	  i = ptoc_int(CTXTc 2) ;
-	  if( i < 0 )
+	  if( !VALID_THREAD(i) )
 		xsb_abort( "[THREAD] Invalid Thread Id" ) ;
 	  set_init_glstack_size(i);
 	  rc = 0;
 	  break;
 	case XSB_SET_INIT_TCPSTACK_SIZE:
 	  i = ptoc_int(CTXTc 2) ;
-	  if( i < 0 )
+	  if( !VALID_THREAD(i) )
 		xsb_abort( "[THREAD] Invalid Thread Id" ) ;
 	  set_init_tcpstack_size(i);
 	  rc = 0;
 	  break;
 	case XSB_SET_INIT_PDL_SIZE:
 	  i = ptoc_int(CTXTc 2) ;
-	  if( i < 0 )
+	  if( !VALID_THREAD(i) )
 		xsb_abort( "[THREAD] Invalid Thread Id" ) ;
 	  set_init_pdl_size(i);
 	  rc = 0;
 	  break;
 	case XSB_SET_INIT_COMPLSTACK_SIZE:
 	  i = ptoc_int(CTXTc 2) ;
-	  if( i < 0 )
+	  if( !VALID_THREAD(i) )
 		xsb_abort( "[THREAD] Invalid Thread Id" ) ;
 	  set_init_complstack_size(i);
 	  rc = 0;
@@ -817,7 +821,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  /* TLS: may generalize -- right now, just detached/joinable */
 	case XSB_THREAD_PROPERTY: 
 	  i = ptoc_int(CTXTc 2);
-	  if( i < 0 )
+	  if( !VALID_THREAD(i) )
 		xsb_abort( "[THREAD] Invalid Thread Id" ) ;
 	  ctop_int(CTXTc 3, th_vec[ THREAD_ENTRY(i) ].detached);
 	  break;
@@ -828,7 +832,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  th_context *	ctxt_ptr ;
 
 	  i = ptoc_int(CTXTc 2);
-	  if( VALID_ENTRY(i) ) {
+	  if( VALID_THREAD(i) ) {
 	    ctxt_ptr = th_vec[THREAD_ENTRY(i)].ctxt;
 	    ctxt_ptr->_asynint_val |= THREADINT_MARK;
 #ifdef WIN_NT
