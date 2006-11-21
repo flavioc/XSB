@@ -31,6 +31,7 @@
 
 #include "basictypes.h"
 #include "basicdefs.h"
+#include "auxlry.h"
 
 #include "cell_xsb.h"
 #include "register.h"
@@ -94,7 +95,7 @@ typedef struct xsb_thread_s
 #define VALID_ENTRY(tid)	(th_vec[THREAD_ENTRY(tid)].incarn == THREAD_INCARN(tid)\
 				&& th_vec[THREAD_ENTRY(tid)].ctxt != NULL)
 
-static xsb_thread_t th_vec[MAX_THREADS];
+static xsb_thread_t *th_vec;
 static xsb_thread_t *th_first_free, *th_last_free, *th_first_thread;
 
 extern void release_private_dynamic_resources(CTXTdecl);
@@ -145,14 +146,17 @@ th_context *find_context( int id )
 static void init_thread_table(void)
 {
 	int i ;
-	for( i = 0; i < MAX_THREADS; i++ )
+
+	th_vec = mem_calloc(max_threads_glc, sizeof(xsb_thread_t), OTHER_SPACE);
+
+	for( i = 0; i < max_threads_glc; i++ )
 	{
-		th_vec[i].incarn = INC_MASK_RIGHT; /* Effectively -1 */
+		th_vec[i].incarn = INC_MASK_RIGHT;	/* Effectively -1 */
 		th_vec[i].next_entry = &th_vec[i+1];
 		th_vec[i].ctxt = NULL;
 	}
 	th_first_free = &th_vec[0];
-	th_last_free = &th_vec[MAX_THREADS-1];
+	th_last_free = &th_vec[max_threads_glc-1];
 	th_last_free->next_entry = NULL;
 	th_first_thread = NULL;
 }

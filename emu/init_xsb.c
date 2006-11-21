@@ -428,10 +428,6 @@ char *init_para(CTXTdeclc int argc, char *argv[])
   char cmd_line_goal[MAXBUFSIZE+1] = "";
   int  strlen_instdir, strlen_initfile, strlen_2ndfile;
 
-#ifdef MULTI_THREAD
-  init_system_mutexes() ;
-  init_system_threads(th) ;
-#endif
 #ifdef SHARED_COMPL_TABLES
   num_deadlocks = 0;
 #endif
@@ -808,6 +804,12 @@ char *init_para(CTXTdeclc int argc, char *argv[])
   /* Other basic initializations
      --------------------------- */
   realtime_count_gl = real_time();
+
+  /* Multi Threaded Data Structure Initializations */
+#ifdef MULTI_THREAD
+  init_system_mutexes() ;
+  init_system_threads(th) ;
+#endif
 
   return ( (char *) flags[BOOT_MODULE] );
 

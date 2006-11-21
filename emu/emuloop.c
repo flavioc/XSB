@@ -96,8 +96,8 @@ CPtr	ans_var_pos_reg;
 Creates a log-file for each thread, and
 Logs calls and executes to it.
 */
-FILE *th_log_file[MAX_THREADS] = {NULL};
-int th_log_cnt[MAX_THREADS] = {0};
+FILE **th_log_file = NULL;
+int *th_log_cnt = NULL;
 
 void open_th_log_file(int tid) {
   char fname[100];
@@ -107,6 +107,10 @@ void open_th_log_file(int tid) {
 }
 
 void log_rec(CTXTdeclc Psc psc, char *ctype) {
+    if (!th_log_file) 
+    {	th_log_file = mem_calloc(max_threads_glc, sizeof(FILE *), OTHER_SPACE);
+    	th_log_cnt = mem_calloc(max_threads_glc, sizeof(int), OTHER_SPACE);
+    }
     if (!th_log_file[xsb_thread_id]) open_th_log_file(xsb_thread_id);
     fprintf(th_log_file[xsb_thread_entry],"inst(%d,%s,'%s',%d).\n",++th_log_cnt[xsb_thread_entry],ctype,get_name(psc),get_arity(psc));
     return;

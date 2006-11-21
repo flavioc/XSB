@@ -742,7 +742,7 @@ static void new_tdispblk(CTXTdeclc TIFptr *instr_ptr, Psc psc) {
   struct TDispBlk_t *tdispblk;
 
   if (!(tdispblk = (struct TDispBlk_t *) 
-	mem_calloc(sizeof(struct TDispBlk_t)+MAX_THREADS*sizeof(Cell),1,COMPILED_SPACE)))
+	mem_calloc(sizeof(struct TDispBlk_t)+max_threads_glc*sizeof(Cell),1,COMPILED_SPACE)))
     xsb_exit("No space for table dispatch block");  /* never deallocated */
   
   SYS_MUTEX_LOCK( MUTEX_TABLE );
@@ -754,7 +754,7 @@ static void new_tdispblk(CTXTdeclc TIFptr *instr_ptr, Psc psc) {
 
   tdispblk->psc_ptr = psc;
   tdispblk->method = DISPATCH_BLOCK;
-  tdispblk->MaxThread = MAX_THREADS;
+  tdispblk->MaxThread = max_threads_glc;
   *instr_ptr = (TIFptr)tdispblk;
 
   SYS_MUTEX_UNLOCK( MUTEX_TABLE );
