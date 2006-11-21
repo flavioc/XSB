@@ -198,13 +198,31 @@ static int th_new( pthread_t_p t, th_context *ctxt )
 	pos = th_first_free ;
 	th_first_free = th_first_free->next_entry ;
 
-	/* add to thread list */
-	pos->next_entry = th_first_thread ;
-	if( th_first_thread )
-		th_first_thread->prev_entry = pos ;
-	th_first_thread = pos ;
-	pos->prev_entry = NULL ;
+	/* add new entry to thread list */
+	/* keep it ordered in the same way as the table */
+	if ( th_first_thread == NULL || th_first_thread > pos )
+	{	/* insert at head */
+		if( th_first_thread != NULL )
+			th_first_thread->prev_entry = pos ;
+		pos->next_entry = th_first_thread ;
+		th_first_thread = pos ;
+		pos->prev_entry = NULL ;
+	}
+	else
+	{	xsb_thread_t *p;
 
+		p = th_first_thread ;
+		/* if p->next_entry == NULL the cycle stops */
+		while( pos < p->next_entry )
+			p = p->next_entry ;
+
+		/* p->next_entry is where we want to insert the entry */
+		pos->prev_entry = p;
+		pos->next_entry = p->next_entry;
+		p->next_entry = pos;
+		if( pos->next_entry != NULL )
+			pos->next_entry->prev_entry = pos;
+	}
 	pos->ctxt = ctxt ;
 	pos->incarn = (pos->incarn+1) & INC_MASK_RIGHT;
 #ifdef WIN_NT
