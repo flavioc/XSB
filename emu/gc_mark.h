@@ -820,6 +820,8 @@ int mark_heap(CTXTdeclc int arity, int *marked_dregs)
 {
   int avail_dreg_marks = 0, marked = 0;
 
+  SYS_MUTEX_LOCK(MUTEX_STACKS);
+
   /* the following seems unnecessary, but it is not !
      mark_heap() may be called directly and not only through gc_heap() */
   slide = (pflags[GARBAGE_COLLECT] == SLIDING_GC) |
@@ -859,7 +861,10 @@ int mark_heap(CTXTdeclc int arity, int *marked_dregs)
   heap_marks = (char * )mem_calloc(heap_marks_size,1,GC_SPACE);
   ls_marks   = (char * )mem_calloc(ls_bot - ls_top + 1,1,GC_SPACE);
   if ((! heap_marks) || (! ls_marks))
+  {
+    SYS_MUTEX_UNLOCK(MUTEX_STACKS);
     xsb_exit("Not enough core to perform garbage collection marking phase");
+  }
   
   heap_marks += 1; /* see its free; also note that heap_marks[-1] = 0 is
 		      needed for copying garbage collection see copy_block() */
@@ -913,6 +918,8 @@ int mark_heap(CTXTdeclc int arity, int *marked_dregs)
     marked += mark_hreg_from_choicepoints(CTXT);
 
   if (print_on_gc) print_all_stacks(CTXTc arity);
+
+  SYS_MUTEX_UNLOCK(MUTEX_STACKS);
 
   return marked ;
 } /* mark_heap */
