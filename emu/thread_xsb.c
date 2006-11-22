@@ -85,10 +85,11 @@ typedef struct xsb_thread_s
 #ifdef WIN_NT
 	pthread_t *		tid_addr;
 #endif
-	unsigned int		incarn;
 	struct xsb_thread_s	*next_entry,	/* either next free slot or next thread */
 				*prev_entry ;	/* only valid for slots used for threads */
-	int			detached ;
+	unsigned int		incarn : 12;
+	unsigned int		detached : 1;
+	unsigned int		exited : 1;
 	th_context *		ctxt ;		/* NULL if invalid thread */
 } xsb_thread_t ;
 
@@ -231,7 +232,8 @@ static int th_new( pthread_t_p t, th_context *ctxt )
 #else
 	pos->tid = t;
 #endif
-	pos->detached = 0;
+	pos->detached = FALSE;
+	pos->exited = FALSE;
 	return pos - th_vec ;
 }
 
@@ -366,7 +368,7 @@ static int xsb_thread_create(th_context *th)
 /* This repetition of the call to th_new is need for concurrency reasons */
   pthread_mutex_lock( &th_mutex );
   id = pos = th_new( thr, new_th_ctxt ) ;
-  if (pos >= 0 && is_detached) th_vec[pos].detached = 1;
+  if (pos >= 0 && is_detached) th_vec[pos].detached = TRUE;
   pthread_mutex_unlock( &th_mutex );
 
   if( pos == -1 )
@@ -622,8 +624,12 @@ xsbBool xsb_thread_request( CTXTdecl )
 #else
 	  i = th_find( tid2 ) ;
 #endif
-	  if( i >= 0 && th_vec[i].detached )
-	    th_delete(i);
+	  if( i >= 0 )
+	  {	if( th_vec[i].detached )
+	    		th_delete(i);
+		else
+	    		th_vec[i].exited = TRUE;
+	  }
 	  pthread_mutex_unlock( &th_mutex );
 	  if( i == -1 )
 		xsb_abort("[THREAD] Couldn't find thread in thread table!") ;
@@ -678,7 +684,15 @@ xsbBool xsb_thread_request( CTXTdecl )
 				  "xsb_thread_detach",1,1); 
 	    }
 	  }
-	  th_vec[THREAD_ENTRY(id)].detached = 1;
+
+	  id = THREAD_ENTRY(id) ;
+	  pthread_mutex_lock( &th_mutex );
+	  if( th_vec[id].exited )
+		th_delete(id) ;
+	  else
+	  	th_vec[THREAD_ENTRY(id)].detached = TRUE;
+	  pthread_mutex_unlock( &th_mutex );
+
 	  break ;
 
        case XSB_THREAD_SELF:

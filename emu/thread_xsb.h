@@ -51,13 +51,15 @@ typedef pthread_t pthread_t_p;
 #endif
 
 #define INC_MASK_RIGHT			0x3ff
-#define INC_MASK			0x3ff00000
+#define INC_SHIFT			20
+#define INC_MASK			(INC_MASK_RIGHT<<INC_SHIFT)
 #define ENTRY_MASK			0x000fffff
 
+
 #define THREAD_ENTRY(TID)		((TID)&ENTRY_MASK)
-#define THREAD_INCARN(TID)		(((TID)&INC_MASK)>>20)
+#define THREAD_INCARN(TID)		(((TID)&INC_MASK)>>INC_SHIFT)
 #define SET_THREAD_INCARN(TID,INC)	((TID) = ((TID & ~INC_MASK) |\
-					 (((INC)<<20) & INC_MASK)))
+					 (((INC)<<INC_SHIFT) & INC_MASK)))
 
 typedef struct Mutex_Frame {
   pthread_mutex_t th_mutex; 
