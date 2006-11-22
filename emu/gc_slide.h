@@ -49,7 +49,7 @@
 #define tr_set_unchained(p)      tr_marks[(p-tr_bot)] &= ~CHAIN_BIT
 #define tr_is_chained(p)         (tr_marks[(p-tr_bot)] & CHAIN_BIT)
 
-static void unchain(CPtr hptr, CPtr destination)
+static void unchain(CTXTdeclc CPtr hptr, CPtr destination)
 {
   CPtr start, pointsto ;
   int  whereto, tag ;
@@ -73,7 +73,7 @@ static void unchain(CPtr hptr, CPtr destination)
     {
       start = (CPtr)(*hptr) ;
       /* start is for sure a pointer - possibly with a tag */
-      pointsto = pointer_from_cell((Cell)start,&tag,&whereto) ;
+      pointsto = pointer_from_cell(CTXTc (Cell)start,&tag,&whereto) ;
       if (pointsto == NULL) xsb_exit("pointsto error during unchaining") ;
       switch (whereto)
 	{
@@ -263,7 +263,7 @@ static void sort_buffer(unsigned long *indata, unsigned long insize)
 
 #ifdef GC
 
-static CPtr slide_heap(int num_marked)
+static CPtr slide_heap(CTXTdeclc int num_marked)
 {
   int  tag ;
   Cell contents;
@@ -290,7 +290,7 @@ static CPtr slide_heap(int num_marked)
 	  continue;
 	tr_clear_mark(p-tr_bot);
 #endif
-	  q = trail_hp_pointer_from_cell(contents,&tag) ;
+	  q = trail_hp_pointer_from_cell(CTXTc contents,&tag) ;
 	  if (!q) continue ;
 	  if (! h_marked(q-heap_bot)) {
 	    continue ;
@@ -308,7 +308,7 @@ static CPtr slide_heap(int num_marked)
       endcp = cp_top ;
       for (p = cp_bot; p >= endcp ; p--)
 	{ contents = cell(p) ;
-	  q = hp_pointer_from_cell(contents,&tag) ;
+	  q = hp_pointer_from_cell(CTXTc contents,&tag) ;
 	  if (!q) continue ;
 	  if (! h_marked(q-heap_bot))
 	    { xsb_dbgmsg((LOG_DEBUG, "not marked from cp(%p)",p)); continue ; }
@@ -329,7 +329,7 @@ static CPtr slide_heap(int num_marked)
 	  if (! ls_marked(p-ls_top)) continue ;
 	  ls_clear_mark((p-ls_top)) ; /* chain bit cannot be on yet */
 	  contents = cell(p) ;
-	  q = hp_pointer_from_cell(contents,&tag) ;
+	  q = hp_pointer_from_cell(CTXTc contents,&tag) ;
 	  if (!q) continue ;
 	  if (! h_marked(q-heap_bot)) continue ;
 	  if (h_is_chained(q)) ls_set_chained(p) ;
@@ -364,9 +364,9 @@ static CPtr slide_heap(int num_marked)
 	hptr = slide_buf[i-1];
 
 	if (h_is_chained(hptr)) {
-	  unchain(hptr,destination);
+	  unchain(CTXTc hptr,destination);
 	}
-	p = hp_pointer_from_cell(*hptr,&tag);
+	p = hp_pointer_from_cell(CTXTc *hptr,&tag);
 	if (p &&(p<hptr)) {
 	  swap_with_tag(hptr,p,tag);
 	  if (h_is_chained(p))
@@ -394,9 +394,9 @@ static CPtr slide_heap(int num_marked)
 	    garbage = 0 ;
 	  }
 	  if (h_is_chained(hptr)) {
-	    unchain(hptr,destination) ; 
+	    unchain(CTXTc hptr,destination) ; 
 	  }
-	  p = hp_pointer_from_cell(*hptr,&tag) ;            
+	  p = hp_pointer_from_cell(CTXTc *hptr,&tag) ;            
 	  if (p && (p < hptr)) {
 	    swap_with_tag(hptr,p,tag) ;
 	    if (h_is_chained(p))
@@ -429,12 +429,12 @@ static CPtr slide_heap(int num_marked)
 	hptr = slide_buf[i];
 
 	if (h_is_chained(hptr)) {
-	  unchain(hptr,destination);
+	  unchain(CTXTc hptr,destination);
 	}
 	if ((Cell)(hptr) == *hptr) /* undef */
 	  bld_free(destination);
 	else {
-	  p = hp_pointer_from_cell(*hptr,&tag);
+	  p = hp_pointer_from_cell(CTXTc *hptr,&tag);
 	  *destination = *hptr;
 	  if (p && (p > hptr)) {
 	    swap_with_tag(destination,p,tag);
@@ -453,11 +453,11 @@ static CPtr slide_heap(int num_marked)
       while (hptr < heap_top) {
 	if (h_marked(hptr - heap_bot)) {
 	  if (h_is_chained(hptr))
-	    { unchain(hptr,destination) ; }
+	    { unchain(CTXTc hptr,destination) ; }
 	  if ((Cell)(hptr) == *hptr) /* UNDEF */
 	    bld_free(destination) ;
 	  else {
-	    p = hp_pointer_from_cell(*hptr,&tag) ;
+	    p = hp_pointer_from_cell(CTXTc *hptr,&tag) ;
 	    *destination = *hptr ;
 	    if (p && (p > hptr)) {
 	      swap_with_tag(destination,p,tag) ;

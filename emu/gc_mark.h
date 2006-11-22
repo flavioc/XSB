@@ -107,7 +107,7 @@ actually in the heap.
 */
 
 #ifdef GC
-inline static CPtr trail_hp_pointer_from_cell(Cell cell, int *tag)
+inline static CPtr trail_hp_pointer_from_cell(CTXTdeclc Cell cell, int *tag)
 {
   int t;
   CPtr retp;
@@ -147,7 +147,7 @@ inline static CPtr trail_hp_pointer_from_cell(Cell cell, int *tag)
 
 /********/
 
-inline static CPtr hp_pointer_from_cell(Cell cell, int *tag)
+inline static CPtr hp_pointer_from_cell(CTXTdeclc Cell cell, int *tag)
 {
   int t;
   CPtr retp;
@@ -185,7 +185,7 @@ inline static CPtr hp_pointer_from_cell(Cell cell, int *tag)
 } /* hp_pointer_from_cell */
 #endif
 
-static CPtr pointer_from_cell(Cell cell, int *tag, int *whereto)
+static CPtr pointer_from_cell(CTXTdeclc Cell cell, int *tag, int *whereto)
 { int t ;
  CPtr retp ;
 
@@ -224,7 +224,7 @@ static CPtr pointer_from_cell(Cell cell, int *tag, int *whereto)
 
 /*-------------------------------------------------------------------------*/
 
-inline static char * pr_h_marked(CPtr cell_ptr)
+inline static char * pr_h_marked(CTXTdeclc CPtr cell_ptr)
 { int i ;
  i = cell_ptr - heap_bot ;
  if (heap_marks == NULL) return("not_m") ;
@@ -234,7 +234,7 @@ inline static char * pr_h_marked(CPtr cell_ptr)
  return("not_m") ;
 } /* pr_h_marked */
 
-inline static char * pr_ls_marked(CPtr cell_ptr) 
+inline static char * pr_ls_marked(CTXTdeclc CPtr cell_ptr) 
 { int i ; 
  i = cell_ptr - ls_top ;
  if (ls_marks == NULL) return("not_m") ;
@@ -244,7 +244,7 @@ inline static char * pr_ls_marked(CPtr cell_ptr)
  return("not_m") ; 
 } /* pr_ls_marked */ 
 
-inline static char * pr_cp_marked(CPtr cell_ptr) 
+inline static char * pr_cp_marked(CTXTdeclc CPtr cell_ptr) 
 { int i ; 
  i = cell_ptr - cp_top ;
  if (cp_marks == NULL) return("not_m") ;
@@ -254,7 +254,7 @@ inline static char * pr_cp_marked(CPtr cell_ptr)
  return("not_m") ; 
 } /* pr_cp_marked */ 
 
-inline static char * pr_tr_marked(CPtr cell_ptr) 
+inline static char * pr_tr_marked(CTXTdeclc CPtr cell_ptr) 
 { int i ; 
  i = cell_ptr - tr_bot ;
  if (tr_marks == NULL) return("not_m") ;
@@ -278,7 +278,7 @@ inline static char * pr_tr_marked(CPtr cell_ptr)
 #define MAXS 3700
 #define push_to_mark(p) mark_stack[mark_top++] = p
 #define mark_overflow   (mark_top >= MAXS)
-static int mark_cell(CPtr cell_ptr)
+static int mark_cell(CTXTdeclc CPtr cell_ptr)
 {
   CPtr p ;
   Cell cell_val ;
@@ -305,7 +305,7 @@ static int mark_cell(CPtr cell_ptr)
   if (tag == XSB_LIST || tag == XSB_ATTV)
     { cell_ptr = clref_val(cell_val) ;
     if (mark_overflow)
-      { m += mark_cell(cell_ptr+1) ; }
+      { m += mark_cell(CTXTc cell_ptr+1) ; }
     else push_to_mark(cell_ptr+1) ;
     goto safe_mark_more ;
     }
@@ -322,7 +322,7 @@ static int mark_cell(CPtr cell_ptr)
     p = ++cell_ptr ;
     if (mark_overflow)
       { while (--arity)
-	{ m += mark_cell(++p) ; }
+	{ m += mark_cell(CTXTc ++p) ; }
       }
     else while (--arity) push_to_mark(++p) ;
     goto mark_more ;
@@ -367,7 +367,7 @@ static int mark_cell(CPtr cell_ptr)
    you dont need to set the attvs in the pre-image trail (as I
    mistakenly thought), at least not for GC. */
 
-static int mark_root(Cell cell_val)
+static int mark_root(CTXTdeclc Cell cell_val)
 {
   Integer i;
   int m, arity ;
@@ -387,13 +387,13 @@ static int mark_root(Cell cell_val)
     case XSB_REF:
     case XSB_REF1:
       v = *(CPtr)cell_val ;
-      pointer_from_cell(v,&tag,&whereto) ;
+      pointer_from_cell(CTXTc v,&tag,&whereto) ;
       switch (tag)
     	{ case XSB_REF: case XSB_REF1:
 	  if (whereto != TO_HEAP) return(0) ;
 	  break ;
     	}
-      return(mark_cell((CPtr)cell_val)) ;
+      return(mark_cell(CTXTc (CPtr)cell_val)) ;
 
     case XSB_STRUCT : 
       cell_ptr = ((CPtr)(cs_val(cell_val))) ;
@@ -402,7 +402,7 @@ static int mark_root(Cell cell_val)
       if (h_marked(i)) return(0) ; 
       /* now check that at i, there is a Psc */
       v = *cell_ptr ;
-      pointer_from_cell(v,&tag,&whereto) ;
+      pointer_from_cell(CTXTc v,&tag,&whereto) ;
       /* v must be a PSC - the following tries to test this */
       switch (tag) {
       case XSB_REF: 
@@ -415,7 +415,7 @@ static int mark_root(Cell cell_val)
       h_mark(i) ; m = 1 ; 
       cell_val = *cell_ptr;
       arity = get_arity((Psc)(cell_val)) ;
-      while (arity--) m += mark_cell(++cell_ptr) ;
+      while (arity--) m += mark_cell(CTXTc ++cell_ptr) ;
       return(m) ;
       
     case XSB_LIST: 
@@ -428,7 +428,7 @@ static int mark_root(Cell cell_val)
       if (gc_strings && (flags[STRING_GARBAGE_COLLECT] == 1)) 
 	mark_if_string(v,"attv 1");
 #endif
-      pointer_from_cell(v,&tag,&whereto) ;
+      pointer_from_cell(CTXTc v,&tag,&whereto) ;
       switch (tag) {
       case XSB_REF:
       case XSB_REF1:
@@ -440,16 +440,16 @@ static int mark_root(Cell cell_val)
       if (gc_strings && (flags[STRING_GARBAGE_COLLECT] == 1))
 	mark_if_string(v,"attv 2");
 #endif
-      pointer_from_cell(v,&tag,&whereto) ;
+      pointer_from_cell(CTXTc v,&tag,&whereto) ;
       switch (tag) {
       case XSB_REF:
       case XSB_REF1:
 	if (whereto != TO_HEAP) return(0) ;
 	break ;
       }
-      m = mark_cell(cell_ptr) ;
+      m = mark_cell(CTXTc cell_ptr) ;
       cell_ptr-- ; 
-      m += mark_cell(cell_ptr) ;
+      m += mark_cell(CTXTc cell_ptr) ;
       return(m) ;
 
 #ifndef NO_STRING_GC
@@ -472,12 +472,12 @@ static int mark_root(Cell cell_val)
 
 /*----------------------------------------------------------------------*/
 
-inline static int mark_region(CPtr beginp, CPtr endp)
+inline static int mark_region(CTXTdeclc CPtr beginp, CPtr endp)
 {
   int marked = 0 ;
 
   while (beginp <= endp) {
-    marked += mark_root(*(beginp++)) ;
+    marked += mark_root(CTXTc *(beginp++)) ;
   }
 
   return(marked) ;
@@ -491,7 +491,7 @@ inline static int mark_region(CPtr beginp, CPtr endp)
     there won't be a PRE_IMAGE_MARK in the 3-rd cell; otherwise there
     will be. */
  
-inline static unsigned long mark_trail_section(CPtr begintr, CPtr endtr)
+inline static unsigned long mark_trail_section(CTXTdeclc CPtr begintr, CPtr endtr)
 {
   CPtr a = begintr;
   CPtr trailed_cell;
@@ -551,7 +551,7 @@ inline static unsigned long mark_trail_section(CPtr begintr, CPtr endtr)
 |	    }
 #else
 	    {
-	      marked += mark_root((Cell)trailed_cell);
+	      marked += mark_root(CTXTc (Cell)trailed_cell);
 	    }
 #endif
 	    
@@ -581,18 +581,18 @@ inline static unsigned long mark_trail_section(CPtr begintr, CPtr endtr)
 	      }
 #else
 	      { ls_mark(i) ;
-	      marked += mark_region(trailed_cell, trailed_cell);
+	      marked += mark_region(CTXTc trailed_cell, trailed_cell);
 	      }
 #endif
 	    }
 	  }
       
       /* mark the forward value */
-      marked += mark_root((Cell) *(a-1));
+      marked += mark_root(CTXTc (Cell) *(a-1));
       
 #ifdef PRE_IMAGE_TRAIL
       if (pre_value) { 
-	marked += mark_root((Cell) pre_value);
+	marked += mark_root(CTXTc (Cell) pre_value);
 	pre_value = NULL;
       }
 #endif
@@ -639,7 +639,7 @@ restart:
 	  ls_mark(e - ls_top) ;
 	  /* TLS: get number of perm. vars from cpreg */
 	  yvar = *(cp-2*sizeof(Cell)+3) - 1 ;  
-	  total_marked += mark_region(e-yvar,e-2) ;
+	  total_marked += mark_region(CTXTc e-yvar,e-2) ;
 	  i = (e-2) - ls_top ;
 	  while (yvar-- > 1) { ls_mark(i--); }
 	  cp = (byte *)e[-1] ;
@@ -661,22 +661,22 @@ restart:
 	region = (CPtr) tcp_template(b);
 	at_size = (int_val(cell(region)) & 0xffff) + 1;
 	while (at_size--)
-	  total_marked += mark_cell(region--);
+	  total_marked += mark_cell(CTXTc region--);
       } else if (is_consumer_choicepoint(b)) {
 	CPtr region;
 	int at_size;
 	region = (CPtr) nlcp_template(b);
 	at_size = (int_val(cell(region))&0xffff)+1;
 	while (at_size--)
-	  total_marked += mark_cell(region--);
+	  total_marked += mark_cell(CTXTc region--);
       }
 
       /* mark the delay list field of all choice points in CP stack too */
       if ((d = cp_pdreg(b)) != NULL) {
-	total_marked += mark_root((Cell)d);
+	total_marked += mark_root(CTXTc (Cell)d);
       }
 
-      total_marked += mark_trail_section(a,(CPtr) tr);
+      total_marked += mark_trail_section(CTXTc a,(CPtr) tr);
 
       /* mark the arguments in the choicepoint */
       /* the choicepoint can be a consumer, a generator or ... */
@@ -689,7 +689,7 @@ restart:
 
       if (is_generator_choicepoint(b))
 	{ /* mark the arguments */
-	  total_marked += mark_region(b+TCP_SIZE, tcp_prevtop(b)-1);
+	  total_marked += mark_region(CTXTc b+TCP_SIZE, tcp_prevtop(b)-1);
 	}
       else if (is_consumer_choicepoint(b))
 	{ /* mark substitution factor -- skip the number of SF vars */
@@ -712,7 +712,7 @@ restart:
 	CPtr endregion, beginregion;
 	endregion = cp_prevtop(b)-1;
 	beginregion = b+CP_SIZE;
-	total_marked += mark_region(beginregion,endregion) ;
+	total_marked += mark_region(CTXTc beginregion,endregion) ;
 
       }
 
@@ -807,8 +807,8 @@ static int mark_from_attv_array(CTXTdecl)
   max = int_val(cell(interrupt_reg));
 
   for (i=0; i<max; i++) {
-    m += mark_cell((CPtr) attv_interrupts[i][0]);
-    m += mark_cell((CPtr) attv_interrupts[i][1]);
+    m += mark_cell(CTXTc (CPtr) attv_interrupts[i][0]);
+    m += mark_cell(CTXTc (CPtr) attv_interrupts[i][1]);
   }
   return m;
 }
@@ -819,8 +819,6 @@ static int mark_from_attv_array(CTXTdecl)
 int mark_heap(CTXTdeclc int arity, int *marked_dregs)
 {
   int avail_dreg_marks = 0, marked = 0;
-
-  SYS_MUTEX_LOCK(MUTEX_STACKS);
 
   /* the following seems unnecessary, but it is not !
      mark_heap() may be called directly and not only through gc_heap() */
@@ -861,21 +859,18 @@ int mark_heap(CTXTdeclc int arity, int *marked_dregs)
   heap_marks = (char * )mem_calloc(heap_marks_size,1,GC_SPACE);
   ls_marks   = (char * )mem_calloc(ls_bot - ls_top + 1,1,GC_SPACE);
   if ((! heap_marks) || (! ls_marks))
-  {
-    SYS_MUTEX_UNLOCK(MUTEX_STACKS);
     xsb_exit("Not enough core to perform garbage collection marking phase");
-  }
   
   heap_marks += 1; /* see its free; also note that heap_marks[-1] = 0 is
 		      needed for copying garbage collection see copy_block() */
   
   /* start marking phase */
-  marked = mark_region(reg+1,reg+arity);
+  marked = mark_region(CTXTc reg+1,reg+arity);
   if (delayreg != NULL) {
-    marked += mark_root((Cell)delayreg);
+    marked += mark_root(CTXTc (Cell)delayreg);
   }
   /* Heap[0] is a global variable */
-  marked += mark_root((Cell)glstack.low);
+  marked += mark_root(CTXTc (Cell)glstack.low);
   
   if (slide)
     { 
@@ -899,7 +894,7 @@ int mark_heap(CTXTdeclc int arity, int *marked_dregs)
   if (slide) { 
     CPtr hfreg_in_heap;
     /* mark from hfreg */
-    marked += mark_root((Cell)hfreg);
+    marked += mark_root(CTXTc (Cell)hfreg);
   
     hfreg_in_heap = heap_top - 1;
     TO_BUFFER(hfreg_in_heap);
@@ -918,8 +913,6 @@ int mark_heap(CTXTdeclc int arity, int *marked_dregs)
     marked += mark_hreg_from_choicepoints(CTXT);
 
   if (print_on_gc) print_all_stacks(CTXTc arity);
-
-  SYS_MUTEX_UNLOCK(MUTEX_STACKS);
 
   return marked ;
 } /* mark_heap */
@@ -989,10 +982,8 @@ void mark_trie_strings(CTXTdecl) {
   mark_trie_strings_for(*private_smTableBTN,BTNptr,pBTNStruct,apBTNStruct);
   //  printf("marked private trie strings\n");
 #endif  
-  SYS_MUTEX_LOCK(MUTEX_SM);
   mark_trie_strings_for(smTableBTN,BTNptr,pBTNStruct,apBTNStruct);
   mark_trie_strings_for(smAssertBTN,BTNptr,pBTNStruct,apBTNStruct);
-  SYS_MUTEX_UNLOCK(MUTEX_SM);
   mark_trie_strings_for(smTSTN,TSTNptr,pTSTNStruct,apTSTNStruct);
 }
 

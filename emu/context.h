@@ -395,7 +395,35 @@ Cell _attv_interrupts[20480][2];
 int _num_gc;
 double _total_time_gc;
 unsigned long _total_collected;
-  
+
+/* Heap realloc and garbage collection stuff */
+
+CPtr	_heap_bot;
+CPtr	_heap_top;
+CPtr	_ls_bot;
+CPtr 	_ls_top;
+CPtr	_tr_bot;
+CPtr	_tr_top;
+CPtr	_cp_bot;
+CPtr	_cp_top;
+CPtr	_compl_top;
+CPtr	_compl_bot;
+
+unsigned long _heap_marks_size;
+
+char	*_heap_marks;
+char	*_ls_marks;
+char	*_tr_marks;
+char	*_cp_marks;
+
+CPtr	 *_slide_buf;
+unsigned long _slide_top;
+int	_slide_buffering;
+unsigned long _slide_buf_size;
+
+int	_gc_offset;
+CPtr	_gc_scan;
+CPtr	_gc_next;
 } ;
 
 typedef struct th_context th_context ;
@@ -624,6 +652,33 @@ typedef struct th_context th_context ;
 #define num_gc                  (th->_num_gc)
 #define total_time_gc           (th->_total_time_gc)
 #define total_collected         (th->_total_collected)
+
+#define	heap_bot		(th->_heap_bot)
+#define	heap_top		(th->_heap_top)
+#define	ls_bot			(th->_ls_bot)
+#define ls_top			(th->_ls_top)
+#define	tr_bot			(th->_tr_bot)
+#define	tr_top			(th->_tr_top)
+#define	cp_bot			(th->_cp_bot)
+#define	cp_top			(th->_cp_top)
+#define	compl_top		(th->_compl_top)
+#define	compl_bot		(th->_compl_bot)
+#define heap_marks_size		(th->_heap_marks_size)
+
+#define	heap_marks		(th->_heap_marks)
+#define	ls_marks		(th->_ls_marks)
+#define	tr_marks		(th->_tr_marks)
+#define	cp_marks		(th->_cp_marks)
+
+#define	slide_buf		(th->_slide_buf)
+#define slide_top		(th->_slide_top)
+#define	slide_buffering		(th->_slide_buffering)
+#define slide_buf_size		(th->_slide_buf_size)
+
+#define gc_offset		(th->_gc_offset)
+#define gc_scan			(th->_gc_scan)
+#define gc_next			(th->_gc_next)
+
 
 #define CTXT			th
 #define CTXTc			th ,

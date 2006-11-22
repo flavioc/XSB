@@ -2149,19 +2149,19 @@ ClRef clref_from_try_addr(ClRef code_addr) {
    that will prevent the retract from immediately reclaiming space */
 
 int mark_cpstack_retract(CTXTdeclc ClRef clref) {
-  CPtr cp_top,cp_bot, cp_inst_addr ;
+  CPtr cp_top1,cp_bot1, cp_inst_addr ;
   byte cp_inst;
   int found_match;
   ClRef cp_clref;
 
-  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
+  cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
 
-  cp_top = ((bfreg < breg)? bfreg : breg) ;		
+  cp_top1 = ((bfreg < breg)? bfreg : breg) ;		
   found_match = 0;
-  while ( cp_top < cp_bot && !(found_match)) {
-    cp_inst = *(byte *)*cp_top;
+  while ( cp_top1 < cp_bot1 && !(found_match)) {
+    cp_inst = *(byte *)*cp_top1;
     if ( is_dynamic_clause_inst(cp_inst) ) {
-      cp_clref = clref_from_try_addr((ClRef)*cp_top);
+      cp_clref = clref_from_try_addr((ClRef)*cp_top1);
       if (clref == cp_clref) {
 	//	fprintf(stderr,"found exact match\n");
 	found_match = 1;
@@ -2171,7 +2171,7 @@ int mark_cpstack_retract(CTXTdeclc ClRef clref) {
       }
     }
     else {
-      cp_inst_addr = (CPtr) *cp_top;
+      cp_inst_addr = (CPtr) *cp_top1;
       if (cp_inst_addr == dbclause_cgc_block_gl
 	  || (cp_inst_addr > standard_cgc_block_begin_gl 
 	      && cp_inst_addr < standard_cgc_block_end_gl)) {
@@ -2179,7 +2179,7 @@ int mark_cpstack_retract(CTXTdeclc ClRef clref) {
 	found_match = 1;
       }
     }
-    cp_top = cp_prevtop(cp_top);
+    cp_top1 = cp_prevtop(cp_top1);
   }
   return found_match;
 }
@@ -2187,20 +2187,20 @@ int mark_cpstack_retract(CTXTdeclc ClRef clref) {
 /* * * * * * * * * */
 
 void unmark_cpstack_retract(CTXTdecl) {
-  CPtr cp_top,cp_bot ;
+  CPtr cp_top1,cp_bot1 ;
   byte cp_inst;
   ClRef cp_clref;
 
-  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
+  cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
 
-  cp_top = ((bfreg < breg)? bfreg : breg) ;		
-  while ( cp_top < cp_bot ) {
-    cp_inst = *(byte *)*cp_top;
+  cp_top1 = ((bfreg < breg)? bfreg : breg) ;		
+  while ( cp_top1 < cp_bot1 ) {
+    cp_inst = *(byte *)*cp_top1;
     if ( is_dynamic_clause_inst(cp_inst) ) {
-      cp_clref = clref_from_try_addr((ClRef)*cp_top);
+      cp_clref = clref_from_try_addr((ClRef)*cp_top1);
       unmark_clref(cp_clref);
     }
-    cp_top = cp_prevtop(cp_top);
+    cp_top1 = cp_prevtop(cp_top1);
   }
 }
 
@@ -2214,22 +2214,22 @@ void unmark_cpstack_retract(CTXTdecl) {
  reclaiming space for any of the retracted clauses.  */
 
 int mark_cpstack_retractall(CTXTdecl) {
-  CPtr cp_top,cp_bot,cp_inst_addr ;
+  CPtr cp_top1,cp_bot1,cp_inst_addr ;
   byte cp_inst;
   ClRef cp_clref;
   int found_match = 0;
 
-  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
+  cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
 
-  cp_top = ((bfreg < breg)? bfreg : breg) ;		
-  while ( cp_top < cp_bot && !found_match) {
-    cp_inst = *(byte *)*cp_top;
+  cp_top1 = ((bfreg < breg)? bfreg : breg) ;		
+  while ( cp_top1 < cp_bot1 && !found_match) {
+    cp_inst = *(byte *)*cp_top1;
     if ( is_dynamic_clause_inst(cp_inst) ) {
-      cp_clref = clref_from_try_addr((ClRef)*cp_top);
+      cp_clref = clref_from_try_addr((ClRef)*cp_top1);
       mark_clref(cp_clref);
     }
     else {
-      cp_inst_addr = (CPtr) *cp_top;
+      cp_inst_addr = (CPtr) *cp_top1;
       if (cp_inst_addr == dbclause_cgc_block_gl
 	  || (cp_inst_addr > standard_cgc_block_begin_gl 
 	      && cp_inst_addr < standard_cgc_block_end_gl)) {
@@ -2237,7 +2237,7 @@ int mark_cpstack_retractall(CTXTdecl) {
 	found_match = 1;
       }
     }
-    cp_top = cp_prevtop(cp_top);
+    cp_top1 = cp_prevtop(cp_top1);
   }
   return found_match;
 }
@@ -2261,26 +2261,26 @@ static inline int dyntabled_incomplete(CTXTdeclc Psc psc) {
 
 int check_cpstack_retractall(CTXTdeclc PrRef prref) { 
 
-  CPtr cp_top,cp_bot, cp_inst_addr; 
+  CPtr cp_top1,cp_bot1, cp_inst_addr; 
   byte cp_inst; 
   int found_prref_match; 
   ClRef clref_ptr;
 
-  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
+  cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
 
-  cp_top = ((bfreg < breg)? bfreg : breg) ;		
+  cp_top1 = ((bfreg < breg)? bfreg : breg) ;		
   found_prref_match = 0;
-  while ( cp_top < cp_bot && !(found_prref_match)) {
-    cp_inst = *(byte *)*cp_top;
+  while ( cp_top1 < cp_bot1 && !(found_prref_match)) {
+    cp_inst = *(byte *)*cp_top1;
     // dynamic clauses now have special try/retry/trust instructions
     if ( is_dynamic_clause_inst(cp_inst) ) {
-      clref_ptr = clref_from_try_addr((ClRef)*cp_top);
+      clref_ptr = clref_from_try_addr((ClRef)*cp_top1);
       if (prref == clref_to_prref(clref_ptr)) {
 	found_prref_match = 1;
       }
     }
     else {
-      cp_inst_addr = (CPtr) *cp_top;
+      cp_inst_addr = (CPtr) *cp_top1;
       if (cp_inst_addr == dbclause_cgc_block_gl
 	  || (cp_inst_addr > standard_cgc_block_begin_gl 
 	      && cp_inst_addr < standard_cgc_block_end_gl)) {
@@ -2288,7 +2288,7 @@ int check_cpstack_retractall(CTXTdeclc PrRef prref) {
 	found_prref_match = 1;
       }
     }
-    cp_top = cp_prevtop(cp_top);
+    cp_top1 = cp_prevtop(cp_top1);
   }
   return found_prref_match;
 }
@@ -2557,25 +2557,25 @@ void mark_delcf_subchain(CTXTdeclc DelCFptr delcf,ClRef clref) {
 
 int mark_dynamic(CTXTdecl) 
 {
-  CPtr cp_top,cp_bot, cp_inst_addr ;
+  CPtr cp_top1,cp_bot1, cp_inst_addr ;
   byte cp_inst;
   ClRef clref_ptr;
   PrRef prref_ptr;
   int found_match = 0;
 
-  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
-  cp_top = ((bfreg < breg)? bfreg : breg) ;		
+  cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
+  cp_top1 = ((bfreg < breg)? bfreg : breg) ;		
 
-  while ( cp_top < cp_bot && !found_match) {
-    cp_inst = *(byte *)*cp_top;
+  while ( cp_top1 < cp_bot1 && !found_match) {
+    cp_inst = *(byte *)*cp_top1;
     if ( is_dynamic_clause_inst(cp_inst) ) {
-      clref_ptr = clref_from_try_addr((ClRef)*cp_top);
+      clref_ptr = clref_from_try_addr((ClRef)*cp_top1);
       mark_clref(clref_ptr);
       prref_ptr = clref_to_prref(clref_ptr);
       mark_delcf_subchain(CTXTc PrRef_DelCF(prref_ptr),clref_ptr);
     }
     else {
-      cp_inst_addr = (CPtr) *cp_top;
+      cp_inst_addr = (CPtr) *cp_top1;
       if (cp_inst_addr == dbclause_cgc_block_gl
 	  || (cp_inst_addr > standard_cgc_block_begin_gl 
 	      && cp_inst_addr < standard_cgc_block_end_gl)) {
@@ -2583,7 +2583,7 @@ int mark_dynamic(CTXTdecl)
 	found_match = 1;
       }
     }
-    cp_top = cp_prevtop(cp_top);
+    cp_top1 = cp_prevtop(cp_top1);
   }
   return found_match;
 }

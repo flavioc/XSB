@@ -29,7 +29,7 @@ inline static char *code_to_string(byte *pc)
   return((char *)(inst_table[*pc][0])) ;
 } /* code_to_string */
 
-static void print_cell(FILE *where, CPtr cell_ptr, int fromwhere)
+static void print_cell(CTXTdeclc FILE *where, CPtr cell_ptr, int fromwhere)
 {
   Integer index = 0 ;
   Cell cell_val ;
@@ -45,7 +45,7 @@ static void print_cell(FILE *where, CPtr cell_ptr, int fromwhere)
 					    can be equal to heap_top
 					    and pointer_from_cell tests
 					    for strict inequality */
-  p = pointer_from_cell(cell_val,&tag,&whereto) ;
+  p = pointer_from_cell(CTXTc cell_val,&tag,&whereto) ;
   if (fromwhere == FROM_CP) heap_top-- ;
   switch (whereto)
     { case TO_HEAP : index = p - heap_bot ; s = "ref_heap" ; break ;
@@ -150,7 +150,6 @@ void print_heap(CTXTdeclc int start, int end, int add)
   char buf[100] ;
   FILE *where ;
 
-  SYS_MUTEX_LOCK(MUTEX_STACKS);
   sprintf(buf,"HEAP%d",printnum) ;
   printnum += add ;
   where = fopen(buf,"w") ;
@@ -166,13 +165,12 @@ void print_heap(CTXTdeclc int start, int end, int add)
   if (endp > heap_top) endp = heap_top ;
 
   while ( startp < endp )
-  { fprintf(where,"heap('%p',%6d,%s,",startp,start,pr_h_marked(startp)) ;
-    print_cell(where,startp,FROM_HEAP) ;
+  { fprintf(where,"heap('%p',%6d,%s,",startp,start,pr_h_marked(CTXTc startp)) ;
+    print_cell(CTXTc where,startp,FROM_HEAP) ;
     startp++ ; start++ ;
   }
 
   fclose(where) ;
-  SYS_MUTEX_UNLOCK(MUTEX_STACKS);
 } /* print_heap */
 
 void print_ls(CTXTdeclc int add)
@@ -182,7 +180,6 @@ void print_ls(CTXTdeclc int add)
   int start ;
   FILE *where ;
 
-  SYS_MUTEX_LOCK(MUTEX_STACKS);
   sprintf(buf,"LS%d",printnum) ;
   printnum += add ;
   where = fopen(buf,"w") ;
@@ -197,13 +194,12 @@ void print_ls(CTXTdeclc int add)
   endp = ls_top ;
 
   while ( startp >= endp )
-  { fprintf(where,"ls(%6d,%s,",start,pr_ls_marked(startp)) ;
-    print_cell(where,startp,FROM_LS) ;
+  { fprintf(where,"ls(%6d,%s,",start,pr_ls_marked(CTXTc startp)) ;
+    print_cell(CTXTc where,startp,FROM_LS) ;
     startp-- ; start++ ;
   }
 
   fclose(where) ;
-  SYS_MUTEX_UNLOCK(MUTEX_STACKS);
 } /* print_ls */
 
 void print_cp(CTXTdeclc int add)
@@ -212,8 +208,6 @@ void print_cp(CTXTdeclc int add)
   char buf[100] ;
   int  start ;
   FILE *where ;
-
-  SYS_MUTEX_LOCK(MUTEX_STACKS);
 
   sprintf(buf,"CP%d",printnum) ;
   printnum += add ;
@@ -229,14 +223,13 @@ void print_cp(CTXTdeclc int add)
   endp = cp_top ;
 
   while ( startp >= endp )
-  { fprintf(where,"cp('%p',%6d,%s,",startp,start,pr_cp_marked(startp)) ;
-    print_cell(where,startp,FROM_CP) ;
+  { fprintf(where,"cp('%p',%6d,%s,",startp,start,pr_cp_marked(CTXTc startp)) ;
+    print_cell(CTXTc where,startp,FROM_CP) ;
     fflush(where);
     startp-- ; start++ ;
   }
 
   fclose(where) ;
-  SYS_MUTEX_UNLOCK(MUTEX_STACKS);
 } /* print_cp */
 
 void print_tr(CTXTdeclc int add)
@@ -245,8 +238,6 @@ void print_tr(CTXTdeclc int add)
   int  start ;
   FILE *where ;
   char buf[100] ;
-
-  SYS_MUTEX_LOCK(MUTEX_STACKS);
 
   sprintf(buf,"TRAIL%d",printnum) ;
   printnum += add ;
@@ -271,16 +262,16 @@ void print_tr(CTXTdeclc int add)
     if ((*endp) & PRE_IMAGE_MARK) {
       Cell tagged_tr_cell = *endp ;
       cell(endp) = tagged_tr_cell - PRE_IMAGE_MARK ; /* untag tr cell */
-      fprintf(where,"trail(%6d,%s,  tagged,",start,pr_tr_marked(endp)) ;
-      print_cell(where,endp,FROM_TR) ;
+      fprintf(where,"trail(%6d,%s,  tagged,",start,pr_tr_marked(CTXTc endp)) ;
+      print_cell(CTXTc where,endp,FROM_TR) ;
       cell(endp) = tagged_tr_cell ; /* restore trail cell */
       endp-- ; start-- ;
-      fprintf(where,"trail(%6d,%s,pre_imag,",start,pr_tr_marked(endp)) ;
-      print_cell(where,endp,FROM_TR) ;
+      fprintf(where,"trail(%6d,%s,pre_imag,",start,pr_tr_marked(CTXTc endp)) ;
+      print_cell(CTXTc where,endp,FROM_TR) ;
       endp-- ; start-- ;
     } else {
-      fprintf(where,"trail(%6d,%s,untagged,",start,pr_tr_marked(endp)) ;
-      print_cell(where,endp,FROM_TR) ;
+      fprintf(where,"trail(%6d,%s,untagged,",start,pr_tr_marked(CTXTc endp)) ;
+      print_cell(CTXTc where,endp,FROM_TR) ;
       endp-- ; start-- ;
     }
 #else
@@ -291,7 +282,6 @@ void print_tr(CTXTdeclc int add)
   }
 
   fclose(where) ;
-  SYS_MUTEX_UNLOCK(MUTEX_STACKS);
 } /* print_tr */
 
 void print_regs(CTXTdeclc int a, int add)
@@ -317,7 +307,7 @@ void print_regs(CTXTdeclc int a, int add)
   while (startp <= endp)                                              
     { 
       fprintf(where,"areg(%6d,",start) ;
-      print_cell(where,startp,FROM_AREG) ;                              
+      print_cell(CTXTc where,startp,FROM_AREG) ;                              
       startp++ ; start++ ;                   
     }
 
@@ -342,7 +332,7 @@ void print_regs(CTXTdeclc int a, int add)
   if (delayreg)
     {
       fprintf(where,"delayreg(");
-      print_cell(where,(CPtr)(&delayreg),FROM_AREG);
+      print_cell(CTXTc where,(CPtr)(&delayreg),FROM_AREG);
     }
   else fprintf(where,"wam_reg(delayreg,%ld).\n",(Cell)delayreg);
 

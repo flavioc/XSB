@@ -290,12 +290,14 @@ int should_gc_strings() {
 /* global variables for top and bottom of some areas + macro to compute them */
 /*---------------------------------------------------------------------------*/
 
+#ifndef MULTI_THREAD
 static CPtr heap_bot,heap_top,
   ls_bot,ls_top,
   tr_bot,tr_top,
   cp_bot,cp_top,
   compl_top,compl_bot;
 static unsigned long heap_marks_size;
+#endif
 
 
 #define stack_boundaries \
@@ -333,17 +335,21 @@ static int num_sgc = 0 ;
 /* marker bits in different areas.                                      */
 /*----------------------------------------------------------------------*/
 
+#ifndef MULTI_THREAD
 static char *heap_marks  = NULL ;
 static char *ls_marks    = NULL ;
 static char *tr_marks    = NULL ;
 static char *cp_marks    = NULL ;
+#endif
 
 #define INDIRECTION_SLIDE
+#ifndef MULTI_THREAD
 #ifdef INDIRECTION_SLIDE
 static CPtr *slide_buf= NULL;
 static unsigned long slide_top = 0;
 static int slide_buffering = 0;
 static unsigned long slide_buf_size = 0;
+#endif
 #endif
 
 #define MARKED    1
@@ -415,8 +421,6 @@ xsbBool glstack_realloc(CTXTdeclc int new_size, int arity)
 
   if (new_size <= glstack.size) return 0;
 
-  SYS_MUTEX_LOCK( MUTEX_STACKS ) ;
-
   xsb_dbgmsg((LOG_REALLOC, 
 	     "Reallocating the Heap and Local Stack data area"));
 #ifdef DEBUG_VERBOSE
@@ -452,12 +456,10 @@ xsbBool glstack_realloc(CTXTdeclc int new_size, int arity)
       }
       if (new_heap_bot == NULL) {
 	xsb_mesg("Not enough core to resize the Heap and Local Stack!");
-        SYS_MUTEX_UNLOCK( MUTEX_STACKS ) ;
 	return 1; /* return an error output -- will be picked up later */
       }
     } else {
       xsb_mesg("Not enough core to resize the Heap and Local Stack!");
-      SYS_MUTEX_UNLOCK( MUTEX_STACKS ) ;
       return 1; /* return an error output -- will be picked up later */
     }
   }
@@ -558,8 +560,6 @@ xsbBool glstack_realloc(CTXTdeclc int new_size, int arity)
 	     "Heap/Local Stack data area expansion - finished in %lf secs\n",
 	     expandtime));
 
-  SYS_MUTEX_UNLOCK( MUTEX_STACKS ) ;
-
   return 0;
 } /* glstack_realloc */
 
@@ -579,8 +579,6 @@ int gc_heap(CTXTdeclc int arity, int ifStringGC)
   int  start_heap_size;
   DECL_GC_PROFILE;
 
-  SYS_MUTEX_LOCK( MUTEX_STACKS ) ;
-  
   INIT_GC_PROFILE;
   if (pflags[GARBAGE_COLLECT] != NO_GC) {
     num_gc++ ;
@@ -690,7 +688,7 @@ int gc_heap(CTXTdeclc int arity, int ifStringGC)
       {
 	GC_PROFILE_SLIDE_START_TIME;
 
-	hreg = slide_heap(marked) ;
+	hreg = slide_heap(CTXTc marked) ;
 
 	if (hreg != (heap_bot+marked))
 	  xsb_dbgmsg((LOG_GC, "heap sliding gc - inconsistent hreg"));
@@ -813,8 +811,6 @@ int gc_heap(CTXTdeclc int arity, int ifStringGC)
   GC_PROFILE_POST_REPORT;
   
 #endif /* GC */
-
-  SYS_MUTEX_UNLOCK( MUTEX_STACKS ) ;
 
   return(TRUE);
 

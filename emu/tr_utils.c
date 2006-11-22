@@ -1786,47 +1786,47 @@ return 1;
 
 void mark_cp_tables(CTXTdecl)
 {
-  CPtr cp_top,cp_bot ;
+  CPtr cp_top1,cp_bot1 ;
   byte cp_inst;
   TIFptr tif;
   
-  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
+  cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
 
-  cp_top = breg ;				 
-  while ( cp_top < cp_bot ) {
-    cp_inst = *(byte *)*cp_top;
+  cp_top1 = breg ;				 
+  while ( cp_top1 < cp_bot1 ) {
+    cp_inst = *(byte *)*cp_top1;
     // Want trie insts, but will need to distinguish from
     // asserted and interned tries
     if ( is_trie_instruction(cp_inst) ) {
-      if (IsInAnswerTrie((BTNptr) *cp_top)) {
-	tif = get_tif_for_answer_trie_cp(CTXTc (BTNptr) *cp_top);
+      if (IsInAnswerTrie((BTNptr) *cp_top1)) {
+	tif = get_tif_for_answer_trie_cp(CTXTc (BTNptr) *cp_top1);
 	cps_check_mark_tif(tif);
       }
     }
-    cp_top = cp_prevtop(cp_top);
+    cp_top1 = cp_prevtop(cp_top1);
   }
 }
 
 void unmark_cp_tables(CTXTdecl)
 {
-  CPtr cp_top,cp_bot ;
+  CPtr cp_top1,cp_bot1 ;
   byte cp_inst;
   TIFptr tif;
   
-  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
+  cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
 
-  cp_top = breg ;				 
-  while ( cp_top < cp_bot ) {
-    cp_inst = *(byte *)*cp_top;
+  cp_top1 = breg ;				 
+  while ( cp_top1 < cp_bot1 ) {
+    cp_inst = *(byte *)*cp_top1;
     // Want trie insts, but will need to distinguish from
     // asserted and interned tries
     if ( is_trie_instruction(cp_inst) ) {
-      if (IsInAnswerTrie((BTNptr) *cp_top)) {
-	tif = get_tif_for_answer_trie_cp(CTXTc (BTNptr) *cp_top);
+      if (IsInAnswerTrie((BTNptr) *cp_top1)) {
+	tif = get_tif_for_answer_trie_cp(CTXTc (BTNptr) *cp_top1);
 	cps_check_unmark_tif(tif);
       }
     }
-    cp_top = cp_prevtop(cp_top);
+    cp_top1 = cp_prevtop(cp_top1);
   }
 }
 
@@ -1841,28 +1841,28 @@ void unmark_cp_tables(CTXTdecl)
 
 int abolish_table_call_cps_check(CTXTdeclc VariantSF subgoal) 
 {
-  CPtr cp_top,cp_bot ;
+  CPtr cp_top1,cp_bot1 ;
   byte cp_inst;
   int found_subgoal_match;
 
-  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
+  cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
 
-  cp_top = breg ;				 
+  cp_top1 = breg ;				 
   found_subgoal_match = 0;
-  while ( cp_top < cp_bot && !(found_subgoal_match)) {
-    cp_inst = *(byte *)*cp_top;
+  while ( cp_top1 < cp_bot1 && !(found_subgoal_match)) {
+    cp_inst = *(byte *)*cp_top1;
     // Want trie insts, but will need to distinguish from
     // asserted and interned tries
     if ( is_trie_instruction(cp_inst) ) {
       // Below we want basic_answer_trie_tt, ts_answer_trie_tt
-      if (IsInAnswerTrie(((BTNptr) *cp_top))) {
+      if (IsInAnswerTrie(((BTNptr) *cp_top1))) {
 	if (subgoal == 
-	    get_subgoal_frame_for_answer_trie_cp(CTXTc (BTNptr) *cp_top)) {
+	    get_subgoal_frame_for_answer_trie_cp(CTXTc (BTNptr) *cp_top1)) {
 	  found_subgoal_match = 1;
 	}
       }
     }
-    cp_top = cp_prevtop(cp_top);
+    cp_top1 = cp_prevtop(cp_top1);
   }
   return found_subgoal_match;
 }
@@ -1934,27 +1934,27 @@ int abolish_table_call(CTXTdeclc VariantSF subgoal) {
 
 int abolish_table_pred_cps_check(CTXTdeclc Psc psc) 
 {
-  CPtr cp_top,cp_bot ;
+  CPtr cp_top1,cp_bot1 ;
   byte cp_inst;
   int found_psc_match;
 
-  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
+  cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
 
-  cp_top = breg ;				 
+  cp_top1 = breg ;				 
   found_psc_match = 0;
-  while ( cp_top < cp_bot && !(found_psc_match)) {
-    cp_inst = *(byte *)*cp_top;
+  while ( cp_top1 < cp_bot1 && !(found_psc_match)) {
+    cp_inst = *(byte *)*cp_top1;
     // Want trie insts, but will need to distinguish from
     // asserted and interned tries
     if ( is_trie_instruction(cp_inst) ) {
       // Below we want basic_answer_trie_tt, ts_answer_trie_tt
-      if (IsInAnswerTrie(((BTNptr) *cp_top))) {
-	if (psc == get_psc_for_answer_trie_cp(CTXTc (BTNptr) *cp_top)) {
+      if (IsInAnswerTrie(((BTNptr) *cp_top1))) {
+	if (psc == get_psc_for_answer_trie_cp(CTXTc (BTNptr) *cp_top1)) {
 	  found_psc_match = 1;
 	}
       }
     }
-    cp_top = cp_prevtop(cp_top);
+    cp_top1 = cp_prevtop(cp_top1);
   }
   return found_psc_match;
 }
@@ -2040,26 +2040,26 @@ inline int abolish_table_predicate(CTXTdeclc Psc psc)
 */
 
 void mark_tabled_preds(CTXTdecl) { 
-  CPtr cp_top,cp_bot ; byte cp_inst;
+  CPtr cp_top1,cp_bot1 ; byte cp_inst;
   TIFptr tif;
   VariantSF subgoal;
   BTNptr call_trie;
 
-  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
+  cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
 
-  cp_top = breg ;				 
-  while ( cp_top < cp_bot ) {
-    cp_inst = *(byte *)*cp_top;
+  cp_top1 = breg ;				 
+  while ( cp_top1 < cp_bot1 ) {
+    cp_inst = *(byte *)*cp_top1;
     // Want trie insts, but will need to distinguish from
     // asserted and interned tries
     if ( is_trie_instruction(cp_inst) ) {
-      if (IsInAnswerTrie((BTNptr) *cp_top)) {
+      if (IsInAnswerTrie((BTNptr) *cp_top1)) {
 	DelTFptr dtf;
 
 	/* Check for predicate DelTFs */
-	tif = get_tif_for_answer_trie_cp(CTXTc (BTNptr) *cp_top);
+	tif = get_tif_for_answer_trie_cp(CTXTc (BTNptr) *cp_top1);
 
-	subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc (BTNptr) *cp_top);
+	subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc (BTNptr) *cp_top1);
 	call_trie = get_call_trie_from_subgoal_frame(CTXTc subgoal);
 	//	printf("subgoal %p call_trie %p\n",subgoal,call_trie);
 	
@@ -2077,7 +2077,7 @@ void mark_tabled_preds(CTXTdecl) {
 	//	}
 	
 	/* Now check for subgoal DelTFs */
-	subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc (BTNptr) *cp_top);
+	subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc (BTNptr) *cp_top1);
 	if (is_completed(subgoal)) {
 	  if (subg_deltf_ptr(subgoal) != NULL) {
 	    DTF_Mark((DelTFptr) subg_deltf_ptr(subgoal)) = 1;
@@ -2085,7 +2085,7 @@ void mark_tabled_preds(CTXTdecl) {
 	}
       }
     }
-    cp_top = cp_prevtop(cp_top);
+    cp_top1 = cp_prevtop(cp_top1);
   }
 }
 
@@ -2094,27 +2094,27 @@ void mark_tabled_preds(CTXTdecl) {
    of mark_tabled_preds()
 */
 void mark_private_tabled_preds(CTXTdecl) { 
-  CPtr cp_top,cp_bot ; byte cp_inst;
+  CPtr cp_top1,cp_bot1 ; byte cp_inst;
   TIFptr tif;
   VariantSF subgoal;
   BTNptr call_trie;
   
-  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
+  cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
 
-  cp_top = breg ;				 
-  while ( cp_top < cp_bot ) {
-    cp_inst = *(byte *)*cp_top;
+  cp_top1 = breg ;				 
+  while ( cp_top1 < cp_bot1 ) {
+    cp_inst = *(byte *)*cp_top1;
     // Want trie insts, but will need to distinguish from
     // asserted and interned tries
     if ( is_trie_instruction(cp_inst) ) {
-      if (IsInAnswerTrie((BTNptr) *cp_top)) {
+      if (IsInAnswerTrie((BTNptr) *cp_top1)) {
 	DelTFptr dtf;
 
 	/* Check for predicate DelTFs */
-	tif = get_tif_for_answer_trie_cp(CTXTc (BTNptr) *cp_top);
+	tif = get_tif_for_answer_trie_cp(CTXTc (BTNptr) *cp_top1);
 
 	if (!get_shared(TIF_PSC(tif))) {
-	  subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc (BTNptr) *cp_top);
+	  subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc (BTNptr) *cp_top1);
 	  call_trie = get_call_trie_from_subgoal_frame(CTXTc subgoal);
 	  //	printf("subgoal %p call_trie %p\n",subgoal,call_trie);
 	
@@ -2135,7 +2135,7 @@ void mark_private_tabled_preds(CTXTdecl) {
 	}
 
 	/* Now check for subgoal DelTFs */
-	subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc (BTNptr) *cp_top);
+	subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc (BTNptr) *cp_top1);
 	if (is_completed(subgoal) 
 	    && !get_shared(TIF_PSC(subg_tif_ptr(subgoal)))) {
 	  if (subg_deltf_ptr(subgoal) != NULL) {
@@ -2144,7 +2144,7 @@ void mark_private_tabled_preds(CTXTdecl) {
 	}
       }
     }
-    cp_top = cp_prevtop(cp_top);
+    cp_top1 = cp_prevtop(cp_top1);
   }
 }
 
@@ -2348,26 +2348,26 @@ int abolish_module_tables(CTXTdeclc const char *module_name)
 
 int abolish_mt_tables_cps_check(CTXTdecl,xsbBool isPrivate) 
 {
-  CPtr cp_top,cp_bot ;
+  CPtr cp_top1,cp_bot1 ;
   byte cp_inst;
   int found_match;
 
-  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
-  cp_top = breg ;				 
+  cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
+  cp_top1 = breg ;				 
   found_match = 0;
-  while ( cp_top < cp_bot && !(found_match)) {
-    cp_inst = *(byte *)*cp_top;
+  while ( cp_top1 < cp_bot1 && !(found_match)) {
+    cp_inst = *(byte *)*cp_top1;
     // Want trie insts, but will need to distinguish from
     // asserted and interned tries
     if ( is_trie_instruction(cp_inst) ) {
       // Below we want basic_answer_trie_tt, ts_answer_trie_tt
-      if (IsInAnswerTrie(((BTNptr) *cp_top))) {
-	if (get_private(get_psc_for_answer_trie_cp(CTXTc (BTNptr) *cp_top)) == isPrivate) {
+      if (IsInAnswerTrie(((BTNptr) *cp_top1))) {
+	if (get_private(get_psc_for_answer_trie_cp(CTXTc (BTNptr) *cp_top1)) == isPrivate) {
 	  found_match = 1;
 	}
       }
     }
-    cp_top = cp_prevtop(cp_top);
+    cp_top1 = cp_prevtop(cp_top1);
   }
   return found_match;
 }
@@ -2542,26 +2542,26 @@ void release_all_tabling_resources(CTXTdecl) {
 
 void abolish_all_tables_cps_check(CTXTdecl) 
 {
-  CPtr cp_top,cp_bot ;
+  CPtr cp_top1,cp_bot1 ;
   byte cp_inst;
   int trie_type;
 
-  cp_bot = (CPtr)(tcpstack.high) - CP_SIZE;
+  cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
 
-  cp_top = breg ;				 
-  while ( cp_top < cp_bot ) {
-    cp_inst = *(byte *)*cp_top;
+  cp_top1 = breg ;				 
+  while ( cp_top1 < cp_bot1 ) {
+    cp_inst = *(byte *)*cp_top1;
     /* Check for trie instructions */
     if ( is_trie_instruction(cp_inst)) {
-      trie_type = (int) TN_TrieType((BTNptr) *cp_top);
+      trie_type = (int) TN_TrieType((BTNptr) *cp_top1);
       /* Here, we want call_trie_tt,basic_answer_trie_tt,
 	 ts_answer_trie_tt","delay_trie_tt */
-      if (IsInAnswerTrie(((BTNptr) *cp_top))) {
+      if (IsInAnswerTrie(((BTNptr) *cp_top1))) {
 	xsb_abort("[abolish_all_tables/0] Illegal table operation"
 		  "\n\t Backtracking through tables to be abolished.");
       }
     }
-      cp_top = cp_prevtop(cp_top);
+      cp_top1 = cp_prevtop(cp_top1);
   }
 }
 
