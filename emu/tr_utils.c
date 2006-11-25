@@ -2429,6 +2429,8 @@ void abolish_private_tables(CTXTdecl) {
 
 void abolish_all_private_tables(CTXTdecl) {
 
+  TIFptr pTIF;
+
   check_for_incomplete_tables("abolish_all_private_tables/0");
 
   // TRUE means we found a private table
@@ -2436,6 +2438,12 @@ void abolish_all_private_tables(CTXTdecl) {
     xsb_abort("[abolish_all_private_tables/0] Illegal table operation"
 		  "\n\t Backtracking through tables to be abolished.");
   else {
+    for ( pTIF = private_tif_list.first; IsNonNULL(pTIF)
+	  			       ; pTIF = TIF_NextTIF(pTIF) ) {
+	  TIF_CallTrie(pTIF) = NULL;
+    	  TIF_Subgoals(pTIF) = NULL;
+    }
+
     SM_ReleaseResources(*private_smTableBTN);
     TrieHT_FreeAllocatedBuckets(*private_smTableBTHT);
     SM_ReleaseResources(*private_smTableBTHT);
