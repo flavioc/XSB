@@ -425,7 +425,7 @@ static int mark_root(CTXTdeclc Cell cell_val)
       if (!points_into_heap(cell_ptr)) return(0) ;
       v = *cell_ptr ;
 #ifndef NO_STRING_GC
-      if (gc_strings && (flags[STRING_GARBAGE_COLLECT] == 1)) 
+      if (gc_strings && (flags[STRING_GARBAGE_COLLECT] == 1 && flags[NUM_THREADS] == 1)) 
 	mark_if_string(v,"attv 1");
 #endif
       pointer_from_cell(CTXTc v,&tag,&whereto) ;
@@ -437,7 +437,7 @@ static int mark_root(CTXTdeclc Cell cell_val)
       }
       v = *(++cell_ptr) ;
 #ifndef NO_STRING_GC
-      if (gc_strings && (flags[STRING_GARBAGE_COLLECT] == 1))
+      if (gc_strings && (flags[STRING_GARBAGE_COLLECT] == 1 && flags[NUM_THREADS] == 1))
 	mark_if_string(v,"attv 2");
 #endif
       pointer_from_cell(CTXTc v,&tag,&whereto) ;
