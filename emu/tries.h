@@ -403,11 +403,13 @@ extern int  global_num_vars;
 /* used for statistics */
 extern counter subg_chk_ins, subg_inserts, ans_chk_ins, ans_inserts;
 
+#ifndef MULTI_THREAD
 /* trie routine variables */
-extern BTNptr Last_Nod_Sav, Paren;
+extern BTNptr Last_Nod_Sav;
 
 /* registers for trie backtracking */
 extern CPtr reg_arrayptr, var_regs[];
+#endif
 
 /*----------------------------------------------------------------------*/
 
