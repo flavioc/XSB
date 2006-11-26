@@ -318,7 +318,12 @@ put_code(C):-
 	        put(C)
 	 ;  domain_error(integer_or_variable,C,put_code/1,1) ).
 
-put(C) :- put(C).
+
+% TLS: changed definition of put so that stream-based version (w. mutexes) is used. 
+%put(C) :- put(C).
+
+put(C):- stat_flag(CURRENT_OUTPUT, Str), file_put(Str, C).
+
 
 tab(N) :- tab(N).
 
@@ -404,9 +409,17 @@ write(S_or_A,Term):-
 
 write(T) :- stat_flag(CURRENT_OUTPUT, Str), file_write(Str, T).
 
+/* TLS: this seems to give problems, need to check.
+% TLS: rewritten to make it an atomic stream operation.
 writeln(S_or_A,Term):- 
 	check_open_stream_or_alias(S_or_A,writeln/2,1,output,Ostr),
+	file_writeln(Ostr,Term).
+*/
+
+ writeln(S_or_A,Term):- 
+	check_open_stream_or_alias(S_or_A,writeln/2,1,output,Ostr),
 	file_write(Ostr,Term),file_nl(Ostr).
+
 
 writeln(T) :- stat_flag(CURRENT_OUTPUT,File),file_write(File,T),file_nl(File).
 
