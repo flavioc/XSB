@@ -318,6 +318,7 @@ struct random_seeds_t *_random_seeds;	/* struct containing seeds for random num 
   struct Structure_Manager *_smBTHT;
 
   /* private structure managers */
+  /* for tables */
   Structure_Manager *_private_smTableBTN;
   Structure_Manager *_private_smTableBTHT;
   Structure_Manager *_private_smTSTN; 
@@ -328,6 +329,9 @@ struct random_seeds_t *_random_seeds;	/* struct containing seeds for random num 
   Structure_Manager *_private_smConsSF;
   Structure_Manager *_private_smALN;
   Structure_Manager *_private_smASI;
+
+  /* for dynamic code */
+  Structure_Manager *_private_smDelCF;
 
   int    _threads_current_sm;
   
@@ -588,6 +592,8 @@ typedef struct th_context th_context ;
 #define private_smConsSF        (th-> _private_smConsSF)
 #define private_smALN           (th-> _private_smALN)
 #define private_smASI           (th-> _private_smASI)
+
+#define private_smDelCF        (th -> _private_smDelCF)
 
 #define subsumptive_smALN       (*private_smALN)
 #define subsumptive_smBTN       (*private_smTableBTN)

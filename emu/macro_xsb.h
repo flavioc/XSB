@@ -331,6 +331,8 @@ typedef struct Deleted_Clause_Frame {
 #define DCF_NextPredDCF(pDCF)	   ( (pDCF)->next_pred_delCF )
 #define DCF_PrevPredDCF(pDCF)	   ( (pDCF)->prev_pred_delCF )
 
+#define DELCFs_PER_BLOCK  2048
+
 /*===========================================================================*/
 
 /*

@@ -1738,6 +1738,9 @@ int builtin_call(CTXTdeclc byte number)
   case SYS_ERRNO:			/* R1: -Int (errno) */
     ctop_int(CTXTc 1, errno);
     break;
+
+    /* TLS: file_writequoted is intended for use within l_write.  Do
+       not use it directly -- as it should have its streams locked. */
   case FILE_WRITEQUOTED: {
     FILE* fptr;
     int   tmpval = ptoc_int(CTXTc 1);

@@ -967,6 +967,12 @@ void init_thread_structures(CTXTdecl)
   SM_InitDeclDyna(private_smASI,ASI_Node, ASIs_PER_BLOCK,
 		  "Answer Substitution Info (Private)");
 
+  private_smDelCF  = 
+    (struct Structure_Manager*) mem_alloc(sizeof(struct Structure_Manager),
+					  MT_PRIVATE_SPACE);
+  SM_InitDeclDyna(private_smDelCF, DeletedClauseFrame, DELCFs_PER_BLOCK,
+		  "Deleted Clause Frames (Private)");
+
   private_current_de_block = NULL;
   private_current_dl_block = NULL;
   private_current_pnde_block = NULL;

@@ -2312,16 +2312,20 @@ int check_cpstack_retractall(CTXTdeclc PrRef prref) {
 /* used by mt engine for shared tables */
 DelCFptr delcf_chain_begin = (DelCFptr) NULL;
 
+Structure_Manager smDelCF      = SM_InitDecl(DeletedClauseFrame, DELCFs_PER_BLOCK,
+					    "DelCFs");
+
 /* Asserting _pred structures to end of pred chain.  This means that
    if lastdcf is not null, just stick it on the end; otherwise adjust
    Prref's delcf pointer. */
 DelCFptr new_DelCF_pred(CTXTdeclc PrRef pPrRef,Psc pPSC,
-				DelCFptr *chain_begin) {
+			DelCFptr *chain_begin,Structure_Manager *SM) {
   DelCFptr pDCF; 
 
-  pDCF = (DelCFptr)mem_alloc(sizeof(DeletedClauseFrame),ASSERT_SPACE); 
-    if ( IsNULL(pDCF) )							
-      xsb_abort("Ran out of memory in allocation of DeletedClauseFrame"); 
+  SM_AllocateStruct(*SM,( pDCF));	     
+  //  pDCF = (DelCFptr)mem_alloc(sizeof(DeletedClauseFrame),ASSERT_SPACE); 
+  //if ( IsNULL(pDCF) )							
+  //  xsb_abort("Ran out of memory in allocation of DeletedClauseFrame"); 
     DCF_PrRef(pDCF) = pPrRef;			
     DCF_ClRef(pDCF) = PrRef_FirstClRef(pPrRef);	 // diff from _clause create
     DCF_PSC(pDCF) = pPSC;
@@ -2344,12 +2348,14 @@ DelCFptr new_DelCF_pred(CTXTdeclc PrRef pPrRef,Psc pPSC,
    that they will be abolished before any pred-level retractalls for
    the same predicate. */
 DelCFptr new_DelCF_clause(PrRef pPrRef,Psc pPSC,ClRef pClRef,
-				 DelCFptr *chain_begin) {
+				 DelCFptr *chain_begin,Structure_Manager *SM) {
   DelCFptr pDCF; 
 
-  pDCF = (DelCFptr)mem_alloc(sizeof(DeletedClauseFrame),ASSERT_SPACE); 
-    if ( IsNULL(pDCF) )							
-      xsb_abort("Ran out of memory in allocation of DeletedClauseFrame"); 
+  SM_AllocateStruct(*SM,( pDCF));	     
+
+  //  pDCF = (DelCFptr)mem_alloc(sizeof(DeletedClauseFrame),ASSERT_SPACE); 
+  //    if ( IsNULL(pDCF) )							
+  //      xsb_abort("Ran out of memory in allocation of DeletedClauseFrame"); 
     DCF_PrRef(pDCF) = pPrRef;			
     DCF_ClRef(pDCF) = pClRef;	  // diff from _pred create
     DCF_PSC(pDCF) = pPSC;						
@@ -2372,7 +2378,7 @@ DelCFptr new_DelCF_clause(PrRef pPrRef,Psc pPSC,ClRef pClRef,
  * thread. Note that prref might be NULL if we have abolished the
  * predicate. */
 
-#define Free_DelCF(pDCF,pPRREF,chain_begin) {				\
+#define Free_DelCF(pDCF,pPRREF,chain_begin,SM) {			\
   if (DCF_PrevDCF(pDCF) == 0) {						\
     chain_begin = DCF_NextDCF(pDCF);					\
   }									\
@@ -2391,7 +2397,7 @@ DelCFptr new_DelCF_clause(PrRef pPrRef,Psc pPSC,ClRef pClRef,
   if (DCF_NextPredDCF(pDCF) != 0) {					\
     DCF_PrevPredDCF(DCF_NextPredDCF(pDCF)) = DCF_PrevPredDCF(pDCF);	\
   }									\
-  mem_dealloc(pDCF,sizeof(DeletedTableFrame),ASSERT_SPACE);		\
+  SM_DeallocateSharedStruct(SM,pDCF);					\
 }
 
 /* * * * * * * * * */
@@ -2415,11 +2421,11 @@ void check_insert_global_delcf_pred(CTXTdeclc PrRef prref,Psc psc) {
     if (DCF_Type(dcf) == DELETED_CLREF) {
       //      fprintf(stderr,"Prref over-riding clref for %s/%d\n",
       //	      get_name(psc),get_arity(psc));
-      Free_DelCF(dcf,prref,delcf_chain_begin);
+      Free_DelCF(dcf,prref,delcf_chain_begin,smDelCF);
     }
     dcf = DCF_NextPredDCF(dcf);
   }
-  dcf = new_DelCF_pred(CTXTc prref,psc,&delcf_chain_begin);
+  dcf = new_DelCF_pred(CTXTc prref,psc,&delcf_chain_begin,&smDelCF);
   SYS_MUTEX_UNLOCK(MUTEX_DYNAMIC);
 }
 
@@ -2431,11 +2437,11 @@ void check_insert_private_delcf_pred(CTXTdeclc PrRef prref,Psc psc) {
     if (DCF_Type(dcf) == DELETED_CLREF) {
       //      fprintf(stderr,"Prref over-riding clref for %s/%d\n",
       //	      get_name(psc),get_arity(psc));
-      Free_DelCF(dcf,prref,private_delcf_chain_begin);
+      Free_DelCF(dcf,prref,private_delcf_chain_begin,*private_smDelCF);
     }
     dcf = DCF_NextPredDCF(dcf);
   }
-  dcf = new_DelCF_pred(CTXTc prref,psc,&private_delcf_chain_begin);
+  dcf = new_DelCF_pred(CTXTc prref,psc,&private_delcf_chain_begin,private_smDelCF);
 }
 #endif
 
@@ -2457,7 +2463,7 @@ void check_insert_global_delcf_clause(CTXTdeclc PrRef prref,
   //    dcf = DCF_NextPredDCF(dcf);
   //  }
   if (!found) {
-    dcf = new_DelCF_clause(prref,psc,clref,&delcf_chain_begin);
+    dcf = new_DelCF_clause(prref,psc,clref,&delcf_chain_begin,&smDelCF);
   }
   SYS_MUTEX_UNLOCK(MUTEX_DYNAMIC);
 }
@@ -2477,7 +2483,7 @@ void check_insert_private_delcf_clause(CTXTdeclc PrRef prref,
   //    dcf = DCF_NextPredDCF(dcf);
   //  }
   if (!found) {
-    dcf = new_DelCF_clause(prref,psc,clref,&private_delcf_chain_begin);
+    dcf = new_DelCF_clause(prref,psc,clref,&private_delcf_chain_begin,private_smDelCF);
   }
 }
 
@@ -2598,7 +2604,7 @@ static int really_delete_clause(ClRef);
    delcf frame.
 */
 
-int sweep_dynamic(CTXTdeclc DelCFptr *chain_begin) { 
+int sweep_dynamic(CTXTdeclc DelCFptr *chain_begin,Structure_Manager *SM) { 
   DelCFptr next_delcf_ptr, delcf_ptr = *chain_begin; 
   int dcf_cnt = 0;
   PrRef prref;
@@ -2618,7 +2624,7 @@ int sweep_dynamic(CTXTdeclc DelCFptr *chain_begin) {
 	//		get_name(DCF_PSC(delcf_ptr)),get_arity(DCF_PSC(delcf_ptr)));
 	gc_retractall(CTXTc DCF_ClRef(delcf_ptr));
 	prref = dynpredep_to_prref(CTXTc get_ep(DCF_PSC(delcf_ptr)));
-	Free_DelCF(delcf_ptr,prref,*chain_begin);
+	Free_DelCF(delcf_ptr,prref,*chain_begin,*SM);
       }
       else {
 	if (DTF_Type(delcf_ptr) == DELETED_CLREF) {
@@ -2628,7 +2634,7 @@ int sweep_dynamic(CTXTdeclc DelCFptr *chain_begin) {
 	    //		    DCF_ClRef(delcf_ptr));
 	    really_delete_clause(DCF_ClRef(delcf_ptr));
 	    prref = dynpredep_to_prref(CTXTc get_ep(DCF_PSC(delcf_ptr)));
-	    Free_DelCF(delcf_ptr,prref,*chain_begin);
+	    Free_DelCF(delcf_ptr,prref,*chain_begin,*SM);
 	  } else {
 	    dcf_cnt++;
 	    //	    fprintf(stderr,"GC Sweep skipping unsafe: %s/%d\n",
@@ -2658,21 +2664,21 @@ int gc_dynamic(CTXTdecl)
   if (flags[NUM_THREADS] == 1 ) {
     if (!delcf_chain_begin && !private_delcf_chain_begin) return 0;
     if (!mark_dynamic(CTXT)) {
-      ctr = sweep_dynamic(CTXTc &delcf_chain_begin) + 
-	sweep_dynamic(CTXTc &private_delcf_chain_begin);
+      ctr = sweep_dynamic(CTXTc &delcf_chain_begin,private_smDelCF) + 
+	sweep_dynamic(CTXTc &private_delcf_chain_begin,private_smDelCF);
     }
     unmark_cpstack_retract(CTXT);
   } else {
     if (!private_delcf_chain_begin) return 0;
     if (!mark_dynamic(CTXT)) {
-      ctr = sweep_dynamic(CTXTc &private_delcf_chain_begin);
+      ctr = sweep_dynamic(CTXTc &private_delcf_chain_begin,private_smDelCF);
     }
     unmark_cpstack_retract(CTXT);
   }
 #else 
     if (!delcf_chain_begin) return 0;
     if (!mark_dynamic(CTXT)) {
-      ctr = sweep_dynamic(CTXTc &delcf_chain_begin);
+      ctr = sweep_dynamic(CTXTc &delcf_chain_begin,&smDelCF);
     }
     unmark_cpstack_retract(CTXT);
 #endif
@@ -2881,42 +2887,46 @@ static void mark_for_deletion(CTXTdeclc ClRef Clause)
    we can actually delete the clause.  Otherwise, we make a frame on
    the delcf list. */
 
-// #define RETRACT_EXPERIMENT 1
+#define RETRACT_EXPERIMENT 1
 
 #ifdef RETRACT_EXPERIMENT
 unsigned long retract_num = 0;
 
-#define time_to_dyngc \
-  ((((CPtr) tcpstack.high - top_of_cpstack) < 100000) ? \
-   !(retract_num && 0x15): !(retract_num && 0x255))
+#define time_to_dyngc	 !(retract_num & 0xff)
 
 static void retract_clause(CTXTdeclc ClRef Clause, Psc psc ) { 
   PrRef prref; 
+  int really_deleted = 0;
 
   retract_num++;
-
-  if (time_to_dyngc) {
-    gc_dynamic(CTXT);    // part of gc strategy -- dont know how good
-  }
+  if (time_to_dyngc) gc_dynamic(CTXT);    // gc strategy -- dont know how good
 
   mark_for_deletion(CTXTc Clause);
-
-// retracting only if unifying -- dont worry abt. NULL return for d_to_p 
-  prref = dynpredep_to_prref(CTXTc get_ep(psc));
-  //    fprintf(stderr,"Delaying retract of clref in use: %s/%d\n",
-  //    get_name(psc),get_arity(psc));
-
-#ifndef MULTI_THREAD
-  check_insert_private_delcf_clause(prref,psc,Clause);
-#else
-  if (!get_shared(psc)) {
-    check_insert_private_delcf_clause(CTXT, prref,psc,Clause);
-  }
-  else {
-    check_insert_shared_delcf_clause(CTXT, prref,psc,Clause);
-  }
+#ifdef MULTI_THREAD
+  if (flags[NUM_THREADS] == 1 || !get_shared(psc))
 #endif
+    if (pflags[CLAUSE_GARBAGE_COLLECT] == 1 && !dyntabled_incomplete(CTXTc psc)
+	&& ((CPtr) tcpstack.high - top_of_cpstack) < 10000) {
+      if (!mark_cpstack_retract(CTXTc Clause) && determine_if_safe_to_delete(Clause)) {
+	really_delete_clause(Clause);
+	really_deleted = 1;
+      }
+      unmark_cpstack_retract(CTXT);
+  }
+  if (!really_deleted) {
+    // retracting only if unifying -- dont worry abt. NULL return for d_to_p 
+    prref = dynpredep_to_prref(CTXTc get_ep(psc));
+#ifndef MULTI_THREAD
+    check_insert_private_delcf_clause(prref,psc,Clause);
+#else
+    if (!get_shared(psc)) 
+      check_insert_private_delcf_clause(CTXT, prref,psc,Clause);
+    else 
+      check_insert_shared_delcf_clause(CTXT, prref,psc,Clause);
+#endif
+  }
 }
+
 #else
 static void retract_clause(CTXTdeclc ClRef Clause, Psc psc ) { 
   PrRef prref; 
