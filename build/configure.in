@@ -1043,18 +1043,6 @@ if test "${with_odbc+set}" = "set"; then
     with_odbc=yes
 fi
 
-INTERPROLOGSRC=""
-INTERPROLOGOBJ=""
-
-if test "${with_interprolog+set}" = "set"; then
-    AC_DEFINE(XSB_INTERPROLOG)
-    with_interprolog=yes
-    INTERPROLOGSRC="interprolog_callback.c"
-    INTERPROLOGOBJ="interprolog_callback.o"
-    dnl also needed to pass jni include file locations
-    dnl to windows make file through site-includes
-fi
-
 win_site_includes=
 win_ld_site_libraries=
 
@@ -1156,14 +1144,27 @@ if test "${with_interprolog}" = "yes"; then
         with_interprolog=""
         JAVA_HEADER_PATH=""
         JAVA_PLATFORM_HEADER_PATH=""
-  else
+    else
         JAVA_HEADER_PATH=${java_path}
         JAVA_PLATFORM_HEADER_PATH=`ls ${JAVA_HEADER_PATH}/*/jni_md.h`
         JAVA_PLATFORM_HEADER_PATH=`dirname ${JAVA_PLATFORM_HEADER_PATH}`
-    echo "Obtaining Java header files form ${JAVA_HEADER_PATH} and ${JAVA_PLATFORM_HEADER_PATH}"
-  fi
+    	echo "Obtaining Java header files form ${JAVA_HEADER_PATH} and ${JAVA_PLATFORM_HEADER_PATH}"
+    fi
 else
   JAVA_HEADER_PATH=""
+fi
+
+INTERPROLOGSRC=""
+INTERPROLOGOBJ=""
+
+if test "${with_interprolog+set}" = "set"; then
+    AC_DEFINE(XSB_INTERPROLOG)
+    with_interprolog=yes
+    INTERPROLOGSRC="interprolog_callback.c"
+    INTERPROLOGOBJ="interprolog_callback.o"
+    c_site_includes="${c_site_includes} -I${JAVA_HEADER_PATH}"
+    dnl also needed to pass jni include file locations
+    dnl to windows make file through site-includes
 fi
 
 
