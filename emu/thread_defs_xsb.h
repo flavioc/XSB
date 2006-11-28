@@ -109,8 +109,8 @@
 
 /* Non-recursive */
 #define MUTEX_STRING		15
-#define MUTEX_SM		17
-#define MUTEX_STACKS		18
+//#define MUTEX_SM		17
+//#define MUTEX_STACKS		18
 #define MUTEX_SOCKETS		19
 #define MUTEX_MEM		20
 #define MUTEX_ODBC		21

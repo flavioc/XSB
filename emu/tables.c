@@ -146,8 +146,8 @@ VariantSF NewProducerSF(CTXTdeclc BTNptr Leaf,TIFptr TableInfo) {
    subg_ans_list_ptr(pNewSF) = empty_return_handle(pNewSF);		     
    subg_compl_stack_ptr(pNewSF) = openreg - COMPLFRAMESIZE;		    
 
+#ifndef MULTI_THREAD
 /* incremental evaluation start */
-
 if((get_incr(TIF_PSC(TableInfo))) &&(IsVariantPredicate(TableInfo))){
   //  sfPrintGoal(stdout,pNewSF,NO);printf(" is marked incr\n");
   subg_callnode_ptr(pNewSF) = makecallnode(pNewSF);                        
@@ -156,7 +156,7 @@ if((get_incr(TIF_PSC(TableInfo))) &&(IsVariantPredicate(TableInfo))){
   subg_callnode_ptr(pNewSF) = NULL;
  }
 /* incremental evaluation end */
-
+#endif
 
    return (VariantSF)pNewSF;						  
 }
@@ -199,16 +199,15 @@ void table_call_search(CTXTdeclc TabledCallInfo *call_info,
 
   TIFptr tif;
 
+#ifndef MULTI_THREAD
   /* for incremental evaluation begin */ 
-
   int flag;
   callnodeptr c;
   VariantSF sf;
   ALNptr pALN;
   BTNptr leaf,Paren;  
-
   /* for incremental evaluation end */     
-
+#endif
 
 
   tif = CallInfo_TableInfo(*call_info);
@@ -216,6 +215,7 @@ void table_call_search(CTXTdeclc TabledCallInfo *call_info,
     TIF_CallTrie(tif) = newCallIndex(CTXTc TIF_PSC(tif));
   if ( IsVariantPredicate(tif) ){
     variant_call_search(CTXTc call_info,results);
+#ifndef MULTI_THREAD
     /* incremental evaluation: checking whether falsecount is zero */
     /*
       In call check insert if a call is reinserted and was already
@@ -226,7 +226,6 @@ void table_call_search(CTXTdeclc TabledCallInfo *call_info,
       should fetch answers from the earlier answer table as any
       completed call would do.
     */
-
     flag=CallLUR_VariantFound(*results);
     Paren=CallLUR_Leaf(*results);
     old_call=NULL;
@@ -255,6 +254,7 @@ void table_call_search(CTXTdeclc TabledCallInfo *call_info,
     CallLUR_Subsumer(*results) = CallTrieLeaf_GetSF(Paren);
     CallLUR_VariantFound(*results) = flag;
     /* incremental evaluation: end */
+#endif
   }
   else
     subsumptive_call_search(CTXTc call_info,results);

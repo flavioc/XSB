@@ -40,16 +40,14 @@
 
    env_byte: Two lowest-order bits of env byte indicate whether the
    symbol is visible by any module, local to a module, or unloaded.
-   Bit 2 indicates whether the predicate is tabled for subsumption,
-   bit 3 indicates whether the predicate is tabled for variance.
-   (Bits 2 and 3 can both be on, indicating that the predicate is
+   Bit 3 indicates whether the predicate is tabled for subsumption,
+   bit 4 indicates whether the predicate is tabled for variance.
+   (Bits 3 and 4 can both be on, indicating that the predicate is
    tabled, but whether it is variant or subsumptive has not yet been
-   determined.)  Bit 4 indicates whether it has been determined that
-   the predicate is thread-shared or thread-private.  Bit 5 indicates
+   determined.)  Bit 5 indicates whether it has been determined that
+   the predicate is thread-shared or thread-private.  Bit 6 indicates
    the predicate is shared among threads in the MT engine.  Thus, bit
-   5 is meaningful only if bit 4 is also set.  
-
-   Still dont understand why bit 6 is needed???
+   5 is meaningful only if bit 5 is also set.  
 
    Bits 7 and 8 are used for get_spy.
 
@@ -77,7 +75,7 @@
 struct psc_rec {
   byte env;			/* 0&0x3 - visible; 1&0x3 - local; 2&0x3 - unloaded;  */
   				/* 0xc0, 2 bits for spy */
-				/* 0x20 - shared, 0x1 for pritave; 0x8 - tabled */
+				/* 0x20 - shared, 0x10 for determined; 0x8 - tabled */
     byte incr;                    /* 1 is incremental; 0 is non-incremental, 2: opaque, incremental evaluation */
   byte entry_type;		/* see psc_defs.h */
   byte arity; 
