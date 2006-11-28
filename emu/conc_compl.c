@@ -106,21 +106,17 @@ ThreadDep *GetNextDep( ThreadDepList *TDL, ThreadDep *dep )
    dependency is found, *new_deps is set to TRUE.
  */
 
-static int PropagateDeps( th_context *th, th_context *dep_th, 
+static void PropagateDeps( th_context *th, th_context *dep_th, 
 		    	ThreadDepList *NewTDL, CPtr *leader, int *new_deps )
 {
     ThreadDep *dep ;
     VariantSF sgf ;
-    int busy = FALSE;
 
     dep = GetInitDep(&dep_th->TDL); 
     while( dep != NULL )
     {   sgf = GetDepSubgoal(dep) ;
-	if( is_completed(sgf) )
-		busy = TRUE;
-	else
-	{
-		if( subg_tid(sgf) == xsb_thread_id )
+	if( !is_completed(sgf) )
+	{	if( subg_tid(sgf) == xsb_thread_id )
 		{
 	    		if( subg_compl_stack_ptr(sgf) > *leader )
 			*leader = subg_compl_stack_ptr(sgf) ;
@@ -131,7 +127,6 @@ static int PropagateDeps( th_context *th, th_context *dep_th,
 	}
 	dep = GetNextDep(&dep_th->TDL, dep); 
     }
-    return busy ;
 }
 
 /********************************************************************* 
@@ -171,8 +166,7 @@ void UpdateDeps(th_context *th, int *busy, CPtr *leader)
 	    else
 		GetDepLast(dep1) = 0 ;
 	    if( dep_th->completing )
-		*busy = *busy || 
-			PropagateDeps( th, dep_th, &NewTDL, leader, &new_deps );
+		PropagateDeps( th, dep_th, &NewTDL, leader, &new_deps );
 	    else
 		*busy = TRUE ;
 	    dep = GetNextDep(&th->TDL, dep); 
