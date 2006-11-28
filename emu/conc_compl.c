@@ -106,25 +106,32 @@ ThreadDep *GetNextDep( ThreadDepList *TDL, ThreadDep *dep )
    dependency is found, *new_deps is set to TRUE.
  */
 
-static void PropagateDeps( th_context *th, th_context *dep_th, 
+static int PropagateDeps( th_context *th, th_context *dep_th, 
 		    	ThreadDepList *NewTDL, CPtr *leader, int *new_deps )
 {
     ThreadDep *dep ;
     VariantSF sgf ;
+    int busy = FALSE;
 
     dep = GetInitDep(&dep_th->TDL); 
     while( dep != NULL )
     {   sgf = GetDepSubgoal(dep) ;
-	if( subg_tid(sgf) == xsb_thread_id )
-	{
-	    if( subg_compl_stack_ptr(sgf) > *leader )
-		*leader = subg_compl_stack_ptr(sgf) ;
-	}
+	if( is_completed(sgf) )
+		busy = TRUE;
 	else
-		if( check_ins_subg(NewTDL, sgf) )
-			*new_deps = TRUE ;
+	{
+		if( subg_tid(sgf) == xsb_thread_id )
+		{
+	    		if( subg_compl_stack_ptr(sgf) > *leader )
+			*leader = subg_compl_stack_ptr(sgf) ;
+		}
+		else
+			if( check_ins_subg(NewTDL, sgf) )
+				*new_deps = TRUE ;
+	}
 	dep = GetNextDep(&dep_th->TDL, dep); 
     }
+    return busy ;
 }
 
 /********************************************************************* 
@@ -156,20 +163,18 @@ void UpdateDeps(th_context *th, int *busy, CPtr *leader)
 	dep = GetInitDep(&th->TDL); 
 	while( dep != NULL )
 	{   sgf = GetDepSubgoal(dep) ;
-	    if( !is_completed(sgf) )
-	    {
-		check_ins_subg(&NewTDL, sgf) ;
-		dep1 = find_tid(&NewTDL,subg_tid(sgf));
-		dep_th = find_context(subg_tid(sgf)) ;
-		if( dep_th->completing )
-			GetDepLast(dep1) = dep_th->last_ans ;
-		else
-			GetDepLast(dep1) = 0 ;
-		if( dep_th->completing )
-		    PropagateDeps( th, dep_th, &NewTDL, leader, &new_deps ) ;
-		else
-		    *busy = TRUE ;
-	    }
+	    check_ins_subg(&NewTDL, sgf) ;
+	    dep1 = find_tid(&NewTDL,subg_tid(sgf));
+	    dep_th = find_context(subg_tid(sgf)) ;
+	    if( dep_th->completing )
+		GetDepLast(dep1) = dep_th->last_ans ;
+	    else
+		GetDepLast(dep1) = 0 ;
+	    if( dep_th->completing )
+		*busy = *busy || 
+			PropagateDeps( th, dep_th, &NewTDL, leader, &new_deps );
+	    else
+		*busy = TRUE ;
 	    dep = GetNextDep(&th->TDL, dep); 
 	}
     	CopyThreadDepList( &th->TDL, &NewTDL ) ;
@@ -201,7 +206,7 @@ int MayHaveAnswers( th_context * th )
     	while( dep1 != NULL )
     	{   tid1 = GetDepTid(dep1) ;
 	    th1 = find_context(tid1) ;
-	    if( GetDepLast(dep1) < th1->last_ans )
+	    if( !th1 || GetDepLast(dep1) < th1->last_ans )
 	    {   pthread_cond_signal( &dep_th->cond_var ) ;
 		rc = TRUE ;
 	    }

@@ -88,14 +88,15 @@ typedef struct xsb_thread_s
 	struct xsb_thread_s	*next_entry,	/* either next free slot or next thread */
 				*prev_entry ;	/* only valid for slots used for threads */
 	unsigned int		incarn : 12;
+	unsigned int		valid : 1;
 	unsigned int		detached : 1;
 	unsigned int		exited : 1;
-	th_context *		ctxt ;		/* NULL if invalid thread */
+	th_context *		ctxt ;
 } xsb_thread_t ;
 
 #define VALID_THREAD(tid)	( tid >= 0 &&\
 				th_vec[THREAD_ENTRY(tid)].incarn == THREAD_INCARN(tid)\
-				&& th_vec[THREAD_ENTRY(tid)].ctxt != NULL)
+				&& th_vec[THREAD_ENTRY(tid)].valid )
 
 static xsb_thread_t *th_vec;
 static xsb_thread_t *th_first_free, *th_last_free, *th_first_thread;
@@ -145,6 +146,32 @@ th_context *find_context( int id )
 		return NULL;
 }
 
+int valid_tid( int t )
+{
+	return VALID_THREAD(t) ;
+}
+
+#ifdef SHARED_COMPL_TABLES
+int get_waiting_for_tid( int t )
+{
+	int wtid;
+	th_context *ctxt ;
+
+	pthread_mutex_lock( &th_mutex ) ;
+	if( !VALID_THREAD(t) )
+		ctxt = NULL;
+	else
+		ctxt = th_vec[THREAD_ENTRY(t)].ctxt ;
+	if( ctxt )
+		wtid = ctxt->waiting_for_tid ;
+	else
+		wtid = -1 ;
+	pthread_mutex_unlock( &th_mutex ) ;
+
+	return wtid ;
+}
+#endif
+
 static void init_thread_table(void)
 {
 	int i ;
@@ -154,6 +181,7 @@ static void init_thread_table(void)
 	for( i = 0; i < max_threads_glc; i++ )
 	{
 		th_vec[i].incarn = INC_MASK_RIGHT;	/* Effectively -1 */
+		th_vec[i].valid = FALSE;
 		th_vec[i].next_entry = &th_vec[i+1];
 		th_vec[i].ctxt = NULL;
 	}
@@ -234,6 +262,7 @@ static int th_new( pthread_t_p t, th_context *ctxt )
 #endif
 	pos->detached = FALSE;
 	pos->exited = FALSE;
+	pos->valid = TRUE;
 	return pos - th_vec ;
 }
 
@@ -248,7 +277,7 @@ static pthread_t_p th_get( int i )
 	pos    = THREAD_ENTRY(i) ;
 	incarn = THREAD_INCARN(i) ;
 
-	if( th_vec[pos].incarn == incarn && th_vec[pos].ctxt != NULL )
+	if( th_vec[pos].incarn == incarn && th_vec[pos].valid )
 #ifdef WIN_NT
 	  return th_vec[pos].tid_addr;
 #else
@@ -280,7 +309,7 @@ static void th_delete( int i )
 		th_last_free = &th_vec[i];
 		th_last_free->next_entry = NULL;
 	}
-	th_vec[i].ctxt = NULL;
+	th_vec[i].valid = FALSE;
 }
 
 /* calls _$thread_run/1 in thread.P */
@@ -615,8 +644,6 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  release_private_dynamic_resources(CTXT);
 	  close_str(CTXT) ;
 	  cleanup_thread_structures(CTXT) ;
-	  mem_dealloc(th,sizeof(th_context),THREAD_SPACE) ;
-	  flags[NUM_THREADS]-- ;
 	  pthread_mutex_lock( &th_mutex );
 	  tid2 = pthread_self();
 #ifdef WIN_NT
@@ -624,6 +651,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 #else
 	  i = th_find( tid2 ) ;
 #endif
+	  th_vec[i].ctxt = NULL;
 	  if( i >= 0 )
 	  {	if( th_vec[i].detached )
 	    		th_delete(i);
@@ -633,6 +661,8 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  pthread_mutex_unlock( &th_mutex );
 	  if( i == -1 )
 		xsb_abort("[THREAD] Couldn't find thread in thread table!") ;
+	  mem_dealloc(th,sizeof(th_context),THREAD_SPACE) ;
+	  flags[NUM_THREADS]-- ;
 	  pthread_exit((void *) rval ) ;
 	  rc = 0 ; /* keep compiler happy */
 	  break ;
@@ -865,13 +895,17 @@ xsbBool xsb_thread_request( CTXTdecl )
 
 	  i = ptoc_int(CTXTc 2);
 	  if( VALID_THREAD(i) ) {
+	    pthread_mutex_lock( &th_mutex ) ;
 	    ctxt_ptr = th_vec[THREAD_ENTRY(i)].ctxt;
-	    ctxt_ptr->_asynint_val |= THREADINT_MARK;
+	    if( ctxt_ptr )
+	    {	ctxt_ptr->_asynint_val |= THREADINT_MARK;
 #ifdef WIN_NT
-	    PTHREAD_KILL( th_vec[THREAD_ENTRY(i)].tid_addr, SIGINT );
+	    	PTHREAD_KILL( th_vec[THREAD_ENTRY(i)].tid_addr, SIGINT );
 #else
-	    PTHREAD_KILL( th_vec[THREAD_ENTRY(i)].tid, SIGINT );
+	    	PTHREAD_KILL( th_vec[THREAD_ENTRY(i)].tid, SIGINT );
 #endif
+	    }
+	    pthread_mutex_unlock( &th_mutex ) ;
 	  } else {
 	    bld_int(reg+2,i);
 	    xsb_permission_error(CTXTc "thread_interrupt","invalid_thread",

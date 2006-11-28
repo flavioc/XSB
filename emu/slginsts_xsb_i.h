@@ -252,24 +252,26 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
 	if (table_tid == xsb_thread_id) 
 		break ;
 	waiting_for_thread = find_context(table_tid) ;
-	if( would_deadlock( waiting_for_thread, th ) )
+	if( would_deadlock( table_tid, xsb_thread_id ) )
         {       /* code for leader */
                 reset_other_threads( th, waiting_for_thread, producer_sf );
                 th->deadlock_brk_leader = TRUE ;
                 continue ;
         }
         th->waiting_for_subgoal = producer_sf ;
-        th->waiting_for_thread = waiting_for_thread ;
+        th->waiting_for_tid = table_tid ;
 	pthread_cond_wait(&completing_cond,&completing_mut) ;
         if( th->reset_thread )
         {       th->reset_thread = FALSE ;
+     		th->waiting_for_tid = -1 ;
+     		th->waiting_for_subgoal = NULL ;
                 pthread_mutex_unlock(&completing_mut) ;
                 /* restart the tabletry instruction */
                 lpcreg = pcreg ;
                 XSB_Next_Instr() ;
         }
      }
-     th->waiting_for_thread = NULL ;
+     th->waiting_for_tid = -1 ;
      th->waiting_for_subgoal = NULL ;
      pthread_mutex_unlock(&completing_mut);
   } 

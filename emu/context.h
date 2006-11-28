@@ -379,7 +379,7 @@ int tid ;
 
 /* stuff for deadlock detection in completion */
 #ifdef SHARED_COMPL_TABLES
-struct th_context * 	waiting_for_thread;
+int waiting_for_tid;
 struct subgoal_frame *	waiting_for_subgoal;
 int deadlock_brk_leader ;
 int reset_thread ;

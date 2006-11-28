@@ -26,7 +26,7 @@
 extern counter num_deadlocks;
 extern counter num_suspends;
                                                                                 
-int would_deadlock( th_context *t1, th_context *t2 ) ;
+int would_deadlock( int tid1, int tid2 ) ;
 void reset_leader( th_context *th ) ;
 void reset_other_threads( th_context *th, th_context *ctxt, VariantSF sgf ) ;
 

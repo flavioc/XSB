@@ -1008,7 +1008,7 @@ void init_thread_structures(CTXTdecl)
   th->tid = 0 ;
 
 #ifdef SHARED_COMPL_TABLES
-  th->waiting_for_thread = NULL ;
+  th->waiting_for_tid = -1 ;
   th->deadlock_brk_leader = FALSE;
   th->reset_thread = FALSE;
 #endif

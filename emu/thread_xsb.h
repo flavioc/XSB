@@ -126,6 +126,10 @@ void init_system_mutexes( void ) ;
 void init_system_threads( th_context * ctxt ) ;
 
 th_context *find_context( int tid );
+int valid_tid( int tid );
+#endif
+#ifdef SHARED_COMPL_TABLES
+int get_waiting_for_tid( int t );
 #endif
 
 #define ENSURE_ONE_THREAD()						\

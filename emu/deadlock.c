@@ -19,18 +19,18 @@
 counter num_deadlocks = 0;
 counter num_suspends = 0;
 
-int would_deadlock( th_context *t1, th_context *t2 )
+int would_deadlock( int t1, int t2 )
 {
-        th_context * t = t1 ;
+	int t = t1;
                                                                                 
-        while( t != NULL )
+        while( valid_tid(t) )
                 if( t == t2 )
 		{	num_deadlocks++;
                         return TRUE ;
 		}
-                else
-                        t = t->waiting_for_thread;
-                                                                                
+                else 
+			t = get_waiting_for_tid(t) ;
+
 	num_suspends++;
         return FALSE ;
 }
@@ -111,10 +111,10 @@ void reset_other_threads( th_context *th, th_context *ctxt, VariantSF sgf )
 	VariantSF resetsgf ;
 	reset_thread( th, ctxt, sgf, &resetsgf );
         while( ctxt != th )
-	{	next = ctxt->waiting_for_thread;
+	{	next = find_context(ctxt->waiting_for_tid);
                 ctxt->deadlock_brk_leader = FALSE ;
                 ctxt->waiting_for_subgoal = resetsgf ;
-                ctxt->waiting_for_thread = th ;
+                ctxt->waiting_for_tid = xsb_thread_id ;
                 if( next != th )
                         reset_thread( th, next, ctxt->waiting_for_subgoal,
 					&resetsgf );
