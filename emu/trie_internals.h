@@ -955,7 +955,7 @@ subsumptive tables, which are private in the MT engine.
 #define free_answer_list(SubgoalFrame) {			\
     if (IsSharedSF(SubgoalFrame)) {				\
       if ( subg_answers(SubgoalFrame) > COND_ANSWERS )		\
-	SM_DeallocateStructList(smALN,				\
+	SM_DeallocateSharedStructList(smALN,				\
 				subg_ans_list_ptr(SubgoalFrame),	\
 				subg_ans_list_tail(SubgoalFrame))	\
 	else								\
@@ -975,9 +975,9 @@ subsumptive tables, which are private in the MT engine.
     if (IsSharedSF(SubgoalFrame)) {					\
       if ( subg_answers(SubgoalFrame) != NULL && 			\
 	   subg_tag(SubgoalFrame) > COND_ANSWERS )			\
-      /* we really should delete a shared answer list in CONC_COMPL */  \
-      /* but it seems like this is only called in "safe" places...  */  \
-	SM_DeallocateStructList(smALN,					\
+      /* we really shouldn't delete a shared answer list in CONC_COMPL
+         but it seems like this is only called in "safe" places...  */  \
+	SM_DeallocateSharedStructList(smALN,				\
 				subg_ans_list_ptr(SubgoalFrame),	\
 				subg_ans_list_tail(SubgoalFrame))	\
 	else								\
