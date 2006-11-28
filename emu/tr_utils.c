@@ -369,13 +369,13 @@ static void free_trie_ht(CTXTdeclc BTHTptr ht) {
 	      TABLE_SPACE);
 #ifdef MULTI_THREAD
   if( threads_current_sm == SHARED_SM )
-	SYS_MUTEX_LOCK(MUTEX_SM);
+	SM_Lock(*smBTHT);
 #endif
   TrieHT_RemoveFromAllocList(*smBTHT,ht);
   SM_DeallocateStruct(*smBTHT,ht); 
 #ifdef MULTI_THREAD
   if( threads_current_sm == SHARED_SM )
-	SYS_MUTEX_UNLOCK(MUTEX_SM);
+	SM_Unlock(*smBTHT);
 #endif
 }
 

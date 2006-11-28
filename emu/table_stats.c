@@ -426,13 +426,21 @@ void print_detailed_tablespace_stats(CTXTdecl) {
   int num_de_blocks, num_dl_blocks, num_pnde_blocks;
   int pri_num_de_blocks, pri_num_dl_blocks, pri_num_pnde_blocks;
 
-  SYS_MUTEX_LOCK( MUTEX_SM );			
+  SM_Lock(smTableBTN);
   btn = node_statistics(&smTableBTN);
+  SM_Unlock(smTableBTN);
+  SM_Lock(smTableBTHT);
   btht = hash_statistics(&smTableBTHT);
+  SM_Unlock(smTableBTHT);
+  SM_Lock(smVarSF);
   varsf = subgoal_statistics(CTXTc &smVarSF);
+  SM_Unlock(smVarSF);
+  SM_Lock(smALN);
   aln = node_statistics(&smALN);
+  SM_Unlock(smALN);
+  SM_Lock(smASI);
   asi = node_statistics(&smASI);
-  SYS_MUTEX_UNLOCK( MUTEX_SM );			
+  SM_Unlock(smASI);
 
   SYS_MUTEX_LOCK( MUTEX_DELAY );			
   de_space_alloc = allocated_de_space(current_de_block_gl,&num_de_blocks);

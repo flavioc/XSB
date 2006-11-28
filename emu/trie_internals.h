@@ -647,9 +647,9 @@ typedef struct Basic_Trie_HashTable {
     if (threads_current_sm == PRIVATE_SM) {				\
       _New_TrieHT_Sub(SM,THT,TrieType);					\
     } else {								\
-      SYS_MUTEX_LOCK( MUTEX_SM );					\
+      SM_Lock(SM);							\
       _New_TrieHT_Sub(SM,THT,TrieType);					\
-      SYS_MUTEX_UNLOCK( MUTEX_SM );					\
+      SM_Unlock(SM);							\
     }									\
 }
 #else

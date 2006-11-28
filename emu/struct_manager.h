@@ -209,6 +209,9 @@ typedef struct Structure_Manager {
     void *alloc;	   /* - convenience hook, not directly maintained */
     void *dealloc;	   /* - deallocated structs, poised for reuse */
   } struct_lists;
+#ifdef MULTI_THREAD
+  pthread_mutex_t sm_lock;
+#endif
 } Structure_Manager;
 typedef struct Structure_Manager *SMptr;
 
@@ -223,6 +226,14 @@ typedef struct Structure_Manager *SMptr;
 #define SM_StructName(SM)	((SM).struct_desc.name)
 #define SM_AllocList(SM)	((SM).struct_lists.alloc)
 #define SM_FreeList(SM)		((SM).struct_lists.dealloc)
+
+#ifdef MULTI_THREAD
+#define SM_Lock(SM)	pthread_mutex_lock(&(SM).sm_lock)
+#define SM_Unlock(SM)	pthread_mutex_unlock(&(SM).sm_lock)
+#else
+#define SM_Lock(SM)
+#define SM_Unlock(SM)
+#endif
 
 #define SM_NewBlockSize(SM)	/* in bytes */			\
    ( sizeof(void *) + SM_StructSize(SM) * SM_StructsPerBlock(SM) )
@@ -280,6 +291,8 @@ extern xsbBool smIsAllocatedStructRef(Structure_Manager, void *);
 /*
  *  For initialization at declaration time.
  */
+#ifndef MULTI_THREAD
+
 #define SM_InitDecl(StructType,StructsPerBlock,NameString) {	\
    {NULL, NULL, NULL},						\
    {sizeof(StructType), StructsPerBlock, NameString},		\
@@ -294,7 +307,36 @@ extern xsbBool smIsAllocatedStructRef(Structure_Manager, void *);
   (StructPtr->struct_desc).num = StructsPerBlock;			\
   (StructPtr->struct_desc).name = NameString;				\
   (StructPtr->struct_lists).alloc = NULL;				\
-  (StructPtr->struct_lists).dealloc = NULL;				
+  (StructPtr->struct_lists).dealloc = NULL;
+
+#else
+
+/* In multi-threading struct managers have a lock. Private struct
+   managers also initialize and destroy the lock, but shouldn't use it
+   otherwise.
+   This way if in some place of code its not known whether a struct
+   manager is private or shared the lock can be used anyway.
+ */
+
+#define SM_InitDecl(StructType,StructsPerBlock,NameString) {	\
+   {NULL, NULL, NULL},						\
+   {sizeof(StructType), StructsPerBlock, NameString},		\
+   {NULL, NULL},						\
+   PTHREAD_MUTEX_INITIALIZER					\
+ }
+
+#define SM_InitDeclDyna(StructPtr,StructType,StructsPerBlock,NameString)  \
+  (StructPtr->cur_block).pBlock = NULL; 				\
+  (StructPtr->cur_block).pNextStruct = NULL;				\
+  (StructPtr->cur_block).pLastStruct = NULL;				\
+  (StructPtr->struct_desc).size = sizeof(StructType);			\
+  (StructPtr->struct_desc).num = StructsPerBlock;			\
+  (StructPtr->struct_desc).name = NameString;				\
+  (StructPtr->struct_lists).alloc = NULL;				\
+  (StructPtr->struct_lists).dealloc = NULL;				\
+  pthread_mutex_init(&StructPtr->sm_lock, NULL );
+
+#endif
   
 /*  strcpy(&((StructPtr->struct_desc).name),NameString);		\*/
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -304,7 +346,7 @@ extern xsbBool smIsAllocatedStructRef(Structure_Manager, void *);
  */
 
 #define SM_AllocateSharedStruct(SM,pStruct) {		\
-  SYS_MUTEX_LOCK( MUTEX_SM );				\
+  SM_Lock(SM);						\
   if ( IsNonNULL(SM_FreeList(SM)) ) {			\
     SM_AllocateFree(SM,pStruct);			\
   }							\
@@ -314,7 +356,7 @@ extern xsbBool smIsAllocatedStructRef(Structure_Manager, void *);
     }							\
     SM_AllocateFromBlock(SM,pStruct);			\
   }							\
-  SYS_MUTEX_UNLOCK( MUTEX_SM );				\
+  SM_Unlock(SM);					\
  }
 
 #define SM_AllocateStruct(SM,pStruct) {		\
@@ -349,10 +391,10 @@ extern xsbBool smIsAllocatedStructRef(Structure_Manager, void *);
      pStruct = *(void **)pStruct;			\
    }							\
    *(((int *)pStruct)+1) = FREE_TRIE_NODE_MARK;		\
-   SYS_MUTEX_LOCK( MUTEX_SM ); 				\
+   SM_Lock(SM);						\
    SMFL_NextFreeStruct(pTail) = SM_FreeList(SM);	\
    SM_FreeList(SM) = pHead;				\
-   SYS_MUTEX_UNLOCK( MUTEX_SM ); 			\
+   SM_Unlock(SM);					\
  }
 #else
 #define SM_DeallocateSharedStructList(SM,pHead,pTail)  \
