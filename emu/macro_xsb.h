@@ -465,6 +465,7 @@ extern TIFptr New_TIF(Psc);
     }									\
     SET_TRIE_ALLOCATION_TYPE_PRIVATE();					\
     delete_predicate_table(CTXTc pTIF);					\
+    free_call_trie_mutex(pTIF);						\
     mem_dealloc((pTIF),sizeof(TableInfoFrame),TABLE_SPACE);		\
   }
 

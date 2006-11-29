@@ -304,8 +304,8 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
 #ifdef CONC_COMPL
     subg_tid(producer_sf) = xsb_thread_id;
     subg_tag(producer_sf) = INCOMP_ANSWERS;
-#endif
     UNLOCK_CALL_TRIE() ;
+#endif
 
     /* for incremental evaluation - start */
     

@@ -146,7 +146,6 @@ VariantSF NewProducerSF(CTXTdeclc BTNptr Leaf,TIFptr TableInfo) {
    subg_ans_list_ptr(pNewSF) = empty_return_handle(pNewSF);		     
    subg_compl_stack_ptr(pNewSF) = openreg - COMPLFRAMESIZE;		    
 
-#ifndef MULTI_THREAD
 /* incremental evaluation start */
 if((get_incr(TIF_PSC(TableInfo))) &&(IsVariantPredicate(TableInfo))){
   //  sfPrintGoal(stdout,pNewSF,NO);printf(" is marked incr\n");
@@ -156,7 +155,6 @@ if((get_incr(TIF_PSC(TableInfo))) &&(IsVariantPredicate(TableInfo))){
   subg_callnode_ptr(pNewSF) = NULL;
  }
 /* incremental evaluation end */
-#endif
 
    return (VariantSF)pNewSF;						  
 }
@@ -254,7 +252,7 @@ void table_call_search(CTXTdeclc TabledCallInfo *call_info,
     CallLUR_Subsumer(*results) = CallTrieLeaf_GetSF(Paren);
     CallLUR_VariantFound(*results) = flag;
     /* incremental evaluation: end */
-#endif
+#endif /* not MULTI_THREAD */
   }
   else
     subsumptive_call_search(CTXTc call_info,results);
@@ -805,8 +803,8 @@ inline TIFptr New_TIF(CTXTdeclc Psc pPSC) {
    TIF_Subgoals(pTIF) = NULL;						
    TIF_NextTIF(pTIF) = NULL;						
 #ifdef MULTI_THREAD
+   pthread_mutex_init( &TIF_CALL_TRIE_LOCK(pTIF), NULL );
    if (get_shared(pPSC)) {
-     pthread_mutex_init( &TIF_CALL_TRIE_LOCK(pTIF), NULL );
      SYS_MUTEX_LOCK( MUTEX_TABLE );				
      if ( IsNonNULL(tif_list.last) )					
        TIF_NextTIF(tif_list.last) = pTIF;				      
