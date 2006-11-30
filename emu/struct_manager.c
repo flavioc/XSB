@@ -28,7 +28,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef MULTI_THREAD
+#ifdef WIN_NT
+#include "pthread.h"
+#else
 #include <pthread.h>
+#endif
+#endif
 
 #include "auxlry.h"
 #include "struct_manager.h"
