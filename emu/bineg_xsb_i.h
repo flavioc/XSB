@@ -122,6 +122,7 @@ case IS_INCOMPLETE: {
 #ifdef SHARED_COMPL_TABLES
 /* This allows sharing of completed tables.  */
      pthread_mutex_lock(&completing_mut);
+     SYS_MUTEX_INCR( MUTEX_COMPL );
      while( !is_completed(producerSF) )
      {
 	table_tid = subg_tid(producerSF) ;
@@ -141,6 +142,7 @@ case IS_INCOMPLETE: {
 	th->waiting_for_subgoal = producerSF ;
         th->waiting_for_tid = table_tid ;
         pthread_cond_wait(&completing_cond,&completing_mut) ;
+        SYS_MUTEX_INCR( MUTEX_COMPL );
         if( th->reset_thread )
         {       th->reset_thread = FALSE ;
 		th->waiting_for_subgoal = NULL ;

@@ -228,7 +228,9 @@ typedef struct Structure_Manager *SMptr;
 #define SM_FreeList(SM)		((SM).struct_lists.dealloc)
 
 #ifdef MULTI_THREAD
-#define SM_Lock(SM)	pthread_mutex_lock(&(SM).sm_lock)
+#define SM_Lock(SM)	{	pthread_mutex_lock(&(SM).sm_lock);	\
+				SYS_MUTEX_INCR( MUTEX_SM );		\
+			}
 #define SM_Unlock(SM)	pthread_mutex_unlock(&(SM).sm_lock)
 #else
 #define SM_Lock(SM)

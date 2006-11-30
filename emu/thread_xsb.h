@@ -100,12 +100,17 @@ extern pthread_attr_t normal_attr_gl;
 
 #define SYS_MUTEX_LOCK_NOERROR( M )   {pthread_mutex_lock(MUTARRAY_MUTEX(M));  \
                                        MUTARRAY_NUMLOCKS(M)++; }
+
+#define SYS_MUTEX_INCR( M )	{ MUTARRAY_NUMLOCKS(M)++; }
+
 #else
 
 #define SYS_MUTEX_LOCK( M )   {pthread_mutex_lock( MUTARRAY_MUTEX(M));	      \
                                MUTARRAY_OWNER(M) = xsb_thread_id; }
 
 #define SYS_MUTEX_LOCK_NOERROR( M )   {pthread_mutex_lock(MUTARRAY_MUTEX(M)); }
+
+#define SYS_MUTEX_INCR( M )
 
 #endif /* PROFILE_MUTEXES */
 
@@ -119,6 +124,7 @@ extern pthread_attr_t normal_attr_gl;
 #define SYS_MUTEX_LOCK_NOERROR( M ) 
 #define SYS_MUTEX_UNLOCK( M )
 #define SYS_MUTEX_UNLOCK_NOERROR( M )
+#define SYS_MUTEX_INCR( M )
 #endif /* MULTI_THREAD */
 
 #ifdef MULTI_THREAD

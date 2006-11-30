@@ -59,6 +59,7 @@ XSB_Start_Instr(check_complete,_check_complete)
 
   cs_ptr = tcp_compl_stack_ptr(breg);
   pthread_mutex_lock(&completing_mut);
+  SYS_MUTEX_INCR( MUTEX_COMPL );
   for(;;)
   {
   	if (prev_compl_frame(cs_ptr) < COMPLSTACKBOTTOM && !is_leader(cs_ptr))
@@ -116,6 +117,7 @@ XSB_Start_Instr(check_complete,_check_complete)
 	th->completed = FALSE ;
 	th->cc_leader = cs_ptr ;
 	pthread_cond_wait(&th->cond_var, &completing_mut) ;
+        SYS_MUTEX_INCR( MUTEX_COMPL );
 	th->completing = FALSE ;
 	if( th->completed )
 		break ;
@@ -172,6 +174,7 @@ XSB_Start_Instr(check_complete,_check_complete)
       
 #ifdef SHARED_COMPL_TABLES
     pthread_mutex_lock(&completing_mut);
+    SYS_MUTEX_INCR( MUTEX_COMPL );
 #endif
       CompleteSimplifyAndReclaim(CTXTc cs_ptr);
 #ifdef SHARED_COMPL_TABLES

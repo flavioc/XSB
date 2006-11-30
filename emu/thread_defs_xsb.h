@@ -99,6 +99,10 @@
    dispatch blocks, table dispatch blocks, and
    deleted_table_info_frames. */
 
+/* pseudo mutexes are used to count accesses to mutexes or sets of mutexes
+   that couldn't adequately be treated has system mutexes */
+   
+
 #define MUTEX_TABLE		2
 #define MUTEX_TRIE		3
 #define MUTEX_SYMBOL		4
@@ -109,8 +113,8 @@
 
 /* Non-recursive */
 #define MUTEX_STRING		15
-//#define MUTEX_SM		17
-//#define MUTEX_STACKS		18
+#define MUTEX_SM		17	/* pseudo mutex */
+#define MUTEX_THREADS		18	/* pseudo mutex */
 #define MUTEX_SOCKETS		19
 #define MUTEX_MEM		20
 #define MUTEX_ODBC		21
@@ -119,6 +123,9 @@
 #define MUTEX_DISPBLKHDR        23
 
 #define MUTEX_DYNMUT            24
+
+#define MUTEX_COMPL		25	/* pseudo mutex */
+#define MUTEX_CALL_TRIE		26	/* pseudo mutex */
 
 /* Some mutexes available to users (obsolete) */
 #define MUTEX_CONSOLE		30

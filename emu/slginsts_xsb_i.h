@@ -100,8 +100,9 @@
 #ifdef MULTI_THREAD
 #define LOCK_CALL_TRIE()						\
 {	if( table_is_shared )						\
-		pthread_mutex_lock( &TIF_CALL_TRIE_LOCK(tip) );		\
-}
+        {	pthread_mutex_lock( &TIF_CALL_TRIE_LOCK(tip) );		\
+		SYS_MUTEX_INCR( MUTEX_CALL_TRIE )			\
+}	}
 #define UNLOCK_CALL_TRIE()						\
 {	if( table_is_shared )						\
 		pthread_mutex_unlock( &TIF_CALL_TRIE_LOCK(tip) );	\
@@ -238,6 +239,7 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
  */
   if ( table_is_shared && !IsNULL(producer_sf) ) {
      pthread_mutex_lock(&completing_mut);
+     SYS_MUTEX_INCR( MUTEX_COMPL );
      while( !is_completed(producer_sf))
      {  
         /* if is leader and subgoal is marked to be computed by leader */
@@ -261,6 +263,7 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
         th->waiting_for_subgoal = producer_sf ;
         th->waiting_for_tid = table_tid ;
 	pthread_cond_wait(&completing_cond,&completing_mut) ;
+        SYS_MUTEX_INCR( MUTEX_COMPL );
         if( th->reset_thread )
         {       th->reset_thread = FALSE ;
      		th->waiting_for_tid = -1 ;

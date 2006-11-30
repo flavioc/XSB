@@ -681,14 +681,16 @@ void do_delay_stuff_shared(CTXTdeclc NODEptr as_leaf, VariantSF subgoal, xsbBool
     ASI	asi;
     DL dl = NULL;
 
-    SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
-    if (delayreg && (!sf_exists || is_conditional_answer(as_leaf))) {
-      if ((dl = intern_delay_list(CTXTc delayreg)) != NULL) {
-	mark_conditional_answer(as_leaf, subgoal, dl, smASI);
-	record_de_usage(dl);
+    if (delayreg) { 
+      SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
+      if (!sf_exists || is_conditional_answer(as_leaf)) {
+        if ((dl = intern_delay_list(CTXTc delayreg)) != NULL) {
+	  mark_conditional_answer(as_leaf, subgoal, dl, smASI);
+	  record_de_usage(dl);
+        }
       }
+      SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
     }
-    SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
     /*
      * Check for the derivation of an unconditional answer.
      */

@@ -158,6 +158,7 @@ int get_waiting_for_tid( int t )
 	th_context *ctxt ;
 
 	pthread_mutex_lock( &th_mutex ) ;
+        SYS_MUTEX_INCR( MUTEX_THREADS ) ;
 	if( !VALID_THREAD(t) )
 		ctxt = NULL;
 	else
@@ -320,6 +321,7 @@ static void *xsb_thread_run( void *arg )
 	int pos ;
 
 	pthread_mutex_lock( &th_mutex );
+        SYS_MUTEX_INCR( MUTEX_THREADS ) ;
 	tid = pthread_self();
 /* if the xsb thread id was just created we need to re-initialize it on the
    thread context */
@@ -396,6 +398,7 @@ static int xsb_thread_create(th_context *th)
 
 /* This repetition of the call to th_new is need for concurrency reasons */
   pthread_mutex_lock( &th_mutex );
+  SYS_MUTEX_INCR( MUTEX_THREADS ) ;
   id = pos = th_new( thr, new_th_ctxt ) ;
   if (pos >= 0 && is_detached) th_vec[pos].detached = TRUE;
   pthread_mutex_unlock( &th_mutex );
@@ -588,6 +591,7 @@ int xsb_thread_self()
         pthread_t tid = pthread_self();
 
         pthread_mutex_lock( &th_mutex );
+        SYS_MUTEX_INCR( MUTEX_THREADS ) ;
         id = pos = th_find( P_PTHREAD_T_P ) ;
         pthread_mutex_unlock( &th_mutex );
 
@@ -645,6 +649,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  close_str(CTXT) ;
 	  cleanup_thread_structures(CTXT) ;
 	  pthread_mutex_lock( &th_mutex );
+          SYS_MUTEX_INCR( MUTEX_THREADS ) ;
 	  tid2 = pthread_self();
 #ifdef WIN_NT
 	  i = th_find( &tid2 ) ;
@@ -670,6 +675,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 	case XSB_THREAD_JOIN: {
 	  id = ptoc_int( CTXTc 2 ) ;
 	  pthread_mutex_lock( &th_mutex );
+          SYS_MUTEX_INCR( MUTEX_THREADS ) ;
 	  tid = th_get( id ) ;
 	  pthread_mutex_unlock( &th_mutex );
 	  if( tid == (pthread_t_p)0 )
@@ -688,6 +694,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  }
 
 	  pthread_mutex_lock( &th_mutex );
+          SYS_MUTEX_INCR( MUTEX_THREADS ) ;
 	  th_delete(THREAD_ENTRY(id));
 	  pthread_mutex_unlock( &th_mutex );
 	  ctop_int( CTXTc 3, rval ) ;
@@ -699,6 +706,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  id = ptoc_int( CTXTc 2 ) ;
 
 	  pthread_mutex_lock( &th_mutex );
+          SYS_MUTEX_INCR( MUTEX_THREADS ) ;
 	  tid = th_get( id ) ;
 	  pthread_mutex_unlock( &th_mutex );
 
@@ -717,6 +725,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 
 	  id = THREAD_ENTRY(id) ;
 	  pthread_mutex_lock( &th_mutex );
+          SYS_MUTEX_INCR( MUTEX_THREADS ) ;
 	  if( th_vec[id].exited )
 		th_delete(id) ;
 	  else
@@ -896,6 +905,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  i = ptoc_int(CTXTc 2);
 	  if( VALID_THREAD(i) ) {
 	    pthread_mutex_lock( &th_mutex ) ;
+            SYS_MUTEX_INCR( MUTEX_THREADS ) ;
 	    ctxt_ptr = th_vec[THREAD_ENTRY(i)].ctxt;
 	    if( ctxt_ptr )
 	    {	ctxt_ptr->_asynint_val |= THREADINT_MARK;
