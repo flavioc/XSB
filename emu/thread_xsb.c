@@ -115,6 +115,8 @@ pthread_mutex_t th_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t completing_mut;
 pthread_cond_t completing_cond;
 
+counter max_threads_sofar;
+
 // pthread_t is a pointer in Unix, structure in Windows libraries
 #ifdef WIN_NT
 #define P_PTHREAD_T_P &tid
@@ -127,8 +129,9 @@ pthread_cond_t completing_cond;
 char *mutex_names[] = {
 "mutex_dynamic","mutex_io","mutex_table","mutex_trie","mutex_symbol",
 "mutex_flags"," mutex_load_undef","mutex_delay","mutex_sys_system","unused",
-"unused","unused","unused","unused","unused",
-"mutex_string","mutex_atom_buf","mutex_sm","mutex_stacks","mutex_sockets",
+"unused","unused","unused","unused",
+"mutex_compl", "mutex_string","mutex_call_trie","mutex_sm","mutex_threads",
+"mutex_sockets",
 "mutex_mem","mutex_odbc","mutex_gentag","mutex_dispbkhdr","unused",
 "unused","unused","unused","unused","unused",
 "mutex_console","mutex_user1","mutex_user2","mutex_user3","mutex_user4",
@@ -363,7 +366,11 @@ static int xsb_thread_create(th_context *th)
 	       ptoc_int(CTXTc 6),ptoc_int(CTXTc 7)) ;
   new_th_ctxt->_reg[1] = copy_term_from_thread(new_th_ctxt, th, goal) ;
 
+  pthread_mutex_lock( &th_mutex );
+  SYS_MUTEX_INCR( MUTEX_THREADS ) ;
   flags[NUM_THREADS]++ ;
+  max_threads_sofar = xsb_max( max_threads_sofar, flags[NUM_THREADS] );
+  pthread_mutex_unlock( &th_mutex );
 
   is_detached = ptoc_int(CTXTc 8);
 
@@ -399,8 +406,10 @@ static int xsb_thread_create(th_context *th)
 /* This repetition of the call to th_new is need for concurrency reasons */
   pthread_mutex_lock( &th_mutex );
   SYS_MUTEX_INCR( MUTEX_THREADS ) ;
+
   id = pos = th_new( thr, new_th_ctxt ) ;
   if (pos >= 0 && is_detached) th_vec[pos].detached = TRUE;
+
   pthread_mutex_unlock( &th_mutex );
 
   if( pos == -1 )
@@ -424,6 +433,7 @@ void init_system_threads( th_context *ctxt )
   if( pos != 0 )
 	xsb_abort( "[THREAD] Error initializing thread table" );
 
+  max_threads_sofar = 1 ;
 }
 
 /* * * * * * */

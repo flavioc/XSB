@@ -112,7 +112,9 @@
 #define MUTEX_SYS_SYSTEM	8      /* recursive prob. not necess */
 
 /* Non-recursive */
+#define MUTEX_COMPL		14	/* pseudo mutex */
 #define MUTEX_STRING		15
+#define MUTEX_CALL_TRIE		16	/* pseudo mutex */
 #define MUTEX_SM		17	/* pseudo mutex */
 #define MUTEX_THREADS		18	/* pseudo mutex */
 #define MUTEX_SOCKETS		19
@@ -124,8 +126,6 @@
 
 #define MUTEX_DYNMUT            24
 
-#define MUTEX_COMPL		25	/* pseudo mutex */
-#define MUTEX_CALL_TRIE		26	/* pseudo mutex */
 
 /* Some mutexes available to users (obsolete) */
 #define MUTEX_CONSOLE		30

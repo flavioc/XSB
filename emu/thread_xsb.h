@@ -91,6 +91,8 @@ extern pthread_cond_t completing_cond;
 extern pthread_attr_t detached_attr_gl;
 extern pthread_attr_t normal_attr_gl; 
 
+extern counter max_threads_sofar ;
+
 #define PROFILE_MUTEXES 1
 #ifdef PROFILE_MUTEXES
 
