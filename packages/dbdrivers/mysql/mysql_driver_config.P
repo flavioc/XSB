@@ -43,7 +43,7 @@ make_mysql_driverH(CC, CC_opts) :-
 	%% Creates something like -Wl,-rpath,<libdir>
 	runtime_loader_flag(XCC, MysqlLibdir, MysqlRunpathFlag),
 	fmt_write_string(LD_flags,
-			 ' %s %s -lmysqlclient -ldl %s%sdriver_manager.so %s%smysql_driver.so', f(MysqlRunpathFlag, MysqlLibdir_flag, ConfigLibdir, Slash, ConfigLibdir, Slash)),
+			 ' %s %s -lmysqlclient %s%sdriver_manager.so %s%smysql_driver.so', f(MysqlRunpathFlag, MysqlLibdir_flag, ConfigLibdir, Slash, ConfigLibdir, Slash)),
 	package_configuration(dir(mysql_driver), MySQLDriverDir),
 	fmt_write_string(LD_directives_file,
 			 '%s%scc%smysql_driver.H', f(MySQLDriverDir, Slash, Slash)),

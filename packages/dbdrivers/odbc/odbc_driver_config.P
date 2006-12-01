@@ -59,12 +59,12 @@ make_odbc_driverH(CC, CC_opts) :-
 	    running_under(darwin)
 	->
 	    fmt_write_string(LD_flags,
-			     ' %s %s %s%sdriver_manager.dylib %s%sodbc_driver.dylib -lodbc -ldl',
+			     ' %s %s %s%sdriver_manager.dylib %s%sodbc_driver.dylib -lodbc ',
 			     f(OdbcRunpathFlag, ODBC_libdir_flag, 
 			       ConfigLibDir, Slash, ConfigLibDir, Slash))
 	; %% other unixes
 	    fmt_write_string(LD_flags,
-			     ' %s %s %s%sdriver_manager.so %s%sodbc_driver.so -lodbc -ldl',
+			     ' %s %s %s%sdriver_manager.so %s%sodbc_driver.so -lodbc ',
 			     f(OdbcRunpathFlag, ODBC_libdir_flag, 
 			       ConfigLibDir, Slash, ConfigLibDir, Slash))
 	),
