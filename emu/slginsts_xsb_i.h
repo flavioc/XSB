@@ -501,6 +501,10 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
     SaveConsumerCPF( consumer_cpf, consumer_sf,
 		     subg_asf_list_ptr(producer_sf), 
 		     answer_template);
+#ifdef CONC_COMPL
+    nlcp_tid(consumer_cpf) = makeint(xsb_thread_id);
+#endif
+
 #ifdef SLG_GC
     nlcp_prevtop(consumer_cpf) = prev_cptop;
 #endif
@@ -510,8 +514,6 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
 		breg,nlcp_prevbreg(breg)));
 
 #ifdef CONC_COMPL
-    nlcp_tid(consumer_cpf) = makeint(xsb_thread_id);
-
     if( subg_tid(producer_sf) != xsb_thread_id )
     {
 	push_completion_frame(producer_sf);

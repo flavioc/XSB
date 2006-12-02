@@ -127,7 +127,7 @@ case IS_INCOMPLETE: {
      {
 	table_tid = subg_tid(producerSF) ;
         /* if the thread owns the table, proceed */
-        if (table_tid == th->tid)
+        if (table_tid == xsb_thread_id)
                 break ;
         waiting_for_thread = find_context(table_tid) ;
         if( would_deadlock( table_tid, xsb_thread_id ) )
