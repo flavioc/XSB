@@ -99,9 +99,6 @@
    dispatch blocks, table dispatch blocks, and
    deleted_table_info_frames. */
 
-/* pseudo mutexes are used to count accesses to mutexes or sets of mutexes
-   that couldn't adequately be treated has system mutexes */
-   
 
 #define MUTEX_TABLE		2
 #define MUTEX_TRIE		3
@@ -111,7 +108,11 @@
 #define MUTEX_DELAY		7
 #define MUTEX_SYS_SYSTEM	8      /* recursive prob. not necess */
 
+/* pseudo mutexes are used to count accesses to mutexes or sets of mutexes
+   that couldn't adequately be treated has system mutexes */
+   
 /* Non-recursive */
+#define MUTEX_CONS_LIST		13
 #define MUTEX_COMPL		14	/* pseudo mutex */
 #define MUTEX_STRING		15
 #define MUTEX_CALL_TRIE		16	/* pseudo mutex */

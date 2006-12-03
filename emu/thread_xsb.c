@@ -128,10 +128,10 @@ counter max_threads_sofar;
 
 char *mutex_names[] = {
 "mutex_dynamic","mutex_io","mutex_table","mutex_trie","mutex_symbol",
-"mutex_flags"," mutex_load_undef","mutex_delay","mutex_sys_system","unused",
-"unused","unused","unused","unused",
-"mutex_compl", "mutex_string","mutex_call_trie","mutex_sm","mutex_threads",
-"mutex_sockets",
+"mutex_flags"," mutex_load_undef","mutex_delay","mutex_sys_system",
+"unused", "unused","unused","unused",
+"mutex_cons_list", "mutex_compl", 
+"mutex_string","mutex_call_trie","mutex_sm","mutex_threads", "mutex_sockets",
 "mutex_mem","mutex_odbc","mutex_gentag","mutex_dispbkhdr","unused",
 "unused","unused","unused","unused","unused",
 "mutex_console","mutex_user1","mutex_user2","mutex_user3","mutex_user4",

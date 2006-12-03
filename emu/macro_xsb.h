@@ -696,11 +696,6 @@ typedef struct subgoal_frame {
 #ifdef CONC_COMPL
   ALNptr tag;		  /* Tag can't be stored in answer list in conc compl */
 #endif
-#ifdef CONC_COMPL_SFL
-  pthread_mutex_t lock;	  /* Lock for the lists on the producer: */
-			  /* the answer return list in the trie and */
-			  /* the consumer cp list */
-#endif
 #ifdef SHARED_COMPL_TABLES
   byte grabbed; 	  /* Subgoal is marked to be computed for leader in
 			     deadlock detection */
@@ -734,21 +729,6 @@ typedef struct subgoal_frame {
 #define subg_tid(b)		( ((VariantSF)(b))->tid )
 #define subg_tag(b)		( ((VariantSF)(b))->tag )
 #define subg_grabbed(b)		( ((VariantSF)(b))->grabbed )
-#define subg_lock(b)		( ((VariantSF)(b))->lock )
-
-#ifdef CONC_COMPL_SFL
-#define SUBGOAL_LOCK(pSF)						\
-{	if( IsSharedSF(pSF) )						\
-		pthread_mutex_lock( &subg_lock(pSF) );			\
-}
-#define SUBGOAL_UNLOCK(pSF)						\
-{	if( IsSharedSF(pSF) ) 						\
-		pthread_mutex_unlock( &subg_lock(pSF) );		\
-}
-#else
-#define SUBGOAL_LOCK(pSF)
-#define SUBGOAL_UNLOCK(pSF)
-#endif
 
 /* Subsumptive Producer Subgoal Frame
    ---------------------------------- */
@@ -898,19 +878,11 @@ extern struct Structure_Manager smConsSF;
 
 /* NewProducerSF() is now a function, in tables.c */
 
-#ifdef CONC_COMPL_SFL
-#define Free_sf_lock(SF)					\
-{	pthread_mutex_destroy( &subg_lock(SF) );	}
-#else
-#define Free_sf_lock(SF)
-#endif
-
 #define FreeProducerSF(SF) {					\
    subg_dll_remove_sf(SF,TIF_Subgoals(subg_tif_ptr(SF)),	\
 		      TIF_Subgoals(subg_tif_ptr(SF)));		\
    if ( IsVariantSF(SF) ) {					\
      if (IsSharedSF(SF)) {					\
-       Free_sf_lock(SF);					\
        SM_DeallocateSharedStruct(smVarSF,SF);			\
      } else {							\
        SM_DeallocateStruct(smVarSF,SF);				\
