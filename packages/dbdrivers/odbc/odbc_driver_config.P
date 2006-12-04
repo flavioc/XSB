@@ -107,16 +107,13 @@ make_odbc_driverH(CC, CC_opts) :-
 	odbc_info(ldflags, LDflags),
 	((running_under(windows) ; running_under(cygwin))
 	->
-	    fmt_write_string(ConfigSharedMod,
-			     '%s%s%s.dll', f(ConfigBinDir, Slash, Basename))
-	    ; running_under(darwin)
+	    fmt_write_string(ConfigSharedMod, '%s%s%s.dll', f(ConfigBinDir, Slash, Basename))
+	; running_under(darwin)
 	->
-	    fmt_write_string(ConfigSharedMod,
-			     '%s%s%s.dylib',  f(ConfigLibDir, Slash, Basename))
-	    ;
-	    fmt_write_string(ConfigSharedMod,
-			     '%s%s%s.so',  f(ConfigLibDir, Slash, Basename))
-	    ),
+	    fmt_write_string(ConfigSharedMod, '%s%s%s.dylib',  f(ConfigLibDir, Slash, Basename))
+	;
+	    fmt_write_string(ConfigSharedMod, '%s%s%s.so',  f(ConfigLibDir, Slash, Basename))
+	),
 	( %% avoid recompilation: check if odbc_driver.xwam exists and 
 	    %% is newer than odbc_driver.c.
 	    search_module(Basename,Dir,_Mod,_Ext,BaseDir,ModuleO),
@@ -127,8 +124,7 @@ make_odbc_driverH(CC, CC_opts) :-
 	-> [Basename]
 	;  
 	    (running_under(cygwin) ->
-				% cygwin specific stuff
-
+		%% cygwin specific stuff
 		fmt_write_string(DBDriversDir, '%s%sdbdrivers%scc', 
 				 f(PackagesDir, Slash, Slash)),
 		fmt_write_string(CC_opts,
