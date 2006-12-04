@@ -45,9 +45,11 @@ compile0(Path, Options) :-
 	search_module(Path, Dir, Mod, SExt, Base, _Obj),
 	!,
 	(SExt \== XSB_OBJ_EXTENSION_ATOM_SANS_DOT
-	 ->	compile_f(SExt, Base, Options, _, Mod, Dir)
-	 ;	file_write0(STDERR, 'Cannot compile a file with .xwam extension'),
-		fail
+	 ->	
+	    compile_f(SExt, Base, Options, _, Mod, Dir)
+	 ;
+	    file_write0(STDERR, 'Cannot compile a file with .xwam extension'),
+	    fail
 	).
 compile0(Path, _) :-
 	file_write0(STDERR, 'Cannot find the file/module '),
@@ -144,13 +146,13 @@ reconsult0(Path, Options, Ensure_loaded) :-
 	).
 
 i_want_compile(SExt, Base, Obj) :-
-	( not(file_exists(Obj)) -> true ; needs_recompile(SExt, Base, Obj) ).
+	( not(file_exists(Obj)) -> true
+	;
+	    needs_recompile(SExt, Base, Obj) ).
 
 needs_recompile(XSB_SRC_EXTENSION_ATOM_SANS_DOT, Base, Obj) :-
 	( str_cat(Base, XSB_SRC_EXTENSION_ATOM, PFileName),
-	  file_time(Obj, time(OTime1,OTime2)), 
-	  file_time(PFileName, time(PTime1,PTime2)),
-	  time(OTime1,OTime2) @< time(PTime1,PTime2)
+	    path_sysop(newerthan,PFileName,Obj)
 	)
 	;
 	( str_cat(Base, XSB_HDR_EXTENSION_ATOM, HFileName),
@@ -180,41 +182,42 @@ needs_recompile('c', Base, Obj) :-
 	xsb_configuration(os_type, OS_type),
 	( ( str_sub('solaris', OS_type) -> str_cat(Base, '.so', C_Obj)
           ; (str_sub('linux', OS_type) -> str_cat(Base, '.so', C_Obj))
+          ; (str_sub('bsd', OS_type) -> str_cat(Base, '.so', C_Obj))
 	  ; str_sub('windows', OS_type) -> str_cat(Base, '.dll', C_Obj)
 	  ; str_sub('cygwin', OS_type) -> str_cat(Base, '.dll', C_Obj)
 	  ; str_sub(darwin, OS_type) -> str_cat(Base, '.dylib', C_Obj)
 	  ; str_cat(Base, '.o', C_Obj)
 	  ),
-	  ( file_exists_here_or_configbin(C_Obj,CC_Obj) -> 
-		file_time(CC_Obj, time(COTime1,COTime2)),
-		str_cat(Base, '.c', CFileName),
-		file_time(CFileName, time(CTime1,CTime2)),
-		time(COTime1,COTime2) @< time(CTime1,CTime2)
+	  ( file_exists_here_or_configbin_or_configlib(C_Obj,CC_Obj) -> 
+	      str_cat(Base, '.c', CFileName),
+	      path_sysop(newerthan, CFileName, CC_Obj)
 	  ; true
 	  )
 	)
 	; 
 	( str_cat(Base, XSB_HDR_EXTENSION_ATOM, HFileName),
-	  file_time(Obj, time(OTime1,OTime2)), 
-	  file_time(HFileName, time(HTime1,HTime2)), 
-	  time(OTime1,OTime2) @< time(HTime1,HTime2)
+	    path_sysop(newerthan, HFileName, Obj)
 	)
         ; object_file_magic_mismatch(Obj).
 
-file_exists_here_or_configbin(C_Obj,CC_Obj) :-
+file_exists_here_or_configbin_or_configlib(C_Obj,CC_Obj) :-
 	(file_exists(C_Obj)
 	 ->	CC_Obj = C_Obj
 	;
-	    parse_filename(C_Obj, _, C_File, C_Ext),
-	    xsb_configuration(config_dir,ConfigDir),
+	    parse_filename(C_Obj, _, Basename, ObjExt),
 	    slash(Slash),
-	    str_cat(ConfigDir,Slash,X1), % add /bin/ or \bin\
-	    str_cat(X1,'bin',X2),
-	    str_cat(X2,Slash,ConfigBinDir),
-	    str_cat(ConfigBinDir,C_File,CC_Obj0),
-	    str_cat(CC_Obj0,'.',CC_Obj1),
-	    str_cat(CC_Obj1,C_Ext,CC_Obj),
-	    file_exists(CC_Obj)
+	    str_cat(Slash,Basename,Base1),
+	    str_cat(Base1,'.',Base2),
+	    str_cat(Base2,ObjExt,ObjFileTail),
+	    (
+	      xsb_configuration(config_bindir,ConfigBinDir),
+	      str_cat(ConfigBinDir,ObjFileTail,BindirObjfile),
+	      file_exists(BindirObjfile)
+	    ;
+	      xsb_configuration(config_libdir,ConfigLibDir),
+	      str_cat(ConfigLibDir,ObjFileTail,LibdirObjfile),
+	      file_exists(LibdirObjfile)
+	    )
 	).
 
 /* As of 6/06, magic numbers have the form 17 18 19 N, where N is 
@@ -381,7 +384,8 @@ write_canonical_list(Term) :-
 	 ->	op(A,B,C)
 	 ;	true
 	),
-	write_canonical(Term),writeln('.').
+	write_canonical(Term),
+	writeln('.').
 
 load_dyn(File) :-
 	load_dyn(File,1).
