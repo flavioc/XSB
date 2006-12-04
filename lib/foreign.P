@@ -75,11 +75,32 @@ runtime_loader_flag(Compiler,LibraryDir,Flag):-
 	->  str_cat('-Wl,-rpath,', LibraryDir, Flag)
 	;   str_sub(netbsd, Configuration)
 	->  str_cat('-Wl,-rpath,', LibraryDir, Flag)
-	;   str_sub('freebsd', Configuration)
+	;   str_sub(freebsd, Configuration)
 	->  str_cat('-Wl,-rpath,', LibraryDir, Flag)
 	;   str_sub('bsd-', Configuration)
 	->  str_cat('-Wl,-rpath,', LibraryDir, Flag)
 	;  str_cat('-rpath ', LibraryDir, Flag)
+	).
+
+%% This should really be used in compile_c, and in consult.P
+%% but needs to be tested - mk
+foreign_module_library_extension(Configuration,Extension) :-
+	( ( str_sub('solaris', Configuration)
+	  ; str_sub('linux', Configuration)
+	  ; str_sub('freebsd', Configuration)
+	  ; str_sub('netbsd', Configuration)
+	  ; str_sub('bsd-', Configuration)
+	  ; str_sub('sgi', Configuration)
+	  ; str_sub('alpha', Configuration)
+	  )
+	->
+	    Extension = '.so'
+	;
+	    str_sub('darwin', Configuration)
+	->
+	    Extension = '.dylib'
+	;
+	    Extension = '.o'
 	).
 
 

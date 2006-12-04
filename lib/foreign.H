@@ -24,7 +24,11 @@
 */
 
 
-:- export compile_cH/6, compile_so/3, runtime_loader_flag/3.
+:- export
+	compile_cH/6,
+	compile_so/3,
+	runtime_loader_flag/3,
+	foreign_module_library_extension/2.
 
 :- import asm_magic/2 from asm.
 :- import asm_putlength/2 from asmpass2.
