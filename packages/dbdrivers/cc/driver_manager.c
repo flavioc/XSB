@@ -477,7 +477,7 @@ static char* buildSQLQuery(prolog_term sqlQueryList)
   char* temp;
   int i, cnt;
 
-  sqlQuery = (char *)malloc(QUERY_SIZE * sizeof(char));
+  sqlQuery = (char *)malloc(QUERY_SIZE * sizeof(char)+1);
   sqlQuery[0] = '\0';
   while (!is_nil(sqlQueryList)) {
     element = p2p_car(sqlQueryList);
@@ -485,7 +485,7 @@ static char* buildSQLQuery(prolog_term sqlQueryList)
     if (is_string(element)) {
       if (p2c_string(element)[0] == TERM_CHAR) {
 	cnt = 0;
-	temp = (char *)malloc(ELEMENT_SIZE * sizeof(char));
+	temp = (char *)malloc(ELEMENT_SIZE * sizeof(char)+1);
 	temp[cnt++] = '\'';
 	/* protect inner quotes in Prolog terms */
 	for (i = 0 ; i < strlen(p2c_string(element)) ; i++) {
@@ -498,6 +498,7 @@ static char* buildSQLQuery(prolog_term sqlQueryList)
 	  }
 	}
 	temp[cnt++] = '\'';
+	temp[cnt++] = '\0';
 	strcat(sqlQuery, temp);
 	free(temp);
       }

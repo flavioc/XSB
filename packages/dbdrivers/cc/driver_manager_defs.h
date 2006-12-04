@@ -57,8 +57,8 @@
 #define QUERY_BEGIN 0
 #define QUERY_RETRIEVE 1
 
-#define QUERY_SIZE 10000
-#define ELEMENT_SIZE 1000
+#define QUERY_SIZE 18000
+#define ELEMENT_SIZE 1500
 
 #define TERM_CHAR '\255'
 

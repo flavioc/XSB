@@ -51,10 +51,13 @@
 	    path_sysop(newerthan,ConfigSharedMod,ModuleSourceFile)
 	%% module compiled and is current, so just load
 	-> [Basename]
-	;  [Basename],
+	;   (search_module(Basename,Dir,_Mod,_Ext,BaseDir,ModuleO)
+	    -> path_sysop(unlink,ModuleO)
+	    ; true
+	    ),
+	    [Basename],
 	    (running_under(cygwin) -> 
 		%% cygwin specific stuff
-		
 		fmt_write_string(DriverManagerDll, '%s.dll',
 				 f(Module)),
 		fmt_write_string(ConfigBinDll, '%s%s%s.dll', 
@@ -80,7 +83,6 @@
 		running_under(windows) ->
 		force_rename(DriverManagerObj, ConfigLibObj)
 	    ; %% else unix specific stuff 
-		
 		fmt_write_string(DriverManagerDir, '%s%sdbdrivers', 
 				 f(PackageDir, Slash)),
 
