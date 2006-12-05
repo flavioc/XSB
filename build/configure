@@ -4136,19 +4136,19 @@ fi
 
 
 
-if test ${c_opt_level} = "-"; then
+if test "${c_opt_level}" = "-"; then
    c_opt_level=
 fi
-if test ${loader_opt_level} = "-"; then
+if test "${loader_opt_level}" = "-"; then
    loader_opt_level=
 fi
-if test ${builtins_opt_level} = "-"; then
+if test "${builtins_opt_level}" = "-"; then
    builtins_opt_level=
 fi
-if test ${emuloop_opt_level} = "-"; then
+if test "${emuloop_opt_level}" = "-"; then
    emuloop_opt_level=
 fi
-if test ${trutils_opt_level} = "-"; then
+if test "${trutils_opt_level}" = "-"; then
    trutils_opt_level=
 fi
 loaderCFLAGS="${c_site_includes} ${loader_opt_level} ${c_inline_level} ${CFLAGS}"
