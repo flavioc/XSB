@@ -37,6 +37,7 @@
 #include "error_xsb.h"
 #include "thread_xsb.h"
 #include "memory_xsb.h"
+#include "tr_utils.h"
 
 extern BTHTptr hhadded;
 
@@ -75,7 +76,7 @@ static void free_private_al(CTXTdeclc VariantSF sf) {
 }
 
 
-/* Deleting Structures with Substructures
+/* Deleting Structures with Substructures for Call Subsumption
    -------------------------------------- */
 
 static void delete_private_btht(CTXTdeclc BTHTptr btht) {
@@ -206,8 +207,10 @@ void delete_subsumptive_table(CTXTdeclc TIFptr tif) {
 
 /* TLS: use this when table has been deleted (via an abolish), but
    space for it has not been reclaimed.  In this case, we get the
-   access points from the DelTF rather than the TIF. For now, called
-   only when 1 active thread.
+   access points from the DelTF rather than the TIF -- this is
+   necessary because we need an *old* set of subsumed calls rather
+   than the new set we'd get from the TIF.  For now, called only when
+   1 active thread.
 
    Input types reflect those of the TIFs */
 

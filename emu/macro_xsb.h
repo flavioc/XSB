@@ -879,6 +879,7 @@ extern struct Structure_Manager smConsSF;
 /* NewProducerSF() is now a function, in tables.c */
 
 #define FreeProducerSF(SF) {					\
+    release_any_pndes(CTXTc subg_nde_list(SF));			\
    subg_dll_remove_sf(SF,TIF_Subgoals(subg_tif_ptr(SF)),	\
 		      TIF_Subgoals(subg_tif_ptr(SF)));		\
    if ( IsVariantSF(SF) ) {					\

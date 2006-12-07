@@ -354,7 +354,6 @@ void total_stat(CTXTdeclc double elapstime) {
 
   int
     num_de_blocks,num_dl_blocks,num_pnde_blocks,
-    private_num_de_blocks,private_num_dl_blocks,
     de_count, dl_count, private_de_count, private_dl_count, 
     i;
 
@@ -413,12 +412,12 @@ void total_stat(CTXTdeclc double elapstime) {
 
   private_de_space_alloc = allocated_de_space(private_current_de_block,&num_de_blocks);
   private_de_space_used = private_de_space_alloc - unused_de_space_private(CTXT);
-  private_de_count = (private_de_space_used - private_num_de_blocks * sizeof(Cell)) /
+  private_de_count = (private_de_space_used - num_de_blocks * sizeof(Cell)) /
 	     sizeof(struct delay_element);
 
   private_dl_space_alloc = allocated_dl_space(private_current_dl_block,&num_dl_blocks);
   private_dl_space_used = private_dl_space_alloc - unused_dl_space_private(CTXT);
-  private_dl_count = (private_dl_space_used - private_num_dl_blocks * sizeof(Cell)) /
+  private_dl_count = (private_dl_space_used - num_dl_blocks * sizeof(Cell)) /
 	     sizeof(struct delay_list);
 
   private_pnde_space_alloc = allocated_pnde_space(private_current_pnde_block,&num_pnde_blocks);

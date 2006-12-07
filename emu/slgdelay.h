@@ -113,6 +113,11 @@ typedef struct AS_info ASI_Node;
 
 /*--------------------------------------------------------------------*/
 
+/* TLS: delay_elements may have some unnecessary information.
+   Abolishing uses subs_fact, but not subs_fact_leaf, while other
+   routines such as get_residual() use subs_fact_leaf, but not
+   subs_fact. */
+
 struct delay_element {
   VariantSF subgoal;	/* pointer to the subgoal frame of this DE */
   NODEptr ans_subst;	/* pointer to an answer substitution leaf */
@@ -121,9 +126,7 @@ struct delay_element {
 			 * list, depending on what DE it is (positive or
 			 * negative).  Will be set in record_de_usage()
 			 */
-#ifdef DEBUG_DELAYVAR
   NODEptr subs_fact;	/* root of the delay trie for this DE */
-#endif
   NODEptr subs_fact_leaf;
 } ;
 
@@ -131,9 +134,7 @@ struct delay_element {
 #define de_ans_subst(X)  (X) -> ans_subst
 #define de_next(X)	 (X) -> next
 #define de_pnde(X)	 (X) ->	pnde
-#ifdef DEBUG_DELAYVAR
 #define de_subs_fact(X)	     (X) -> subs_fact
-#endif
 #define de_subs_fact_leaf(X) (X) -> subs_fact_leaf
 
 /*--------------------------------------------------------------------*/
@@ -219,6 +220,25 @@ struct pos_neg_de_list {
 
 #define most_general_answer(ANS) IsEscapeNode(ANS)
 
+#define release_entry(ENTRY_TO_BE_RELEASED,				\
+		      RELEASED,						\
+		      NEXT_FUNCTION) {					\
+  NEXT_FUNCTION(ENTRY_TO_BE_RELEASED) = RELEASED;			\
+  RELEASED = ENTRY_TO_BE_RELEASED;					\
+}
+
+#define release_shared_de_entry(DE) {	       \
+    delete_delay_trie(CTXTc de_subs_fact(de)); \
+    release_entry(de, released_des_gl, de_next);	\
+  }
+
+#ifdef MULTI_THREAD
+#define release_private_de_entry(DE) {	       \
+    delete_delay_trie(CTXTc de_subs_fact(de)); \
+    release_entry(de, private_released_des, de_next);	\
+  }
+#endif
+
 /*
  * Variables used in other parts of the system.
  */
@@ -255,17 +275,22 @@ extern unsigned long allocated_dl_space(char *,int * num_blocks);
 extern unsigned long allocated_pnde_space(char *,int * num_blocks);
 #ifndef MULTI_THREAD
 extern void simplify_pos_unsupported(NODEptr);
+extern void release_all_dls(ASI);
 #else
 extern unsigned long unused_de_space_private(struct th_context *);
 extern unsigned long unused_dl_space_private(struct th_context *);
 extern unsigned long unused_pnde_space_private(struct th_context *);
 extern void simplify_pos_unsupported(struct th_context *, NODEptr);
+extern void release_all_dls(struct th_context *, ASI);
 #endif
-extern void release_all_dls(ASI);
 
 extern char *current_pnde_block_gl;
 extern char *current_de_block_gl;
 extern char *current_dl_block_gl;
+extern PNDE released_pndes_gl;	/* the list of released PNDEs */
+extern DE released_des_gl;	/* the list of released DEs */
+extern DL released_dls_gl;	/* the list of released DLs */
+
 
 /*---------------------- end of file slgdelay.h ------------------------*/
 

@@ -1106,7 +1106,10 @@ BTNptr delay_chk_insert(CTXTdeclc int arity, CPtr cptr, CPtr *hook)
 #endif
 
     Paren = NULL;
-    GNodePtrPtr = (BTNptr *) hook;
+
+    if (hook)
+      GNodePtrPtr = (BTNptr *) hook;
+    else GNodePtrPtr = (BTNptr *) NULL;
 
     ctr = AnsVarCtr;
 
@@ -1626,16 +1629,23 @@ void remove_incomplete_tries(CTXTdeclc CPtr bottom_parameter)
 {
   xsbBool warned = FALSE;
   VariantSF CallStrPtr;
+  TIFptr tif;
 
   while (openreg < bottom_parameter) {
     CallStrPtr = (VariantSF)compl_subgoal_ptr(openreg);
     if (!is_completed(CallStrPtr)) {
+
       if (warned == FALSE) {
 	xsb_mesg("Removing incomplete tables...");
 	//	check_table_cut = FALSE;  /* permit cuts over tables */
 	warned = TRUE;
       }
-      remove_calls_and_returns(CTXTc CallStrPtr);
+      if (IsVariantSF(CallStrPtr)) {
+	SET_TRIE_ALLOCATION_TYPE_SF(CallStrPtr); // set smBTN to private/shared
+	tif = subg_tif_ptr(CallStrPtr);
+	delete_branch(CTXTc CallStrPtr->leaf_ptr, &tif->call_trie); /* delete call */
+	delete_variant_sf_and_answers(CTXTc CallStrPtr); // delete answers + subgoal
+      } else remove_calls_and_returns(CTXTc CallStrPtr);
     }
     openreg += COMPLFRAMESIZE;
   }

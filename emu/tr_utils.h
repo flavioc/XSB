@@ -68,5 +68,7 @@ extern void abolish_table_info(CTXTdecl);
 extern int abolish_usermod_tables(CTXTdecl);
 extern int abolish_module_tables(CTXTdeclc const char *module_name);
 
+extern void release_any_pndes(CTXTdeclc PNDE firstPNDE);
+void delete_delay_trie(CTXTdeclc BTNptr root);
 
 #endif /* __TR_UTILS_H__ */

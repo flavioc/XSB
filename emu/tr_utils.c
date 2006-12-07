@@ -285,8 +285,6 @@ VariantSF get_call(CTXTdeclc Cell callTerm, Cell *retTerm) {
     return NULL;
   }
 
-  
-
   tif = get_tip(CTXTc psc);
   if ( IsNULL(tif) )
     xsb_abort("Predicate %s/%d is not tabled", get_name(psc), get_arity(psc));
@@ -379,10 +377,162 @@ static void free_trie_ht(CTXTdeclc BTHTptr ht) {
 #endif
 }
 
+/* -------------------------------------------------------------- 
+ * Space reclamation for Conditional Answers 
+ * All routines assume that trie allocation type has been set (cf. struct_manager.h)
+ * ------------------------------------------------------------ */
+
+#ifdef MULTI_THREAD
+#define GLOBAL_TABLE    (threads_current_sm == PRIVATE_SM)		
+#endif
+
+void release_any_pndes(CTXTdeclc PNDE firstPNDE) {
+  PNDE lastPNDE;
+
+#ifdef MULTI_THREAD  
+  if (GLOBAL_TABLE)
+#endif
+    while (firstPNDE) {
+      lastPNDE = firstPNDE;
+      firstPNDE = pnde_next(firstPNDE);
+      SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
+      release_entry(lastPNDE, released_pndes_gl, pnde_next);	
+      SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
+    }
+#ifdef MULTI_THREAD  
+  else
+    while (firstPNDE) {
+      lastPNDE = firstPNDE;
+      firstPNDE = pnde_next(firstPNDE);
+      release_entry(lastPNDE, private_released_pndes, pnde_next);	
+    }
+#endif
+}
+
+/* TLS: a delay "trie" should be a simple chain, as I understand it --
+   hence the error messages below. 
+---------------------------------------------------------------------*/
+void delete_delay_trie(CTXTdeclc BTNptr root) {
+  int node_stk_top = 0;
+  BTNptr rnod;
+  //  BTNptr *Bkp; 
+  //  BTHTptr ht;
+  
+  BTNptr *freeing_stack = NULL;
+  int freeing_stack_size = 0;
+
+  if ( IsNonNULL(root) ) {
+    push_node(root);
+    while (node_stk_top != 0) {
+      pop_node(rnod);
+      if ( IsHashHeader(rnod) ) {
+	xsb_abort("encountered hashtable in delay trie?!?\n");
+
+	//	ht = (BTHTptr) rnod;
+	//	for (Bkp = BTHT_BucketArray(ht);
+	//	     Bkp < BTHT_BucketArray(ht) + BTHT_NumBuckets(ht);
+	//	     Bkp++) {
+	//	  if ( IsNonNULL(*Bkp) )
+	//	    push_node(*Bkp);
+	//	}
+	//	free_trie_ht(CTXTc ht);
+      }
+      else {
+	if (BTN_Sibling(rnod)) 
+	  xsb_abort("encountered sibling in delay trie?!?\n");
+	//	  push_node(BTN_Sibling(rnod));
+	if ( BTN_Child(rnod))
+	  push_node(BTN_Child(rnod));
+	SM_DeallocatePossSharedStruct(*smBTN,rnod);
+      }
+    }
+  } /* free answer trie */
+  mem_dealloc(freeing_stack,freeing_stack_size*sizeof(BTNptr),TABLE_SPACE);
+}
+
+/* TLS: unlike release_all_dls() in slgdelay.c which is used for
+   simplification, I am not releasing pndes of the subgoal or answer
+   associated with the delay element.  Rather, a linked set of tables
+   should be abolished in one fell swoop. 
+---------------------------------------------------------------------*/
+   
+void abolish_release_all_dls_shared(CTXTdeclc ASI asi)
+{
+  //  ASI de_asi;
+  DE de, tmp_de;
+  DL dl, tmp_dl;
+
+  dl = asi_dl_list(asi);
+  SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
+  while (dl) {
+    tmp_dl = dl_next(dl);
+    de = dl_de_list(dl);
+    while (de) {
+      tmp_de = de_next(de);
+      release_shared_de_entry(de);
+      de = tmp_de; /* next DE */
+    } /* while (de) */
+    release_entry(dl, released_dls_gl, dl_next);
+    dl = tmp_dl; /* next DL */
+  }
+  SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
+}
+
+#ifdef MULTI_THREAD
+void abolish_release_all_dls_private(CTXTdeclc ASI asi)
+{
+  DE de, tmp_de;
+  DL dl, tmp_dl;
+
+  dl = asi_dl_list(asi);
+  while (dl) {
+    tmp_dl = dl_next(dl);
+    de = dl_de_list(dl);
+    while (de) {
+      tmp_de = de_next(de);
+      release_private_de_entry(de);
+      de = tmp_de; /* next DE */
+    } /* while (de) */
+    release_entry(dl, private_released_dls, dl_next);
+    dl = tmp_dl; /* next DL */
+  }
+}
+#endif
+
+void abolish_release_all_dls(CTXTdeclc ASI asi)
+{
+
+#ifdef MULTI_THREAD  
+  if (GLOBAL_TABLE)
+#endif
+    abolish_release_all_dls_shared(CTXTc asi);
+#ifdef MULTI_THREAD
+  else
+    abolish_release_all_dls_private(CTXTc asi);
+#endif
+}
+
+void release_conditional_answer_info(CTXTdeclc BTNptr node) {
+  ASI asiptr;
+  if ((asiptr = (ASI) BTN_Child(node))) {
+    abolish_release_all_dls(CTXTc asiptr);		    
+    release_any_pndes(CTXTc asi_pdes(asiptr)); // handles shared/private
+#ifdef MULTI_THREAD  
+  if (GLOBAL_TABLE)
+#endif
+    SM_DeallocateSharedStruct(smASI,asiptr)
+#ifdef MULTI_THREAD  
+  else
+    SM_DeallocateStruct(*private_smASI,asiptr);
+#endif
+  }
+}
+
 /* delete_variant_sf_and_answers deletes and reclaims space for
    answers and their subgoal frame in a variant table, and is used by
-   abolish_table_call.  It copies code from delete_variant_table, but
-   uses its own stack.  (Not easy to integrate due to macro usage.) */
+   abolish_table_call (which does not work on subsumptive table).  It
+   copies code from delete_variant_table, but uses its own stack.
+   (Not easy to integrate due to macro usage.) */
 
 /* 
  * TLS: since this deallocates from SMs, make sure
@@ -392,9 +542,26 @@ void delete_variant_sf_and_answers(CTXTdeclc VariantSF pSF) {
   int node_stk_top = 0;
   BTNptr rnod, *Bkp; 
   BTHTptr ht;
+  xsbBool should_warn = TRUE;
   
   BTNptr *freeing_stack = NULL;
   int freeing_stack_size = 0;
+
+  TRIE_W_LOCK();
+
+  /* TLS: this checks whether any answer for this subgoal has a delay
+     list: may overstate problems but will warn for any possible
+     corruption. */
+#ifndef CONC_COMPL
+  if ( subg_answers(pSF) == COND_ANSWERS && should_warn) {
+#else
+    if ( subg_tag(pSF) == COND_ANSWERS && should_warn) {
+#endif
+      xsb_warn("abolish_table_call/1 is deleting a table entry for %s/%d with conditional\
+                      answers: delay dependencies may be corrupted.\n",	    
+	       get_name(TIF_PSC(subg_tif_ptr(pSF))),get_arity(TIF_PSC(subg_tif_ptr(pSF))));
+      should_warn = FALSE;
+    }
 
   if ( IsNonNULL(subg_ans_root_ptr(pSF)) ) {
     push_node((BTNptr)subg_ans_root_ptr(pSF));
@@ -414,20 +581,23 @@ void delete_variant_sf_and_answers(CTXTdeclc VariantSF pSF) {
 	if (BTN_Sibling(rnod)) 
 	  push_node(BTN_Sibling(rnod));
 	if ( ! IsLeafNode(rnod) )
-	  push_node(BTN_Child(rnod));
-	SM_DeallocatePossSharedStruct(*smBTN,rnod);
+	  push_node(BTN_Child(rnod))
+	  else { /* leaf node */
+	    release_conditional_answer_info(CTXTc rnod);
+	  }
+ 	SM_DeallocatePossSharedStruct(*smBTN,rnod);
       }
     }
   } /* free answer trie */
   free_answer_list(pSF);
   FreeProducerSF(pSF);
+  TRIE_W_UNLOCK();
   mem_dealloc(freeing_stack,freeing_stack_size*sizeof(BTNptr),TABLE_SPACE);
 }
 
-/* 
- * TLS: since this deallocates from SMs, make sure
- * trie_allocation_type is set before using.
- */
+/* Incremental recomputation seems to be implemented only for
+   abolishing predicates, but not subgoals */
+
 extern void hashtable1_destroy(void *, int);
 
 static void delete_variant_table(CTXTdeclc BTNptr x, int incr) {
@@ -470,10 +640,8 @@ static void delete_variant_table(CTXTdeclc BTNptr x, int incr) {
 	  /* TLS: this checks whether any answer for this subgoal has
 	  a delay list: may overstate problems but will warn for any
 	  possible corruption. */
-
-
 #ifndef CONC_COMPL
-	  if ( subg_answers(pSF) == COND_ANSWERS ) {
+	  if ( subg_answers(pSF) == COND_ANSWERS && should_warn) {
 #else
 	  if ( subg_tag(pSF) == COND_ANSWERS && should_warn) {
 #endif
@@ -502,8 +670,11 @@ static void delete_variant_table(CTXTdeclc BTNptr x, int incr) {
 		if (BTN_Sibling(rnod)) 
 		  push_node(BTN_Sibling(rnod));
 		if ( ! IsLeafNode(rnod) )
-		  push_node(BTN_Child(rnod));
-		SM_DeallocateStruct(*smBTN,rnod);
+		  push_node(BTN_Child(rnod))
+		else { /* leaf node */
+		  release_conditional_answer_info(CTXTc rnod);
+		}
+		SM_DeallocatePossSharedStruct(*smBTN,rnod);
 	      }
 	    }
 	  } /* free answer trie */
@@ -511,11 +682,11 @@ static void delete_variant_table(CTXTdeclc BTNptr x, int incr) {
 	  if (incr) hashtable1_destroy(pSF->callnode->outedges->hasht,0);
 	  free_answer_list(pSF);
 	  FreeProducerSF(pSF);
-	} /* is leaf */
+	} /* callTrie node is leaf */
 	else 
 	  push_node(BTN_Child(node));
       } /* there is a child of "node" */
-      SM_DeallocateStruct(*smBTN,node);
+      SM_DeallocatePossSharedStruct(*smBTN,node);
     }
   }
   TRIE_W_UNLOCK();
@@ -529,7 +700,9 @@ void delete_predicate_table(CTXTdeclc TIFptr tif) {
       smBTN, &smTableBTN,private_smTableBTN);
       printf("smBTHT %x smTableBTHT %x private_smTableBTHT %x\n",
       smBTHT, &smTableBTHT,private_smTableBTHT);*/
+  
   if ( TIF_CallTrie(tif) != NULL ) {
+    SET_TRIE_ALLOCATION_TYPE_TIP(tif);
     if ( IsVariantPredicate(tif) ) {
       delete_variant_table(CTXTc TIF_CallTrie(tif),get_incr(TIF_PSC(tif)));
     }
@@ -544,6 +717,8 @@ void delete_predicate_table(CTXTdeclc TIFptr tif) {
 
 void reclaim_deleted_subsumptive_table(CTXTdeclc DelTFptr);
 
+/* Just like delete_predicate_table, but called from gc sweeps with deltf_ptr.
+   In addition, does not reset TIFs.*/
 void reclaim_deleted_predicate_table(CTXTdeclc DelTFptr deltf_ptr) {
   TIFptr tif = subg_tif_ptr(DTF_Subgoals(deltf_ptr));
 
@@ -922,10 +1097,11 @@ void delete_return(CTXTdeclc BTNptr l, VariantSF sg_frame)
 
     /* deleting an answer makes it false, so we have to deal with 
        delay lists */
+    SET_TRIE_ALLOCATION_TYPE_SF(sg_frame);
     if (is_conditional_answer(l)) {
       ASI asi = Delay(l);
       SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
-      release_all_dls(asi);
+      release_all_dls(CTXTc asi);
       SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
       /* TLS 12/00 changed following line from 
 	 (l == subg_ans_root_ptr(sg_frame) && ..
@@ -938,7 +1114,6 @@ void delete_return(CTXTdeclc BTNptr l, VariantSF sg_frame)
   if (is_completed(sg_frame)) {
     safe_delete_branch(l);
   } else {
-    SET_TRIE_ALLOCATION_TYPE_SF(sg_frame);
     delete_branch(CTXTc l,&subg_ans_root_ptr(sg_frame));
     n = subg_ans_list_ptr(sg_frame);
     /* Find previous sibling -pvr */
@@ -1769,11 +1944,6 @@ int fast_abolish_table_predicate(CTXTdeclc Psc psc)
   }
 
   if (!TIF_Mark(tif) && (!get_shared(psc) || flags[NUM_THREADS] == 1)) {
-
-#ifdef MULTI_THREAD  
-    SET_TRIE_ALLOCATION_TYPE_PSC(psc);  // set pvt/shared SMs
-#endif
-
     delete_predicate_table(CTXTc tif);
   }  else {
     //    fprintf(stderr,"Delaying abolish of table in use: %s/%d\n",
@@ -1903,10 +2073,8 @@ int abolish_table_call(CTXTdeclc VariantSF subgoal) {
       action = abolish_table_call_cps_check(CTXTc subgoal);
     } else action = 1;
 
+    SET_TRIE_ALLOCATION_TYPE_SF(subgoal); // set smBTN to private/shared
     if (!action) {
-#ifdef MULTI_THREAD      
-      SET_TRIE_ALLOCATION_TYPE_SF(subgoal); // set smBTN to private/shared
-#endif
       delete_branch(CTXTc subgoal->leaf_ptr, &tif->call_trie); /* delete call */
       delete_variant_sf_and_answers(CTXTc subgoal); // delete answers
       return TRUE;
@@ -2011,17 +2179,12 @@ inline int abolish_table_predicate(CTXTdeclc Psc psc)
   }
   else action = 1;
   if (!action) {
-
-#ifdef MULTI_THREAD  
-    SET_TRIE_ALLOCATION_TYPE_PSC(psc);  // determine whether pvt/shared SMs
-#endif
-
     delete_predicate_table(CTXTc tif);
     return 1;
   }
   else {
-        fprintf(stderr,"Delaying abolish of table in use: %s/%d\n",
-        get_name(psc),get_arity(psc));
+    //        fprintf(stderr,"Delaying abolish of table in use: %s/%d\n",
+    //        get_name(psc),get_arity(psc));
 #ifndef MULTI_THREAD
     check_insert_private_deltf_pred(CTXTc tif);
 #else
@@ -2163,27 +2326,28 @@ int sweep_private_tabled_preds(CTXTdecl) {
   TIFptr tif_ptr;
 
   deltf_ptr = private_deltf_chain_begin;
+  SET_TRIE_ALLOCATION_TYPE_PRIVATE();
   while (deltf_ptr) {
     next_deltf_ptr = DTF_NextDTF(deltf_ptr);
     if (DTF_Mark(deltf_ptr)) {
       tif_ptr = subg_tif_ptr(DTF_Subgoals(deltf_ptr));
-           fprintf(stderr,"Skipping: %s/%d\n",
-           get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
+      //           fprintf(stderr,"Skipping: %s/%d\n",
+      //   get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
       DTF_Mark(deltf_ptr) = 0;
       dtf_cnt++;
     }
     else {
       if (DTF_Type(deltf_ptr) == DELETED_PREDICATE) {
 	tif_ptr = subg_tif_ptr(DTF_Subgoals(deltf_ptr));
-		fprintf(stderr,"Garbage Collecting Predicate: %s/%d\n",
-	 get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
+	//	fprintf(stderr,"Garbage Collecting Predicate: %s/%d\n",
+	//		get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
 	reclaim_deleted_predicate_table(CTXTc deltf_ptr);
 	Free_Private_DelTF_Pred(deltf_ptr,tif_ptr);
       } else 
 	if (DTF_Type(deltf_ptr) == DELETED_SUBGOAL) {
 	  tif_ptr = subg_tif_ptr(DTF_Subgoal(deltf_ptr));
-	  	  fprintf(stderr,"Garbage Collecting Subgoal: %s/%d\n",
-	    get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
+	  //	  fprintf(stderr,"Garbage Collecting Subgoal: %s/%d\n",
+	  //	  get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
 	  delete_variant_sf_and_answers(CTXTc DTF_Subgoal(deltf_ptr)); 
 	  Free_Private_DelTF_Subgoal(deltf_ptr,tif_ptr);
 	}
@@ -2204,6 +2368,7 @@ int sweep_tabled_preds(CTXTdecl) {
 
   /* Free global deltfs */
   deltf_ptr = deltf_chain_begin;
+  SET_TRIE_ALLOCATION_TYPE_SHARED();
   while (deltf_ptr) {
     next_deltf_ptr = DTF_NextDTF(deltf_ptr);
     if (DTF_Mark(deltf_ptr)) {
