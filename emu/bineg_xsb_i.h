@@ -103,6 +103,7 @@ case IS_INCOMPLETE: {
 #ifdef SHARED_COMPL_TABLES
 	int table_tid ;
 	th_context *waiting_for_thread ;
+	int table_is_shared ;
 #endif
 
   VariantSF producerSF = ptoc_addr(regSubgoalFrame);
@@ -121,9 +122,12 @@ case IS_INCOMPLETE: {
 
 #ifdef SHARED_COMPL_TABLES
 /* This allows sharing of completed tables.  */
-     pthread_mutex_lock(&completing_mut);
-     SYS_MUTEX_INCR( MUTEX_COMPL );
-     while( !is_completed(producerSF) )
+     table_is_shared = IsSharedSF(producerSF);
+     if( table_is_shared  )
+     {	pthread_mutex_lock(&completing_mut);
+     	SYS_MUTEX_INCR( MUTEX_COMPL );
+     }
+     while( table_is_shared && !is_completed(producerSF) )
      {
 	table_tid = subg_tid(producerSF) ;
         /* if the thread owns the table, proceed */
@@ -142,7 +146,7 @@ case IS_INCOMPLETE: {
 	th->waiting_for_subgoal = producerSF ;
         th->waiting_for_tid = table_tid ;
         pthread_cond_wait(&completing_cond,&completing_mut) ;
-        SYS_MUTEX_INCR( MUTEX_COMPL );
+	SYS_MUTEX_INCR( MUTEX_COMPL );
         if( th->reset_thread )
         {       th->reset_thread = FALSE ;
 		th->waiting_for_subgoal = NULL ;
@@ -154,7 +158,8 @@ case IS_INCOMPLETE: {
      }
      th->waiting_for_tid = -1 ;
      th->waiting_for_subgoal = NULL ;
-     pthread_mutex_unlock(&completing_mut);
+     if( table_is_shared )
+     	pthread_mutex_unlock(&completing_mut);
 #endif
 
   if (is_completed(producerSF)) {
