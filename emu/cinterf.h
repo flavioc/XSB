@@ -316,26 +316,26 @@ values in them. To pass or retrieve complex arguments, you must use
 the lower-level ctop_* routines directly. */
 
 /* build an answer term of arity i in reg 2 */
-#define xsb_make_vars(i)   c2p_functor("ret",i,reg_term(2))
+#define xsb_make_vars(i)   c2p_functor(CTXTc "ret",i,reg_term(CTXTc 2))
 
 /* set argument i of answer term to integer value v, for filtering */
-#define xsb_set_var_int(v,i) c2p_int(v,p2p_arg(reg_term(2),i))
+#define xsb_set_var_int(v,i) c2p_int(CTXTc v,p2p_arg(reg_term(CTXTc 2),i))
 
 /* set argument i of answer term to atom value s, for filtering */
-#define xsb_set_var_string(s,i) c2p_string(s,p2p_arg(reg_term(2),i))
+#define xsb_set_var_string(s,i) c2p_string(CTXTc s,p2p_arg(reg_term(CTXTc 2),i))
 
 /* set argument i of answer term to atom value f, for filtering */
-#define xsb_set_var_float(f,i) c2p_float(f,p2p_arg(reg_term(2),i))
+#define xsb_set_var_float(f,i) c2p_float(CTXTc f,p2p_arg(reg_term(CTXTc 2),i))
 
 
 /* return integer argument i of answer term */
-#define xsb_var_int(i) (p2c_int(p2p_arg(reg_term(2),i)))
+#define xsb_var_int(i) (p2c_int(p2p_arg(reg_term(CTXTc 2),i)))
 
 /* return string (atom) argument i of answer term */
-#define xsb_var_string(i) (p2c_string(p2p_arg(reg_term(2),i)))
+#define xsb_var_string(i) (p2c_string(p2p_arg(reg_term(CTXTc 2),i)))
 
 /* return float argument i of answer term */
-#define xsb_var_float(i) (p2c_float(p2p_arg(reg_term(2),i)))
+#define xsb_var_float(i) (p2c_float(p2p_arg(reg_term(CTXTc 2),i)))
 
 #ifdef __cplusplus
 }
