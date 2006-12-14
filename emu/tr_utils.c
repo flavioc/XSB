@@ -1850,7 +1850,7 @@ void check_insert_global_deltf_subgoal(CTXTdeclc VariantSF subgoal) {
 // extern void printTIF(TIFptr);
 
 void check_insert_private_deltf_pred(CTXTdeclc TIFptr tif) {
-  DelTFptr dtf = TIF_DelTF(tif);
+  DelTFptr dtf = TIF_DelTF(tif), next_dtf;
   BTNptr call_trie = TIF_CallTrie(tif);
   VariantSF subgoals = TIF_Subgoals(tif);	
   int found = 0;
@@ -1859,15 +1859,16 @@ void check_insert_private_deltf_pred(CTXTdeclc TIFptr tif) {
   //  printTIF(tif);
 
   while ( dtf != 0 ) {
+    next_dtf = DTF_NextPredDTF(dtf);
     if (DTF_Type(dtf) == DELETED_PREDICATE && 
 	DTF_CallTrie(dtf) == call_trie && DTF_Subgoals(dtf) == subgoals)
       found = 1;
     if (DTF_Type(dtf) == DELETED_SUBGOAL) {
-      //      fprintf(stderr,"Predicate over-riding subgoal for %s/%d\n",
-      //      get_name(TIF_PSC(tif)),get_arity(TIF_PSC(tif)));
+      //            fprintf(stderr,"Predicate over-riding subgoal for %s/%d\n",
+      //            get_name(TIF_PSC(tif)),get_arity(TIF_PSC(tif)));
       Free_Private_DelTF_Subgoal(dtf,tif);
     }
-    dtf = DTF_NextPredDTF(dtf);
+    dtf = next_dtf;
   }
   if (!found) {
     New_Private_DelTF_Pred(dtf,tif);

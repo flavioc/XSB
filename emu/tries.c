@@ -408,6 +408,47 @@ BTNptr newBasicAnswerTrie(CTXTdeclc Cell symbol, CPtr Paren, int trie_type) {
    TRIE_W_UNLOCK();							\
 }
 
+/* This functional version of the above code is not used in the system
+   -- but I  use it for debugging (sequential mode) so please leave it around
+
+void fone_node_chk_ins(int Found,Cell item,int TrieType,BTNptr **GNPP,
+		       BTNptr *Parent) {
+									
+   int count = 0;							
+   BTNptr LocalNodePtr;					
+
+   BTNptr *GNodePtrPtr = *GNPP;
+   BTNptr Paren = *Parent;
+									
+   TRIE_W_LOCK();							
+   if ( IsNULL(*GNodePtrPtr) ) {					
+     New_BTN(LocalNodePtr,TrieType,INTERIOR_NT,item,Paren,NULL);	
+     *GNodePtrPtr = Paren = LocalNodePtr;				
+     Found = 0;								
+   }									
+   else if ( IsHashHeader(*GNodePtrPtr) ) {				
+     BTHTptr ht = (BTHTptr)*GNodePtrPtr;				
+     GNodePtrPtr = CalculateBucketForSymbol(ht,item);			
+     IsInsibling(*GNodePtrPtr,count,Found,item,TrieType);		
+     if (!Found) {							
+     MakeHashedNode(LocalNodePtr);					
+       BTHT_NumContents(ht)++;						
+       TrieHT_ExpansionCheck(ht,count);					
+     }									
+   }									
+   else {								
+     BTNptr pParent = Paren;						
+     IsInsibling(*GNodePtrPtr,count,Found,item,TrieType);		
+     if (IsLongSiblingChain(count))					
+//       used to pass in GNodePtrPtr (ptr to hook)		      
+       hashify_children(CTXTc pParent,TrieType);			
+   }									
+   GNodePtrPtr = &(BTN_Child(LocalNodePtr));				
+   *GNPP = GNodePtrPtr;
+   *Parent = Paren;
+}
+*/
+
 /*----------------------------------------------------------------------*/
 
 /* Trie-HashTable maintenance routines.
