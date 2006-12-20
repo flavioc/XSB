@@ -1345,6 +1345,8 @@ multifile([P/A, _T1, T2]) :-	% T1 is not used
 	% Here the original retract (retract0/1) must be used, because
 	% '_$multifile_retract'(TT1,_,TT2) is true and retract/1 will change
 	% TT1 to TT2.
+	term_psc(TT1,PSC),
+	psc_set_shared(PSC,1),
 	assertz(:-(TT1, T2)).
  
 

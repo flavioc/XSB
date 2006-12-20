@@ -120,7 +120,7 @@
           expand_filename/2, gc_stuff/2,is_charlist/1,
           machine_file_exists/1, 
 	  psc_arity/2, psc_import/3, psc_insert/4,
-	  psc_name/2, psc_type/2,
+	  psc_name/2, psc_type/2, psc_set_shared/2,
 	  stat_set_flag/2, stat_flag/2, term_compare/3,
 	  stat_sta/1, stat_cputime/1, stat_walltime/1,str_len/2,
           term_psc/2, term_new/2, term_new_mod/3, term_type/2  %%, close_open_tables/0
