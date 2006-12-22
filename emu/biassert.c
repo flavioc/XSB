@@ -987,9 +987,11 @@ static void db_putterm(CTXTdeclc int Rt, prolog_term T0,
     case bldtvar:
       if (Reg->RegArrayInit[Arg1]) {
 	dbgen_instB_ppv(bldtval, Arg1);
+	reg_release(Reg,Arg1);
       } else {
 	Reg->RegArrayInit[Arg1] = 1;
 	dbgen_instB_ppv(bldtvar, Arg1);
+	reg_release(Reg,Arg1);
       }
       break;
     case bldavar:
