@@ -162,7 +162,7 @@ user_unhide([P/A|T]) :-
 	user_unhide(T).
 
 %% Show preds hidden by the user
-user_hidden(L) :- setof(P/A, '_$_deb_user_hidden'(P,A), L).
+user_hidden(L) :- setof(P/A, '_$_deb_user_hidden'(P,A), L) -> true ; L = [].
 
 /* -- set debug on ------------------------------------------------ */
 

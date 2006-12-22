@@ -35,14 +35,15 @@
 file_read(File, Answer) :- 
 	file_read(File, Answer, _).
 
-%   file_read_foe(+File, -Answer, -Variables) reads a term from the
-%   current input stream and unifies it with Answer.  Variables is
-%   bound to a list of vv(Atom,Variable) pairs.  It fails if it finds an
-%   error (and doesn''t try again to read another term.)
+/***********
+file_read_foe(+File, -Answer, -Variables) (foe = fail on error) 
+reads a term from the current input stream and unifies it with Answer.
+Variables is bound to a list of vv(Atom,Variable) pairs.  It fails
+if it finds an error (and doesn''t try again to read another term.)
+*************/
 
 file_read_foe(File, Answer, Variables) :-
 	xsb_stream_lock(File),
-%	stat_set_flag(51, File),
 	term_psc('_$synerr'(_), Psc), psc_set_prop(Psc, -1),
 	read_tokens(File, 10, Tokens, Variables),	% 10 is the first char
 	read4(Tokens, 1200, Term, LeftOver),	% 1200 is the maximum
@@ -50,24 +51,68 @@ file_read_foe(File, Answer, Variables) :-
 	Answer = Term,
 	xsb_stream_unlock(File).
 
-%   file_read(+File, -Answer, -Variables)
-%   reads a term from the current input stream and unifies it with
-%   Answer.  Variables is bound to a list of [Atom=Variable] pairs.
+/************ 
+file_read_fapoe(+File, -Answer, -Variables) (fail and print on error)
+This is the older version of file_read, and still used in the
+compiler.  It reads a term from the current input stream and unifies
+it with Answer.  Variables is bound to a list of [Atom=Variable]
+pairs.  It "handles" its own syntax errors by printing out an error
+message, and failing.  
+**************/
 
-file_read(File, Answer, Variables) :-
+file_read_fapoe(File, Answer, Variables) :-
 	xsb_stream_lock(File),
-%	stat_set_flag(51, File),
 	repeat,	% reading terms until you find one with no syntax errors
-	    term_psc('_$synerr'(_), Psc), psc_set_prop(Psc, -1),
+%	    term_psc('_$synerr'(_), Psc), 
+	    get_synerr_psc(Psc),
+	    psc_set_prop(Psc, -1),
 	    read_tokens(File, 10, Tokens, Variables),	% 10 is the first char
 	    ( read4(Tokens, 1200, Term, LeftOver),	% 1200 is the maximum
 	      read_all(LeftOver)			% precedence
-	    ; read_syntax_error(Tokens), 
+	    ; read_syntax_error(Psc,Tokens), 
 	      Term = Term			% To avoid a lamp variable
 	    ),
 	!,
 	Answer = Term,
 	xsb_stream_unlock(File).
+
+/************ 
+
+file_read(+File, -Answer, -Variables) Support for the ISO family of
+read predicates.  It explicitly throws a syntax error if the tokens
+cannot be parsed.
+
+************/
+
+file_read(File, Answer, Variables) :-
+	xsb_stream_lock(File),
+	repeat,	% reading terms until you find one with no syntax errors
+%	    term_psc('_$synerr'(_), Psc), 
+	    get_synerr_psc(Psc),
+	    psc_set_prop(Psc, -1),
+	    read_tokens(File, 10, Tokens, Variables),	% 10 is the first char
+	    ( read4(Tokens, 1200, Term, LeftOver),	% 1200 is the maximum
+	      read_all(LeftOver)			% precedence
+	    ; iso_read_syntax_error(Psc,Tokens),
+	      Term = Term			% To avoid an uninitialized variable
+	    ),
+	!,
+	Answer = Term,
+	xsb_stream_unlock(File).
+
+#ifndef MULTI_THREAD
+get_synerr_psc(Psc):- term_psc('_$synerr'(_), Psc).
+#else 
+get_synerr_psc(Psc):- 
+	xsb_thread_self(Thread),
+	(Thread == 0 -> 
+	    term_psc('_$synerr'(_), Psc).
+          ; 
+	    concat_atom(['_$synerr',Thread],Atom),
+	    functor(Term,Atom,1),
+ 	    term_psc(Term, Psc)).
+
+#endif
 
 %   read_all(+Tokens)
 %   checks that there are no unparsed tokens left over.
@@ -591,7 +636,8 @@ is_a_hilog_term(_).   % Everything else is a HiLog term.
 /* (psc records) to record the number of syntax errors found.		 */
 
 read_record_error(List) :-
-	term_psc('_$synerr'(_), Psc), psc_prop(Psc, Loc),
+	term_psc('_$synerr'(_), Psc), 
+	psc_prop(Psc, Loc),
 	( Loc < 0, 
 		l_length(List, Length),
 		psc_set_prop(Psc, Length)
@@ -600,12 +646,13 @@ read_record_error(List) :-
 	!,
 	fail.
 
-read_syntax_error(List) :-
+read_syntax_error(Psc,List) :-
 	increase_syntax_errors,
 	file_nl(STDERR),
 	file_write0(STDERR, '*** syntax error '),
 	file_nl(STDERR),
-	term_psc('_$synerr'(_), Psc), psc_prop(Psc, AfterError),
+%	term_psc('_$synerr'(_), Psc), 
+	psc_prop(Psc, AfterError),
         l_length(List,Length),
         BeforeError is Length - AfterError,
 	file_write0(STDERR, '>>>   '),
@@ -655,6 +702,50 @@ print_token(func(X))		:- !, read_writecon(X).
 print_token(tk_eoc)		:- !, file_put(STDERR, 46).
 print_token(X)			:-    read_writecon(X).
 
+%--------------------------------------------------------------------------
+
+iso_read_syntax_error(Psc,Tokens):- 
+	psc_prop(Psc, After),
+	length(Tokens,L),				
+	Length is L - After,		     
+        iso_read_display_list(Tokens, Length, PrintList,Tail,Remaining),
+	Tail = [' <--- HERE? ************ 
+++                              '|T1],
+        iso_read_display_list(Remaining, After, PrintList1,NewTail,_Remaining),
+	SpaceLength is 2*Length,
+	make_spaces(SpaceLength,SpaceList,T2),
+	T1 = SpaceList,
+	T2 = PrintList1,
+	NewTail = [],
+	concat_atom(PrintList,NewMessage),
+	syntax_error(NewMessage).				     
+
+make_spaces(0,T,T):-!.
+make_spaces(N,[' '|R],Handle):-
+	N1 is N - 1,
+	make_spaces(N1,R,Handle).
+
+iso_read_display_list(Rest, 0, H,H,Rest).
+iso_read_display_list([Head|Tail], Count, [NewHead,' '|Rest],Out,Remaining) :-
+	Count > 0,
+        strip_token(Head,NewHead),
+        Count1 is Count-1, !,
+        iso_read_display_list(Tail, Count1, Rest,Out,Remaining).
+
+strip_token(atom(X),X):- !.
+strip_token(var(_V,X),X):- !.
+strip_token(varfunc(_V,X),X):- !.
+strip_token(integer(X),X):- !.
+strip_token(real(X),X):-!.
+strip_token(intfunc(X),X):-!.
+strip_token(realfunc(X),X):-!.
+strip_token(punc(V),X):- !,atom_codes(X,[V]).
+strip_token(h_punc(V),X):- !,atom_codes(X,[V]).
+strip_token(func(X),X):- !.
+strip_token(tk_eoc,'.'):- !.
+strip_token(X,X).
+
+%--------------------------------------------------------------------------
 
 /*  The following predicates are sort of standard, but to avoid backward  */
 /*  imports, they are included here.					  */
@@ -794,7 +885,6 @@ token_type(13, tk_hpunc).	% Added for HiLog to distinguish terms of the
 				% the scanner thows away all the spaces. 
 token_type(14, tk_intfunc).	% Added for terms of the form: integer( ...
 token_type(15, tk_realfunc).	% Added for terms of the form: real( ...
-
 
 /* this will go away in the future; its purpose is to make sure that
    sysinitrc.P loads xsb_read.P before users have a chance to load
