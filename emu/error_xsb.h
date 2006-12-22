@@ -127,6 +127,7 @@ extern void call_conv xsb_misc_error(CTXTdeclc char*,char*,int) ;
 extern void call_conv xsb_permission_error(CTXTdeclc char *,char *,Cell,char *,int) ;
 extern void call_conv xsb_resource_error(CTXTdeclc char *,char *, int) ;
 extern void call_conv xsb_resource_error_nopred(CTXTdeclc char *,char *) ;
+extern void call_conv xsb_syntax_error(CTXTdeclc char *) ;
 extern void call_conv xsb_table_error(CTXTdeclc char *) ;
 extern void call_conv xsb_type_error(CTXTdeclc char *,Cell , char *,int, int) ;
 

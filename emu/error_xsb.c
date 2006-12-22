@@ -453,6 +453,38 @@ void call_conv xsb_resource_error_nopred(CTXTdeclc char *resource,char *message)
 
 /**************/
 
+void call_conv xsb_syntax_error(CTXTdeclc char *message) 
+{
+  prolog_term ball_to_throw;
+  int isnew;
+  Cell *tptr;
+  unsigned long ball_len = 10*sizeof(Cell);
+#ifdef MULTI_THREAD
+  char mtmessage[MAXBUFSIZE];
+  int tid = xsb_thread_self();
+#endif
+
+  tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
+  ball_to_throw = makecs(tptr);
+  bld_functor(tptr, pair_psc(insert("error",3,
+				    (Psc)flags[CURRENT_MODULE],&isnew)));
+
+  tptr++;
+  bld_string(tptr,string_find("syntax_error",1));
+  tptr++;
+#ifdef MULTI_THREAD
+  sprintf(mtmessage,"[th %d] %s",tid,message);
+  bld_string(tptr,string_find(mtmessage,1));
+#else  
+  bld_string(tptr,string_find(message,1));
+#endif
+  tptr++;
+  bld_copy(tptr,build_xsb_backtrace(CTXT));
+  xsb_throw_internal(CTXTc ball_to_throw,ball_len);
+}			       
+
+/**************/
+
 void call_conv xsb_table_error(CTXTdeclc char *message) 
 {
   prolog_term ball_to_throw;

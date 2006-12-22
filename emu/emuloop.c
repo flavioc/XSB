@@ -2283,56 +2283,56 @@ DllExport int call_conv xsb(CTXTdeclc int flag, int argc, char *argv[])
 	perform_IO_Redirect(CTXTc argc, argv);
 
 #ifdef SIMPLESCALAR
-     strcpy(executable_path_gl,argv[0]);
+	strcpy(executable_path_gl,argv[0]);
 #else
-     if (executable_path_gl[0] == '\0')
-       xsb_executable_full_path(argv[0]);
+	if (executable_path_gl[0] == '\0')
+	  xsb_executable_full_path(argv[0]);
 #endif
 
-     /* set install_dir, xsb_config_file and user_home */
-     set_install_dir();
-     set_config_file();
-     set_user_home();
+	/* set install_dir, xsb_config_file and user_home */
+	set_install_dir();
+	set_config_file();
+	set_user_home();
 
-     realtime = real_time();
-     setbuf(stdout, NULL);
-     startup_file = init_para(CTXTc argc, argv);	/* init parameters */
+	realtime = real_time();
+	setbuf(stdout, NULL);
+	startup_file = init_para(CTXTc argc, argv);	/* init parameters */
 
-     init_machine(CTXTc 0, 0, 0, 0);	/* init space, regs, stacks */
-     init_inst_table();		/* init table of instruction types */
-     init_symbols();		/* preset a few symbols in PSC table */
-     init_interrupt();		/* catch ^C interrupt signal */
+	init_machine(CTXTc 0, 0, 0, 0);	/* init space, regs, stacks */
+	init_inst_table();		/* init table of instruction types */
+	init_symbols();		/* preset a few symbols in PSC table */
+	init_interrupt();		/* catch ^C interrupt signal */
 
-     /* "b" does nothing in UNIX, denotes binary file in Windows -- 
-	needed in Windows for reading byte-code files */
-     fd = fopen(startup_file, "rb");
+	/* "b" does nothing in UNIX, denotes binary file in Windows -- 
+	   needed in Windows for reading byte-code files */
+	fd = fopen(startup_file, "rb");
 
-     if (!fd) {
-       char message[256];
-       sprintf(message, "The startup file, %s, could not be found!",
-	       startup_file);
-       xsb_exit(message);
-     }
-     magic_num = read_magic(fd);
-     fclose(fd);
-     if (magic_num == 0x11121307 || magic_num == 0x11121305)
-       inst_begin_gl = loader(CTXTc startup_file,0);
-     else
-       xsb_exit("Incorrect startup file format");
+	if (!fd) {
+	  char message[256];
+	  sprintf(message, "The startup file, %s, could not be found!",
+		  startup_file);
+	  xsb_exit(message);
+	}
+	magic_num = read_magic(fd);
+	fclose(fd);
+	if (magic_num == 0x11121307 || magic_num == 0x11121305)
+	  inst_begin_gl = loader(CTXTc startup_file,0);
+	else
+	  xsb_exit("Incorrect startup file format");
 
-     if (!inst_begin_gl)
-       xsb_exit("Error in loading startup file");
+	if (!inst_begin_gl)
+	  xsb_exit("Error in loading startup file");
 
-     if (xsb_mode == DISASSEMBLE) {
-       dis(1);
-       exit(0);
-     }
+	if (xsb_mode == DISASSEMBLE) {
+	  dis(1);
+	  exit(0);
+	}
 
-     /* do it after initialization, so that typing 
-	xsb -v or xsb -h won't create .xsb directory */
-     set_xsbinfo_dir();
+	/* do it after initialization, so that typing 
+	   xsb -v or xsb -h won't create .xsb directory */
+	set_xsbinfo_dir();
 
-     return(0);
+	return(0);
 
    } else if (flag == 1) {  /* continue execution */
 

@@ -27,6 +27,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 
 #include "auxlry.h"
@@ -239,9 +240,14 @@ int intype(int c)
   return (intab.chtype+1)[c];
 }
 
-static void SyntaxError(char *description)
+static void SyntaxError(CTXTdeclc char *description)
 {
-	xsb_abort("[TOKENIZER] Syntax error: %s", description);
+  char message[MAXBUFSIZE];
+
+  //	xsb_abort("[TOKENIZER] Syntax error: %s", description);
+  strcpy(message, "(In tokenizer) ");
+  strncpy(message+15,description,(MAXBUFSIZE - 15));
+  xsb_syntax_error(CTXTc message);
 }
  
 
@@ -346,12 +352,12 @@ static int read_character(CTXTdeclc register FILE *card,
 BACK:   if (c < 0) {
           if (c == EOF) /* to mostly handle cygwin stdio.h bug ... */
 READ_ERROR: if (q < 0) {
-                SyntaxError("end of file in character constant");
+                SyntaxError(CTXTc "end of file in character constant");
 		//		return -2;		/* encounters EOF */
             } else {
                 char message[80];
                 sprintf(message, "end of file in %cquoted%c constant", q, q);
-                SyntaxError(message);
+                SyntaxError(CTXTc message);
 		//		return -2;		/* encounters EOF */
             }
           else c = c & 0xff;  /* in which getc returns "signed" char? */
@@ -567,7 +573,7 @@ START:
 		      d = d*10-'0'+c;
 		    }
 		    if (d == 1 || d > 36) {
-		      SyntaxError(badradix);
+		      SyntaxError(CTXTc badradix);
 		      //		      token->type = TK_ERROR;
 		      //		      return token;
 		    }
@@ -630,7 +636,7 @@ LAB_DECIMAL:                *s++ = '.';
                             if (d == '-') *s++ = d, d = GetC(card,instr);
                             else if (d == '+') d = GetC(card,instr);
                             if (InType(d) > BREAK) {
-				SyntaxError(badexpt);
+				SyntaxError(CTXTc badexpt);
 				//				token->type = TK_ERROR;
 				//				return token;
 			    }
@@ -755,7 +761,7 @@ SYMBOL:         if (c == '(') {
                 *s = c, d = GetC(card,instr);
                 if (c == intab.begcom && d == intab.astcom) {
 ASTCOM:             if (com2plain(card, instr, d, intab.endcom)) {
-			SyntaxError(eofinrem);
+			SyntaxError(CTXTc eofinrem);
 			//			token->type = TK_ERROR;
 			//			return token;
 		    }
