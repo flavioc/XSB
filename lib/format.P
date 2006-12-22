@@ -31,12 +31,12 @@
 
 :- export format/2, format/3, format_control/1.
 
-:- import  put_code/1, nl/0, write/1, writeq/1, print/1,
-	write_canonical/1, write/1, current_output/1, integer/1, 'C'/3,
-	atom/1, atom_codes/2, set_output/1,xsb_configuration/2,
-	is_list/1 from usermod.
+:- import write/1, nl/0,writeln/1 from standard.
 
-:- import stat_set_flag/2 from machine.
+:- import  put_code/2, nl/1, write/2, writeq/2, print/2,
+	write_canonical/2, current_output/1, integer/1, 'C'/3,
+	atom/1, atom_codes/2, xsb_configuration/2,
+	is_list/1 from usermod.
 
 :-  import throw/1 from standard.
 
@@ -398,7 +398,8 @@ format(Control_in, Args_in) :-
 	check_nonvar(Args_in,format/2,1),
 	preproc_newlines(Control_in,Control),
 	preproc_newlines_list(Args_in,Args),
-	format1(Control, Args), !.
+        current_output(Curr),
+	format1(Curr,Control, Args), !.
 format(Control, Arguments) :-
 	throw(error(parse_error(format(Control, Arguments)), format/2)).
 
@@ -408,23 +409,21 @@ format(Stream_or_alias, Control_in, Args_in) :-
         check_nonvar(Args_in,format/2,3),
         preproc_newlines(Control_in,Control),
         preproc_newlines_list(Args_in,Args),
-        current_output(Curr),
-        stat_set_flag(CURRENT_OUTPUT, Stream),
-        ( format1(Control, Args) -> true ; true), 
-        set_output(Curr),
+        ( format1(Stream,Control, Args) -> true ; true), 
         !.
 format(_, Control, Arguments) :-
 	throw(error(parse_error(format(..., Control, Arguments)), format/3)).
 
-format1(Control, Arguments) :-
+format1(Stream,Control, Arguments) :-
 	(   atom(Control) -> atom_codes(Control, ControlList)
 	;   ControlList=Control
 	),
 	(   ArgumentList=Arguments
 	;   ArgumentList=[Arguments]
 	),
+%	writeln(fmt_parse(Stream,ArgumentList, SpecList, ControlList, [])),
 	fmt_parse(ArgumentList, SpecList, ControlList, []), !,
-	current_output(Stream),
+%	write(fmt_print(SpecList, 0, 0' , Stream)),nl,
 	fmt_print(SpecList, 0, 0' , Stream).
 
 fmt_print([], _, _, _).
@@ -435,35 +434,37 @@ fmt_print(settab(Arg,Tab0PlusArg,Pos,Tab), Xs, Tab0, Fill, Stream) :- !,
 %	line_position(Stream, Pos),
 	Pos = 0,
 	(   Pos>Tab ->
-	    nl,
-	    putn(Tab, Fill)
+	    nl(Stream),
+	    putn(Stream,Tab, Fill)
 	;   Skip is Tab-Pos,
-	    putn(Skip, Fill)
+	    putn(Stream,Skip, Fill)
 	),
 	fmt_print(Xs, Tab, Fill, Stream).
 fmt_print(fill(Fill), Xs, Tab, _, Stream) :- !,
 	fmt_print(Xs, Tab, Fill, Stream).
 fmt_print(spec(X,A,N), Xs, Tab, Fill, Stream) :- !,
 %	line_count(Stream, Lc0),
-	fmt_pr(X, A, N),
+	fmt_pr(Stream,X, A, N),
 %	line_count(Stream, Lc),
 	fmt_print(Lc0, Lc0, Xs, Tab, Fill, Stream).
 fmt_print(0'
 	  , Xs, _, _, Stream) :- !,
-	nl,
+	nl(Stream),
 	fmt_print(Xs, 0, 0' , Stream).
 fmt_print(92, [110|Xs], _, _, Stream) :- !,
-	nl,
+	nl(Stream),
 	fmt_print(Xs, 0, 0' , Stream).
 fmt_print(C, Xs, Tab, Fill, Stream) :-
 	Char is truncate(C),
-	put_code(Char),
+	put_code(Stream,Char),
 	fmt_print(Xs, Tab, Fill, Stream).
 
 fmt_print(Lc, Lc, Xs, Tab, Fill, Stream) :- !,
 	fmt_print(Xs, Tab, Fill, Stream).
 fmt_print(_, _, Xs, _, _, Stream) :- !,
 	fmt_print(Xs, 0, 0' , Stream).
+
+%---------------
 
 fmt_parse([], []) --> [].
 fmt_parse(Args, Specs) --> [0'~, C1], !,
@@ -484,38 +485,38 @@ fmt_parse(0'*, [N|Args], Specs, _, _, D) -->
 fmt_parse(0'~, Args, [0'~|Specs], _, 1, 1) -->
 	fmt_parse(Args, Specs).
 /*
-fmt_parse(0'n, Args, [spec(0'c, 0'
-                          , N)|Specs], _, N, 1) -->
-	fmt_parse(Args, Specs).*/
-fmt_parse(0'n, Args, [spec(0'c, 10, N)|Specs], _, N, 1) -->
-	fmt_parse(Args, Specs).
+ fmt_parse(0'n, Args, [spec(0'c, 0'
+                           , N)|Specs], _, N, 1) -->
+ 	fmt_parse(Args, Specs).*/
+ fmt_parse(0'n, Args, [spec(0'c, 10, N)|Specs], _, N, 1) -->
+ 	fmt_parse(Args, Specs).
 fmt_parse(0'N, Args, [settab(0,_,_,0)|Specs], _, 1, 1) -->
-	fmt_parse(Args, Specs).
-fmt_parse(0'|, Args, [Spec|Specs], _, N, current) -->
-	(   {current=N} ->
+ 	fmt_parse(Args, Specs).
+ fmt_parse(0'|, Args, [Spec|Specs], _, N, current) -->
+ 	(   {current=N} ->
 	    {Spec=settab(0,_,Tab,Tab)}
-	;   {Spec=settab(N,_,_,N)}
-	),
+ 	;   {Spec=settab(N,_,_,N)}
+ 	),
+ 	fmt_parse(Args, Specs).
+ fmt_parse(0'+, Args, [settab(N,Tab,_,Tab)|Specs], _, N, 8) -->
+ 	fmt_parse(Args, Specs).
+ fmt_parse(0't, Args, [fill(N)|Specs], _, N, 0' ) --> % faking
+ 	fmt_parse(Args, Specs).
+ fmt_parse(0'`, Args, [fill(Fill)|Specs], 0, _, _) -->
+ 	[Fill, 0't],
+ 	fmt_parse(Args, Specs).
+ fmt_parse(0'i, [_|Args], Specs, _, 1, 1) -->
+ 	fmt_parse(Args, Specs).
+ fmt_parse(0'a, [A|Args], [spec(0'a, A, 1)|Specs], _, 1, 1) -->
+ 	{atom(A)},
 	fmt_parse(Args, Specs).
-fmt_parse(0'+, Args, [settab(N,Tab,_,Tab)|Specs], _, N, 8) -->
-	fmt_parse(Args, Specs).
-fmt_parse(0't, Args, [fill(N)|Specs], _, N, 0' ) --> % faking
-	fmt_parse(Args, Specs).
-fmt_parse(0'`, Args, [fill(Fill)|Specs], 0, _, _) -->
-	[Fill, 0't],
-	fmt_parse(Args, Specs).
-fmt_parse(0'i, [_|Args], Specs, _, 1, 1) -->
-	fmt_parse(Args, Specs).
-fmt_parse(0'a, [A|Args], [spec(0'a, A, 1)|Specs], _, 1, 1) -->
-	{atom(A)},
-	fmt_parse(Args, Specs).
-fmt_parse(0'c, [A|Args], [spec(0'c, A, N)|Specs], _, N, 1) -->
-	{integer(A)},
-	fmt_parse(Args, Specs).
-fmt_parse(0'k, [A|Args], [spec(0'k, A, 1)|Specs], _, 1, 1) -->
-	fmt_parse(Args, Specs).
-fmt_parse(0'p, [A|Args], [spec(0'p, A, 1)|Specs], _, 1, 1) -->
-	fmt_parse(Args, Specs).
+ fmt_parse(0'c, [A|Args], [spec(0'c, A, N)|Specs], _, N, 1) -->
+ 	{integer(A)},
+ 	fmt_parse(Args, Specs).
+ fmt_parse(0'k, [A|Args], [spec(0'k, A, 1)|Specs], _, 1, 1) -->
+ 	fmt_parse(Args, Specs).
+ fmt_parse(0'p, [A|Args], [spec(0'p, A, 1)|Specs], _, 1, 1) -->
+ 	fmt_parse(Args, Specs).
 fmt_parse(0'q, [A|Args], [spec(0'q, A, 1)|Specs], _, 1, 1) -->
 	fmt_parse(Args, Specs).
 fmt_parse(0'w, [A|Args], [spec(0'w, A, 1)|Specs], _, 1, 1) -->
@@ -533,7 +534,7 @@ fmt_parse(0'g, [A|Args], [spec(0'g, V, N)|Specs], _, N, 6) -->
 	{V is float(A)},
 	fmt_parse(Args, Specs).
 fmt_parse(0'G, [A|Args], [spec(0'G, V, N)|Specs], _, N, 6) -->
-	{V is float(A)},
+`v	{V is float(A)},
 	fmt_parse(Args, Specs).
 fmt_parse(0'd, [A|Args], [spec(0'd, V, N)|Specs], _, N, 0) -->
 	{V is truncate(A)},
@@ -558,59 +559,61 @@ is_ascii_list([X|Xs], N0, N) :-
 	integer(X),
 	is_ascii_list(Xs, N1, N).
 
-fmt_pr(0'a, Arg, _) :- write(Arg). % display
-fmt_pr(0'k, Arg, _) :- write_canonical(Arg).
-fmt_pr(0'p, Arg, _) :- print(Arg).
-fmt_pr(0'q, Arg, _) :- writeq(Arg).
-fmt_pr(0'w, Arg, _) :- write(Arg).
-fmt_pr(0'c, Arg, Number) :-
-	putn(Number, Arg).
-fmt_pr(0'e, Arg, Number) :-
-	'$format_print_float'(0'e, Arg, Number).
-fmt_pr(0'E, Arg, Number) :-
-	'$format_print_float'(0'E, Arg, Number).
-fmt_pr(0'f, Arg, Number) :-
-	'$format_print_float'(0'f, Arg, Number).
-fmt_pr(0'g, Arg, Number) :-
-	'$format_print_float'(0'g, Arg, Number).
-fmt_pr(0'G, Arg, Number) :-
-	'$format_print_float'(0'G, Arg, Number).
-fmt_pr(0'd, Arg, Number) :-
-	'$format_print_integer'(0'd, Arg, Number).
-fmt_pr(0'D, Arg, Number) :-
-	'$format_print_integer'(0'D, Arg, Number).
-fmt_pr(0'r, Arg, Number) :-
-	'$format_print_integer'(0'r, Arg, Number).
-fmt_pr(0'R, Arg, Number) :-
-	'$format_print_integer'(0'R, Arg, Number).
-fmt_pr(0's, Arg, Number) :-
-	putn_list(Number, Arg).
+%---------------
+
+fmt_pr(Str,0'a, Arg, _) :- write(Str,Arg). % display
+fmt_pr(Str,0'k, Arg, _) :- write_canonical(Str,Arg).
+fmt_pr(Str,0'p, Arg, _) :- print(Str,Arg).
+fmt_pr(Str,0'q, Arg, _) :- writeq(Str,Arg).
+fmt_pr(Str,0'w, Arg, _) :- write(Str,Arg).
+fmt_pr(Str,0'c, Arg, Number) :-
+	putn(Str,Number, Arg).
+fmt_pr(Str,0'e, Arg, Number) :-
+	'$format_print_float'(Str,0'e, Arg, Number).
+fmt_pr(Str,0'E, Arg, Number) :-
+	'$format_print_float'(Str,0'E, Arg, Number).
+fmt_pr(Str,0'f, Arg, Number) :-
+	'$format_print_float'(Str,0'f, Arg, Number).
+fmt_pr(Str,0'g, Arg, Number) :-
+	'$format_print_float'(Str,0'g, Arg, Number).
+fmt_pr(Str,0'G, Arg, Number) :-
+	'$format_print_float'(Str,0'G, Arg, Number).
+fmt_pr(Str,0'd, Arg, Number) :-
+	'$format_print_integer'(Str,0'd, Arg, Number).
+fmt_pr(Str,0'D, Arg, Number) :-
+	'$format_print_integer'(Str,0'D, Arg, Number).
+fmt_pr(Str,0'r, Arg, Number) :-
+	'$format_print_integer'(Str,0'r, Arg, Number).
+fmt_pr(Str,0'R, Arg, Number) :-
+	'$format_print_integer'(Str,0'R, Arg, Number).
+fmt_pr(Str,0's, Arg, Number) :-
+	putn_list(Str,Number, Arg).
 
 % TLS: Hack! but I didnt want to change file_puttoken.
-'$format_print_integer'(_,Arg,_):- write(Arg).
-'$format_print_float'(_,Arg,_):- write(Arg).
+'$format_print_integer'(Str,_,Arg,_):- write(Str,Arg).
+'$format_print_float'(Str,_,Arg,_):- write(Str,Arg).
 
-putn(0, _) :- !.
-putn(N, C) :-
+putn(_Str,0, _) :- !.
+putn(Str,N, C) :-
 	N>0, N1 is N-1,
 	Char is truncate(C),
-	put_code(Char),
-	putn(N1, C).
+	put_code(Str,Char),
+	putn(Str,N1, C).
 
-putn_list(0, _) :- !.
-putn_list(N, []) :- !,
+putn_list(_Str,0, _) :- !.
+putn_list(Str,N, []) :- !,
 	N1 is N-1,
-	put_code(0' ),
-	putn_list(N1, []).
-putn_list(N, [92,110|Chars]) :-
+	put_code(Str,0' ),
+	putn_list(Str,N1, []).
+putn_list(Str,N, [92,110|Chars]) :-
 	N1 is N-2,
-	nl,
-	putn_list(N1, Chars).
-putn_list(N, [C|Chars]) :-
+	nl(Str),
+	putn_list(Str,N1, Chars).
+putn_list(Str,N, [C|Chars]) :-
 	N1 is N-1,
 	Char is truncate(C),
-	put_code(Char),
-	putn_list(N1, Chars).
+	put_code(Str,Char),
+	putn_list(Str,N1, Chars).
 
 preproc_newlines_list(H,T):- 
 	xsb_configuration(host_os,Type),
