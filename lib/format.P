@@ -534,7 +534,7 @@ fmt_parse(0'g, [A|Args], [spec(0'g, V, N)|Specs], _, N, 6) -->
 	{V is float(A)},
 	fmt_parse(Args, Specs).
 fmt_parse(0'G, [A|Args], [spec(0'G, V, N)|Specs], _, N, 6) -->
-`v	{V is float(A)},
+	{V is float(A)},
 	fmt_parse(Args, Specs).
 fmt_parse(0'd, [A|Args], [spec(0'd, V, N)|Specs], _, N, 0) -->
 	{V is truncate(A)},
