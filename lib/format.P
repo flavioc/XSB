@@ -31,7 +31,7 @@
 
 :- export format/2, format/3, format_control/1.
 
-:- import write/1, nl/0,writeln/1 from standard.
+%:- import write/1, nl/0,writeln/1 from standard.
 
 :- import  put_code/2, nl/1, write/2, writeq/2, print/2,
 	write_canonical/2, current_output/1, integer/1, 'C'/3,
