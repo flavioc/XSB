@@ -1168,6 +1168,7 @@ int xsb_answer_string(CTXTdeclc VarString *ans, char *sep)
 {
   int i;
   
+  XSB_StrSet(ans,"");
   if (!is_string(reg_term(CTXTc 2))) {
     for (i=1; i<p2c_arity(reg_term(CTXTc 2)); i++) {
       print_pterm(CTXTc p2p_arg(reg_term(CTXTc 2),i),TRUE,ans);
