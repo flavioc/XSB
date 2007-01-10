@@ -1363,6 +1363,8 @@ void init_symbols(void)
   if (status != 0) 
     xsb_exit("Cannot set pthread attr detached state during system initialization");
 
+  pthread_attr_setscope(&detached_attr_gl,PTHREAD_SCOPE_SYSTEM);
+
   /* set minimal stack size to a reasonable value */
   pthread_attr_setstacksize(&detached_attr_gl,512*K*ZOOM_FACTOR);
   status = pthread_attr_init(&normal_attr_gl);
@@ -1380,6 +1382,7 @@ void init_symbols(void)
 		printf( "Minimum thread stack size set to %d\n", stack_size ) ;
   }
 #endif
+  pthread_attr_setscope(&normal_attr_gl,PTHREAD_SCOPE_SYSTEM);
 #endif
 
 }
