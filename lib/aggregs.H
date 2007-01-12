@@ -60,7 +60,7 @@
 :- import member/2, copy_term/2, append/3 from basics.
 :- import sort/2, findall/3, bagof/3, excess_vars/4 from setof.
 :- import ','/2 from usermod.
-:- import variant/2 from subsumes.
+:- import subsumes/2, variant/2 from subsumes.
 
 :- import delete_return/2,
 	  get_producer_call/3,
