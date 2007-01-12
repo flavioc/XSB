@@ -1,21 +1,38 @@
 
 This directory contains examples that show how to call XSB from C.
 
-All these programs assume that they are compiled and placed in the XSB
-directory for executables, $XSB_HOME/config/<your system architecture>/bin
+cvarstring.c shows how to use the VarString interface, 
+cfixedstring.c shows how to use the fixed string interface
+cmain.c cmain2.c show how to use the register interface
 
-***You must first execute "makexsb module" in the XSB/build directory***
+See the manual for details on these files.
 
-The simplest way to compile these examples is to start XSB and then execute:
+The easiest way to create them as executables is to consult './make.P'
+(for cvarstring.c and cfixedstring.c) or './makealt.P' (for cmain.c
+and cmain2.c) from the configuration of XSB you wish to use (for
+instance, using the sequential or multi-threaded engine).  ./make.P
+should automatically obtain the proper directory names, compilation
+flags and load flags to compile with your architecture and
+configuration.
 
-| ?- [make].
+Alternately, you can adapt ./Makefile to make these files.  ./Makefile
+was written for Linux, so it will probably require some tweaking to
+determine the proper directory names and flags.  To obtain these
+values, first check that the file
 
-A sample Makefile for Linux is also provided but this may require some
-tweaking. 
+$XSB_HOME/config/<your system architecture>/modMakefile 
 
-The Makefile specific to your architecture is placed in
-    $XSB_HOME/config/<your system architecture>/modMakefile
-after you build XSB.
-You can use it to link your own programs with XSB. This make file
-contains all the right settings, but you will have to fill in the actual
-name of your program that calls the XSB module.
+is present.  If not, execute "makexsb module" in the $XSB_home/build
+directory.  modMakefile can then be used or adapted to statically link
+your own programs with XSB.  This make file contains all the right
+settings, but you will have to fill in the actual name of your program
+that calls the XSB module.
+
+Both processes execute the following two steps for a file cmain.c that
+is to be made into an executable cmain.
+
+1. cmain is compiled to create cmain.o using the proper compiler flags
+2. cmain.o is linked with files in 
+   $XSB_HOME/config/<your system architecture/saved.o 
+   under the proper compiler flags to create cmain.
+

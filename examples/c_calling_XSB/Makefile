@@ -28,15 +28,15 @@
 
 
 # Where the architectue specific XSB stuff is
-ARCH=i686-pc-linux-gnu
+ARCH=powerpc-apple-darwin7.5.1-dflt
 #ARCH=i686-pc-linux-gnu-dbg
-arch_dir=$(HOME)/XSB/XSB/config/$(ARCH)
+arch_dir=$(HOME)/XSBNEW/XSB/config/$(ARCH)
 
 CC=gcc
 CFLAGS= -O4 -ansi -pedantic -Wall
 # for debug:
 #CFLAGS= -ansi -pedantic -Wall -g
-LDFLAGS= -lm -ldl -Wl,-export-dynamic
+LDFLAGS= -lm -ldl -Wl
 # For Solaris use:
 #LDFLAGS=  -lsocket -lm -lnsl -ldl -Wl,-export-dynamic
 
