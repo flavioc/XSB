@@ -35,11 +35,11 @@
 
 c_callloop :-
         set_inthandler('_$keyboard_int'(_), MYSIG_KEYB),
-	catch(c_callloop_cmd_goal([]),Ball,default_error_handler(Ball)),
+	catch(c_callloop_cmd_goal([]),Ball,ccall_error_handler(Ball)),
 	fail.
 c_callloop :-
 	repeat,
-	catch(c_callloop_query_loop([]),Ball,default_error_handler(Ball)),
+	catch(c_callloop_query_loop([]),Ball,ccall_error_handler(Ball)),
 	fail.
 
 c_callloop_cmd_goal(_) :-
@@ -98,7 +98,7 @@ string_to_term(Atom,Goal) :-
 
 string_to_term(Atom,Goal) :-
 	file_open(Atom,sr,Fp),
-	file_read_foe(Fp,Goal,_),
+	file_read(Fp,Goal,_),
 	file_close(Fp).
 
 

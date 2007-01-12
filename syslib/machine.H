@@ -162,6 +162,7 @@
         install_verify_attribute_handler/4,
         verify_attribute_handler/4,
 	globalvar/1,
+        ccall_store_error/2,
 	xsb_backtrace/0, xsb_backtrace/1.
 
 :- import assert/1, retract/1, (dynamic)/1 from assert.

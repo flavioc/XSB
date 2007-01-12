@@ -38,4 +38,5 @@
 :- import file_read_foe/3, file_read/3 from xsb_read.
 :- import excess_vars/4 from setof.
 :- import conset/2 from gensym.
+   :- import ccall_error_handler/1 from error_handler.
 :- import [] / 0 from usermod.	       % just to make usermod typed "module"

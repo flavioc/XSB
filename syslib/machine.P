@@ -393,6 +393,8 @@ set_prof_on(Level) :- stat_set_flag(PROFFLAG,Level).
 globalvar(_Var) :-
 	'_$builtin'(GLOBALVAR).
 
+ccall_store_error(_Type,_Message) :- '_$builtin'(CCALL_STORE_ERROR).
+
 /* Prompt routines */
 
 prompt(New,Old) :- prompt(New,Old,'_$main_prompt'(_)).
