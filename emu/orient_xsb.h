@@ -24,6 +24,7 @@
 
 #include "export.h"
 
+
 extern void  set_xsbinfo_dir (void);
 extern void  set_install_dir(void);
 extern void  set_config_file(void);

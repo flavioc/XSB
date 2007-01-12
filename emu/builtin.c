@@ -921,6 +921,7 @@ void init_builtin_table(void)
   set_builtin_table(TRIE_UNDISPOSE, "trie_undispose");
   set_builtin_table(RECLAIM_UNINTERNED_NR, "reclaim_uninterned_nr");
   set_builtin_table(GLOBALVAR, "globalvar");
+  set_builtin_table(CCALL_STORE_ERROR, "ccall_store_error");
 
   set_builtin_table(SET_TABLED_EVAL, "set_tabled_eval_method");
   set_builtin_table(UNIFY_WITH_OCCURS_CHECK, "unify_with_occurs_check");
@@ -2357,6 +2358,9 @@ case WRITE_OUT_PROFILE:
     break;
   case GLOBALVAR:
     ctop_tag(CTXTc 1, ((Cell)glstack.low));
+    break;
+  case CCALL_STORE_ERROR:
+    create_ccall_error(ptoc_string(CTXTc 1),ptoc_string(CTXTc 2));
     break;
 
   case STORAGE_BUILTIN: {

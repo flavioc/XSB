@@ -49,6 +49,8 @@
 #include "error_xsb.h"
 #include "extensions_xsb.h"
 #include "memory_xsb.h"
+#include "auxlry.h"
+#include "cinterf.h"
 
 char executable_path_gl[MAXPATHLEN] = {'\0'};	/* This is set to a real name below */
 
@@ -138,7 +140,6 @@ char *xsb_executable_full_path(char *myname)
   int link_len;
 #endif
 
-
 #ifndef WIN_NT
 #ifndef SIMPLESCALAR
   /* Unix */
@@ -214,38 +215,54 @@ char *xsb_executable_full_path(char *myname)
   }
 
   /* XSB executable isn't found after searching PATH */
-  fprintf(stderr,
+  if (xsb_mode != C_CALLING_XSB) {
+    fprintf(stderr,
 	  "*************************************************************\n");
-  fprintf(stderr, 
+    fprintf(stderr, 
 	  "PANIC!!! Cannot determine the full name of the XSB executable!\n");
-  fprintf(stderr, 
+    fprintf(stderr, 
 	  "Please report this problem using the XSB bug tracking system accessible from\n");
-  fprintf(stderr, "\t http://sourceforge.net/projects/xsb\n");
-  fprintf(stderr,
-	  "*************************************************************\n");
-  exit(1);
+    fprintf(stderr, "\t http://sourceforge.net/projects/xsb\n");
+    fprintf(stderr,
+	    "*************************************************************\n");
+    exit(1);
+  }
+  else { /* Dont want to exit when calling from C */
+    xsb_initialization_exit("Cannot determine the full name of the XSB executable!\n"
+		       "Please report this problem using the XSB bug tracking system accessible from\n"
+		       "\t http://sourceforge.net/projects/xsb')\n");
+  }
   /* This return is needed just to pacify the compiler */
   return FALSE;
 }
 
-void set_install_dir() {
+/**************************************/
+
+void set_install_dir(void) {
 
   /* strip 4 levels, since executable is always of this form:
      install_dir/config/<arch>/bin/xsb */
   install_dir_gl = strip_names_from_path(executable_path_gl, 4);
   if (install_dir_gl == NULL) {
-    fprintf(stderr,
-	    "*************************************************************\n");
-    fprintf(stderr, "PANIC!! Can't find the XSB installation directory.\n");
-    fprintf(stderr, "Perhaps, you moved the XSB executable out of \n");
-    fprintf(stderr, "its normal place in the XSB directory structure?\n");
-    fprintf(stderr,
-	    "*************************************************************\n");
-    exit(1);
+    if (xsb_mode != C_CALLING_XSB) {
+      fprintf(stderr,
+	      "*************************************************************\n");
+      fprintf(stderr, "PANIC!! Can't find the XSB installation directory.\n");
+      fprintf(stderr, "Perhaps, you moved the XSB executable out of \n");
+      fprintf(stderr, "its normal place in the XSB directory structure?\n");
+      fprintf(stderr,
+	      "*************************************************************\n");
+      exit(1);
+    }
+    else { /* Dont want to exit when calling from C */
+      xsb_initialization_exit("Cant find the XSB installation directory.\n"
+			 "Perhaps, you moved the XSB executable out of \n"
+			 "its normal place in the XSB directory structure?')\n");
+    }
   }
 }
 
-void set_config_file() {
+void set_config_file(void) {
   int retcode;
   struct stat fileinfo;
 
@@ -259,18 +276,29 @@ void set_config_file() {
      This is probably redundant */
   if ( strncmp(install_dir_gl, xsb_config_file_gl, strlen(install_dir_gl)) != 0 
        || (strstr(xsb_config_file_gl, "config") == NULL) ) {
-    fprintf(stderr,
+
+    if (xsb_mode != C_CALLING_XSB) {
+      fprintf(stderr,
 	    "*************************************************************\n");
-    fprintf(stderr,
+      fprintf(stderr,
 	    "PANIC!! The file configuration%s\n", XSB_SRC_EXTENSION_STRING);
-    fprintf(stderr,
-	    "is not where it is expected: %s%cconfig%c%s%clib\n",
-	    install_dir_gl, SLASH, SLASH, FULL_CONFIG_NAME, SLASH);
-    fprintf(stderr, "Perhaps you moved the XSB executable %s\n", executable_path_gl);
-    fprintf(stderr, "away from its usual place?\n");
-    fprintf(stderr,
-	    "*************************************************************\n");
-    exit(1);
+      fprintf(stderr,
+	      "is not where it is expected: %s%cconfig%c%s%clib\n",
+	      install_dir_gl, SLASH, SLASH, FULL_CONFIG_NAME, SLASH);
+      fprintf(stderr, "Perhaps you moved the XSB executable %s\n", executable_path_gl);
+      fprintf(stderr, "away from its usual place?\n");
+      fprintf(stderr,
+	      "*************************************************************\n");
+      exit(1);
+    }
+    else {
+      xsb_initialization_exit("The file configuration%s\n"
+			       "is not where it is expected: %s%cconfig%c%s%clib\n"
+			       "Perhaps you moved the XSB executable %s\n", 
+			       "away from its usual place?\n"	
+	      XSB_SRC_EXTENSION_STRING,install_dir_gl, SLASH, SLASH, FULL_CONFIG_NAME, SLASH,
+	      executable_path_gl);
+    }
   }
 
   /* Check if configuration.P exists and is readable */
@@ -279,16 +307,22 @@ void set_config_file() {
   if ( (retcode != 0) || !(S_IREAD & fileinfo.st_mode) ) {
 #else
   if ( (retcode != 0) || !(S_IRUSR & fileinfo.st_mode) ) {
-#endif
-    fprintf(stderr,
+#endif  
+    if (xsb_mode != C_CALLING_XSB) {
+      fprintf(stderr,
 	    "*************************************************************\n");
-    fprintf(stderr, "PANIC! XSB configuration file %s\n", xsb_config_file_gl);
-    fprintf(stderr, "doesn't exist or is not readable by you.\n");
-    fprintf(stderr,
-	    "*************************************************************\n");
-    exit(1);
+      fprintf(stderr, "PANIC! XSB configuration file %s\n", xsb_config_file_gl);
+      fprintf(stderr, "doesn't exist or is not readable by you.\n");
+      fprintf(stderr,
+	      "*************************************************************\n");
+      exit(1);
+    }
+    else {
+      xsb_initialization_exit("XSB configuration file %s does not exist or is not readable by you.\n",
+			      xsb_config_file_gl);
+    }
   }
-}
+  }
 
 #ifdef WIN_NT
 void transform_cygwin_pathname(char*);

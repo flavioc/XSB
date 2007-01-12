@@ -80,6 +80,13 @@
 #define IsNULL(ptr)      ( (ptr) == NULL )
 #define IsNonNULL(ptr)   ( (ptr) != NULL )
 
+#define XSB_INIT 0 
+#define XSB_EXECUTE 1
+#define XSB_SHUTDOWN 2
+#define XSB_C_INIT 3
+
+#define XSBINITERRLEN 2048
+
 #endif  /* BASICDEFS_INCLUDED */
 
 #define BASICDEFS_INCLUDED

@@ -82,10 +82,10 @@ int main(int argc, char *argv[])
   th = malloc( sizeof( th_context ) ) ;  /* don't use mem_alloc */
 #endif
 
-  xsb(CTXTc 0, argc, argv);  /* init xsb */
+  xsb(CTXTc XSB_INIT, argc, argv);  /* init xsb */
 
-  xsb(CTXTc 1, 0, 0);        /* normal execution */
-  xsb(CTXTc 2, 0, 0);        /* when halts, exit */
+  xsb(CTXTc XSB_EXECUTE, 0, 0);        /* normal execution */
+  xsb(CTXTc XSB_SHUTDOWN, 0, 0);        /* when halts, exit */
   return 0;
 }
 

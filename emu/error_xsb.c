@@ -781,6 +781,27 @@ DllExport void call_conv dbgmsg1_xsb(int log_level, char *description)
 
 /*----------------------------------------------------------------------*/
 
+DllExport void call_conv xsb_initialization_exit(char *description, ...)
+{
+  va_list args;
+
+  if (xsb_mode != C_CALLING_XSB) {
+    va_start(args, description);
+    vfprintf(stderr, description, args);
+    va_end(args);
+
+    fprintf(stdfdbk, "\nExiting XSB abnormally...\n");
+    exit(1);
+  }
+  else {
+    sprintf(xsb_get_error_type(),"init_error");
+    va_start(args, description);
+    vsprintf(xsb_get_error_message(), description, args);
+    va_end(args);
+    longjmp(ccall_init_env, XSB_ERROR);
+  }
+}
+
 DllExport void call_conv xsb_exit(char *description, ...)
 {
   va_list args;

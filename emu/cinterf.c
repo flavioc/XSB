@@ -1196,28 +1196,28 @@ static inline void updateWarningStart(void)
 /*                                                                      */
 /* xsb_init(argc,argv) initializes XSB to be called from C.             */
 /* argc and argv are the arg count and arg vector as passed from the    */
-/* command line.  The parameters are used to set space sizes in xsb.    */
-/* The parameters MUST include -i, which indicates that the main        */
-/* interpreter is to be loaded, AND -n, which indicates that the        */
-/* interpreter should not enter the usual read-eval-print loop, but     */
-/* instead support the interface to the C caller.                       */
-/*   If xsb has been previously initialized, nothing is done and 1 is   */
-/* returned.                                                            */
+/* command line.  The parameters may be used to set space sizes in xsb. */
+/* If xsb has been previously initialized, nothing is done and          */
+/* XSB_FAILURE is returned.                                            */
 /*                                                                      */
 /************************************************************************/
 
 static int xsb_initted_gl = 0;   /* if xsb has been called */
 static int xsb_inquery_gl = 0;   
+struct ccall_error_t ccall_error;
+jmp_buf ccall_init_env;
+
 
 DllExport int call_conv xsb_init(CTXTdeclc int argc, char *argv[])
 {
-int rc = 1;
-char executable1[MAXPATHLEN];
- char *expfilename;
+  int rc = XSB_FAILURE;
+  char executable1[MAXPATHLEN];
+  char *expfilename;
 
-updateWarningStart();
-if (!xsb_initted_gl)
-	{
+  reset_ccall_error();
+  
+ updateWarningStart();
+ if (!xsb_initted_gl) {
 	/* we rely on the caller to tell us in argv[0]
 	the absolute or relative path name to the XSB installation directory */
 	sprintf(executable1, "%s%cconfig%c%s%cbin%cxsb",
@@ -1226,13 +1226,19 @@ if (!xsb_initted_gl)
 	strcpy(executable_path_gl, expfilename);
 	mem_dealloc(expfilename,MAXPATHLEN,OTHER_SPACE);
 
-	if (0 == (rc = xsb(CTXTc 0,argc,argv)))     /* initialize xsb */
+	if ((rc = setjmp(ccall_init_env))) return rc;  /* catch XSB_C_INIT exceptions */
+
+	if (0 == (rc = xsb(CTXTc XSB_C_INIT,argc,argv)))     /* initialize xsb */
 		{
-		if (0 == (rc = xsb(CTXTc 1,0,0)))       /* enter xsb to set up regs */
+		if (0 == (rc = xsb(CTXTc XSB_EXECUTE,0,0)))       /* enter xsb to set up regs */
 		xsb_initted_gl = 1;
 		}
-	}
-return(rc);
+	return(rc);
+ }
+ else {
+    create_ccall_error("permission_error","xsb_init() called when XSB has already been initialized.");
+    return(XSB_ERROR);     
+  }
 }
 
 /************************************************************************/
@@ -1243,25 +1249,19 @@ return(rc);
 /*	the function.  (Will handle a max of 19 args.)			*/
 /*									*/
 /************************************************************************/
-/*FILE *stream_err, *stream_out;*/
 
 DllExport int call_conv xsb_init_string(CTXTdeclc char *cmdline_param) {
-	int i = 0, argc = 0;
-	char **argv, delim;
-	char cmdline[2*MAXPATHLEN+1];
+  int i = 0, argc = 0, length = 0;
+  char **argv, delim;
+  char cmdline[2*MAXPATHLEN+1];
 
   updateWarningStart();
 
-	/*stream_err = freopen("XSB_errlog", "w", stderr);
-	  stream_out = freopen("XSB_outlog", "w", stdout);*/
-
-	if (strlen(cmdline_param) > 2*MAXPATHLEN) {
-	    xsb_warn("**************************************************************************");
-	    xsb_warn("[XSB_INIT_STRING] %18s...: command used to call XSB server is too long",
-		    cmdline_param);
-	    xsb_warn("**************************************************************************");
-	    exit(1);
-	}
+  if ((length = strlen(cmdline_param)) > 2*MAXPATHLEN) {
+    snprintf(cmdline,2*MAXPATHLEN+1,"command used to call XSB server is too long: %s",cmdline_param);
+    create_ccall_error("init_error",cmdline);
+    return(XSB_ERROR);
+  }
 	strncpy(cmdline, cmdline_param, 2*MAXPATHLEN - 1);
 	argv = (char **) mem_alloc(20*sizeof(char *),OTHER_SPACE);  /* count space even if never released */
 
@@ -1327,16 +1327,22 @@ DllExport int call_conv writeln_to_xsb_stdin(char * input){
 
 DllExport int call_conv xsb_command(CTXTdecl)
 {
-  if (xsb_inquery_gl) return(2);  /* error */
+  int rc;
+
+  if (xsb_inquery_gl) {
+    create_ccall_error("permission_error","unable to call xsb_command() when query a query is open");
+    return(XSB_ERROR);     
+  }
+  reset_ccall_error();
   updateWarningStart();
   c2p_int(CTXTc 0,reg_term(CTXTc 3));  /* command for calling a goal */
-  xsb(CTXTc 1,0,0);
-  if (is_var(reg_term(CTXTc 1))) return(1);  /* goal failed, so return 1 */
+  rc = xsb(CTXTc XSB_EXECUTE,0,0);
+  if (is_var(reg_term(CTXTc 1))) return(XSB_FAILURE);  /* goal failed, so return 1 */
   c2p_int(CTXTc 1,reg_term(CTXTc 3));  /* command for next answer */
-  xsb(CTXTc 1,0,0);
-  if (is_var(reg_term(CTXTc 1))) return(0);  /* goal succeeded */
+  xsb(CTXTc XSB_EXECUTE,0,0);
+  if (is_var(reg_term(CTXTc 1))) return(XSB_SUCCESS);  /* goal succeeded */
   (void) xsb_close_query(CTXT);
-  return(2);
+  return(rc);
 }
 
 /************************************************************************/
@@ -1351,18 +1357,26 @@ DllExport int call_conv xsb_command(CTXTdecl)
 
 DllExport int call_conv xsb_command_string(CTXTdeclc char *goal)
 {
-  if (xsb_inquery_gl) return(2);  /* error */
+
+  if (xsb_inquery_gl) {
+    create_ccall_error("permission_error","unable to call xsb_command_string() when a query is open");
+    return(XSB_ERROR);     
+  }
+  reset_ccall_error();
   updateWarningStart();
   c2p_string(CTXTc goal,reg_term(CTXTc 1));
   c2p_int(CTXTc 2,reg_term(CTXTc 3));  /* command for calling a string goal */
-  xsb(CTXTc 1,0,0);
-  if (is_var(reg_term(CTXTc 1))) return(1);  /* goal failed, so return 1 */
+  xsb(CTXTc XSB_EXECUTE,0,0);
+  if (ccall_error_thrown) return(XSB_ERROR);
+  if (is_var(reg_term(CTXTc 1))) return(XSB_FAILURE);  /* goal failed, so return 1 */
   c2p_int(CTXTc 1,reg_term(CTXTc 3));  /* command for next answer */
-  xsb(CTXTc 1,0,0);
-  if (is_var(reg_term(CTXTc 1))) return(0);  /* goal succeeded */
+  xsb(CTXTc XSB_EXECUTE,0,0);
+  if (is_var(reg_term(CTXTc 1))) return(XSB_SUCCESS);  /* goal succeeded */
   (void) xsb_close_query(CTXT);
-  return(2);
+  return(XSB_ERROR);     // to shut up compiler.
 }
+
+
 
 /************************************************************************/
 /*                                                                      */ 
@@ -1380,13 +1394,14 @@ DllExport int call_conv xsb_command_string(CTXTdeclc char *goal)
 
 DllExport int call_conv xsb_query(CTXTdecl)
 {
-  if (xsb_inquery_gl) return(2);
+  if (xsb_inquery_gl) return(XSB_FAILURE);
+  reset_ccall_error();
   updateWarningStart();
   c2p_int(CTXTc 0,reg_term(CTXTc 3));  /* set command for calling a goal */
-  xsb(CTXTc 1,0,0);
-  if (is_var(reg_term(CTXTc 1))) return(1);
+  xsb(CTXTc XSB_EXECUTE,0,0);
+  if (is_var(reg_term(CTXTc 1))) return(XSB_FAILURE);
   xsb_inquery_gl = 1;
-  return(0);
+  return(XSB_SUCCESS);
 }
 
 /************************************************************************/
@@ -1400,21 +1415,29 @@ DllExport int call_conv xsb_query(CTXTdecl)
    Y1, .... Yn are the variables in the parsed goal (in left-to-right
    order).  This answer term is unified with the argument in register
    2.  Then the goal is called.  If the goal succeeds,
-   xsb_query_string returns 0 and the first answer is in register 2.
-   If it fails, xsb_query_string returns 1.                             */
+   xsb_query_string returns XSB_SUCCESS and the first answer is in register 2.
+   If it fails, xsb_query_string returns XSB_FAILURE.                             */
 /*                                                                      */
 /************************************************************************/
 
 DllExport int call_conv xsb_query_string(CTXTdeclc char *goal)
 {
-  if (xsb_inquery_gl) return(2);
+  if (xsb_inquery_gl) {
+    create_ccall_error("permission_error","unable to call xsb_query_string() when a query is open");
+    return(XSB_ERROR);     
+  }
+  reset_ccall_error();
   updateWarningStart();
   c2p_chars(CTXTc goal,2,reg_term(CTXTc 1));
   c2p_int(CTXTc 2,reg_term(CTXTc 3));  /* set command for calling a string goal */
-  xsb(CTXTc 1,0,0);
-  if (is_var(reg_term(CTXTc 1))) return(1);
+  xsb(CTXTc XSB_EXECUTE,0,0);
+  if (ccall_error_thrown) {
+    xsb_inquery_gl = 0;
+    return(XSB_ERROR);
+  }
+  if (is_var(reg_term(CTXTc 1))) return(XSB_FAILURE);
   xsb_inquery_gl = 1;
-  return(0);
+  return(XSB_SUCCESS);
 }
 
 /************************************************************************/
@@ -1431,9 +1454,10 @@ int call_conv xsb_query_string_string(CTXTdeclc char *goal,
 {
   int rc;
   
+  reset_ccall_error();
   rc = xsb_query_string(CTXTc goal);
-  if (rc > 0) return rc;
-  return xsb_answer_string(CTXTc ans,sep);
+  if (rc != XSB_SUCCESS) return rc;
+  else return xsb_answer_string(CTXTc ans,sep);
 }
 
 /************************************************************************/
@@ -1458,13 +1482,13 @@ int call_conv xsb_query_string_string_b(CTXTdeclc
   
   XSB_StrSet(last_answer,"");
   rc = xsb_query_string_string(CTXTc goal,last_answer,sep); 
-  if (rc > 0) return rc;
-  *anslen = last_answer->length;
+  if (rc != XSB_SUCCESS) return rc;
   XSB_StrNullTerminate(last_answer);
-  if (last_answer->length < buflen) {
+  *anslen = (last_answer->length)+1;  // length does not always include null terminator
+  if (*anslen <= buflen) {
     strcpy(buff,last_answer->string);
     return rc;
-  } else return(3);
+  } else return(XSB_OVERFLOW);
 }
 
 /************************************************************************/
@@ -1475,12 +1499,12 @@ int call_conv xsb_query_string_string_b(CTXTdeclc
 DllExport int call_conv 
    xsb_get_last_answer_string(CTXTdeclc char *buff, int buflen, int *anslen) {
 
- *anslen = last_answer->length;
-  if (last_answer->length < buflen) {
+  *anslen = (last_answer->length)+1;
+  if (*anslen <= buflen) {
     strcpy(buff,last_answer->string);
-    return 0;
+    return XSB_SUCCESS;
   } else 
-    return(3);
+    return(XSB_OVERFLOW);
 }    
 
 /************************************************************************/
@@ -1500,14 +1524,21 @@ DllExport int call_conv
 
 DllExport int call_conv xsb_next(CTXTdecl)
 {
-  if (!xsb_inquery_gl) return(2);
+  if (!xsb_inquery_gl) {
+    create_ccall_error("permission_error","unable to call xsb_next() when a query is not open");
+    return(XSB_ERROR);     
+  }
   updateWarningStart();
   c2p_int(CTXTc 0,reg_term(CTXTc 3));  /* set command for next answer */
-  xsb(CTXTc 1,0,0);
+  xsb(CTXTc XSB_EXECUTE,0,0);
+  if (ccall_error_thrown) {
+    xsb_inquery_gl = 0;
+    return(XSB_ERROR);
+  }
   if (is_var(reg_term(CTXTc 1))) {
     xsb_inquery_gl = 0;
-    return(1);
-  } else return(0);
+    return(XSB_FAILURE);
+  } else return(XSB_SUCCESS);
 }
 
 /************************************************************************/
@@ -1541,15 +1572,15 @@ DllExport int call_conv xsb_next_string_b(CTXTdeclc
 {
   int rc;
 
-  XSB_StrSet(last_answer,"");
+  buff[0] = '\0';
   rc = xsb_next_string(CTXTc last_answer,sep);
   if (rc > 0) return rc;
-  *anslen = last_answer->length;
   XSB_StrNullTerminate(last_answer);
-  if (last_answer->length < buflen) {
+  *anslen = (last_answer->length)+1;  // length does not always include null terminator
+  if (*anslen <= buflen) {
     strcpy(buff,last_answer->string);
     return rc;
-  } else return(3);
+  } else return(XSB_OVERFLOW);
 }
 
 /************************************************************************/
@@ -1565,13 +1596,16 @@ DllExport int call_conv xsb_next_string_b(CTXTdeclc
 DllExport int call_conv xsb_close_query(CTXTdecl)
 {
   updateWarningStart();
-  if (!xsb_inquery_gl) return(2);
+  if (!xsb_inquery_gl) {
+    create_ccall_error("permission_error","unable to call xsb_close_query() when a query is not open");
+    return(XSB_ERROR);     
+  }
   c2p_int(CTXTc 1,reg_term(CTXTc 3));  /* set command for cut */
-  xsb(CTXTc 1,0,0);
+  xsb(CTXTc XSB_EXECUTE,0,0);
   if (is_var(reg_term(CTXTc 1))) {
     xsb_inquery_gl = 0;
-    return(0);
-  } else return(2);
+    return(XSB_SUCCESS);
+  } else return(XSB_ERROR);
 }
 
 /************************************************************************/
@@ -1584,8 +1618,11 @@ DllExport int call_conv xsb_close_query(CTXTdecl)
 DllExport int call_conv xsb_close(CTXTdecl)
 {
   updateWarningStart();
-  if (xsb_initted_gl) return(0);
-  else return(1);
+  if (xsb_initted_gl) return(XSB_SUCCESS);
+  else {
+    create_ccall_error("permission_error","unable to call xsb_close() when XSB has not been inialized.");
+    return(XSB_ERROR);     
+  }
 }
 
 #if defined(WIN_NT)
@@ -1636,12 +1673,13 @@ else
 	if((0 == errno) && (-1 < *anslen))
 		{				// ftell worked
 		if (*anslen >= buflen)
-			rc = 3;		// Not enough room in the target buffer
+			rc = XSB_OVERFLOW;		// Not enough room in the target buffer
 		else
 			{
 			while ((totalBytesRead < *anslen) && (0 < bytesRead) && !ferror(stderr))
 				{
- 		   		bytesRead = pread(fileno(stderr),&buff[totalBytesRead],(*anslen - totalBytesRead),(lastWarningStart + totalBytesRead));
+ 		   		bytesRead = pread(fileno(stderr),&buff[totalBytesRead],
+						  (*anslen - totalBytesRead),(lastWarningStart + totalBytesRead));
  		   		totalBytesRead += bytesRead;
  		   		}
 			if (!ferror(stderr))
@@ -1658,3 +1696,5 @@ else
 	}
 return(rc);
 }    
+
+

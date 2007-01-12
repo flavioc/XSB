@@ -188,6 +188,7 @@
 #define TRIE_UNDISPOSE          166
 #define RECLAIM_UNINTERNED_NR   167
 #define GLOBALVAR               168
+#define CCALL_STORE_ERROR       169
 
 #define SET_TABLED_EVAL		170
 

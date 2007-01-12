@@ -105,7 +105,6 @@ void *mem_alloc(unsigned long size, int category)
     ptr = (byte *) malloc(size);
 
 #if defined(GENERAL_TAGGING)
-    //    printf("mem_alloc %x %x\n",ptr,ptr+size);
     extend_enc_dec_as_nec(ptr,ptr+size);
 #endif
 

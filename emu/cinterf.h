@@ -163,6 +163,11 @@ extern "C" {
 #include "export.h"
 #include "varstring_xsb.h"
 
+#define XSB_SUCCESS 0
+#define XSB_FAILURE 1
+#define XSB_ERROR 2
+#define XSB_OVERFLOW 3
+
 #define extern_ctop_abs(reg_num,val) ctop_abs(CTXTc reg_num,val) 
 #define extern_ctop_float(reg_num, val) ctop_float(CTXTc reg_num, val) 
 #define extern_ctop_int(reg_num,val) ctop_int(CTXTc reg_num,val) 
@@ -310,6 +315,37 @@ DllExport extern int call_conv xsb_get_last_error_string(char*,int,int*);
 DllExport extern void call_conv print_pterm(CTXTdeclc Cell, int, VarString*);
 extern char *p_charlist_to_c_string(CTXTdeclc prolog_term term, VarString *buf,
 				    char *in_func, char *where);
+
+/*******************************************************************************/
+
+#define ERRTYPELEN 1024
+#define ERRMSGLEN 4096
+
+struct ccall_error_t {
+  char ccall_error_type[ERRTYPELEN];
+  char ccall_error_message[ERRMSGLEN];
+  //  char ccall_error_backtrace
+};
+
+  extern struct ccall_error_t ccall_error;
+
+#define xsb_get_error_type() (&ccall_error.ccall_error_type[0])
+#define xsb_get_error_message() (&ccall_error.ccall_error_message[0])
+#define ccall_error_thrown (ccall_error.ccall_error_type[0] != '\0')
+
+#define create_ccall_error(TYPE,MESSAGE) {	 \
+    strncpy(xsb_get_error_type(),TYPE,ERRTYPELEN);  \
+    strncpy(xsb_get_error_message(),MESSAGE,ERRMSGLEN);	\
+  }
+
+#define reset_ccall_error() {	 \
+    ccall_error.ccall_error_type[0] = '\0'; \
+    ccall_error.ccall_error_message[0] = '\0'; \
+  }
+
+extern jmp_buf ccall_init_env;
+
+/*******************************************************************************/
 
 /* macros for constructing answer terms and setting and retrieving atomic
 values in them. To pass or retrieve complex arguments, you must use

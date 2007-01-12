@@ -79,6 +79,8 @@
 #include "struct_manager.h"
 #include "builtin.h"
 #include "call_graph_xsb.h" /* incremental evaluation */
+#include "cinterf.h"
+
 /*
  * Variable ans_var_pos_reg is a pointer to substitution factor of an
  * answer in the heap.  It is used and set in function
@@ -2254,6 +2256,7 @@ return 0;
 
 /*======================================================================*/
 /*======================================================================*/
+/* TLS: changes so that XSB does not cause a process exit when called by C */
 
 DllExport int call_conv xsb(CTXTdeclc int flag, int argc, char *argv[])
 { 
@@ -2263,7 +2266,7 @@ DllExport int call_conv xsb(CTXTdeclc int flag, int argc, char *argv[])
    static double realtime;	/* To retain its value across invocations */
 
    extern void dis(xsbBool);
-   extern char *init_para(CTXTdeclc int, char **);
+   extern char *init_para(CTXTdeclc int, int, char **);
    extern void perform_IO_Redirect(CTXTdeclc int, char **);
    extern void init_machine(CTXTdeclc int, int, int, int), init_symbols(void);
 #ifdef FOREIGN
@@ -2274,18 +2277,21 @@ DllExport int call_conv xsb(CTXTdeclc int flag, int argc, char *argv[])
 #endif
 #endif
 
-   if (flag == 0) {  /* initialize xsb */
+   if (flag == XSB_INIT || flag == XSB_C_INIT) {  /* initialize xsb */
+
+     if (flag == XSB_C_INIT) xsb_mode = C_CALLING_XSB;
+     else xsb_mode = DEFAULT; /* MAY BE CHANGED LATER */
+
      /* Set the name of the executable to the real name.
 	The name of the executable could have been set in cinterf.c:xsb_init
 	if XSB is called from C. In this case, we don't want `executable'
 	to be overwritten, so we check if it is initialized. */
-
 	perform_IO_Redirect(CTXTc argc, argv);
 
 #ifdef SIMPLESCALAR
 	strcpy(executable_path_gl,argv[0]);
 #else
-	if (executable_path_gl[0] == '\0')
+      	if (executable_path_gl[0] == '\0')
 	  xsb_executable_full_path(argv[0]);
 #endif
 
@@ -2296,7 +2302,7 @@ DllExport int call_conv xsb(CTXTdeclc int flag, int argc, char *argv[])
 
 	realtime = real_time();
 	setbuf(stdout, NULL);
-	startup_file = init_para(CTXTc argc, argv);	/* init parameters */
+	startup_file = init_para(CTXTc flag, argc, argv);	/* init parameters */
 
 	init_machine(CTXTc 0, 0, 0, 0);	/* init space, regs, stacks */
 	init_inst_table();		/* init table of instruction types */
@@ -2311,21 +2317,21 @@ DllExport int call_conv xsb(CTXTdeclc int flag, int argc, char *argv[])
 	  char message[256];
 	  sprintf(message, "The startup file, %s, could not be found!",
 		  startup_file);
-	  xsb_exit(message);
+	  xsb_initialization_exit(message); 
 	}
 	magic_num = read_magic(fd);
 	fclose(fd);
 	if (magic_num == 0x11121307 || magic_num == 0x11121305)
 	  inst_begin_gl = loader(CTXTc startup_file,0);
-	else
-	  xsb_exit("Incorrect startup file format");
+	else 
+	  xsb_initialization_exit("Incorrect startup file format");
 
 	if (!inst_begin_gl)
-	  xsb_exit("Error in loading startup file");
+	  xsb_initialization_exit("Error in loading startup file");
 
 	if (xsb_mode == DISASSEMBLE) {
 	  dis(1);
-	  exit(0);
+	  exit(0);  /* wont be called by C_CALLING_XSB in this case */
 	}
 
 	/* do it after initialization, so that typing 
@@ -2334,11 +2340,11 @@ DllExport int call_conv xsb(CTXTdeclc int flag, int argc, char *argv[])
 
 	return(0);
 
-   } else if (flag == 1) {  /* continue execution */
+   } else if (flag == XSB_EXECUTE) {  /* continue execution */
 
      return(emuloop(CTXTc inst_begin_gl));
 
-   } else if (flag == 2) {  /* shutdown xsb */
+   } else if (flag == XSB_SHUTDOWN) {  /* shutdown xsb */
 
 #ifdef FOREIGN
 #ifndef FOREIGN_ELF

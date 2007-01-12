@@ -71,6 +71,7 @@
 #include "call_graph_xsb.h" /* for incremental evaluation*/
 #include "incr_xsb.h" /* for incremental evaluation */
 #include "deadlock.h"
+#include "cinterf.h"
 /*-----------------------------------------------------------------------*/
 
 /* Sizes of the Data Regions in K-byte blocks
@@ -161,9 +162,8 @@ static void display_file(char *infile_name)
   char buffer[MAXBUFSIZE];
 
   if ((infile = fopen(infile_name, "r")) == NULL) {
-    xsb_error("\nCan't open `%s'; XSB installation might be corrupted\n",
-	      infile_name);
-    exit(1);
+    xsb_initialization_exit("Can't open `%s'; XSB installation might be corrupted\n",
+			     infile_name);
   }
 
   while (fgets(buffer, MAXBUFSIZE-1, infile) != NULL)
@@ -171,7 +171,6 @@ static void display_file(char *infile_name)
 
   fclose(infile);
 }
-
 
 static void version_message(void)
 {
@@ -187,7 +186,7 @@ static void version_message(void)
   fprintf(stdmsg, "\n");
   display_file(licensemsg);
 
-  exit(0);
+  if (xsb_mode != C_CALLING_XSB) exit(0);
 }
 
 static void help_message(void)
@@ -197,10 +196,16 @@ static void help_message(void)
   sprintf(helpmsg, "%s%cetc%chelp.msg", install_dir_gl, SLASH, SLASH);
   puts("");
   display_file(helpmsg);
-
-  exit(0);
+  if (xsb_mode != C_CALLING_XSB) exit(0);
 }
 
+static void parameter_error(char * param) {
+
+  if (xsb_mode == C_CALLING_XSB) {
+    xsb_initialization_exit("cannot use option ''%s'' when calling XSB from C.\n",param);
+  }
+  else help_message();  // dont need to check for return here.
+}
 
 /*==========================================================================*/
 
@@ -233,7 +238,7 @@ char    standard_message_glc[]      = "stdmsg";
 char    standard_debug_glc[]      = "stddbg";
 char    standard_feedback_glc[]      = "stdfdbk";
 
-static void init_open_files(void)
+static int init_open_files(void)
 {
   int i, msg_fd, dbg_fd, warn_fd, fdbk_fd;
 
@@ -259,7 +264,7 @@ static void init_open_files(void)
 
   /* stream for xsb warning msgs */
   if ((warn_fd = dup(fileno(stderr))) < 0)
-    xsb_exit("Can't open the standard stream for warnings\n");
+    xsb_initialization_exit("Can't open the standard stream for warnings\n");
   stdwarn = fdopen(warn_fd, "w");
   open_files[3].file_ptr = stdwarn;
   open_files[3].io_mode = 'w';
@@ -268,7 +273,7 @@ static void init_open_files(void)
 
   /* stream for xsb normal msgs */
   if ((msg_fd = dup(fileno(stderr))) < 0)
-     xsb_exit("Can't open the standard stream for messages\n");
+     xsb_initialization_exit("Can't open the standard stream for messages\n");
   stdmsg = fdopen(msg_fd, "w");
   open_files[4].file_ptr = stdmsg;
   open_files[4].io_mode = 'w';
@@ -277,7 +282,7 @@ static void init_open_files(void)
 
   /* stream for xsb debugging msgs */
   if ((dbg_fd = dup(fileno(stderr))) < 0)
-     xsb_exit("Can't open the standard stream for debugging messages\n");
+     xsb_initialization_exit("Can't open the standard stream for debugging messages\n");
   stddbg = fdopen(dbg_fd, "w");
   open_files[5].file_ptr = stddbg;
   open_files[5].io_mode = 'w';
@@ -286,7 +291,7 @@ static void init_open_files(void)
 
   /* stream for xsb feedback msgs */
   if ((fdbk_fd = dup(fileno(stdout))) < 0)
-     xsb_exit("Can't open the standard stream for XSB feedback messages\n");
+     xsb_initialization_exit("Can't open the standard stream for XSB feedback messages\n");
   stdfdbk = fdopen(fdbk_fd, "w");
   open_files[6].file_ptr = stdfdbk;
   open_files[6].io_mode = 'w';
@@ -311,13 +316,14 @@ static void init_open_files(void)
 
 #ifdef MULTI_THREAD
   if( pthread_mutexattr_settype( &attr_std, PTHREAD_MUTEX_RECURSIVE_NP )<0 )
-    xsb_exit( "[THREAD] Error initializing mutexes" ) ;
+    xsb_initialization_exit( "[THREAD] Error initializing mutexes" ) ;
 
   for( i = 0; i < MAX_OPEN_FILES ; i++ ) {
     pthread_mutex_init(OPENFILES_MUTEX(i) , &attr_std ) ;
     OPENFILES_MUTEX_OWNER(i) = -1;
   }
 #endif
+  return(0);
 }
 
 /*==========================================================================*/
@@ -325,7 +331,7 @@ static void init_open_files(void)
 /* if command line option is long --optionname, then the arg here is
    'optionname'. Process it and return.
 */
-static void process_long_option(char *option,int *ctr,char *argv[],int argc)
+static int process_long_option(char *option,int *ctr,char *argv[],int argc)
 {
   if (0==strcmp(option, "nobanner")) {
     flags[BANNER_CTL] *= NOBANNER;
@@ -345,7 +351,7 @@ static void process_long_option(char *option,int *ctr,char *argv[],int argc)
     else xsb_warn("Missing size value for --max_threads");
   }
 
-  return;
+  return(0);
 }
 
 /*==========================================================================*/
@@ -412,9 +418,9 @@ int pipe_input_stream() {
 
 /*==========================================================================*/
 /* Initialize System Parameters: This is done only on process start
- * up, not on thread startup */
+ * up, not on thread startup.   */
 
-char *init_para(CTXTdeclc int argc, char *argv[])
+    char *init_para(CTXTdeclc int flag, int argc, char *argv[])
 {
   int i;
   char warning[80];
@@ -459,22 +465,31 @@ char *init_para(CTXTdeclc int argc, char *argv[])
 #endif
 
   /* File extensions are automatically added for Loader-loaded files. */
+  if( xsb_mode == C_CALLING_XSB) {
 #ifdef WIN_NT
-  cmd_loop_driver = "\\syslib\\x_interp";
+      cmd_loop_driver = "\\syslib\\xcallxsb";
 #else
-  cmd_loop_driver = "/syslib/x_interp";
+      cmd_loop_driver = "/syslib/xcallxsb";
 #endif
+  }
+  else { /* xsb_mode is now DEFAULT, but may later be changed */
+#ifdef WIN_NT
+    cmd_loop_driver = "\\syslib\\x_interp";
+#else
+    cmd_loop_driver = "/syslib/x_interp";
+#endif
+  }
 
-
-  xsb_mode = DEFAULT;
   pflags[TABLING_METHOD] = VARIANT_EVAL_METHOD;
 
   /* Modify Parameters Using Command Line Options
      -------------------------------------------- */
   for (i=1; i<argc; i++) {
     if (*argv[i] != '-') {        /* command-line module specified */
-      if (xsb_mode != DEFAULT)
-	help_message();
+      if (xsb_mode != DEFAULT) {
+	parameter_error(argv[i]);
+	break;
+      }
       xsb_mode = CUSTOM_CMD_LOOP_DRIVER;
       cmd_loop_driver = argv[i];
       continue;
@@ -598,8 +613,8 @@ char *init_para(CTXTdeclc int argc, char *argv[])
       pflags[TABLING_METHOD] = SUBSUMPTIVE_EVAL_METHOD;
       break;
     case 'd':
-      if ( (xsb_mode != DEFAULT) && (xsb_mode != CUSTOM_BOOT_MODULE) )
-	help_message();
+      if ( (xsb_mode != DEFAULT) && (xsb_mode != CUSTOM_BOOT_MODULE) ) 
+	parameter_error("d");
       xsb_mode = DISASSEMBLE;
       break;
     case 'T': 
@@ -612,19 +627,19 @@ char *init_para(CTXTdeclc int argc, char *argv[])
       flags[HITRACE] = 1;
       asynint_val |= MSGINT_MARK;
 #else
-      xsb_exit("-t option unavailable for this executable (non-debug mode)");
+      xsb_initialization_exit("-t option unavailable for this executable (non-debug mode)");
 #endif
       break;
     case 'i':
       if (xsb_mode != DEFAULT)
-	help_message();
+	parameter_error("i");
       xsb_mode = INTERPRETER;
       break;
     case 'l':
       flags[LETTER_VARS] = 1;
       break;
-    case 'n':
-      if (xsb_mode != DEFAULT)
+    case 'n':  /* TLS: obsolete, but leaving in for backward compat */
+      if (xsb_mode != C_CALLING_XSB)
 	help_message();
       xsb_mode = C_CALLING_XSB;
 #ifdef WIN_NT
@@ -637,7 +652,7 @@ char *init_para(CTXTdeclc int argc, char *argv[])
       if (xsb_mode == DEFAULT)
 	xsb_mode = CUSTOM_BOOT_MODULE;
       else if (xsb_mode != DISASSEMBLE)   /* retain disassemble command for */
-	help_message();                /* -d -f <file> AWA -f <file> -d */
+	parameter_error("B"); /* -d -f <file> AWA -f <file> -d */
       if (argv[i][2] != '\0')
 	boot_module = argv[i]+2;
       else {
@@ -652,7 +667,7 @@ char *init_para(CTXTdeclc int argc, char *argv[])
       if (xsb_mode == DEFAULT)
 	xsb_mode = CUSTOM_CMD_LOOP_DRIVER;
       else if (xsb_mode != CUSTOM_BOOT_MODULE)
-	help_message();
+	parameter_error("D"); 
       if (argv[i][2] != '\0')
 	cmd_loop_driver = argv[i]+2;
       else {
@@ -676,12 +691,12 @@ char *init_para(CTXTdeclc int argc, char *argv[])
       }
 
       if (strchr(tmp_goal, '.') == NULL) {
-	xsb_exit("\n\nTerminating `.' missing in command line goal:\n\t`%s'",
+	xsb_initialization_exit("\n\nTerminating `.' missing in command line goal:\n\t`%s'",
 		 tmp_goal);
       }
 
       if ((strlen(cmd_line_goal) + strlen(tmp_goal)) >= MAXBUFSIZE)
-	xsb_exit("\n\nCommand line goal is too long (> %d)\n\n", MAXBUFSIZE);
+	xsb_initialization_exit("\n\nCommand line goal is too long (> %d)\n\n", MAXBUFSIZE);
       strcat(cmd_line_goal, " ");
       strcat(cmd_line_goal, tmp_goal);
       break;
@@ -797,7 +812,7 @@ char *init_para(CTXTdeclc int argc, char *argv[])
     strcpy( (char *)flags[BOOT_MODULE], boot_module );
     break;
   default:
-    xsb_exit("Setting startup files: Bad XSB mode!");
+    xsb_initialization_exit("Setting startup files: Bad XSB mode!");
     break;
   }
 
@@ -1135,13 +1150,13 @@ void init_machine(CTXTdeclc int glsize, int tcpsize,
 
   pdl.low = (byte *)malloc(pdl.init_size * K);
   if (!pdl.low)
-    xsb_exit("Not enough core for the PDL Stack!");
+    xsb_initialization_exit("Not enough core for the PDL Stack!");
   pdl.high = pdl.low + pdl.init_size * K;
   pdl.size = pdl.init_size;
 
   glstack.low = (byte *)malloc(glstack.init_size * K);
   if (!glstack.low)
-    xsb_exit("Not enough core for the Global and Local Stacks!");
+    xsb_initialization_exit("Not enough core for the Global and Local Stacks!");
   glstack.high = glstack.low + glstack.init_size * K;
   glstack.size = glstack.init_size;
 
@@ -1153,13 +1168,13 @@ void init_machine(CTXTdeclc int glsize, int tcpsize,
 
   tcpstack.low = (byte *)malloc(tcpstack.init_size * K);
   if (!tcpstack.low)
-    xsb_exit("Not enough core for the Trail and Choice Point Stack!");
+    xsb_initialization_exit("Not enough core for the Trail and Choice Point Stack!");
   tcpstack.high = tcpstack.low + tcpstack.init_size * K;
   tcpstack.size = tcpstack.init_size;
 
   complstack.low = (byte *)malloc(complstack.init_size * K);
   if (!complstack.low)
-    xsb_exit("Not enough core for the Completion Stack!");
+    xsb_initialization_exit("Not enough core for the Completion Stack!");
   complstack.high = complstack.low + complstack.init_size * K;
   complstack.size = complstack.init_size;
 
@@ -1357,11 +1372,11 @@ void init_symbols(void)
 #ifdef MULTI_THREAD
   status = pthread_attr_init(&detached_attr_gl);
   if (status != 0) 
-    xsb_exit("Cannot init pthread attr detached state during system initialization");
+    xsb_initialization_exit("Cannot init pthread attr detached state during system initialization");
   
   status = pthread_attr_setdetachstate(&detached_attr_gl,PTHREAD_CREATE_DETACHED);
   if (status != 0) 
-    xsb_exit("Cannot set pthread attr detached state during system initialization");
+    xsb_initialization_exit("Cannot set pthread attr detached state during system initialization");
 
   pthread_attr_setscope(&detached_attr_gl,PTHREAD_SCOPE_SYSTEM);
 
@@ -1369,7 +1384,7 @@ void init_symbols(void)
   pthread_attr_setstacksize(&detached_attr_gl,512*K*ZOOM_FACTOR);
   status = pthread_attr_init(&normal_attr_gl);
   if (status != 0) 
-    xsb_exit("Cannot init pthread attr during system initialization");
+    xsb_initialization_exit("Cannot init pthread attr during system initialization");
   /* set minimal stack size to a reasonable value */
   status = pthread_attr_setstacksize(&normal_attr_gl,512*K*ZOOM_FACTOR);
 #ifdef DEBUG
@@ -1377,7 +1392,7 @@ void init_symbols(void)
   {
   	status = pthread_attr_getstacksize(&normal_attr_gl,&stack_size);
   	if (status != 0) 
-    		xsb_exit("Cannot determine thread stack size during system initialization");
+    		xsb_initialization_exit("Cannot determine thread stack size during system initialization");
 	else
 		printf( "Minimum thread stack size set to %d\n", stack_size ) ;
   }

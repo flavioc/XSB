@@ -982,6 +982,14 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  break;
 	}
 
+	case PTHREAD_SETCONCURRENCY: 
+	  break;
+
+	case PTHREAD_GETCONCURRENCY: 
+	  break;
+
+
+
 	default:
 	  rc = 0 ; /* Keep compiler happy */
 	  xsb_abort( "[THREAD] Invalid thread operation requested %d",request_num);
