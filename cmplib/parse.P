@@ -242,7 +242,7 @@ parse_clauses(M, _) :-	% Under normal conditions this clause is unreachable!
 	error(('Clauses of ', M, ' cannot be parsed.')).
 
 my_read(Term, Vars) :-
-	stat_flag(CURRENT_INPUT, File), file_read(File, Term, Vars).
+	stat_flag(CURRENT_INPUT, File), file_read_fapoe(File, Term, Vars).
 
 check_compilable_clause(Cl) :- var(Cl), !, 
 	error(('Clause cannot be compiled: ',Cl)),
