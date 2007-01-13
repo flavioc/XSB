@@ -288,6 +288,7 @@ void print_statistics(CTXTdeclc int amount) {
 #endif
   case 4:                  /* mutex use (if PROFILE_MUTEXES is defined) */
     print_mutex_use();
+    print_mem_allocs();
     break;
   case 5:
     dis(0); 

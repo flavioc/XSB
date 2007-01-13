@@ -76,11 +76,37 @@ void inline extend_enc_dec_as_nec(void *lptr, void *hptr) {
 	  enc[nibble] = next_free_code << 28;
 	  dec[next_free_code] = nibble << 28;
 	  // printf("recoding %lx to %lx\n",nibble,next_free_code);
-	  next_free_code++;
+	  next_free_code+x+;
 	}
 	SYS_MUTEX_UNLOCK_NOERROR(MUTEX_GENTAG);
       }
     }
+}
+#endif
+
+/* Statistics on number of mem_allocs (maintained for NON_OPT_COMPILE)
+   -------------------------------------------------------------------- */
+
+struct memcount_t {
+  int num_mem_allocs;    // includes callocs
+  int num_mem_reallocs;
+  int num_mem_deallocs;
+};
+
+#ifdef NON_OPT_COMPILE
+struct memcount_t memcount_gl = {0,0,0};
+
+void print_mem_allocs() {
+
+  printf("System memory interactions since last use:\n");
+  printf("Memory Allocations: %d\n",memcount_gl.num_mem_allocs);
+  printf("Memory Reallocations: %d\n",memcount_gl.num_mem_reallocs);
+  printf("Memory Deallocations: %d\n",memcount_gl.num_mem_deallocs);
+
+  memcount_gl.num_mem_allocs = memcount_gl.num_mem_reallocs = memcount_gl.num_mem_deallocs = 0;
+}
+#else
+void print_mem_allocs() {
 }
 #endif
 
@@ -98,6 +124,7 @@ void *mem_alloc(unsigned long size, int category)
     size = (size+7) & ~0x7 ;	      /* round to 8 */
 
 #ifdef NON_OPT_COMPILE
+    memcount_gl.num_mem_allocs++;
     SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
 #endif
     pspacesize[category] += size;
@@ -127,6 +154,7 @@ void *mem_alloc_nocheck(unsigned long size, int category)
 
     size = (size+7) & ~0x7 ;	      /* round to 8 */
 #ifdef NON_OPT_COMPILE
+    memcount_gl.num_mem_allocs++;
     SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
 #endif
     pspacesize[category] += size;
@@ -150,6 +178,7 @@ void *mem_calloc(unsigned long size, unsigned long occs, int category)
     unsigned long length = (size*occs+7) & ~0x7;
 
 #ifdef NON_OPT_COMPILE
+    memcount_gl.num_mem_allocs++;
    SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
 #endif
     pspacesize[category] += length;
@@ -175,6 +204,7 @@ void *mem_realloc(void *addr, unsigned long oldsize, unsigned long newsize, int 
     newsize = (newsize+7) & ~0x7 ;	      /* round to 8 */
     oldsize = (oldsize+7) & ~0x7 ;	      /* round to 8 */
 #ifdef NON_OPT_COMPILE
+    memcount_gl.num_mem_reallocs++;
     SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
 #endif
     pspacesize[category] = pspacesize[category] - oldsize + newsize;
@@ -196,6 +226,7 @@ void *mem_realloc_nocheck(void *addr, unsigned long oldsize, unsigned long newsi
     newsize = (newsize+7) & ~0x7 ;	      /* round to 8 */
     oldsize = (oldsize+7) & ~0x7 ;	      /* round to 8 */
 #ifdef NON_OPT_COMPILE
+    memcount_gl.num_mem_reallocs++;
     SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
 #endif
     pspacesize[category] = pspacesize[category] - oldsize + newsize;
@@ -217,6 +248,7 @@ void mem_dealloc(void *addr, unsigned long size, int category)
   //  int i;
     size = (size+7) & ~0x7 ;	      /* round to 8 */
 #ifdef NON_OPT_COMPILE
+    memcount_gl.num_mem_deallocs++;
     SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
 #endif
     //    if (size > 0) for (i=0; i<size/4-1; i++) *((CPtr *)addr + i) = (CPtr)0xefefefef;

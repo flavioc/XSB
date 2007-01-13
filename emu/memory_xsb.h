@@ -153,6 +153,7 @@ extern void *mem_calloc(unsigned long, unsigned long, int);
 extern void *mem_realloc(void *, unsigned long, unsigned long, int);
 extern void *mem_realloc_nocheck(void *, unsigned long, unsigned long, int);
 extern void mem_dealloc(void *, unsigned long, int);
+extern void print_mem_allocs(void);
 #ifndef MULTI_THREAD
 extern void tcpstack_realloc(long);
 extern void complstack_realloc(long);
