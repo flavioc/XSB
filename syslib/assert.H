@@ -35,7 +35,7 @@
 :- export t_assert/2.
 :- export exchange_definitions/2.
 
-:- import append/3,ground/1 from basics.
+:- import append/3 from basics.
 
 :- import default_assert_size/1 from config.
 
@@ -51,14 +51,13 @@
 :- import psc_ep/2, psc_type/2, psc_set_type/2, psc_arity/2,
 	  conpsc/2, assert_code_to_buff/1, assert_buff_to_clref/6,
           psc_set_ep/2, unload_seg/1, db_build_prref/3, db_get_prref/2,
-          code_call/3, db_retract0/3
+	  code_call/3, db_retract0/3, term_set_arg/4
      from machine.
-:- import parsort/4 from machine.
 :- import db_get_last_clause/4 from machine.
 
 :- import '_$multifile_retract'/3 from parse.
 
-:- import (=..)/2, functor/3, integer/1, callable/1, 
+ :- import (=..)/2, functor/3, integer/1, callable/1, arg/3,
   goal_cut_trans/3, goal_cut_untrans/2, abort/1, check_arity_integer/3,
   is_most_general_term/1, atomic/1
      from standard.

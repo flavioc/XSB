@@ -42,8 +42,8 @@
 /*    assert(+Clause, +AorZ, +Index)            			*/
 /*	Asserts a clause.		                                */
 /*	AorZ/\1:  0 for insertion as the first clause, 1 for as last.	*/
-/*	AorZ/\2:  0 for uniform treatment of anonymous variables,	*/
-/*		  2 for special treatment of anonymous variables.	*/
+/*	AorZ/\2:  0 for simple register allocation,			*/
+/*		  2 for setting var occurrence counts for reg alloc.	*/
 /*	Index: the number of the argument on which to index; 		*/
 /*		0 for no indexing. (If there is index declaration, this	*/
 /*			argument is ignored.)				*/
@@ -182,51 +182,35 @@ assert(Clause, AZL, Index1,ErrPred) :-
 code_to_buff(Clause,AZ) :-
 	(AZ =< 1
 	 ->	assert_code_to_buff(Clause), fail
-	 ;	bind_single_occ_vars(Clause,'$assertAVAR'),
+	 ;	set_var_occurrences(Clause),
 		assert_code_to_buff(Clause), fail
 	).
 code_to_buff(_,_).
 
-/* bind all single-occurrence variables in Term to Val.  Used so
-assert in C will know which variables are anonymous and can generate
-better code for them (and not use registers) */
-bind_single_occ_vars(Term,Val) :-
-	(ground(Term)
+set_var_occurrences(Term) :-
+	(atomic(Term)
 	 ->	true
-	 ;	accumulate_vars(Term,AllVars,[]),
-		parsort(AllVars,asc,0,SAllVars),
-		SAllVars = [V1|RVars],
-		bind_single_occs_f(RVars,V1,Val)
+	 ; var(Term)
+	 ->	(is_attv(Term)
+		 ->	true
+		 ;	Term = '$assertVAR'(_,1)
+		)
+	 ; Term = '$assertVAR'(_,N)
+	 ->	N1 is N+1,
+		term_set_arg(Term,2,N1,0)
+	 ;	functor(Term,_,Arity),
+		set_var_occurrences_sub(1,Arity,Term)
 	).
 
-accumulate_vars(Term,Vars0,Vars) :-
-	(var(Term)
-	 ->	Vars0 = [Term|Vars]
-	 ; atomic(Term)
-	 ->	Vars0 = Vars
-	 ;	Term =.. [_|Args],
-		accumulate_vars_list(Args,Vars0,Vars)
+set_var_occurrences_sub(N,Arity,Term) :-
+	(N > Arity
+	 ->	true
+	 ;	arg(N,Term,Arg),
+		set_var_occurrences(Arg),
+		N1 is N+1,
+		set_var_occurrences_sub(N1,Arity,Term)
 	).
 
-accumulate_vars_list([],Vars,Vars).
-accumulate_vars_list([T|Ts],Vars0,Vars) :-
-	accumulate_vars(T,Vars0,Vars1),
-	accumulate_vars_list(Ts,Vars1,Vars).
-
-bind_single_occs_f([],Val,Val).
-bind_single_occs_f([V1|RVars],V1a,Val) :-
-	(V1 == V1a
-	 ->	bind_single_occs(RVars,V1a,Val)
-	 ;	V1a = Val,
-		bind_single_occs_f(RVars,V1,Val)
-	).
-
-bind_single_occs([],_V1a,_Val).
-bind_single_occs([V1|RVars],V1a,Val) :-
-	(V1 == V1a
-	 ->	bind_single_occs(RVars,V1a,Val)
-	 ;	bind_single_occs_f(RVars,V1,Val)
-	).
 
 /*======================================================================*/
 /* check_assert(+Clause, +Predicate_Called)				*/
