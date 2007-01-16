@@ -489,15 +489,6 @@ static Integer p2c_float_as_int(prolog_term T0)
     return converter.i;
 }
 
-static int is_frozen_var(prolog_term T0)
-{
-    if (isconstr(T0) && strcmp(p2c_functor(T0), "$assertVAR")==0 &&
-	p2c_arity(T0) == 1) {
-	T0 = p2p_arg(T0, 1);
-	return int_val(T0);
-    } else return 0;
-}
-
 static void inst_queue_init(struct instruction_q *inst_queue)
 {
     inst_queue->inst_queue_top = inst_queue->inst_queue_bottom = 10;
@@ -565,9 +556,11 @@ static void inst_queue_rotate(struct instruction_q *inst_queue) {
 	/* >0 - next free register */
 	/* -1 used for real var */
 	/* -2 used for introduced var */
+	/* -3 required reg forever */
 
 #define RVAR -1
 #define TVAR -2
+#define NVAR -3
 
 struct RegStat_t {
   int RegArray[MAX_REGS];
@@ -582,7 +575,7 @@ static void reg_init(RegStat Reg, int Size)
     int i;
 
     Reg->FreeReg = Size+1;
-    for (i=0; i<Reg->FreeReg; i++) Reg->RegArray[i] = RVAR;
+    for (i=0; i<Reg->FreeReg; i++) Reg->RegArray[i] = NVAR;
     Reg->RegArray[Reg->FreeReg] = 0;
 }
 
@@ -601,7 +594,7 @@ static int reg_get(CTXTdeclc RegStat Reg, int Type)
     } else Reg->FreeReg = Reg->RegArray[Reg->FreeReg];
     Reg->RegArray[new_reg] = Type;
     Reg->RegArrayInit[new_reg] = 0;	/* register is not initialized */
-    //    printf("Got %d\n",new_reg);
+    //    printf("Got(%d) %d\n",Type,new_reg);
     return new_reg;
 }
 
@@ -610,7 +603,59 @@ static void reg_release(RegStat Reg, int R0)
     if (Reg->RegArray[R0]==TVAR) {
 	Reg->RegArray[R0] = Reg->FreeReg;
 	Reg->FreeReg = R0;
+	//	printf("free treg: %d\n",R0);
     }
+}
+
+static void reg_release_perm(RegStat Reg, int R0) {
+    if (Reg->RegArray[R0]==RVAR) {
+	Reg->RegArray[R0] = Reg->FreeReg;
+	Reg->FreeReg = R0;
+	//	printf("free preg: %d\n",R0);
+    }
+}
+
+
+#define FIRST_OCC_OF_MORE 0
+#define ONLY_OCC 1
+#define SUBSEQUENT_OCC 2
+#define LAST_OCC 3
+
+static int is_frozen_var(CTXTdeclc prolog_term T0, int regster, RegStat Reg, int *occs)
+{
+  if (isconstr(T0) && strcmp(p2c_functor(T0), "$assertVAR")==0 &&
+      p2c_arity(T0) == 2) {
+    if (isref(p2p_arg(T0,1))) {  /* first occurrence */
+      if ((*occs = int_val(p2p_arg(T0, 2)) - 1)) {
+	cell(clref_val(T0)+2) = makeint(*occs);
+	*occs = FIRST_OCC_OF_MORE;
+	if (regster < 0) {
+	  regster = reg_get(CTXTc Reg, regster); /* <0->get tempreg else use regster */
+	  Reg->RegArrayInit[regster] = 1; /* regster initted */
+	}
+      } else {
+	*occs = ONLY_OCC;
+	regster = -1;  /* dummy, non-0 */
+      }
+      c2p_int(CTXTc regster, p2p_arg(T0,1));
+    } else {
+      if ((*occs = int_val(p2p_arg(T0, 2)) - 1)) {
+	cell(clref_val(T0)+2) = makeint(*occs);
+	*occs = SUBSEQUENT_OCC;
+      } else {
+	*occs = LAST_OCC;
+	if (regster != NVAR) reg_release_perm(Reg,int_val(p2p_arg(T0, 1)));
+      }
+    }
+    return int_val(p2p_arg(T0, 1));
+  } else return 0;
+}
+
+static void freeze_var(CTXTdeclc prolog_term T0, int regster, RegStat Reg) {
+  c2p_functor(CTXTc "$assertVAR", 2, T0);
+  c2p_int(CTXTc regster, p2p_arg(T0,1));
+  c2p_int(CTXTc 1000000, p2p_arg(T0,2));
+  Reg->RegArrayInit[regster] = 1;	/* Regster is initted */
 }
 
 #ifndef MULTI_THREAD
@@ -716,7 +761,7 @@ int assert_code_to_buff_p(CTXTdeclc prolog_term Clause)
 
 static void db_gentopinst(CTXTdeclc prolog_term T0, int Argno, RegStat Reg)
 {
-  int Rt;
+  int Rt, occs;
   struct instruction_q flatten_queue_lc;
   struct instruction_q *flatten_queue = &flatten_queue_lc;
   
@@ -725,28 +770,23 @@ static void db_gentopinst(CTXTdeclc prolog_term T0, int Argno, RegStat Reg)
   if (isinteger(T0)) {
     dbgen_instB_ppvw(getnumcon, Argno, int_val(T0)); /* getnumcon */
   } else if (isstring(T0)) {
-    if (strcmp(string_val(T0),"$assertAVAR"))
-	dbgen_instB_ppvw(getcon, Argno, (Cell)string_val(T0));  /* getcon */
+    dbgen_instB_ppvw(getcon, Argno, (Cell)string_val(T0));  /* getcon */
   } else if (isfloat(T0)) {
     dbgen_instB_ppvw(getfloat, Argno, T0); /* getfloat */
   } else if (isref(T0)) {
-    c2p_functor(CTXTc "$assertVAR", 1, T0);
-    T0 = p2p_arg(T0, 1);
-    c2p_int(CTXTc Argno, T0);
-    Reg->RegArrayInit[Argno] = 1;	/* Reg is initted */
+    freeze_var(CTXTc T0,Argno,Reg);
   } else if (isnil(T0)) {
     dbgen_instB_ppv(getnil, Argno);	/* getnil */
-  } else if ((Rt = is_frozen_var(T0))) {
-    dbgen_instB_pvv(gettval, Rt, Argno);	/* gettval */
+  } else if ((Rt = is_frozen_var(CTXTc T0,Argno,Reg,&occs))) {
+    if (!(occs == FIRST_OCC_OF_MORE || occs == ONLY_OCC)) {
+      dbgen_instB_pvv(gettval, Rt, Argno);	/* gettval */
+    }
   } else {
     inst_queue_init(flatten_queue);
     inst_queue_push(flatten_queue, Argno, T0, 0);
     if (isattv(T0)) {
       T0 = p2p_arg(T0, 0);		/* the VAR part of the attv */
-      c2p_functor(CTXTc "$assertVAR", 1, T0);
-      T0 = p2p_arg(T0, 1);
-      c2p_int(CTXTc Argno, T0);
-      Reg->RegArrayInit[Argno] = 1;		/* Reg is initted */
+      freeze_var(CTXTc T0,Argno,Reg);
     }      
     db_genterms(CTXTc 1, flatten_queue, Reg); /* gen uni's */
   }
@@ -770,17 +810,11 @@ static void db_genterms(CTXTdeclc int unibld, struct instruction_q *flatten_queu
       T2 = p2p_cdr(T0);
       if (unibld && isref(T1) && isref(T2) && T1!=T2 /* not same var */) {
 	int Rt1, Rt2;
-	c2p_functor(CTXTc "$assertVAR", 1, T1);
-	T1 = p2p_arg(T1, 1);
 	Rt1 = reg_get(CTXTc Reg, RVAR);
-	c2p_int(CTXTc Rt1, T1);
-	c2p_functor(CTXTc "$assertVAR", 1, T2);
-	T2 = p2p_arg(T2, 1);
+	freeze_var(CTXTc T1,Rt1,Reg);
 	Rt2 = reg_get(CTXTc Reg, RVAR);
-	c2p_int(CTXTc Rt2, T2);
+	freeze_var(CTXTc T2,Rt2,Reg);
 	dbgen_instB3_tv(getlist_tvar_tvar, Argno, Rt1, Rt2);
-	Reg->RegArrayInit[Rt1] = 1;	/* Reg is initted */
-	Reg->RegArrayInit[Rt2] = 1;	/* Reg is initted */
 	reg_release(Reg,Argno);
       } else {
 	if (unibld || !istop) {dbgen_instB_ppv(getlist, Argno);}    /* getlist */
@@ -815,18 +849,14 @@ static void db_genterms(CTXTdeclc int unibld, struct instruction_q *flatten_queu
 static void db_geninst(CTXTdeclc int unibld, prolog_term Sub, RegStat Reg,
 		       struct instruction_q *flatten_queue)
 {
-  int Rt;
+  int Rt, occs;
   
   if (isinteger(Sub)) {
     if (unibld) {dbgen_instB_pppw(uninumcon, int_val(Sub));}
     else {dbgen_instB_pppw(bldnumcon, int_val(Sub));}
   } else if (isstring(Sub)) {
-    if (!strcmp(string_val(Sub),"$assertAVAR")) {
-      if (unibld) {dbgen_instB_ppp(uniavar);}
-      else {dbgen_instB_ppp(bldavar);}
-    } else 
-      if (unibld) {dbgen_instB_pppw(unicon, (Cell)p2c_string(Sub));}
-      else {dbgen_instB_pppw(bldcon, (Cell)p2c_string(Sub));}
+    if (unibld) {dbgen_instB_pppw(unicon, (Cell)p2c_string(Sub));}
+    else {dbgen_instB_pppw(bldcon, (Cell)p2c_string(Sub));}
   } else if (isnil(Sub)) {
     if (unibld) {dbgen_instB_ppp(uninil);}
     else {dbgen_instB_ppp(bldnil);}
@@ -834,16 +864,21 @@ static void db_geninst(CTXTdeclc int unibld, prolog_term Sub, RegStat Reg,
     if (unibld) {dbgen_instB_pppw(unifloat, Sub);}
     else {dbgen_instB_pppw(bldfloat, Sub);}
   } else if (isref(Sub)) {
-    c2p_functor(CTXTc "$assertVAR", 1, Sub);
-    Sub = p2p_arg(Sub, 1);
     Rt = reg_get(CTXTc Reg, RVAR);
-    c2p_int(CTXTc Rt, Sub);
+    freeze_var(CTXTc Sub,Rt,Reg);
     if (unibld) {dbgen_instB_ppv(unitvar, Rt);}
     else {dbgen_instB_ppv(bldtvar, Rt);}
-    Reg->RegArrayInit[Rt] = 1;  /* reg is inited */
-  } else if ((Rt = is_frozen_var(Sub))) {
-    if (unibld) {dbgen_instB_ppv(unitval, Rt);}
-    else {dbgen_instB_ppv(bldtval, Rt);}
+  } else if ((Rt = is_frozen_var(CTXTc Sub,RVAR,Reg,&occs))) {
+    if (occs == ONLY_OCC) {
+      if (unibld) {dbgen_instB_ppp(uniavar);}
+      else {dbgen_instB_ppp(bldavar);}
+    } else if (occs == FIRST_OCC_OF_MORE) {
+      if (unibld) {dbgen_instB_ppv(unitvar, Rt);}
+      else {dbgen_instB_ppv(bldtvar, Rt);}
+    } else {
+      if (unibld) {dbgen_instB_ppv(unitval, Rt);}
+      else {dbgen_instB_ppv(bldtval, Rt);}
+    }
   } else if (isattv(Sub)) {
     /*
      * An ATTV is treated as a real variable, so that the register will
@@ -856,13 +891,10 @@ static void db_geninst(CTXTdeclc int unibld, prolog_term Sub, RegStat Reg,
       Rt = reg_get(CTXTc Reg, TVAR);
       dbgen_instB_ppv(bldtvar, Rt);
     }
-    Reg->RegArrayInit[Rt] = 1;  /* reg is inited */
     inst_queue_add(flatten_queue, Rt, Sub, 0);
       
     Sub = p2p_arg(Sub, 0);		/* the VAR part of the attv */
-    c2p_functor(CTXTc "$assertVAR", 1, Sub);
-    Sub = p2p_arg(Sub, 1);
-    c2p_int(CTXTc Rt, Sub);
+    freeze_var(CTXTc Sub,Rt,Reg);
   } else {
     Rt = reg_get(CTXTc Reg, TVAR);
     if (unibld) {dbgen_instB_ppv(unitvar, Rt);}
@@ -876,19 +908,19 @@ static void db_genaput(CTXTdeclc prolog_term T0, int Argno,
 		       struct instruction_q *inst_queue,
 		       RegStat Reg)
 {
-  int Rt;
+  int Rt, occs;
   struct instruction_q flatten_queue_lc;
   struct instruction_q *flatten_queue = &flatten_queue_lc;
 
   if (isref(T0)) {
-    c2p_functor(CTXTc "$assertVAR", 1, T0);
-    T0 = p2p_arg(T0, 1);
     Rt = reg_get(CTXTc Reg, RVAR);
-    c2p_int(CTXTc Rt, T0);  /* used to be TempVar???? */
+    freeze_var(CTXTc T0,Rt,Reg);
     dbgen_instB_pvv(puttvar, Rt, Rt);
-    Reg->RegArrayInit[Rt] = 1;  /* reg is inited */
     inst_queue_push(inst_queue, movreg, Rt, Argno);
-  } else if ((Rt = is_frozen_var(T0))) {
+  } else if ((Rt = is_frozen_var(CTXTc T0,NVAR,Reg,&occs))) {
+    if (occs == FIRST_OCC_OF_MORE || occs == ONLY_OCC) {
+      dbgen_instB_pvv(puttvar, Rt, Rt);
+    } 
     inst_queue_push(inst_queue, movreg, Rt, Argno);
   } else if (isinteger(T0)) {
     inst_queue_push(inst_queue, putnumcon, int_val(T0), Argno);
@@ -898,12 +930,7 @@ static void db_genaput(CTXTdeclc prolog_term T0, int Argno,
   } else if (isnil(T0)) {
     inst_queue_push(inst_queue, putnil, 0, Argno);
   } else if (isstring(T0)) {
-    if (!strcmp(string_val(T0),"$assertAVAR")) {
-      Rt = reg_get(CTXTc Reg, RVAR);
-      dbgen_instB_pvv(puttvar, Rt, Rt);
-      Reg->RegArrayInit[Rt] = 1;  /* reg is inited */
-      inst_queue_push(inst_queue, movreg, Rt, Argno);
-    } else inst_queue_push(inst_queue, putcon, (Cell)p2c_string(T0), Argno);
+    inst_queue_push(inst_queue, putcon, (Cell)p2c_string(T0), Argno);
   } else if (isattv(T0)) {
     prolog_term T1;
     
@@ -911,10 +938,7 @@ static void db_genaput(CTXTdeclc prolog_term T0, int Argno,
     inst_queue_push(inst_queue, movreg, Rt, Argno);
 
     T1 = p2p_arg(T0, 0);		/* the VAR part of the attv */
-    c2p_functor(CTXTc "$assertVAR", 1, T1);
-    T1 = p2p_arg(T1, 1);
-    c2p_int(CTXTc Rt, T1);
-    Reg->RegArrayInit[Rt] = 1;		/* Reg is initted */
+    freeze_var(CTXTc T1,Rt,Reg);
 
     inst_queue_init(flatten_queue);
     inst_queue_push(flatten_queue, Rt, T0, 0);  /*???dsw*/
@@ -988,7 +1012,7 @@ static void db_genmvs(CTXTdeclc struct instruction_q *inst_queue, RegStat Reg)
       } else if (source_is_not_target(inst_queue,Arg)) /* assume target is source */
 	inst_queue_push(inst_queue, movreg, Arg, T0);
       /* delay the instruction at the end */
-      /* else if (Arg>T0) dbgen_instB_pvv(movreg,Arg,T0); movreg */
+      /* else if (Arg>T0) {dbgen_instB_pvv(movreg,Arg,T0);} movreg */
       else {
 	R0 = reg_get(CTXTc Reg, TVAR);
 	dbgen_instB_pvv(movreg, Arg, R0); /* movreg */
@@ -1418,7 +1442,7 @@ static void db_addbuff(byte Arity, ClRef Clause, PrRef Pred, int AZ, int ifSOB, 
     SetClRefNext(Clause, Pred) ;
     Loc = 0;
     if (Inum > 1) {dbgen_inst_pppw(jump,Clause,Pred,&Loc);}
-    else dbgen_inst_ppvw(jumptbreg,Arity,Clause,Pred,&Loc);
+    else {dbgen_inst_ppvw(jumptbreg,Arity,Clause,Pred,&Loc);}
     Pred->LastClRef = Clause ;
     SetClRefPrev(Clause, Pred) ;
   } else if ( PredOpCode(Pred) == jumptbreg || PredOpCode(Pred) == jump ) {
@@ -3089,8 +3113,9 @@ static inline void allocate_prref_tab(CTXTdeclc Psc psc, PrRef *prref, pb *new_e
       if (get_incr(psc)) { /* incremental evaluation */
 	//printf("%s is incr %p\n",get_name(psc),*prref);
 	dbgen_inst_ppvww(tabletrysinglenoanswers,get_arity(psc),*prref,tip,tp,&Loc);
-      } else 
+      } else {
 	dbgen_inst_ppvww(tabletrysingle,get_arity(psc),(tp+3),tip,tp,&Loc) ;
+      }
       dbgen_inst_pvv(allocate_gc,3,3,tp,&Loc) ;
       dbgen_inst_ppv(getVn,2,tp,&Loc) ;  /* was getpbreg */
       dbgen_inst_ppvw(calld,3,*prref,tp,&Loc) ; /* *prref is *(tp+6), see remove_prref*/
