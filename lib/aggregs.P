@@ -235,64 +235,70 @@ bagPO1(Templ,Call,Res,PO) :-
 			 Res = OTempl
 			)
 		)
-	 ;	findall(p(Tp,Skel,OVarList,Leaf),
-			get_returns_type(Cs,Skel,VarList,OVarList,Leaf,Tp),
+	 ;	findall(p(Tp,Oskel,OVarList,Leaf),
+			get_returns_type(Cs,Skel,VarList,Oskel,OVarList,POCA,POCB,Leaf,Tp),
 			Rets),
 		sort(Rets, Rets1),
-		split_on_type(Rets1,Variants,[],OldSubsumes,[],NewSubsumes,[]),
-		(member(p(variant,Oskel,OVarList,Leaf),Variants),call_c(POCA)
+		split_on_type(Rets1,Variants_ob,[],Variants_nb,[],OldSubsumes,[],NewSubsumes,[]),
+		(member(p(variant_oldbetter,Oskel,OVarList,Leaf),Variants_ob)
 		 ->	fail
-		 ;	(member(p(variant,Oskel,OVarList,Leaf),Variants),
-			 call_c(POCB), % new is better than old
+		 ;	(member(p(variant_newbetter,Oskel,OVarList,Leaf),Variants_nb),
 			 delete_return(Cs,Leaf), % so delete old
 			 fail
 			 ;	
-			 member(p(newsubsumes,Oskel,OVarList,Leaf),NewSubsumes),
-			 call_c(POCB), % new is better than old
+			 member(p(newsubsumes_newbetter,Oskel,OVarList,Leaf),NewSubsumes),
 			 delete_return(Cs,Leaf), % so delete old
 			 fail
 			 ;	
-			 member(p(oldsubsumes,Oskel,OVarList,Leaf),OldSubsumes),
-			 call_c(POCA), % old is better than new
+			 member(p(oldsubsumes_oldbetter,Oskel,OVarList,Leaf),OldSubsumes),
 			 VarList = OVarList, % so return new with old answer
 			 Res = Ores
 			 ;	
-			 member(p(newsubsumes,Oskel,OVarList,Leaf),NewSubsumes),
-			 call_c(POCB), % new is better than old
+			 member(p(newsubsumes_newbetter,Oskel,OVarList,Leaf),NewSubsumes),
 			 VarList = OVarList, % so return new
 			 Res = OTempl
 			 ;	
-			 \+ (member(p(oldsubsumes,Oskel,OVarList,Leaf),OldSubsumes),
-			     call_c(POCA)),
+			 \+ member(p(oldsubsumes_oldbetter,Oskel,OVarList,Leaf),OldSubsumes),
 			 VarList = OVarList,
 			 Res = OTempl
 			)
 		)
 	).
 
-split_on_type([],V,V,O,O,N,N).
-split_on_type([Ret|Rets],V0,V,O0,O,N0,N) :-
+split_on_type([],Vo,Vo,Vn,Vn,O,O,N,N).
+split_on_type([Ret|Rets],Vo0,Vo,Vn0,Vn,O0,O,N0,N) :-
 	Ret = p(Tp,_,_,_),
-	(Tp == variant
-	 ->	V0 = [Ret|V1],
-		split_on_type(Rets,V1,V,O0,O,N0,N)
-	 ; Tp == oldsubsumes
+	(Tp == variant_oldbetter
+	 ->	Vo0 = [Ret|Vo1],
+		split_on_type(Rets,Vo1,Vo,Vn0,Vn,O0,O,N0,N)
+	 ; Tp == variant_newbetter
+	 ->	Vn0 = [Ret|Vn1],
+		split_on_type(Rets,Vo0,Vo,Vn1,Vn,O0,O,N0,N)
+	 ; Tp == oldsubsumes_oldbetter
 	 ->	O0 = [Ret|O1],
-		split_on_type(Rets,V0,V,O1,O,N0,N)
+		split_on_type(Rets,Vo0,Vo,Vn0,Vn,O1,O,N0,N)
 	 ;	N0 = [Ret|N1],
-		split_on_type(Rets,V0,V,O0,O,N1,N)
+		split_on_type(Rets,Vo0,Vo,Vn0,Vn,O0,O,N1,N)
 	).
 
-get_returns_type(Cs,Skel,VarList,OVarList,Leaf,Tp) :-
+get_returns_type(Cs,Skel,VarList,Oskel,OVarList,POCA,POCB,Leaf,Tp) :-
 	get_returns(Cs,Skel,Leaf),
 	(variant(OVarList,VarList)
-	 ->	Tp = variant
-	 ;	subsumes(OVarList,VarList)
-	 ->	Tp = newsubsumes
-	 ;	subsumes(VarList,OVarList)
-	 ->	Tp = oldsubsumes
+	 ->	Skel = Oskel,
+		(call_c(POCA)
+		 ->	Tp = variant_oldbetter
+		 ; call_c(POCB)
+		 ->	Tp = variant_newbetter
+		)
+	 ; subsumes(OVarList,VarList)
+	 ->	Skel = Oskel,
+		call_c(POCB),
+		Tp = newsubsumes_newbetter
+	 ; subsumes(VarList,OVarList)
+	 ->	Skel = Oskel,
+		call_c(POCA),
+		Tp = oldsubsumes_oldbetter
 	).
-
 
 
 /*=======================================================================*/
