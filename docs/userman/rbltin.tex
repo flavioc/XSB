@@ -5,7 +5,7 @@
 XSB provides an array of features for modifying the dynamic database.
 As a default, using {\tt assert/1}, clauses can be asserted using
 first-argument indexing in a manner that is now standard to Prolog
-implementations.  However, a variety of other behavior can be
+implementations.  However, a variety of other behaviors can be
 specified using the (executable) directives {\tt index/3} and {\tt
   index/2}.  For instance, dynamic clauses can be declared to have
 multiple or joint indexes, and this indexing can be either hash-based
@@ -136,6 +136,35 @@ the trie.  Error cases are as with {\tt assertz/1}.
 Note that because of the precedence of {\tt :-/2}, asserting a clause
 containing this operator requires an extra set of parentheses: {\tt
   assert((Head :- Body))}.
+
+\ouritem{assert(+Clause,+AorZandVar,+Index)}\index{\texttt{assert/3}}
+This is a lower-level interface to (non-trie-indexed) assert.  It is
+normally not needed except in one particular situation, when assert
+aborts because it needs too many registers.  In this case, this
+loswer-level assert may allow the offending clause to be correctly
+asserted.
+
+The default implementation of non-trie-indexed assert generates code
+with a single pass through the asserted term.  Because of this, it
+cannot know when it has encountered the final occurrence of a
+variable, and thus it can never release (and thus re-use) registers
+that are used to refer to variables.  Since there is a limit of 255
+registers in the XSB virtual machine, asserting a clause with more
+than this many distinct variables results in an error.  There is an
+alternative implementation of assert that initially traverses the
+clause to determine the number of occurrences of each variable and
+thus allows better use of registers during code generation.
+
+{\tt Clause} is the clause to assert. {\tt AorZandVar} is an integer
+whose lower 2 bits are used: The low-order bit is 0 if the clause is
+to be added as the first clause, and 1 if it is to be added as the
+last clause. If the second bit (2) is on, then the clause is traversed
+to count variable occurrences and so improve register allocation for
+variables; if it is 0, the default one-pass code-generation is done.
+So, for example, if {\tt AorZandVar} is 3, then the clause will be
+asserted as the last one in the predicate and the better register
+allocation will be used.  {\tt Index} indicates the argument(s) on
+which to index.
 
 \ouritem{retract(+Clause)}\index{\texttt{retract/1}} 
 %
