@@ -76,7 +76,7 @@ void inline extend_enc_dec_as_nec(void *lptr, void *hptr) {
 	  enc[nibble] = next_free_code << 28;
 	  dec[next_free_code] = nibble << 28;
 	  // printf("recoding %lx to %lx\n",nibble,next_free_code);
-	  next_free_code+x+;
+	  next_free_code++;
 	}
 	SYS_MUTEX_UNLOCK_NOERROR(MUTEX_GENTAG);
       }
