@@ -1394,7 +1394,7 @@ void init_symbols(void)
   	if (status != 0) 
     		xsb_initialization_exit("Cannot determine thread stack size during system initialization");
 	else
-		printf( "Minimum thread stack size set to %d\n", stack_size ) ;
+	  printf( "Minimum thread stack size set to %d\n", (int) stack_size ) ;
   }
 #endif
   pthread_attr_setscope(&normal_attr_gl,PTHREAD_SCOPE_SYSTEM);

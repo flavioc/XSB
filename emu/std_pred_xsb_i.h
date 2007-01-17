@@ -33,6 +33,7 @@
 static xsbBool atom_to_list(CTXTdeclc int call_type);
 static xsbBool number_to_list(CTXTdeclc int call_type);
 
+
 /* TLS 10/01 changed functor so that it did not core dump on 
    functor(X,1,2) */
 inline static xsbBool functor_builtin(CTXTdecl)
@@ -528,6 +529,18 @@ inline static xsbBool number_to_list(CTXTdeclc int call_type)
   return TRUE;
 }
 
+/*************************************************************************************
+ SORTING
+
+ TLS: Changed sorting functions so that they just use area from the
+ stack in the case of short lists and so avoid a malloc.  For
+ applications that use sorting heavily, this greately improves
+ scalability for the MT engine, and should improve speed a little for
+ single threade applications as well.
+*************************************************************************************/
+
+#define SHORTLISTLEN 1024
+
 #ifdef MULTI_THREAD
 
 /* Define own qsort routine when multithreading because it has to pass
@@ -601,6 +614,8 @@ void qsort0(CTXTdeclc compfptr qsort_cmp, CPtr low, CPtr high )
 	}
 }
 
+/* This function (and some others) avoid a */
+
 void mt_qsort(th_context *th, CPtr v, int len, unsigned int sz, compfptr comp)
 {
 	qsort0( th, comp, v, v + len - 1 ) ;
@@ -615,6 +630,7 @@ inline static xsbBool sort(CTXTdecl)
   Cell heap_addr, term, term2;
   Cell list, new_list;
   CPtr top = 0;
+  Cell cell_tbl_array[SHORTLISTLEN];
 
   list = ptoc_tag(CTXTc 1);
   term2 = list; len = 0;
@@ -632,7 +648,8 @@ inline static xsbBool sort(CTXTdecl)
   list = ptoc_tag(CTXTc 1); /* reset in case moved */
   if (len > 0) {
     term2 = list;
-    cell_tbl = (Cell *)mem_alloc((len * sizeof(Cell)),LEAK_SPACE);
+    if (len > SHORTLISTLEN) cell_tbl = (Cell *)mem_alloc((len * sizeof(Cell)),LEAK_SPACE);
+    else cell_tbl = &cell_tbl_array[0];
     if (!cell_tbl)
       xsb_abort("Cannot allocate temporary memory for sort/2");
     for (i=0 ; i < len ; ++i) {
@@ -656,7 +673,7 @@ inline static xsbBool sort(CTXTdecl)
 	follow(top) = makelist(hreg);
       }
     } follow(top) = makenil;
-    mem_dealloc(cell_tbl,len * sizeof(Cell),LEAK_SPACE);
+    if (len > SHORTLISTLEN) mem_dealloc(cell_tbl,len * sizeof(Cell),LEAK_SPACE);
     term = ptoc_tag(CTXTc 2);
     return unify(CTXTc new_list, term);
   }
@@ -673,6 +690,7 @@ inline static xsbBool keysort(CTXTdecl)
   Cell list, new_list;
   Cell *cell_tbl;
   CPtr top = 0;
+  Cell cell_tbl_array[SHORTLISTLEN];
 
   list = ptoc_tag(CTXTc 1);
   term2 = list; len = 0;
@@ -699,7 +717,8 @@ inline static xsbBool keysort(CTXTdecl)
   term = ptoc_tag(CTXTc 2);
   if (len > 0) {
     term2 = list;
-    cell_tbl = (Cell *)mem_alloc(len * sizeof(Cell),LEAK_SPACE);
+    if (len > SHORTLISTLEN) cell_tbl = (Cell *)mem_alloc((len * sizeof(Cell)),LEAK_SPACE);
+    else cell_tbl = &cell_tbl_array[0];
     if (!cell_tbl)
       xsb_abort("Cannot allocate temporary memory for keysort/2");
     for (i=0 ; i < len ; ++i) {
@@ -719,7 +738,7 @@ inline static xsbBool keysort(CTXTdecl)
       top = hreg++;
       follow(top) = makelist(hreg);
     } follow(top) = makenil;
-    mem_dealloc(cell_tbl,len * sizeof(Cell),LEAK_SPACE);
+    if (len > SHORTLISTLEN) mem_dealloc(cell_tbl,len * sizeof(Cell),LEAK_SPACE);
     return unify(CTXTc new_list, term);
   }
   return unify(CTXTc list, term);
