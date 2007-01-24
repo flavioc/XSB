@@ -150,7 +150,6 @@
 	'$$findall_add'/3,
 	'$$findall_get_solutions'/4,
 	socket_request/7,
-        thread_request/5, mt_random_request/3,
 	set_arg/3,
 	put_attributes/2,
 	get_attributes/2,

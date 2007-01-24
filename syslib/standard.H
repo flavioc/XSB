@@ -44,7 +44,6 @@
         gc_dynamic/1,   gc_tables/1,    get/1,		get0/1,		
         get_char/1,	get_char/2,     get_code/1,	get_code/2,
         halt/0,		
-	ceil/2, floor/2, round/2,
 	(hilog)/1,	hilog_arg/3,	hilog_functor/3,
 	(index)/3,	(index)/2,      (table)/1,
         (incr)/1, (incrdynamic)/1, (opaque)/1, /* incremental */
@@ -64,7 +63,7 @@
             set_input/1,    set_output/1,  
 	demand_once/1,
 	skip/1,		statistics/1,	statistics/0,	structure/1,
-	tab/1,		tell/1,		tell/2,		telling/1,	told/0,
+	tab/1,		tell/1,		telling/1,	told/0,
 	ttywrite/1,	ttywritenl/1,   ttywrite/2,	ttywritenl/2, 
 	var/1,		walltime/1,	true/0,
 	write/1,	write/2,	write_prolog/1,	write_prolog/2,
@@ -76,7 +75,7 @@
 	'\=='/2,	'@<'/2,		'@>'/2,		'@=<'/2,
         '@>='/2,	';'/2,		','/2,		'->'/2,         '?='/2,
 	':'/2,		'_$cutto'/1,	'_$savecp'/1.	
-:- export (thread_shared)/1, (thread_private)/1.
+%%:- export (thread_shared)/1, (thread_private)/1.
 
 /* --------------------------------------------------------------- */
 /*  exported predicates used in other modules (but not "standard")  */

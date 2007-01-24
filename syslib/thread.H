@@ -51,7 +51,7 @@
 :- export xsb_sys_mutex_lock/1, xsb_sys_mutex_unlock/1.
 :- export xsb_show_mutexes/0.
 
-:- export get_first_mutex_property/4, get_next_mutex_property/4.
+%%:- export get_first_mutex_property/4, get_next_mutex_property/4.
 
 :- import retractall/1 from assert. 
  

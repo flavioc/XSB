@@ -106,7 +106,7 @@ get_synerr_psc(Psc):- term_psc('_$synerr'(_), Psc).
 get_synerr_psc(Psc):- 
 	xsb_thread_self(Thread),
 	(Thread == 0 -> 
-	    term_psc('_$synerr'(_), Psc).
+	    term_psc('_$synerr'(_), Psc)
           ; 
 	    concat_atom(['_$synerr',Thread],Atom),
 	    functor(Term,Atom,1),

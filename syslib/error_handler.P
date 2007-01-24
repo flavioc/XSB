@@ -188,7 +188,7 @@ get_backtrace([ForPscs|BackPscs], [['Forward Continuation...'|PFor]|['Backward C
 get_backtrace_list([],[]).
 get_backtrace_list([Psc|Pscs],[Mod:Name/Arity|Preds]) :-
 	(Psc =:= 0
-	 ->	Mod = '?', Name = '?', Arity = '?'
+	 ->	Mod = (?), Name = (?), Arity = (?)
 	 ;	psc_data(Psc,ModPsc),
 		(ModPsc =:= 0
 		 ->	Mod = usermod % 0 also means usermod

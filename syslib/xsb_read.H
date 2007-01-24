@@ -26,8 +26,8 @@
 
 :- export file_read/2, file_read/3, vv/2.
 :- export file_read_foe/3, file_read_fapoe/3.
-:- export vv/2.
-:- export iso_file_read/3.
+:- export vv/2.  %% this is a functor symbol, not a predicate
+%%:- export iso_file_read/3.
 
 :- import '_$op'/3 from file_op.
 :- import file_put/2 from file_io.
@@ -43,5 +43,6 @@
 :- import concat_atom/2 from string.
 :- import length/2 from basics.
 :- import xsb_stream_lock/1, xsb_stream_unlock/1 from file_io.
+%%:- import xsb_thread_self/1 from thread.  %% needed for mt?
 
 /* -------------------- end of file file_read.H ----------------------- */

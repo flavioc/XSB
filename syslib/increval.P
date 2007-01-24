@@ -1,5 +1,5 @@
 /* File:      increval.P
-** Author(s): Diptikalyan Saha, C. R. Ramakrishnan
+** Author(s): Diptikalyan Saha, C. R. Ramakrishnan, David S. Warren
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1993-1998
@@ -24,6 +24,7 @@
 :- compiler_options([xpp_on]).
 #include "builtin.h"
 #include "incr_xsb_defs.h"
+
 psc_set_incr(PSC, CODE):-
 	incr_eval_builtin(PSC_SET_INCR, PSC, CODE).
 
@@ -39,31 +40,38 @@ update(FiltList,Changed):-
 	get_changed_calls(FiltList,Changed).
 
 imm_depends(X,Y):-	
-	(nonvar(X),var(Y)->
-	     imm_dependent_on_calls(X,Y);
-	(nonvar(Y),var(X)->
-	     imm_depend_calls(Y,X);
-	(nonvar(X),nonvar(Y)->
-	     imm_depend_calls(Y,Z),Z=X;	
-		writeln(userout,'Invalid Modes')))).	
+	(nonvar(X),var(Y)
+	 ->	imm_dependent_on_calls(X,Y)
+	 ; nonvar(Y),var(X)
+	 ->	imm_depend_calls(Y,X)
+	 ; nonvar(X),nonvar(Y)
+	 ->	imm_depend_calls(Y,Z),
+		Z=X
+	 ;	writeln(userout,'Invalid Modes')
+	).
+
 trans_depends(X,Y):-
-	(nonvar(X),var(Y)->
-	     trans_dependent_on_calls(X,Y);
-	(nonvar(Y),var(X)->
-	     trans_depend_calls(Y,X);
-	(nonvar(X),nonvar(Y)->
-	     trans_depend_calls(Y,Z),Z=X;	
-		writeln(userout,'Invalid Modes')))).	
+	(nonvar(X),var(Y)
+	 ->	trans_dependent_on_calls(X,Y)
+	 ; nonvar(Y),var(X)
+	 ->	trans_depend_calls(Y,X)
+	 ; nonvar(X),nonvar(Y)
+	 ->	trans_depend_calls(Y,Z),
+		Z=X
+	 ;	writeln(userout,'Invalid Modes')
+	).
 
 :- table trans_dependent_on_call/2.
 trans_dependent_on_calls(Call,Call2):-
 	abolish_table_pred(trans_dependent_on_call(_,_)),
 	trans_dependent_on_call(Call,Call2).
+
 trans_dependent_on_call(Call1,Call2):-
 	imm_dependent_on_calls(Call1,Call2).
 trans_dependent_on_call(Call1,Call2):-
 	trans_dependent_on_call(Call1,Call3),
 	imm_dependent_on_calls(Call3,Call2).
+
 trans_depend_calls(Call,Call2):-
 	abolish_table_pred(trans_depend_call(_,_)),
 	trans_depend_call(Call,Call2).
