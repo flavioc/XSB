@@ -1676,7 +1676,7 @@ odbc_delete(Connection,Head, Body) :-
 	copy_term(Head,Head1),
 	assert(odbc_asserted_query(ConnHandle,Head1)),
 	assert((Head1 :-
-		odbc_link(del,ConnHandle,Head,Head1,Body), !,
+		odbc_link(del,ConnHandle,Head,Head1,Body,option(false)), !,
 		Head1)).
 
 odbc_insert(Head, Body) :-
@@ -1686,7 +1686,7 @@ odbc_insert(Connection,Head,Body) :-
 	copy_term(Head,Head1),
 	assert(odbc_asserted_query(ConnHandle,Head1)),
 	assert((Head1 :-
-		odbc_link(ins,ConnHandle,Head,Head1,Body), !,
+		odbc_link(ins,ConnHandle,Head,Head1,Body,option(false)), !,
 		Head1)).
 
 assert_call_rule(ProjectionTerm,Type,ConnHandle,SQLAtom,Blist,
