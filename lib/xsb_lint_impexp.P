@@ -42,11 +42,11 @@ e. no_symbol_uses: Don't treat any non-predicate uses of symbols as
 
 /* Do a simple check of import and export statements, to check that
 they are consistent. */
-%%% ciao operators.
+%%% ciao operators.  These may cause problems in reading some files.
 :- op(500,yfx,#).
 :- op(975, xfx,(=>)).
 :- op(978, xfx,(::)).
-:- op(200,fy,(?)).
+%%:- op(200,fy,(?)).
 :- op(500,fy,(@)).
 :- import '_$op'/3 from file_op.
 
@@ -56,7 +56,7 @@ they are consistent. */
 :- import standard_symbol/3 from std_xsb.
 :- import standard_metapredicate/3 from std_xsb.
 :- import file_size/2 from file_io.
-:- import call0/1 from machine.
+:- import call_c/1 from standard.
 
 :- dynamic imports/3.
 :- dynamic exports/2.
@@ -453,6 +453,7 @@ read_for_ports(Mod) :-
 	),
 	fail.
 
+
 load_code_file(FileName,Mod) :-
 	filter_to_temp(FileName,TempFileName),
 	retractall(operators(_)),
@@ -468,7 +469,7 @@ load_code_file(FileName,Mod) :-
 
 undo_operators :-
 	retract(operators(Op)),
-	call0(Op),
+	call_c(Op),
 	fail.
 undo_operators.
 
@@ -548,7 +549,7 @@ assert_from_clist((E1,E2),E,Fact) :-
 	assert_from_clist(E1,E,Fact),
 	assert_from_clist(E2,E,Fact).
 assert_from_clist(E,E1,Fact) :-
-	(E = E1, \+ call0(Fact), asserta(Fact), fail
+	(E = E1, \+ call_c(Fact), asserta(Fact), fail
 	 ;
 	 true
 	).
