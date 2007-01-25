@@ -794,9 +794,9 @@ DllExport void call_conv xsb_initialization_exit(char *description, ...)
     exit(1);
   }
   else {
-    sprintf(xsb_get_error_type(),"init_error");
+    sprintf(xsb_get_error_type(main_thread_gl),"init_error");
     va_start(args, description);
-    vsprintf(xsb_get_error_message(), description, args);
+    vsprintf(xsb_get_error_message(main_thread_gl), description, args);
     va_end(args);
     longjmp(ccall_init_env, XSB_ERROR);
   }

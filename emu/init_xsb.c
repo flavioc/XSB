@@ -932,6 +932,12 @@ void init_thread_structures(CTXTdecl)
   SM_InitDeclDyna(private_smTableBTHT,BasicTrieHT, BTHTs_PER_BLOCK,
 		  "Basic Trie Hash Table (Private)");
 
+  private_smTableBTHTArray  = 
+    (struct Structure_Manager*) mem_alloc(sizeof(struct Structure_Manager),
+					  MT_PRIVATE_SPACE);
+  BuffM_InitDeclDyna(private_smTableBTHTArray,(TrieHT_INIT_SIZE*(sizeof(Cell))), BTHTs_PER_BLOCK,
+		  "Basic Trie Hash Table Array(Private)");
+
   private_smTSTN = 
     (struct Structure_Manager*) mem_alloc(sizeof(struct Structure_Manager),
 					  MT_PRIVATE_SPACE);
@@ -1301,7 +1307,7 @@ Psc make_code_psc_rec(char *name, int arity, Psc mod_psc) {
 
 /* Initialize Standard PSC Records and Thread Attributes
    ------------------------------- */
-void init_symbols(void)
+void init_symbols(CTXTdecl)
 {
   Psc  tables_psc, standard_psc;
   Pair temp, tp;
@@ -1314,6 +1320,7 @@ void init_symbols(void)
 #endif
 
   inst_begin_gl = 0;
+  current_inst = 0;
   symbol_table.table = (void **)mem_calloc(symbol_table.size, sizeof(Pair),ATOM_SPACE);
   string_table.table = (void **)mem_calloc(string_table.size, sizeof(char *),STRING_SPACE);
 
@@ -1344,6 +1351,8 @@ void init_symbols(void)
   comma_psc = make_code_psc_rec(",", 2, standard_psc);
 
   colon_psc = make_code_psc_rec(":", 2, standard_psc);
+
+  ccall_psc = make_code_psc_rec("c_callloop", 0, standard_psc);
 
   /* insert symbol tnot/1 into module tables */
   tables_psc = pair_psc(insert_module(0, "tables"));		/* unloaded */

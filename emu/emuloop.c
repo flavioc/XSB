@@ -1993,7 +1993,8 @@ contcase:     /* the main loop */
   XSB_Start_Instr(halt,_halt)  /* PPP */
     ADVANCE_PC(size_xxx);
     pcreg = lpcreg; 
-    inst_begin_gl = lpcreg;  /* hack for the moment to make this a ``creturn'' */
+    current_inst = lpcreg;
+    //    inst_begin_gl = lpcreg;  /* hack for the moment to make this a ``creturn'' */
     return(0);	/* not "goto contcase"! */
   XSB_End_Instr()
 
@@ -2268,7 +2269,7 @@ DllExport int call_conv xsb(CTXTdeclc int flag, int argc, char *argv[])
    extern void dis(xsbBool);
    extern char *init_para(CTXTdeclc int, int, char **);
    extern void perform_IO_Redirect(CTXTdeclc int, char **);
-   extern void init_machine(CTXTdeclc int, int, int, int), init_symbols(void);
+   extern void init_machine(CTXTdeclc int, int, int, int), init_symbols(CTXT);
 #ifdef FOREIGN
 #ifndef FOREIGN_ELF
 #ifndef FOREIGN_WIN32
@@ -2306,7 +2307,7 @@ DllExport int call_conv xsb(CTXTdeclc int flag, int argc, char *argv[])
 
 	init_machine(CTXTc 0, 0, 0, 0);	/* init space, regs, stacks */
 	init_inst_table();		/* init table of instruction types */
-	init_symbols();		/* preset a few symbols in PSC table */
+	init_symbols(CTXT);		/* preset a few symbols in PSC table */
 	init_interrupt();		/* catch ^C interrupt signal */
 
 	/* "b" does nothing in UNIX, denotes binary file in Windows -- 
@@ -2338,11 +2339,13 @@ DllExport int call_conv xsb(CTXTdeclc int flag, int argc, char *argv[])
 	   xsb -v or xsb -h won't create .xsb directory */
 	set_xsbinfo_dir();
 
+	current_inst = inst_begin_gl;   // current_inst is thread-specific.
+
 	return(0);
 
    } else if (flag == XSB_EXECUTE) {  /* continue execution */
 
-     return(emuloop(CTXTc inst_begin_gl));
+     return(emuloop(CTXTc current_inst));
 
    } else if (flag == XSB_SHUTDOWN) {  /* shutdown xsb */
 

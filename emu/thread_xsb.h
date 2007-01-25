@@ -92,6 +92,7 @@ extern pthread_attr_t detached_attr_gl;
 extern pthread_attr_t normal_attr_gl; 
 
 extern counter max_threads_sofar ;
+extern int call_conv xsb_ccall_thread_create(th_context *th,th_context **thread_return);
 
 #define PROFILE_MUTEXES 1
 #ifdef PROFILE_MUTEXES

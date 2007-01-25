@@ -98,7 +98,7 @@ struct memcount_t memcount_gl = {0,0,0};
 
 void print_mem_allocs() {
 
-  printf("System memory interactions since last use:\n");
+  printf("\nSystem memory interactions since last use:\n");
   printf("Memory Allocations: %d\n",memcount_gl.num_mem_allocs);
   printf("Memory Reallocations: %d\n",memcount_gl.num_mem_reallocs);
   printf("Memory Deallocations: %d\n",memcount_gl.num_mem_deallocs);
@@ -178,6 +178,7 @@ void *mem_calloc(unsigned long size, unsigned long occs, int category)
     unsigned long length = (size*occs+7) & ~0x7;
 
 #ifdef NON_OPT_COMPILE
+    //    printf("Callocing size %d occs %d category %d\n",size,occs,category);
     memcount_gl.num_mem_allocs++;
    SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
 #endif

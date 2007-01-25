@@ -69,6 +69,8 @@
 #define PTHREAD_SETCONCURRENCY          29
 #define PTHREAD_GETCONCURRENCY          30
 
+#define SET_XSB_READY 31
+
 #define MAX_THREADS		1024
 
 

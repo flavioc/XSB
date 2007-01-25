@@ -342,6 +342,31 @@ static void *xsb_thread_run( void *arg )
 	return NULL ;
 }
 
+/*----------------------------------------------------------------------------------*/
+
+/* calls _$thread_run/1 in thread.P */
+static void *ccall_xsb_thread_run( void *arg )
+{
+        pthread_t tid;
+	th_context *ctxt = (th_context *)arg ;
+	int pos ;
+
+	pthread_mutex_lock( &th_mutex );
+        SYS_MUTEX_INCR( MUTEX_THREADS ) ;
+	tid = pthread_self();
+/* if the xsb thread id was just created we need to re-initialize it on the
+   thread context */
+	ctxt->tid = pos = th_new( P_PTHREAD_T_P, ctxt ) ;
+	pthread_mutex_unlock( &th_mutex );
+	if( pos == -1 )
+		xsb_abort("[THREAD] Too many threads");
+	SET_THREAD_INCARN(ctxt->tid, th_vec[pos].incarn ) ;
+
+	emuloop( ctxt, get_ep(ccall_psc)) ;
+
+	return NULL ;
+}
+
 static void copy_pflags( th_context *to, th_context *from )
 {
 	int i ;
@@ -349,6 +374,8 @@ static void copy_pflags( th_context *to, th_context *from )
 	for( i = 0; i < MAX_PRIVATE_FLAGS; i++ )
 		to->_pflags[i] = from->_pflags[i] ;
 }
+
+/*-------------------*/
 
 static int xsb_thread_create(th_context *th)
 {
@@ -417,6 +444,55 @@ static int xsb_thread_create(th_context *th)
   SET_THREAD_INCARN(id, th_vec[pos].incarn ) ;
 
   ctop_int( th, 3, id ) ;
+  return rc ;
+}  /* xsb_thread_create */
+
+/*-------------------*/
+
+call_conv int xsb_ccall_thread_create(th_context *th,th_context **thread_return)
+{
+  int rc ;
+  th_context *new_th_ctxt ;
+  pthread_t_p thr ;
+  Integer id, pos ;
+       
+  new_th_ctxt = mem_alloc(sizeof(th_context),THREAD_SPACE) ;
+  copy_pflags(new_th_ctxt, th) ;
+
+  init_machine(new_th_ctxt,0,0,0,0);
+
+  pthread_mutex_lock( &th_mutex );
+  SYS_MUTEX_INCR( MUTEX_THREADS ) ;
+  flags[NUM_THREADS]++ ;
+  max_threads_sofar = xsb_max( max_threads_sofar, flags[NUM_THREADS] );
+  pthread_mutex_unlock( &th_mutex );
+
+  new_th_ctxt->_xsb_ready = 0;
+  xsb_inquery = 0;   
+#ifdef WIN_NT
+  thr = mem_alloc(sizeof(pthread_t),THREAD_SPACE);
+  rc = pthread_create(thr, &normal_attr_gl, &ccall_xsb_thread_run, (void *)new_th_ctxt ) ;
+#else
+  rc = pthread_create( &thr, &normal_attr_gl, &ccall_xsb_thread_run, (void *)new_th_ctxt ) ;
+#endif
+
+  if (rc == EAGAIN) {
+    xsb_resource_error(th,"system threads","xsb_thread_create",2);
+  } else {
+    if (rc != 0) 
+      xsb_abort("[THREAD] Failure to create thread: error %d\n",rc);
+  }
+
+/* This repetition of the call to th_new is need for concurrency reasons */
+  pthread_mutex_lock( &th_mutex );
+  SYS_MUTEX_INCR( MUTEX_THREADS ) ;
+  id = pos = th_new( thr, new_th_ctxt ) ;
+  pthread_mutex_unlock( &th_mutex );
+
+  if( pos == -1 ) xsb_abort("[THREAD] Too many threads");
+  SET_THREAD_INCARN(id, th_vec[pos].incarn ) ;
+
+  *thread_return = new_th_ctxt;
   return rc ;
 }  /* xsb_thread_create */
 
@@ -982,13 +1058,10 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  break;
 	}
 
-	case PTHREAD_SETCONCURRENCY: 
+	case SET_XSB_READY: {
+	  xsb_ready = 1;
 	  break;
-
-	case PTHREAD_GETCONCURRENCY: 
-	  break;
-
-
+	}
 
 	default:
 	  rc = 0 ; /* Keep compiler happy */
@@ -1011,6 +1084,8 @@ xsbBool xsb_thread_request( CTXTdecl )
 			break ;
 		case XSB_THREAD_YIELD:
 	       		break ;
+	case SET_XSB_READY:
+	  break;
 		default:
 			xsb_abort( "[THREAD] Thread primitives not compiled" ) ;
 			break ;

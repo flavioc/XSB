@@ -80,8 +80,8 @@ void smAllocateBlock(Structure_Manager *pSM) {
 
   void *pNewBlock;
 
-  dbg_smPrint(LOG_STRUCT_MANAGER, *pSM,"before block allocation");
-  pNewBlock = mem_alloc(SM_NewBlockSize(*pSM),TABLE_SPACE);  // counted in table-stats
+  //  smPrint(*pSM,"before block allocation");
+  pNewBlock = mem_calloc(SM_NewBlockSize(*pSM),1,TABLE_SPACE);  // counted in table-stats
   if ( IsNULL(pNewBlock) )
     xsb_abort("[smAllocateBlock] Out of memory in allocation of %s block\n",
 	      SM_StructName(*pSM));

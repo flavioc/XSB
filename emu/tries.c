@@ -190,6 +190,10 @@ Structure_Manager smTableBTN  = SM_InitDecl(BasicTrieNode, BTNs_PER_BLOCK,
 Structure_Manager smTableBTHT = SM_InitDecl(BasicTrieHT, BTHTs_PER_BLOCK,
 					    "Basic Trie Hash Table");
 
+/*
+Structure_Manager smTableBTHTArray = BuffM_InitDecl((TrieHT_INIT_SIZE*(sizeof(Cell))), BTHTs_PER_BLOCK,
+					    "Basic Trie Hash Table ARRAY");
+*/
 /* For Assert & Intern Tries
    ------------------------- */
 Structure_Manager smAssertBTN  = SM_InitDecl(BasicTrieNode, BTNs_PER_BLOCK,
@@ -458,6 +462,8 @@ void fone_node_chk_ins(int Found,Cell item,int TrieType,BTNptr **GNPP,
    of trie nodes whose length has become "too long."
 */
 
+int hashcount_gl = 0;
+
 void hashify_children(CTXTdeclc BTNptr parent, int trieType) {
 
   BTNptr children;		/* child list of the parent */
@@ -465,7 +471,6 @@ void hashify_children(CTXTdeclc BTNptr parent, int trieType) {
   BTHTptr ht;			/* HT header struct */
   BTNptr *tablebase;		/* first bucket of allocated HT */
   unsigned long  hashseed;	/* needed for hashing of BTNs */
-
 
   New_BTHT(ht,trieType);
   children = BTN_Child(parent);
@@ -852,7 +857,7 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
   Paren = subg_ans_root_ptr(subgoal_ptr);
   GNodePtrPtr = &BTN_Child(Paren);
 
-  /* Documentation rewritten by TLS: 
+  /* Documentation rewritten by~< TLS: 
    * To properly generate instructions for attributed variables, you
    * need to know which attributed variables are identical to those in
    * the call, and which represent new bindings to attributed or vanilla

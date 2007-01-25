@@ -866,7 +866,7 @@ extern ALNptr empty_return(struct th_context *,VariantSF);
 
 /* Global Structure Management
    --------------------------- */
-#define SUBGOAL_FRAMES_PER_BLOCK    16
+#define SUBGOAL_FRAMES_PER_BLOCK    128
 
 extern struct Structure_Manager smVarSF;
 extern struct Structure_Manager smProdSF;

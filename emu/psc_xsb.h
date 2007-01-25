@@ -164,6 +164,7 @@ extern Psc comma_psc;
 extern Psc box_psc;
 extern Psc tnot_psc;
 extern Psc colon_psc;
+extern Psc ccall_psc;
 extern Psc delay_psc;
 extern char *nil_string;
 extern char *true_string;

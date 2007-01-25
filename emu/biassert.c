@@ -1375,7 +1375,7 @@ xsbBool assert_buff_to_clref_p(CTXTdeclc prolog_term Head,
   /* ctop_int(7, (Integer)Clause);  DO NOT RETURN ANYTHING */
   /* *Clref = Clause; */
   
-  SYS_MUTEX_LOCK( MUTEX_DYNAMIC );
+  SYS_MUTEX_LOCK(MUTEX_DYNAMIC);
 
   if (NI <= 0) db_addbuff(Arity,Clause,Pred,AZ,FALSE,1);
   else db_addbuff_i(Arity,Clause,Pred,AZ,Index,NI,Head,HashTabSize);

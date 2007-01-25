@@ -294,8 +294,8 @@ extern char *vfile_obj(/* vfile */);
 /* Routines to call xsb from C						*/
 /*======================================================================*/
 
-DllExport extern int call_conv xsb_init(CTXTdeclc int, char **);
-DllExport extern int call_conv xsb_init_string(CTXTdeclc char *);
+DllExport extern int call_conv xsb_init(int, char **);
+DllExport extern int call_conv xsb_init_string(char *);
 DllExport extern int call_conv pipe_xsb_stdin(); 
 DllExport extern int call_conv writeln_to_xsb_stdin(char * input);
 DllExport extern int call_conv xsb_command(CTXTdecl);
@@ -318,32 +318,39 @@ extern char *p_charlist_to_c_string(CTXTdeclc prolog_term term, VarString *buf,
 
 /*******************************************************************************/
 
-#define ERRTYPELEN 1024
-#define ERRMSGLEN 4096
-
-struct ccall_error_t {
-  char ccall_error_type[ERRTYPELEN];
-  char ccall_error_message[ERRMSGLEN];
-  //  char ccall_error_backtrace
-};
-
+#ifndef MULTI_THREAD
   extern struct ccall_error_t ccall_error;
+#define xsb_get_error_type(THREAD) (&(ccall_error).ccall_error_type[0])
+#define xsb_get_error_message(THREAD) (&(ccall_error).ccall_error_message[0])
+#define ccall_error_thrown(THREAD) ((ccall_error).ccall_error_type[0] != '\0')
 
-#define xsb_get_error_type() (&ccall_error.ccall_error_type[0])
-#define xsb_get_error_message() (&ccall_error.ccall_error_message[0])
-#define ccall_error_thrown (ccall_error.ccall_error_type[0] != '\0')
+#define xsb_get_init_error_type(THREAD) (&(ccall_error).ccall_error_type[0])
+#define xsb_get_init_error_message(THREAD) (&(ccall_error).ccall_error_message[0])
 
-#define create_ccall_error(TYPE,MESSAGE) {	 \
-    strncpy(xsb_get_error_type(),TYPE,ERRTYPELEN);  \
-    strncpy(xsb_get_error_message(),MESSAGE,ERRMSGLEN);	\
-  }
+#else
+  extern struct ccall_error_t init_ccall_error;
 
-#define reset_ccall_error() {	 \
-    ccall_error.ccall_error_type[0] = '\0'; \
-    ccall_error.ccall_error_message[0] = '\0'; \
-  }
+#define xsb_get_error_type(THREAD) (&(THREAD->_ccall_error).ccall_error_type[0])
+#define xsb_get_error_message(THREAD) (&(THREAD->_ccall_error).ccall_error_message[0])
+#define ccall_error_thrown(THREAD) ((THREAD->_ccall_error).ccall_error_type[0] != '\0')
 
+#define xsb_get_init_error_type(THREAD) (&(init_ccall_error).ccall_error_type[0])
+#define xsb_get_init_error_message(THREAD) (&(init_ccall_error).ccall_error_message[0])
+
+#endif
+
+extern void create_ccall_error(CTXTdeclc char *, char *);
+
+
+  /* This stays global as its used only for system initialization */
 extern jmp_buf ccall_init_env;
+
+#ifdef MULTI_THREAD
+extern th_context *main_thread_gl;
+#define xsb_get_main_thread() main_thread_gl
+#else
+#define xsb_get_main_thread() 
+#endif
 
 /*******************************************************************************/
 

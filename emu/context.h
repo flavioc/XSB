@@ -91,6 +91,17 @@ struct asrtBuff_t {
  int Size;
 };
 
+#define ERRTYPELEN 1024
+#define ERRMSGLEN 4096
+
+struct ccall_error_t {
+  char ccall_error_type[ERRTYPELEN];
+  char ccall_error_message[ERRMSGLEN];
+  //  char ccall_error_backtrace
+};
+
+
+
 #define MAX_RETRACTED_CLAUSES   20
 
 #ifdef MULTI_THREAD
@@ -321,6 +332,7 @@ struct random_seeds_t *_random_seeds;	/* struct containing seeds for random num 
   /* for tables */
   Structure_Manager *_private_smTableBTN;
   Structure_Manager *_private_smTableBTHT;
+  Structure_Manager *_private_smTableBTHTArray;
   Structure_Manager *_private_smTSTN; 
   Structure_Manager *_private_smTSTHT;
   Structure_Manager *_private_smTSIN;
@@ -357,7 +369,11 @@ byte *_catch_scope_marker;
 jmp_buf _xsb_abort_fallback_environment;
 
   /********** cinterf stuff  **********/
-jmp_buf _cinterf_env;
+  jmp_buf _cinterf_env;
+  byte *_current_inst;
+  int _xsb_inquery;
+  int _xsb_ready;
+  struct ccall_error_t _ccall_error;
 
  /************ Pointers to cursor information used by
  odbc_xsb.c context-local cursor table ***********/
@@ -561,6 +577,10 @@ typedef struct th_context th_context ;
 
 #define assertcmp_env		(th->_assertcmp_env)
 #define cinterf_env             (th->_cinterf_env)
+#define current_inst            (th->_current_inst)
+#define xsb_inquery             (th-> _xsb_inquery)
+#define xsb_ready               (th-> _xsb_ready)
+#define ccall_error             (th-> _ccall_error)
 
 #define retracted_buffer	(th->_retracted_buffer)
 #define OldestCl		(th->_OldestCl)
@@ -584,6 +604,7 @@ typedef struct th_context th_context ;
 
 #define private_smTableBTN        (th->_private_smTableBTN)
 #define private_smTableBTHT       (th->_private_smTableBTHT)
+#define private_smTableBTHTArray       (th->_private_smTableBTHTArray)
 #define private_smTSTN          (th-> _private_smTSTN)
 #define private_smTSTHT         (th-> _private_smTSTHT)
 #define private_smTSIN          (th-> _private_smTSIN)

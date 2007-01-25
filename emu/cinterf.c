@@ -1203,21 +1203,50 @@ static inline void updateWarningStart(void)
 /************************************************************************/
 
 static int xsb_initted_gl = 0;   /* if xsb has been called */
-static int xsb_inquery_gl = 0;   
-struct ccall_error_t ccall_error;
+
 jmp_buf ccall_init_env;
 
+// In the multi-threaded engine this will be used only for initialization errors.
 
-DllExport int call_conv xsb_init(CTXTdeclc int argc, char *argv[])
+#ifdef MULTI_THREAD
+th_context *main_thread_gl = NULL;
+struct ccall_error_t init_ccall_error;
+
+#else
+int xsb_inquery = 0;   
+struct ccall_error_t ccall_error;
+#endif
+
+void create_ccall_error(CTXTdeclc char * type, char * message) {
+  strncpy(xsb_get_error_type(CTXT),type,ERRTYPELEN);  
+  strncpy(xsb_get_error_message(CTXT),message,ERRMSGLEN);	
+}
+
+void reset_ccall_error(CTXTdecl) {	 
+    (ccall_error).ccall_error_type[0] = '\0';  
+    (ccall_error).ccall_error_message[0] = '\0';	
+  }
+
+DllExport int call_conv xsb_init(int argc, char *argv[])
 {
   int rc = XSB_FAILURE;
   char executable1[MAXPATHLEN];
   char *expfilename;
-
-  reset_ccall_error();
   
- updateWarningStart();
- if (!xsb_initted_gl) {
+  
+#ifdef MULTI_THREAD
+  th_context *th;
+  
+  if (main_thread_gl == NULL) {
+    main_thread_gl = malloc( sizeof( th_context ) ) ;  /* don't use mem_alloc */
+  }
+  th = main_thread_gl;
+#endif
+
+  reset_ccall_error(CTXT);
+  
+  // updateWarningStart();
+  if (!xsb_initted_gl) {
 	/* we rely on the caller to tell us in argv[0]
 	the absolute or relative path name to the XSB installation directory */
 	sprintf(executable1, "%s%cconfig%c%s%cbin%cxsb",
@@ -1236,8 +1265,8 @@ DllExport int call_conv xsb_init(CTXTdeclc int argc, char *argv[])
 	return(rc);
  }
  else {
-    create_ccall_error("permission_error","xsb_init() called when XSB has already been initialized.");
-    return(XSB_ERROR);     
+   create_ccall_error(CTXTc "permission_error","xsb_init() called when XSB has already been initialized.");
+   return(XSB_ERROR);     
   }
 }
 
@@ -1250,38 +1279,53 @@ DllExport int call_conv xsb_init(CTXTdeclc int argc, char *argv[])
 /*									*/
 /************************************************************************/
 
-DllExport int call_conv xsb_init_string(CTXTdeclc char *cmdline_param) {
+DllExport int call_conv xsb_init_string(char *cmdline_param) {
   int i = 0, argc = 0, length = 0;
   char **argv, delim;
   char cmdline[2*MAXPATHLEN+1];
 
-  updateWarningStart();
+  //  updateWarningStart();
+  if (!xsb_initted_gl) {
+#ifdef MULTI_THREAD
+    th_context * th;
+    main_thread_gl = malloc( sizeof( th_context ) ) ;  
+    th = main_thread_gl;
+#endif
 
-  if ((length = strlen(cmdline_param)) > 2*MAXPATHLEN) {
-    snprintf(cmdline,2*MAXPATHLEN+1,"command used to call XSB server is too long: %s",cmdline_param);
-    create_ccall_error("init_error",cmdline);
-    return(XSB_ERROR);
+    if ((length = strlen(cmdline_param)) > 2*MAXPATHLEN) {
+      snprintf(cmdline,2*MAXPATHLEN+1,"command used to call XSB server is too long: %s",cmdline_param);
+      create_ccall_error(CTXTc "init_error",cmdline);
+      return(XSB_ERROR);
+    }
+    strncpy(cmdline, cmdline_param, 2*MAXPATHLEN - 1);
+    argv = (char **) mem_alloc(20*sizeof(char *),OTHER_SPACE);  /* count space even if never released */
+
+    while (cmdline[i] == ' ') i++;
+    while (cmdline[i] != '\0') {
+      if ((cmdline[i] == '"') || (cmdline[i] == '\'')) {
+	delim = cmdline[i];
+	i++;
+      } else delim = ' ';
+      argv[argc] = &(cmdline[i]);
+      argc++;
+      if (argc >= 19) {argc--; break;}
+      while ((cmdline[i] != delim) && (cmdline[i] != '\0')) i++;
+      if (cmdline[i] == '\0') break;
+      cmdline[i] = '\0';
+      i++;
+      while (cmdline[i] == ' ') i++;
+    }
+    argv[argc] = 0;
+    return xsb_init(argc,argv);
   }
-	strncpy(cmdline, cmdline_param, 2*MAXPATHLEN - 1);
-	argv = (char **) mem_alloc(20*sizeof(char *),OTHER_SPACE);  /* count space even if never released */
-
-	while (cmdline[i] == ' ') i++;
-	while (cmdline[i] != '\0') {
-		if ((cmdline[i] == '"') || (cmdline[i] == '\'')) {
-			delim = cmdline[i];
-			i++;
-		} else delim = ' ';
-		argv[argc] = &(cmdline[i]);
-		argc++;
-		if (argc >= 19) {argc--; break;}
-		while ((cmdline[i] != delim) && (cmdline[i] != '\0')) i++;
-		if (cmdline[i] == '\0') break;
-		cmdline[i] = '\0';
-		i++;
-		while (cmdline[i] == ' ') i++;
-	}
-	argv[argc] = 0;
-	return xsb_init(CTXTc argc,argv);
+  else {
+#ifdef MULTI_THREAD
+    create_ccall_error(main_thread_gl, "permission_error","xsb_init_string() called after XSB has been initialized.");
+#else
+    create_ccall_error("permission_error","xsb_init_string() called after XSB has been initialized.");
+#endif
+   return(XSB_ERROR);     
+  }
 }
 
 /************************************************************************/
@@ -1301,7 +1345,7 @@ DllExport int call_conv pipe_xsb_stdin() {
 
 /************************************************************************/
 /*                                                                      */
-/* writeln_to_xsb_stdin(char *) is to be called after a call to           */
+/* writeln_to_xsb_stdin(char *) is to be called after a call to         */
 /* pipe_xsb_stdin, and writes a string of characters to the write end   */
 /* of xsb's piped stdin stream.                                         */
 /*                                                                      */
@@ -1329,12 +1373,19 @@ DllExport int call_conv xsb_command(CTXTdecl)
 {
   int rc;
 
-  if (xsb_inquery_gl) {
-    create_ccall_error("permission_error","unable to call xsb_command() when query a query is open");
+#ifdef MULTI_THREAD
+  // TLS temporary hack to make sure initialization has been done.
+  int i;
+  while (!xsb_ready)
+    i++;
+#endif
+
+  if (xsb_inquery) {
+    create_ccall_error(CTXTc "permission_error","unable to call xsb_command() when query a query is open");
     return(XSB_ERROR);     
   }
-  reset_ccall_error();
-  updateWarningStart();
+  reset_ccall_error(CTXT);
+  //  updateWarningStart();
   c2p_int(CTXTc 0,reg_term(CTXTc 3));  /* command for calling a goal */
   rc = xsb(CTXTc XSB_EXECUTE,0,0);
   if (is_var(reg_term(CTXTc 1))) return(XSB_FAILURE);  /* goal failed, so return 1 */
@@ -1358,16 +1409,23 @@ DllExport int call_conv xsb_command(CTXTdecl)
 DllExport int call_conv xsb_command_string(CTXTdeclc char *goal)
 {
 
-  if (xsb_inquery_gl) {
-    create_ccall_error("permission_error","unable to call xsb_command_string() when a query is open");
+#ifdef MULTI_THREAD
+  // TLS temporary hack to make sure initialization has been done.
+  int i;
+  while (!xsb_ready)
+    i++;
+#endif
+
+  if (xsb_inquery) {
+    create_ccall_error(CTXTc "permission_error","unable to call xsb_command_string() when a query is open");
     return(XSB_ERROR);     
   }
-  reset_ccall_error();
-  updateWarningStart();
+  reset_ccall_error(CTXT);
+  //  updateWarningStart();
   c2p_string(CTXTc goal,reg_term(CTXTc 1));
   c2p_int(CTXTc 2,reg_term(CTXTc 3));  /* command for calling a string goal */
   xsb(CTXTc XSB_EXECUTE,0,0);
-  if (ccall_error_thrown) return(XSB_ERROR);
+  if (ccall_error_thrown(CTXT)) return(XSB_ERROR);
   if (is_var(reg_term(CTXTc 1))) return(XSB_FAILURE);  /* goal failed, so return 1 */
   c2p_int(CTXTc 1,reg_term(CTXTc 3));  /* command for next answer */
   xsb(CTXTc XSB_EXECUTE,0,0);
@@ -1394,13 +1452,13 @@ DllExport int call_conv xsb_command_string(CTXTdeclc char *goal)
 
 DllExport int call_conv xsb_query(CTXTdecl)
 {
-  if (xsb_inquery_gl) return(XSB_FAILURE);
-  reset_ccall_error();
-  updateWarningStart();
+  if (xsb_inquery) return(XSB_FAILURE);
+  reset_ccall_error(CTXT);
+  //  updateWarningStart();
   c2p_int(CTXTc 0,reg_term(CTXTc 3));  /* set command for calling a goal */
   xsb(CTXTc XSB_EXECUTE,0,0);
   if (is_var(reg_term(CTXTc 1))) return(XSB_FAILURE);
-  xsb_inquery_gl = 1;
+  xsb_inquery = 1;
   return(XSB_SUCCESS);
 }
 
@@ -1422,21 +1480,30 @@ DllExport int call_conv xsb_query(CTXTdecl)
 
 DllExport int call_conv xsb_query_string(CTXTdeclc char *goal)
 {
-  if (xsb_inquery_gl) {
-    create_ccall_error("permission_error","unable to call xsb_query_string() when a query is open");
+
+#ifdef MULTI_THREAD
+  // TLS temporary hack to make sure initialization has been done.
+  int i;
+  while (!xsb_ready)
+    i++;
+#endif
+
+  reset_ccall_error(CTXT);
+
+  if (xsb_inquery) {
+    create_ccall_error(CTXTc "permission_error","unable to call xsb_query_string() when a query is open");
     return(XSB_ERROR);     
   }
-  reset_ccall_error();
-  updateWarningStart();
+  //  updateWarningStart();
   c2p_chars(CTXTc goal,2,reg_term(CTXTc 1));
   c2p_int(CTXTc 2,reg_term(CTXTc 3));  /* set command for calling a string goal */
   xsb(CTXTc XSB_EXECUTE,0,0);
-  if (ccall_error_thrown) {
-    xsb_inquery_gl = 0;
+  if (ccall_error_thrown(CTXT)) {
+    xsb_inquery = 0;
     return(XSB_ERROR);
   }
   if (is_var(reg_term(CTXTc 1))) return(XSB_FAILURE);
-  xsb_inquery_gl = 1;
+  xsb_inquery = 1;
   return(XSB_SUCCESS);
 }
 
@@ -1454,7 +1521,7 @@ int call_conv xsb_query_string_string(CTXTdeclc char *goal,
 {
   int rc;
   
-  reset_ccall_error();
+  reset_ccall_error(CTXT);
   rc = xsb_query_string(CTXTc goal);
   if (rc != XSB_SUCCESS) return rc;
   else return xsb_answer_string(CTXTc ans,sep);
@@ -1524,19 +1591,19 @@ DllExport int call_conv
 
 DllExport int call_conv xsb_next(CTXTdecl)
 {
-  if (!xsb_inquery_gl) {
-    create_ccall_error("permission_error","unable to call xsb_next() when a query is not open");
+  if (!xsb_inquery) {
+    create_ccall_error(CTXTc "permission_error","unable to call xsb_next() when a query is not open");
     return(XSB_ERROR);     
   }
-  updateWarningStart();
+  //  updateWarningStart();
   c2p_int(CTXTc 0,reg_term(CTXTc 3));  /* set command for next answer */
   xsb(CTXTc XSB_EXECUTE,0,0);
-  if (ccall_error_thrown) {
-    xsb_inquery_gl = 0;
+  if (ccall_error_thrown(CTXT)) {
+    xsb_inquery = 0;
     return(XSB_ERROR);
   }
   if (is_var(reg_term(CTXTc 1))) {
-    xsb_inquery_gl = 0;
+    xsb_inquery = 0;
     return(XSB_FAILURE);
   } else return(XSB_SUCCESS);
 }
@@ -1595,32 +1662,43 @@ DllExport int call_conv xsb_next_string_b(CTXTdeclc
 
 DllExport int call_conv xsb_close_query(CTXTdecl)
 {
-  updateWarningStart();
-  if (!xsb_inquery_gl) {
-    create_ccall_error("permission_error","unable to call xsb_close_query() when a query is not open");
+  //  updateWarningStart();
+  if (!xsb_inquery) {
+    create_ccall_error(CTXTc "permission_error","unable to call xsb_close_query() when a query is not open");
     return(XSB_ERROR);     
   }
   c2p_int(CTXTc 1,reg_term(CTXTc 3));  /* set command for cut */
   xsb(CTXTc XSB_EXECUTE,0,0);
   if (is_var(reg_term(CTXTc 1))) {
-    xsb_inquery_gl = 0;
+    xsb_inquery = 0;
     return(XSB_SUCCESS);
   } else return(XSB_ERROR);
 }
 
 /************************************************************************/
 /*                                                                      */
-/*  xsb_close() is currently just a noop, since it doesn't clean        */
-/*  anything up, to allow a re-init.                                    */
+/*  xsb_close() does not try to clean everything up, but at least       */
+/*  tries to get the tables.  Can't re-init XSB, I'm not sure how hard  */
+/*  this would be to do.                                                */
 /*                                                                      */
 /************************************************************************/
 
 DllExport int call_conv xsb_close(CTXTdecl)
 {
-  updateWarningStart();
-  if (xsb_initted_gl) return(XSB_SUCCESS);
+  //  updateWarningStart();
+  if (xsb_initted_gl) {
+#ifdef MULTI_THREAD
+    main_thread_gl = NULL;
+#endif
+    /* Get rid of any tables */
+    hashtable1_destroy_all(0);  /* free all incr hashtables in use */
+    release_all_tabling_resources(CTXT);
+    abolish_wfs_space(CTXT); 
+
+    return(XSB_SUCCESS);
+  }
   else {
-    create_ccall_error("permission_error","unable to call xsb_close() when XSB has not been inialized.");
+    create_ccall_error(CTXTc "permission_error","unable to call xsb_close() when XSB has not been inialized.");
     return(XSB_ERROR);     
   }
 }

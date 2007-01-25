@@ -2359,9 +2359,14 @@ case WRITE_OUT_PROFILE:
   case GLOBALVAR:
     ctop_tag(CTXTc 1, ((Cell)glstack.low));
     break;
-  case CCALL_STORE_ERROR:
+  case CCALL_STORE_ERROR: {
+#ifdef MULTI_THREAD
+    create_ccall_error(find_context(xsb_thread_id), ptoc_string(CTXTc 1),ptoc_string(CTXTc 2));
+#else
     create_ccall_error(ptoc_string(CTXTc 1),ptoc_string(CTXTc 2));
+#endif
     break;
+  }
 
   case STORAGE_BUILTIN: {
     STORAGE_HANDLE *storage_handle =

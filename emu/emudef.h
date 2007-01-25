@@ -82,6 +82,8 @@ VarString *tsgSBuff2;
 Cell interrupt_counter;
 CPtr interrupt_reg = &interrupt_counter;
 
+byte *current_inst;
+
 #endif /* MULTI_THREAD */
 
 /*
@@ -93,7 +95,7 @@ char *nil_string, *true_string;
 
 Pair list_pscPair;
 
-Psc list_psc, comma_psc, true_psc, if_psc, colon_psc;
+Psc list_psc, comma_psc, true_psc, if_psc, colon_psc, ccall_psc;
 Psc tnot_psc, delay_psc;
 Psc box_psc;
 
