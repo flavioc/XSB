@@ -31,6 +31,7 @@
 :- import file_open/3, file_close/1
      from file_io.
 
+:- import set_xsb_ready/0 from thread.
 :- import call_c/1, call_expose/1, catch/3,
  	  goal_cut_trans/3, repeat/0, (=..)/2  from standard.
 :- import set_inthandler/2 from loader.

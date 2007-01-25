@@ -159,6 +159,9 @@ abolish_shared_tables:-
 abolish_all_shared_tables:-
 	thread_request( ABOLISH_ALL_SHARED_TABLES, _,_,_, _, _, _, _).
 
+set_xsb_ready:- 
+	thread_request( SET_XSB_READY, _,_,_, _, _, _, _).
+
 /* ==================================================================  */
 /* Routines used internally. */
 

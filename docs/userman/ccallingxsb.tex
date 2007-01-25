@@ -112,32 +112,38 @@ a simple program that will call XSB and return the following answers:
 \end{verbatim}
 \end{small}
 %
-(cf. {\tt \$XSBDIR/examples/c\_calling\_xsb/edb.P}).  A simple program
-to do this, is shown in in Figure~\ref{fig:varstringex}, and can be
-found in {\tt \$XSBDIR/examples/c\_calling\_xsb/cvarstring.c}).
+(cf. {\tt \$XSBDIR/examples/c\_calling\_xsb/edb.P}).  
+
+We structure out discussion by first showing how to construct a C
+program to call the single-threaded engine alone in
+Section~\ref{sec:CXSBSeq}.  This example is mostly pedagogic: with a
+small amount of extra coding a C program can be constructed to call
+both the single- and the multi-threaded engine, and these extensions
+are discussed in Section~\ref{}.  Finally, we show how to a C program
+can call and manage multiple XSB threads in Section~\ref{}.
+
+\subsection{The XSB API for the Sequential Engine Only} \label{sec:CXSBSeq}
+
+Figure~\ref{fig:varstringex} shows a simple program to backtrack
+through the {\tt p/3} predicate above to do this, and can be found in
+{\tt \$XSBDIR/examples/c\_calling\_xsb/cvarstring.c}).  This example
+will only compile properly if the sequential engine is used, and its
+style is not recommended: it will be shown in Section~\ref{} how to
+extend the style.
 %
 \begin{figure}[hbtp]
 \begin{small}
 \begin{verbatim}
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
 
 /* cinterf.h is necessary for the XSB API, as well as the path manipulation routines*/
 #include "cinterf.h"
-
-/* context.h is necessary for the type of a thread context. */
-#include "context.h"
 
 extern char *xsb_executable_full_path(char *);
 extern char *strip_names_from_path(char*, int);
 
 int main(int argc, char *argv[]) { 
-
-#ifdef MULTI_THREAD
-   static th_context *th ;
-   th = malloc( sizeof( th_context ) ) ;  
-#endif
 
   char init_string[1024];
   int rc;
@@ -150,51 +156,38 @@ int main(int argc, char *argv[]) {
 
   strcpy(init_string,strip_names_from_path(xsb_executable_full_path(argv[0]),3));
 
-  if (xsb_init_string(CTXTc init_string) == XSB_ERROR) {
-    fprintf(stderr,"++%s initializing XSB: %s\n",xsb_get_error_type(),xsb_get_error_message());
+  if (xsb_init_string(init_string) == XSB_ERROR) {
+    fprintf(stderr,"++initializing XSB: %s\n",xsb_get_init_error_message());
     exit(XSB_ERROR);
   }
 
   /* Create command to consult a file: edb.P, and send it. */
-  if (xsb_command_string(CTXTc "consult('edb.P').") == XSB_ERROR)
+  if (xsb_command_string("consult('edb.P').") == XSB_ERROR)
     fprintf(stderr,"++Error consulting edb.P: %s/%s\n",xsb_get_error_type(),xsb_get_error_message());
 
-  rc = xsb_query_string_string(CTXTc "p(X,Y,Z).",&return_string,"|");
+  rc = xsb_query_string_string("p(X,Y,Z).",&return_string,"|");
   while (rc == XSB_SUCCESS) {
     printf("Return %s\n",(return_string.string));
-    rc = xsb_next_string(CTXTc &return_string,"|");
+    rc = xsb_next_string(&return_string,"|");
   }
  
  if (rc == XSB_ERROR) 
     fprintf(stderr,"++Query Error: %s/%s\n"xsb_get_error_type(),xsb_get_error_message());
 
-  xsb_close(CTXT);     
-  return(0);
+  xsb_close();     
 }
 \end{verbatim}
 \end{small}
-\caption{Calling XSB using the {\tt VarString} Interface} \label{fig:varstringex}
+\caption{Calling the Sequential Engine Using the {\tt VarString} Interface} \label{fig:varstringex}
 \end{figure}
 
 We discuss the program in Figure~\ref{fig:varstringex} in detail.  It
 begins by including some standard C headers: note that {\tt string.h}
-is needed for string manipulation routines such as {\tt strcpy} and
-{\tt stdlib.h} is needed to malloc a thread context if the
-multi-threaded engine is used (Calls to the multi-threaded engine,
-including the use of context parameters is discussed in
-Chapter~\ref{foreign} and the chapter {\em Multi-Threaded Programming
-  in XSB} in Volume 1)~\footnote{This is temporary, I'll change it
-  --TLS.}.  In addition, the XSB library header {\tt cinterf.h} is
-necessary for the XSB C API, and, {\tt context.h} is necessary for the
-C API to work with the multi-threaded engine.
-
-Within {\tt main()}, two declarations may need explanation.  If the
-multi-threaded engine is used, space for a thread context must be
-allocated and a pointer set up -- this thread context will then need
-to be passed into the appropriate function`<s (via the macro {\tt
-  CTXTc}).  In addition, since the program in
+is needed for string manipulation routines such as {\tt strcpy}.  In
+addition, the XSB library header {\tt cinterf.h} is necessary for the
+XSB C API.  Within {\tt main()} since the program in
 Figure~\ref{fig:varstringex} uses functions in the {\tt VarString}
-interface, the routine {\tt XSB\_StrDefine(return\_string)}is used to
+interface, the routine {\tt XSB\_StrDefine(return\_string)} is used to
 decare and initialize a structure of type VarString, named {\tt
   return\_string}.
 
@@ -220,17 +213,16 @@ corrupted, of for similar reasons (if XSB is called in its usual
 stand-alone mode such an error will cause XSB to exit).  An error
 returned by XSB's API are similar to an error ball described in Volume
 1 {\em Exception Handling} in that it has both a {\em type} and a {\em
-  message}.  A string pointer to the type can be obtained by {\tt
-  xsb\_get\_error\_type()}, while a atring pointer to the message can
-be obtained by {\tt xsb\_get\_error\_message()}.  For normal Prolog
-exceptions, XSB's API will throw the same kinds of errors as XSB
-called in a stand-alone or server mode, i.e. instantiation errors,
-type errors, etc.  However XSB's API adds two new error types:
+  message}.  For normal Prolog exceptions, XSB's API will throw the
+same kinds of errors as XSB called in a stand-alone or server mode,
+i.e. instantiation errors, type errors, etc.  However XSB's API adds
+two new error types:
 %
 \begin{itemize}
 \item {\tt init\_error} is used as the type of an error discovered
   upon initialization of XSB, before query and command processing has
-  begun.
+  begun.  If an {\tt init\_error} is raised, XSB has not been properly
+  initialized and will not run.
 %
 \item {\tt unrecoverable\_error} is used to indicate that XSB has
   encountered an error, (such as a memory allocation error), during
@@ -239,22 +231,27 @@ type errors, etc.  However XSB's API adds two new error types:
   stand-alone mode.
 \end{itemize}
 %
-To get back to our running example, {\tt xsb\_init\_string()} will
-only return an error of type {\tt init\_error}.  As a final point on
-initialization, note that the function {\tt xsb\_init()} can also be
-used to initialize XSB based on an argument vector and count (see
-Section~\ref{sec:CAPI}).
+Errors raised by {\tt xsb\_init\_string()} always have type {\tt
+  init\_type}, and a string pointer to the associated message can be
+found by the function {\tt xsb\_get\_init\_error\_message()}.  As a
+final point on initialization, note that the function {\tt
+  xsb\_init()} can also be used to initialize XSB based on an argument
+vector and count (see Section~\ref{sec:CAPI}).
 
 As can be seen from the example, handling errors from commands is done
-in manner similar to that of initialization.  Note, however that the
-argument to {\tt xsb\_command\_string} must be a syntactically valid
-Prolog term ending with a period, otherwise a syntax error will be
-thrown, which may be displayed through {\tt xsb\_get\_error\_type()}
-and {\tt xsb\_get\_error\_message()}~\footnote{Most XSB errors are
-  handled in this manner when XSB is called through its API.  A few
-  errors will print directly to {\tt stderr} and some XSB warnings
-  will print to {\tt stdwarn} which upon startup is dup-ed to {\tt
-    stderr}.}.
+in manner similar to that of initialization.  For non-initialization
+errors, a string pointer to the type can be obtained by {\tt
+  xsb\_get\_error\_type()}, while a string pointer to the message can
+be obtained by {\tt xsb\_get\_error\_message()}.  The reason that
+initialization errors are handled separately is discussed in
+Section~\ref{}.  Note, however that the argument to {\tt
+  xsb\_command\_string} must be a syntactically valid Prolog term
+ending with a period, otherwise a syntax error will be thrown, which
+may be displayed through {\tt xsb\_get\_error\_type()} and {\tt
+  xsb\_get\_error\_message()}~\footnote{Most XSB errors are handled in
+  this manner when XSB is called through its API.  A few errors will
+  print directly to {\tt stderr} and some XSB warnings will print to
+  {\tt stdwarn} which upon startup is dup-ed to {\tt stderr}.}.
 
 Queries to XSB are a little more complicated than commands.  Since a
 query may return multiple solutions, a query should usually be called
@@ -294,7 +291,7 @@ need be done at this point: a new queries or commands can be invoked
 using one of the functions just discussed.  However if the calling
 application is finished with XSB it can call {\tt xsb\_close()}.
 
-\subsection{An Example using Fixed Strings}
+\subsubsection{An Example using Fixed Strings}
 
 \begin{figure}[hbtp]
 \begin{small}
@@ -343,6 +340,216 @@ the {\tt VarString} level is that the length of each answer should be
 checked and {\tt xsb\_get\_last\_answer\_string()} called if
 necessary.
 
+\subsection{The General XSB API} \label{sec:CXSB}
+
+The previous section showed how to use the XSB API with both the {\tt
+  VarString} type and without, but did not consider the multi-threaded
+engine.  In fact, there are different ways to use XSB's
+multi-threading that can have advantages for various situations.  In
+the first mode, threads are managed from Prolog, with a single XSB
+thread called from the API; that XSB thread can then create another
+XSB thread that does work, and the first thread can return almost
+immediately to handle more requests from the API's caller.  A second
+model allows the caller to manipulate a pool of several XSB threads,
+so that different XSB threads may be called from different threads
+over the API.  In this model each C, Java, Ruby, or other thread could
+a number of different Prolog threads.  In this section we sketch how
+to use the API to illustrate the first model, and sketch the second
+model in the next section.
+
+\begin{figure}[hbtp]
+\begin{small}
+\begin{verbatim}
+.....
+
+/* context.h is necessary for the type of a thread context. */
+#include "context.h"
+
+int main(int argc, char *argv[])
+{ 
+
+  char init_string[MAXPATHLEN];
+  int rc;
+  XSB_StrDefine(return_string);
+
+  strcpy(init_string,strip_names_from_path(xsb_executable_full_path(argv[0]),3));
+  if (xsb_init_string(init_string) == XSB_ERROR) {
+    fprintf(stderr,"++initializing XSB: %s\n",xsb_get_init_error_message());
+    exit(XSB_ERROR);
+  }
+
+#ifdef MULTI_THREAD
+  th_context *th = xsb_get_main_thread();
+#endif
+
+  /* Create command to consult a file: edb.P, and send it. */
+  if (xsb_command_string(CTXTc "consult('edb.P').") == XSB_ERROR)
+    fprintf(stderr,"++Error consulting edb.P: %s/%s\n",xsb_get_error_type(CTXT),
+            xsb_get_error_message(CTXT));
+
+  rc = xsb_query_string_string(CTXTc "p(X,Y,Z).",&return_string,"|");
+  while (rc == XSB_SUCCESS) {
+    printf("Return %s\n",(return_string.string));
+    rc = xsb_next_string(CTXTc &return_string,"|");
+  }
+ 
+ if (rc == XSB_ERROR) 
+    fprintf(stderr,"++Query Error: %s/%s\n",xsb_get_error_type(CTXT),xsb_get_error_message(CTXT));
+
+  xsb_close();     
+}
+\end{verbatim}
+\end{small}
+\caption{Calling the Single- or Multi-Threaded Engine Using the {\tt VarString} Interface} 
+\label{fig:varstringex1}
+\end{figure}
+
+Figure~\ref{fig:varstringex1} shows how relevant portions of the
+previous {\tt VarString} example can be adapted to use the
+multi-thraded engine.  The main change is that a new variable is
+introduced on the C side that points to the context of the main
+thread.  As pointed out in Chapter~\ref{foreign}, each thread in the
+multi-threaded engine has a {\em context} in which is kept much of its
+thread-specific data (excluding tables and dynamic code).  Of the
+threads running in the multi-threaded engine the thread created upon
+the call to {\tt xsb\_init()} is designated as the {\tt main thread},
+and is closed only upon calling {\tt xsb\_close()}.
+
+Within the multi-threaded engine, a call to an API function such as
+{\tt xsb\_query\_string\_string()} is actually a call to a specific
+thread to do some work (using a thread context pointer).  Accordingly,
+since any errors produced will be specific to a given thread, all
+calls to error reporting functions are also thread-specific.  If no
+specific thread is needed, it may be best just to use the main thread,
+which is what is done in Figure~\ref{fig:varstringex1}.  The thread
+context pointer {\tt th} is initialized to the main thread using the
+API macro {\tt xsb\_get\_main\_thread()}.  Afterwards, this pointer is
+passed into the various interface functions by making use of XSB
+macros defined in {\tt context.h} In the multi-threaded engine, these
+macros are defined as
+%
+\begin{verbatim}
+#define CTXT th
+#define CTXTc th,
+\end{verbatim}
+%
+while in the single-threaded engine they are defined as empty strings,
+as is {\tt xsb\_get\_main\_thread()}.  As a result the code in
+Figure~\ref{fig:varstringex1} will compile and run properly both for
+the single-threaded and the multi-threaded engines.
+
+At this stage, suppose one wanted a new thread to execute a specific
+command, say {\tt do\_foo}.  In this case, a C call such as 
+%
+\begin{verbatim}
+xsb_query_string_string(CTXTc,"thread_create(do_foo,Id)",&return_string,"|")
+\end{verbatim}
+creates a thread to execute the command, and returns the thread id of
+the newly created thread in {\tt return\_string}.  The behavior of
+this newly created thread is exactly the same as if it were created
+from the XSB command line: in particular the newly created thread will
+automatically exit upon completion of its command.  As a somewhat
+technical point, there are two different ways of referring to XSB
+threads.  The foreign language interfaces described in
+Chapter~\ref{foreign} and here use pointers to thread contexts so that
+the intefaces use much of the same code as the XSB engine.  However
+Prolog refers to threads using thread identifiers.  The two different
+forms can be converted into each other by the functions {\tt
+  xsb\_thread\_id\_to\_context()} and {\tt
+  xsb\_thread\_context\_to\_id()}.
+
+\subsection{Multi-threaded Programming with the XSB API} \label{sec:CXSB}
+
+The ability to pass thread contexts into query and command functions
+allows a great deal of flexibility~\footnote{For the sake of brevity,
+  we sometimes abuse notation and do not always distinguish between
+  thread-contexts and their pointers.}.  Once XSB is initialized, XSB
+threads can be created from C and can execute independently of each
+other, effectively giving the ability for different calling threads to
+query cXSB in a mechanism reminiscent of database cursors.
+
+\begin{figure}[hbtp]
+\begin{small}
+\begin{verbatim}
+.....
+/* context.h is necessary for the type of a thread context. */
+#include "context.h"
+
+int main(int argc, char *argv[])
+{ 
+
+  static th_context *p_th, *r_th;
+  char init_string[MAXPATHLEN];
+  int rcp, rcr;
+  XSB_StrDefine(p_return_string);
+  XSB_StrDefine(r_return_string);
+
+  strcpy(init_string,strip_names_from_path(xsb_executable_full_path(argv[0]),3));
+
+  if (xsb_init_string(init_string)) {
+    fprintf(stderr,"%s initializing XSB: %s\n",xsb_get_init_error_message(xsb_get_main_thread()));
+    exit(XSB_ERROR);
+  }
+
+  p_th = xsb_get_main_thread();
+
+  /* Create command to consult a file: edb.P, and send it. */
+  if (xsb_command_string(p_th, "consult('edb.P').") == XSB_ERROR)
+    fprintf(stderr,"++Error consulting edb.P: %s/%s\n",xsb_get_error_type(p_th),
+	    xsb_get_error_message(p_th));
+
+  xsb_ccall_thread_create(p_th,&r_th);
+
+  rcp = xsb_query_string_string(p_th,"p(X,Y,Z).",&p_return_string,"|");
+  rcr = xsb_query_string_string(r_th,"r(X,Y,Z).",&r_return_string,"|");
+
+  while (rcp == XSB_SUCCESS && rcr == XSB_SUCCESS) {
+
+    printf("Return p %s\n",(p_return_string.string));
+    rcp = xsb_next_string(p_th, &p_return_string,"|");
+
+    printf("Return r %s\n",(r_return_string.string));
+    rcr = xsb_next_string(r_th, &r_return_string,"|");
+  }
+
+ if (rcp == XSB_ERROR) 
+   fprintf(stderr,"++Query Error p: %s/%s\n",xsb_get_error_type(p_th),xsb_get_error_message(p_th));
+ if (rcr == XSB_ERROR) 
+   fprintf(stderr,"++Query Error r: %s/%s\n",xsb_get_error_type(r_th),xsb_get_error_message(r_th));
+
+ xsb_close();      
+}
+\end{verbatim}
+\end{small}
+\caption{Manipulating Multiple Threads Using the {\tt VarString} Interface} 
+\label{fig:varstringex2}
+\end{figure}
+
+Figure~\ref{fig:varstringex2} illustrates a very simple example of
+this.  XSB is initalized and the file {\tt edb.P} consulted exactly as
+in Figure~\ref{fig:varstringex2}.  However, the function {\tt
+xsb\_ccall\_thread\_create()} causes the XSB thread {\tt p\_th} to
+create a new thread, causes the new thread to call the same command
+loop as the main thread, and sets {\tt r\_th} to a pointer to the
+context of the new thread.  The new thread {\tt r\_th} can be used for
+commands or queries just as {\tt p\_th}.
+Figure~\ref{fig:varstringex2} shows that queries to the two threads
+can be interleaved, and errors for both threads can be checked and
+reported independently.
+ 
+It is important to note that since each thread created by {\tt
+  xsb\_ccall\_thread\_create()} goes into a command-loop similar to
+the command loop, it will stay around until it is explicitly exited or
+until XSB is closed.  A call such as 
+\begin{verbatim}
+xsb\_command\_string(r_th,"thread_exit.")
+\end{verbatim}
+would cause {\tt r\_th} to exit.  Note that once a thread is exited,
+all of its data structures will be freed, including those that support
+{\tt xsb\_get\_error\_type()} and {\tt
+  xsb\_get\_error\_message()}~\footnote{Note that causing XSB's main
+  thread to exit will cause the entire process to exit -- not just XSB.}.
+
 \section{A C API for XSB} \label{sec:CAPI}
 %
 \subsection{Initializing and Closing XSB}
@@ -373,7 +580,7 @@ which initializes XSB with the goal {\tt ?- startup.}
 %
 \item {\tt XSB\_ERROR} 
 \bi
-\item {\tt init\_error} if any error occurred during initialization. a
+\item {\tt init\_error} if any error occurred during initialization. 
 
 \item {\tt permission\_error} if {\tt xsb\_init\_string()} is called
   after XSB has aleady been correctly initialized.  
@@ -383,7 +590,7 @@ which initializes XSB with the goal {\tt ?- startup.}
 
 \ouritem{int xsb\_init(int argc, char *argv[])} \index{\texttt{xsb\_init}}
 %
-This function is a variant of xsb\_init\_string() which passes
+This function is a variant of {\tt xsb\_init\_string()} which passes
 initialization arguments as an argument vector: {\tt argc} is the
 count of the number of arguments in the {\tt argv} vector.  The {\tt
   argv} vector is exactly as would be passed from the command line to
@@ -391,7 +598,7 @@ XSB.
 %%
 \begin{itemize}
 \item $\tt argv[0]$ must be an absolute or relative path name of the XSB
-  installation directory ({\it i.e.}, {\tt \$XSB\_DIR}.  Here is an
+  installation directory ({\it i.e.}, {\tt \$XSB\_DIR}).  Here is an
   example, which assumes that we invoke the C program from the XSB
   installation directory.
     %%
@@ -418,8 +625,10 @@ The return codes for {\tt xsb\_init()} are the same as those for {\tt
 %
 This routine closes the entire connection to XSB .  After this, no
 more calls can be made (not even calls to {\tt xsb\_init\_string()} or
-{\tt xsb\_init()}).  In \version{}, this routine is essentially as
-stub that does not reclaim space. 
+{\tt xsb\_init()}).  In \version{}, no guarentee is made that all
+space used by XSB will be restored to the process (even when the
+process has dynamically linked to XSB), but space for any XSB tables
+is freed.
 
 {\bf Return Codes} 
 \bi
@@ -438,11 +647,13 @@ stub that does not reclaim space.
 \subsection{Passing Commands to XSB}
 
 \begin{description}
-\ouritem{int xsb\_command\_string(char *cmd)} \index{\texttt{xsb\_command\_string}}
+\ouritem{int xsb\_command\_string(th\_context *th, char *cmd)} \index{\texttt{xsb\_command\_string}}
 %
-This function passes a command to XSB.  No query can be active when
-the command is called.  The command is a string consisting of a Prolog
-(or HiLog) term terminated by a period (.).
+This function passes a command to the XSB thread designated by {\tt
+  th} (the first argument is not used in the single-threaded engine).
+No query can be active in {\tt th} when the command is called.  The
+command is a string consisting of a Prolog (or HiLog) term terminated
+by a period (.).
 
 {\bf Return Codes}  
 \bi
@@ -453,28 +664,30 @@ the command is called.  The command is a string consisting of a Prolog
 \item {\tt XSB\_ERROR} 
 \bi
 \item {\tt permission\_error} if {\tt xsb\_command\_string()} is
-  called while a query is open.
+  called while a query is open in {\tt th}.
 %
 \item Otherwise, any queries thrown during execution of the command
-  are accessable through {\tt xsb\_get\_error\_type()} and {\tt
-    xsb\_get\_error\_message()}.
+  are accessable through {\tt xsb\_get\_error\_type(th)} and {\tt
+    xsb\_get\_error\_message(th)}.
 \ei
 %
 \ei
 
-\ouritem{int xsb\_command()} \index{\texttt{xsb\_command}}
+\ouritem{int xsb\_command(th\_context *th)} \index{\texttt{xsb\_command}}
 %
-This function passes a command to XSB.  Any previous query must have
-already been closed.  Before calling {\tt xsb\_command()}, the calling
-program must construct the term representing the command in register 1
-in XSB 's space.  This can be done by using the {\tt c2p\_*} (and {\tt
-  p2p\_*}) routines, which are described in Section \ref{c2p_p2p_p2c}
-below.  Register 2 may also be set before the call to {\tt xsb\_query}
+This function passes a command to the XSB thread designated by {\tt
+  th} (the first argument is not used in the single-threaded engine).
+Any previous query must have already been closed.  Before calling {\tt
+  xsb\_command()}, the calling program must construct the term
+representing the command in register 1 in the XSB thread's space.
+This can be done by using the {\tt c2p\_*} (and {\tt p2p\_*})
+routines, which are described in Section \ref{c2p_p2p_p2c} below.
+Register 2 may also be set before the call to {\tt xsb\_query()}
 (using {\tt xsb\_make\_vars(int)} and {\tt xsb\_set\_var\_*()}) in
 which case any variables set to values in the {\tt ret/n} term will be
 so bound in the call to the command goal.  {\tt xsb\_command} invokes
 the command represented in register 1 and returns 0 if the command
-succeeds and 1 if it fails. 
+succeeds and 1 if it fails.
 
 Apart from the steps necessary to formulate the query, the behavior of
 {\tt xsb\_command()} is similar to that of {\tt
@@ -484,20 +697,21 @@ Apart from the steps necessary to formulate the query, the behavior of
 \subsection{Querying XSB}
 
 \begin{description}
-\ouritem{int xsb\_query\_string\_string(char *query, VarString *buff,
+\ouritem{int xsb\_query\_string\_string(th\_context *th, char *query, VarString *buff,
 char *sep)} \index{\texttt{xsb\_query\_string\_string}} 
 %
-This function opens a query to XSB and returns the first answer (if
-there is one) as a VarString.  Any previous query must have already
-been closed.  A query is expected to return possibly multiple data
-answers.  The first is found and made available to the caller as a
-result of this call.  To get subsequent answers, {\tt
-  xsb\_next\_string()} or a similar function must be called.  An
-example call is:
+This function opens a query to the XSB thread designated by {\tt th}
+(the first argument is not used in the single-threaded engine); it
+returns the first answer (if there is one) as a {\tt VarString}.  Any
+previous query to {\tt th} must have already been closed.  Any query
+may return multiple data answers.  The first is found and made
+available to the caller as a result of this call.  To get any
+subsequent answers, {\tt xsb\_next\_string()} or a similar function
+must be called.  An example call is:
 \begin{verbatim}
-rc = xsb_query_string_string("append(X,Y,[a,b,c]).",buff,";");
+rc = xsb_query_string_string(th, "append(X,Y,[a,b,c]).",buff,";");
 \end{verbatim}
-The first argument is the period-terminated query string.  The second
+The second argument is the period-terminated query string.  The third
 argument is a ponter to a variable string buffer in which the
 subroutine returns the answer (if any.) The variable string data type
 {\tt VarString} is explained in Section~\ref{sec-varstring}. (Use {\tt
@@ -513,11 +727,10 @@ which is the first answer to the append query.  There are two fields
 of this answer, corresponding to the two variables in the query,
 \verb|X| and \verb|Y|.  The bindings of those variables make up the
 answer and the individual fields are separated by the \verb|sep|
-string, here the semicolon (\verb|;|).  Its returns are just as for
-{\tt xsb\_query\_string}.  In the answer string, XSB atoms are printed
-without quotes.  Complex terms are printed in a canonical form, with
-atoms quoted if necessary, and lists produced in the normal list
-notation.
+string, here the semicolon (\verb|;|).  In the answer string, XSB
+atoms are printed without quotes.  Complex terms are printed in a
+canonical form, with atoms quoted if necessary, and lists produced in
+the normal list notation.
 
 {\bf Return Codes}  
 \bi
@@ -528,32 +741,31 @@ notation.
 \item {\tt XSB\_ERROR} 
 \bi
 \item {\tt permission\_error} if {\tt xsb\_query\_string\_string()} is
-  called while a query is open.
+  called while a query to {\tt th} is open.
 %
-\item Otherwise, any queries thrown during execution of the command
-  are accessable through {\tt xsb\_get\_error\_type()} and {\tt
-    xsb\_get\_error\_message()}.
-\ei
+\item Otherwise, any errors thrown during execution of the query are
+  accessable through {\tt xsb\_get\_error\_type()} and {\tt
+    xsb\_get\_error\_message()}.  
+\ei 
 \ei
 
-\ouritem{int xsb\_query\_string\_string\_b(char *query, char *buff,
-  int bufflen, int *anslen, char *sep)}
+\item[{\mbox{\tt {\small int xsb\_query\_string\_string\_b(th\_context *th,char *query,char *buff,int bufflen,int *anslen,char *sep)}}}]
 \index{\texttt{xsb\_query\_string\_string\_b}} 
 %
-This function provides a lower-level interface to {\tt
+This function provides a lower-level alternative to {\tt
   xsb\_query\_string\_string} (not using the {\tt VarString} type),
 which makes it easier for non-C callers (such as Visual Basic or
-Delphi) to access XSB functionality.  Any previous query must have
-already been closed.  A query is expected to return possibly multiple
+Delphi) to access XSB functionality.  Any previous query to {\tt th}
+must have already been closed.  Any query may return possibly multiple
 data answers.  The first is found and made available to the caller as
-a result of this call.  To get subsequent answers, {\tt
+a result of this call.  To get any subsequent answers, {\tt
   xsb\_next\_string\_b()} or a similar function must be called.  The
 first and last arguments are the same as in {\tt
-  xsb\_query\_string\_string}.  The \verb|buff|, \verb|bufflen|, and
+  xsb\_query\_string\_string()}.  The \verb|buff|, \verb|bufflen|, and
 \verb|anslen| parameters are used to pass the answer (if any) back to
-the caller.  \verb|buff| is a buffer provided by the caller in which
-the answer is returned.  \verb|bufflen| is the length of the buffer
-(\verb|buff|) and is provided by the caller.  \verb|anslen| is
+the caller.  \verb|buff| is a character array provided by the caller
+in which the answer is returned.  \verb|bufflen| is the length of the
+buffer (\verb|buff|) and is provided by the caller.  \verb|anslen| is
 returned by this routine and is the length of the computed answer.  If
 that length is less than \verb|bufflen|, then the answer is put in
 \verb|buff| (and null-terminated).  If the answer is longer than will
@@ -571,8 +783,8 @@ case the caller can retrieve the answer by providing a bigger buffer
 %
 \item {\tt XSB\_ERROR} 
 \bi
-\item {\tt permission\_error} if {\tt xsb\_query\_string\_string\_b()} is
-  called while a query is open.
+\item {\tt permission\_error} if {\tt xsb\_query\_string\_string\_b()}
+  is called while a query to {\tt th} is open.
 %
 \item Otherwise, any queries thrown during execution of the command
   are accessable through {\tt xsb\_get\_error\_type()} and {\tt
@@ -584,44 +796,46 @@ case the caller can retrieve the answer by providing a bigger buffer
 %
 \ei
 
-\ouritem{int xsb\_query()} \index{\texttt{xsb\_query}} 
+\ouritem{int xsb\_query(th\_context *th)} \index{\texttt{xsb\_query}} 
 %
-This function passes a query to XSB.  Any previous query must have
-already been closed.  A query is expected to return possibly multiple
-data answers.  The first is found and made available to the caller as
-a result of this call.  To get subsequent answers, {\tt xsb\_next()}
-or a similar function must be called.  Before calling {\tt
-  xsb\_query()} the caller must construct the term representing the
-query in XSB 's register 1 (using routines described in Section
-\ref{c2p_p2p_p2c} below.)  If the query has no answers (i.e., just
-fails), register 1 is set back to a free variable and {\tt xsb\_query}
-returns {\tt XSB\_FAILURE}.  If the query has at least one answer, the
-variables in the query term in register 1 are bound to those answers
-and {\tt xsb\_query()} returns {\tt XSB\_SUCCESS}.  In addition,
-register 2 is bound to a term whose main functor symbol is {\tt
-  ret/n}, where n is the number of variables in the query. The main
-subfields of this term are set to the variable values for the first
-answer. (These fields can be accessed by the functions {\tt p2c\_*},
-or the functions {\tt xsb\_var\_*}, described in Section
-\ref{c2p_p2p_p2c} below.)  Thus there are two places the answers are
-returned. Register 2 is used to make it easier to access them.Register
-2 may also be set before the call to {\tt xsb\_query} (using {\tt
-  xsb\_make\_vars(int)} and {\tt xsb\_set\_var\_*()}) in which case
-any variables set to values in the {\tt ret/n} term will be so bound
-in the call to the goal.
+This function passes a query to the XSB thread {\tt th}.  Any previous
+query to {\tt th} must have already been closed.  Any query may return
+possibly multiple data answers.  The first is found and made available
+to the caller as a result of this call.  To get any subsequent
+answers, {\tt xsb\_next()} or a similar function must be called.
+Before calling {\tt xsb\_query()} the caller must construct the term
+representing the query in the XSB thread's register 1 (using routines
+described in Section \ref{c2p_p2p_p2c} below.)  If the query has no
+answers (i.e., just fails), register 1 is set back to a free variable
+and {\tt xsb\_query()} returns {\tt XSB\_FAILURE}.  If the query has
+at least one answer, the variables in the query term in register 1 are
+bound to those answers and {\tt xsb\_query()} returns {\tt
+  XSB\_SUCCESS}.  In addition, register 2 is bound to a term whose
+main functor symbol is {\tt ret/n}, where n is the number of variables
+in the query. The main subfields of this term are set to the variable
+values for the first answer. (These fields can be accessed by the
+functions {\tt p2c\_*}, or the functions {\tt xsb\_var\_*}, described
+in Section \ref{c2p_p2p_p2c} below.)  Thus there are two places the
+answers are returned. Register 2 is used to make it easier to access
+them.  Register 2 may also be set before the call to {\tt xsb\_query()}
+(using {\tt xsb\_make\_vars(int)} and {\tt xsb\_set\_var\_*()}) in
+which case any variables set to values in the {\tt ret/n} term will be
+so bound in the call to the goal.
 
-\ouritem{int xsb\_get\_last\_answer\_string(char *buff, int bufflen,
-int *anslen)} \index{\texttt{xsb\_get\_last\_answer\_string\_b}} 
+\ouritem{int xsb\_get\_last\_answer\_string(th\_context *th, char
+  *buff, int bufflen, int *anslen)}
+\index{\texttt{xsb\_get\_last\_answer\_string\_b}}
 %
-This function is used only when a call to {\tt
-  xsb\_query\_string\_string\_b()} or to {\tt xsb\_next\_string\_b()}
-returns {\tt XSB\_OVERFLOW}, indicating that the buffer provided was
-not big enough to contain the computed answer.  In that case the user
-may allocate a larger buffer and then call this routine to retrieve
-the answer (that had been saved.)  Only one answer is saved, so this
-routine must called immediately after the failing call in order to get
-the right answer.  The parameters are the same as the 2nd through 4th
-parameters of {\tt xsb\_query\_string\_string\_b()}.
+This function is used only when a call {\tt
+  xsb\_query\_string\_string\_b()} or {\tt xsb\_next\_string\_b()} to
+{\tt th} returns {\tt XSB\_OVERFLOW}, indicating that the buffer
+provided was not big enough to contain the computed answer.  In that
+case the user may allocate a larger buffer and then call this routine
+to retrieve the answer (that had been saved.)  Only one answer is
+saved per thread, so this routine must called immediately after the
+failing call in order to get the right answer.  The parameters are the
+same as the 2nd through 4th parameters of {\tt
+  xsb\_query\_string\_string\_b()}.
 
 {\bf Return Codes}  
 \bi
@@ -629,15 +843,17 @@ parameters of {\tt xsb\_query\_string\_string\_b()}.
   too long for the buffer.  
 \ei
 
-\ouritem{int xsb\_query\_string(char *query)}
-\index{\texttt{xsb\_query\_string}} This function passes a query to
-XSB .  The query is a string consisting of a term that can be read by
-the XSB reader.  The string must be terminated with a period (.).  Any
-previous query must have already been closed.  In all other respects,
-xsb\_query\_string is similar to xsb\_query, except the only way to
-retrieve answers is through Register 2.  The ability to create the
-return structure and bind variables in it is particularly useful in
-this function.
+\ouritem{int xsb\_query\_string(th\_context *th,char *query)}
+\index{\texttt{xsb\_query\_string}} 
+%
+This function passes a query to the XSB thread {\tt th}.  The query is
+a string consisting of a term that can be read by the XSB reader.  The
+string must be terminated with a period (.).  Any previous query must
+have already been closed.  In all other respects, {\tt
+  xsb\_query\_string()} is similar to {\tt xsb\_query()}, except the
+only way to retrieve answers is through Register 2.  The ability to
+create the return structure and bind variables in it is particularly
+useful in this function.
 
 {\bf Return Codes}  
 \bi
@@ -650,15 +866,15 @@ this function.
 %
 \ei
 
-\ouritem{int xsb\_next\_string(VarString *buff,char *sep)}
+\ouritem{int xsb\_next\_string(th\_context *th,VarString *buff,char *sep)}
 \index{\texttt{xsb\_next\_string}}  
 %
 This routine is called after {\tt xsb\_query\_string()} to retrieve a
-subsequent answer in {\tt buff}.  If a query is not open, an error is
-returned.  This function treats answers just as {\tt
+subsequent answer in {\tt buff}.  If a query is not open in {\tt th},
+an error is returned.  This function treats answers just as {\tt
   xsb\_query\_string\_string()}.  For example after the example call
 \begin{verbatim}
-rc = xsb_query_string_string("append(X,Y,[a,b,c]).",buff,";");
+rc = xsb_query_string_string(th,"append(X,Y,[a,b,c]).",buff,";");
 \end{verbatim}
 which returns with buff set to 
 \begin{verbatim}
@@ -666,7 +882,7 @@ which returns with buff set to
 \end{verbatim}
 Then a call:
 \begin{verbatim}
-rc = xsb_next_string(buff,";");
+rc = xsb_next_string(th,buff,";");
 \end{verbatim}
 returns with buff set to 
 \begin{verbatim}
@@ -685,12 +901,12 @@ the second answer to the indicated query.
 %
 \ei
 
-\ouritem{int xsb\_next\_string\_b(char *buff, int bufflen, int
+\ouritem{int xsb\_next\_string\_b(th\_context *th, char *buff, int bufflen, int
 *anslen, char *sep)} \index{\texttt{xsb\_next\_string}} 
 %
 This function is a variant of {\tt xsb\_next\_string()} that does not
-use the {\tt VarString} type.  Its parameters are the same as the 2nd
-through 5th parameters of {\tt xsb\_query\_string\_string\_b()}.  The
+use the {\tt VarString} type.  Its parameters are the same as the 3rd
+through 6th parameters of {\tt xsb\_query\_string\_string\_b()}.  The
 next answer to the current query is returned in \verb|buff|, if there
 is enough space.  If the buffer would overflow, this routine returns
 {\tt XSB\_OVERFLOW}, and the answer can be retrieved by providing a
@@ -699,19 +915,19 @@ In any case, the length of the answer is returned in \verb|anslen|.
 
 {\bf Return Codes}  
 \bi
-\item {\tt XSB\_SUCCESS} indicates that the query succeeded.
+\item {\tt XSB\_SUCCESS} indicates that backtracking into the query succeeded.
 %
-\item {\tt XSB\_FAILURE} indicates that the query failed.
+\item {\tt XSB\_FAILURE} indicates that backtracking into the query failed.
 %
 \item {\tt XSB\_ERROR} indicates that an error occurred while further
   executing the query.
 
-\item {\tt XSB\_OVERFLOW} indicates that the query succeeded, but the
+\item {\tt XSB\_OVERFLOW} indicates that backtracking into the query succeeded, but the
   new answer was too long for the buffer.
 %
 \ei
 
-\ouritem{int xsb\_next()} \index{\texttt{xsb\_next}} 
+\ouritem{int xsb\_next(th\_context *)} \index{\texttt{xsb\_next}} 
 %
 This function is called after {\tt xsb\_query()} (which must have
 returned {\tt XSB\_SUCCESS}) to retrieve more answers.  It rebinds the
@@ -720,16 +936,17 @@ fields of the {\tt ret/n} answer term in register 2 to reflect the
 next answer to the query.  Its return codes are as with {\tt
   xsb\_next\_string()}.
 
-\ouritem{int xsb\_close\_query()} \index{\texttt{xsb\_close\_query}}
+\ouritem{int xsb\_close\_query(th\_context *th)} \index{\texttt{xsb\_close\_query}}
 %
-This function allows a user to close a query before all its answers
-have been retrieved.  Since XSB\ is (usually) a tuple-at-a-time
-system, answers that are not retrieved are not computed so that
-closing a query may save time.  If a given query $Q$ is open, it is an
-error to open a new query without closing $Q$ either by retrieving all
-its answers or explicitly calling {\tt xsb\_close\_query()} to close
-$Q$.  Calling {\tt xsb\_close\_query()} when no query is open gives an
-error message, but otherwise has no effect.
+This function allows a user to close a query to {\tt th} before all
+its answers have been retrieved.  Since XSB is (usually) a
+tuple-at-a-time system, answers that are not retrieved are not
+computed so that closing a query may save time.  If a given query $Q$
+is open, it is an error to open a new query without closing $Q$ either
+by retrieving all its answers or explicitly calling {\tt
+  xsb\_close\_query()} to close $Q$.  Calling {\tt
+  xsb\_close\_query()} when no query is open gives an error message,
+but otherwise has no effect.
 
 {\bf Return Codes}  
 \bi
@@ -741,26 +958,66 @@ error message, but otherwise has no effect.
   called while no query is open.
 \ei
 \ei
-
 \end{description}
 
 \subsection{Obtaining Information about Errors}
 
 \begin{description}
-\ouritem{char * xsb\_get\_error\_type()} \index{xsb\_get\_error\_type}
+\ouritem{char * xsb\_get\_init\_error\_message()} \index{xsb\_get\_error\_message}
 %
-If a function returned {\tt XSB\_ERROR} this query provides a pointer
-to a string representing the type of the error.  Types are as in
-Volume 1 {\em Exception Handling} with the addition of {\tt
-  init\_error} for errors that occur during initialization of XSB, and
-{\tt unrecoverable\_error} for errors from which no recovery is
-possible for XSB (e.g. inability to allocate new memory).
+Used to find error messages if {\tt xsb\_init\_string()} or {\tt
+  xsb\_init()} returns {\tt XSB\_ERROR}.  Any errors returned by these
+functions have type {\tt init\_error}.  Because inialization errors
+occur before XSB or any of its threads have been initialized,
+initialization errors do not require a thread context for input.
 
-\ouritem{char *  xsb\_get\_error\_message()}\index{xsb\_get\_error\_message}
+\ouritem{char * xsb\_get\_error\_type(th\_context *th)} \index{xsb\_get\_error\_type}
 %
-If a function returned {\tt XSB\_ERROR} this query provides a pointer
-to a string representing a message associated with the error.
-Messages are as in Volume 1 {\em Exception Handling}.
+If a function called for {\tt th} returned {\tt XSB\_ERROR} this
+function provides a pointer to a string representing the type of the
+error.  Types are as in Volume 1 {\em Exception Handling} with the
+addition of {\tt init\_error} for errors that occur during
+initialization of XSB, and {\tt unrecoverable\_error} for errors from
+which no recovery is possible for XSB (e.g. inability to allocate new
+memory).  
+
+\ouritem{char *xsb\_get\_error\_message(th\_context *th)}\index{xsb\_get\_error\_message}
+%
+If a function called for {\tt th} returned {\tt XSB\_ERROR} this
+function provides a pointer to a string representing a message
+associated with the error.  For errors raised within the Prolog
+portion of execution, messages are as in Volume 1 {\em Exception
+  Handling}.
+
+\end{description}
+
+\subsection{Thread Management from Calling Programs}
+
+\begin{description}
+
+\ouritem{int xsb\_ccall\_thread\_create(th\_contex *callingThread, th\_context **newThrea)}
+\index{xsb\_ccall\_thread\_create}
+%
+Causes {\tt callingThread} to create a thread pointed to by {\tt
+  newThread}.  {\tt newThread} runs exactly the same interpreter loop
+as {\tt callingThread} and all API functions will work on {\tt
+  newThread} just as on the main thread, or any other thread.  {\tt
+  newThread} will be non-detached, and will inherit any private
+parameters from {\tt callingThread}.  To create a thread to do a
+specific task or a detached thread, rather than one that executes a
+command loop, simply call the query {\tt thread\_create/[2,3]} from
+one of the query functions.
+
+\ouritem{th\_context *xsb\_get\_main\_thread()}\index{xsb\_get\_main\_thread}
+%
+Returns a pointer to the thread context of XSB's main thread.  If XSB
+has not been initialized or has been closed this function returns 0.
+
+\ouritem{xsb\_tid xsb\_thread\_id\_to\_context(th\_context *th)}
+\index{xsb\_thread\_id\_to\_context}
+
+\ouritem{th\_context *xsb\_thread\_context\_to\_id(xsb\_tid id)}
+\index{xsb\_thread\_context\_to\_id}
 
 \end{description}
 
