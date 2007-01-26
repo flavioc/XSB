@@ -295,11 +295,13 @@ real_search_module(ModName, Dir, Base, Ext) :-
 /*	Changed to use the C loader (code_load/3) that automatically	*/
 /*	imports all exported predicates of the module into the current	*/
 /*	working module when its third argument is 1.  - Kostis (4/3/93)	*/
+/* The loader returns int 4 when a foreign file has been loaded.  
 /*======================================================================*/
 
 load_exec(File, ModName) :-	
+
 	code_load(File, Init, 1),	% use the changed C loader.
-	% jf: for Windows a valid file pointer might be negative
+	% jf: for Windows a valid segment pointer might be negative
 	( Init =\= 0			% load succeeded
 	; Init =:= 0, file_write0(STDERR, 'Error in loading file '), 
 		file_write0(STDERR, File),
@@ -311,7 +313,8 @@ load_exec(File, ModName) :-
 	;   file_write0(STDMSG, '['), file_write0(STDMSG, ModName),
 	    file_write0(STDMSG, ' loaded]'), file_nl(STDMSG)
 	),
-	(Init > 4			% Prolog byte code loaded
+	(Init =\= 4			% Prolog byte code loaded
+                                        % Do not check Init > 4 as valid segment pointers may be negative.
 	 ->     % push/pop_loaded_file: added by MK, 7/16/01
 		push_loaded_file(File,Rand),
 	        co_code_call(Init, true, 2), % call '_$main'
