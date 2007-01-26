@@ -267,6 +267,12 @@ subset([H|T],List) :-
         subset(T,List).
 
 %---
+% subseq
+subseq([],[],[]).
+subseq([H|T],[H|S],C) :- subseq(T,S,C).
+subseq([H|T],S,[H|C]) :- subseq(T,S,C).
+
+%---
 % A not so naive reverse
 reverse(L, R) :- reverse_acc(L, [], R).
 
