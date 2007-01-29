@@ -363,8 +363,8 @@ TSTNptr subsumptive_answer_search(CTXTdeclc SubProdSF sf, int nTerms,
   if ( IsNULL(subg_ans_root_ptr(sf)) )
     subg_ans_root_ptr(sf) = newAnswerSet(CTXTc nTerms, (TSTNptr) sf);
   root = (TSTNptr)subg_ans_root_ptr(sf);
-  tstn = subsumptive_tst_search( CTXTc root, nTerms, answerVector,
-				 ProducerSubsumesSubgoals(sf), isNew );
+  tstn = subsumptive_tst_search( CTXTc root, nTerms, answerVector, 
+				 (xsbBool)ProducerSubsumesSubgoals(sf), isNew );
   if ( *isNew )
     NumSubOps_AnswerInsert++;
   return tstn;
