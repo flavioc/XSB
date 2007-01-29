@@ -36,45 +36,67 @@ extern char *strip_names_from_path(char*, int);
 
 /* context.h is necessary for the type of a thread context. */
 #include "context.h"
+#include "thread_xsb.h"
 
 int main(int argc, char *argv[])
 { 
 
+#ifdef MULTI_THREAD
+  static th_context *p_th, *r_th;
+#endif
+
   char init_string[MAXPATHLEN];
-  int rc;
-  XSB_StrDefine(return_string);
+  int rcp, rcr;
+  XSB_StrDefine(p_return_string);
+  XSB_StrDefine(r_return_string);
 
   /* xsb_init_string relies on the calling program to pass the absolute or relative
      path name of the XSB installation directory. We assume that the current
      program is sitting in the directory ../examples/c_calling_xsb/
      To get installation directory, we strip 3 file names from the path. */
-
+ 
   strcpy(init_string,strip_names_from_path(xsb_executable_full_path(argv[0]),3));
 
   if (xsb_init_string(init_string)) {
-    fprintf(stderr,"%s initializing XSB: %s\n",xsb_get_init_error_type(),
-	    xsb_get_init_error_message());
+    fprintf(stderr,"%s initializing XSB: %s\n",xsb_get_error_type(xsb_get_main_thread()),
+	    xsb_get_error_message(xsb_get_main_thread()));
     exit(XSB_ERROR);
   }
 
-#ifdef MULTI_THREAD
-  th_context *th = xsb_get_main_thread();
-#endif
+  p_th = xsb_get_main_thread();
 
   /* Create command to consult a file: edb.P, and send it. */
-  if (xsb_command_string(CTXTc "consult('edb.P').") == XSB_ERROR)
-    fprintf(stderr,"++Error consulting edb.P: %s/%s\n",xsb_get_error_type(CTXT),
-	    xsb_get_error_message(CTXT));
+  if (xsb_command_string(p_th, "consult('edb.P').") == XSB_ERROR)
+    fprintf(stderr,"++Error consulting edb.P: %s/%s\n",xsb_get_error_type(p_th),
+	    xsb_get_error_message(p_th));
 
-  rc = xsb_query_string_string(CTXTc "p(X,Y,Z).",&return_string,"|");
-  while (rc == XSB_SUCCESS) {
-    printf("Return %s\n",(return_string.string));
-    rc = xsb_next_string(CTXTc &return_string,"|");
+  xsb_ccall_thread_create(p_th,&r_th);
+
+ if (xsb_command_string(r_th,"import thread_exit/0 from thread.") == XSB_ERROR)
+    fprintf(stderr,"++Error exiting r: %s/%s\n",xsb_get_error_type(r_th),
+	    xsb_get_error_message(r_th));
+
+  rcp = xsb_query_string_string(p_th,"p(X,Y,Z).",&p_return_string,"|");
+  rcr = xsb_query_string_string(r_th,"r(X,Y,Z).",&r_return_string,"|");
+
+  while (rcp == XSB_SUCCESS && rcr == XSB_SUCCESS) {
+
+    printf("Return p %s\n",(p_return_string.string));
+    rcp = xsb_next_string(p_th, &p_return_string,"|");
+
+    printf("Return r %s\n",(r_return_string.string));
+    rcr = xsb_next_string(r_th, &r_return_string,"|");
   }
 
- if (rc == XSB_ERROR) 
-   fprintf(stderr,"++Query Error: %s/%s\n",xsb_get_error_type(CTXT),xsb_get_error_message(CTXT));
+ if (rcp == XSB_ERROR) 
+   fprintf(stderr,"++Query Error p: %s/%s\n",xsb_get_error_type(p_th),xsb_get_error_message(p_th));
+ if (rcr == XSB_ERROR) 
+   fprintf(stderr,"++Query Error r: %s/%s\n",xsb_get_error_type(r_th),xsb_get_error_message(r_th));
 
-  xsb_close(CTXT);      /* Close connection */
+ if (xsb_command_string(r_th,"thread_exit.") == XSB_ERROR)
+    fprintf(stderr,"++Error exiting: %s/%s\n",xsb_get_error_type(r_th),
+	    xsb_get_error_message(r_th));
+
+ xsb_close(xsb_get_main_thread());      /* Close connection */
   return(0);
 }

@@ -1,19 +1,28 @@
 
-This directory contains examples that show how to call XSB from C.
+This directory contains various examples that show how to call XSB
+from C.
 
-cvarstring.c shows how to use the VarString interface, 
-cfixedstring.c shows how to use the fixed string interface
-cmain.c cmain2.c show how to use the register interface
+cvarstring.c shows how to use the VarString interface, cfixedstring.c
+shows how to use the fixed string interface.   These two files can be
+compiled and run under both the single- and multi-threaded engines.
 
-See the manual for details on these files.
+cvarstring_thread.c shows how to use the VarString interface with
+multiple threads.  It can be compiled and run only under the
+multi-threaded engine.
+
+cmain.c cmain2.c show how to use the register interface.  These files
+were written for the single-threaded engine, and have not been updated
+for the multi-threaded engine.
+
+See the manual for details on commands used in these files.
 
 The easiest way to create them as executables is to consult './make.P'
-(for cvarstring.c and cfixedstring.c) or './makealt.P' (for cmain.c
-and cmain2.c) from the configuration of XSB you wish to use (for
-instance, using the sequential or multi-threaded engine).  ./make.P
-should automatically obtain the proper directory names, compilation
-flags and load flags to compile with your architecture and
-configuration.
+(for cvarstring.c and cfixedstring.c), ./make_thread.P (for
+cvarstring_thread.c) or './makealt.P' (for cmain.c and cmain2.c) from
+the configuration of XSB you wish to use (for instance, using the
+sequential or multi-threaded engine).  Each of these make files should
+automatically obtain the proper directory names, compilation flags and
+load flags to compile with your architecture and configuration.
 
 Alternately, you can adapt ./Makefile to make these files.  ./Makefile
 was written for Linux, so it will probably require some tweaking to
