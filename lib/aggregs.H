@@ -29,6 +29,7 @@
 :- export 
 	bagReduce/4,
 	bagReduce/5,
+   bagReduce1/5,
 	bagPO/3,
 	bagPO/4,
 	bagPO1/3,
