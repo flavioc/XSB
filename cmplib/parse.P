@@ -443,6 +443,18 @@ parse_clause(Cl, _VariableList, module(SymTab,_DcList,ClList,QrList),ModName) :-
 		transform_slash_to_skel(PAs,Skels),
 		parse_comma_list_dyn(Skels, SymTab),
 		parse_query(dynamic(Skels), QrList, SymTab)
+	; Cl = (':-'(use_incremental_dynamic(PAs))) ->
+		transform_slash_to_skel(PAs,Skels),
+		parse_comma_list_dyn(Skels, SymTab),
+		parse_query(use_incremental_dynamic(Skels), QrList, SymTab)
+	; Cl = (':-'(use_incremental_tabling(PAs))) ->
+		transform_slash_to_skel(PAs,Skels),
+		parse_comma_list(Skels,SymTab,[tabled],(use_incremental_tabling)),
+		parse_query(use_incremental_tabling(Skels), QrList, SymTab)
+	; Cl = (':-'(use_opaque_tabling(PAs))) ->
+		transform_slash_to_skel(PAs,Skels),
+		parse_comma_list(Skels,SymTab,[tabled],(use_opaque_tabling)),
+		parse_query(use_opaque_tabling(Skels), QrList, SymTab)
 	; Cl = (':-'(initialization(Q))) ->	parse_query(Q,QrList,SymTab)
 	; Cl = (':-'(PDirective)) ->	transform_directive(PDirective,Directive),
 	                                (%% parse_spec_directive(Directive,
@@ -629,8 +641,10 @@ parse_directive(thread_private(PredCList),SymTab,_ModName) :-
 parse_directive(table(PredCList),SymTab,_ModName) :-
 	parse_comma_list(PredCList,SymTab,[tabled],(table)).
 parse_directive(use_subsumptive_tabling(PredCList),SymTab,_ModName) :-
+	parse_comma_list(PredCList,SymTab,[tabled],(table)),  % implies tabled
 	parse_comma_list(PredCList,SymTab,[(use_subsumptive_tabling)],(use_subsumptive_tabling)).
 parse_directive(use_variant_tabling(PredCList),SymTab,_ModName) :-
+	parse_comma_list(PredCList,SymTab,[tabled],(table)),  % implies tabled
 	parse_comma_list(PredCList,SymTab,[(use_variant_tabling)],(use_variant_tabling)).
 parse_directive(Directive,_SymTab,_ModName) :-
 	option(ciao_directives),
