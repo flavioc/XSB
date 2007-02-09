@@ -2,9 +2,9 @@
 
   All table predicates that have to be maintained incrementally should
   be declared as incr. 
-  e.g. in reach.P the predicate reach/2 is declared as tabled and incr.
+  e.g. in reach.P the predicate reach/2 is declared as tabled and incr_table-d.
 
-  :- incr reach/2.
+  :- incr_table reach/2.
   
   Also fact predicates that are changed (inserted or deleted) needs to
   be declared as incrdynamic. e.g. edge/2 is declared incrdynamic. The fact
@@ -48,13 +48,13 @@ X = 3;
 X = 2;
 
 no
-| ?- import incr_assert/1, incr_retract/1, update/1 from increval.
+| ?- import incr_assert_inval/1, incr_retract_inval/1, incr_table_update/1 from increval.
 
 yes
-| ?- incr_assert(edge(4,5)).
+| ?- incr_assert_inval(edge(4,5)).
 
 yes
-| ?- update(X).
+| ?- incr_table_update(X).
 
 X = [reach(1,_h192),reach(3,_h204),reach(2,_h216),reach(4,_h228),reach(5,_h240)]
 
@@ -70,10 +70,10 @@ X = 3;
 X = 2;
 
 no
-| ?- incr_retract(edge(4,5)).
+| ?- incr_retract_inval(edge(4,5)).
 
 yes
-| ?- update(X).
+| ?- incr_table_update(X).
 
 X = [reach(1,_h194),reach(3,_h206),reach(2,_h218),reach(4,_h230)]
 
