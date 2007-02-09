@@ -21,8 +21,6 @@
 ** $Id$
 ** 
 */
-
-
 #define GET_AFFECTED_CALLS      1
 #define INCR_STATISTICS         2
 #define GET_CALL_GRAPH          3
@@ -35,3 +33,4 @@
 #define IMM_DEPEND_LIST         10
 #define IMM_DEPENDENT_ON_LIST   11
 #define IS_AFFECTED             12
+#define PSC_GET_INCR            13

@@ -76,10 +76,9 @@ struct psc_rec {
   byte env;			/* 0&0x3 - visible; 1&0x3 - local; 2&0x3 - unloaded;  */
   				/* 0xc0, 2 bits for spy */
 				/* 0x20 - shared, 0x10 for determined; 0x8 - tabled */
-    byte incr;                    /* 1 is incremental; 0 is non-incremental, 2: opaque, incremental evaluation */
+  byte incr;                    /* 1 is incremental; 0 is non-incremental, 2: opaque, incremental evaluation */
   byte entry_type;		/* see psc_defs.h */
   byte arity; 
-  //byte unused;  //incremental evaluation
   char *nameptr;
   struct psc_rec *data;      /* psc of module, if pred; otw data */
   byte *ep;                     /* entry point (initted to next word) */
@@ -113,8 +112,8 @@ typedef struct psc_pair *Pair;
 #define  get_shared(psc)	((psc)->env & T_SHARED)
 #define  get_private(psc)	((psc)->env & ~T_SHARED & T_SHARED_DET)
 #define  get_tabled(psc)	((psc)->env & T_TABLED)
-#define  get_incr(psc)          ((psc)->incr==1)  /* incremental */
-#define  get_opaque(psc)        ((psc)->incr==2)  /* incremental */
+#define  get_incr(psc)          (((psc)->incr & 3) == 1)  /* incremental */
+#define  get_opaque(psc)        (((psc)->incr & 3) == 2)  /* incremental */
 #define  get_subsumptive_tabled(psc)	((psc)->env & T_TABLED_VAR & ~T_TABLED_SUB)
 #define  get_variant_tabled(psc)	((psc)->env & T_TABLED_SUB & ~T_TABLED_VAR)
 #define  get_arity(psc)		((psc)->arity)
@@ -127,7 +126,7 @@ typedef struct psc_pair *Pair;
 #define  set_spy(psc, spy)	(psc)->env = ((psc)->env & ~T_SPY) | spy
 #define  set_shared(psc, shar)	(psc)->env = ((psc)->env & ~T_SHARED) | shar
 #define  set_tabled(psc, tab)	(psc)->env = ((psc)->env & ~T_TABLED) | tab
-#define  set_incr(psc,val)      ((psc)->incr = val)  /* incremental */
+#define  set_incr(psc,val)      ((psc)->incr = ((psc)->incr & 3) | val)  /* incremental */
 #define  set_arity(psc, ari)	((psc)->arity = ari)
 #define  set_length(psc, len)	((psc)->length = len)
 #define  set_ep(psc, val)	((psc)->ep = val)

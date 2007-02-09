@@ -423,7 +423,7 @@ void alt_print_cp(CTXTdecl)
   alt_printnum++ ;
   where = fopen(buf,"w") ;
   if (! where)
-    { xsb_dbgmsg((LOG_GC, "could not open CP%d", printnum));
+    { xsb_dbgmsg((LOG_GC, "could not open CP%d", alt_printnum));
       return;
     }
 
@@ -754,6 +754,21 @@ char *stringSubgoalFrameType(byte type) {
   }
 }
 
+/*
+ * Tries to make the interface more robust by cleaning-up any extra user
+ * input supplied to a prompt.  Place a call to this function after any
+ * input scan which doesn't take the whole input line (ie. which isn't a
+ * `scanf("%s", &array);').
+ */
+static void skip_to_nl(void)
+{
+  char c;
+
+  do {
+    c = getchar();
+  } while (c != '\n');
+}
+
 void print_tables(void)
 {
   int i = 0;
@@ -900,21 +915,6 @@ void print_help(void)
 }
 
 /*--------------------------------------------------------------------------*/
-
-/*
- * Tries to make the interface more robust by cleaning-up any extra user
- * input supplied to a prompt.  Place a call to this function after any
- * input scan which doesn't take the whole input line (ie. which isn't a
- * `scanf("%s", &array);').
- */
-static void skip_to_nl(void)
-{
-  char c;
-
-  do {
-    c = getchar();
-  } while (c != '\n');
-}
 
 /*----- For table debugging --------------------------------------------*/ 
 

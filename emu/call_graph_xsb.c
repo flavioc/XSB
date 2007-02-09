@@ -540,6 +540,7 @@ int in_reg2_list(CTXTdeclc Psc psc) {
 
   list = reg[2];
   XSB_Deref(list);
+  if (isnil(list)) return TRUE; /* if filter is empty, return all */
   while (!isnil(list)) {
     term = cell(clref_val(list));
     XSB_Deref(term);
@@ -553,6 +554,11 @@ int in_reg2_list(CTXTdeclc Psc psc) {
   return FALSE;
 }
 
+/* reg 1: tag for this call
+   reg 2: filter list of goals to keep (keep all if [])
+   reg 3: returned list of changed goals
+   reg 4: used as temp (in case of heap expansion)
+ */
 int create_changed_call_list(CTXTdecl){
   callnodeptr call1;
   VariantSF subgoal;
@@ -571,7 +577,7 @@ int create_changed_call_list(CTXTdecl){
     if (in_reg2_list(CTXTc psc)) {
       count++;
       arity = get_arity(psc);
-      check_glstack_overflow(4,pcreg,2+arity*200); // don't know how much for build_subgoal_args...
+      check_glstack_overflow(4,pcreg,2+arity*200); // guess for build_subgoal_args...
       oldhreg = hreg-2;
       if(arity>0){
 	sreg = hreg;

@@ -2016,7 +2016,9 @@ byte * trie_get_calls(CTXTdecl)
    if ((psc_ptr = term_psc(call_term)) != NULL) {
      tip_ptr = get_tip(CTXTc psc_ptr);
      if (tip_ptr == NULL) {
-       xsb_abort("get_calls/3 called with non-tabled predicate");
+       if (!get_incr(psc_ptr)) 
+	 xsb_abort("get_calls/3 called with non-tabled predicate: %s/%d",
+		   get_name(psc_ptr),get_arity(psc_ptr));
        return (byte *)&fail_inst;
      }
      call_trie_root = TIF_CallTrie(tip_ptr);

@@ -223,7 +223,7 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
       addcalledge(producer_sf->callnode,parent_table_sf->callnode);  
     }else{
       if(!get_opaque(TIF_PSC(CallInfo_TableInfo(callInfo))))
-	xsb_abort("Predicate %s/%d not defined incr\n", get_name(TIF_PSC(CallInfo_TableInfo(callInfo))),get_arity(TIF_PSC(CallInfo_TableInfo(callInfo))));       
+	xsb_abort("Predicate %s/%d not declared incr_table\n", get_name(TIF_PSC(CallInfo_TableInfo(callInfo))),get_arity(TIF_PSC(CallInfo_TableInfo(callInfo))));       
     }
   }
 
@@ -338,7 +338,7 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
 	addcalledge(producer_sf->callnode,parent_table_sf->callnode);  
       }else{
 	if(!get_opaque(TIF_PSC(CallInfo_TableInfo(callInfo))))
-	  xsb_abort("Predicate %s/%d not defined incr\n", get_name(TIF_PSC(CallInfo_TableInfo(callInfo))),get_arity(TIF_PSC(CallInfo_TableInfo(callInfo))));       
+	  xsb_abort("Predicate %s/%d not declared incr_table\n", get_name(TIF_PSC(CallInfo_TableInfo(callInfo))),get_arity(TIF_PSC(CallInfo_TableInfo(callInfo))));       
       }
     }
     /* for incremental evaluation - end */
@@ -676,7 +676,7 @@ XSB_Start_Instr(tabletrysinglenoanswers,_tabletrysinglenoanswers)
        addcalledge(c,sf->callnode);  
      }
    }else
-     xsb_abort("Predicate %s/%d should be defined incr\n", get_name(TIF_PSC(subg_tif_ptr(sf))),get_arity(TIF_PSC(subg_tif_ptr(sf))));      
+     xsb_abort("Predicate %s/%d not declared incr_table\n", get_name(TIF_PSC(subg_tif_ptr(sf))),get_arity(TIF_PSC(subg_tif_ptr(sf))));      
   }
 
 

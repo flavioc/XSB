@@ -2061,7 +2061,7 @@ int abolish_table_call(CTXTdeclc VariantSF subgoal) {
     Psc psc;
     int action;
 
-    subgoal = (VariantSF) ptoc_int(CTXTc 1);
+    //    subgoal = (VariantSF) ptoc_int(CTXTc 1);
     tif = subg_tif_ptr(subgoal);
     psc = TIF_PSC(tif);
 
