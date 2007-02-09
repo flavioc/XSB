@@ -289,8 +289,8 @@ dynamic_1(Spec) :-
 	 ->	psc_set_ep(Psc,4), % set to addr of fail instruction
 		psc_set_type(Psc,T_DYNA)
 	 ;	true
-	),
-	convert_to_dyna(Head,_,'dynamic/1'),!.
+	).
+%%	convert_to_dyna(Head,_,'dynamic/1'),!.
 dynamic_1(Spec) :- 
 	type_error(comma_list_callable,Spec,dynamic,1).
 

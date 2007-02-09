@@ -46,7 +46,8 @@
         halt/0,		
 	(hilog)/1,	hilog_arg/3,	hilog_functor/3,
 	(index)/3,	(index)/2,      (table)/1,
-        (incr)/1, (incrdynamic)/1, (opaque)/1, /* incremental */
+        (use_incremental_tabling)/1,    (use_incremental_dynamic)/1, 
+        (use_opaque_tabling)/1, /* incremental */
 	integer/1,	is/2,		is_attv/1,	is_list/1,
 	is_most_general_term/1,		
 	listing/0,	listing/1,	name/2,		nl/0, nl/1,

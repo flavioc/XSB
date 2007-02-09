@@ -293,9 +293,9 @@ standard_symbol(sys_exit, 1, shell).
 
 standard_symbol(tab, 1, standard).
 standard_symbol((table), 1, standard).
-standard_symbol((incr), 1, standard).  /* for incremental evaluation */
-standard_symbol((incrdynamic), 1, standard).  /* for incremental evaluation */
-standard_symbol((opaque), 1, standard).  /* for incremental evaluation */
+standard_symbol((use_incremental_tabling), 1, standard).  /* for incremental evaluation */
+standard_symbol((use_incremental_dynamic), 1, standard).  /* for incremental evaluation */
+standard_symbol((use_opaque_tabling), 1, standard).  /* for incremental evaluation */
 standard_symbol(table_prop, 3, tables).
 standard_symbol(table_prop, 4, tables).
 standard_symbol(tbagof, 3, setof).

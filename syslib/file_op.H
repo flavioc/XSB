@@ -34,10 +34,11 @@
 
 :- import default_assert_size/1 from config.
 :- import integer/1, functor/3, atom/1 from standard.
-   :- import convert_to_dyna/3, /*incremental evaluation */ assert/1, assertai/2, retract/1, retractall/1, (dynamic)/1 from assert.
+:- import /*incremental evaluation */ assert/1, assertai/2, retract/1, retractall/1, (dynamic)/1 from assert.
 
 :- import conpsc/2, psc_type/2, term_new/2, psc_insert/4, 
-	term_psc/2, psc_set_tabled/2 from machine.
+	term_psc/2, psc_set_tabled/2, psc_set_ep/2, 
+	psc_set_type/2 from machine.
 :- import instantiation_error/2 from error_handler.
 
  :- import psc_set_incr/2 from increval. /* incremental */

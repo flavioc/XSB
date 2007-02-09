@@ -846,28 +846,35 @@ table(Ps) :-
 /* for incremental evaluation: add incremental tabled declaration */
 
 
-incr(Ps) :- 
-	check_nonvar(Ps,(incr)/1,1),
+use_incremental_tabling((P,Ps)) :- !,
+	use_incremental_tabling(P),
+	use_incremental_tabling(Ps).
+use_incremental_tabling(Ps) :- 
+	check_nonvar(Ps,(use_incremental_tabling)/1,1),
 	(Ps=P/S
-	 ->	nonvar(P),nonvar(S);
-		true	
+	 ->	nonvar(P),nonvar(S)
+	 ;	true	
 	),
 	add_incr_table(Ps).
 
-incrdynamic(Ps) :- 
-	check_nonvar(Ps,(incrdynamic)/1,1),
+use_incremental_dynamic((P,Ps)) :- !,
+	use_incremental_dynamic(P),
+	use_incremental_dynamic(Ps).
+use_incremental_dynamic(Ps) :- 
+	check_nonvar(Ps,(use_incremental_dynamic)/1,1),
 	(Ps=P/S
-	 ->	nonvar(P),nonvar(S);
-		true	
+	 ->	nonvar(P),nonvar(S)
+	 ;	true	
 	),
 	add_incr_dynamic(Ps).
 
 
-opaque(Ps) :- 
-	check_nonvar(Ps,(opaque)/1,1),
+use_opaque_tabling((P,Ps)) :- !,use_opaque_tabling(P),use_opaque_tabling(Ps).
+use_opaque_tabling(Ps) :- 
+	check_nonvar(Ps,(use_opaque_tabling)/1,1),
 	(Ps=P/S
-	 ->	nonvar(P),nonvar(S);
-		true	
+	 ->	nonvar(P),nonvar(S)
+	 ;	true	
 	),
 	add_opaque(Ps).
 

@@ -750,16 +750,6 @@ proc_directive(parallel(_X)) :- !,
 	warning('parallel directive ignored.').
 proc_directive(table(Pred)) :- !,
 	proc_table(Pred).
-
-
-/* incremental */
-proc_directive(incr(Pred)) :- !,
-	proc_incr(Pred).
-proc_directive(incrdynamic(Pred)) :- !,
-	proc_incrdynamic(Pred).
-proc_directive(opaque(Pred)) :- !,
-	proc_opaque(Pred).
-
 proc_directive(table_all) :- !, 
 	warning('table_all directive ignored. Use table/n explicitly').
 proc_directive(thread_shared(Preds)) :- !,
@@ -800,27 +790,6 @@ proc_table((Pred, Preds)) :- !,
 	proc_table(Preds).
 proc_table(Pname/Arity) :- 
 	table(Pname/Arity).
-
-/* incremental */
-proc_incr((Pred, Preds)) :- !,
-	proc_incr(Pred),
-	proc_incr(Preds).
-proc_incr(Pname/Arity) :- 
-	incr(Pname/Arity).
-
-proc_incrdynamic((Pred, Preds)) :- !,
-	proc_incrdynamic(Pred),
-	proc_incrdynamic(Preds).
-proc_incrdynamic(Pname/Arity) :- 
-	incrdynamic(Pname/Arity).
-
-proc_opaque((Pred, Preds)) :- !,
-	proc_opaque(Pred),
-	proc_opaque(Preds).
-proc_opaque(Pname/Arity) :- 
-	opaque(Pname/Arity).
-
-
 
 thread_shared((Pred, Preds)) :- !,
 	thread_shared(Pred),

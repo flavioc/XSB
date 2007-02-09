@@ -79,8 +79,7 @@
 	  seeing/1, see/1, seen/0, call/1, goal_cut_trans/3,
 	  expand_term/2, read/1, op/3, (table)/1, (index)/3, (index)/2,
 	  (=..)/2, writeln/1, write_canonical/1, tell/1,
-          told/0, telling/1, functor/3, cputime/1,
-          (incr)/1, (incrdynamic)/1,(opaque)/1 /* incremental */
+          told/0, telling/1, functor/3, cputime/1
      from standard.
 :- import str_cat/3, str_sub/2 from string.
 :- import xsb_configuration/2 from xsb_configuration.
