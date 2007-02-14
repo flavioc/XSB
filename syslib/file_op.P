@@ -132,6 +132,7 @@ deactivate_op(T, S) :-
 '_$op1'(1050,fy,(import)).	% Not in the Prolog standard
 '_$op1'(1050,fy,(document_import)).	% Not in the Prolog standard
 '_$op1'(1050,xfx,(from)).	% Not in the Prolog standard
+'_$op1'(1050,xfx,(as)).		% Not in the Prolog standard
 '_$op1'(1050,xfy,'->').
 '_$op1'(1000,xfy,',').
 '_$op1'(900,fy,not).		% Not in the Prolog standard
