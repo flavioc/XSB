@@ -295,11 +295,9 @@ relation.
 
 \subsection{Shorthand for Complex Table and Dynamic Declarations}
 
-(This is a proposal and not as yet implemented...)
-
 We have a number of variations to how predicates can be tabled in XSB:
 subsumptive, variant, incremental, opaque, dynamic, private, and
-shared.  And we have variations in forms of dynamic predicates:
+shared.  We also have variations in forms of dynamic predicates:
 tabled, incremental, private, and shared.  We extend the {\tt table}
 and {\tt dynamic} compiler directives with modifiers that allow users
 to indicate the kind of tabled or dynamic predicate they want.  For
@@ -315,20 +313,21 @@ example,
 The first example above would be equivalent to:
 
 \begin{verbatim}
-:- table p/3.
-:- use_subsumptive_tabling p/3.
-:- thread_private p/3.
+:- table p/3,s/1.
+:- use_subsumptive_tabling p/3,s/1.
+:- thread_private p/3,s/1.
 
 \end{verbatim}
 
 The modifiers available for the {\tt table} compiler directive are
-{\tt subsumptive}, {\tt variant}, {\tt dynamic}, {\tt incremental},
-{\tt opaque}, {\tt private}, and {\tt shared}.  Not all combinations
-are allowed.  The modifiers available for the {\tt dynamic} compiler
-directive are {\tt tabled}, {\tt incremental}, {\tt private}, {\tt
-shared}.  Again not all combinations are legal.  We note that
+{\tt subsumptive}, {\tt variant}, {\tt (dynamic)} or {\tt dyn}, {\tt
+incremental}, {\tt opaque}, {\tt private}, and {\tt shared}.  Not all
+combinations are meaningful.  The modifiers available for the {\tt
+dynamic} compiler directive are {\tt tabled}, {\tt incremental}, {\tt
+private}, {\tt shared}.  Again not all combinations are meaningful.
+We note that
 \begin{verbatim}
-:- table p/3 as dynamic.
+:- table p/3 as dyn.
 and
 :- dynamic p/3 as tabled.
 \end{verbatim}
