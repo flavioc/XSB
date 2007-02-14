@@ -439,11 +439,8 @@ parse_clause(Cl, module(SymTab,_DcList,ClList,QrList),ModName) :-
 	(Cl = (':-'(H, B))
 	 ->	parse_preddef_chk_dyn(H, B, ClList, QrList, SymTab)
 	 ; Cl = (':-'(Directive))
-	 ->	(transform_directive(Directive,PDirective),
-		 parse_directive(PDirective,QrList,SymTab,ModName)
-		 ->	true
-		 ;	parse_query(Directive, QrList,SymTab)
-		)
+	 ->	transform_directive(Directive,PDirective),
+		parse_directive(PDirective,QrList,SymTab,ModName)
 	 ; Cl = ('?-'(Q))
 	 ->	parse_query(Q,QrList,SymTab)
 	 ;	parse_preddef_chk_dyn(Cl, true, ClList, QrList, SymTab)
@@ -453,6 +450,8 @@ parse_clause(Cl, module(SymTab,_DcList,ClList,QrList),ModName) :-
 /* transform_directive(+Directive, -TDirective)                  	*/
 /*======================================================================*/
 
+transform_directive(table(as(Args,Options)),table(as(TArgs,Options))) :- !,
+	transform_slash_to_skel(Args,TArgs).
 transform_directive(table(Args),table(TArgs)) :- !,
 	transform_slash_to_skel(Args,TArgs).
 transform_directive(index(Args),index(TArgs)) :- !,
@@ -463,13 +462,15 @@ transform_directive(index(Spec,X),index(Skel,X)) :- !,
 transform_directive(index(Spec,X,Y),index(Skel,X,Y)) :- !,
 %	mpa_to_skel(Spec,Skel,transform_directive/2), !.
 	mpa_to_skel(Spec,Skel).
-transform_directive(dynamic(Args),dynamic(TArgs)) :-
+transform_directive(dynamic(as(Args,Options)),dynamic(as(TArgs,Options))) :- !,
 	transform_slash_to_skel(Args,TArgs).
-transform_directive(use_incremental_dynamic(Args),use_incremental_dynamic(TArgs)) :-
+transform_directive(dynamic(Args),dynamic(TArgs)) :- !,
 	transform_slash_to_skel(Args,TArgs).
-transform_directive(use_incremental_tabling(Args),use_incremental_tabling(TArgs)) :-
+transform_directive(use_incremental_dynamic(Args),use_incremental_dynamic(TArgs)) :- !,
 	transform_slash_to_skel(Args,TArgs).
-transform_directive(use_opaque_tabling(Args),use_opaque_tabling(TArgs)) :-
+transform_directive(use_incremental_tabling(Args),use_incremental_tabling(TArgs)) :- !,
+	transform_slash_to_skel(Args,TArgs).
+transform_directive(use_opaque_tabling(Args),use_opaque_tabling(TArgs)) :- !,
 	transform_slash_to_skel(Args,TArgs).
 transform_directive(Directive,Directive).
 
@@ -529,16 +530,16 @@ parse_directive(local(X), _QrList,SymTab,_ModName) :- !,
 	parse_comma_list(X, SymTab, [(local)], (local)).
 parse_directive(index(X), _QrList,SymTab,_ModName) :- !,	% for compiled-code indexing
 	parse_index(X, SymTab).
-parse_directive(index(Ps,Arg,Size), _QrList,SymTab,_ModName) :- !,
+parse_directive(index(Ps,Arg,Size), QrList,SymTab,_ModName) :- !,
 	(Ps = Pname/Arity -> true ; functor(Ps,Pname,Arity)),
 	sym_insert(Pname,Arity,[index(Arg)],SymTab,_),
 	index(Ps,Arg,Size), 
-	fail.
-parse_directive(index(Ps,Arg), _QrList,SymTab,_ModName) :- !,
+	parse_query(index(Ps,Arg,Size), QrList,SymTab).
+parse_directive(index(Ps,Arg), QrList,SymTab,_ModName) :- !,
 	(Ps = Pname/Arity -> true ; functor(Ps,Pname,Arity)),
 	sym_insert(Pname,Arity,[index(Arg)],SymTab,_),
 	index(Ps,Arg),
-	fail.
+	parse_query(index(Ps,Arg), QrList,SymTab).
 parse_directive(mode(X), _QrList,SymTab,_ModName) :- !,
 	parse_mode(X, SymTab).
 parse_directive(parallel(X), _QrList,SymTab,_ModName) :- !,
@@ -550,12 +551,12 @@ parse_directive(suppl_table, _QrList,_SymTab,_ModName) :- !,	% This is quite dir
 parse_directive(suppl_table(EDB_Dep), _QrList,_SymTab,_ModName) :- !,	% This is quite dirty!
 	conset('EDB Dep #', EDB_Dep),
 	conset(suppl_table, 1).
-parse_directive(op(P,T,S), _QrList,_SymTab,_ModName) :- !,
+parse_directive(op(P,T,S), QrList,SymTab,_ModName) :- !,
 	op(P,T,S), 
-	fail.
-parse_directive(hilog(X), _QrList,_SymTab,_ModName) :- !,
+	parse_query(op(P,T,S),QrList,SymTab).
+parse_directive(hilog(X), QrList,SymTab,_ModName) :- !,
 	add_hilog_symbol(X), 
-	fail.
+	parse_query(hilog(X),QrList,SymTab).
 parse_directive(ti(X), _QrList,SymTab,_ModName) :- !,
 	parse_ti(X, (ti), SymTab).
 parse_directive(ti_all, _QrList,_SymTab,_ModName) :- !,
@@ -581,6 +582,9 @@ parse_directive(thread_shared(PredCList),_QrList,SymTab,_ModName) :- !,
 	parse_comma_list(PredCList,SymTab,[(thread_shared)],(thread_shared)).
 parse_directive(thread_private(PredCList),_QrList,SymTab,_ModName) :- !,
 	parse_comma_list(PredCList,SymTab,[(thread_private)],(thread_private)).
+parse_directive(table(as(PredCList,Options)),QrList,SymTab,ModName) :- !,
+	parse_comma_list(PredCList,SymTab,[tabled],(table)),
+	parse_table_options(Options,PredCList,QrList,SymTab,ModName).
 parse_directive(table(PredCList),_QrList,SymTab,_ModName) :- !,
 	parse_comma_list(PredCList,SymTab,[tabled],(table)).
 parse_directive(use_subsumptive_tabling(PredCList),_QrList,SymTab,_ModName) :- !,
@@ -589,6 +593,11 @@ parse_directive(use_subsumptive_tabling(PredCList),_QrList,SymTab,_ModName) :- !
 parse_directive(use_variant_tabling(PredCList),_QrList,SymTab,_ModName) :- !,
 	parse_comma_list(PredCList,SymTab,[tabled],(table)),  % implies tabled
 	parse_comma_list(PredCList,SymTab,[(use_variant_tabling)],(use_variant_tabling)).
+parse_directive(dynamic(as(PredCList,Options)),QrList,SymTab,ModName) :- !,
+	parse_comma_list_dyn(PredCList,SymTab),
+	copy_term(PredCList,PredCListVars),
+	parse_query(dynamic(PredCList), QrList, SymTab),
+	parse_dynamic_options(Options,PredCListVars,QrList,SymTab,ModName).
 parse_directive(dynamic(Skels),QrList,SymTab,_ModName) :- !,
 	parse_comma_list_dyn(Skels, SymTab),
 	parse_query(dynamic(Skels), QrList, SymTab).
@@ -604,8 +613,49 @@ parse_directive(use_opaque_tabling(Skels),QrList,SymTab,_ModName) :- !,
 parse_directive(initialization(Q),QrList,SymTab,_ModName) :- !,
 	parse_query(Q,QrList,SymTab).
 parse_directive(Directive,_QrList,_SymTab,_ModName) :-
-	option(ciao_directives), !,
-	included_ciao_directive(Directive).
+	option(ciao_directives),
+	included_ciao_directive(Directive), % ignore ciao directives
+	!.
+parse_directive(Query,QrList,SymTab,_ModName) :-  %% else its a query
+	parse_query(Query, QrList, SymTab).
+
+
+parse_table_options((Option,Options),PredCList,QrList,SymTab,ModName) :- !,
+	parse_table_options(Option,PredCList,QrList,SymTab,ModName),
+	parse_table_options(Options,PredCList,QrList,SymTab,ModName).
+parse_table_options(dynamic,PredCList,QrList,SymTab,ModName) :- !,
+	parse_directive(dynamic(PredCList),QrList,SymTab,ModName).
+parse_table_options(dyn,PredCList,QrList,SymTab,ModName) :- !,
+	parse_directive(dynamic(PredCList),QrList,SymTab,ModName).
+parse_table_options(subsumptive,PredCList,QrList,SymTab,ModName) :- !,
+	parse_directive(use_subsumptive_tabling(PredCList),QrList,SymTab,ModName).
+parse_table_options(variant,PredCList,QrList,SymTab,ModName) :- !,
+	parse_directive(use_variant_tabling(PredCList),QrList,SymTab,ModName).
+parse_table_options(incremental,PredCList,QrList,SymTab,ModName) :- !,
+	parse_directive(use_incremental_tabling(PredCList),QrList,SymTab,ModName).
+parse_table_options(opaque,PredCList,QrList,SymTab,ModName) :- !,
+	parse_directive(use_opaque_tabling(PredCList),QrList,SymTab,ModName).
+parse_table_options(private,PredCList,QrList,SymTab,ModName) :- !,
+	parse_directive(thread_private(PredCList),QrList,SymTab,ModName).
+parse_table_options(shared,PredCList,QrList,SymTab,ModName) :- !,
+	parse_directive(thread_shared(PredCList),QrList,SymTab,ModName).
+parse_table_options(Option,_PredCList,_QrList,_SymTab,_ModName) :- !,
+	error((Option,' is an illegal option for the table directive')).
+
+parse_dynamic_options((Option,Options),PredCList,QrList,SymTab,ModName) :- !,
+	parse_dynamic_options(Option,PredCList,QrList,SymTab,ModName),
+	parse_dynamic_options(Options,PredCList,QrList,SymTab,ModName).
+parse_dynamic_options(tabled,PredCList,QrList,SymTab,ModName) :- !,
+	parse_directive(table(PredCList),QrList,SymTab,ModName).
+parse_dynamic_options(incremental,PredCList,QrList,SymTab,ModName) :- !,
+	parse_directive(use_incremental_dynamic(PredCList),QrList,SymTab,ModName).
+parse_dynamic_options(private,PredCList,QrList,SymTab,ModName) :- !,
+	parse_directive(thread_private(PredCList),QrList,SymTab,ModName).
+parse_dynamic_options(shared,PredCList,QrList,SymTab,ModName) :- !,
+	parse_directive(thread_shared(PredCList),QrList,SymTab,ModName).
+parse_dynamic_options(Option,_PredCList,_QrList,_SymTab,_ModName) :- !,
+	error((Option,' is an illegal option for the dynamic directive')).
+
 
 /*======================================================================*/
 /* process regular clauses --- collect them in List			*/
