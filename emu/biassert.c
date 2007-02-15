@@ -134,6 +134,8 @@ PrRef dynpredep_to_prref(CTXTdeclc void *pred_ep) {
   else return pred_ep;
 }
 
+/*  #define LOG_ASSERT 0 */
+
 /* #ifdef DEBUG */
 /* I hope we can trust any decent C compiler to compile away
    empty switch statements like the ones below, if DEBUG is not set
@@ -143,15 +145,15 @@ static inline void dbgen_printinst3(Opcode, Arg1, Arg2, Arg3)
 {
   switch (Opcode) {
   case getlist_tvar_tvar:
-    xsb_dbgmsg((LOG_ASSERT,"getlist_tvar_tvar - %ld %ld %ld",
+    xsb_dbgmsg((LOG_ASSERT,"getlist_tvar_tvar - %ld %ld %ld\n",
 	       (long)Arg1,(long)Arg2,(long)Arg3)); break;
   case switchonbound:
-    xsb_dbgmsg((LOG_ASSERT,"switchonbound - %ld %ld %ld",
+    xsb_dbgmsg((LOG_ASSERT,"switchonbound - %ld %ld %ld\n",
 	       (long)Arg1,(long)Arg2,(long)Arg3)); break;
   case switchon3bound:
-    xsb_dbgmsg((LOG_ASSERT,"switchon3bound - %ld %ld %ld",
+    xsb_dbgmsg((LOG_ASSERT,"switchon3bound - %ld %ld %ld\n",
 	       (long)Arg1,(long)Arg2,(long)Arg3)); break;
-  default: xsb_dbgmsg((LOG_ASSERT,"Unknown instruction in assert %d",
+  default: xsb_dbgmsg((LOG_ASSERT,"Unknown instruction in assert %d\n",
 		      Opcode));
   }
 }
@@ -918,10 +920,18 @@ static void db_genaput(CTXTdeclc prolog_term T0, int Argno,
     dbgen_instB_pvv(puttvar, Rt, Rt);
     inst_queue_push(inst_queue, movreg, Rt, Argno);
   } else if ((Rt = is_frozen_var(CTXTc T0,NVAR,Reg,&occs))) {
-    if (occs == FIRST_OCC_OF_MORE || occs == ONLY_OCC) {
-      dbgen_instB_pvv(puttvar, Rt, Rt);
-    } 
-    inst_queue_push(inst_queue, movreg, Rt, Argno);
+    //    if (occs == FIRST_OCC_OF_MORE || occs == ONLY_OCC) {
+    //      dbgen_instB_pvv(puttvar, Rt, Rt);
+    //    } 
+    //    inst_queue_push(inst_queue, movreg, Rt, Argno);
+    if (occs == ONLY_OCC) {
+      inst_queue_push(inst_queue, puttvar, Argno, Argno);
+    } else {
+      if (occs == FIRST_OCC_OF_MORE) {
+	dbgen_instB_pvv(puttvar, Rt, Rt);
+      }
+      inst_queue_push(inst_queue, movreg, Rt, Argno);
+    }
   } else if (isinteger(T0)) {
     inst_queue_push(inst_queue, putnumcon, int_val(T0), Argno);
   } else if (isfloat(T0)) {
@@ -991,7 +1001,9 @@ static void db_genmvs(CTXTdeclc struct instruction_q *inst_queue, RegStat Reg)
     inst_queue_rem(inst_queue, &Opcode, &Arg, &T0);	/* T0: target reg */
     switch (Opcode) {
     case puttvar:  
-      dbgen_instB_pvv(Opcode, Arg, T0);
+      if (target_is_not_source(inst_queue,T0))
+	{dbgen_instB_pvv(Opcode, Arg, T0);}
+      else inst_queue_push(inst_queue, Opcode, Arg, T0);
       break;
     case putnil:
       if (target_is_not_source(inst_queue,T0))
