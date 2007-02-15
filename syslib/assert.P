@@ -172,8 +172,20 @@ assert(Clause, AZL, Index1,ErrPred) :-
 		NArity is Arity+1, % to hold the cut addr
 		convert_to_dyna(Head,Prref,ErrPred),
 		cut_transform(Clause,Nclause),
-		code_to_buff(Nclause,AZL),
-		AZ is AZL /\ 1,
+		(integer(AZL)
+		 ->	AZLI = AZL
+		 ;	(memberchk(large_clause,AZL)
+			 ->	AZLLC = 2
+			 ;	AZLLC = 0
+			),
+			(memberchk(beginning,AZL)
+			 ->	AZLF = 1
+			 ;	AZLF = 0
+			),
+			AZLI is AZLLC + AZLF
+		),
+		code_to_buff(Nclause,AZLI),
+		AZ is AZLI /\ 1,
 		assert_buff_to_clref(Head,NArity,Prref,AZ,Index,HashTabSize)
 	).
 

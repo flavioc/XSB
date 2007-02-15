@@ -35,7 +35,7 @@
 :- export t_assert/2.
 :- export exchange_definitions/2.
 
-:- import append/3 from basics.
+:- import append/3, memberchk/2 from basics.
 
 :- import default_assert_size/1 from config.
 
