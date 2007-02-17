@@ -436,7 +436,7 @@ void call_conv xsb_resource_error_nopred(CTXTdeclc char *resource,char *message)
   //  bld_string(tptr,string_find(message,1));
   bld_string(tptr,MsgBuf.string);
   tptr++;
-  bld_copy(tptr,(Integer)nil_string);
+  bld_copy(tptr,makenil);
   tptr++;
   bld_functor(tptr, pair_psc(insert("resource_error",1,
 				    (Psc)flags[CURRENT_MODULE],&isnew)));
