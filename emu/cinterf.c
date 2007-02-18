@@ -70,6 +70,26 @@ char *p_charlist_to_c_string(CTXTdeclc prolog_term term, VarString *buf,
 void c_string_to_p_charlist(CTXTdeclc char *name, prolog_term list,
 			    int regs_to_protect, char *in_func, char *where);
 
+#ifndef HAVE_SNPRINTF
+#include <stdarg.h>
+int snprintf(char *buffer, size_t count, const char *fmt, ...) {
+       va_list ap;
+       int ret;
+
+       va_start(ap, fmt);
+       ret = _vsnprintf(buffer, count-1, fmt, ap);
+
+       if (ret < 0) {
+               buffer[count-1] = '\0';
+       }
+
+       va_end(ap);
+       return ret;
+}
+#endif
+
+
+
 /*======================================================================*/
 /* Low level C interface						*/
 /*======================================================================*/
