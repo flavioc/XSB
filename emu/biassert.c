@@ -134,7 +134,7 @@ PrRef dynpredep_to_prref(CTXTdeclc void *pred_ep) {
   else return pred_ep;
 }
 
-/*  #define LOG_ASSERT 0 */
+/* #define LOG_ASSERT 0 */
 
 /* #ifdef DEBUG */
 /* I hope we can trust any decent C compiler to compile away
@@ -148,10 +148,10 @@ static inline void dbgen_printinst3(Opcode, Arg1, Arg2, Arg3)
     xsb_dbgmsg((LOG_ASSERT,"getlist_tvar_tvar - %ld %ld %ld\n",
 	       (long)Arg1,(long)Arg2,(long)Arg3)); break;
   case switchonbound:
-    xsb_dbgmsg((LOG_ASSERT,"switchonbound - %ld %ld %ld\n",
+    xsb_dbgmsg((LOG_ASSERT,"switchonbound - %ld %lx %ld\n",
 	       (long)Arg1,(long)Arg2,(long)Arg3)); break;
   case switchon3bound:
-    xsb_dbgmsg((LOG_ASSERT,"switchon3bound - %ld %ld %ld\n",
+    xsb_dbgmsg((LOG_ASSERT,"switchon3bound - %ld %lx %ld\n",
 	       (long)Arg1,(long)Arg2,(long)Arg3)); break;
   default: xsb_dbgmsg((LOG_ASSERT,"Unknown instruction in assert %d\n",
 		      Opcode));
@@ -162,77 +162,77 @@ static inline void dbgen_printinst(Opcode, Arg1, Arg2)
 {
   switch (Opcode) {
   case getpvar:	/* PRV */
-    xsb_dbgmsg((LOG_ASSERT,"getpvar - %d %d\n", Arg1, Arg2)); break;
+    xsb_dbgmsg((LOG_ASSERT,"getpvar - R%d V%d\n", Arg1, Arg2)); break;
   case getpval:	/* PRV */
-    xsb_dbgmsg((LOG_ASSERT,"getpval - %d %d\n", Arg1, Arg2)); break;
+    xsb_dbgmsg((LOG_ASSERT,"getpval - R%d V%d\n", Arg1, Arg2)); break;
   case putpvar:	/* PRV */
-    xsb_dbgmsg((LOG_ASSERT,"putpvar - %d %d\n", Arg1, Arg2)); break;
+    xsb_dbgmsg((LOG_ASSERT,"putpvar - R%d V%d\n", Arg1, Arg2)); break;
   case putpval:	/* PRV */
-    xsb_dbgmsg((LOG_ASSERT,"putpval - %d %d\n", Arg1, Arg2)); break;
+    xsb_dbgmsg((LOG_ASSERT,"putpval - R%d V%d\n", Arg1, Arg2)); break;
   case gettval:	/* PRR */
-    xsb_dbgmsg((LOG_ASSERT,"gettval - %d %d\n", Arg1, Arg2)); break;
+    xsb_dbgmsg((LOG_ASSERT,"gettval - R%d R%d\n", Arg1, Arg2)); break;
   case puttvar:	/* PRR */
-    xsb_dbgmsg((LOG_ASSERT,"puttvar - %d %d\n", Arg1, Arg2)); break;
+    xsb_dbgmsg((LOG_ASSERT,"puttvar - R%d R%d\n", Arg1, Arg2)); break;
   case movreg:	/* PRR */
-    xsb_dbgmsg((LOG_ASSERT,"movreg - %d %d\n", Arg1, Arg2)); break;
+    xsb_dbgmsg((LOG_ASSERT,"movreg - R%d R%d\n", Arg1, Arg2)); break;
   case unipvar:	/* PPV */
-    xsb_dbgmsg((LOG_ASSERT,"unipvar - - %d\n", Arg1)); break;
+    xsb_dbgmsg((LOG_ASSERT,"unipvar - - V%d\n", Arg1)); break;
   case unipval:	/* PPV */
-    xsb_dbgmsg((LOG_ASSERT,"unipval - - %d\n", Arg1)); break;
+    xsb_dbgmsg((LOG_ASSERT,"unipval - - V%d\n", Arg1)); break;
   case bldpvar:	/* PPV */
-    xsb_dbgmsg((LOG_ASSERT,"bldpvar - - %d\n", Arg1)); break;
+    xsb_dbgmsg((LOG_ASSERT,"bldpvar - - V%d\n", Arg1)); break;
   case bldpval:	/* PPV */
-    xsb_dbgmsg((LOG_ASSERT,"bldpval - - %d\n", Arg1)); break;
+    xsb_dbgmsg((LOG_ASSERT,"bldpval - - V%d\n", Arg1)); break;
   case unitvar:	/* PPR */
-    xsb_dbgmsg((LOG_ASSERT,"unitvar - - %d\n", Arg1)); break;
+    xsb_dbgmsg((LOG_ASSERT,"unitvar - - R%d\n", Arg1)); break;
   case uniavar:	/* PPR */
     xsb_dbgmsg((LOG_ASSERT,"uniavar - - \n")); break;
   case unitval:	/* PPR */
-    xsb_dbgmsg((LOG_ASSERT,"unitval - - %d\n", Arg1)); break;
+    xsb_dbgmsg((LOG_ASSERT,"unitval - - R%d\n", Arg1)); break;
   case bldtvar:	/* PPR */
-    xsb_dbgmsg((LOG_ASSERT,"bldtvar - - %d\n", Arg1)); break;
+    xsb_dbgmsg((LOG_ASSERT,"bldtvar - - R%d\n", Arg1)); break;
   case bldavar:	/* PPR */
     xsb_dbgmsg((LOG_ASSERT,"bldavar - - \n")); break;
   case bldtval:	/* PPR */
-    xsb_dbgmsg((LOG_ASSERT,"bldtval - - %d\n", Arg1)); break;
+    xsb_dbgmsg((LOG_ASSERT,"bldtval - - R%d\n", Arg1)); break;
   case putlist:	/* PPR */
-    xsb_dbgmsg((LOG_ASSERT,"putlist - - %d\n", Arg1)); break;
+    xsb_dbgmsg((LOG_ASSERT,"putlist - - R%d\n", Arg1)); break;
   case getlist:	/* PPR */
-    xsb_dbgmsg((LOG_ASSERT,"getlist - - %d\n", Arg1)); break;
+    xsb_dbgmsg((LOG_ASSERT,"getlist - - R%d\n", Arg1)); break;
   case getattv: /* PPR */
-    xsb_dbgmsg((LOG_ASSERT,"getattv - - %d\n", Arg1)); break;
+    xsb_dbgmsg((LOG_ASSERT,"getattv - - R%d\n", Arg1)); break;
   case putattv: /* PPR */
-    xsb_dbgmsg((LOG_ASSERT,"putattv - - %d\n", Arg1)); break;
+    xsb_dbgmsg((LOG_ASSERT,"putattv - - R%d\n", Arg1)); break;
   case putcon:
-    xsb_dbgmsg((LOG_ASSERT,"putcon - - %d 0x%x\n", Arg1, Arg2)); break;
+    xsb_dbgmsg((LOG_ASSERT,"putcon - - R%d %s\n", Arg1, Arg2)); break;
   case putnumcon:
-    xsb_dbgmsg((LOG_ASSERT,"putnumcon - - %d 0x%x\n", Arg1, int_val(Arg2))); break;
+    xsb_dbgmsg((LOG_ASSERT,"putnumcon - - R%d %d\n", Arg1, Arg2)); break;
   case putfloat:
-    xsb_dbgmsg((LOG_ASSERT,"putfloat - - %d %f (0x%x)\n", Arg1, ofloat_val(Arg2), ofloat_val(Arg2))); break;
+    xsb_dbgmsg((LOG_ASSERT,"putfloat - - R%d %f (0x%x)\n", Arg1, ofloat_val(Arg2), ofloat_val(Arg2))); break;
   case getcon:
-    xsb_dbgmsg((LOG_ASSERT,"getcon - - %d 0x%x\n", Arg1, Arg2)); break;
+    xsb_dbgmsg((LOG_ASSERT,"getcon - - R%d %s\n", Arg1, Arg2)); break;
   case getnumcon:
-    xsb_dbgmsg((LOG_ASSERT,"getnumcon - - %d 0x%x\n", Arg1, int_val(Arg2))); break;
+    xsb_dbgmsg((LOG_ASSERT,"getnumcon - - R%d %d\n", Arg1, Arg2)); break;
   case getfloat:
-    xsb_dbgmsg((LOG_ASSERT,"getfloat - - %d %f (0x%x)\n", Arg1, ofloat_val(Arg2), ofloat_val(Arg2))); break;
+    xsb_dbgmsg((LOG_ASSERT,"getfloat - - R%d %f\n", Arg1, ofloat_val(Arg2))); break;
   case putstr:
-    xsb_dbgmsg((LOG_ASSERT,"putstr - - %d %s (0x%x)\n", Arg1, get_name((Psc)Arg2), Arg2)); break;
+    xsb_dbgmsg((LOG_ASSERT,"putstr - - R%d %s/%d\n", Arg1, get_name((Psc)Arg2), get_arity((Psc)Arg2))); break;
   case getstr:
-    xsb_dbgmsg((LOG_ASSERT,"getstr - - %d 0x%x\n", Arg1, Arg2)); break;
+    xsb_dbgmsg((LOG_ASSERT,"getstr - - R%d %s/%d\n", Arg1, get_name((Psc)Arg2), get_arity((Psc)Arg2))); break;
   case putnil:
-    xsb_dbgmsg((LOG_ASSERT,"putnil - - %d\n", Arg1)); break;
+    xsb_dbgmsg((LOG_ASSERT,"putnil - - R%d\n", Arg1)); break;
   case getnil:
     xsb_dbgmsg((LOG_ASSERT,"getnil - - %d\n", Arg1)); break;
   case bldcon:
-    xsb_dbgmsg((LOG_ASSERT,"bldcon - - - %s (0x%x)\n", Arg1, Arg1)); break;
+    xsb_dbgmsg((LOG_ASSERT,"bldcon - - - %s\n", Arg1)); break;
   case bldnumcon:
     xsb_dbgmsg((LOG_ASSERT,"bldnumcon - - - %d\n", Arg1)); break;
   case bldfloat:
     xsb_dbgmsg((LOG_ASSERT,"bldfloat - - - %f\n", ofloat_val(Arg1))); break;
   case unicon:
-    xsb_dbgmsg((LOG_ASSERT,"unicon - - - 0x%x\n", Arg1)); break;
+    xsb_dbgmsg((LOG_ASSERT,"unicon - - - %s\n", Arg1)); break;
   case uninumcon:
-    xsb_dbgmsg((LOG_ASSERT,"uninumcon - - - 0x%x\n", int_val(Arg1))); break;
+    xsb_dbgmsg((LOG_ASSERT,"uninumcon - - - %d\n", Arg1)); break;
   case unifloat:
     xsb_dbgmsg((LOG_ASSERT,"unifloat - - - %f\n", ofloat_val(Arg1))); break;
   case xsb_execute:
@@ -250,7 +250,7 @@ static inline void dbgen_printinst(Opcode, Arg1, Arg2)
   case jumptbreg:
     xsb_dbgmsg((LOG_ASSERT,"jumptbreg - - %d 0x%x\n", Arg1, Arg2)); break;
   case test_heap:
-    xsb_dbgmsg((LOG_ASSERT,"test_heap - - %d %d\n", Arg1, int_val(Arg2))); break;
+    xsb_dbgmsg((LOG_ASSERT,"test_heap - - %d %d\n", Arg1, Arg2)); break;
   case dyntrustmeelsefail:
     xsb_dbgmsg((LOG_ASSERT,"dyntrustmeelsefail - - %d 0x%x\n", Arg1, Arg2)); break;
   case dynretrymeelse:
@@ -355,7 +355,7 @@ static inline void dbgen_printinst(Opcode, Arg1, Arg2)
 
 #define dbgen_instB3_tv(Opcode,Arg1,Arg2,Arg3) {							\
   dbgen_printinst3_macro(Opcode, Arg1, Arg2, Arg3);							\
-  if (*asrtBuff->Loc >= asrtBuff->BLim) asrtBuff->Buff = buff_realloc(CTXT);				\
+  if (*asrtBuff->Loc >= asrtBuff->BLim) buff_realloc(CTXT);						\
   write_byte(asrtBuff->Buff,asrtBuff->Loc,Opcode); write_byte(asrtBuff->Buff,asrtBuff->Loc,Arg1);	\
   write_byte(asrtBuff->Buff,asrtBuff->Loc,Arg2); write_byte(asrtBuff->Buff,asrtBuff->Loc,Arg3);		\
   pad64bits(asrtBuff->Loc);										\
@@ -363,7 +363,7 @@ static inline void dbgen_printinst(Opcode, Arg1, Arg2)
 
 #define dbgen_instB3_sob(Opcode,Arg1,Arg2,Arg3) {							\
   dbgen_printinst3_macro(Opcode, Arg1, Arg2, Arg3);							\
-  if (*asrtBuff->Loc >= asrtBuff->BLim) asrtBuff->Buff = buff_realloc(CTXT);				\
+  if (*asrtBuff->Loc >= asrtBuff->BLim) buff_realloc(CTXT);						\
   write_byte(asrtBuff->Buff,asrtBuff->Loc,Opcode); write_byte(asrtBuff->Buff,asrtBuff->Loc,Arg1>>16);	\
   write_byte(asrtBuff->Buff,asrtBuff->Loc,Arg1>>8); write_byte(asrtBuff->Buff,asrtBuff->Loc,Arg1);	\
   pad64bits(asrtBuff->Loc);										\
@@ -372,7 +372,7 @@ static inline void dbgen_printinst(Opcode, Arg1, Arg2)
 
 #define dbgen_instB_pvv(Opcode,Arg1,Arg2) {							\
   dbgen_printinst_macro(Opcode, Arg1, (Integer)Arg2);						\
-  if (*asrtBuff->Loc >= asrtBuff->BLim) asrtBuff->Buff = buff_realloc(CTXT);			\
+  if (*asrtBuff->Loc >= asrtBuff->BLim) buff_realloc(CTXT);					\
   write_byte(asrtBuff->Buff,asrtBuff->Loc,Opcode); write_byte(asrtBuff->Buff,asrtBuff->Loc,0);	\
   write_byte(asrtBuff->Buff,asrtBuff->Loc,Arg1); write_byte(asrtBuff->Buff,asrtBuff->Loc,Arg2);	\
   pad64bits(asrtBuff->Loc);									\
@@ -380,7 +380,7 @@ static inline void dbgen_printinst(Opcode, Arg1, Arg2)
 
 #define dbgen_instB_ppv(Opcode,Arg1) {								\
   dbgen_printinst_macro(Opcode, Arg1,0);							\
-  if (*asrtBuff->Loc >= asrtBuff->BLim) asrtBuff->Buff = buff_realloc(CTXT);			\
+  if (*asrtBuff->Loc >= asrtBuff->BLim) buff_realloc(CTXT);					\
   write_byte(asrtBuff->Buff,asrtBuff->Loc,Opcode); write_byte(asrtBuff->Buff,asrtBuff->Loc,0);	\
   write_byte(asrtBuff->Buff,asrtBuff->Loc,0); write_byte(asrtBuff->Buff,asrtBuff->Loc,Arg1);	\
   pad64bits(asrtBuff->Loc);									\
@@ -388,7 +388,7 @@ static inline void dbgen_printinst(Opcode, Arg1, Arg2)
 
 #define dbgen_instB_ppvw(Opcode,Arg1,Arg2) {							\
   dbgen_printinst_macro(Opcode, Arg1, (Integer)Arg2);						\
-  if (*asrtBuff->Loc >= asrtBuff->BLim) asrtBuff->Buff = buff_realloc(CTXT);			\
+  if (*asrtBuff->Loc >= asrtBuff->BLim) buff_realloc(CTXT);					\
   write_byte(asrtBuff->Buff,asrtBuff->Loc,Opcode); write_byte(asrtBuff->Buff,asrtBuff->Loc,0);	\
   write_byte(asrtBuff->Buff,asrtBuff->Loc,0); write_byte(asrtBuff->Buff,asrtBuff->Loc,Arg1);	\
   pad64bits(asrtBuff->Loc);									\
@@ -397,7 +397,7 @@ static inline void dbgen_printinst(Opcode, Arg1, Arg2)
 
 #define dbgen_instB_pppw(Opcode,Arg1) {									\
     dbgen_printinst_macro(Opcode, (Integer)Arg1, 0);							\
-    if (*asrtBuff->Loc >= asrtBuff->BLim) asrtBuff->Buff = buff_realloc(CTXT);				\
+    if (*asrtBuff->Loc >= asrtBuff->BLim) buff_realloc(CTXT);						\
     write_byte(asrtBuff->Buff,asrtBuff->Loc,Opcode); write_byte(asrtBuff->Buff,asrtBuff->Loc,0);	\
     write_byte(asrtBuff->Buff,asrtBuff->Loc,0); write_byte(asrtBuff->Buff,asrtBuff->Loc,0);		\
     pad64bits(asrtBuff->Loc);										\
@@ -406,7 +406,7 @@ static inline void dbgen_printinst(Opcode, Arg1, Arg2)
 
 #define dbgen_instB_ppp(Opcode) {								\
   dbgen_printinst_macro(Opcode,0,0);								\
-  if (*asrtBuff->Loc >= asrtBuff->BLim) asrtBuff->Buff = buff_realloc(CTXT);			\
+  if (*asrtBuff->Loc >= asrtBuff->BLim) buff_realloc(CTXT);					\
   write_byte(asrtBuff->Buff,asrtBuff->Loc,Opcode); write_byte(asrtBuff->Buff,asrtBuff->Loc,0);	\
   write_byte(asrtBuff->Buff,asrtBuff->Loc,0); write_byte(asrtBuff->Buff,asrtBuff->Loc,0);	\
   pad64bits(asrtBuff->Loc);									\
@@ -665,15 +665,15 @@ struct asrtBuff_t asrtBuffB = {NULL,512,NULL,0,0};
 struct asrtBuff_t *asrtBuff = &asrtBuffB;
 #endif
 
-static char *buff_realloc(CTXTdecl)
+static void buff_realloc(CTXTdecl)
 {
   /*  xsb_dbgmsg((LOG_DEBUG,"Enter buff_realloc(%d) %X", asrtBuff->Buff_size,asrtBuff->Buff)); */
   asrtBuff->Buff_size = asrtBuff->Buff_size + asrtBuff->Buff_size;
   if (asrtBuff->Buff == NULL) asrtBuff->Buff = (char *)mem_alloc(asrtBuff->Buff_size,ASSERT_SPACE);
   else asrtBuff->Buff = (char *)mem_realloc(asrtBuff->Buff,(asrtBuff->Buff_size / 2),asrtBuff->Buff_size,ASSERT_SPACE);
-  asrtBuff->BLim = asrtBuff->Buff_size-16;
+  asrtBuff->BLim = asrtBuff->Buff_size-32;
   /*  xsb_dbgmsg((LOG_DEBUG,"Leave buff_realloc(%d) %X", asrtBuff->Buff_size,asrtBuff->Buff)); */
-  return(asrtBuff->Buff);
+  return;
 }
 
 /*----------------------------------------------------------------------*/
@@ -1384,6 +1384,7 @@ xsbBool assert_buff_to_clref_p(CTXTdeclc prolog_term Head,
    to assert_buff_to_clref through PROLOG calls */
 
   memmove(((pb)Clause)+Location,asrtBuff->Buff,asrtBuff->Size); /* fill in clause with code from Buff */
+
   /* ctop_int(7, (Integer)Clause);  DO NOT RETURN ANYTHING */
   /* *Clref = Clause; */
   
