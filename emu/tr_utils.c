@@ -363,8 +363,15 @@ VariantSF get_call(CTXTdeclc Cell callTerm, Cell *retTerm) {
 
 static void free_trie_ht(CTXTdeclc BTHTptr ht) {
 
-  mem_dealloc(BTHT_BucketArray(ht),BTHT_NumBuckets(ht)*sizeof(void *),
-	      TABLE_SPACE);
+#ifdef MULTI_THREAD
+  if (BTHT_NumBuckets(ht) == TrieHT_INIT_SIZE 
+      && threads_current_sm != SHARED_SM) {
+    SM_DeallocateStruct(*private_smTableBTHTArray,BTHT_BucketArray(ht)); 
+  }
+  else
+#endif
+    mem_dealloc(BTHT_BucketArray(ht),BTHT_NumBuckets(ht)*sizeof(void *),
+		TABLE_SPACE);
 #ifdef MULTI_THREAD
   if( threads_current_sm == SHARED_SM )
 	SM_Lock(*smBTHT);
