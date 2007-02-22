@@ -1996,7 +1996,6 @@ contcase:     /* the main loop */
     current_inst = lpcreg;
 #ifdef MULTI_THREAD
     if (xsb_mode == C_CALLING_XSB && th != main_thread_gl) {
-      UNLOCK_XSB_SYNCH;
       pthread_cond_signal(&xsb_done_cond);
       xsb_ready = 1;
       pthread_cond_wait( &xsb_started_cond, &xsb_synch_mut );

@@ -1379,7 +1379,6 @@ DllExport int call_conv writeln_to_xsb_stdin(char * input){
 #else
 #define EXECUTE_XSB {						\
     if (th != main_thread_gl) {					\
-      UNLOCK_XSB_SYNCH;						\
       pthread_cond_signal(&xsb_started_cond);			\
       pthread_cond_wait( &xsb_done_cond, &xsb_synch_mut );	\
     }								\
@@ -1448,11 +1447,11 @@ DllExport int call_conv xsb_command_string(CTXTdeclc char *goal)
     create_ccall_error(CTXTc "permission_error","unable to call xsb_command_string() when a query is open");
     return(XSB_ERROR);     
   }
-  LOCK_XSB_SYNCH;
 #endif
 
   LOCK_XSB_QUERY;
   LOCK_XSB_READY;
+  LOCK_XSB_SYNCH;
   reset_ccall_error(CTXT);
 
   c2p_string(CTXTc goal,reg_term(CTXTc 1));
@@ -1742,6 +1741,8 @@ DllExport int call_conv xsb_close_query(CTXTdecl)
     create_ccall_error(CTXTc "permission_error","unable to call xsb_close_query() when a query is not open");
     return(XSB_ERROR);     
   }
+  LOCK_XSB_READY;
+  LOCK_XSB_SYNCH;
   c2p_int(CTXTc 1,reg_term(CTXTc 3));  /* set command for cut */
   //  xsb(CTXTc XSB_EXECUTE,0,0);
   EXECUTE_XSB;
