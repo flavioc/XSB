@@ -80,12 +80,24 @@ static void free_private_al(CTXTdeclc VariantSF sf) {
    -------------------------------------- */
 
 static void delete_private_btht(CTXTdeclc BTHTptr btht) {
+#ifdef MULTI_THREAD
+  if (BTHT_NumBuckets(btht) == TrieHT_INIT_SIZE) {
+    SM_DeallocateStruct(*private_smTableBTHTArray,BTHT_BucketArray(btht)); 
+  }
+  else
+#endif
   mem_dealloc(BTHT_BucketArray(btht),BTHT_NumBuckets(btht)*sizeof(void *),TABLE_SPACE);
   TrieHT_RemoveFromAllocList(subsumptive_smBTHT,btht);
   SM_DeallocateStruct(subsumptive_smBTHT,btht);
 }
 
 static void delete_private_tstht(CTXTdeclc TSTHTptr tstht) {
+#ifdef MULTI_THREAD
+  if (BTHT_NumBuckets(tstht) == TrieHT_INIT_SIZE) {
+    SM_DeallocateStruct(*private_smTableBTHTArray,BTHT_BucketArray(tstht)); 
+  }
+  else
+#endif
   mem_dealloc(BTHT_BucketArray(tstht),BTHT_NumBuckets(tstht)*sizeof(void *),TABLE_SPACE);
   free_private_tsi(CTXTc tstht);
   free_private_tstht(CTXTc tstht);
