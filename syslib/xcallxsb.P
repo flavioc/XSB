@@ -47,8 +47,8 @@ c_callloop_cmd_goal(_) :-
 
 c_callloop_query_loop(_) :-
 %	writeln(foo),
+%	set_xsb_ready,
 	repeat,
-	set_xsb_ready,
 	get_from_caller(Par,VarTerm,Command),
 	(\+integer(Command)
 	 ->	file_write(STDERR,'C command error; must be an integer; is '),
