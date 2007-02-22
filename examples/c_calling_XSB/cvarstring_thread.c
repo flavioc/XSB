@@ -11,7 +11,8 @@
 ** 
 ** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
 ** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** FOR
+ A PARTICULAR PURPOSE.  See the GNU Library General Public License for
 ** more details.
 ** 
 ** You should have received a copy of the GNU Library General Public License
@@ -93,9 +94,7 @@ int main(int argc, char *argv[])
  if (rcr == XSB_ERROR) 
    fprintf(stderr,"++Query Error r: %s/%s\n",xsb_get_error_type(r_th),xsb_get_error_message(r_th));
 
- if (xsb_command_string(r_th,"thread_exit.") == XSB_ERROR)
-    fprintf(stderr,"++Error exiting: %s/%s\n",xsb_get_error_type(r_th),
-	    xsb_get_error_message(r_th));
+ // xsb_kill_thread(r_th);
 
  xsb_close(xsb_get_main_thread());      /* Close connection */
   return(0);
