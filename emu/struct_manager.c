@@ -66,7 +66,7 @@ void smPrint(Structure_Manager smRecord, char *string) {
 	  SM_CurBlock(smRecord),	nBlocks,
 	  SM_NextStruct(smRecord),	SM_FreeList(smRecord),
 	  SM_LastStruct(smRecord),	SM_AllocList(smRecord),
-	  SM_StructsPerBlock(smRecord),	SM_StructSize(smRecord));
+	  SM_StructsPerBlock(smRecord),	(int) SM_StructSize(smRecord));
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */

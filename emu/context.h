@@ -373,6 +373,11 @@ jmp_buf _xsb_abort_fallback_environment;
   byte *_current_inst;
   int _xsb_inquery;
   int _xsb_ready;
+  pthread_cond_t _xsb_started_cond;
+  pthread_cond_t _xsb_done_cond;
+  pthread_mutex_t _xsb_synch_mut;
+  pthread_mutex_t _xsb_ready_mut;
+  pthread_mutex_t _xsb_query_mut;
   struct ccall_error_t _ccall_error;
 
  /************ Pointers to cursor information used by
@@ -391,7 +396,7 @@ Cell _pflags[MAX_PRIVATE_FLAGS];
 
 /* Thread Id (for fast access) */
 
-int tid ;
+  int tid;
 
 /* stuff for deadlock detection in completion */
 #ifdef SHARED_COMPL_TABLES
@@ -580,6 +585,11 @@ typedef struct th_context th_context ;
 #define current_inst            (th->_current_inst)
 #define xsb_inquery             (th-> _xsb_inquery)
 #define xsb_ready               (th-> _xsb_ready)
+#define xsb_done_cond           (th-> _xsb_done_cond)
+#define xsb_started_cond        (th-> _xsb_started_cond)
+#define xsb_synch_mut           (th-> _xsb_synch_mut)
+#define xsb_ready_mut           (th-> _xsb_ready_mut)
+#define xsb_query_mut           (th-> _xsb_query_mut)
 #define ccall_error             (th-> _ccall_error)
 
 #define retracted_buffer	(th->_retracted_buffer)

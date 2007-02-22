@@ -28,6 +28,8 @@
 
 #define PUBLIC_TRIE_DEFS
 
+#include "struct_manager.h"
+
 /*===========================================================================*/
 
 /*
@@ -183,6 +185,37 @@ typedef struct Basic_Trie_Node *NODEptr;
 #define Sibl(X)		BTN_Sibling(X)
 #define Atom(X)		BTN_Symbol(X)
 
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+/*
+ *                        Basic Trie Hash Tables
+ *                        ----------------------
+ */
+
+typedef struct Basic_Trie_HashTable *BTHTptr;
+typedef struct Basic_Trie_HashTable {
+  InstrPlusType info;
+  unsigned long  numContents;
+  unsigned long  numBuckets;
+  BTNptr *pBucketArray;
+  BTHTptr prev, next;		   /* DLL needed for branch deletion */
+} BasicTrieHT;
+
+/* Field Access Macros
+   ------------------- */
+#define BTHT_Instr(pTHT)		TrieHT_Instr(pTHT)
+#define BTHT_Status(pTHT)		TrieHT_Status(pTHT)
+#define BTHT_TrieType(pTHT)		TrieHT_TrieType(pTHT)
+#define BTHT_NodeType(pTHT)		TrieHT_NodeType(pTHT)
+#define BTHT_NumBuckets(pTHT)		TrieHT_NumBuckets(pTHT)
+#define BTHT_NumContents(pTHT)		TrieHT_NumContents(pTHT)
+#define BTHT_BucketArray(pTHT)		TrieHT_BucketArray(pTHT)
+#define BTHT_PrevBTHT(pTHT)		TrieHT_PrevHT(pTHT)
+#define BTHT_NextBTHT(pTHT)		TrieHT_NextHT(pTHT)
+
+#define BTHT_GetHashSeed(pTHT)		TrieHT_GetHashSeed(pTHT)
+
+
 /*===========================================================================*/
 
 /*
@@ -324,8 +357,11 @@ extern BTNptr   delay_chk_insert(int, CPtr, CPtr *);
 extern void     undo_answer_bindings(void);
 extern void	load_delay_trie(int, CPtr, BTNptr);
 extern xsbBool  bottom_up_unify(void);
+extern BTHTptr  New_BTHT(Structure_Manager *, int);
 #else
 struct th_context ;
+
+extern BTHTptr  New_BTHT(struct th_context *, Structure_Manager *, int);
 extern BTNptr   newBasicTrie(struct th_context *, Cell,int);
 extern byte *	trie_get_calls(struct th_context *);
 extern Cell	get_lastnode_cs_retskel(struct th_context *, Cell);

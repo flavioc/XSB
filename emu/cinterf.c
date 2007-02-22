@@ -53,6 +53,7 @@
 #include "loader_xsb.h"
 #include "context.h"
 
+
 /*
   This was the old test for being a kosher Prolog string
 #define PRINTABLE_OR_ESCAPED_CHAR(Ch) (Ch <= 255 || Ch >= 0)
@@ -1212,14 +1213,9 @@ static inline void updateWarningStart(void)
   	lastWarningStart = ftell(stderr);
 }
 
-/************************************************************************/
-/*                                                                      */
-/* xsb_init(argc,argv) initializes XSB to be called from C.             */
-/* argc and argv are the arg count and arg vector as passed from the    */
-/* command line.  The parameters may be used to set space sizes in xsb. */
-/* If xsb has been previously initialized, nothing is done and          */
-/* XSB_FAILURE is returned.                                            */
-/*                                                                      */
+/*********************************************************************************************/
+
+                                                                     
 /************************************************************************/
 
 static int xsb_initted_gl = 0;   /* if xsb has been called */
@@ -1277,11 +1273,10 @@ DllExport int call_conv xsb_init(int argc, char *argv[])
 
 	if ((rc = setjmp(ccall_init_env))) return rc;  /* catch XSB_C_INIT exceptions */
 
-	if (0 == (rc = xsb(CTXTc XSB_C_INIT,argc,argv)))     /* initialize xsb */
-		{
-		if (0 == (rc = xsb(CTXTc XSB_EXECUTE,0,0)))       /* enter xsb to set up regs */
-		xsb_initted_gl = 1;
-		}
+	if (0 == (rc = xsb(CTXTc XSB_C_INIT,argc,argv)))  {   /* initialize xsb */
+	  if (0 == (rc = xsb(CTXTc XSB_EXECUTE,0,0)))       /* enter xsb to set up regs */
+	    xsb_initted_gl = 1;
+	}
 	return(rc);
  }
  else {
@@ -1297,6 +1292,7 @@ DllExport int call_conv xsb_init(int argc, char *argv[])
 /*  vector in its second argument, and the argc count as the value of   */
 /*	the function.  (Will handle a max of 19 args.)			*/
 /*									*/
+/* For MT engine, synchronization is done in  */
 /************************************************************************/
 
 DllExport int call_conv xsb_init_string(char *cmdline_param) {
@@ -1378,6 +1374,19 @@ DllExport int call_conv writeln_to_xsb_stdin(char * input){
     return 0;
 }
 
+#ifndef MULTI_THREAD
+#define EXECUTE_XSB   xsb(CTXTc XSB_EXECUTE,0,0);
+#else
+#define EXECUTE_XSB {						\
+    if (th != main_thread_gl) {					\
+      UNLOCK_XSB_SYNCH;						\
+      pthread_cond_signal(&xsb_started_cond);			\
+      pthread_cond_wait( &xsb_done_cond, &xsb_synch_mut );	\
+    }								\
+    else xsb(CTXTc XSB_EXECUTE,0,0);				\
+  }
+#endif
+
 /************************************************************************/
 /*                                                                      */
 /* xsb_command() passes the command (i.e. query with no variables) to   */
@@ -1391,29 +1400,35 @@ DllExport int call_conv writeln_to_xsb_stdin(char * input){
 
 DllExport int call_conv xsb_command(CTXTdecl)
 {
-  int rc;
 
-#ifdef MULTI_THREAD
-  // TLS temporary hack to make sure initialization has been done.
-  int i;
-  while (!xsb_ready)
-    i++;
-#endif
-
+#ifndef MULTI_THREAD
   if (xsb_inquery) {
     create_ccall_error(CTXTc "permission_error","unable to call xsb_command() when query a query is open");
     return(XSB_ERROR);     
   }
+#endif
+
+  LOCK_XSB_QUERY;
+  LOCK_XSB_READY;
   reset_ccall_error(CTXT);
-  //  updateWarningStart();
+
   c2p_int(CTXTc 0,reg_term(CTXTc 3));  /* command for calling a goal */
-  rc = xsb(CTXTc XSB_EXECUTE,0,0);
-  if (is_var(reg_term(CTXTc 1))) return(XSB_FAILURE);  /* goal failed, so return 1 */
+  EXECUTE_XSB;
+  if (ccall_error_thrown(CTXT))  
+    {UNLOCK_XSB_SYNCH;UNLOCK_XSB_READY; UNLOCK_XSB_QUERY;  return(XSB_ERROR);}
+  if (is_var(reg_term(CTXTc 1))) /* goal failed, so return 1 */
+    {UNLOCK_XSB_SYNCH;UNLOCK_XSB_READY; UNLOCK_XSB_QUERY; return(XSB_FAILURE); } 
+
   c2p_int(CTXTc 1,reg_term(CTXTc 3));  /* command for next answer */
-  xsb(CTXTc XSB_EXECUTE,0,0);
-  if (is_var(reg_term(CTXTc 1))) return(XSB_SUCCESS);  /* goal succeeded */
-  (void) xsb_close_query(CTXT);
-  return(rc);
+  EXECUTE_XSB;
+  if (is_var(reg_term(CTXTc 1))) 
+    {UNLOCK_XSB_SYNCH;UNLOCK_XSB_READY; UNLOCK_XSB_QUERY; return(XSB_SUCCESS);}  /* goal succeeded */
+  //  (void) xsb_close_query(CTXT);
+  UNLOCK_XSB_SYNCH;
+  UNLOCK_XSB_READY;
+  UNLOCK_XSB_QUERY;
+  return(XSB_ERROR);     // to shut up compiler.
+
 }
 
 /************************************************************************/
@@ -1428,32 +1443,50 @@ DllExport int call_conv xsb_command(CTXTdecl)
 
 DllExport int call_conv xsb_command_string(CTXTdeclc char *goal)
 {
-
-#ifdef MULTI_THREAD
-  // TLS temporary hack to make sure initialization has been done.
-  int i;
-  while (!xsb_ready)
-    i++;
-#endif
-
+#ifndef MULTI_THREAD
   if (xsb_inquery) {
     create_ccall_error(CTXTc "permission_error","unable to call xsb_command_string() when a query is open");
     return(XSB_ERROR);     
   }
+  LOCK_XSB_SYNCH;
+#endif
+
+  LOCK_XSB_QUERY;
+  LOCK_XSB_READY;
   reset_ccall_error(CTXT);
-  //  updateWarningStart();
+
   c2p_string(CTXTc goal,reg_term(CTXTc 1));
   c2p_int(CTXTc 2,reg_term(CTXTc 3));  /* command for calling a string goal */
-  xsb(CTXTc XSB_EXECUTE,0,0);
-  if (ccall_error_thrown(CTXT)) return(XSB_ERROR);
-  if (is_var(reg_term(CTXTc 1))) return(XSB_FAILURE);  /* goal failed, so return 1 */
+  EXECUTE_XSB;
+  if (ccall_error_thrown(CTXT))  
+    {UNLOCK_XSB_SYNCH;UNLOCK_XSB_READY; UNLOCK_XSB_QUERY;  return(XSB_ERROR);}
+  if (is_var(reg_term(CTXTc 1))) /* goal failed, so return 1 */
+    {UNLOCK_XSB_SYNCH;UNLOCK_XSB_READY; UNLOCK_XSB_QUERY; return(XSB_FAILURE); } 
   c2p_int(CTXTc 1,reg_term(CTXTc 3));  /* command for next answer */
-  xsb(CTXTc XSB_EXECUTE,0,0);
-  if (is_var(reg_term(CTXTc 1))) return(XSB_SUCCESS);  /* goal succeeded */
-  (void) xsb_close_query(CTXT);
+  EXECUTE_XSB;
+  if (is_var(reg_term(CTXTc 1))) 
+    {UNLOCK_XSB_SYNCH;UNLOCK_XSB_READY; UNLOCK_XSB_QUERY; return(XSB_SUCCESS);}  /* goal succeeded */
+  //  (void) xsb_close_query(CTXT);
+  UNLOCK_XSB_SYNCH;
+  UNLOCK_XSB_READY;
+  UNLOCK_XSB_QUERY;
   return(XSB_ERROR);     // to shut up compiler.
 }
 
+DllExport int call_conv xsb_kill_thread(CTXTdecl)
+{
+  LOCK_XSB_QUERY;
+  LOCK_XSB_READY;
+  LOCK_XSB_SYNCH;
+
+  c2p_int(CTXTc 0,reg_term(CTXTc 3));  /* command for calling a goal */
+  c2p_functor(CTXTc "thread_exit",0,reg_term(CTXTc 1));
+  xsb(CTXTc XSB_SHUTDOWN, 0, 0);
+  UNLOCK_XSB_SYNCH;
+  UNLOCK_XSB_READY;
+  UNLOCK_XSB_QUERY;
+  return(XSB_ERROR);     // to shut up compiler.
+}
 
 
 /************************************************************************/
@@ -1501,29 +1534,38 @@ DllExport int call_conv xsb_query(CTXTdecl)
 DllExport int call_conv xsb_query_string(CTXTdeclc char *goal)
 {
 
-#ifdef MULTI_THREAD
-  // TLS temporary hack to make sure initialization has been done.
-  int i;
-  while (!xsb_ready)
-    i++;
-#endif
+  LOCK_XSB_QUERY;
+  LOCK_XSB_READY;
+  LOCK_XSB_SYNCH;
 
-  reset_ccall_error(CTXT);
-
+#ifndef MULTI_THREAD
   if (xsb_inquery) {
     create_ccall_error(CTXTc "permission_error","unable to call xsb_query_string() when a query is open");
     return(XSB_ERROR);     
   }
-  //  updateWarningStart();
+#endif
+
+  reset_ccall_error(CTXT);
+
   c2p_chars(CTXTc goal,2,reg_term(CTXTc 1));
   c2p_int(CTXTc 2,reg_term(CTXTc 3));  /* set command for calling a string goal */
-  xsb(CTXTc XSB_EXECUTE,0,0);
+  EXECUTE_XSB;
   if (ccall_error_thrown(CTXT)) {
     xsb_inquery = 0;
+    UNLOCK_XSB_SYNCH;
+    UNLOCK_XSB_READY;
+    UNLOCK_XSB_QUERY;
     return(XSB_ERROR);
   }
-  if (is_var(reg_term(CTXTc 1))) return(XSB_FAILURE);
+  if (is_var(reg_term(CTXTc 1))) {
+    UNLOCK_XSB_SYNCH;
+    UNLOCK_XSB_READY;
+    UNLOCK_XSB_QUERY;
+    return(XSB_FAILURE);
+  } 
   xsb_inquery = 1;
+  UNLOCK_XSB_SYNCH;
+  UNLOCK_XSB_READY;
   return(XSB_SUCCESS);
 }
 
@@ -1541,7 +1583,6 @@ int call_conv xsb_query_string_string(CTXTdeclc char *goal,
 {
   int rc;
   
-  reset_ccall_error(CTXT);
   rc = xsb_query_string(CTXTc goal);
   if (rc != XSB_SUCCESS) return rc;
   else return xsb_answer_string(CTXTc ans,sep);
@@ -1611,21 +1652,35 @@ DllExport int call_conv
 
 DllExport int call_conv xsb_next(CTXTdecl)
 {
+  LOCK_XSB_READY;
+  LOCK_XSB_SYNCH;
   if (!xsb_inquery) {
     create_ccall_error(CTXTc "permission_error","unable to call xsb_next() when a query is not open");
+    UNLOCK_XSB_SYNCH;
+    UNLOCK_XSB_READY;
     return(XSB_ERROR);     
   }
   //  updateWarningStart();
   c2p_int(CTXTc 0,reg_term(CTXTc 3));  /* set command for next answer */
-  xsb(CTXTc XSB_EXECUTE,0,0);
+  EXECUTE_XSB;
   if (ccall_error_thrown(CTXT)) {
     xsb_inquery = 0;
+    UNLOCK_XSB_SYNCH;
+    UNLOCK_XSB_READY;
+    UNLOCK_XSB_QUERY;
     return(XSB_ERROR);
   }
   if (is_var(reg_term(CTXTc 1))) {
     xsb_inquery = 0;
+    UNLOCK_XSB_SYNCH;
+    UNLOCK_XSB_READY;
+    UNLOCK_XSB_QUERY;
     return(XSB_FAILURE);
-  } else return(XSB_SUCCESS);
+  } else {
+    UNLOCK_XSB_SYNCH;
+    UNLOCK_XSB_READY;
+    return(XSB_SUCCESS);
+  }
 }
 
 /************************************************************************/
@@ -1688,9 +1743,13 @@ DllExport int call_conv xsb_close_query(CTXTdecl)
     return(XSB_ERROR);     
   }
   c2p_int(CTXTc 1,reg_term(CTXTc 3));  /* set command for cut */
-  xsb(CTXTc XSB_EXECUTE,0,0);
+  //  xsb(CTXTc XSB_EXECUTE,0,0);
+  EXECUTE_XSB;
   if (is_var(reg_term(CTXTc 1))) {
     xsb_inquery = 0;
+    UNLOCK_XSB_SYNCH;
+    UNLOCK_XSB_READY;
+    UNLOCK_XSB_QUERY;
     return(XSB_SUCCESS);
   } else return(XSB_ERROR);
 }
@@ -1703,10 +1762,18 @@ DllExport int call_conv xsb_close_query(CTXTdecl)
 /*                                                                      */
 /************************************************************************/
 
+// TLS: not including tr_utils.h because that would disturb CTXT stuff. 
+extern void release_all_tabling_resources(CTXTdecl);
+extern void hashtable1_destroy_all(int);
+extern void abolish_wfs_space(CTXTdecl);
+
 DllExport int call_conv xsb_close(CTXTdecl)
 {
   //  updateWarningStart();
   if (xsb_initted_gl) {
+    LOCK_XSB_QUERY;
+    LOCK_XSB_READY;
+    LOCK_XSB_SYNCH;
 #ifdef MULTI_THREAD
     main_thread_gl = NULL;
 #endif
@@ -1715,6 +1782,9 @@ DllExport int call_conv xsb_close(CTXTdecl)
     release_all_tabling_resources(CTXT);
     abolish_wfs_space(CTXT); 
 
+    UNLOCK_XSB_SYNCH;
+    UNLOCK_XSB_READY;
+    UNLOCK_XSB_QUERY;
     return(XSB_SUCCESS);
   }
   else {

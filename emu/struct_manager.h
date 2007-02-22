@@ -391,6 +391,18 @@ extern xsbBool smIsAllocatedStructRef(Structure_Manager, void *);
    }						\
  }
 
+#ifdef MULTI_THREAD
+#define SM_AllocatePossSharedStruct(SM,pStruct)		\
+  if (threads_current_sm == PRIVATE_SM) {			\
+    SM_AllocateStruct(SM,pStruct);				\
+  } else {							\
+  SM_AllocateSharedStruct(SM,pStruct);	\
+  }
+#else
+#define SM_AllocatePossSharedStruct(SM,pStruct)	\
+  SM_AllocateStruct(SM,pStruct)
+#endif
+
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 /*

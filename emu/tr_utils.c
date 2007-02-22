@@ -2143,8 +2143,6 @@ int abolish_table_pred_cps_check(CTXTdeclc Psc psc)
  "abolished" tables in deltf frames.  Need to do gc tables for
   that. */
 
-extern void hashtable1_destroy_all(int);
-
 inline int abolish_table_predicate(CTXTdeclc Psc psc)
 {
   TIFptr tif;

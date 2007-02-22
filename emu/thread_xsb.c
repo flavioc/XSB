@@ -25,6 +25,7 @@
 #include <time.h>
 #include <math.h>
 #include <signal.h>
+#include <unistd.h>
 
 #include "xsb_debug.h"
 #include "xsb_config.h"
@@ -140,6 +141,10 @@ char *mutex_names[] = {
 
 /*-------------------------------------------------------------------------*/
 /* General Routines */
+
+int thread_exited(int tid) {
+  return th_vec[tid].exited;
+}
 
 th_context *find_context( int id )
 {
@@ -363,6 +368,9 @@ static void *ccall_xsb_thread_run( void *arg )
 	SET_THREAD_INCARN(ctxt->tid, th_vec[pos].incarn ) ;
 
 	emuloop( ctxt, get_ep(ccall_psc)) ;
+	printf("exiting emuloop\n");
+
+	printf("exiting thread\n");
 
 	return NULL ;
 }
@@ -457,6 +465,10 @@ call_conv int xsb_ccall_thread_create(th_context *th,th_context **thread_return)
   Integer id, pos ;
        
   new_th_ctxt = mem_alloc(sizeof(th_context),THREAD_SPACE) ;
+  new_th_ctxt->_xsb_ready = 0;  
+  pthread_mutex_init( &new_th_ctxt->_xsb_synch_mut, NULL ) ;
+  pthread_mutex_lock(&(new_th_ctxt->_xsb_synch_mut));
+
   copy_pflags(new_th_ctxt, th) ;
 
   init_machine(new_th_ctxt,0,0,0,0);
@@ -467,8 +479,12 @@ call_conv int xsb_ccall_thread_create(th_context *th,th_context **thread_return)
   max_threads_sofar = xsb_max( max_threads_sofar, flags[NUM_THREADS] );
   pthread_mutex_unlock( &th_mutex );
 
-  new_th_ctxt->_xsb_ready = 0;
-  xsb_inquery = 0;   
+  pthread_cond_init( &new_th_ctxt->_xsb_started_cond, NULL ) ;
+  pthread_cond_init( &new_th_ctxt->_xsb_done_cond, NULL ) ;
+  pthread_mutex_init( &new_th_ctxt->_xsb_ready_mut, NULL ) ;
+  pthread_mutex_init( &new_th_ctxt->_xsb_query_mut, NULL ) ;
+  new_th_ctxt->_xsb_inquery = 0;
+
 #ifdef WIN_NT
   thr = mem_alloc(sizeof(pthread_t),THREAD_SPACE);
   rc = pthread_create(thr, &normal_attr_gl, &ccall_xsb_thread_run, (void *)new_th_ctxt ) ;
@@ -493,6 +509,9 @@ call_conv int xsb_ccall_thread_create(th_context *th,th_context **thread_return)
   SET_THREAD_INCARN(id, th_vec[pos].incarn ) ;
 
   *thread_return = new_th_ctxt;
+
+  while (!(new_th_ctxt->_xsb_ready))    usleep(1000);
+
   return rc ;
 }  /* xsb_thread_create */
 
@@ -1059,7 +1078,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 	}
 
 	case SET_XSB_READY: {
-	  xsb_ready = 1;
+	  unlock_xsb_ready("set_xsb_ready");
 	  break;
 	}
 

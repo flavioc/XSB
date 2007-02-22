@@ -703,16 +703,51 @@ void print_private_deltfs(CTXTdecl) {
 #endif
 
 
+/*----- For table debugging --------------------------------------------*/ 
 
-/*======================================================================*/
-/*  The third set of routines should be useful with gdb.  They need to  */
-/*  be revised to get rid of the xsb_dbg stuff, and so that they're     */
-/*  defined whenever we configure with -dbg                             */
-/*======================================================================*/
+static char *compl_stk_frame_field[] = {
+  "subgoal_ptr", "level_num",
+  "del_ret_list", "visited", 
+#ifndef LOCAL_EVAL
+"DG_edges", "DGT_edges"
+#endif
+};
 
-#if (defined(DEBUG_VERBOSE) || defined(DEBUG_VM))
 
-static int count_producer_subgoals(void)
+void print_subg_header(CTXTdeclc VariantSF SUBG) {			    
+    fprintf(stddbg, "=== Frame for "); print_subgoal(CTXTc stddbg, SUBG); 
+    if (is_completed(SUBG)) fprintf(stddbg, " (completed) ===\n"); 
+    else fprintf(stddbg, " (incomplete) ===\n"); }
+
+void print_completion_stack(CTXTdecl)
+{
+  int i = 0;
+  EPtr eptr;
+  VariantSF subg;
+  CPtr temp = openreg;
+
+  fprintf(stddbg,"openreg -> ");
+  while (temp < COMPLSTACKBOTTOM) {
+    if ((i % COMPLFRAMESIZE) == 0) {
+      fprintf(stddbg,EOFR);	/* end of frame */
+      subg = (VariantSF) *temp;
+      print_subg_header(CTXTc subg);
+    }
+    fprintf(stddbg,"Completion Stack %p: %lx\t(%s)",
+	    temp, *temp, compl_stk_frame_field[(i % COMPLFRAMESIZE)]);
+    if ((i % COMPLFRAMESIZE) >= COMPLFRAMESIZE-2) {
+      for (eptr = (EPtr)*temp; eptr != NULL; eptr = next_edge(eptr)) {
+	fprintf(stddbg," --> %p", edge_to_node(eptr));
+      }
+    }
+    fprintf(stddbg,"\n");
+    temp++; i++;
+  }
+  fprintf(stddbg, EOS);
+}
+
+
+static int count_producer_subgoals(CTXTdecl)
 {
   int i;
   TIFptr tif;
@@ -769,7 +804,7 @@ static void skip_to_nl(void)
   } while (c != '\n');
 }
 
-void print_tables(void)
+void print_tables(CTXTdecl)
 {
   int i = 0;
   char ans = 'y';
@@ -777,7 +812,7 @@ void print_tables(void)
   VariantSF subg;
   SubConsSF cons;
 
-  i = count_producer_subgoals();
+  i = count_producer_subgoals(CTXT);
   xsb_dbgmsg((LOG_DEBUG,"\t There are %d producer subgoal structures...", i));
 
   i = 0;
@@ -789,38 +824,38 @@ void print_tables(void)
     subg = TIF_Subgoals(tif);
     while ( IsNonNULL(subg) && (ans == 'y') ) {
       i++;
-      print_subg_header(subg);
+      print_subg_header(CTXTc subg);
       fprintf(stddbg, "%p:\n", subg);
-      xsb_dbgmsg((LOG_DEBUG,"  sf_type = %s,  is_complete = %s,  is_reclaimed = %s,",
+      fprintf(stddbg,"  sf_type = %s,  is_complete = %s,  is_reclaimed = %s,",
 		 stringSubgoalFrameType(subg_sf_type(subg)),
 		 (subg_is_complete(subg) ? "YES" : "NO"),
-		 (subg_is_reclaimed(subg) ? "YES" : "NO")));
-      xsb_dbgmsg((LOG_DEBUG,"  tif_ptr = %p,  leaf_ptr = %p,  ans_root_ptr = %p,\n"
+		 (subg_is_reclaimed(subg) ? "YES" : "NO"));
+      fprintf(stddbg,"  tif_ptr = %p,  leaf_ptr = %p,  ans_root_ptr = %p,\n"
 		 "  ans_list_ptr = %p,   ans_list_tail = %p,\n"
 		 "  next_subgoal = %p,  prev_subgoal = %p,  cp_ptr = %p",
 		 subg_tif_ptr(subg), subg_leaf_ptr(subg),
 		 subg_ans_root_ptr(subg),
 		 subg_ans_list_ptr(subg), subg_ans_list_tail(subg),
 		 subg_next_subgoal(subg), subg_prev_subgoal(subg), 
-		 subg_cp_ptr(subg)));
-      xsb_dbgmsg((LOG_DEBUG,"  asf_list_ptr = %p,", subg_asf_list_ptr(subg)));
-      xsb_dbgmsg((LOG_DEBUG,"  compl_stk_ptr = %p,  compl_susp_ptr = %p,"
+		 subg_cp_ptr(subg));
+      fprintf(stddbg,"  asf_list_ptr = %p,", subg_asf_list_ptr(subg));
+      fprintf(stddbg,"  compl_stk_ptr = %p,  compl_susp_ptr = %p,"
 		 "  nde_list = %p",
 		 subg_compl_stack_ptr(subg), subg_compl_susp_ptr(subg),
-		 subg_nde_list(subg)));
+		 subg_nde_list(subg));
       if ( IsSubProdSF(subg) ) {
-	xsb_dbgmsg((LOG_DEBUG,"  consumers = %p", subg_consumers(subg)));
+	fprintf(stddbg,"  consumers = %p", subg_consumers(subg));
 	for ( cons = subg_consumers(subg);  IsNonNULL(cons);
 	      cons = conssf_consumers(cons) )
-	  xsb_dbgmsg((LOG_DEBUG,"Consumer  %p\n"
+	  fprintf(stddbg,"Consumer  %p\n"
 		     "  sf_type = %11s,  tif_ptr = %p,         leaf_ptr = %p\n"
 		     "  producer = %10p,  ans_list_ptr = %p,"
 		     "  ans_list_tail = %p\n"
 		     "  ts = %ul,  consumers = %p",
-		     cons, subg_sf_type(cons), subg_tif_ptr(cons),
-		     subg_leaf_ptr(cons), conssf_producer(cons),
-		     subg_ans_list_ptr(cons), subg_ans_list_tail(cons),
-		     conssf_timestamp(cons), conssf_consumers(cons)));
+		  cons, stringSubgoalFrameType(subg_sf_type(cons)), subg_tif_ptr(cons),
+		  subg_leaf_ptr(cons), conssf_producer(cons),
+		  subg_ans_list_ptr(cons), subg_ans_list_tail(cons),
+		  (int) conssf_timestamp(cons), conssf_consumers(cons));
       }
       subg = subg_next_subgoal(subg);
       if (subg != NULL)
@@ -837,7 +872,7 @@ void print_tables(void)
   fprintf(stddbg, EOS);
 }
 
-#endif
+
 
 /*======================================================================*/
 /*  The final set of routines should be useful with the instruction-    */

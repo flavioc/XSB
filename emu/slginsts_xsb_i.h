@@ -715,16 +715,15 @@ XSB_Start_Instr(answer_return,_answer_return)
   CPtr answer_template;
   int template_size, attv_num;
 
-
-  xsb_dbgmsg((LOG_DEBUG,"Starting answer return %x (%x) (prev %x)\n",
-	      breg,*lpcreg,nlcp_prevbreg(breg))); 
-
   /* Locate relevant answers
      ----------------------- */
   answer_continuation = ALN_Next(nlcp_trie_return(breg)); /* step to next answer */
   consumer_sf = (VariantSF)nlcp_subgoal_ptr(breg);
   answer_template = nlcp_template(breg);
   
+  //  fprintf(stddbg,"Starting answer return %x (%x) (prev %x) aln %x\n",
+  //	  breg,*lpcreg,nlcp_prevbreg(breg),answer_continuation); 
+
   table_pending_answer( nlcp_trie_return(breg),
 			answer_continuation,
 			next_answer,

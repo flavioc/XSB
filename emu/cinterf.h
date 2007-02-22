@@ -327,6 +327,15 @@ extern char *p_charlist_to_c_string(CTXTdeclc prolog_term term, VarString *buf,
 #define xsb_get_init_error_type(THREAD) (&(ccall_error).ccall_error_type[0])
 #define xsb_get_init_error_message(THREAD) (&(ccall_error).ccall_error_message[0])
 
+#define  UNLOCK_XSB_QUERY 
+#define  LOCK_XSB_QUERY  
+
+#define  UNLOCK_XSB_READY  
+#define  LOCK_XSB_READY  
+
+#define  UNLOCK_XSB_SYNCH  
+#define  LOCK_XSB_SYNCH  
+
 #else
   extern struct ccall_error_t init_ccall_error;
 
@@ -336,6 +345,43 @@ extern char *p_charlist_to_c_string(CTXTdeclc prolog_term term, VarString *buf,
 
 #define xsb_get_init_error_type(THREAD) (&(init_ccall_error).ccall_error_type[0])
 #define xsb_get_init_error_message(THREAD) (&(init_ccall_error).ccall_error_message[0])
+
+  /*
+#define  UNLOCK_XSB_READY   pthread_mutex_unlock(&xsb_ready_mut);
+#define  LOCK_XSB_READY  pthread_mutex_lock(&xsb_ready_mut);
+
+#define  UNLOCK_XSB_SYNCH   pthread_mutex_unlock(&xsb_synch_mut);
+#define  LOCK_XSB_SYNCH  pthread_mutex_lock(&xsb_synch_mut);
+  */
+
+#define  lock_xsb_ready(S)  { \
+    pthread_mutex_lock(&xsb_ready_mut); \
+    printf("locked ready %s\n",S);	\
+  }
+
+#define  unlock_xsb_ready(S)  { \
+    pthread_mutex_unlock(&xsb_ready_mut); \
+    printf("unlocked ready %s\n",S);	  \
+  }
+
+#define  lock_xsb_synch(S)  { \
+    pthread_mutex_lock(&xsb_synch_mut); \
+    printf("locked synch %s\n",S);	\
+  }
+
+#define  unlock_xsb_synch(S)  { \
+    pthread_mutex_unlock(&xsb_synch_mut); \
+    printf("unlocked synch %s\n",S);	  \
+  }
+
+#define  LOCK_XSB_QUERY  pthread_mutex_lock(&xsb_query_mut);
+#define  UNLOCK_XSB_QUERY   pthread_mutex_unlock(&xsb_query_mut);
+
+#define  LOCK_XSB_READY  pthread_mutex_lock(&xsb_ready_mut);
+#define  UNLOCK_XSB_READY   pthread_mutex_unlock(&xsb_ready_mut);
+
+#define  UNLOCK_XSB_SYNCH   pthread_mutex_unlock(&xsb_synch_mut);
+#define  LOCK_XSB_SYNCH  pthread_mutex_lock(&xsb_synch_mut);
 
 #endif
 

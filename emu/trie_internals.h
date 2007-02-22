@@ -38,7 +38,7 @@
 #include "inst_xsb.h"
 #include "struct_manager.h"
 #include "tries.h"
-
+#include "thread_xsb.h"
 
 /*===========================================================================*/
 
@@ -532,7 +532,7 @@ extern void  hashify_children(CTXTdeclc BTNptr, int);
 #define TrieHT_ExpansionCheck(pHT,NumBucketContents) {		\
    if ( (NumBucketContents > BUCKET_CONTENT_THRESHOLD) &&	\
         (TrieHT_NumContents(pHT) > TrieHT_NumBuckets(pHT)) )	\
-     expand_trie_ht((BTHTptr)pHT);				\
+     expand_trie_ht(CTXTc (BTHTptr)pHT);			\
  }
 
    
@@ -613,73 +613,13 @@ extern BTNptr new_btn(CTXTdeclc int TrieType, int NodeType, Cell Symbol,
  *                        ----------------------
  */
 
-typedef struct Basic_Trie_HashTable *BTHTptr;
-typedef struct Basic_Trie_HashTable {
-  InstrPlusType info;
-  unsigned long  numContents;
-  unsigned long  numBuckets;
-  BTNptr *pBucketArray;
-  BTHTptr prev, next;		   /* DLL needed for branch deletion */
-} BasicTrieHT;
-
-/* Field Access Macros
-   ------------------- */
-#define BTHT_Instr(pTHT)		TrieHT_Instr(pTHT)
-#define BTHT_Status(pTHT)		TrieHT_Status(pTHT)
-#define BTHT_TrieType(pTHT)		TrieHT_TrieType(pTHT)
-#define BTHT_NodeType(pTHT)		TrieHT_NodeType(pTHT)
-#define BTHT_NumBuckets(pTHT)		TrieHT_NumBuckets(pTHT)
-#define BTHT_NumContents(pTHT)		TrieHT_NumContents(pTHT)
-#define BTHT_BucketArray(pTHT)		TrieHT_BucketArray(pTHT)
-#define BTHT_PrevBTHT(pTHT)		TrieHT_PrevHT(pTHT)
-#define BTHT_NextBTHT(pTHT)		TrieHT_NextHT(pTHT)
-
-#define BTHT_GetHashSeed(pTHT)		TrieHT_GetHashSeed(pTHT)
-
 /* General Header Management
    ------------------------- */
 
 /* TLS: Lock once (if needed), as we need to allocate, add buckets to
    alloc_list, etc. */
 
-#ifdef MULTI_THREAD  
-#define _New_TrieHT(SM,THT,TrieType) {					\
-    if (threads_current_sm == PRIVATE_SM) {				\
-      _New_TrieHT_Sub(SM,THT,TrieType);					\
-    } else {								\
-      SM_Lock(SM);							\
-      _New_TrieHT_Sub(SM,THT,TrieType);					\
-      SM_Unlock(SM);							\
-    }									\
-}
-#else
-#define _New_TrieHT(SM,THT,TrieType)  _New_TrieHT_Sub(SM,THT,TrieType) 
-#endif
-
-#define _New_TrieHT_Sub(SM,THT,TrieType) {				\
-									\
-   void * btht;								\
-   SM_AllocateStruct(SM,btht);						\
-   BTHT_Instr(((BTHTptr)btht)) = hash_opcode;				\
-   BTHT_Status(((BTHTptr)btht)) = VALID_NODE_STATUS;			\
-   BTHT_TrieType(((BTHTptr)btht)) = TrieType;				\
-   BTHT_NodeType(((BTHTptr)btht)) = HASH_HEADER_NT;			\
-   BTHT_NumContents(((BTHTptr)btht)) = MAX_SIBLING_LEN + 1;		\
-   BTHT_NumBuckets(((BTHTptr)btht)) = TrieHT_INIT_SIZE;			\
-   BTHT_BucketArray(((BTHTptr)btht)) =					\
-     (BTNptr *)mem_calloc(TrieHT_INIT_SIZE, sizeof(void *),TABLE_SPACE);\
-   SM_AddToAllocList_DL(SM,((BTHTptr)btht),BTHT_PrevBTHT,BTHT_NextBTHT) \
-   THT = btht;								\
-}
-
-   /*   Debugging: 
-|	printf("allocating hash for %s (%d): %x\n",
-|	SM_StructName(SM),xsb_thread_id,btht);			
-|   for ( pBTHT = (BTHTptr)SM_AllocList(SM);  IsNonNULL(pBTHT);	
-|	 pBTHT = (BTHTptr)BTHT_NextBTHT(pBTHT) ) 			
-|	 printf("     hash allocation chain%x\n",pBTHT);	*/	
-
-extern void expand_trie_ht(BTHTptr);
+extern void expand_trie_ht(CTXTdeclc BTHTptr);
 
 /* Currently SM must be a private table, or this macro must be called
    from within the scope of a mutex. */
@@ -691,10 +631,11 @@ extern void expand_trie_ht(BTHTptr);
 #define TrieHT_FreeAllocatedBuckets(SM) {			\
    BTHTptr pBTHT;						\
 								\
-   for ( pBTHT = (BTHTptr)SM_AllocList(SM);  IsNonNULL(pBTHT);	\
+   for ( pBTHT = (BTHTptr)SM_AllocList(SM);  IsNonNULL(pBTHT);		\
 	 pBTHT = (BTHTptr)BTHT_NextBTHT(pBTHT) ) {			\
      /*     printf("freeing table for thread %d: %x\n",xsb_thread_id,pBTHT); */ \
-     mem_dealloc(BTHT_BucketArray(pBTHT),BTHT_NumBuckets(pBTHT)*sizeof(void *),TABLE_SPACE); \
+     if (BTHT_NumBuckets(pBTHT) > TrieHT_INIT_SIZE)			\
+       mem_dealloc(BTHT_BucketArray(pBTHT),BTHT_NumBuckets(pBTHT)*sizeof(void *),TABLE_SPACE); \
    }									\
  }
 
@@ -707,7 +648,6 @@ extern Structure_Manager smAssertBTHT;
 extern Structure_Manager *smBTHT;
 #endif
 
-#define New_BTHT(BTHT,TrieType)      _New_TrieHT(*smBTHT,BTHT,TrieType)
 
 /*---------------------------------------------------------------------------*/
 
@@ -870,11 +810,14 @@ typedef struct HashTable_for_TSTNs {
 #define TSTHTs_PER_BLOCK  16
 
 /* TLS: no locking for subsumptive tables, which use private SMs */
-#define New_TSTHT(TSTHT,TrieType,TST) {				\
-   _New_TrieHT_Sub(smTSTHT,TSTHT,TrieType);				\
-   TSTHT_InternalLink(TSTHT) = (TSTHTptr)TSTRoot_GetHTList(TST);\
-   TSTRoot_SetHTList(TST,TSTHT);				\
-   TSTHT_IndexHead(TSTHT) = TSTHT_IndexTail(TSTHT) = NULL;	\
+/* Althought this allocates what appears to be a BTHT, the smTSTHT is
+   sent down to SM_Allocate, which allocates a structure with the
+   right size for a TSTHT */
+#define New_TSTHT(TSTHT,TrieType,TST) {					\
+    TSTHT = (TSTHTptr) New_BTHT(CTXTc &smTSTHT,TrieType);		\
+    TSTHT_InternalLink(TSTHT) = (TSTHTptr)TSTRoot_GetHTList(TST);	\
+    TSTRoot_SetHTList(TST,TSTHT);					\
+    TSTHT_IndexHead(TSTHT) = TSTHT_IndexTail(TSTHT) = NULL;		\
  }
 
 /*-------------------------------------------------------------------------*/

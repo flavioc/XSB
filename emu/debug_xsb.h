@@ -32,11 +32,6 @@
 #define EOFR	"--------------------------------------------\n"
 #define EOSUBG	"------------------------------------------------------------\n"
 
-#define print_subg_header(SUBG) { \
-    fprintf(stddbg, "=== Frame for "); print_subgoal(stddbg, SUBG); \
-    if (is_completed(SUBG)) fprintf(stddbg, " (completed) ===\n"); \
-    else fprintf(stddbg, " (incomplete) ===\n"); }
-
 /* extern int cur_log_level; */
 #define cur_log_level pflags[VERBOSENESS_LEVEL]
 typedef struct subgoal_frame *VariantSF;

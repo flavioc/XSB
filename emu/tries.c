@@ -30,6 +30,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /* Special debug includes */
 #include "debugs/debug_tries.h"
@@ -296,6 +297,51 @@ TSTNptr new_tstn(CTXTdeclc int trie_t, int node_t, Cell symbol, TSTNptr parent,
   return (TSTNptr)tstn;
 }
 
+/*----------------------------------------------------------------------*/
+
+BTHTptr  New_BTHT(CTXTdeclc Structure_Manager * SM,int TrieType) {
+   void * btht;								
+
+#ifdef MULTI_THREAD  
+   void * arrayPtr;							
+   BTNptr * BTNarrayPtr;						
+
+   if (threads_current_sm == SHARED_SM) {
+     /* Lock shared BTHT structure manager and malloc BTHT array */
+     SM_Lock(*SM);
+     SM_AllocateStruct(*SM,btht);
+     SM_AddToAllocList_DL(*SM,((BTHTptr)btht),BTHT_PrevBTHT,BTHT_NextBTHT);
+     SM_Unlock(*SM);
+     BTHT_BucketArray(((BTHTptr)btht)) =				\
+       (BTNptr *)mem_calloc(TrieHT_INIT_SIZE, sizeof(void *),TABLE_SPACE); \
+   } else { 
+     /* Dont lock BTHT structure manager and use BTHT array structure manager  -- also 
+      need to 0 out alloced array to emulate calloc */
+     SM_AllocateStruct(*SM,btht);
+     SM_AddToAllocList_DL(*SM,((BTHTptr)btht),BTHT_PrevBTHT,BTHT_NextBTHT);
+     SM_AllocateStruct(*private_smTableBTHTArray,arrayPtr);		
+     BTHT_BucketArray(((BTHTptr)btht)) = (BTNptr *) arrayPtr;		
+     for (BTNarrayPtr = BTHT_BucketArray((BTHTptr)btht) ;			
+	  BTNarrayPtr < (BTHT_BucketArray((BTHTptr)btht)+TrieHT_INIT_SIZE) ; 
+	  BTNarrayPtr++) *BTNarrayPtr = NULL;				
+   }
+#else
+   /* Dont lock BTHT structure manager and malloc BTHT array */
+   SM_AllocateStruct(*SM,btht);
+   SM_AddToAllocList_DL(*SM,((BTHTptr)btht),BTHT_PrevBTHT,BTHT_NextBTHT);
+   BTHT_BucketArray(((BTHTptr)btht)) =					 
+     (BTNptr *)mem_calloc(TrieHT_INIT_SIZE, sizeof(void *),TABLE_SPACE); 
+#endif
+   
+   BTHT_Instr(((BTHTptr)btht)) = hash_opcode;				
+   BTHT_Status(((BTHTptr)btht)) = VALID_NODE_STATUS;			
+   BTHT_TrieType(((BTHTptr)btht)) = TrieType;				
+   BTHT_NodeType(((BTHTptr)btht)) = HASH_HEADER_NT;			
+   BTHT_NumContents(((BTHTptr)btht)) = MAX_SIBLING_LEN + 1;		
+   BTHT_NumBuckets(((BTHTptr)btht)) = TrieHT_INIT_SIZE;			
+   return (BTHTptr) btht;								
+}
+
 /*-------------------------------------------------------------------------*/
 
 /*
@@ -472,7 +518,7 @@ void hashify_children(CTXTdeclc BTNptr parent, int trieType) {
   BTNptr *tablebase;		/* first bucket of allocated HT */
   unsigned long  hashseed;	/* needed for hashing of BTNs */
 
-  New_BTHT(ht,trieType);
+  ht = New_BTHT(CTXTc smBTHT, trieType);
   children = BTN_Child(parent);
   BTN_SetHashHdr(parent,ht);
   tablebase = BTHT_BucketArray(ht);
@@ -503,26 +549,45 @@ void hashify_children(CTXTdeclc BTNptr parent, int trieType) {
  *  the lower half of the table.
  */
 
+BTNptr *resize_hash_array(CTXTdeclc BTHTptr pHT, int new_size) {
+  BTNptr *bucket_array;     /* base address of resized hash table */
 
-void expand_trie_ht(BTHTptr pHT) {
+#ifdef MULTI_THREAD  
+  Structure_Manager * sm_BTHTArray;
+  /* we were only using private sm if MT, table is private and it was the initial malloc */
+  if (threads_current_sm == PRIVATE_SM) {
+    if (BTHT_NumBuckets(pHT) == 64) {
+      sm_BTHTArray = private_smTableBTHTArray;
+      bucket_array = (BTNptr *) mem_alloc(new_size * sizeof(BTNptr),TABLE_SPACE );
+      if ( IsNULL(bucket_array) )     return NULL;
+      memmove(bucket_array,BTHT_BucketArray(pHT),BTHT_NumBuckets(pHT)*sizeof(void*));
+      SM_DeallocateStruct(*sm_BTHTArray,BTHT_BucketArray(pHT));
+      return bucket_array;
+    } 
+  }
+#endif
+  /* do this for ST engine, or MT engine and shared tables, or already realloced. */
+  bucket_array = (BTNptr *)mem_realloc( BTHT_BucketArray(pHT), BTHT_NumBuckets(pHT)*sizeof(void*),
+					new_size * sizeof(BTNptr),TABLE_SPACE );
+  return bucket_array;
+}
+    
+void expand_trie_ht(CTXTdeclc BTHTptr pHT) {
 
   BTNptr *bucket_array;     /* base address of resized hash table */
   BTNptr *upper_buckets;    /* marker in the resized HT delimiting where the
 			        newly allocated buckets begin */
-
   BTNptr *bucket;           /* for stepping through buckets of the HT */
-
   BTNptr curNode;           /* TSTN being processed */
   BTNptr nextNode;          /* rest of the TSTNs in a bucket */
 
   unsigned long  new_size;  /* double duty: new HT size, then hash mask */
 
-
   new_size = TrieHT_NewSize(pHT);
-  bucket_array = (BTNptr *)mem_realloc( BTHT_BucketArray(pHT), BTHT_NumBuckets(pHT)*sizeof(void*),
-				     new_size * sizeof(BTNptr),TABLE_SPACE );
-  if ( IsNULL(bucket_array) )
-    return;
+
+  bucket_array = resize_hash_array(CTXTc pHT, new_size);
+
+  if ( IsNULL(bucket_array) )     return;
 
   upper_buckets = bucket_array + BTHT_NumBuckets(pHT);
   for (bucket = upper_buckets;  bucket < bucket_array + new_size;  bucket++)
@@ -530,6 +595,7 @@ void expand_trie_ht(BTHTptr pHT) {
   BTHT_NumBuckets(pHT) = new_size;
   new_size--;     /* 'new_size' is now the hashing mask */
   BTHT_BucketArray(pHT) = bucket_array;
+	 
   for (bucket = bucket_array;  bucket < upper_buckets;  bucket++) {
     curNode = *bucket;
     *bucket = NULL;
@@ -878,7 +944,7 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
    * setup for completed tables, the substitution factor is traversed
    * and the attvs set to the lower portion of varEnumerator.  To save
    * time, this is only done when there is at least one attv in 
-   * the call (attv_num > 0).  น
+   * the call (attv_num > 0).  ยน
    */
   if (attv_num > 0) {
     for (i = 0; i < sf_size; i++) {
@@ -2110,4 +2176,3 @@ ALNptr empty_return(CTXTdeclc VariantSF subgoal)
     return i;
 }
 
-/*----------------------------------------------------------------------*/

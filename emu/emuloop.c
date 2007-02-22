@@ -1994,8 +1994,15 @@ contcase:     /* the main loop */
     ADVANCE_PC(size_xxx);
     pcreg = lpcreg; 
     current_inst = lpcreg;
-    //    inst_begin_gl = lpcreg;  /* hack for the moment to make this a ``creturn'' */
-    return(0);	/* not "goto contcase"! */
+#ifdef MULTI_THREAD
+    if (xsb_mode == C_CALLING_XSB && th != main_thread_gl) {
+      UNLOCK_XSB_SYNCH;
+      pthread_cond_signal(&xsb_done_cond);
+      xsb_ready = 1;
+      pthread_cond_wait( &xsb_started_cond, &xsb_synch_mut );
+    } else  
+#endif
+return(0);	/* not "goto contcase"! */
   XSB_End_Instr()
 
   XSB_Start_Instr(builtin,_builtin)
@@ -2269,7 +2276,7 @@ DllExport int call_conv xsb(CTXTdeclc int flag, int argc, char *argv[])
    extern void dis(xsbBool);
    extern char *init_para(CTXTdeclc int, int, char **);
    extern void perform_IO_Redirect(CTXTdeclc int, char **);
-   extern void init_machine(CTXTdeclc int, int, int, int), init_symbols(CTXT);
+   extern void init_machine(CTXTdeclc int, int, int, int), init_symbols(CTXTdecl);
 #ifdef FOREIGN
 #ifndef FOREIGN_ELF
 #ifndef FOREIGN_WIN32
@@ -2309,6 +2316,16 @@ DllExport int call_conv xsb(CTXTdeclc int flag, int argc, char *argv[])
 	init_inst_table();		/* init table of instruction types */
 	init_symbols(CTXT);		/* preset a few symbols in PSC table */
 	init_interrupt();		/* catch ^C interrupt signal */
+
+#ifdef MULTI_THREAD
+	if (pthread_cond_init( &(th->_xsb_started_cond), NULL )) 
+	  printf("xsb_started_cond not initialized \n");
+	if (pthread_cond_init( &(th->_xsb_done_cond), NULL ))
+	  printf("xsb_done_cond not initialized \n");
+	pthread_mutex_init( &(th->_xsb_ready_mut), NULL ) ;
+	pthread_mutex_init( &(th->_xsb_synch_mut), NULL ) ;
+	xsb_ready = 0;
+#endif
 
 	/* "b" does nothing in UNIX, denotes binary file in Windows -- 
 	   needed in Windows for reading byte-code files */

@@ -69,6 +69,10 @@ extern int abolish_usermod_tables(CTXTdecl);
 extern int abolish_module_tables(CTXTdeclc const char *module_name);
 
 extern void release_any_pndes(CTXTdeclc PNDE firstPNDE);
-void delete_delay_trie(CTXTdeclc BTNptr root);
+extern void delete_delay_trie(CTXTdeclc BTNptr root);
+extern void release_all_tabling_resources(CTXTdecl);
+
+// Perhaps this should be in hashtable.h?
+extern void hashtable1_destroy_all(int);
 
 #endif /* __TR_UTILS_H__ */
