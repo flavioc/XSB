@@ -91,14 +91,15 @@ default_sys_error_handler_main(BT,Backtrace):-
 :- import functor/3 from standard.
 /* TLS: for now ignoring backtraces in Ccall; Ignoring Mt engine.
          Note that for ISO errors we get a comma-list that may have
-         terms in it.  I'm handling that specially, to make it look
+         terms in it.  Im handling that specially, to make it look
          pretty.*/
-
  default_ccall_error_handler(error(Error,MsgIn,_Backtrace)) :-
 	% here is where we may do something abt backtraces.
 	% xsb_flag(backtrace_on_error,BT),
 	% xsb_thread_self(Thread),
-	get_sys_error_description(error(Error,MsgIn),MsgList),
+	(get_sys_error_description(error(Error,MsgIn),MsgList) -> 
+	    true
+	  ; MsgList = ('++Error[XSB/Runtime] Unhandled Exception: ',MsgIn)),
 	transform_error_message(MsgList,MsgList1),
 	concat_atom(MsgList1,MsgAtom),
 	(atom(Error) -> ErrorAtom = Error ; functor(Error,ErrorAtom,_)),
@@ -167,14 +168,14 @@ get_sys_error_description(error(system_error,Msg), ExceptionDesc) :-
 	ExceptionDesc =   ('++Error[XSB/Runtime/P]: [System] ', Msg) .
 get_sys_error_description(error(table_error,Msg), ExceptionDesc) :-
 	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Table] ',Msg).
-
 get_sys_error_description(error(thread_cancel,Id), ExceptionDesc) :- 
 	ExceptionDesc = 
              ('++Error[XSB/Runtime/P]: [XSB Thread Cancellation] Thread ',Id).
-
 get_sys_error_description(error(type_error(Valid_type,Culprit),Msg), ExceptionDesc) :-
 	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Type (',Culprit,' in place of ',
 	                          Valid_type,')] ', Msg).
+get_sys_error_description(error(unrecoverable_error,Msg), ExceptionDesc) :-
+	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Unrecoverable!] ',Msg).
 
 /*get_backtrace(+, -) gets backtrace as built by build_xsb_backtrace:
 list pair, with car=forward continuation, cdr=backward continuation.
