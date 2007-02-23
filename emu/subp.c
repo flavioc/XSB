@@ -845,7 +845,7 @@ void setProfileBit(void *place_holder) {
 #ifdef WIN_NT
     Sleep(10);
 #else
-    sleep(0.01);
+    usleep(10000);
 #endif
   }
 }

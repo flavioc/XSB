@@ -25,10 +25,14 @@
 #include <time.h>
 #include <math.h>
 #include <signal.h>
-#include <unistd.h>
 
 #include "xsb_debug.h"
 #include "xsb_config.h"
+
+#ifndef WIN_NT
+#include <unistd.h>
+#endif
+
 
 #include "basictypes.h"
 #include "basicdefs.h"
@@ -510,8 +514,13 @@ call_conv int xsb_ccall_thread_create(th_context *th,th_context **thread_return)
 
   *thread_return = new_th_ctxt;
 
-  while (!(new_th_ctxt->_xsb_ready))    usleep(1000);
-
+  while (!(new_th_ctxt->_xsb_ready)) {
+#ifdef WIN_NT
+    Sleep(1);
+#else
+    usleep(1000);
+#endif
+  }
   return rc ;
 }  /* xsb_thread_create */
 
