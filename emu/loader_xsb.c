@@ -222,7 +222,7 @@ Integer float_val_to_hash(Float Flt) {
    of, the typing is a little unclear).  Each bucket is a list of
    hrecs. */
 
-static int get_index_tab(FILE *fd, int clause_no)
+static int get_index_tab(CTXTdeclc FILE *fd, int clause_no)
 {
   long hashval, size, j;
   long count = 0;
@@ -276,7 +276,7 @@ static int get_index_tab(FILE *fd, int clause_no)
       break; 
     default:
       hashval = 0;
-      xsb_exit("illegal format");
+      xsb_exit(CTXTc "illegal format");
     }
 
     get_obj_word_bbsig_notag(&label);
@@ -462,7 +462,7 @@ static int load_text(FILE *fd, int seg_num, int text_bytes, int *current_tab)
 
 /*----------------------------------------------------------------------*/
 
-static void load_index(FILE *fd, int index_bytes, int table_num)
+static void load_index(CTXTdeclc FILE *fd, int index_bytes, int table_num)
 {
   Integer index_bno, clause_no, t_len;
   byte    index_inst, arity;
@@ -483,7 +483,7 @@ static void load_index(FILE *fd, int index_bytes, int table_num)
     else 
 #endif
        temp_ptr = hptr = (CPtr)mem_alloc(temp_space*sizeof(CPtr),COMPILED_SPACE);
-    t_len = get_index_tab(fd, clause_no);
+    t_len = get_index_tab(CTXTc fd, clause_no);
     
     gen_index((xsbBool)(table_num > 0), clause_no, sob_arg_p, arity);
     mem_dealloc(indextab,hsize(clause_no)*sizeof(struct hrec),COMPILED_SPACE);
@@ -498,7 +498,7 @@ static void load_index(FILE *fd, int index_bytes, int table_num)
 
 /*== the load_seg function =============================================*/
 
-static pseg load_seg(FILE *fd, int seg_num, int text_bytes, int index_bytes)
+static pseg load_seg(CTXTdeclc FILE *fd, int seg_num, int text_bytes, int index_bytes)
 {
    int current_tab;
 
@@ -524,7 +524,7 @@ static pseg load_seg(FILE *fd, int seg_num, int text_bytes, int index_bytes)
      return NULL;
    }
    index_block_chain = &seg_index(current_seg);
-   load_index(fd, index_bytes, current_tab);
+   load_index(CTXTc fd, index_bytes, current_tab);
    mem_dealloc(index_reloc,NUM_INDEX_BLKS*sizeof(CPtr),COMPILED_SPACE);
    
    /* set text-index segment chain */
@@ -743,7 +743,7 @@ static void new_tdispblk(CTXTdeclc TIFptr *instr_ptr, Psc psc) {
 
   if (!(tdispblk = (struct TDispBlk_t *) 
 	mem_calloc(sizeof(struct TDispBlk_t)+max_threads_glc*sizeof(Cell),1,COMPILED_SPACE)))
-    xsb_exit("No space for table dispatch block");  /* never deallocated */
+    xsb_exit(CTXTc "No space for table dispatch block");  /* never deallocated */
   
   SYS_MUTEX_LOCK( MUTEX_TABLE );
 
@@ -811,7 +811,7 @@ static byte *loader1(CTXTdeclc FILE *fd, int exp)
     /*		xsb_dbgmsg(("Text Bytes %x %d",text_bytes,text_bytes));*/
     get_obj_word_bb(&index_bytes);
     /* load the text-index segment */
-    seg_first_inst = load_seg(fd,seg_count,text_bytes,index_bytes);
+    seg_first_inst = load_seg(CTXTc fd,seg_count,text_bytes,index_bytes);
     if (!seg_first_inst) return FALSE;
     if (seg_count == 1) first_inst = seg_first_inst;
     /* 1st inst of file */

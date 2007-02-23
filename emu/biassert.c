@@ -1913,14 +1913,14 @@ ClRef next_clref( PrRef Pred, ClRef Clause, prolog_term Head,
             }                                                           \
             break ;                                                     \
         default:                                                        \
-            xsb_exit("error removing a clause: %x",c) ;                 \
-            break ;                                                     \
+	  xsb_exit(CTXTc "error removing a clause: %x",c) ;		\
+	  break ;							\
     }                                                                   \
 }
 
 /* delete from a hash chain */
 
-static void delete_from_hashchain( ClRef Clause, int Ind, int NI )
+static void delete_from_hashchain(CTXTdeclc ClRef Clause, int Ind, int NI )
 {  
     CPtr PI = ClRefIndPtr(Clause,Ind) ;
     byte c = cell_opcode(PI) ;
@@ -1938,7 +1938,7 @@ static void delete_from_hashchain( ClRef Clause, int Ind, int NI )
 
 /* delete from the chain pointed by a prref - a all chain or a sob chain */
 
-static void delete_from_allchain( ClRef Clause )
+static void delete_from_allchain(CTXTdeclc ClRef Clause )
 {  
     PrRef Pred ;
     byte c = ClRefTryOpCode(Clause) ;
@@ -1967,7 +1967,7 @@ static void delete_from_allchain( ClRef Clause )
    last pointers from the PrRef -- note that retrys need no PrRef
    adjustment. */
 
-static void delete_from_sobchain(ClRef Clause)
+static void delete_from_sobchain(CTXTdeclc ClRef Clause)
 {  
     PrRef Pred ;
     byte c = ClRefTryOpCode(Clause) ;
@@ -2508,7 +2508,7 @@ int mark_dynamic(CTXTdecl)
 
 void gc_retractall(CTXTdeclc ClRef);
 int determine_if_safe_to_delete(ClRef);
-static int really_delete_clause(ClRef);
+static int really_delete_clause(CTXTdeclc ClRef);
 
 /* Upon freeing, the Pred-delcf pointer for the current prref may need
    to be set.  To do this, need to find the current prref (via
@@ -2544,7 +2544,7 @@ int sweep_dynamic(CTXTdeclc DelCFptr *chain_begin,Structure_Manager *SM) {
 	    //	    fprintf(stderr,"Garbage Collecting Clause: %s/%d (%p)\n",
 	    //		    get_name(DCF_PSC(delcf_ptr)),get_arity(DCF_PSC(delcf_ptr)),
 	    //		    DCF_ClRef(delcf_ptr));
-	    really_delete_clause(DCF_ClRef(delcf_ptr));
+	    really_delete_clause(CTXTc DCF_ClRef(delcf_ptr));
 	    prref = dynpredep_to_prref(CTXTc get_ep(DCF_PSC(delcf_ptr)));
 	    Free_DelCF(delcf_ptr,prref,*chain_begin,*SM);
 	  } else {
@@ -2677,7 +2677,7 @@ void release_private_dynamic_resources(CTXTdecl) {
 /********************************************************************/
 /* Insert in retract buffer and remove old clauses */
 
-static int really_delete_clause(ClRef Clause)
+static int really_delete_clause(CTXTdeclc ClRef Clause)
 {
   xsb_dbgmsg((LOG_RETRACT,
 	     "Really deleting clause(%p) op(%x) type(%d)",
@@ -2685,7 +2685,7 @@ static int really_delete_clause(ClRef Clause)
     switch( ClRefType(Clause) )
     {
         case UNINDEXED_CL:
-	  delete_from_sobchain(Clause) ;
+	  delete_from_sobchain(CTXTc Clause) ;
 	  break ;
 
         case INDEXED_CL:
@@ -2697,7 +2697,7 @@ static int really_delete_clause(ClRef Clause)
             xsb_dbgmsg((LOG_RETRACT,
 		       "Really deleting clause (%p) size %d indexes %d",
 		       Clause, ClRefSize(Clause), NI )) ;
-            delete_from_allchain(Clause) ;
+            delete_from_allchain(CTXTc Clause) ;
 
             /* remove it from index chains */
             for( i = NI; i >= 1; i-- ) {
@@ -2712,11 +2712,11 @@ static int really_delete_clause(ClRef Clause)
 	      xsb_dbgmsg((LOG_RETRACT,
 			  "Addr %p : prev %p : next %p",
 			  sob, ClRefNext(sob), ClRefPrev(sob) ));
-	      delete_from_hashchain(Clause,i,NI) ;
+	      delete_from_hashchain(CTXTc Clause,i,NI) ;
 	      if (sob && --ClRefNumNonemptyBuckets(sob) == 0) 
                 { /* if emptied bucket, decrement count; if all empty, reclaim SOB */
                     xsb_dbgmsg((LOG_RETRACT,"deleting sob - %p", sob ));
-		    delete_from_sobchain(sob) ;
+		    delete_from_sobchain(CTXTc sob) ;
 		    mem_dealloc((pb)ClRefAddr(sob), ClRefSize(sob),ASSERT_SPACE);
 		}
             }
@@ -2724,7 +2724,7 @@ static int really_delete_clause(ClRef Clause)
         }
         case SOB_RECORD:
         default :
-	  xsb_exit( "retract internal error!" ) ;
+	  xsb_exit(CTXTc  "retract internal error!" ) ;
     }
     mem_dealloc((pb)ClRefAddr(Clause), ClRefSize(Clause),ASSERT_SPACE);
     if (xsb_profiling_enabled)
@@ -2782,10 +2782,10 @@ static void mark_for_deletion(CTXTdeclc ClRef Clause)
 	  }
 	  break ;
         case SOB_RECORD:
-	  xsb_exit( "retracting indexing record!" ) ;
+	  xsb_exit(CTXTc  "retracting indexing record!" ) ;
 	  break ;
         default :
-	  xsb_exit( "retract internal error!" ) ;
+	  xsb_exit(CTXTc "retract internal error!" ) ;
 	  break ;
     }
     SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
@@ -2820,7 +2820,7 @@ static void retract_clause(CTXTdeclc ClRef Clause, Psc psc ) {
     if (pflags[CLAUSE_GARBAGE_COLLECT] == 1 && !dyntabled_incomplete(CTXTc psc)
 	&& ((CPtr) tcpstack.high - top_of_cpstack) < 10000) {
       if (!mark_cpstack_retract(CTXTc Clause) && determine_if_safe_to_delete(Clause)) {
-	really_delete_clause(Clause);
+	really_delete_clause(CTXTc Clause);
 	really_deleted = 1;
       }
       unmark_cpstack_retract(CTXT);
@@ -2853,7 +2853,7 @@ static void retract_clause(CTXTdeclc ClRef Clause, Psc psc ) {
 	determine_if_safe_to_delete(Clause)) {
       //          fprintf(stderr,"Really deleting clause: %s/%d (%p)\n",
       //		  get_name(psc),get_arity(psc),Clause);
-      really_delete_clause(Clause);
+      really_delete_clause(CTXTc Clause);
       really_deleted = 1;
     }
     unmark_cpstack_retract(CTXT);
@@ -3038,7 +3038,7 @@ xsbBool db_get_clause( CTXTdecl /*+CC, ?CI, ?CIL, +PredEP, +Head, +Failed, -Clau
 set_outputs:
     if( Clause != 0 ) {
       if( ClRefType(Clause) == SOB_RECORD ) {
-	    xsb_exit("Error in get clause");
+	    xsb_exit(CTXTc "Error in get clause");
       }
       else EntryPoint = get_ClRefEntryPoint(Clause);
     }
@@ -3098,7 +3098,7 @@ static inline void allocate_prref_tab(CTXTdeclc Psc psc, PrRef *prref, pb *new_e
   int Loc;
 
   if (!(*prref = (PrRef)mem_alloc_nocheck(sizeof(PrRefData),ASSERT_SPACE))) 
-    xsb_exit("++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory (PrRef)");
+    xsb_exit(CTXTc "[Resource] Out of memory (PrRef)");
   //fprintf(stdout,"build_prref: %s/%d, shared=%d, prref=%p, incr=%d\n",
   //          get_name(psc),get_arity(psc),get_shared(psc),prref,get_incr(psc));
 
@@ -3120,7 +3120,7 @@ static inline void allocate_prref_tab(CTXTdeclc Psc psc, PrRef *prref, pb *new_e
       tip = New_TIF(CTXTc psc);
       tp  = (CPtr)mem_alloc_nocheck(FIXED_BLOCK_SIZE_FOR_TABLED_PRED,ASSERT_SPACE) ;
       if (tp == NULL) {
-	xsb_exit("++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory (PrRef)");
+	xsb_exit(CTXTc "[Resource] Out of memory (PrRef)");
       }
       Loc = 0 ;
       if (get_incr(psc)) { /* incremental evaluation */
@@ -3187,7 +3187,7 @@ PrRef build_prref( CTXTdeclc Psc psc )
     }
     if (dispblk->MaxThread >= xsb_thread_entry) {
       (&(dispblk->Thread0))[xsb_thread_entry] = (CPtr)new_ep;
-    } else xsb_exit("must expand dispatch-block");
+    } else xsb_exit(CTXTc "must expand dispatch-block");
   } else set_ep(psc,new_ep);
 #else
   set_ep(psc,new_ep);
@@ -3218,7 +3218,7 @@ PrRef get_prref(CTXTdeclc Psc psc) {
 	(&(dispblk->Thread0))[xsb_thread_entry] = (CPtr) new_ep;
       } else {
 	//      SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
-	xsb_exit("must expand dispatch-block");
+	xsb_exit(CTXTc "must expand dispatch-block");
       }
     }
     //  SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
@@ -3386,7 +3386,7 @@ void retractall_prref(CTXTdeclc PrRef prref) {
     }
     buffers_to_free[btop++] = prref->FirstClRef;
     while (btop > 0) {
-      if (btop >= MAXDYNFREEBUFF) xsb_exit("Too many buffers to retract");
+      if (btop >= MAXDYNFREEBUFF) xsb_exit(CTXTc "Too many buffers to retract");
       buffer = buffers_to_free[--btop];
       switch (ClRefType(buffer)) {
       case SOB_RECORD: 
@@ -3429,7 +3429,7 @@ void gc_retractall(CTXTdeclc ClRef clref) {
 
     buffers_to_free[btop++] = clref;
     while (btop > 0) {
-      if (btop >= MAXDYNFREEBUFF) xsb_exit("Too many buffers to retract");
+      if (btop >= MAXDYNFREEBUFF) xsb_exit(CTXTc "Too many buffers to retract");
       buffer = buffers_to_free[--btop];
       switch (ClRefType(buffer)) {
       case SOB_RECORD: 
@@ -3605,7 +3605,7 @@ static void retractall_clause(CTXTdeclc ClRef Clause, Psc psc, int flag ) {
 
     if(!(clref_is_marked(Clause)) && 
 	determine_if_safe_to_delete(Clause)) {
-      really_delete_clause(Clause);
+      really_delete_clause(CTXTc Clause);
       really_deleted = 1;
     }
   }

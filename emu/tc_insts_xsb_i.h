@@ -704,7 +704,7 @@ if ( int_val(cell(breg + CP_SIZE + 2)) == HASH_IS_NOT_FREE ) {
       }
       XSB_Deref(*reg_arrayptr);
       if (isref(*reg_arrayptr))   /* sanity check */
-	xsb_exit("error_condition in hash_handle\n");
+	xsb_exit(CTXTc "error_condition in hash_handle\n");
 
       hash_nonvar_subterm(*reg_arrayptr,hash_hdr,hashed_hash_offset);
       if (hash_offset == FIRST_HASH_NODE) {
@@ -734,7 +734,7 @@ if ( int_val(cell(breg + CP_SIZE + 2)) == HASH_IS_NOT_FREE ) {
       else {
 	xsb_error("Hash Offset %d, HHO %d",
 		  hash_offset, hashed_hash_offset);
-	xsb_exit("error_condition in hash_handle\n");
+	xsb_exit(CTXTc "error_condition in hash_handle\n");
       }
     }
     else {  /* unification of trie with variable term */

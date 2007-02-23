@@ -952,7 +952,7 @@ void undelete_branch(BTNptr lowest_node_in_branch) {
   if (trie_op_top >= trie_op_size) {\
     trie_op_size = 2*trie_op_size;\
     delete_trie_op = (char *)mem_realloc(delete_trie_op,(trie_op_size/2)*sizeof(char),trie_op_size*sizeof(char),TABLE_SPACE);\
-    if (!delete_trie_op) xsb_exit("out of space for deleting trie");\
+    if (!delete_trie_op) xsb_exit(CTXTc "out of space for deleting trie");\
     /*xsb_dbgmsg((LOG_DEBUG,"realloc delete_trie_op to %d",trie_op_size));*/\
   }\
   delete_trie_op[trie_op_top] = op;\
@@ -960,7 +960,7 @@ void undelete_branch(BTNptr lowest_node_in_branch) {
   if (trie_node_top >= trie_node_size) {\
     trie_node_size = 2*trie_node_size;\
     delete_trie_node = (BTNptr *)mem_realloc(delete_trie_node,(trie_node_size/2)*sizeof(BTNptr),trie_node_size*sizeof(BTNptr),TABLE_SPACE);\
-    if (!delete_trie_node) xsb_exit("out of space for deleting trie");\
+    if (!delete_trie_node) xsb_exit(CTXTc "out of space for deleting trie");\
     /*xsb_dbgmsg((LOG_DEBUG,"realloc delete_trie_node to %d",trie_node_size));*/\
   }\
   delete_trie_node[trie_node_top] = node;\
@@ -970,7 +970,7 @@ void undelete_branch(BTNptr lowest_node_in_branch) {
   if (trie_op_top >= trie_op_size) {\
     trie_op_size = 2*trie_op_size;\
     delete_trie_op = (char *)mem_realloc(delete_trie_op,(trie_op_size/2)*sizeof(char),trie_op_size*sizeof(char),TABLE_SPACE);\
-    if (!delete_trie_op) xsb_exit("out of space for deleting trie");\
+    if (!delete_trie_op) xsb_exit(CTXTc "out of space for deleting trie");\
     /*xsb_dbgmsg((LOG_DEBUG,"realloc delete_trie_op to %d",trie_op_size));*/\
   }\
   delete_trie_op[trie_op_top] = DT_HT;\
@@ -978,7 +978,7 @@ void undelete_branch(BTNptr lowest_node_in_branch) {
   if (trie_hh_top >= trie_hh_size) {\
     trie_hh_size = 2*trie_hh_size;\
     delete_trie_hh = (BTHTptr *)mem_realloc(delete_trie_hh,(trie_hh_size/2)*sizeof(BTHTptr),trie_hh_size*sizeof(BTHTptr),TABLE_SPACE);\
-    if (!delete_trie_hh) xsb_exit("out of space for deleting trie");\
+    if (!delete_trie_hh) xsb_exit(CTXTc "out of space for deleting trie");\
     /*xsb_dbgmsg((LOG_DEBUG,"realloc delete_trie_hh to %d",trie_hh_size));*/\
   }\
   delete_trie_hh[trie_hh_top] = hh;\
@@ -1042,7 +1042,7 @@ void delete_trie(CTXTdeclc BTNptr iroot) {
 	  /* Child nodes == NULL is not the correct test*/
 	  if (IsLeafNode(root)) {
 	    if (IsNonNULL(chil))
-	      xsb_exit("Anomaly in delete_trie !");
+	      xsb_exit(CTXTc "Anomaly in delete_trie !");
 	    push_delete_trie_node(root,DT_DS);
 	    if (IsNonNULL(sib)) {
 	      push_delete_trie_node(sib,DT_NODE);
@@ -1128,7 +1128,7 @@ void delete_return(CTXTdeclc BTNptr l, VariantSF sg_frame)
       n = ALN_Next(n);/* if a is not in that list a core dump will result */
     }
     if (n == NULL) {
-      xsb_exit("Error in delete_return()");
+      xsb_exit(CTXTc "Error in delete_return()");
     }
     a               = ALN_Next(n);
     next            = ALN_Next(a);
@@ -1313,7 +1313,7 @@ Integer newtrie(CTXTdecl)
       Set_ArraySz += ADJUST_SIZE;  /* adjust the array size */
       Set_ArrayPtr = (BTNptr *) mem_calloc(Set_ArraySz ,sizeof(BTNptr),TABLE_SPACE);
       if (Set_ArrayPtr == NULL)
-	xsb_exit("Out of memory in new_trie/1");
+	xsb_exit(CTXTc "Out of memory in new_trie/1");
       for (i = 0; i < num_sets; i++)
 	Set_ArrayPtr[i] = temp_arrayptr[i];
       mem_dealloc(temp_arrayptr,temp_arraysz,TABLE_SPACE);

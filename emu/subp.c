@@ -311,16 +311,16 @@ void print_statistics(CTXTdeclc int amount) {
 /*======================================================================*/
 /*======================================================================*/
 
-static void default_inthandler(int intcode)
+static void default_inthandler(CTXTdeclc int intcode)
 {
   char message[80];
 
   switch (intcode) {
   case MYSIG_UNDEF:
-    xsb_exit("Undefined predicate; exiting by the default handler.");
+    xsb_exit(CTXTc "Undefined predicate; exiting by the default handler.");
     break;
   case MYSIG_KEYB:
-    xsb_exit("Keyboard interrupt; exiting by the default handler.");
+    xsb_exit(CTXTc "Keyboard interrupt; exiting by the default handler.");
     break;
   case MYSIG_PSC:
     break;
@@ -328,7 +328,7 @@ static void default_inthandler(int intcode)
     sprintf(message,
 	    "Unknown interrupt (%d) occured; exiting by the default handler", 
 	    intcode);
-    xsb_exit(message);
+    xsb_exit(CTXTc message);
     break;
   }
 }
@@ -364,7 +364,7 @@ Psc synint_proc(CTXTdeclc Psc psc, int intcode)
 {
   if (pflags[intcode+INT_HANDLERS_FLAGS_START]==(Cell)0) {
     /* default hard handler */
-    default_inthandler(intcode);
+    default_inthandler(CTXTc intcode);
     psc = 0;
   } else {				/* call Prolog handler */
     switch (intcode) {
@@ -775,7 +775,8 @@ void xsb_segfault_catcher(int err)
 {
   char *tmp_message = xsb_segfault_message;
 #ifdef MULTI_THREAD
-  xsb_exit(tmp_message);
+  th_context *th = find_context(xsb_thread_self());
+  xsb_exit(th, tmp_message);
 #else
   xsb_segfault_message = xsb_default_segfault_msg; /* restore default */
   printf("segfault!!\n");
@@ -789,7 +790,7 @@ void xsb_segfault_quitter(int err)
   th_context *th = find_context(xsb_thread_self());
 #endif
   print_xsb_backtrace(CTXT);
-  xsb_exit(xsb_segfault_message);
+  xsb_exit(CTXTc xsb_segfault_message);
 }
 
 #ifdef WIN_NT

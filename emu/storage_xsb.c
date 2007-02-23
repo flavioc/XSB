@@ -44,9 +44,9 @@
 
 /* this func would insert handle into hashtable, if it isn't there */
 #define find_or_insert_storage_handle(name)  \
-    	    (STORAGE_HANDLE *)search_bucket(name,&bt_storage_hash_table,hashtable_insert)
+    	    (STORAGE_HANDLE *)search_bucket(CTXTc name,&bt_storage_hash_table,hashtable_insert)
 #define destroy_storage_handle(name) \
-    	    search_bucket(name,&bt_storage_hash_table,hashtable_delete)
+    	    search_bucket(CTXTc name,&bt_storage_hash_table,hashtable_delete)
 #define show_table_state()    show_table_state(&bt_storage_hash_table)
 
 static STORAGE_HANDLE        *increment_storage_snapshot(CTXTdeclc Cell name);

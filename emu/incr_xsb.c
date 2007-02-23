@@ -201,7 +201,7 @@ xsbBool incr_eval_builtin(CTXTdecl)
     
 
   default:
-    xsb_exit("Unknown Incremental Evaluation Builtin: %d\n.", builtin_number);
+    xsb_exit(CTXTc "Unknown Incremental Evaluation Builtin: %d\n.", builtin_number);
     break;
   }
   return TRUE;

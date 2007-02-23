@@ -62,16 +62,16 @@
 #define mark_bucket_free(bucket,size)   memset(bucket,(Cell)0,size)
 #define is_free_bucket(bucket)          (bucket->name == (Cell)0)
 
-static void init_hashtable(xsbHashTable *table);
+static void init_hashtable(CTXTdeclc xsbHashTable *table);
 
 
-xsbBucket *search_bucket(Cell name,
+xsbBucket *search_bucket(CTXTdeclc Cell name,
 			 xsbHashTable *table,
 			 enum xsbHashSearchOp search_op)
 {
   xsbBucket *bucket, *prev;
 
-  if (! table->initted) init_hashtable(table);
+  if (! table->initted) init_hashtable(CTXTc table);
 
   prev = NULL;
   bucket = get_top_bucket(table,table_hash(name,table->length));
@@ -118,7 +118,7 @@ xsbBucket *search_bucket(Cell name,
     bucket = (xsbBucket *)mem_calloc(1,table->bucket_size,HASH_SPACE);
     //printf("calloc bucket, size: %d\n",table->bucket_size);
     if (!bucket)
-      xsb_exit("Out of Memory: Can't allocate hash bucket");
+      xsb_exit(CTXTc "Out of Memory: Can't allocate hash bucket");
     prev->next = bucket;
     /* NOTE: not necessary to nullify bucket->next because of calloc() */
   }
@@ -127,13 +127,13 @@ xsbBucket *search_bucket(Cell name,
 }
 
 
-static void init_hashtable(xsbHashTable *table)
+static void init_hashtable(CTXTdeclc xsbHashTable *table)
 {
   /* calloc zeroes the allocated space; clients rely on this */
   table->table = (byte *)mem_calloc(table->length,table->bucket_size,HASH_SPACE);
   //printf("calloc table, size: %d\n",table->length*table->bucket_size);
   if (!table->table)
-    xsb_exit("Out of Memory: Can't create hash table");
+    xsb_exit(CTXTc "Out of Memory: Can't create hash table");
   table->initted = TRUE;
 }
 

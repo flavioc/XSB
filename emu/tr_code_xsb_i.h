@@ -45,8 +45,8 @@
    Cell symbol = 0;	/* eliminate compiler warning */	\
 								\
    switch (cell_tag(Subterm)) {					\
-   case XSB_STRING:    	       	       	       	       	       \
-   case XSB_INT:    	       	       	       	       	       \
+   case XSB_STRING:						\
+   case XSB_INT:						\
    case XSB_FLOAT:	      	  				\
      symbol = EncodeTrieConstant(Subterm);			\
      break;							\
@@ -58,7 +58,7 @@
      break;							\
    default:							\
      fprintf(stderr,"Bad tag :Type %ld ",cell_tag(Subterm));	\
-     xsb_exit("In instruction hash_handle");			\
+     xsb_exit(CTXTc "In instruction hash_handle");		\
      break;							\
    }								\
    BucketNum = TrieHash(symbol,BTHT_GetHashSeed(pBTHT));	\

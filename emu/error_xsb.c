@@ -96,7 +96,7 @@ DllExport void call_conv xsb_throw_internal(CTXTdeclc prolog_term Ball, unsigned
   space_for_ball_assert = (Cell *) mem_alloc_nocheck(space_for_ball_assert_len,
 						     LEAK_SPACE);
   if (!space_for_ball_assert) 
-    xsb_exit("++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory");
+    xsb_exit(CTXTc "[Resource] Out of memory");
 
   exceptballpsc = pair_psc((Pair)insert("$$exception_ball", (byte)2, 
 					pair_psc(insert_module(0,"standard")), 
@@ -114,7 +114,7 @@ DllExport void call_conv xsb_throw_internal(CTXTdeclc prolog_term Ball, unsigned
   mem_dealloc(cs_val(Ball),Ball_len,LEAK_SPACE);
   mem_dealloc(space_for_ball_assert,space_for_ball_assert_len,LEAK_SPACE);
   /* reset WAM emulator state to Prolog catcher */
-  if (unwind_stack(CTXT)) xsb_exit("Unwind_stack failed in xsb_throw_internal!");
+  if (unwind_stack(CTXT)) xsb_exit(CTXTc "Unwind_stack failed in xsb_throw_internal!");
   /* Resume main emulator instruction loop */
   longjmp(xsb_abort_fallback_environment, (Integer) &fail_inst);
 }
@@ -132,7 +132,7 @@ DllExport void call_conv xsb_throw(CTXTdeclc prolog_term Ball)
   if (!space_for_ball_assert) {
     /* 3 cells needed for term */
     space_for_ball_assert = (Cell *) mem_alloc(3*sizeof(Cell),LEAK_SPACE);
-    if (!space_for_ball_assert) xsb_exit("out of memory in xsb_throw!");
+    if (!space_for_ball_assert) xsb_exit(CTXTc "out of memory in xsb_throw!");
   }
 
   exceptballpsc = pair_psc((Pair)insert("$$exception_ball", (byte)2, 
@@ -150,7 +150,7 @@ DllExport void call_conv xsb_throw(CTXTdeclc prolog_term Ball)
   assert_buff_to_clref_p(CTXTc term_to_assert,3,Prref,0,makeint(0),0,&clause);
   mem_dealloc(space_for_ball_assert,3*sizeof(Cell),LEAK_SPACE);
   /* reset WAM emulator state to Prolog catcher */
-  if (unwind_stack(CTXT)) xsb_exit("Unwind_stack failed in xsb_throw!");
+  if (unwind_stack(CTXT)) xsb_exit(CTXTc "Unwind_stack failed in xsb_throw!");
 
   /* Resume main emulator instruction loop */
   longjmp(xsb_abort_fallback_environment, (Integer) &fail_inst);
@@ -355,7 +355,7 @@ void call_conv xsb_resource_error(CTXTdeclc char *resource,
 
   tptr = (Cell *) malloc(1000);
   if (!tptr) 
-    xsb_exit("++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory");
+    xsb_exit(CTXTc "++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory");
   else free(tptr);
 
   sprintf(message,"in predicate %s/%d)",predicate,arity);
@@ -364,7 +364,7 @@ void call_conv xsb_resource_error(CTXTdeclc char *resource,
 
   tptr =   (Cell *) mem_alloc_nocheck(ball_len,LEAK_SPACE);
   if (!tptr) 
-    xsb_exit("++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory");
+    xsb_exit(CTXTc "++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory");
 
   ball_to_throw = makecs(tptr);
   bld_functor(tptr, pair_psc(insert("error",3,
@@ -398,7 +398,7 @@ void call_conv xsb_memory_error(char *resource,char *message)
   sprintf(exit_message,
 	  "++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory (%s)",
 	  message);
-  xsb_exit(exit_message);
+  exit_xsb(exit_message);
 }
 #else
 void call_conv xsb_memory_error(char *resource,char *message) {
@@ -417,7 +417,7 @@ void call_conv xsb_resource_error_nopred(CTXTdeclc char *resource,char *message)
 
   tptr = (Cell *) malloc(1000);
   if (!tptr) 
-    xsb_exit("++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory");
+    xsb_exit(CTXTc "++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory");
   else free(tptr);
 
   XSB_StrSet(&MsgBuf,message);
@@ -425,7 +425,7 @@ void call_conv xsb_resource_error_nopred(CTXTdeclc char *resource,char *message)
 
   tptr =   (Cell *) mem_alloc_nocheck(ball_len,LEAK_SPACE);
   if (!tptr) 
-    xsb_exit("++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory");
+    xsb_exit(CTXTc "++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory");
 
   ball_to_throw = makecs(tptr);
   bld_functor(tptr, pair_psc(insert("error",3,
@@ -552,6 +552,38 @@ void call_conv xsb_type_error(CTXTdeclc char *valid_type,Cell culprit,
   xsb_throw_internal(CTXTc ball_to_throw, ball_len);
 
 }
+
+/**************/
+
+void call_conv xsb_unrecoverable_error(CTXTdeclc char *message) 
+{
+  prolog_term ball_to_throw;
+  int isnew;
+  Cell *tptr;
+  unsigned long ball_len = 10*sizeof(Cell);
+#ifdef MULTI_THREAD
+  char mtmessage[MAXBUFSIZE];
+  int tid = xsb_thread_self();
+#endif
+
+  tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
+  ball_to_throw = makecs(tptr);
+  bld_functor(tptr, pair_psc(insert("error",3,
+				    (Psc)flags[CURRENT_MODULE],&isnew)));
+
+  tptr++;
+  bld_string(tptr,string_find("unrecoverable_error",1));
+  tptr++;
+#ifdef MULTI_THREAD
+  sprintf(mtmessage,"[th %d] %s",tid,message);
+  bld_string(tptr,string_find(mtmessage,1));
+#else  
+  bld_string(tptr,string_find(message,1));
+#endif
+  tptr++;
+  bld_copy(tptr,build_xsb_backtrace(CTXT));
+  xsb_throw_internal(CTXTc ball_to_throw,ball_len);
+}			       
 
 /*****************/
 
@@ -802,18 +834,29 @@ DllExport void call_conv xsb_initialization_exit(char *description, ...)
   }
 }
 
-DllExport void call_conv xsb_exit(char *description, ...)
+DllExport void call_conv xsb_exit(CTXTdeclc  char *description, ...)
 {
   va_list args;
+  char message[MAXBUFSIZE];
 
-  va_start(args, description);
-  vfprintf(stderr, description, args);
-  va_end(args);
+  if (xsb_mode != C_CALLING_XSB) {
+    va_start(args, description);
+    vfprintf(stderr, description, args);
+    va_end(args);
 
-  fprintf(stdfdbk, "\nExiting XSB abnormally...\n");
-  exit(1);
+    fprintf(stdfdbk, "\nExiting XSB abnormally...\n");
+    exit(1);
+  }
+  else {
+    va_start(args, description);
+    vsnprintf(message,MAXBUFSIZE, description, args);
+    va_end(args);
+    xsb_unrecoverable_error(CTXTc message);
+  }
 }
 
+/* This gives an absolute exit -- used only in memory errors, 
+   and perhaps shouldn't even be used there.*/
 DllExport void call_conv exit_xsb(char *description)
 {
   fprintf(stderr, description);
@@ -925,7 +968,7 @@ int unwind_stack(CTXTdecl)
      }
 
    if ( ! e )
-     xsb_exit("Throw failed because no catcher for throw");
+     xsb_exit(CTXTc "Throw failed because no catcher for throw");
 
    /* now find the corresponding breg */
    b = breg;

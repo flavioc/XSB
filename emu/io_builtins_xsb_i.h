@@ -439,7 +439,7 @@ inline static xsbBool file_function(CTXTdecl)
 	int old_len = line_buff_len;
 	line_buff_len = line_buff_disp+MAX_IO_BUFSIZE;
 	if(!(line_buff = mem_realloc(line_buff,old_len,line_buff_len,LEAK_SPACE)))
-	  xsb_exit("No space for line buffer");
+	  xsb_exit(CTXTc "No space for line buffer");
 //	printf("frll: expand buffer line_buff(%p,%d)\n",line_buff,line_buff_len);
       }
       *(line_buff+line_buff_disp) = c = getc(fptr);

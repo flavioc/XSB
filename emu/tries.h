@@ -457,7 +457,7 @@ extern CPtr reg_arrayptr, var_regs[];
     if (ArraySz < NeededSz) ArraySz = NeededSz;\
     ArrayNam = mem_realloc(ArrayNam,Siz*sizeof(ArrType),ArraySz*sizeof(ArrType),TABLE_SPACE);\
     if (ArrayNam == NULL) \
-      xsb_exit("No More memory for reallocating Array");\
+      xsb_exit(CTXTc "No More memory for reallocating Array");\
 }
 
 #define will_overflow_reg_array(x) {\

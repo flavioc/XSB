@@ -303,7 +303,7 @@ static unsigned long heap_marks_size;
 #define stack_boundaries \
   heap_top = hreg; \
   ls_top = top_of_localstk - 256;  /* extra space for environment above top */ \
-  if (ls_top < heap_top) xsb_exit("Heap and local stack are clobbered"); \
+  if (ls_top < heap_top) xsb_exit(CTXTc "Heap and local stack are clobbered"); \
   heap_bot = (CPtr)glstack.low ; \
   ls_bot = (CPtr)glstack.high - 1 ; \
   tr_top = (CPtr)(top_of_trail) /*- 1*/ ; \
@@ -724,7 +724,7 @@ int gc_heap(CTXTdeclc int arity, int ifStringGC)
 	
 	begin_new_heap = (CPtr)mem_alloc(marked*sizeof(Cell),GC_SPACE);
 	if (begin_new_heap == NULL)
-	  xsb_exit("copying garbage collection could not allocate new heap");
+	  xsb_exit(CTXTc "copying garbage collection could not allocate new heap");
 	end_new_heap = begin_new_heap+marked;
 
 	hreg = copy_heap(CTXTc marked,begin_new_heap,end_new_heap,arity);

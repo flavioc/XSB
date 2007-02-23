@@ -79,7 +79,7 @@ int get_more_chunk(CTXTdecl)
 
   /* calloc so string gc marking doesn't look at uninitted cells */
   if (!(newchunk = (CPtr)mem_calloc(FINDALL_CHUNCK_SIZE, sizeof(Cell),FINDALL_SPACE)))
-    xsb_exit("get_more_chunk failed");
+    xsb_exit(CTXTc "get_more_chunk failed");
 
   *newchunk = 0 ;
   *(current_findall->current_chunk) = (Cell)newchunk ;
@@ -109,7 +109,7 @@ int findall_init_c(CTXTdecl)
 	  p = findall_solutions = (findall_solution_list *)
 			mem_alloc(MAX_FINDALLS*sizeof(findall_solution_list),FINDALL_SPACE) ;
 	  if (findall_solutions == 0)
-	    xsb_exit("init of findall failed") ;
+	    xsb_exit(CTXTc "init of findall failed") ;
 	  for (i = 0 ; i++ < MAX_FINDALLS ; p++)
 		{ p->size = i ;
 		  p->tail = 0 ;
@@ -396,7 +396,7 @@ static int findall_trail(CTXTdeclc CPtr p, Cell val)
   if (trail_left == 0)
     {
       if (!(new_tr_chunk = (f_tr_chunk *)mem_alloc(sizeof(f_tr_chunk),FINDALL_SPACE)))
-	xsb_exit("findall_trail failed");
+	xsb_exit(CTXTc "findall_trail failed");
       cur_tr_top = new_tr_chunk->tr ;
       cur_tr_limit = new_tr_chunk->tr+F_TR_NUM ;
       new_tr_chunk->previous = cur_tr_chunk ;
@@ -411,7 +411,7 @@ static int findall_trail(CTXTdeclc CPtr p, Cell val)
 static int init_findall_trail(CTXTdecl)
 {
   if (!(cur_tr_chunk = (f_tr_chunk *)mem_alloc(sizeof(f_tr_chunk),FINDALL_SPACE)))
-    xsb_exit("init_findall_trail failed");
+    xsb_exit(CTXTc "init_findall_trail failed");
   cur_tr_top = cur_tr_chunk->tr ;
   cur_tr_limit = cur_tr_chunk->tr+F_TR_NUM ;
   cur_tr_chunk->previous = 0 ;
@@ -628,7 +628,7 @@ int findall_add(CTXTdecl)
   
   current_findall = findall_solutions + int_val(arg2) ;
   if (current_findall->tail == 0)
-    xsb_exit("internal error 1 in findall") ;
+    xsb_exit(CTXTc "internal error 1 in findall") ;
   
   to = current_findall->top_of_chunk ;
   if ((to+2) > (current_findall->current_chunk + FINDALL_CHUNCK_SIZE -1)) {

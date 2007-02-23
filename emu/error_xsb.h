@@ -67,7 +67,7 @@
 #endif 
 
 
-DllExport extern void call_conv xsb_exit(char *, ...);
+DllExport extern void call_conv xsb_exit(CTXTdeclc char *, ...);
 DllExport extern void call_conv xsb_initialization_exit(char *, ...);
 DllExport extern void call_conv exit_xsb(char *);
 

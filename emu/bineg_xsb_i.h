@@ -260,7 +260,7 @@ case IS_INCOMPLETE: {
 	  copy_of_var_addr_arraysz = var_addr_arraysz;
 	  copy_of_var_addr = (CPtr *)mem_calloc(copy_of_var_addr_arraysz, sizeof(CPtr),OTHER_SPACE);
 	  if(copy_of_var_addr == NULL){
-	    xsb_exit("No enough memory to calloc copy_of_var_addr!\nBye");
+	    xsb_exit(CTXTc "No enough memory to calloc copy_of_var_addr!\nBye");
 	  }
 	  for( i = 0; i <= global_num_vars; i++)
 	    copy_of_var_addr[i] = var_regs[i];

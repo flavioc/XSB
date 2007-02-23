@@ -288,8 +288,7 @@ void tcpstack_realloc(CTXTdeclc long new_size) {
 
 #ifdef CONC_COMPL
   if( flags[NUM_THREADS] > 1 && openreg < COMPLSTACKBOTTOM )
-	xsb_exit( 
-"Concurrent Completion doesn't yet support choice point stack expansion\n\
+	xsb_exit(CTXTc "Concurrent Completion doesn't yet support choice point stack expansion\n\
 Please use -c N or cpsize(N) to start with a larger choice point stack"
 	);
 #endif
@@ -322,7 +321,7 @@ Please use -c N or cpsize(N) to start with a larger choice point stack"
      */
     new_trail = (byte *)realloc(tcpstack.low, new_size * K);
     if ( IsNULL(new_trail) )
-      xsb_exit("Not enough core to resize the Trail and Choice Point Stack!");
+      xsb_exit(CTXTc "Not enough core to resize the Trail and Choice Point Stack!");
     new_cps = new_trail + new_size * K;
 
 #if defined(GENERAL_TAGGING)
@@ -454,7 +453,7 @@ void handle_tcpstack_overflow(CTXTdecl)
     tcpstack_realloc(CTXTc resize_stack(tcpstack.size,0));
   }
   else {
-    xsb_exit("Trail/ChoicePoint stack overflow detected but expansion is off");
+    xsb_exit(CTXTc "Trail/ChoicePoint stack overflow detected but expansion is off");
   }
 }
 
@@ -505,7 +504,7 @@ void complstack_realloc (CTXTdeclc long new_size) {
      */
     new_top = (byte *)realloc(complstack.low, new_size * K);
     if ( IsNULL(new_top) )
-      xsb_exit("Not enough core to resize the Completion Stack!");
+      xsb_exit(CTXTc "Not enough core to resize the Completion Stack!");
     new_bottom = new_top + new_size * K;
     
     top_offset = (long)(new_top - complstack.low);

@@ -42,7 +42,7 @@
 
 #define exit_if_null(x) {\
   if(x == NULL){\
-   xsb_exit("Malloc Failed !\n");\
+   xsb_exit(CTXTc "Malloc Failed !\n");\
   }\
 }
 
@@ -546,7 +546,6 @@ struct token_t *GetToken(CTXTdeclc FILE *card, STRFILE *instr, int prevch)
 	  {
 	    /* First call for GetToken, so allocate a buffer */
 	    strbuff = (char *)mem_alloc(strbuff_len,OTHER_SPACE);
-	    exit_if_null(strbuff);
 	  }
 	s = strbuff;
 	n = strbuff_len;
@@ -919,20 +918,20 @@ case deleted ****/
 }
 
 /* --- Testing routines (usually commented) ---  
- 
-void main(int arc, char *argv[])
-{
-  FILE *card;
-  struct token_t *res;
 
-  card = fopen(argv[1], "r");
-  if (!card) exit(1);
-  token->nextch = ' ';
-  do {
-    res = GetToken(CTXTc card, NULL, token->nextch);
-    print_token(res->type, res->value);
-  } while (res->type != TK_EOF);
-}
+| void main(int arc, char *argv[])
+| {
+|   FILE *card;
+|   struct token_t *res;
+| 
+|   card = fopen(argv[1], "r");
+|   if (!card) exit(1);
+|   token->nextch = ' ';
+|   do {
+|     res = GetToken(CTXTc card, NULL, token->nextch);
+|     print_token(res->type, res->value);
+|   } while (res->type != TK_EOF);
+| }
 
 void print_token(int token_type, char *ptr)
 {

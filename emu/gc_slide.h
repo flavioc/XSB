@@ -74,7 +74,7 @@ static void unchain(CTXTdeclc CPtr hptr, CPtr destination)
       start = (CPtr)(*hptr) ;
       /* start is for sure a pointer - possibly with a tag */
       pointsto = pointer_from_cell(CTXTc (Cell)start,&tag,&whereto) ;
-      if (pointsto == NULL) xsb_exit("pointsto error during unchaining") ;
+      if (pointsto == NULL) xsb_exit(CTXTc "pointsto error during unchaining") ;
       switch (whereto)
 	{
 	  case TO_HEAP :
@@ -94,7 +94,7 @@ static void unchain(CTXTdeclc CPtr hptr, CPtr destination)
 	    cp_set_unchained(pointsto) ;
 	    break ;
 	  default :
-	    xsb_exit("pointsto wrong space error during unchaining");
+	    xsb_exit(CTXTc "pointsto wrong space error during unchaining");
 	    break;
 	}
       *hptr = *pointsto ;
@@ -113,7 +113,7 @@ static void unchain(CTXTdeclc CPtr hptr, CPtr destination)
 	*pointsto = makeattv((Cell)destination);
 	break;
       default :
-	xsb_exit("tag error during unchaining") ;
+	xsb_exit(CTXTc "tag error during unchaining") ;
       }
     }
   while (continue_after_this) ;
@@ -124,7 +124,7 @@ static void unchain(CTXTdeclc CPtr hptr, CPtr destination)
 
 int swt_flag = 0;
 
-inline static void swap_with_tag(CPtr p, CPtr q, int tag)
+inline static void swap_with_tag(CTXTdeclc CPtr p, CPtr q, int tag)
 { /* p points to a cell with contents a tagged pointer
      make *q = p + tag, but maybe shift p
   */
@@ -144,7 +144,7 @@ inline static void swap_with_tag(CPtr p, CPtr q, int tag)
    case XSB_ATTV :
      *q = makeattv((Cell)p);
      break;
-   default : xsb_exit("error during swap_with_tag") ;
+   default : xsb_exit(CTXTc "error during swap_with_tag") ;
    }
 } /* swap_with_tag */
 
@@ -297,7 +297,7 @@ static CPtr slide_heap(CTXTdeclc int num_marked)
 	  }
 	  if (h_is_chained(q)) tr_set_chained(p) ;
 	  h_set_chained(q) ;
-	  swap_with_tag(p,q,tag) ;
+	  swap_with_tag(CTXTc p,q,tag) ;
 	}
     }
 
@@ -314,7 +314,7 @@ static CPtr slide_heap(CTXTdeclc int num_marked)
 	    { xsb_dbgmsg((LOG_DEBUG, "not marked from cp(%p)",p)); continue ; }
 	  if (h_is_chained(q)) cp_set_chained(p) ;
 	  h_set_chained(q) ;
-	  swap_with_tag(p,q,tag) ;
+	  swap_with_tag(CTXTc p,q,tag) ;
 	}
     }
 
@@ -334,7 +334,7 @@ static CPtr slide_heap(CTXTdeclc int num_marked)
 	  if (! h_marked(q-heap_bot)) continue ;
 	  if (h_is_chained(q)) ls_set_chained(p) ;
 	  h_set_chained(q) ;
-	  swap_with_tag(p,q,tag) ;
+	  swap_with_tag(CTXTc p,q,tag) ;
 	}
     }
 
@@ -368,7 +368,7 @@ static CPtr slide_heap(CTXTdeclc int num_marked)
 	}
 	p = hp_pointer_from_cell(CTXTc *hptr,&tag);
 	if (p &&(p<hptr)) {
-	  swap_with_tag(hptr,p,tag);
+	  swap_with_tag(CTXTc hptr,p,tag);
 	  if (h_is_chained(p))
 	    h_set_chained(hptr);
 	  else
@@ -398,7 +398,7 @@ static CPtr slide_heap(CTXTdeclc int num_marked)
 	  }
 	  p = hp_pointer_from_cell(CTXTc *hptr,&tag) ;            
 	  if (p && (p < hptr)) {
-	    swap_with_tag(hptr,p,tag) ;
+	    swap_with_tag(CTXTc hptr,p,tag) ;
 	    if (h_is_chained(p))
 	      h_set_chained(hptr) ;
 	    else 
@@ -437,7 +437,7 @@ static CPtr slide_heap(CTXTdeclc int num_marked)
 	  p = hp_pointer_from_cell(CTXTc *hptr,&tag);
 	  *destination = *hptr;
 	  if (p && (p > hptr)) {
-	    swap_with_tag(destination,p,tag);
+	    swap_with_tag(CTXTc destination,p,tag);
 	    if (h_is_chained(p))
 	      h_set_chained(destination);
 	    else
@@ -460,7 +460,7 @@ static CPtr slide_heap(CTXTdeclc int num_marked)
 	    p = hp_pointer_from_cell(CTXTc *hptr,&tag) ;
 	    *destination = *hptr ;
 	    if (p && (p > hptr)) {
-	      swap_with_tag(destination,p,tag) ;
+	      swap_with_tag(CTXTc destination,p,tag) ;
 	      if (h_is_chained(p))           
 		h_set_chained(destination) ;   
 	      else 

@@ -1206,6 +1206,8 @@ int xsb_answer_string(CTXTdeclc VarString *ans, char *sep)
 }
 
 
+/* Should be obsolete now that parser is returning proper error
+   messages */
 static long lastWarningStart = 0L;
 static inline void updateWarningStart(void)
 {
@@ -1216,7 +1218,59 @@ static inline void updateWarningStart(void)
 /*********************************************************************************************/
 
                                                                      
-/************************************************************************/
+/************************************************************************
+
+Using the API with the MT engine.
+
+In an MT environment, multiple XSB threads may be called by multiple C
+threads.  Note that the API commands affect XSB's stacks through
+c2p_xxx() calls and other actions.  And of course, XSB execution
+affects its registers and stacks, too.  Thus if an API command is
+being called by a thread that is separate from the XSB thread, we need
+to think of XSB's registers and stacks as shared data protected by a
+mutex.
+
+However, its a little more complex than that since what we really need
+to do is to tweak an XSB thread's stacks and then cause the thread to
+execute.  So I use a condition variable to signal to the caller that
+XSB is done with the request, and another to signal to XSB that the
+caller has set it a task.  Possibly this could be done by a mutex
+alone, but I don't understand how to do that right now.  
+
+The calling thread and XSB communicate through xsb_synch_mut, and the
+condition variables xsb_started_cond and xsb_done_con -- all of which
+are in an XSB thread's context.  If you look at emuloop.c, you'll see
+that the halt instruction, which is a function return in the
+sequential system, manipulates these condition variables in the MT
+system (with the exception of the main thread which is discussed
+below).
+
+Next, since commands and queries require more than one synchronization
+point, we need to serialize the commands and queries.  For this I use
+xsb_ready_mut (in an XSB thread's context).  Furthermore, since
+queries may make several different calls to XSB, each with their own
+synchronization points, I use xsb_query_mut to ensure that a
+backtracking query (including next_answer() calls) is done atomically
+without being intersperced with commands or other queries.  It could
+be that by using xsb_ready a little differently I could get rid of
+xsb_query_mut, but right now I just want to get it to work.
+
+There are two other issues.  First, XSB's action upon initialization
+ends with a halt.  If we want this halt to end with condition variable
+manipulation then we need to set up the condition variables and
+synchronization mutex before initializing the thread -- which contains
+the variables and mutex as part of its context.  Somewhat similarly,
+when a thread exits, it needs to return from the function that
+initialized it (ccall_xsb_thread_run()), so halt in this case cannot
+just manipulate condition variables.  To handle thread shutdown I use
+xsb_kill_thread().  Thus if thread_exit/0 is called by a thread in the
+C API, the thread calling the exited thread will hang.
+
+It would be nicer for the main thread to be treated just like any
+other thread, and if we could thread_exit.  Perhaps someone can figure
+out how to do this on a future pass.
+
+************************************************************************/
 
 static int xsb_initted_gl = 0;   /* if xsb has been called */
 
@@ -1287,7 +1341,7 @@ DllExport int call_conv xsb_init(int argc, char *argv[])
 
 /************************************************************************/
 /*								        */
-/*  int xsb_cmd_string(char *cmdline, char **argv) takes a		*/
+/*  int xsb_init_string(char *cmdline, char **argv) takes a		*/
 /*  command line string in cmdline, and parses it to return an argv	*/
 /*  vector in its second argument, and the argc count as the value of   */
 /*	the function.  (Will handle a max of 19 args.)			*/
@@ -1386,16 +1440,23 @@ DllExport int call_conv writeln_to_xsb_stdin(char * input){
   }
 #endif
 
-/************************************************************************/
-/*                                                                      */
-/* xsb_command() passes the command (i.e. query with no variables) to   */
-/* xsb.  The command must be put into xsb's register 1 as a term, by    */
-/* the caller who uses the c2p_* (and perhaps p2p_*) functions.         */
-/*   It returns 0 if it succeeds, 1 if it fails, in either case         */
-/* resetting register 1 back to a free variable.  It returns 2 if there */
-/* is an error.                                                         */
-/*                                                                      */
-/************************************************************************/
+/************************************************************************
+
+ xsb_command() passes the command (i.e. query with no variables) to
+ xsb.  The command must be put into xsb's register 1 as a term, by the
+ caller who uses the c2p_* (and perhaps p2p_*) functions.  
+
+ It returns XSB_SUCCESS if it succeeds, XSB_FAILURE if it fails, in
+ either case resetting register 1 back to a free variable.  It returns
+ XSB_ERROR if there is an error.
+
+ Note that because this command depends on the user mucking about with
+ registers via c2p_xxx() it is difficult at best to ensure
+ synchronization with the XSB thread that is being manipulated.  Thus,
+ this routine should not be used if multiple C threads may call
+ multiple XSB threads -- perhaps not in the MT engine at all?
+                                                                      
+************************************************************************/
 
 DllExport int call_conv xsb_command(CTXTdecl)
 {
