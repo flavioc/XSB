@@ -518,7 +518,7 @@ void realloc_strbuff(CTXTdeclc char **pstrbuff, char **ps, int *pn)
 { 
   char *newbuff;
 
-  newbuff = (char *)realloc(*pstrbuff, strbuff_len * 2);
+  newbuff = (char *)mem_realloc(*pstrbuff, strbuff_len, strbuff_len * 2,OTHER_SPACE);
   exit_if_null(newbuff);
   if (token_too_long_warning) {
     xsb_warn("Extra-long token. Runaway string?");
