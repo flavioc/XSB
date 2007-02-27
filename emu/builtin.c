@@ -2958,16 +2958,20 @@ int print_xsb_backtrace(CTXTdecl) {
     fprintf(stdout,"Partial Forward Continuation...\n");
     tmp_ereg = ereg;
     tmp_cpreg = cpreg;
-    instruction = *(tmp_cpreg-2*sizeof(Cell));
+    if (!tmp_cpreg) instruction = *(tmp_cpreg-2*sizeof(Cell));
     while (tmp_cpreg && (instruction == call || instruction == trymeorelse) && 
 	   (backtrace_length++ < MAX_BACKTRACE_LENGTH)) {
       if (instruction == call) {
 	called_psc = *((Psc *)tmp_cpreg - 1);
 	fprintf(stdout,"... %s/%d\n",get_name(called_psc),get_arity(called_psc));
       }
+      if (!tmp_ereg) {
+	fprintf(stdout,"... error in backtrace \n");
+	break;
+      }
       tmp_cpreg = *((byte **)tmp_ereg-1);
       tmp_ereg = *(CPtr *)tmp_ereg;
-      instruction = *(tmp_cpreg-2*sizeof(Cell));
+      if (!tmp_cpreg) instruction = *(tmp_cpreg-2*sizeof(Cell));
     }
   }
   return TRUE;
