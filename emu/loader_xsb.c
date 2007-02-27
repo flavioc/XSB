@@ -841,8 +841,13 @@ static byte *loader1(CTXTdeclc FILE *fd, int exp)
       if (strcmp(name, "_$main")!=0) {
 	if (xsb_profiling_enabled)
 	  remove_prog_seg((pb)get_ep(ptr->psc_ptr));
-	unload_seg((pseg)get_ep(ptr->psc_ptr));
-	set_ep(ptr->psc_ptr, (pb)seg_first_inst);
+	if (strcmp(get_name(cur_mod),"standard")==0 && strcmp(name,"catch")==0 && arity==3) {
+	  printf("Cannot reload catch/3: ignored\n");
+       	  unload_seg((pseg)seg_first_inst); /* unload version just loaded */
+	} else {
+	  unload_seg((pseg)get_ep(ptr->psc_ptr));
+	  set_ep(ptr->psc_ptr, (pb)seg_first_inst);
+	}
 	if (xsb_profiling_enabled)
 	  add_prog_seg(ptr->psc_ptr, (pb)seg_first_inst, text_bytes);
       }
