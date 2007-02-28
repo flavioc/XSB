@@ -847,9 +847,9 @@ static byte *loader1(CTXTdeclc FILE *fd, int exp)
 	} else {
 	  unload_seg((pseg)get_ep(ptr->psc_ptr));
 	  set_ep(ptr->psc_ptr, (pb)seg_first_inst);
+	  if (xsb_profiling_enabled)
+	    add_prog_seg(ptr->psc_ptr, (pb)seg_first_inst, text_bytes);
 	}
-	if (xsb_profiling_enabled)
-	  add_prog_seg(ptr->psc_ptr, (pb)seg_first_inst, text_bytes);
       }
       instruct_tip = get_tip_or_tdisp(ptr->psc_ptr);
       if (instruct_tip != NULL) {
