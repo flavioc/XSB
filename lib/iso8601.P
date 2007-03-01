@@ -22,7 +22,21 @@
 ##
 */
 
-/* Ported to XSB by Barry Evans and Terry Swift */
+/* Ported to XSB by Barry Evans and Terry Swift
+
+	based on Daniel L. Dudley's 
+	iso8601.lgt contribution to LogTalk
+	
+	Library: ISO8601.PL
+	Copyright (c) 2004-2005 Daniel L. Dudley
+
+	Purpose: ISO 8601 (and European civil calendar) compliant library of date
+			 and time (clock) related predicates. That is, an ISO 8601 handler.
+
+	Author:  Daniel L. Dudley
+	Created: 2004-02-18
+
+*/
 
 :- export
 			date_string/3,
@@ -37,7 +51,7 @@
  ************************/
 
 %==============================================================================
-% date(?JD, ?Year, ?Month, ?Day, ?DoW, ?Week, ?DoY)
+% julian_date(?JD, ?Year, ?Month, ?Day, ?DoW, ?Week, ?DoY)
 
 checkyear(Year):-
 	((var(Year) ; Year > -4714) -> 
