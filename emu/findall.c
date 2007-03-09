@@ -111,7 +111,8 @@ int findall_init_c(CTXTdecl)
 	  if (findall_solutions == 0)
 	    xsb_exit(CTXTc "init of findall failed") ;
 	  for (i = 0 ; i++ < MAX_FINDALLS ; p++)
-		{ p->size = i ;
+	    { p->first_chunk = NULL; /* no first chunk */
+		  p->size = i ;
 		  p->tail = 0 ;
 		}
           (--p)->size = -1 ;
@@ -121,12 +122,13 @@ int findall_init_c(CTXTdecl)
   if (nextfree < 0) /* could realloc here - too lazy to do it */
 	xsb_abort("[FINDALL] Maximum number of active findalls reached");
   thisfree = nextfree;
-	/* no checking - no trailing - just use findall_init correct :-) */
-  p = findall_solutions + nextfree ;
-  /* calloc so string gc marking doesn't look at uninitted cells */
-  if (!(w = (CPtr)mem_calloc(FINDALL_CHUNCK_SIZE, sizeof(Cell),FINDALL_SPACE)))
-	xsb_abort("[FINDALL] Not enough memory");
+	/* no checking - no trailing - just use findall_init correctly :-) */
+  p = findall_solutions + thisfree ;
 
+  if (p->first_chunk == NULL) {
+    if (!(w = (CPtr)mem_calloc(FINDALL_CHUNCK_SIZE,sizeof(Cell),FINDALL_SPACE)))
+      xsb_abort("[FINDALL] Not enough memory");
+  } else w = p->first_chunk;  /* already a first chunk, so use it */
   *w = 0 ;
   p->first_chunk = p->current_chunk = w ;
   w++ ; bld_free(w) ; p->tail = w ; /* create an undef as init of tail */
@@ -153,12 +155,14 @@ int findall_init(CTXTdecl)
 
 void findall_free(CTXTdeclc int i)
 { CPtr to_free,p ;
+  findall_solution_list *this_solution = findall_solutions + i ;
 
-  p = (findall_solutions + i)->first_chunk ;
+  /* Leave first chunk, so no need to realloc later */
+  p = (CPtr) *(this_solution->first_chunk) ;
   while (p != NULL)
-	{ to_free = p ; p = (CPtr)(*p) ; mem_dealloc(to_free,FINDALL_CHUNCK_SIZE * sizeof(Cell),FINDALL_SPACE) ; }
-  (findall_solutions + i)->tail = 0 ;
-  (findall_solutions + i)->size = nextfree ;
+    { to_free = p ; p = (CPtr)(*p) ; mem_dealloc(to_free,FINDALL_CHUNCK_SIZE * sizeof(Cell),FINDALL_SPACE) ; }
+  this_solution->tail = 0 ;
+  this_solution->size = nextfree ;
   nextfree = i ;
 } /*findall_free*/
 
