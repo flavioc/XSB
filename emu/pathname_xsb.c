@@ -290,7 +290,9 @@ DllExport char * call_conv strip_names_from_path(char* path, int how_many)
    is b.c */
 static char *get_file_basename(char *path) {
   char *ptr;
-  ptr = strrchr(path, SLASH);
+  char canonicized[MAXPATHLEN];
+  //ptr = strrchr(path, SLASH);
+  ptr = strrchr(rectify_pathname(path,canonicized), SLASH);
   if (ptr == NULL)
     return path;
   else
