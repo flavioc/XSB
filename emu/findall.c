@@ -111,7 +111,7 @@ int findall_init_c(CTXTdecl)
 	  if (findall_solutions == 0)
 	    xsb_exit(CTXTc "init of findall failed") ;
 	  for (i = 0 ; i++ < MAX_FINDALLS ; p++)
-	    { p->first_chunk = NULL; /* no first chunk */
+                { p->first_chunk = NULL; /* no first chunk */
 		  p->size = i ;
 		  p->tail = 0 ;
 		}
@@ -167,7 +167,8 @@ void findall_free(CTXTdeclc int i)
 } /*findall_free*/
 
 /* findall_clean should be called after interrupts or jumps out of the
-   interpreter - or just before jumping back into it
+   interpreter - or just before jumping back into it.
+   It frees the first chunk of each chain of chunks as well.
 */
 
 void findall_clean(CTXTdecl)
@@ -175,14 +176,30 @@ void findall_clean(CTXTdecl)
   int i ;
 	p = findall_solutions ;
 	if (! p) return ;
-	for (i = 0 ; i < MAX_FINDALLS ; i++)
-		{ if (p->tail != 0)
-			findall_free(CTXTc i) ;
-		  (findall_solutions + i)->size = i+1 ;
-		}
+	for (i = 0 ; i < MAX_FINDALLS ; i++) {
+	  if (p->tail != 0) findall_free(CTXTc i) ;
+	  (findall_solutions + i)->size = i+1 ;
+	  if ((findall_solutions+1)->first_chunk != NULL) {
+	    /* and free every first block as well */
+	    mem_dealloc((findall_solutions+i)->first_chunk,
+			FINDALL_CHUNCK_SIZE * sizeof(Cell),FINDALL_SPACE);
+	    (findall_solutions+i)->first_chunk = NULL;
+	  }
+	}
 	(findall_solutions + i - 1)->size = -1 ;
 	nextfree = 0 ;
 } /* findall_clean */
+
+/* clean up ALL memory used by findall */
+void findall_clean_all(CTXTdecl) {
+  return;
+  findall_clean(CTXT);
+  mem_dealloc(findall_solutions,MAX_FINDALLS*sizeof(findall_solution_list),FINDALL_SPACE);
+  findall_solutions = NULL;
+  return;
+}
+
+
 
 /* findall_copy_to_heap does not need overflow checking - heap space is
    ensured; variables in the findall solution list can be altered without

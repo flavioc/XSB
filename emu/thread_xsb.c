@@ -106,6 +106,7 @@ typedef struct xsb_thread_s
 static xsb_thread_t *th_vec;
 static xsb_thread_t *th_first_free, *th_last_free, *th_first_thread;
 
+extern void findall_clean_all(CTXTdecl);
 extern void release_private_dynamic_resources(CTXTdecl);
 extern void release_private_tabling_resources(CTXTdecl);
 
@@ -760,6 +761,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  release_private_tabling_resources(CTXT);
 	  abolish_private_wfs_space(CTXT);
 	  release_private_dynamic_resources(CTXT);
+	  findall_clean_all(CTXT);
 	  close_str(CTXT) ;
 	  cleanup_thread_structures(CTXT) ;
 	  pthread_mutex_lock( &th_mutex );
