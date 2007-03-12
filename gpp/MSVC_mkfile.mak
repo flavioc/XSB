@@ -78,3 +78,8 @@ SOURCE=.\gpp.c
 
 "$(INTDIR)\gpp.obj" : $(SOURCE) "$(INTDIR)"
 
+
+
+# Local Variables:
+# coding-system-for-write: iso-2022-7bit-dos
+# End:
