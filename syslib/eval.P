@@ -78,7 +78,7 @@ eval(Arg, Res,Expr) :-
 %	; T =:= XSB_STRUCT -> eval1(Arg, Res)	/* user defined function */
 	).
 
-/* TLS: we are now more ISO-compatable for fp-to-integer rouinding
+/* TLS: we are now more ISO-compatable for fp-to-integer rounding
 functions, 9.1.5.1.  To be completely compatable, we'd have to check for
 overflow.  */
 eval0('+'(X,Y), Res,Expr) :- eval(X, Res1,Expr), 
