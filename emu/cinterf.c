@@ -1151,7 +1151,7 @@ DllExport void call_conv print_pterm(CTXTdeclc prolog_term term, int toplevel,
     sprintf(tempstring,"%d", (int) p2c_int(term));
     XSB_StrAppend(straddr,tempstring);
   } else if (is_float(term)) {
-    sprintf(tempstring,"%f", (float) p2c_float(term));
+    sprintf(tempstring,"%lg", (double) p2c_float(term));
     XSB_StrAppend(straddr,tempstring);
   } else if (is_nil(term)) {
     XSB_StrAppend(straddr,"[]");
