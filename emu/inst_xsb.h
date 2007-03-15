@@ -367,6 +367,7 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 #define deallocate      0xea
 #define proceed         0xeb
 #define xsb_execute         0xec
+#define deallocate_gc	0xed
 #define calld           0xef
 
 /* Branching instructions */

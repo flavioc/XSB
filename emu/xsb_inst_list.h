@@ -260,7 +260,7 @@ XSB_INST(0xe9, allocate, _allocate, PPP,X, X,X);
 XSB_INST(0xea, deallocate, _deallocate, PPP,X, X,X);
 XSB_INST(0xeb, proceed, _proceed, PPP,X, X,X);
 XSB_INST(0xec, xsb_execute, _xsb_execute, PPP,S, X,X);
-XSB_INST(0xed, no_inst, _no_inst, PPP,X,X,X);
+XSB_INST(0xed, deallocate_gc, _deallocate_gc, PP, A, X,X);
 XSB_INST(0xee, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0xef, calld, _calld, PP, A, L,X);
 
