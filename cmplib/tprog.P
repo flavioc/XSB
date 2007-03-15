@@ -187,7 +187,7 @@ tbody(goal(Sym,Args),A,Pil,Pilr,Tin,Tout,Meet,_,_HoldRegs,Tabled,Tabar,_,_) :-
     tgoalargs(Args,1,Pil,Pil1,T1,_,Tabled),
     ( (option(sysmod), inline_builtin(Pred, Arity, BltNum)) ->
 	( LastLit =:= 1 ->
-	  ( A > 0 ->  Pil1 = [deallocate,builtin(BltNum),proceed|Pilr]
+	  ( A > 0 ->  Pil1 = [deallocate_gc(Arity),builtin(BltNum),proceed|Pilr]
 	   ; Pil1 = [builtin(BltNum),proceed | Pilr]
 	  )
         ; LastLit =\= 1, Pil1 = [builtin(BltNum)|Pilr]
@@ -198,7 +198,7 @@ tbody(goal(Sym,Args),A,Pil,Pilr,Tin,Tout,Meet,_,_HoldRegs,Tabled,Tabar,_,_) :-
 		Pil1 = [call(Sym,A),
 			check_interrupt(Sym,A),
 			new_answer_dealloc(Tabar,A1)|Pilr]
-	 ; ( A > 0 -> Pil1 = [deallocate,execute(Sym)|Pilr]
+	 ; ( A > 0 -> Pil1 = [deallocate_gc(Arity),execute(Sym)|Pilr]
 	   ;          Pil1 = [execute(Sym)|Pilr] )
 	 )
       ; Pil1 = [call(Sym,A)|Pilr] )   /* LastLit =\= 1 --  A: ARSize */
@@ -214,7 +214,7 @@ tbody(inlinegoal(Pred,_Ar,Args),A,Pil,Pilr,Tin,Tout,Meet,_,HoldRegs,
 		A1 is A-1,
 		Pil1 = [check_interrupt(Sym,A),
 			new_answer_dealloc(Tabar,A1)|Pilr]
-	 ; ( A > 0 -> Pil1 = [deallocate,proceed|Pilr]
+	 ; ( A > 0 -> Pil1 = [deallocate_gc(0),proceed|Pilr]
 	   ;          Pil1 = [proceed|Pilr] )
 	 )
     ; Pil1 = Pilr /* LastLit =\= 1 */

@@ -127,6 +127,7 @@ asm_inst(allocate,		4,	233,	[ppp]		).
 asm_inst(deallocate,		4,	234,	[ppp]		).
 asm_inst(proceed,		4,	235,	[ppp]		).
 asm_inst(execute(S),		8,	236,	[ppp, s(S)]	).
+asm_inst(deallocate_gc(A),	4,	237,	[pp, a(A)]	).
 	% Address has been preprocessed
 asm_inst(calld(L,B),		8,	239,	[pp, a(B), n(L)]).
 	% not used by the compiler; Address has been preprocessed
