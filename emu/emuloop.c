@@ -591,6 +591,32 @@ contcase:     /* the main loop */
     }
   XSB_End_Instr()
 
+  XSB_Start_Instr(unitvar_getlist_uninumcon,_unitvar_getlist_uninumcon) /* RAA */
+    Def1op
+    int num;
+    Op1(get_rxx);
+    num = ((get_xax) << 8)+(get_xxa);
+    ADVANCE_PC(size_xxx);
+    if (!flag) {	/* if (flag == READ) */
+      bld_copy((CPtr)op1, *(sreg++));
+      op1 = Register((CPtr)op1);
+      nunify_with_list_sym(op1);
+      if (flag) { /* write */
+	new_heap_num(hreg, makeint(num));
+      } else {
+	op1 = *(sreg++);
+	nunify_with_num(op1,num);
+      }
+    }
+    else {
+      bld_ref((CPtr)op1, hreg);
+      new_heap_free(hreg);
+      op1 = Register((CPtr)op1);
+      bld_list((CPtr)op1, hreg);
+      new_heap_num(hreg, makeint(num));
+    }
+  XSB_End_Instr()
+
     /* "avar" stands for anonymous variable */
   XSB_Start_Instr(uniavar,_uniavar) /* PPP */
     ADVANCE_PC(size_xxx);
@@ -796,6 +822,29 @@ contcase:     /* the main loop */
     Op1(Register(get_xxr));
     ADVANCE_PC(size_xxx);
     nbldval(op1);
+  XSB_End_Instr()
+
+  XSB_Start_Instr(bldtval_putlist_bldnumcon,_bldtval_putlist_bldnumcon) /* RAA */
+    Def2ops   /* get extra argument to use as temp */
+    int num;
+    Op1(get_rxx);
+    num = ((get_xax) << 8)+(get_xxa);
+    ADVANCE_PC(size_xxx);
+    op2 = Register((CPtr)op1);
+    nbldval(op2);
+    bld_list((CPtr)op1, hreg);
+    new_heap_num(hreg, (Integer)makeint(num));
+  XSB_End_Instr()
+
+  XSB_Start_Instr(bldtvar_list_numcon,_bldtvar_list_numcon) /* RAA */
+    int num;
+    Cell h;
+    num = ((get_xax) << 8)+(get_xxa);
+    ADVANCE_PC(size_xxx);
+    bld_ref(&h,hreg);
+    new_heap_free(hreg);
+    bld_list((CPtr)h, hreg);
+    new_heap_num(hreg, (Integer)makeint(num));
   XSB_End_Instr()
 
   XSB_Start_Instr(bldcon,_bldcon) /* PPP-C */

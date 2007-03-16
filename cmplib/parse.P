@@ -911,11 +911,23 @@ trans_arg(RawArg, integer(RawArg), _SymTab, VidIn, VidIn) :- integer(RawArg), !.
 trans_arg(RawArg, real(RawArg), _SymTab, VidIn, VidIn) :- real(RawArg), !.
 trans_arg(RawArg, constant(Sym), SymTab, VidIn, VidIn) :- atom(RawArg), !,
 	sym_insert(RawArg, 0, _Prop, SymTab, Sym).
+%%trans_arg(RawArg, list_of_atoms(Sym,RawArg), SymTab, VidIn,VidIn) :- is_list_of_atoms(RawArg), !,
+%%	sym_insert('.', 2, _Prop, SymTab, Sym).
 trans_arg(RawArg, structure(Sym, ArgList), SymTab, VidIn, VidOut) :-
 	functor(RawArg, N, A),
 	RawArg =.. [N|RawArgs],
 	sym_insert(N, A, _Prop, SymTab, Sym),
 	trans_args(RawArgs, ArgList, SymTab, VidIn, VidOut).
+
+%% list of atoms (not floats!).
+%%is_list_of_atoms([]).
+%%is_list_of_atoms([A|L]) :-
+%%	(integer(A)
+%%	 ->	true
+%%	 ; atom(A)
+%%	 ->	true
+%%	),
+%%	is_list_of_atoms(L).
 
 prime(401).
 prime(809).

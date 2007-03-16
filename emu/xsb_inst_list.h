@@ -41,10 +41,10 @@ XSB_INST(0x20, no_inst, _no_inst, PPP,X,X,X);
 
 XSB_INST(0x21, uniavar, _uniavar, PPP, X,X,X);
 XSB_INST(0x22, bldavar, _bldavar, PPP, X,X,X);
+XSB_INST(0x23, unitvar_getlist_uninumcon, _unitvar_getlist_uninumcon, R,A,A, X);
+XSB_INST(0x24, bldtval_putlist_bldnumcon, _bldtval_putlist_bldnumcon, R,A,A, X);
+XSB_INST(0x25, bldtvar_list_numcon, _bldtvar_list_numcon, R,A,A, X);
 
-XSB_INST(0x23, no_inst, _no_inst, PPP,X,X,X);
-XSB_INST(0x24, no_inst, _no_inst, PPP,X,X,X);
-XSB_INST(0x25, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0x26, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0x27, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0x28, no_inst, _no_inst, PPP,X,X,X);

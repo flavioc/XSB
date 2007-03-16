@@ -212,6 +212,9 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 
 #define uniavar		0x21  /* for single occurrence variables */
 #define bldavar		0x22
+#define unitvar_getlist_uninumcon 0x23  /* combined, same reg, 16-bit int */
+#define bldtval_putlist_bldnumcon 0x24  /* combined, same reg, 16-bit int */
+#define bldtvar_list_numcon 0x25  /* combined, same reg, 16-bit int */
 
 #define getattv		0x30
 #define putattv		0x31
