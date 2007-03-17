@@ -687,7 +687,7 @@ static void buff_realloc(CTXTdecl)
 static void db_genmvs(CTXTdeclc struct instruction_q *, RegStat);
 static void db_gentopinst(CTXTdeclc prolog_term, int, RegStat);
 static void db_genterms(CTXTdeclc int, struct instruction_q *, RegStat);
-static void db_geninst(CTXTdeclc int, prolog_term, RegStat, struct instruction_q *);
+static void db_geninst(CTXTdeclc int, prolog_term, int, RegStat, struct instruction_q *);
 static void db_genaput(CTXTdeclc prolog_term, int, struct instruction_q *, RegStat);
 
 /*======================================================================*/
@@ -827,8 +827,8 @@ static void db_genterms(CTXTdeclc int unibld, struct instruction_q *flatten_queu
 	else {dbgen_instB_ppv(putlist, Argno);}    /* putlist */
 	reg_release(Reg,Argno);
 	flatten_queue->inst_queue_added = 0;
-	db_geninst(CTXTc unibld, p2p_car(T0), Reg, flatten_queue);
-	db_geninst(CTXTc unibld, p2p_cdr(T0), Reg, flatten_queue);
+	db_geninst(CTXTc unibld, p2p_car(T0), FALSE, Reg, flatten_queue);
+	db_geninst(CTXTc unibld, p2p_cdr(T0), TRUE, Reg, flatten_queue);
 	inst_queue_rotate(flatten_queue);
       }
     } else if (isconstr(T0)) {
@@ -836,9 +836,10 @@ static void db_genterms(CTXTdeclc int unibld, struct instruction_q *flatten_queu
       else {dbgen_instB_ppvw(putstr, Argno, get_str_psc(T0));}   /* putstr */
       reg_release(Reg,Argno);
       flatten_queue->inst_queue_added = 0;
-      for (Argno=1; Argno <= (int)get_arity(get_str_psc(T0)); Argno++) {
-	db_geninst(CTXTc unibld, p2p_arg(T0,Argno), Reg, flatten_queue);
+      for (Argno=1; Argno < (int)get_arity(get_str_psc(T0)); Argno++) {
+	db_geninst(CTXTc unibld, p2p_arg(T0,Argno), FALSE, Reg, flatten_queue);
       }
+      db_geninst(CTXTc unibld, p2p_arg(T0,Argno), TRUE, Reg, flatten_queue);
       inst_queue_rotate(flatten_queue);
     }
     else { /* is_attv(T0) */
@@ -846,14 +847,14 @@ static void db_genterms(CTXTdeclc int unibld, struct instruction_q *flatten_queu
       XSB_Deref(T1);
       dbgen_instB_ppv(getattv, Argno);	/* getattv */
       /* The register for a new attv CANNOT be released ! */
-      db_geninst(CTXTc unibld, T1, Reg, flatten_queue);
+      db_geninst(CTXTc unibld, T1, TRUE, Reg, flatten_queue);
     }
     istop = FALSE;
   }
 }
 
-static void db_geninst(CTXTdeclc int unibld, prolog_term Sub, RegStat Reg,
-		       struct instruction_q *flatten_queue)
+static void db_geninst(CTXTdeclc int unibld, prolog_term Sub, int isLast, 
+		       RegStat Reg, struct instruction_q *flatten_queue)
 {
   int Rt, occs;
   
@@ -905,7 +906,7 @@ static void db_geninst(CTXTdeclc int unibld, prolog_term Sub, RegStat Reg,
   } else {
     Rt = reg_get(CTXTc Reg, TVAR);
     if (unibld) {
-      /*      if (islist(Sub) && isinteger(p2p_car(Sub))) {
+      if (isLast && islist(Sub) && isinteger(p2p_car(Sub))) {
 	int num = int_val(p2p_car(Sub));
 	if (num >= 0 && num <= 0xffff) {
 	  dbgen_instB3_tv(unitvar_getlist_uninumcon,Rt,num>>8,num&0xff);
@@ -913,9 +914,9 @@ static void db_geninst(CTXTdeclc int unibld, prolog_term Sub, RegStat Reg,
 	  Sub = p2p_cdr(Sub);
 	  goto begin_db_geninst;
 	} else dbgen_instB_ppv(unitvar, Rt);
-	} else */  dbgen_instB_ppv(unitvar, Rt);
+	} else dbgen_instB_ppv(unitvar, Rt);
     } else {
-      /*      if (islist(Sub) && isinteger(p2p_car(Sub))) {
+      if (isLast && islist(Sub) && isinteger(p2p_car(Sub))) {
 	int num = int_val(p2p_car(Sub));
 	if (num >= 0 && num <= 0xffff) {
 	  dbgen_instB3_tv(bldtvar_list_numcon,Rt,num>>8,num&0xff);
@@ -923,7 +924,7 @@ static void db_geninst(CTXTdeclc int unibld, prolog_term Sub, RegStat Reg,
 	  Sub = p2p_cdr(Sub);
 	  goto begin_db_geninst;
 	} else dbgen_instB_ppv(bldtvar, Rt);
-	} else **/  dbgen_instB_ppv(bldtvar, Rt);
+	} else dbgen_instB_ppv(bldtvar, Rt);
     }
     Reg->RegArrayInit[Rt] = 1;  /* reg is inited */
     inst_queue_add(flatten_queue, Rt, Sub, 0);
