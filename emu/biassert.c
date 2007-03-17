@@ -905,7 +905,7 @@ static void db_geninst(CTXTdeclc int unibld, prolog_term Sub, RegStat Reg,
   } else {
     Rt = reg_get(CTXTc Reg, TVAR);
     if (unibld) {
-      if (islist(Sub) && isinteger(p2p_car(Sub))) {
+      /*      if (islist(Sub) && isinteger(p2p_car(Sub))) {
 	int num = int_val(p2p_car(Sub));
 	if (num >= 0 && num <= 0xffff) {
 	  dbgen_instB3_tv(unitvar_getlist_uninumcon,Rt,num>>8,num&0xff);
@@ -913,7 +913,7 @@ static void db_geninst(CTXTdeclc int unibld, prolog_term Sub, RegStat Reg,
 	  Sub = p2p_cdr(Sub);
 	  goto begin_db_geninst;
 	} else dbgen_instB_ppv(unitvar, Rt);
-      } else dbgen_instB_ppv(unitvar, Rt);
+	} else */  dbgen_instB_ppv(unitvar, Rt);
     } else {
       /*      if (islist(Sub) && isinteger(p2p_car(Sub))) {
 	int num = int_val(p2p_car(Sub));
