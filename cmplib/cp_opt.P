@@ -119,5 +119,6 @@ cpo_index_argpat(integer(X), i, X).
 cpo_index_argpat(real(X), i, X).
 cpo_index_argpat(constant(C), c, C).
 cpo_index_argpat(varocc(_), v, v).
+cpo_index_argpat(string(_), l, l).
 cpo_index_argpat(structure(Sym,_), l,l) :- sym_name(Sym, '.', 2).
 cpo_index_argpat(structure(Sym,_), s,Sym).

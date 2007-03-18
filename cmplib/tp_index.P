@@ -240,6 +240,7 @@ index_argpat(integer(X), i, X).
 index_argpat(real(X), f, X). %% dsw changed from i...
 index_argpat(constant(C), c, C).
 index_argpat(varocc(_), v, v).
+index_argpat(string(_), l, l).
 index_argpat(structure(Sym,_), l, l) :- sym_name(Sym, '.', 2).
 index_argpat(structure(Sym,_), s, Sym).
 

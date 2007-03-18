@@ -102,6 +102,11 @@ eval_exp(constant(Sym),R,[Inst|Pil],Pil,_,Tin,Tout,PredSym,NC) :-
 	error(('non-numeric constant ', Const, ' in a numeric expression')),
 	message(('         in clause #', NC, ' of predicate ', P,'/',A)),
 	Inst = fail, Tin = Tout, R = 0.
+eval_exp(string(Sym),R,[Inst|Pil],Pil,_,Tin,Tout,PredSym,NC) :-
+	sym_name(PredSym, P, A),
+	error(('non-numeric string ', Sym, ' in a numeric expression')),
+	message(('         in clause #', NC, ' of predicate ', P,'/',A)),
+	Inst = fail, Tin = Tout, R = 0.
 
 eval_uniop('+',E,R,Pil,Pilr,HoldR,Tin,Tout,PredSym,NC) :- !, /* unary plus */
     eval_exp(E,R,Pil,Pilr,HoldR,Tin,Tout,PredSym,NC).

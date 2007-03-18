@@ -91,13 +91,36 @@ flt_arg_head(real(Real), New, OldGoal, NewGoal, Level) :-
 flt_arg_head(constant(Sym), constant(Sym), OldGoal, OldGoal, _).
 flt_arg_head(structure(Sym,Args), New, OldGoal, NewGoal, Level) :-
         level_allowed(Allowed),
-        NStr = structure(Sym,NArgs),
-        Level1 is Level + 1,
-        flt_args_head(Args, NArgs, OldGoal, MedGoal, Level1),
-        ( Level =< Allowed, New = NStr, NewGoal = MedGoal
-        ; Level > Allowed, gennum(Vid), New = varocc(Vid),
-          NewGoal = and(inlinegoal('=',2,[New,NStr]),MedGoal)
-        ).
+	(is_small_int_list(Sym,Args,String,[])
+	 ->	(Level =< Allowed
+		 ->	New = string(String), NewGoal = OldGoal
+		 ;	gennum(Vid), New = varocc(Vid),
+			NewGoal = and(inlinegoal('=',2,[New,string(String)]),OldGoal)
+		)
+	 ;	NStr = structure(Sym,NArgs),
+		Level1 is Level + 1,
+		flt_args_head(Args, NArgs, OldGoal, MedGoal, Level1),
+		(Level =< Allowed
+		 ->	New = NStr, NewGoal = MedGoal
+		 ;	gennum(Vid), New = varocc(Vid),
+			NewGoal = and(inlinegoal('=',2,[New,NStr]),MedGoal)
+		)
+	).
+/*======================================================================*/
+/* is_small_int_list(+Sym,+Args,-IntList0,-IntList)			*/
+/*======================================================================*/
+
+/* is "- string at least 2 symbols long */
+is_small_int_list(sym('.',2,_,_),[integer(N),structure(Sym,Args)],[N|IL0],IL) :-
+	is_small_int_list0(Sym,Args,IL0,IL).
+
+is_small_int_list0(sym('.',2,_,_),[integer(N),Symbol],[N|IL0],IL) :-
+	N >= 0, N =< 16'ffff',
+	(Symbol = constant(sym([],0,_,_))
+	 ->	IL = IL0
+	 ;	Symbol = structure(Sym,Args),
+		is_small_int_list(Sym,Args,IL0,IL)
+	).
 
 /*======================================================================*/
 /* flt_body(+Body, -FlattenedBody)					*/
@@ -214,16 +237,23 @@ flt_arg(real(Real), New, OldGoal, NewGoal, Level, InIs) :-
 flt_arg(constant(Sym), constant(Sym), OldGoal, OldGoal, _, _InIs).
 flt_arg(structure(Sym,Args), New, OldGoal, NewGoal, Level, InIs) :-
 	level_allowed(Allowed),
-	NStr = structure(Sym, NArgs),
-	Level1 is Level + 1,
-	flt_args(Args, NArgs, MedGoal, NewGoal, Level1, InIs),
-	( Level =< Allowed, New = NStr, MedGoal = OldGoal
-	; Level > Allowed, gennum(Vid), New = varocc(Vid),
-	  ( InIs =:= 1,
-		MedGoal = and(inlinegoal(is, 2, [New,NStr]), OldGoal)
-	  ; InIs =\= 1, 
-		MedGoal = and(inlinegoal('=', 2, [New,NStr]), OldGoal)
-	  )
+	(is_small_int_list(Sym,Args,String,[])
+	 ->	(Level =< Allowed
+		 ->	New = string(String), NewGoal = OldGoal
+		 ;	gennum(Vid), New = varocc(Vid),
+			NewGoal = and(inlinegoal('=',2,[New,string(String)]),OldGoal)
+		)
+	 ;	NStr = structure(Sym, NArgs),
+		Level1 is Level + 1,
+		flt_args(Args, NArgs, MedGoal, NewGoal, Level1, InIs),
+		( Level =< Allowed, New = NStr, MedGoal = OldGoal
+		 ;	Level > Allowed, gennum(Vid), New = varocc(Vid),
+			( InIs =:= 1,
+			 MedGoal = and(inlinegoal(is, 2, [New,NStr]), OldGoal)
+			 ;	InIs =\= 1, 
+				MedGoal = and(inlinegoal('=', 2, [New,NStr]), OldGoal)
+			)
+		)
 	).
 
 

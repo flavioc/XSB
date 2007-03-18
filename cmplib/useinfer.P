@@ -233,6 +233,7 @@ check_args([Arg|Args], SymTab, InList, OutList) :-
 check_arg(constant(Sym), _SymTab, InList, [Sym|InList]).
 check_arg(integer(_), _SymTab, InList, InList).
 check_arg(real(_), _SymTab, InList, InList).
+check_arg(string(_), _SymTab, InList, InList).
 check_arg(varocc(_), _SymTab, InList, InList).
 check_arg(structure(Sym,Args), SymTab, InList, OutList) :-
 %	message(add_if_necessary(Sym, InList, MedList)),

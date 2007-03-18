@@ -113,6 +113,8 @@ load_from_nreg([Arg|Args],[Arg|Nargs],N,Reg) :-
 tputpar(integer(V),N,[putnumcon(N,V)|Pil],Pil,Tin,Tin).
 tputpar(real(V),N,[putfloat(N,V)|Pil],Pil,Tin,Tin).
 tputpar(constant(Sym),N,[putcon(N,Sym)|Pil],Pil,Tin,Tin).
+tputpar(string(String),N,Pil0,Pil,Tin,Tin) :-
+	tputstring(String,N,Pil0,Pil).
 tputpar(varocc(_Vid,Prag),N,Pil0,Pil,Tin,Tout) :-
 	vprag_type(Prag, Type),
 	( Type == t -> alloc_reg1(Prag,N,Tin,Tout) ; Tin = Tout ),
@@ -123,6 +125,8 @@ tputpar(structure(Sym,Args),N,[putstr(N,Sym)|Pil],Pilr,Tin,Tout) :-
 tputpar(integer(V),N,[putnumcon(N,V)|Pil],Pil,Tin,Tin,_Tab).
 tputpar(real(V),N,[putfloat(N,V)|Pil],Pil,Tin,Tin,_Tab).
 tputpar(constant(Sym),N,[putcon(N,Sym)|Pil],Pil,Tin,Tin,_Tab).
+tputpar(string(String),N,Pil0,Pil,Tin,Tin,_Tab) :-
+	tputstring(String,N,Pil0,Pil).
 tputpar(varocc(_Vid,Prag),N,Pil0,Pil,Tin,Tout,Tab) :-
 	vprag_type(Prag, Type),
 	( Type == t -> alloc_reg1(Prag,N,Tin,Tout) ; Tin = Tout ),
@@ -133,6 +137,15 @@ tputpar(structure(Sym,Args),N,[putstr(N,Sym)|Pil],Pilr,Tin,Tout,_Tab) :-
 %   write('putstr: '),write(N),
 %   write('  Tin= '),write(Tin),write('  Tout= '),write(Tout),nl,
 %   write('  Pil= '),write(Pil),nl,told,tell(X).
+
+tputstring([I|String],N,[putlist(N),bldnumcon(I)|Pil0],Pil) :-
+	tputstring0(String,Pil0,Pil).
+
+tputstring0([],[bldnil|Pil],Pil).
+tputstring0([I|String],[bldtvar_list_numcon(0,I1,I2)|Pil0],Pil) :-
+	I1 is I >> 8,
+	I2 is I /\ 16'ff',
+	tputstring0(String,Pil0,Pil).
 
 %:- import tell/1, telling/1, told/0, write/1, nl/0 from standard.
 
@@ -162,6 +175,9 @@ tbldpar(constant(Sym),[bldcon(Sym)|Pilr],Pilr,T,T).
 tgetpar(integer(V), N, [getnumcon(N,V)|Pil], Pil, Tin, Tin).
 tgetpar(real(V), N, [getfloat(N,V)|Pil], Pil, Tin, Tin).
 tgetpar(constant(Sym), N, [getcon(N,Sym)|Pil], Pil, Tin, Tin).
+tgetpar(string(String), N, Pil0, Pil, Tin, Tin) :-
+	getreg(Tin,TReg),
+	tgetstring(String,N,TReg,Pil0,Pil).
 tgetpar(varocc(_Vid,Prag), N, Pil0, Pil, Tin, Tout) :-
     vprag_type(Prag, Type),
     ( Type == vh -> Pil0 = Pil, Tin = Tout
@@ -170,6 +186,15 @@ tgetpar(varocc(_Vid,Prag), N, Pil0, Pil, Tin, Tout) :-
     ).
 tgetpar(structure(Sym,Args), N, [getstr(N,Sym)|Pil], Pilr, Tin, Tout) :-
     tunipars(Args, Pil, Pilr, Tin, Tout).
+
+tgetstring([I|String],N,TReg,[getlist(N),uninumcon(I)|Pil0],Pil) :-
+	tgetstring0(String,TReg,Pil0,Pil).
+
+tgetstring0([],_R,[uninil|Pil],Pil).
+tgetstring0([I|String],R,[unitvar_getlist_uninumcon(R,I1,I2)|Pil0],Pil) :-
+	I1 is I >> 8,
+	I2 is I /\ 16'ff',
+	tgetstring0(String,R,Pil0,Pil).	
 
 /*----------------------------------------------------------------------*/
 /* tunipars(+SubArgs, -Pil, -Pilr, +TRin, -TRout)			*/

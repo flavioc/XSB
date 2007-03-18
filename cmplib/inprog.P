@@ -182,7 +182,7 @@ inp_arg(Arg, NArg, VOList, VOListr, Head, Argno, Level, VarList) :-
 	; Arg = structure(Sym,Args) ->
 		NArg = structure(Sym,NArgs),
         	inp_subargs(Args, NArgs, VOList, VOListr,Head,Argno,VarList)
-	; NArg = Arg, VOListr = VOList      /* integer, real, constant */
+	; NArg = Arg, VOListr = VOList      /* integer, real, constant, string */
 	).
 
 inp_subargs([],[],VOList,VOList,_,_,_).

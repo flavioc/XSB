@@ -49,6 +49,7 @@ args_same([A1|R1], [A2|R2]) :- arg_same(A1,A2), args_same(R1,R2).
 arg_same(varocc(ID),varocc(ID)).
 arg_same(integer(V), integer(V)).
 arg_same(constant(S), constant(S)).
+arg_same(string(S), string(S)).
 arg_same(structure(Sym, Args1), structure(Sym, Args2)) :-
 	args_same(Args1, Args2).
 

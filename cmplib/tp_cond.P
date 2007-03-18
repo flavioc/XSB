@@ -48,6 +48,7 @@ tvar_hold_args([Arg|Args], HoldIn, HoldOut) :-
 tvar_hold_arg(real(_), HoldIn, HoldIn).
 tvar_hold_arg(integer(_), HoldIn, HoldIn).
 tvar_hold_arg(constant(_), HoldIn, HoldIn).
+tvar_hold_arg(string(_), HoldIn, HoldIn).
 tvar_hold_arg(structure(_,Args), HoldIn, HoldOut) :- 
 	tvar_hold_args(Args, HoldIn, HoldOut).
 tvar_hold_arg(varocc(Vid,Prag), HoldIn, HoldOut) :-

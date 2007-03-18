@@ -145,6 +145,7 @@ write_arg(OStr,varocc(ID)) :-
 write_arg(OStr,constant(Sym)) :- sym_name(Sym,Name,_), writeq(OStr,Name).
 write_arg(OStr,integer(I)) :- write(OStr,I).
 write_arg(OStr,real(R)) :- write(OStr,R).
+write_arg(OStr,string(R)) :- write(OStr,R).
 write_arg(OStr,structure(Sym,StructArgs)) :-
 	sym_name(Sym, Name, Arity),
 	( Name == '.', Arity =:= 2 ->
