@@ -157,6 +157,12 @@ static inline void dbgen_printinst3(Opcode, Arg1, Arg2, Arg3)
   case switchon3bound:
     xsb_dbgmsg((LOG_ASSERT,"switchon3bound - %ld %lx %ld\n",
 	       (long)Arg1,(long)Arg2,(long)Arg3)); break;
+  case unitvar_getlist_uninumcon:
+    xsb_dbgmsg((LOG_ASSERT,"unitvar_getlist_uninumcon - %ld %ld\n",
+		(long)Arg1,((long)Arg2<<8)+((long)Arg3))); break;
+  case bldtvar_list_numcon:
+    xsb_dbgmsg((LOG_ASSERT,"bldtvar_list_numcon - %ld %ld\n",
+		(long)Arg1,((long)Arg2<<8)+((long)Arg3))); break;
   default: xsb_dbgmsg((LOG_ASSERT,"Unknown instruction in assert %d\n",
 		      Opcode));
   }
