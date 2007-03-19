@@ -483,7 +483,7 @@ static char* buildSQLQuery(prolog_term sqlQueryList)
     element = p2p_car(sqlQueryList);
     sqlQueryList = p2p_cdr(sqlQueryList);
     if (is_string(element)) {
-      if (p2c_string(element)[0] == TERM_CHAR) {
+      if (p2c_string(element)[0] == DB_INTERFACE_TERM_SYMBOL) {
 	cnt = 0;
 	temp = (char *)malloc(ELEMENT_SIZE * sizeof(char)+1);
 	temp[cnt++] = '\'';
@@ -571,7 +571,7 @@ static int bindReturnList(prolog_term returnList, struct xsb_data** result, stru
 	  c2p_nil(element);
 	else {
 	  c = result[i]->val->str_val[0];
-	  if (c == TERM_CHAR) {
+	  if (c == DB_INTERFACE_TERM_SYMBOL) {
 	    temp = (char *)malloc(strlen(result[i]->val->str_val) * sizeof(char));
 	    for (j = 1 ; j < strlen(result[i]->val->str_val) ; j++) {
 	      temp[j-1] = result[i]->val->str_val[j];

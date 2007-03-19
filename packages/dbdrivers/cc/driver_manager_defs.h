@@ -60,7 +60,7 @@
 #define QUERY_SIZE 18000
 #define ELEMENT_SIZE 1500
 
-#define TERM_CHAR '\255'
+#define DB_INTERFACE_TERM_SYMBOL '\255'
 
 // codes returned by bindReturnList
 #define RESULT_EMPTY_BUT_REQUESTED 0

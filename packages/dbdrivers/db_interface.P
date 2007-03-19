@@ -37,22 +37,28 @@
 
 db_connect(Handle, Driver, Server, Database, User, Password) :- 
 	(openConnection(Handle, Driver, Server, Database, User, Password)
-	-> true; 
-	    exception(Number, Mesg), throw(xsb_error(database(Number), Mesg))
+	-> true
+	; 
+	    exception(Number, Mesg),
+	    throw(xsb_error(database(Number), Mesg))
 	).
 
 db_connect(Handle, Driver, Dsn, User, Password) :-
 	(openConnection(Handle, Driver, '', Dsn, User, Password)
-	-> true; 
-	    exception(Number, Mesg), throw(xsb_error(database(Number), Mesg))
+	-> true
+	; 
+	    exception(Number, Mesg),
+	    throw(xsb_error(database(Number), Mesg))
 	).
 
 %% closing connection to the database 
 
 db_disconnect(Handle) :- 
 	(closeConnection(Handle)
-	-> true; 
-	    exception(Number, Mesg), throw(xsb_error(database(Number), Mesg))
+	-> true
+	; 
+	    exception(Number, Mesg),
+	    throw(xsb_error(database(Number), Mesg))
 	).
 
 %% direct querying
@@ -60,13 +66,14 @@ db_disconnect(Handle) :-
 db_query(Connhandle, QueryHandle, SQLQueryList, ReturnList) :-
 	(length(ReturnList, N), length(List, N), 
 	    db_canonise_term(SQLQueryList, CanSQLQueryList),
-	    queryConnection(Connhandle, QueryHandle, CanSQLQueryList, List),
-	    db_term(ReturnList, List)
-	-> true;
-	    !, 
+	    queryConnection(Connhandle, QueryHandle, CanSQLQueryList, List)
+	-> db_term(ReturnList, List)
+	;
+	    %%!,  %% Saikat: why this cut????
 	    (exception(Number, Mesg)
 	    ->  db_statement_close(QueryHandle),
-		throw(xsb_error(database(Number), Mesg));
+		throw(xsb_error(database(Number), Mesg))
+	    ;
 		fail)
 	).
 
@@ -77,21 +84,23 @@ db_query(Connhandle, QueryHandle, SQLQueryList, ReturnList) :-
 %% prepared statements
 
 db_prepare(ConnHandle, QueryHandle, SQLQueryList) :-
-	(db_canonise_term(SQLQueryList, CanSQLQueryList),
-	    prepareStatement(ConnHandle, QueryHandle, CanSQLQueryList)
-	->  true
+	(db_canonise_term(SQLQueryList, CanSQLQueryList)
+	->  prepareStatement(ConnHandle, QueryHandle, CanSQLQueryList)
 	;
-	    exception(Number, Mesg), throw(xsb_error(database(Number), Mesg))).
+	    exception(Number, Mesg),
+	    throw(xsb_error(database(Number), Mesg))
+	).
 
 db_prepare_execute(QueryHandle, BindList, ReturnList) :-
 	(length(ReturnList, N), length(List, N),
 	    db_canonise_term(BindList, CanBindList), 
-	    executePreparedStatement(QueryHandle, CanBindList, List),
-	    db_term(ReturnList, List)
-	-> true;
-	    !, 
+	    executePreparedStatement(QueryHandle, CanBindList, List)
+	-> db_term(ReturnList, List)
+	;
+	    %%!,  %% Saikat: why this cut????
 	    (exception(Number, Mesg)
-	    -> throw(xsb_error(database(Number), Mesg));
+	    -> throw(xsb_error(database(Number), Mesg))
+	    ;
 		fail)
 	).
 
@@ -103,8 +112,10 @@ db_prepare_execute(QueryHandle, BindList, ReturnList) :-
 
 db_statement_close(QueryHandle) :-
 	(closeStatement(QueryHandle)
-	-> true; 
-	    exception(Number, Mesg), throw(xsb_error(database(Number), Mesg))
+	-> true
+	; 
+	    exception(Number, Mesg),
+	    throw(xsb_error(database(Number), Mesg))
 	).
 
 
