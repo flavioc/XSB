@@ -766,7 +766,8 @@ int assert_code_to_buff_p(CTXTdeclc prolog_term Clause)
     dbgen_instB_pppw(xsb_execute, get_str_psc(Body));
   } else dbgen_instB_ppp(proceed);
   asrtBuff->Size = *asrtBuff->Loc;
-  write_word(asrtBuff->Buff,&Loc_size,(asrtBuff->Size/sizeof(Cell)));  /* backpatch max heap needed*/
+  /* backpatch max heap needed, *2 due to mega-instructions for small intlists */
+  write_word(asrtBuff->Buff,&Loc_size,(2*asrtBuff->Size/sizeof(Cell)));
 
   return TRUE;
 }
