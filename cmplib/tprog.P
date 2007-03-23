@@ -142,7 +142,7 @@ tbody(and(Goal,Goals),A,Pil,Pilr,Tin,Tout,Meet,_,HoldRegs,Tabled,Tabar,Sym,NC) :
 tbody(or(Goal,Goals),A,Pil,Pilr,Tin,[],Meet,Nested,HoldRegs,Tabled,Tabar,Sym,NC) :-
     ( Nested == no ->
 	Pil = [trymeorelse(A,Label2)|Pil1],
-	( Meet = lastgoal -> ThisMeet = Meet, Pil5 = Pilr
+	( Meet == lastgoal -> ThisMeet = Meet, Pil5 = Pilr
 	; gennum(LabId4), ThisMeet = (disj,LabId4),
 	  Pil5 = [label(meet, ThisMeet)|Pilr]
 	)
@@ -151,7 +151,7 @@ tbody(or(Goal,Goals),A,Pil,Pilr,Tin,[],Meet,Nested,HoldRegs,Tabled,Tabar,Sym,NC)
     ),
     tbody(Goal,A, Pil1,Pil2,Tin,_,Meet,no,HoldRegs,Tabled,Tabar,Sym,NC),
     gennum(LabId2), Label2 = (disj,LabId2),
-    ( Meet = lastgoal ->
+    ( Meet == lastgoal ->
 	Pil2 = [label(disj,Label2)|Pil3]
     ;	Pil2 = [jump(ThisMeet),label(disj,Label2)|Pil3]
     ),
@@ -165,7 +165,7 @@ tbody(if_then_else(Test,TGoal,FGoal),A,Pil,Pilr,Tin,Tout,M,_,
     tvar_hold(Test, HoldRegs0, HoldRegs1),
     tcond(Test,TLabel,FLabel,Pil,[TLabel|Pil1],Tin,Tmid,HoldRegs1,Sym,NC),
     tbody(TGoal,A,Pil1,Pil2,Tmid,Tout0,M,no,HoldRegs1,Tabled,Tabar,Sym,NC),
-    ( M = lastgoal ->
+    ( M == lastgoal ->
 	Pil2 = [FLabel|Pil3], Pil4 = Pilr
     ;	Pil2 = [jump(ThisMeet),FLabel|Pil3],
 	gennum(MLabId), ThisMeet = (meet,MLabId),
@@ -179,20 +179,18 @@ tbody(nil,_,Pil,Pilr,T,T,_,_,_,Tabled,Tabar,Sym,_) :-
     ( Tabled =:= 0 -> Pil = [proceed|Pilr]
     ; Pil = [check_interrupt(Sym,3), new_answer_dealloc(Tabar,2)|Pilr]
     ).
-
 tbody(goal(Sym,Args),A,Pil,Pilr,Tin,Tout,Meet,_,_HoldRegs,Tabled,Tabar,_,_) :-
-    ( Meet = lastgoal -> LastLit = 1 ; LastLit = 0 ),
     sym_name(Sym, Pred, Arity),
     reserve(Arity,Tin,T1), Tout = [],
     tgoalargs(Args,1,Pil,Pil1,T1,_,Tabled),
     ( (option(sysmod), inline_builtin(Pred, Arity, BltNum)) ->
-	( LastLit =:= 1 ->
-	  ( A > 0 ->  Pil1 = [deallocate_gc(Arity),builtin(BltNum),proceed|Pilr]
+	( Meet == lastgoal ->
+	  ( A > 0 ->  Pil1 = [deallocate,builtin(BltNum),proceed_gc|Pilr]
 	   ; Pil1 = [builtin(BltNum),proceed | Pilr]
 	  )
-        ; LastLit =\= 1, Pil1 = [builtin(BltNum)|Pilr]
+        ; Pil1 = [builtin(BltNum)|Pilr]
         )
-    ; ( LastLit =:= 1 ->
+    ; ( Meet == lastgoal ->
 	( Tabled =:= 1 ->      /* if tabled = 1, A>0 */
 		A1 is A-1,
 		Pil1 = [call(Sym,A),
@@ -201,23 +199,23 @@ tbody(goal(Sym,Args),A,Pil,Pilr,Tin,Tout,Meet,_,_HoldRegs,Tabled,Tabar,_,_) :-
 	 ; ( A > 0 -> Pil1 = [deallocate,execute(Sym)|Pilr]
 	   ;          Pil1 = [execute(Sym)|Pilr] )
 	 )
-      ; Pil1 = [call(Sym,A)|Pilr] )   /* LastLit =\= 1 --  A: ARSize */
+      ; Pil1 = [call(Sym,A)|Pilr] )   /* not LastLit --  A: ARSize */
     ),
     !.
 
 tbody(inlinegoal(Pred,_Ar,Args),A,Pil,Pilr,Tin,Tout,Meet,_,HoldRegs,
 							Tabled,Tabar,Sym,NC) :-
-    ( Meet = lastgoal -> LastLit = 1 ; LastLit = 0 ),
     geninline(Pred,Args,HoldRegs,Pil,Pil1,Tin,Tout,Sym,NC),
-    ( LastLit =:= 1 ->
+    ( Meet == lastgoal ->
 	( Tabled =:= 1 ->      /* if tabled = 1, A>0 */
 		A1 is A-1,
 		Pil1 = [check_interrupt(Sym,A),
 			new_answer_dealloc(Tabar,A1)|Pilr]
-	 ; ( A > 0 -> Pil1 = [deallocate_gc(0),proceed|Pilr]
+	 ; ( A > 0 -> Pil1 = [deallocate,proceed_gc|Pilr]
+	    /* some obscure case might require _gc here following, but I can't generate one. */
 	   ;          Pil1 = [proceed|Pilr] )
 	 )
-    ; Pil1 = Pilr /* LastLit =\= 1 */
+    ; Pil1 = Pilr /* not last lit */
     ).
 
 more_branches(or(_,_)).

@@ -79,6 +79,9 @@ compile_popt11(gettval(R,R), PRest, OptPRest) :-
 	compile_popt1(PRest, OptPRest).
 compile_popt11(movreg(R,R), PRest, OptPRest) :- 
 	compile_popt1(PRest, OptPRest).
+compile_popt11(call(Sym,A),[putpbreg(R),deallocate,proceed_gc|PilRest],
+	       [call(Sym,A)|OptPilRest]) :-
+	compile_popt1([putpbreg(R),deallocate,proceed|PilRest],OptPilRest).
 compile_popt11(jump(L), [label(T,L)|PRest], [label(T,L)|OptPRest]) :-
 	compile_popt1(PRest,OptPRest).
 % Dead-code elimination
@@ -307,7 +310,7 @@ compile_popt4([Inst|Rest],Seen,[Inst|ORest]) :-
 
 popt_chkmember(P,L,Flag) :-
 	( var(L) -> L = [P|_], Flag = 0
-	; L = [P1|L1], ( P = P1 -> Flag = 1 ; popt_chkmember(P,L1,Flag) )
+	; L = [P1|L1], ( P == P1 -> Flag = 1 ; popt_chkmember(P,L1,Flag) )
 	).
 
 

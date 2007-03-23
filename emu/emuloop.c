@@ -1881,7 +1881,7 @@ contcase:     /* the main loop */
     ereg = *(CPtr *)ereg;
   XSB_End_Instr()
 
-  XSB_Start_Instr(deallocate_gc,_deallocate_gc) /* PPA */
+  XSB_Start_Instr(deallocate_gc,_deallocate_gc) /* PPA -- instruction no longer used! */
     ADVANCE_PC(size_xxx);
     cpreg = *((byte **)ereg-1);
     ereg = *(CPtr *)ereg;
@@ -1906,6 +1906,25 @@ contcase:     /* the main loop */
 
   XSB_Start_Instr(proceed,_proceed)  /* PPP */
      proceed_sub;
+  XSB_End_Instr()
+
+  XSB_Start_Instr(proceed_gc,_proceed_gc) /* PPP */
+    proceed_sub;
+    /* following required for recursive loops that build structure on way back up. */
+    if (((pb)ereg - (pb)hreg) < 2048) { 
+      if (gc_heap(CTXTc 0,FALSE)) { // no regs, garbage collection potentially modifies hreg 
+	if (((pb)ereg - (pb)hreg) < 2048) {
+	  if (pflags[STACK_REALLOC]) {
+	    if (glstack_realloc(CTXTc resize_stack(glstack.size,OVERFLOW_MARGIN),0) != 0) {
+	      xsb_basic_abort(local_global_exception);
+	    }
+	  } else {
+	    xsb_warn("Reallocation is turned OFF !");
+	    xsb_basic_abort(local_global_exception);
+	  }
+	}
+      }
+    }
   XSB_End_Instr()
 
     /* This is the WAM-execute.  Name was changed because of conflict
