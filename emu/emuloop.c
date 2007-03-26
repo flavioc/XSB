@@ -1909,7 +1909,6 @@ contcase:     /* the main loop */
   XSB_End_Instr()
 
   XSB_Start_Instr(proceed_gc,_proceed_gc) /* PPP */
-    proceed_sub;
     /* following required for recursive loops that build structure on way back up. */
     if (((pb)ereg - (pb)hreg) < 2048) { 
       if (gc_heap(CTXTc 0,FALSE)) { // no regs, garbage collection potentially modifies hreg 
@@ -1925,6 +1924,7 @@ contcase:     /* the main loop */
 	}
       }
     }
+    proceed_sub;
   XSB_End_Instr()
 
     /* This is the WAM-execute.  Name was changed because of conflict
