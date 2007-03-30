@@ -33,9 +33,13 @@
 #include "cell_xsb.h"
 #include "error_xsb.h"
 #include "cinterf.h"
+/* context.h is necessary for the type of a thread context. */
+#include "context.h"
+
+
 #include "heap_xsb.h"
 
-extern char *p_charlist_to_c_string(prolog_term term, VarString *outstring, 
+extern char *p_charlist_to_c_string(CTXTdeclc prolog_term term, VarString *outstring, 
 				    char *in_func, char *where);
 extern void c_string_to_p_charlist(char *name, prolog_term list,
 				   char *in_func, char *where);
@@ -75,6 +79,10 @@ static XSB_StrDefine(subst_buf);
 static XSB_StrDefine(output_buffer);
 static XSB_StrDefine(regexp_buffer);
 
+#ifdef MULTI_THREAD
+	static th_context *th = NULL;
+#endif
+
 
 /* XSB regular expression matcher entry point
    In:
@@ -93,11 +101,14 @@ static XSB_StrDefine(regexp_buffer);
 */
 int do_regmatch__(void)
 {
+  if( NULL == th)
+	th = xsb_get_main_thread();
+
   prolog_term listHead, listTail;
   /* Prolog args are first assigned to these, so we could examine the types
      of these objects to determine if we got strings or atoms. */
   prolog_term regexp_term, input_term, offset_term;
-  prolog_term output_term = p2p_new();
+  prolog_term output_term = p2p_new(CTXT);
   int i;
   char *regexp_ptr=NULL;      /* regular expression ptr	       	      */
   char *input_string=NULL;    /* string where matches are to be found */
@@ -108,25 +119,25 @@ int do_regmatch__(void)
   if (first_call)
     initialize_regexp_tbl();
 
-  regexp_term = reg_term(1);  /* Arg1: regexp */
+  regexp_term = reg_term(CTXTc 1);  /* Arg1: regexp */
   if (is_string(regexp_term)) /* check it */
     regexp_ptr = string_val(regexp_term);
   else if (is_list(regexp_term))
-    regexp_ptr = p_charlist_to_c_string(regexp_term, &regexp_buffer,
+    regexp_ptr = p_charlist_to_c_string(CTXTc regexp_term, &regexp_buffer,
 					"RE_MATCH", "regular expression");
   else
     xsb_abort("[RE_MATCH] Arg 1 (the regular expression) must be an atom or a character list");
 
-  input_term = reg_term(2);  /* Arg2: string to find matches in */
+  input_term = reg_term(CTXTc 2);  /* Arg2: string to find matches in */
   if (is_string(input_term)) /* check it */
     input_string = string_val(input_term);
   else if (is_list(input_term)) {
-    input_string = p_charlist_to_c_string(input_term, &input_buffer,
+    input_string = p_charlist_to_c_string(CTXTc input_term, &input_buffer,
 					  "RE_MATCH", "input string");
   } else
     xsb_abort("[RE_MATCH] Arg 2 (the input string) must be an atom or a character list");
   
-  offset_term = reg_term(3); /* arg3: offset within the string */
+  offset_term = reg_term(CTXTc 3); /* arg3: offset within the string */
   if (! is_int(offset_term))
     xsb_abort("[RE_MATCH] Arg 3 (the offset) must be an integer");
   offset = int_val(offset_term);
@@ -135,7 +146,7 @@ int do_regmatch__(void)
 	      offset, strlen(input_string));
 
   /* arg 4 specifies flags: _, number, list [extended,ignorecase] */
-  match_flags = make_flags(reg_term(4), "RE_MATCH");
+  match_flags = make_flags(reg_term(CTXTc 4), "RE_MATCH");
 
   /* paren_number gets the # of parenthetical subexpressions (not 1 minus!) */
   return_code = xsb_re_match(regexp_ptr, input_string+offset, match_flags,
@@ -148,19 +159,19 @@ int do_regmatch__(void)
   /* return result */
   listTail = output_term;
   for (i=0; i <= paren_number; i++) {
-    c2p_list(listTail); /* make it into a list */
+    c2p_list(CTXTc listTail); /* make it into a list */
     listHead = p2p_car(listTail); /* get head of the list */
 
     /* bind i-th match to listHead as match(beg,end) */
-    c2p_functor("match", 2, listHead);
-    c2p_int(match_array[i].rm_so+offset, p2p_arg(listHead,1));
-    c2p_int(match_array[i].rm_eo+offset, p2p_arg(listHead,2));
+    c2p_functor(CTXTc "match", 2, listHead);
+    c2p_int(CTXTc match_array[i].rm_so+offset, p2p_arg(listHead,1));
+    c2p_int(CTXTc match_array[i].rm_eo+offset, p2p_arg(listHead,2));
 
     listTail = p2p_cdr(listTail);
   }
 
-  c2p_nil(listTail); /* bind tail to nil */
-  return p2p_unify(output_term, reg_term(5));
+  c2p_nil(CTXTc listTail); /* bind tail to nil */
+  return p2p_unify(CTXTc output_term, reg_term(CTXTc 5));
 }
 
 
@@ -181,11 +192,14 @@ int do_regmatch__(void)
 */
 int do_bulkmatch__(void)
 {
+  if( NULL == th)
+	th = xsb_get_main_thread();
+
   prolog_term listHead, listTail;
   /* Prolog args are first assigned to these, so we could examine the types
      of these objects to determine if we got strings or atoms. */
   prolog_term regexp_term, input_term, offset_term;
-  prolog_term output_term = p2p_new();
+  prolog_term output_term = p2p_new(CTXT);
   char *regexp_ptr=NULL;      /* regular expression ptr	       	      */
   char *input_string=NULL;    /* string where matches are to be found */
   int match_flags=FALSE;
@@ -196,27 +210,27 @@ int do_bulkmatch__(void)
   if (first_call)
     initialize_regexp_tbl();
 
-  regexp_term = reg_term(1);  /* Arg1: regexp */
+  regexp_term = reg_term(CTXTc 1);  /* Arg1: regexp */
   if (is_string(regexp_term)) /* check it */
     regexp_ptr = string_val(regexp_term);
   else if (is_list(regexp_term))
-    regexp_ptr = p_charlist_to_c_string(regexp_term, &regexp_buffer,
+    regexp_ptr = p_charlist_to_c_string(CTXTc regexp_term, &regexp_buffer,
 					"RE_BULKMATCH", "regular expression");
   else
     xsb_abort("[RE_BULKMATCH] Arg 1 (the regular expression) must be an atom or a character list");
 
-  input_term = reg_term(2);  /* Arg2: string to find matches in */
+  input_term = reg_term(CTXTc 2);  /* Arg2: string to find matches in */
   if (is_string(input_term)) /* check it */
     input_string = string_val(input_term);
   else if (is_list(input_term)) {
-    input_string = p_charlist_to_c_string(input_term, &input_buffer,
+    input_string = p_charlist_to_c_string(CTXTc input_term, &input_buffer,
 					  "RE_BULKMATCH", "input string");
   } else
     xsb_abort("[RE_BULKMATCH] Arg 2 (the input string) must be an atom or a character list");
 
   input_len = strlen(input_string);
   
-  offset_term = reg_term(3); /* arg3: offset within the string */
+  offset_term = reg_term(CTXTc 3); /* arg3: offset within the string */
   if (! is_int(offset_term))
     xsb_abort("[RE_BULKMATCH] Arg 3 (the offset) must be an integer");
   offset = int_val(offset_term);
@@ -224,7 +238,7 @@ int do_bulkmatch__(void)
     xsb_abort("[RE_BULKMATCH] Arg 3 (=%d) must be between 0 and %d", input_len);
 
    /* arg 4 specifies flags: _, number, list [extended,ignorecase] */
-  match_flags = make_flags(reg_term(4), "RE_BULKMATCH");
+  match_flags = make_flags(reg_term(CTXTc 4), "RE_BULKMATCH");
 
   last_pos = offset;
   /* returned result */
@@ -235,13 +249,13 @@ int do_bulkmatch__(void)
     /* exit on no match */
     if (! return_code) break;
 
-    c2p_list(listTail); /* make it into a list */
+    c2p_list(CTXTc listTail); /* make it into a list */
     listHead = p2p_car(listTail); /* get head of the list */
 
     /* bind i-th match to listHead as match(beg,end) */
-    c2p_functor("match", 2, listHead);
-    c2p_int(match_array[0].rm_so+last_pos, p2p_arg(listHead,1));
-    c2p_int(match_array[0].rm_eo+last_pos, p2p_arg(listHead,2));
+    c2p_functor(CTXTc "match", 2, listHead);
+    c2p_int(CTXTc match_array[0].rm_so+last_pos, p2p_arg(listHead,1));
+    c2p_int(CTXTc match_array[0].rm_eo+last_pos, p2p_arg(listHead,2));
 
     listTail = p2p_cdr(listTail);
     if (match_array[0].rm_eo > 0)
@@ -250,8 +264,8 @@ int do_bulkmatch__(void)
       last_pos++;
   }
 
-  c2p_nil(listTail); /* bind tail to nil */
-  return p2p_unify(output_term, reg_term(5));
+  c2p_nil(CTXTc listTail); /* bind tail to nil */
+  return p2p_unify(CTXTc output_term, reg_term(CTXTc 5));
 }
 
 
@@ -268,6 +282,9 @@ int do_bulkmatch__(void)
 */
 int do_regsubstitute__(void)
 {
+  if( NULL == th)
+	th = xsb_get_main_thread();
+
   /* Prolog args are first assigned to these, so we could examine the types
      of these objects to determine if we got strings or atoms. */
   prolog_term input_term, output_term;
@@ -285,11 +302,11 @@ int do_regsubstitute__(void)
   
   XSB_StrSet(&output_buffer,"");
 
-  input_term = reg_term(1);  /* Arg1: string to find matches in */
+  input_term = reg_term(CTXTc 1);  /* Arg1: string to find matches in */
   if (is_string(input_term)) /* check it */
     input_string = string_val(input_term);
   else if (is_list(input_term)) {
-    input_string = p_charlist_to_c_string(input_term, &input_buffer,
+    input_string = p_charlist_to_c_string(CTXTc input_term, &input_buffer,
 					  "RE_SUBSTITUTE", "input string");
     conversion_required = TRUE;
   } else
@@ -298,16 +315,16 @@ int do_regsubstitute__(void)
   input_len = strlen(input_string);
 
   /* arg 2: substring specification */
-  subst_spec_list_term = reg_term(2);
+  subst_spec_list_term = reg_term(CTXTc 2);
   if (!is_list(subst_spec_list_term) && !is_nil(subst_spec_list_term))
     xsb_abort("[RE_SUBSTITUTE] Arg 2 must be a list [s(B1,E1),s(B2,E2),...]");
 
   /* handle substitution string */
-  subst_str_list_term = reg_term(3);
+  subst_str_list_term = reg_term(CTXTc 3);
   if (! is_list(subst_str_list_term))
     xsb_abort("[RE_SUBSTITUTE] Arg 3 must be a list of strings");
 
-  output_term = reg_term(4);
+  output_term = reg_term(CTXTc 4);
   if (! is_var(output_term))
     xsb_abort("[RE_SUBSTITUTE] Arg 4 (the output) must be an unbound variable");
 
@@ -332,7 +349,7 @@ int do_regsubstitute__(void)
       if (is_string(subst_str_term)) {
 	subst_string = string_val(subst_str_term);
       } else if (is_list(subst_str_term)) {
-	subst_string = p_charlist_to_c_string(subst_str_term, &subst_buf,
+	subst_string = p_charlist_to_c_string(CTXTc subst_str_term, &subst_buf,
 					      "RE_SUBSTITUTE",
 					      "substitution string");
       } else 
@@ -377,7 +394,7 @@ int do_regsubstitute__(void)
        manipulation it is often necessary to process the same string many
        times. This can cause atom table overflow. Not interning allws us to
        circumvent the problem.  */
-    ctop_string(4, output_buffer.string);
+    ctop_string(CTXTc 4, output_buffer.string);
   
   return(TRUE);
 }
@@ -395,6 +412,9 @@ int do_regsubstitute__(void)
 */
 int do_regsubstring__(void)
 {
+  if( NULL == th)
+	th = xsb_get_main_thread();
+
   /* Prolog args are first assigned to these, so we could examine the types
      of these objects to determine if we got strings or atoms. */
   prolog_term input_term, output_term;
@@ -405,11 +425,11 @@ int do_regsubstring__(void)
   
   XSB_StrSet(&output_buffer,"");
 
-  input_term = reg_term(1);  /* Arg1: string to find matches in */
+  input_term = reg_term(CTXTc 1);  /* Arg1: string to find matches in */
   if (is_string(input_term)) /* check it */
     input_string = string_val(input_term);
   else if (is_list(input_term)) {
-    input_string = p_charlist_to_c_string(input_term, &input_buffer,
+    input_string = p_charlist_to_c_string(CTXTc input_term, &input_buffer,
 					  "RE_SUBSTRING", "input string");
     conversion_required = TRUE;
   } else
@@ -418,7 +438,7 @@ int do_regsubstring__(void)
   input_len = strlen(input_string);
 
   /* arg 2: beginning offset */
-  beg_offset_term = reg_term(2);
+  beg_offset_term = reg_term(CTXTc 2);
   if (! is_int(beg_offset_term))
     xsb_abort("[RE_SUBSTRING] Arg 2 (the beginning offset) must be an integer");
   beg_offset = int_val(beg_offset_term);
@@ -427,7 +447,7 @@ int do_regsubstring__(void)
 	      beg_offset, input_len);
 
   /* arg 3: ending offset */
-  end_offset_term = reg_term(3);
+  end_offset_term = reg_term(CTXTc 3);
   if (! is_int(end_offset_term))
     xsb_abort("[RE_SUBSTRING] Arg 3 (the ending offset) must be an integer");
   end_offset = int_val(end_offset_term);
@@ -437,7 +457,7 @@ int do_regsubstring__(void)
     xsb_abort("[RE_SUBSTRING] Arg 3 (=%d) must be < 0 or between %d and %d",
 	      end_offset, beg_offset, input_len);
 
-  output_term = reg_term(4);
+  output_term = reg_term(CTXTc 4);
   if (! is_var(output_term))
     xsb_abort("[RE_SUBSTRING] Arg 4 (the output string) must be an unbound variable");
 
@@ -458,7 +478,7 @@ int do_regsubstring__(void)
        manipulation it is often necessary to process the same string many
        times. This can cause atom table overflow. Not interning allws us to
        circumvent the problem.  */
-    ctop_string(4, output_buffer.string);
+    ctop_string(CTXTc 4, output_buffer.string);
   
   return(TRUE);
 }
@@ -469,12 +489,14 @@ int do_regsubstring__(void)
 static XSB_StrDefine(temp_buffer);
 int do_regcharlist_to_string__(void)
 {
+  if( NULL == th)
+	th = xsb_get_main_thread();
 
-  prolog_term input_term = reg_term(1);
+  prolog_term input_term = reg_term(CTXTc 1);
 
-  p_charlist_to_c_string(input_term, &temp_buffer,
+  p_charlist_to_c_string(CTXTc input_term, &temp_buffer,
 			 "RE_CHARLIST_TO_STRING", "input string");
-  ctop_string(2, temp_buffer.string);
+  ctop_string(CTXTc 2, temp_buffer.string);
   return TRUE;
 }
 
@@ -484,6 +506,9 @@ static int make_flags(prolog_term flag_term, char *context)
   int flags = 0;
   prolog_term aux_list=flag_term, head_trm;
   char *head;
+
+  if( NULL == th)
+	th = xsb_get_main_thread();
 
   if (is_var(flag_term))
     return REG_EXTENDED;
@@ -537,6 +562,9 @@ static int xsb_re_match(char *regexp_ptr, char *match_str, int flags,
   regex_t *compiled_re;
   int idx, err_code;
   char err_msg[ERR_MSG_LEN];
+
+  if( NULL == th)
+	th = xsb_get_main_thread();
 
   *match_array = matches;
 

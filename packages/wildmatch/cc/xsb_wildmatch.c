@@ -36,6 +36,8 @@
 #include "cell_xsb.h"
 #include "error_xsb.h"
 #include "cinterf.h"
+/* context.h is necessary for the type of a thread context. */
+#include "context.h"
 
 /* Casefolding seems to be defined in some versions of gcc, but not in
    others. So, it is really not that portable.
@@ -47,7 +49,7 @@
 #define CASEFOLD_UNSUPPORTED 0
 #endif
 
-extern char *p_charlist_to_c_string(prolog_term term, VarString *outstring,
+extern char *p_charlist_to_c_string(CTXTdeclc prolog_term term, VarString *outstring,
 				    char *in_func, char *where);
 extern void c_string_to_p_charlist(char *name, prolog_term list,
 				   char *in_func, char *where);
@@ -58,6 +60,10 @@ static char *lowercase_string(char *str);
 static XSB_StrDefine(wild_buffer);
 static XSB_StrDefine(input_string_buffer);
 
+#ifdef MULTI_THREAD
+	static th_context *th = NULL;
+#endif
+
 
 /* XSB wildcard matcher entry point 
 ** Arg1: wildcard, Arg2: string to be matched, Arg3: IgnoreCase flag */
@@ -67,11 +73,14 @@ int do_wildmatch__(void)
   int flags = 0; /* passed to wildcard matcher */
   char *wild_ptr=NULL, *input_string=NULL;
   int ret_code;
+  
+  if( NULL == th)
+	th = xsb_get_main_thread();
 
-  wild_term = reg_term(1); /* Arg1: wildcard */
-  input_string_term = reg_term(2); /* Arg2: string to find matches in */
+  wild_term = reg_term(CTXTc 1); /* Arg1: wildcard */
+  input_string_term = reg_term(CTXTc 2); /* Arg2: string to find matches in */
   /* If arg 3 is bound to anything, then consider this as ignore case flag */
-  if (! is_var(reg_term(3)))
+  if (! is_var(reg_term(CTXTc 3)))
     ignorecase = TRUE;
 
   flags = (ignorecase ? FNM_CASEFOLD : 0);
@@ -80,8 +89,7 @@ int do_wildmatch__(void)
   if (is_string(wild_term))
     wild_ptr = string_val(wild_term);
   else if (is_list(wild_term))
-    wild_ptr = p_charlist_to_c_string(wild_term, &wild_buffer,
-				      "WILDMATCH", "wildcard");
+    wild_ptr = p_charlist_to_c_string(CTXTc wild_term, &wild_buffer,"WILDMATCH", "wildcard");
   else
     xsb_abort("[WILDMATCH] Wildcard (Arg 1) must be an atom or a character list");
 
@@ -89,7 +97,7 @@ int do_wildmatch__(void)
   if (is_string(input_string_term))
     input_string = string_val(input_string_term);
   else if (is_list(input_string_term)) {
-    input_string = p_charlist_to_c_string(input_string_term,
+    input_string = p_charlist_to_c_string(CTXTc input_string_term,
 					  &input_string_buffer,
 					  "WILDMATCH", "input string");
   } else
@@ -135,20 +143,23 @@ int do_glob_directory__(void)
   char *wild_ptr=NULL;
   int conversion_required, return_code, i;
 
-  wild_term = reg_term(1); /* Arg1: wildcard */
+  if( NULL == th)
+	th = xsb_get_main_thread();
+
+  wild_term = reg_term(CTXTc 1); /* Arg1: wildcard */
   /* If arg 3 is bound to anything, then consider this as ignore case flag */
-  if (! is_var(reg_term(2)))
+  if (! is_var(reg_term(CTXTc 2)))
     markdirs = TRUE;
 
   flags = (markdirs ? GLOB_MARK : 0);
 
-  conversion_required = ptoc_int(4);
+  conversion_required = ptoc_int(CTXTc 4);
 
   /* check wildcard expression */
   if (is_string(wild_term))
     wild_ptr = string_val(wild_term);
   else if (is_list(wild_term)) {
-    wild_ptr = p_charlist_to_c_string(wild_term, &wild_buffer,
+    wild_ptr = p_charlist_to_c_string(CTXTc wild_term, &wild_buffer,
 				      "GLOB_DIRECTORY", "wildcard");
   }
   else
@@ -187,24 +198,24 @@ int do_glob_directory__(void)
 #endif
 
   /* matched successfully: now retrieve results */
-  listTail = listOfMatches = reg_term(3);
+  listTail = listOfMatches = reg_term(CTXTc 3);
   if (! is_var(listTail))
     xsb_abort("[GLOB_DIRECTORY] Argument 7 (list of matches) must be an unbound variable");
 
   for (i=0; i<file_vector.gl_pathc; i++) {
-    c2p_list(listTail); /* make it into a list */
+    c2p_list(CTXTc listTail); /* make it into a list */
     listHead = p2p_car(listTail); /* get head of the list */
 
     if (conversion_required)
       c_string_to_p_charlist(file_vector.gl_pathv[i], listHead,
 			     "GLOB_DIRECTORY", "arg 3");
     else
-      c2p_string(file_vector.gl_pathv[i], listHead);
+      c2p_string(CTXTc file_vector.gl_pathv[i], listHead);
 
     listTail = p2p_cdr(listTail);
   }
 
-  c2p_nil(listTail); /* bind tail to nil */
+  c2p_nil(CTXTc listTail); /* bind tail to nil */
   globfree(&file_vector);
   return TRUE;
 }
@@ -240,14 +251,17 @@ int do_convert_string__(void)
   prolog_term conversion_flag_term, output_term;
   int to_string_conversion_required=FALSE;
 
-  input_string_term = reg_term(1); /* Arg1: string to convert */
+  if( NULL == th)
+	th = xsb_get_main_thread();
 
-  output_term = reg_term(2);
+  input_string_term = reg_term(CTXTc 1); /* Arg1: string to convert */
+
+  output_term = reg_term(CTXTc 2);
   if (! is_var(output_term))
     xsb_abort("[CONVERT_STRING] Output string (Arg 2) must be a variable");
 
   /* If arg 3 is bound to anything, then consider this as ignore case flag */
-  conversion_flag_term = reg_term(3);
+  conversion_flag_term = reg_term(CTXTc 3);
   if (! is_string(conversion_flag_term))
     xsb_abort("[CONVERT_STRING] Conversion flag (Arg 3) must be an atom");
 
@@ -257,7 +271,7 @@ int do_convert_string__(void)
   if (is_string(input_string_term))
     input_string = string_val(input_string_term);
   else if (is_list(input_string_term)) {
-    input_string = p_charlist_to_c_string(input_string_term,
+    input_string = p_charlist_to_c_string(CTXTc input_string_term,
 					  &input_string_buffer,
 					  "STRING_CONVERT", "input string");
     to_string_conversion_required = TRUE;
@@ -274,7 +288,7 @@ int do_convert_string__(void)
   if (to_string_conversion_required)
     c_string_to_p_charlist(output_ptr,output_term,"CONVERT_STRING","Arg 2");
   else
-    c2p_string(output_ptr, output_term);
+    c2p_string(CTXTc output_ptr, output_term);
 
   /* free up space to avoid memory leak */
   free(output_ptr);
