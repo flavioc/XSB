@@ -693,6 +693,12 @@ flag is private to each thread.  \\ \hline
 retracted clauses is allowed, and off otherwise. Default is {\tt
   on}.  This flag is private to each thread.  \\ \hline
 %
+{\tt string\_garbage\_collection} & {\tt on} if garbage collection for
+atomic constants is allowed, and off otherwise. Default is {\tt on}.
+This flag is global for all threads (currently, string garbage
+collection will only be invoked if there is a single active thread.)
+\\ \hline
+%
 {\tt goal} & the goal passed to XSB on command line with the
 `-e' switch; `{\tt true.}' if nothing is passed.  \\ \hline 
 %
@@ -871,14 +877,25 @@ used to report various degrees of abnormality.
         \>   \>     Yes master >
     }
 
-\ouritem{garbage\_collection(+Option)}\index{texttt{garbage\_collection/1}} 
-   Sets the system so that subsequent heap garbage collecting will be
-   done according to the specified {\tt Option}.  {\tt Option} may be
-   the atom \verb|none| indicating that heap garbage collection is
-   turned off; it may be the atom \verb|sliding| indicating that
-   sliding garbage collection will be done; the atom \verb|copying|
-   indicating that the copying garbage collector will be used; or it
-   may be the atom
+\ournewitem{trimcore}{machine}\index{\texttt{trimcore/0}}
+%
+A call to {\tt trimcore/0} reallocates an XSB thread's execution
+stacks (and some tabling stacks) to their initial allocation size, the
+action affecting only the memory areas for the calling thread.  When
+XSB is called in standalone or server mode, {\tt trimcore/0} is
+automatically called when the top interpreter level is reached.  When
+XSB is embedded in a process, {\tt trimcore/0} is called at the top
+interpreter level for any thread created through
+{\ xsb\_ccall\_thread\_create()} (see Volume 2, Chapter 3 {\em
+  Embedding XSB in a Process}).
+
+\ouritem{garbage\_collection(+Option)}\index{texttt{garbage\_collection/1}}
+Sets the system so that subsequent heap garbage collecting will be
+done according to the specified {\tt Option}.  {\tt Option} may be the
+atom \verb|none| indicating that heap garbage collection is turned
+off; it may be the atom \verb|sliding| indicating that sliding garbage
+collection will be done; the atom \verb|copying| indicating that the
+copying garbage collector will be used; or it may be the atom
 \verb|indirection| indicating that the indirect-sliding garbage
 collector will be used.
  

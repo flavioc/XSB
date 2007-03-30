@@ -37,20 +37,20 @@ significant care must be taken when modifying the definition of a
 predicate which is currently being executed.
 
 \comment{
-This means that significant care must be taken when
-modifying the definition of a predicate which is currently being
-executed. Notice that this makes some operations difficult. For
-example, one might try to retract from dynamically asserted
-predicates, {\tt p/1} and {\tt q/1}, exactly their intersection, by
-issuing the following query:
-\begin{center} 
-{\tt :- p(X), q(X), retract(p(X)), retract(q(X)), fail.}
-\end{center}
-Neither {\tt retract/1} nor {\tt retractall/1} support this behavior,
-due to their techniques for space reclamation.  One alternative is to
-use {\tt findall/3} to collect the intersection first, before retracting.
-Another is to use the predicates {\tt retract\_nr/1} and {\tt
-reclaim\_space/1}, described below.  
+| This means that significant care must be taken when
+| modifying the definition of a predicate which is currently being
+| executed. Notice that this makes some operations difficult. For
+| example, one might try to retract from dynamically asserted
+| predicates, {\tt p/1} and {\tt q/1}, exactly their intersection, by
+| issuing the following query:
+| \begin{center} 
+| {\tt :- p(X), q(X), retract(p(X)), retract(q(X)), fail.}
+| \end{center}
+| Neither {\tt retract/1} nor {\tt retractall/1} support this behavior,
+| due to their techniques for space reclamation.  One alternative is to
+| use {\tt findall/3} to collect the intersection first, before retracting.
+| Another is to use the predicates {\tt retract\_nr/1} and {\tt
+| reclaim\_space/1}, described below.  
 }
 
 If a dynamic predicate is given an indexing directive of {\tt trie},
@@ -339,20 +339,20 @@ bindings.
 \comment{
 Now obsolete, what with GC.
 
-\ouritem{retract\_nr(+Clause)}\index{\texttt{retract\_nr/1}}
-Performs just as {\tt retract/1} does, except that it does not reclaim the
-space used by the retracted clause. This is provided to allow programmers
-to modify dynamic clauses while executing them (a practice that is 
-discouraged.) For example, to retract an intersection, as described above,
-one could do:
-\begin{center}
-{\tt :- p(X), q(X), retract\_nr(p(X)), retract\_nr(q(X)), fail.}
-\end{center}
-In order to reclaim space after using {\tt retract\_nr/1}, see 
-{\tt reclaim\_space/1} below.  Predicate {\tt retract\_nr/1}
-is not a standard predicate and must be imported from module {\tt assert}.
-{\tt retract\_nr/1} is provided for (partial)
-compatibility with the {\tt retract/1} predicate of SB-Prolog.
+| \ouritem{retract\_nr(+Clause)}\index{\texttt{retract\_nr/1}}
+| Performs just as {\tt retract/1} does, except that it does not reclaim the
+| space used by the retracted clause. This is provided to allow programmers
+| to modify dynamic clauses while executing them (a practice that is 
+| discouraged.) For example, to retract an intersection, as described above,
+| one could do:
+| \begin{center}
+| {\tt :- p(X), q(X), retract\_nr(p(X)), retract\_nr(q(X)), fail.}
+| \end{center}
+| In order to reclaim space after using {\tt retract\_nr/1}, see 
+| {\tt reclaim\_space/1} below.  Predicate {\tt retract\_nr/1}
+| is not a standard predicate and must be imported from module {\tt assert}.
+| {\tt retract\_nr/1} is provided for (partial)
+| compatibility with the {\tt retract/1} predicate of SB-Prolog.
 
 %In this case, the {\tt retract\_nr/1} deletes the clauses, but will not
 %drastically modify the clause data structure,
@@ -363,24 +363,24 @@ compatibility with the {\tt retract/1} predicate of SB-Prolog.
 %compatibility with the {\tt retract/1} predicate provided by SB-Prolog that
 %did not reclaim space.
 
-\ouritem{reclaim\_space(+Head)}\index{\texttt{reclaim\_space/1}} Runs
-through the dynamic code for the predicate indicated by {\tt Head},
-and reclaims space for any clauses that have been deleted from that
-predicate by {\tt retract\_nr/1}.  This cannot safely be used when
-execution is still within some invocation of the specified predicate,
-or will backtrack into such a scope.  To complete our example of
-retracting the intersection of dynamic predicates:
-\begin{center}
-{\tt :- p(X), q(X), retract\_nr(p(X)), retract\_nr(q(X)), fail\ ;\\
-     reclaim\_space(p(\_)), reclaim\_space(q(\_)).}
-\end{center}
-would do the trick. Notice that the {\tt reclaim\_space} calls 
-must be made after execution has completely failed
-out of choice points for {\tt q(X)} and {\tt p(X)}.  Predicate 
-{\tt reclaim\_space/1} is not
-standard but must be imported from module {\tt assert}.
-As with {\tt retract\_nr}, the use of this predicate is discouraged; 
-it is provided for (partial) compatibility with SB-Prolog.
+| \ouritem{reclaim\_space(+Head)}\index{\texttt{reclaim\_space/1}} Runs
+| through the dynamic code for the predicate indicated by {\tt Head},
+| and reclaims space for any clauses that have been deleted from that
+| predicate by {\tt retract\_nr/1}.  This cannot safely be used when
+| execution is still within some invocation of the specified predicate,
+| or will backtrack into such a scope.  To complete our example of
+| retracting the intersection of dynamic predicates:
+| \begin{center}
+| {\tt :- p(X), q(X), retract\_nr(p(X)), retract\_nr(q(X)), fail\ ;\\
+|      reclaim\_space(p(\_)), reclaim\_space(q(\_)).}
+| \end{center}
+| would do the trick. Notice that the {\tt reclaim\_space} calls 
+| must be made after execution has completely failed
+| out of choice points for {\tt q(X)} and {\tt p(X)}.  Predicate 
+| {\tt reclaim\_space/1} is not
+| standard but must be imported from module {\tt assert}.
+| As with {\tt retract\_nr}, the use of this predicate is discouraged; 
+| it is provided for (partial) compatibility with SB-Prolog.
 }
 \comment{ 
 TLS: I dont think we need hashtable size given that we use dynamic
