@@ -663,6 +663,9 @@ xsb_flag(heap_garbage_collection, GCmode) :-
 xsb_flag(clause_garbage_collection, OnOff) :-
 	stat_flag(CLAUSE_GARBAGE_COLLECT, GCflag),
 	( GCflag =:= 0 -> OnOff = off ; OnOff = on ).
+xsb_flag(atom_garbage_collection, OnOff) :-
+	stat_flag(STRING_GARBAGE_COLLECT, GCflag),
+	( GCflag =:= 0 -> OnOff = off ; OnOff = on ).
 xsb_flag(gc_verbose_level,Level) :-
 	(   var(Level)
 	->  stat_flag(VERBOSE_GC,VerboseGC),
@@ -756,6 +759,9 @@ set_xsb_flag_1(heap_garbage_collection, GCmode) :-  !,
 set_xsb_flag_1(clause_garbage_collection, OnOff) :-  !, 
 	( OnOff == off -> Value = 0 ; Value = 1 ),
 	stat_set_flag(CLAUSE_GARBAGE_COLLECT, Value).
+set_xsb_flag_1(atom_garbage_collection, OnOff) :-  !, 
+	( OnOff == off -> Value = 0 ; Value = 1 ),
+	stat_set_flag(STRING_GARBAGE_COLLECT, Value).
 set_xsb_flag_1(gc_verbose_level,Level) :-  !, 
 	(   Level = 0
 	-> stat_set_flag(VERBOSE_GC,0),
