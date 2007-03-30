@@ -1217,6 +1217,7 @@ typedef ClRef SOBRef ;
 /* For indexed clause group (SOBblock) */
 
 #define ClRefSOBInstr(Cl)	(ClRefWord((Cl),2))
+#define ClRefSOBOpCode(Cl)	(cell_opcode(&ClRefSOBInstr(Cl)))
 #define ClRefHashSize(Cl)	(ClRefWord((Cl),4))
 #define ClRefJumpInstr(Cl)	(ClRefWord((Cl),5))
 #define ClRefFirstIndex(Cl)	(ClRefWord((Cl),6))
@@ -2063,6 +2064,21 @@ Predicates for Clause Garbage Collecting and Safe Space Reclamation
 #define is_dynamic_clause_inst(inst)					\
   ((int) inst == dynretrymeelse ||   (int) inst == dyntrustmeelsefail)	
 
+/* For testing in debug mode */
+#define known_backtracking_inst(inst)					\
+  ((int) inst == trie_retry_attv || (int) inst == trie_retry_str ||	\
+   (int) inst == trie_retry_list  || (int) inst ==  trie_retry_var ||	\
+   (int) inst == trie_retry_val || (int) inst == trie_retry_numcon ||	\
+   (int) inst == trie_retry_numcon_succ  ||				\
+   (int) inst == trie_trust_attv || (int) inst == trie_trust_str  ||	\
+   (int) inst == trie_trust_list  || (int) inst ==  trie_trust_var ||	\
+   (int) inst == trie_trust_val || (int) inst == trie_trust_numcon ||	\
+   (int) inst == trie_trust_numcon_succ  ||				\
+   (int) inst == retry ||   (int) inst == trust ||  (int) inst == retrymeorelse || \
+   (int) inst == trustmeorelsefail || inst == (int) tableretry || (int) inst == tabletrust || \
+   (int) inst == check_complete || (int) inst == answer_return ||	\
+   (int) inst == resume_compl_suspension)
+
 /* TLS: due to weirdness of ClRefs, a ClRef pointer points to the END
    of the ClRef.  To access its components you must decrement the
    ClRef pointer.  At some point I'd like to change this, but this
@@ -2122,6 +2138,14 @@ int mark_cpstack_retract(CTXTdeclc ClRef clref) {
 	//	fprintf(stderr,"found dangling dbclause/; ptr in mc_retract\n");
 	found_match = 1;
       }
+#ifdef DYN_GC_DEBUG
+      else if (!known_backtracking_inst(cp_inst))
+	fprintf(stderr,"Unexpected cp_inst %x at %p (%s/%d) cp %p\n",
+		cp_inst,(clref_from_try_addr((ClRef) *cp_top1)),
+		get_name(PrRef_Psc(clref_to_prref(clref_from_try_addr((ClRef) *cp_top1)))),
+		get_arity(PrRef_Psc(clref_to_prref(clref_from_try_addr((ClRef) *cp_top1)))),
+		cp_top1);
+#endif
     }
     cp_top1 = cp_prevtop(cp_top1);
   }
@@ -2144,6 +2168,14 @@ void unmark_cpstack_retract(CTXTdecl) {
       cp_clref = clref_from_try_addr((ClRef)*cp_top1);
       unmark_clref(cp_clref);
     }
+#ifdef DYN_GC_DEBUG
+    else if (!known_backtracking_inst(cp_inst))
+      fprintf(stderr,"Unexpected cp_inst %x at %p (%s/%d) cp %p\n",
+	      cp_inst,(clref_from_try_addr((ClRef) *cp_top1)),
+	      get_name(PrRef_Psc(clref_to_prref(clref_from_try_addr((ClRef) *cp_top1)))),
+	      get_arity(PrRef_Psc(clref_to_prref(clref_from_try_addr((ClRef) *cp_top1)))),
+	      cp_top1);
+#endif
     cp_top1 = cp_prevtop(cp_top1);
   }
 }
@@ -2180,6 +2212,14 @@ int mark_cpstack_retractall(CTXTdecl) {
 	//	fprintf(stderr,"found dangling dbclause/; ptr in CLREF retra\n");
 	found_match = 1;
       }
+#ifdef DYN_GC_DEBUG
+    else if (!known_backtracking_inst(cp_inst))
+      fprintf(stderr,"Unexpected cp_inst %x at %p (%s/%d) cp %p\n",
+	      cp_inst,(clref_from_try_addr((ClRef) *cp_top1)),
+	      get_name(PrRef_Psc(clref_to_prref(clref_from_try_addr((ClRef) *cp_top1)))),
+	      get_arity(PrRef_Psc(clref_to_prref(clref_from_try_addr((ClRef) *cp_top1)))),
+	      cp_top1);
+#endif
     }
     cp_top1 = cp_prevtop(cp_top1);
   }
@@ -2231,6 +2271,14 @@ int check_cpstack_retractall(CTXTdeclc PrRef prref) {
 	//	fprintf(stderr,"found dangling dbclause/; ptr in gen retra\n");
 	found_prref_match = 1;
       }
+#ifdef DYN_GC_DEBUG
+    else if (!known_backtracking_inst(cp_inst))
+      fprintf(stderr,"Unexpected cp_inst %x at %p (%s/%d) cp %p\n",
+	      cp_inst,(clref_from_try_addr((ClRef) *cp_top1)),
+	      get_name(PrRef_Psc(clref_to_prref(clref_from_try_addr((ClRef) *cp_top1)))),
+	      get_arity(PrRef_Psc(clref_to_prref(clref_from_try_addr((ClRef) *cp_top1)))),
+	      cp_top1);
+#endif
     }
     cp_top1 = cp_prevtop(cp_top1);
   }
@@ -2532,6 +2580,14 @@ int mark_dynamic(CTXTdecl)
 	//	fprintf(stderr,"found dangling dbclause/; ptr in gc\n");
 	found_match = 1;
       }
+#ifdef DYN_GC_DEBUG
+    else if (!known_backtracking_inst(cp_inst))
+      fprintf(stderr,"Unexpected cp_inst %x at %p (%s/%d) cp %p\n",
+	      cp_inst,(clref_from_try_addr((ClRef) *cp_top1)),
+	      get_name(PrRef_Psc(clref_to_prref(clref_from_try_addr((ClRef) *cp_top1)))),
+	      get_arity(PrRef_Psc(clref_to_prref(clref_from_try_addr((ClRef) *cp_top1)))),
+	      cp_top1);
+#endif
     }
     cp_top1 = cp_prevtop(cp_top1);
   }
@@ -2540,6 +2596,7 @@ int mark_dynamic(CTXTdecl)
 
 void gc_retractall(CTXTdeclc ClRef);
 int determine_if_safe_to_delete(ClRef);
+int determine_if_sob_safe_to_delete(ClRef);
 static int really_delete_clause(CTXTdeclc ClRef);
 
 /* Upon freeing, the Pred-delcf pointer for the current prref may need
@@ -2708,6 +2765,7 @@ void release_private_dynamic_resources(CTXTdecl) {
 
 /********************************************************************/
 /* Insert in retract buffer and remove old clauses */
+void print_clref_sob(ClRef);
 
 static int really_delete_clause(CTXTdeclc ClRef Clause)
 {
@@ -2745,12 +2803,22 @@ static int really_delete_clause(CTXTdeclc ClRef Clause)
 			  "Addr %p : prev %p : next %p",
 			  sob, ClRefNext(sob), ClRefPrev(sob) ));
 	      delete_from_hashchain(CTXTc Clause,i,NI) ;
-	      if (sob && --ClRefNumNonemptyBuckets(sob) == 0) 
-                { /* if emptied bucket, decrement count; if all empty, reclaim SOB */
-                    xsb_dbgmsg((LOG_RETRACT,"deleting sob - %p", sob ));
-		    delete_from_sobchain(CTXTc sob) ;
-		    mem_dealloc((pb)ClRefAddr(sob), ClRefSize(sob),ASSERT_SPACE);
+	      if (sob && --ClRefNumNonemptyBuckets(sob) == 0) { 
+                /* if emptied bucket, decrement count; if all empty, reclaim SOB */
+		if (!determine_if_sob_safe_to_delete((ClRef) sob)) {
+		  printf("!!! deleting improper sob %p\n",sob);
+		  // This doesn't seem to work -- I don't know why.
+		  //		  ClRefSOBOpCode(sob) = fail;
+		  print_clref_sob(sob);
+		} 
+		//		else 
+		{
+		xsb_dbgmsg((LOG_RETRACT,"deleting sob - %p", sob ));
+		delete_from_sobchain(CTXTc sob) ;
+		mem_dealloc((pb)ClRefAddr(sob), ClRefSize(sob),ASSERT_SPACE);
 		}
+	      } 
+
             }
             break ;
         }
@@ -2765,6 +2833,19 @@ static int really_delete_clause(CTXTdeclc ClRef Clause)
 }
 
 /********************/
+int determine_if_sob_safe_to_delete(ClRef Clause) {
+  byte opcode;
+
+  if (clref_is_marked(Clause)) return FALSE;
+
+  opcode = ClRefTryOpCode(Clause);
+  if ((opcode == trymeelse || opcode == dyntrymeelse)
+      && (clref_is_marked(ClRefNext(Clause)))) {
+    return FALSE;
+  }
+  return TRUE;
+}
+
 
 int determine_if_safe_to_delete(ClRef Clause) {
   byte opcode;
@@ -3897,5 +3978,32 @@ int trie_retract_safe(CTXTdecl)
     safe_delete_branch(Last_Nod_Sav);
     return TRUE;
   }
+}
+
+
+void print_clref_sob(ClRef Clref) {
+  fprintf(stddbg,"***** SOB Clref *****\n");
+  fprintf(stddbg,"Clref Length      %d Type %x Marked %d\n"
+	  "Clref Previous    %p   \n"
+	  "Clref Instruction %x %s  \n"
+	  "Clref Next        %p   \n"
+	  "Clref SOB Instruction %x %s arg %d  \n"
+	  "Clref Hash Table Addr %x \n "
+	  "Clref Hash Table Size %d \n"
+	  "Clref SOB Jump %x \n"
+	  "Next SOB or First Clause %x \n"   
+	  "Last ClRefI on All %x \n"   
+	  "Clauses in Hash %d \n",
+	  (int) ClRefSize(Clref),(int) ClRefType(Clref),(clref_is_marked(Clref)?1:0),
+	  ClRefPrev(Clref),
+	  (int) ClRefTryInstr(Clref),(char *)inst_table[ClRefTryOpCode(Clref)][0],
+	  ClRefNext(Clref),
+	  (int) ClRefSOBInstr(Clref),(char *) inst_table[ClRefSOBOpCode(Clref)][0],ClRefSOBArg(Clref,3),
+	  (int) (ClRefWord((Clref),3)),
+	  (int) ClRefHashSize(Clref),
+	  (int) ClRefJumpInstr(Clref),
+	  (int) ClRefFirstIndex(Clref),
+	  (int) ClRefLastIndex(Clref),
+	  (int) ClRefNumNonemptyBuckets(Clref));
 }
 

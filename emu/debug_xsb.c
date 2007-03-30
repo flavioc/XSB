@@ -872,7 +872,26 @@ void print_tables(CTXTdecl)
   fprintf(stddbg, EOS);
 }
 
+/*----------------------------------------------------------------------*/ 
+extern DelCFptr delcf_chain_begin;
 
+void print_deleted_clause_frame(DelCFptr delcf) {
+  printf("deleted %s frame for %s/%d: %p ref %p mark %d next_pred %p next %p\n",
+	 ((delcf->type)== 0 ? "pred":"clause"),get_name(delcf->psc),get_arity(delcf->psc),
+	 ((delcf->type)== 0 ? (ClRef) delcf->prref:delcf->clref),
+	 delcf,delcf->mark,delcf->next_pred_delCF,delcf->next_delCF);
+}
+
+void print_delcf_chain() {
+  
+  printf("--------------------------------------------------------\n");
+  DelCFptr delcf = delcf_chain_begin;
+  while(delcf) {
+    print_deleted_clause_frame(delcf);
+    delcf = delcf->next_delCF;    
+  }
+  printf("--------------------------------------------------------\n");
+}
 
 /*======================================================================*/
 /*  The final set of routines should be useful with the instruction-    */

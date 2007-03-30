@@ -2338,7 +2338,7 @@ return(0);	/* not "goto contcase"! */
 #ifndef JUMPTABLE_EMULOOP
   default: {
     char message[80];
-    sprintf(message, "Illegal opcode hex %x", *lpcreg); 
+    sprintf(message, "Illegal opcode hex %x (& %x)", *lpcreg,lpcreg); 
     xsb_exit(CTXTc message);
   }
 } /* end of switch */
@@ -2346,7 +2346,7 @@ return(0);	/* not "goto contcase"! */
   _no_inst:
     {
       char message[80];
-      sprintf(message, "Illegal opcode hex %x", *lpcreg);
+      sprintf(message, "Illegal opcode hex %x (& %x)", *lpcreg,(int) lpcreg);
       xsb_exit(CTXTc message);
     }
 #endif
