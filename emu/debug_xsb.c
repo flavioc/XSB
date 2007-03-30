@@ -884,8 +884,8 @@ void print_deleted_clause_frame(DelCFptr delcf) {
 
 void print_delcf_chain() {
   
-  printf("--------------------------------------------------------\n");
   DelCFptr delcf = delcf_chain_begin;
+  printf("--------------------------------------------------------\n");
   while(delcf) {
     print_deleted_clause_frame(delcf);
     delcf = delcf->next_delCF;    
