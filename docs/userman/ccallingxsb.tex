@@ -178,7 +178,8 @@ int main(int argc, char *argv[]) {
   strcpy(init_string,strip_names_from_path(xsb_executable_full_path(argv[0]),3));
 
   if (xsb_init_string(init_string) == XSB_ERROR) {
-    fprintf(stderr,"++initializing XSB: %s\n",xsb_get_init_error_message());
+    fprintf(stderr,"++initializing XSB: %s/%s\n",xsb_get_init_error_type(),
+            xsb_get_init_error_message());
     exit(XSB_ERROR);
   }
 
@@ -412,7 +413,8 @@ int main(int argc, char *argv[])
 
   strcpy(init_string,strip_names_from_path(xsb_executable_full_path(argv[0]),3));
   if (xsb_init_string(init_string) == XSB_ERROR) {
-    fprintf(stderr,"++initializing XSB: %s\n",xsb_get_init_error_message());
+    fprintf(stderr,"++initializing XSB: %s/%s\n",xsb_get_init_error_type(),
+            xsb_get_init_error_message());
     exit(XSB_ERROR);
   }
 
@@ -525,7 +527,8 @@ int main(int argc, char *argv[])
   strcpy(init_string,strip_names_from_path(xsb_executable_full_path(argv[0]),3));
 
   if (xsb_init_string(init_string)) {
-    fprintf(stderr,"%s initializing XSB: %s\n",xsb_get_init_error_message(xsb_get_main_thread()));
+    fprintf(stderr,"%s initializing XSB: %s/%s\n",xsb_get_init_error_type(),
+            xsb_get_init_error_message());cin
     exit(XSB_ERROR);
   }
 
@@ -578,15 +581,16 @@ reported independently.
 It is important to note that since each thread created by {\tt
   xsb\_ccall\_thread\_create()} goes into a command-loop similar to
 the command loop, it will stay around until it is explicitly killed or
-until XSB is closed.  A call such as 
+until XSB is closed.  The call 
 \begin{verbatim}
-xsb_command_string(r_th,"thread_exit.")
+  xsb_kill_thread(r_th);
 \end{verbatim}
-would cause {\tt r\_th} to exit.  Note that once a thread is exited,
-all of its data structures will be freed, including those that support
+is needed to make {\tt r\_th} to exit.  Once a thread is exited, all
+of its data structures will be freed, including those that support
 {\tt xsb\_get\_error\_type()} and {\tt
   xsb\_get\_error\_message()}~\footnote{Note that causing XSB's main
-  thread to exit will cause the entire process to exit -- not just XSB.}.
+  thread to exit will cause the entire process to exit -- not just
+  XSB.}.
 
 \subsection{Calling Multiple XSB Threads using Multiple C Threads} \label{sec:CXSBMTMT}
 
@@ -696,6 +700,27 @@ int main(int argc, char *argv[]) {
 \label{fig:varstringex3}
 \end{figure}
 
+\subsubsection{Protected and Non-Protected API Functions} 
+
+Example~\ref{fig:varstringex3} shows that, when the {\tt Varstring}
+functions are used, if a single calling thread opens a query to an XSB
+thread $X_T$, $X_T$ will be protected from queries and commands posed
+by other C threads until the query is closed, failed out of, or exits
+via an error.  In fact, queries (and commands) are protected when the
+{\tt Varstring} or fixed string interfaces are used.  However,
+consider what may happen when the register level interface is used.
+In this case, a calling thread may call one or more API functions to
+set up the registers, execute a command or query, call several more
+API functions to obtain the output, and so on.  For this reason, if an
+application uses API commands that depend on user manipulation of
+registers ({\tt xsb\_command()},{\tt xsb\_query()},{\tt
+  xsb\_query\_string()}, and {\tt xsb\_next()}) the user must ensure
+that only one calling thread interacts with an XSB thread when that
+thread in the course of executing a command or query.  See {\tt
+  \$XSB\_DIR/examples/c\_calling\_xsb/cregs\_thread2.c} for an example
+of how mutexes can be used to protect XSB threads.
+
+
 \section{A C API for XSB} \label{sec:CAPI}
 %
 \subsection{Initializing and Closing XSB}
@@ -750,7 +775,7 @@ XSB.
     %%
     \begin{verbatim}
 int main(int argc, char *argv[])
-{ v
+{ 
   int myargc = 1;
   char *myargv[1];
 
@@ -760,6 +785,7 @@ int main(int argc, char *argv[])
 
   /* Initialize xsb */
   xsb_init(myargc,myargv);
+}
     \end{verbatim}
     %%
 \end{itemize}
@@ -793,13 +819,18 @@ is freed.
 \subsection{Passing Commands to XSB}
 
 \begin{description}
-\ouritem{int xsb\_command\_string(th\_context *th, char *cmd)} \index{\texttt{xsb\_command\_string}}
+\ouritem{int xsb\_command\_string(th\_context *th, char *cmd)} 
+\index{\texttt{xsb\_command\_string}}
 %
 This function passes a command to the XSB thread designated by {\tt
   th} (the first argument is not used in the single-threaded engine).
 No query can be active in {\tt th} when the command is called.  The
 command is a string consisting of a Prolog (or HiLog) term terminated
 by a period (.).
+
+When used in the multi-threaded engine, {\tt xsb\_command\_string}
+protects the called thread from API calls from other pthreads until
+the command is finished.
 
 {\bf Return Codes}  
 \bi
@@ -832,12 +863,21 @@ Register 2 may also be set before the call to {\tt xsb\_query()}
 (using {\tt xsb\_make\_vars(int)} and {\tt xsb\_set\_var\_*()}) in
 which case any variables set to values in the {\tt ret/n} term will be
 so bound in the call to the command goal.  {\tt xsb\_command} invokes
-the command represented in register 1 and returns 0 if the command
-succeeds and 1 if it fails.
+the command represented in register 1 and returns {\tt XSB\_SUCCESS}
+if the command succeeds, {\tt XSB\_FAILURE} if it fails, and {\tt
+  XSB\_ERROR} if an error is thrown while executing the command.
 
-Apart from the steps necessary to formulate the query, the behavior of
-{\tt xsb\_command()} is similar to that of {\tt
-  xsb\_command\_string()}, including its return codes.
+When used in the multi-threaded engine, {\tt xsb\_command\_string}
+{\em does not protect} the called thread from API calls from other
+pthreads until the command is finished.  It is the user's
+responsibility to protect the XSB thread, using a mutex or other
+concurrency control, from the time the goal begins to be constructed
+in the register 1 until the command has completed.
+
+Apart from the steps necessary to formulate the query and the lack of
+protection of the XSB thread, the behavior of {\tt xsb\_command()} is
+similar to that of {\tt xsb\_command\_string()}, including its return
+codes.
 \end{description}
 
 \subsection{Querying XSB}
@@ -852,8 +892,8 @@ returns the first answer (if there is one) as a {\tt VarString}.  Any
 previous query to {\tt th} must have already been closed.  Any query
 may return multiple data answers.  The first is found and made
 available to the caller as a result of this call.  To get any
-subsequent answers, {\tt xsb\_next\_string()} or a similar function
-must be called.  An example call is:
+subsequent answers, {\tt xsb\_next\_string()} must be called.  An
+example call is:
 \begin{verbatim}
 rc = xsb_query_string_string(th, "append(X,Y,[a,b,c]).",buff,";");
 \end{verbatim}
@@ -877,6 +917,10 @@ string, here the semicolon (\verb|;|).  In the answer string, XSB
 atoms are printed without quotes.  Complex terms are printed in a
 canonical form, with atoms quoted if necessary, and lists produced in
 the normal list notation.
+
+When used in the multi-threaded engine, {\tt
+  xsb\_query\_string\_string} protects the called thread from API
+calls from other pthreads until the entire query is finished.
 
 {\bf Return Codes}  
 \bi
@@ -920,6 +964,10 @@ not copied to the buffer and {\tt XSB\_OVERFLOW} is returned.  In this
 case the caller can retrieve the answer by providing a bigger buffer
 (of size greater than the returned \verb|anslen|) in a call to {\tt
   xsb\_get\_last\_answer\_string()}.
+
+When used in the multi-threaded engine, {\tt
+  xsb\_query\_string\_string\_b} protects the called thread from API
+calls from other pthreads until the entire query is finished.
 
 {\bf Return Codes}  
 \bi
@@ -968,6 +1016,14 @@ them.  Register 2 may also be set before the call to {\tt xsb\_query()}
 which case any variables set to values in the {\tt ret/n} term will be
 so bound in the call to the goal.
 
+When used in the multi-threaded engine, {\tt xsb\_query} {\em does not
+  protect} the called thread from API calls from other pthreads until
+the query is finished, or even when the registers are being accessed.
+It is the user's responsibility to protect the XSB thread, using a
+mutex or other concurrency control, from the time the goal begins to
+be constructed in the register 1 until the query is closed, failed, or
+exited upon error.
+
 \ouritem{int xsb\_get\_last\_answer\_string(th\_context *th, char
   *buff, int bufflen, int *anslen)}
 \index{\texttt{xsb\_get\_last\_answer\_string\_b}}
@@ -1000,6 +1056,14 @@ have already been closed.  In all other respects, {\tt
 only way to retrieve answers is through Register 2.  The ability to
 create the return structure and bind variables in it is particularly
 useful in this function.
+
+When used in the multi-threaded engine, {\tt xsb\_query\_string} {\em
+  does not protect} the called thread from API calls from other
+pthreads until the query is finished, or even when the registers are
+being accessed.  It is the user's responsibility to protect the XSB
+thread, using a mutex or other concurrency control, from the time the
+goal begins to be constructed in the register 1 until the query is
+closed, failed, or exited upon error.
 
 {\bf Return Codes}  
 \bi
@@ -1036,6 +1100,10 @@ returns with buff set to
 \end{verbatim}
 the second answer to the indicated query. 
 
+In the multi-threaded engine, {\tt xsb\_next\_string()} protects the
+XSB thread from concurrent access by other threads as long as the
+query was invoked by {\tt xsb\_query\_string\_string(\_b)}.
+
 {\bf Return Codes}  
 \bi
 \item {\tt XSB\_SUCCESS} indicates that the query succeeded.
@@ -1058,6 +1126,10 @@ is enough space.  If the buffer would overflow, this routine returns
 {\tt XSB\_OVERFLOW}, and the answer can be retrieved by providing a
 larger buffer in a call to {\tt xsb\_get\_last\_answer\_string\_b()}.
 In any case, the length of the answer is returned in \verb|anslen|.
+
+In the multi-threaded engine, {\tt xsb\_next\_string()} protects the
+XSB thread from concurrent access by other threads as long as the
+query was invoked by {\tt xsb\_query\_string\_string(\_b)}.
 
 {\bf Return Codes}  
 \bi
@@ -1082,6 +1154,13 @@ fields of the {\tt ret/n} answer term in register 2 to reflect the
 next answer to the query.  Its return codes are as with {\tt
   xsb\_next\_string()}.
 
+When used in the multi-threaded engine, {\tt xsb\_next} {\em does not
+  protect} the called thread from API calls from other pthreads until
+the query is finished, or even when the registers are being accessed.
+It is the user's responsibility to protect the XSB thread, using a
+mutex or other concurrency control, through the time that registers
+are accessed by the calling program.
+
 \ouritem{int xsb\_close\_query(th\_context *th)} \index{\texttt{xsb\_close\_query}}
 %
 This function allows a user to close a query to {\tt th} before all
@@ -1104,6 +1183,7 @@ but otherwise has no effect.
   called while no query is open.
 \ei
 \ei
+
 \end{description}
 
 \subsection{Obtaining Information about Errors}
