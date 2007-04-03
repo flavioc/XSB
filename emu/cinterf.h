@@ -293,34 +293,34 @@ extern char *vfile_obj(/* vfile */);
 /* Routines to call xsb from C						*/
 /*======================================================================*/
 
-DllExport call_conv extern int call_conv xsb_init(int, char **);
-DllExport call_conv extern int call_conv xsb_init_string(char *);
-DllExport call_conv extern int call_conv pipe_xsb_stdin(); 
-DllExport call_conv extern int call_conv writeln_to_xsb_stdin(char * input);
-DllExport call_conv extern int call_conv xsb_command(CTXTdecl);
-DllExport call_conv extern int call_conv xsb_command_string(CTXTdeclc char *);
-DllExport call_conv extern int call_conv xsb_query(CTXTdecl);
-DllExport call_conv extern int call_conv xsb_query_string(CTXTdeclc char *);
-DllExport call_conv extern int call_conv xsb_query_string_string(CTXTdeclc char*,VarString*,char*);
-DllExport call_conv extern int call_conv xsb_query_string_string_b(CTXTdeclc char*,char*,int,int*,char*);
-DllExport call_conv extern int call_conv xsb_next(CTXTdecl);
-DllExport call_conv extern int call_conv xsb_next_string(CTXTdeclc VarString*,char*);
-DllExport call_conv extern int call_conv xsb_next_string_b(CTXTdeclc char*,int,int*,char*);
-DllExport call_conv extern int call_conv xsb_get_last_answer_string(CTXTdeclc char*,int,int*);
-DllExport call_conv extern int call_conv xsb_close_query(CTXTdecl);
-DllExport call_conv extern int call_conv xsb_close(CTXTdecl);
-DllExport call_conv extern int call_conv xsb_get_last_error_string(char*,int,int*);
-DllExport call_conv extern char * xsb_get_init_error_message();
-DllExport call_conv extern char * xsb_get_init_error_type();
-DllExport call_conv extern char * xsb_get_error_message(CTXTdecl);
-DllExport call_conv extern char * xsb_get_error_type(CTXTdecl);
+DllExport extern int call_conv xsb_init(int, char **);
+DllExport extern int call_conv xsb_init_string(char *);
+DllExport extern int call_conv pipe_xsb_stdin(); 
+DllExport extern int call_conv writeln_to_xsb_stdin(char * input);
+DllExport extern int call_conv xsb_command(CTXTdecl);
+DllExport extern int call_conv xsb_command_string(CTXTdeclc char *);
+DllExport extern int call_conv xsb_query(CTXTdecl);
+DllExport extern int call_conv xsb_query_string(CTXTdeclc char *);
+DllExport extern int call_conv xsb_query_string_string(CTXTdeclc char*,VarString*,char*);
+DllExport extern int call_conv xsb_query_string_string_b(CTXTdeclc char*,char*,int,int*,char*);
+DllExport extern int call_conv xsb_next(CTXTdecl);
+DllExport extern int call_conv xsb_next_string(CTXTdeclc VarString*,char*);
+DllExport extern int call_conv xsb_next_string_b(CTXTdeclc char*,int,int*,char*);
+DllExport extern int call_conv xsb_get_last_answer_string(CTXTdeclc char*,int,int*);
+DllExport extern int call_conv xsb_close_query(CTXTdecl);
+DllExport extern int call_conv xsb_close(CTXTdecl);
+DllExport extern int call_conv xsb_get_last_error_string(char*,int,int*);
+DllExport extern char * call_conv xsb_get_init_error_message();
+DllExport extern char * call_conv xsb_get_init_error_type();
+DllExport extern char * call_conv xsb_get_error_message(CTXTdecl);
+DllExport extern char * call_conv xsb_get_error_type(CTXTdecl);
 #ifdef MULTI_THREAD
 DllExport extern th_context * call_conv xsb_get_main_thread();
 extern th_context *main_thread_gl;
 #endif
 
 #ifdef MULTI_THREAD
-DllExport extern int xsb_kill_thread(CTXTdecl);
+DllExport extern int call_conv xsb_kill_thread(CTXTdecl);
 #endif
 
 DllExport extern void call_conv print_pterm(CTXTdeclc Cell, int, VarString*);

@@ -1298,31 +1298,31 @@ void reset_ccall_error(CTXTdecl) {
   }
 
 #ifndef MULTI_THREAD
-DllExport char * xsb_get_init_error_type() {
+DllExport char * call_conv xsb_get_init_error_type() {
   return &(ccall_error).ccall_error_type[0];
   }
 
-DllExport char * xsb_get_init_error_message() {
+DllExport char * call_conv xsb_get_init_error_message() {
   return &(ccall_error).ccall_error_message[0];
   }
 
 #else
 
-DllExport char * xsb_get_init_error_type() {
+DllExport char * call_conv xsb_get_init_error_type() {
   return &(init_ccall_error).ccall_error_type[0];
   }
 
-DllExport char * xsb_get_init_error_message() {
+DllExport char * call_conv xsb_get_init_error_message() {
   return &(init_ccall_error).ccall_error_message[0];
   }
 
 #endif
 
-DllExport char * xsb_get_error_type(CTXTdecl) {
+DllExport char * call_conv xsb_get_error_type(CTXTdecl) {
   return &(ccall_error).ccall_error_type[0];
   }
 
-DllExport char * xsb_get_error_message(CTXTdecl) {
+DllExport char * call_conv xsb_get_error_message(CTXTdecl) {
   return &(ccall_error).ccall_error_message[0];
   }
 
@@ -1635,7 +1635,7 @@ DllExport int call_conv xsb_query(CTXTdecl)
  Then the goal is called.  If the goal succeeds, xsb_query_string
  returns XSB_SUCCESS and the first answer is in register 2.  If it
  fails, xsb_query_string returns XSB_FAILURE. 
- /************************************************************************/
+************************************************************************/
 
 DllExport int call_conv xsb_query_string(CTXTdeclc char *goal)
 {
