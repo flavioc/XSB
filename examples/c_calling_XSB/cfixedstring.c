@@ -60,12 +60,16 @@ int main(int argc, char *argv[])
 
 #ifdef MULTI_THREAD
   th_context *th = xsb_get_main_thread();
+#define xsb_get_main_thread_macro() xsb_get_main_thread()
+#else
+#define xsb_get_main_thread_macro() 
 #endif
 
   /* Create command to consult a file: edb.P, and send it. */
   if (xsb_command_string(CTXTc "consult('edb.P').") == XSB_ERROR)
-    fprintf(stderr,"++Error consulting edb.P: %s/%s\n",xsb_get_error_type(xsb_get_main_thread()),
-	    xsb_get_error_message(xsb_get_main_thread()));
+    fprintf(stderr,"++Error consulting edb.P: %s/%s\n",
+	    xsb_get_error_type(xsb_get_main_thread_macro()),
+	    xsb_get_error_message(xsb_get_main_thread_macro()));
 
   rc = xsb_query_string_string_b(CTXTc "p(X,Y,Z).",return_string,return_size,&anslen,"|");
 
@@ -83,8 +87,9 @@ int main(int argc, char *argv[])
   }
 
  if (rc == XSB_ERROR) 
-   fprintf(stderr,"++Query Error: %s/%s\n",xsb_get_error_type(xsb_get_main_thread()),
-	   xsb_get_error_message(xsb_get_main_thread()));
+   fprintf(stderr,"++Query Error: %s/%s\n",
+	   xsb_get_error_type(xsb_get_main_thread_macro()),
+	   xsb_get_error_message(xsb_get_main_thread_macro()));
 
   xsb_close(CTXT);
   return(0);

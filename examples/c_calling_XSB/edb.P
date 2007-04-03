@@ -30,3 +30,24 @@ test_r_fail:- findall(C,r(r,_,C),Clist),C \= [], writeln(r(Clist)).
 
 test_p_err:- functor(_X,_Y,_Z).
 test_r_err:- functor(X,a,a).
+
+
+pregs(a,b,c).
+pregs(d,e,f).
+pregs(g,h,i).
+pregs(j,k,l).
+
+rregs(1,2,3).
+rregs(4,5,6).
+rregs(7,8,9).
+rregs(10,11,12).
+
+pregs_err(a,b,c).
+pregs_err(d,e,f):- functor(_,_,_).
+pregs_err(g,h,i).
+pregs_err(j,k,l).
+
+rregs_err(1,2,3).
+rregs_err(4,5,6):- functor(_,_,_).
+rregs_err(7,8,9).
+rregs_err(10,11,12).
