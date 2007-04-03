@@ -35,6 +35,8 @@
 
 c_callloop :-
         set_inthandler('_$keyboard_int'(_), MYSIG_KEYB),
+	set_inthandler('_$attv_int'(_,_), MYSIG_ATTV),
+	set_inthandler('_$thread_int'(_,_), THREADSIG_CANCEL),
 	catch(c_callloop_cmd_goal([]),Ball,ccall_error_handler(Ball)),
 	fail.
 c_callloop :-
