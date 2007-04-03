@@ -23,7 +23,9 @@
 */
 
 
-:- export new_trie/1, trie_intern/5, trie_intern/4, trie_interned/4,
+:- export new_trie/1, trie_intern/5, trie_intern/4, 
+   trie_intern/2,
+   trie_interned/4,
 	  trie_intern/3, trie_interned/3, trie_unintern/2, delete_trie/1,
 	  trie_set_last_int/2,
 	  trie_unintern_nr/2, trie_reclaim_uninterned_nr/1, 

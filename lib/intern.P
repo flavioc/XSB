@@ -51,6 +51,9 @@ trie_intern(Term,Root,Leaf,Flag,Skel) :-
 	i_trie_intern(Term,Root,Leaf,Flag),
 	get_lastnode_cs_retskel(_,_,_,Skel1), Skel = Skel1.
 
+trie_intern(Term,Root) :-
+	i_trie_intern(Term,Root,_Leaf,_Flag).
+
 /*--------------------------------------------------
  version where flag is ignored 
 --------------------------------------------------*/
