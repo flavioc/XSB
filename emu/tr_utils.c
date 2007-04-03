@@ -1570,8 +1570,8 @@ static void insertLeaf(IGRptr r, BTNptr leafn)
   if(r == NULL)
     return;
   p = r -> leaves;
+#ifdef UNDEFINED
   while(p != NULL){
-    /*    xsb_warn("loopd"); */
     if(p -> leaf == leafn){
       /* The following should be permitted, because we should be able to
 	 backtrackably delete backtrackably deleted nodes (which should have no
@@ -1584,6 +1584,7 @@ static void insertLeaf(IGRptr r, BTNptr leafn)
     }
     p = p -> next;
   }
+#endif
   p = newIGL(leafn);
   p -> next = r -> leaves;
   r -> leaves = p;
