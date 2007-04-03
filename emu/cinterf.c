@@ -1297,6 +1297,44 @@ void reset_ccall_error(CTXTdecl) {
     (ccall_error).ccall_error_message[0] = '\0';	
   }
 
+#ifndef MULTI_THREAD
+DllExport char * xsb_get_init_error_type() {
+  return &(ccall_error).ccall_error_type[0];
+  }
+
+DllExport char * xsb_get_init_error_message() {
+  return &(ccall_error).ccall_error_message[0];
+  }
+
+#else
+
+DllExport char * xsb_get_init_error_type() {
+  return &(init_ccall_error).ccall_error_type[0];
+  }
+
+DllExport char * xsb_get_init_error_message() {
+  return &(init_ccall_error).ccall_error_message[0];
+  }
+
+#endif
+
+DllExport char * xsb_get_error_type(CTXTdecl) {
+  return &(ccall_error).ccall_error_type[0];
+  }
+
+DllExport char * xsb_get_error_message(CTXTdecl) {
+  return &(ccall_error).ccall_error_message[0];
+  }
+
+#ifdef MULTI_THREAD
+extern th_context *main_thread_gl;
+
+th_context * xsb_get_main_thread() {
+  return main_thread_gl;
+}
+#endif
+
+
 DllExport int call_conv xsb_init(int argc, char *argv[])
 {
   int rc = XSB_FAILURE;
@@ -1468,25 +1506,22 @@ DllExport int call_conv xsb_command(CTXTdecl)
   }
 #endif
 
-  LOCK_XSB_QUERY;
-  LOCK_XSB_READY;
   reset_ccall_error(CTXT);
 
+  LOCK_XSB_SYNCH;
   c2p_int(CTXTc 0,reg_term(CTXTc 3));  /* command for calling a goal */
   EXECUTE_XSB;
   if (ccall_error_thrown(CTXT))  
-    {UNLOCK_XSB_SYNCH;UNLOCK_XSB_READY; UNLOCK_XSB_QUERY;  return(XSB_ERROR);}
+    {UNLOCK_XSB_SYNCH;  return(XSB_ERROR);}
   if (is_var(reg_term(CTXTc 1))) /* goal failed, so return 1 */
-    {UNLOCK_XSB_SYNCH;UNLOCK_XSB_READY; UNLOCK_XSB_QUERY; return(XSB_FAILURE); } 
+    {UNLOCK_XSB_SYNCH; return(XSB_FAILURE); } 
 
   c2p_int(CTXTc 1,reg_term(CTXTc 3));  /* command for next answer */
   EXECUTE_XSB;
   if (is_var(reg_term(CTXTc 1))) 
-    {UNLOCK_XSB_SYNCH;UNLOCK_XSB_READY; UNLOCK_XSB_QUERY; return(XSB_SUCCESS);}  /* goal succeeded */
+    {UNLOCK_XSB_SYNCH; return(XSB_SUCCESS);}  /* goal succeeded */
   //  (void) xsb_close_query(CTXT);
   UNLOCK_XSB_SYNCH;
-  UNLOCK_XSB_READY;
-  UNLOCK_XSB_QUERY;
   return(XSB_ERROR);     // to shut up compiler.
 
 }
@@ -1549,47 +1584,58 @@ DllExport int call_conv xsb_kill_thread(CTXTdecl)
 }
 
 
-/************************************************************************/
-/*                                                                      */ 
-/* xsb_query() submits a query to xsb. The query must have been put into*/
-/* xsb's register 1 by the caller, using p2c_* (and perhaps p2p_*).  Xsb*/
-/* will evaluate the query and return with the variables in the query   */
-/* bound to the first answer.  In addition, register 2 will contain a   */
-/* Prolog term of the form ret(V1,V2,..,Vn) with as many Vi's as        */
-/* variables in the original query and with Vi bound to the value for   */
-/* that variable in the first answer.  If the query fails, it returns 1.*/
-/* If the query succeeds, it returns 0. If there is an error, it returns*/
-/* 2.                                                                   */
-/*                                                                      */
-/************************************************************************/
+/************************************************************************
+xsb_query() submits a query to xsb. The query must have been put into
+register 1 of XSB by the caller, using p2c_* (and perhaps p2p_*).  XSB
+will evaluate the query and return with the variables in the query
+bound to the first answer.  In addition, register 2 will contain a
+Prolog term of the form ret(V1,V2,..,Vn) with as many Vi's as
+variables in the original query and with Vi bound to the value for
+that variable in the first answer.  If the query fails, it returns
+XSB_FAILURE If the query succeeds, it returns XSB_SUCCESS. If there is
+an error, it returns XSB_ERROR.
+************************************************************************/
 
 DllExport int call_conv xsb_query(CTXTdecl)
 {
-  if (xsb_inquery) return(XSB_FAILURE);
+  LOCK_XSB_QUERY;
+  LOCK_XSB_READY;
+  LOCK_XSB_SYNCH;
+
+#ifndef MULTI_THREAD
+  if (xsb_inquery) {
+    create_ccall_error(CTXTc "permission_error","unable to call xsb_query() when a query is open");
+    return(XSB_ERROR);     
+  }
+#endif
+
   reset_ccall_error(CTXT);
-  //  updateWarningStart();
   c2p_int(CTXTc 0,reg_term(CTXTc 3));  /* set command for calling a goal */
-  xsb(CTXTc XSB_EXECUTE,0,0);
+  EXECUTE_XSB;
+  if (ccall_error_thrown(CTXT)) {
+    xsb_inquery = 0;
+    UNLOCK_XSB_SYNCH;UNLOCK_XSB_READY;UNLOCK_XSB_QUERY;
+    return(XSB_ERROR);
+  }
   if (is_var(reg_term(CTXTc 1))) return(XSB_FAILURE);
   xsb_inquery = 1;
+  UNLOCK_XSB_SYNCH;UNLOCK_XSB_READY;UNLOCK_XSB_QUERY;
   return(XSB_SUCCESS);
 }
 
-/************************************************************************/
-/*                                                                      */ 
-/* xsb_query_string(char *) submits a query to xsb.  The string must
-   be a goal that will be correctly read by xsb's reader, and it must
-   be terminated with a period (.).  Register 2 may be a variable or
-   it may be a term of the form ret(X1,X2,...,Xn), where n is the
-   number of variables in the query.  The query will be parsed, and an
-   answer term of the form ret(Y1,Y2,...,Yn) will be constructed where
-   Y1, .... Yn are the variables in the parsed goal (in left-to-right
-   order).  This answer term is unified with the argument in register
-   2.  Then the goal is called.  If the goal succeeds,
-   xsb_query_string returns XSB_SUCCESS and the first answer is in register 2.
-   If it fails, xsb_query_string returns XSB_FAILURE.                             */
-/*                                                                      */
-/************************************************************************/
+/************************************************************************
+ xsb_query_string(char *) submits a query to xsb.  The string
+ must be a goal that will be correctly read by xsb's reader, and it
+ must be terminated with a period (.).  Register 2 may be a variable
+ or it may be a term of the form ret(X1,X2,...,Xn), where n is the
+ number of variables in the query.  The query will be parsed, and an
+ answer term of the form ret(Y1,Y2,...,Yn) will be constructed where
+ Y1, .... Yn are the variables in the parsed goal (in left-to-right
+ order).  This answer term is unified with the argument in register 2.
+ Then the goal is called.  If the goal succeeds, xsb_query_string
+ returns XSB_SUCCESS and the first answer is in register 2.  If it
+ fails, xsb_query_string returns XSB_FAILURE. 
+ /************************************************************************/
 
 DllExport int call_conv xsb_query_string(CTXTdeclc char *goal)
 {
@@ -1695,20 +1741,19 @@ DllExport int call_conv
     return(XSB_OVERFLOW);
 }    
 
-/************************************************************************/
-/*                                                                      */
-/* xsb_next() causes xsb to return the next answer.  It (or             */
-/* xsb_close_query) must be called after xsb_query.  If there is        */
-/* another answer, xsb_next returns 0 and the variables in goal term    */
-/* (in xsb register 1) are bound to the answer values.  In addition     */
-/* xsb register 2 will contain a term of the form ret(V1,V2,...,Vn)     */
-/* where the Vi's are the values for the variables for the next         */
-/* answer.                                                              */
-/* xsb_next returns 0 if the next is found, 1 if there are no more      */
-/* answers, and 3 if an error is encountered. If 1 is returned, then    */
-/* the query is automatically closed.                                   */
-/*                                                                      */
-/************************************************************************/
+/************************************************************************
+xsb_next() causes xsb to return the next answer.  It should
+only be called from xsb_next_string, and should not be used with
+xsb_query().  xsb_next_string() (or xsb_close_query) must be called
+after xsb_query.  If there is another answer, xsb_next returns
+XSB_SUCCESS and the variables in goal term (in xsb register 1) are
+bound to the answer values.  In addition xsb register 2 will contain a
+term of the form ret(V1,V2,...,Vn) where the Vis are the values for
+the variables for the next answer.  xsb_next returns XSB_SUCESS if the
+next is found, XSB_FAILURE if there are no more answers, and XSB_ERROR
+if an error is encountered. If XSB_FAILURE or XSB_ERROR is returned,
+then the query is automatically closed.
+************************************************************************/
 
 DllExport int call_conv xsb_next(CTXTdecl)
 {
@@ -1785,21 +1830,19 @@ DllExport int call_conv xsb_next_string_b(CTXTdeclc
   } else return(XSB_OVERFLOW);
 }
 
-/************************************************************************/
-/*                                                                      */
-/* xsb_close_query() closes the current query, so that no more answers  */
-/* will be returned, and another query can be opened.                   */
-/* If the query was correctly closed, it resets xsb registers 1 and 2   */
-/* to be variables, and returns 0.  If there is some error, it returns  */
-/* 2.                                                                   */
-/*                                                                      */
-/************************************************************************/
+/************************************************************************
+ xsb_close_query_string() closes the current query, so that no more
+ answers will be returned, and another query can be opened.  If the
+ query was correctly closed, it resets xsb registers 1 and 2 to be
+ variables, and returns 0.  If there is some error, it returns 2.
+ ************************************************************************/
 
 DllExport int call_conv xsb_close_query(CTXTdecl)
 {
   //  updateWarningStart();
   if (!xsb_inquery) {
-    create_ccall_error(CTXTc "permission_error","unable to call xsb_close_query() when a query is not open");
+    create_ccall_error(CTXTc "permission_error",
+    			    "unable to call xsb_close_query() when a query is not open");
     return(XSB_ERROR);     
   }
   LOCK_XSB_READY;

@@ -228,8 +228,8 @@ DllExport extern void  call_conv extern_ctop_string(CTXTdeclc reg_num, char*);
 						/* def in builtin.c */
 DllExport extern int   call_conv ctop_abs(reg_num, char*);
 
+// These are not in the manual, if they are included make them DllExport, etc
 extern char* string_find(char*, int);		/* defined in psc.c	*/
-
 extern int   ctop_term(CTXTdeclc char*, char*, reg_num);
 extern int   ptoc_term(CTXTdeclc char*, char*, reg_num);
 
@@ -249,7 +249,6 @@ DllExport extern void call_conv ensure_heap_space(CTXTdeclc int, int);
 DllExport extern xsbBool call_conv c2p_functor(CTXTdeclc char *, int, prolog_term);
 DllExport extern void call_conv c2p_setfree(prolog_term);
 DllExport extern void call_conv c2p_chars(CTXTdeclc char *str, int regs_to_protect, prolog_term term);
-
 
 DllExport extern prolog_int   call_conv p2c_int(prolog_term);
 DllExport extern double   call_conv p2c_float(prolog_term);
@@ -294,23 +293,35 @@ extern char *vfile_obj(/* vfile */);
 /* Routines to call xsb from C						*/
 /*======================================================================*/
 
-DllExport extern int call_conv xsb_init(int, char **);
-DllExport extern int call_conv xsb_init_string(char *);
-DllExport extern int call_conv pipe_xsb_stdin(); 
-DllExport extern int call_conv writeln_to_xsb_stdin(char * input);
-DllExport extern int call_conv xsb_command(CTXTdecl);
-DllExport extern int call_conv xsb_command_string(CTXTdeclc char *);
-DllExport extern int call_conv xsb_query(CTXTdecl);
-DllExport extern int call_conv xsb_query_string(CTXTdeclc char *);
-DllExport extern int call_conv xsb_query_string_string(CTXTdeclc char*,VarString*,char*);
-DllExport extern int call_conv xsb_query_string_string_b(CTXTdeclc char*,char*,int,int*,char*);
-DllExport extern int call_conv xsb_next(CTXTdecl);
-DllExport extern int call_conv xsb_next_string(CTXTdeclc VarString*,char*);
-DllExport extern int call_conv xsb_next_string_b(CTXTdeclc char*,int,int*,char*);
-DllExport extern int call_conv xsb_get_last_answer_string(CTXTdeclc char*,int,int*);
-DllExport extern int call_conv xsb_close_query(CTXTdecl);
-DllExport extern int call_conv xsb_close(CTXTdecl);
-DllExport extern int call_conv xsb_get_last_error_string(char*,int,int*);
+DllExport call_conv extern int call_conv xsb_init(int, char **);
+DllExport call_conv extern int call_conv xsb_init_string(char *);
+DllExport call_conv extern int call_conv pipe_xsb_stdin(); 
+DllExport call_conv extern int call_conv writeln_to_xsb_stdin(char * input);
+DllExport call_conv extern int call_conv xsb_command(CTXTdecl);
+DllExport call_conv extern int call_conv xsb_command_string(CTXTdeclc char *);
+DllExport call_conv extern int call_conv xsb_query(CTXTdecl);
+DllExport call_conv extern int call_conv xsb_query_string(CTXTdeclc char *);
+DllExport call_conv extern int call_conv xsb_query_string_string(CTXTdeclc char*,VarString*,char*);
+DllExport call_conv extern int call_conv xsb_query_string_string_b(CTXTdeclc char*,char*,int,int*,char*);
+DllExport call_conv extern int call_conv xsb_next(CTXTdecl);
+DllExport call_conv extern int call_conv xsb_next_string(CTXTdeclc VarString*,char*);
+DllExport call_conv extern int call_conv xsb_next_string_b(CTXTdeclc char*,int,int*,char*);
+DllExport call_conv extern int call_conv xsb_get_last_answer_string(CTXTdeclc char*,int,int*);
+DllExport call_conv extern int call_conv xsb_close_query(CTXTdecl);
+DllExport call_conv extern int call_conv xsb_close(CTXTdecl);
+DllExport call_conv extern int call_conv xsb_get_last_error_string(char*,int,int*);
+DllExport call_conv extern char * xsb_get_init_error_message();
+DllExport call_conv extern char * xsb_get_init_error_type();
+DllExport call_conv extern char * xsb_get_error_message(CTXTdecl);
+DllExport call_conv extern char * xsb_get_error_type(CTXTdecl);
+#ifdef MULTI_THREAD
+DllExport extern th_context * call_conv xsb_get_main_thread();
+extern th_context *main_thread_gl;
+#endif
+
+#ifdef MULTI_THREAD
+DllExport extern int xsb_kill_thread(CTXTdecl);
+#endif
 
 DllExport extern void call_conv print_pterm(CTXTdeclc Cell, int, VarString*);
 extern char *p_charlist_to_c_string(CTXTdeclc prolog_term term, VarString *buf,
@@ -320,12 +331,7 @@ extern char *p_charlist_to_c_string(CTXTdeclc prolog_term term, VarString *buf,
 
 #ifndef MULTI_THREAD
   extern struct ccall_error_t ccall_error;
-#define xsb_get_error_type(THREAD) (&(ccall_error).ccall_error_type[0])
-#define xsb_get_error_message(THREAD) (&(ccall_error).ccall_error_message[0])
 #define ccall_error_thrown(THREAD) ((ccall_error).ccall_error_type[0] != '\0')
-
-#define xsb_get_init_error_type(THREAD) (&(ccall_error).ccall_error_type[0])
-#define xsb_get_init_error_message(THREAD) (&(ccall_error).ccall_error_message[0])
 
 #define  UNLOCK_XSB_QUERY 
 #define  LOCK_XSB_QUERY  
@@ -339,20 +345,7 @@ extern char *p_charlist_to_c_string(CTXTdeclc prolog_term term, VarString *buf,
 #else
   extern struct ccall_error_t init_ccall_error;
 
-#define xsb_get_error_type(THREAD) (&(THREAD->_ccall_error).ccall_error_type[0])
-#define xsb_get_error_message(THREAD) (&(THREAD->_ccall_error).ccall_error_message[0])
 #define ccall_error_thrown(THREAD) ((THREAD->_ccall_error).ccall_error_type[0] != '\0')
-
-#define xsb_get_init_error_type(THREAD) (&(init_ccall_error).ccall_error_type[0])
-#define xsb_get_init_error_message(THREAD) (&(init_ccall_error).ccall_error_message[0])
-
-  /*
-#define  UNLOCK_XSB_READY   pthread_mutex_unlock(&xsb_ready_mut);
-#define  LOCK_XSB_READY  pthread_mutex_lock(&xsb_ready_mut);
-
-#define  UNLOCK_XSB_SYNCH   pthread_mutex_unlock(&xsb_synch_mut);
-#define  LOCK_XSB_SYNCH  pthread_mutex_lock(&xsb_synch_mut);
-  */
 
 #define  lock_xsb_ready(S)  { \
     pthread_mutex_lock(&xsb_ready_mut); \
@@ -390,13 +383,6 @@ extern void create_ccall_error(CTXTdeclc char *, char *);
 
   /* This stays global as its used only for system initialization */
 extern jmp_buf ccall_init_env;
-
-#ifdef MULTI_THREAD
-extern th_context *main_thread_gl;
-#define xsb_get_main_thread() main_thread_gl
-#else
-#define xsb_get_main_thread() 
-#endif
 
 /*******************************************************************************/
 
