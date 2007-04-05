@@ -26,6 +26,7 @@
 :- compiler_options([sysmod,xpp_on]).
 
 #include "builtin.h"
+#include "biassert_defs.h"
 
 
 % the i_ predicates are internal!
@@ -48,11 +49,11 @@ trie_intern(+Term,+Root,-Leaf,-Flag,-Skel)
 --------------------------------------------------*/
 
 trie_intern(Term,Root,Leaf,Flag,Skel) :-
-	i_trie_intern(Term,Root,Leaf,Flag),
+	i_trie_intern(Term,Root,Leaf,Flag,CPS_CHECK,EXPAND_HASHES),
 	get_lastnode_cs_retskel(_,_,_,Skel1), Skel = Skel1.
 
 trie_intern(Term,Root) :-
-	i_trie_intern(Term,Root,_Leaf,_Flag).
+	i_trie_intern(Term,Root,_Leaf,_Flag,CPS_CHECK,EXPAND_HASHES).
 
 /*--------------------------------------------------
  version where flag is ignored 
@@ -93,6 +94,10 @@ trie_interned(Term,Root,Leaf,Skel) :-
 	),
 	Skel1 = Skel.
 
+
+trie_interned(Term,Root) :-
+	i_trie_interned(Term,Root,_Leaf).
+
 /* --------------------------------------------------
 version which interns into a fixed trie 
 --------------------------------------------------*/
@@ -127,12 +132,10 @@ being uninterned is not being actively accessed.
 --------------------------------------------------*/
 
 trie_unintern(Root,Leaf) :- 
-	integer(Root),
-	integer(Leaf),
-	!,
-	trie_dispose(Root,Leaf).
-trie_unintern(R,L) :-
-	abort(('Incorrect Arguments to',trie_unintern(R,L))).
+	(integer(Root),integer(Leaf) -> 
+	    trie_dispose(Root,Leaf,USE_CPS_CHECK)
+	    ; 
+	    abort(('Incorrect Arguments to',trie_unintern(Root,Leaf)))).
 
 /*--------------------------------------------------
 trie_unintern_nr(+Root, +Leaf)
@@ -156,16 +159,47 @@ delete_trie(+Root)
 --------------------------------------------------*/
 delete_trie(Root) :- delete_trie(Root,intern).
 
+/*--------------------------------------------------
+trie_retractall(#Term,+Trie)
+--------------------------------------------------*/
+
+trie_retractall(Term,Trie):- 	
+	findall(Leaf,trie_interned(Term,Trie,Leaf,_),Leaves),
+	dynamic_code_function(INTERNED_TRIE_CPS_CHECK,Trie,CantReclaim,_,_),
+	(CantReclaim == 1 -> 
+	    member(Leaf,Leaves),
+	    trie_dispose_nr(Trie,Leaf)
+	    ;
+	    member(Leaf,Leaves),
+	    trie_dispose(Trie,Leaf,NO_CPS_CHECK)),
+	fail.
+trie_retractall(_Trie,_Term).
+
+/*--------------------------------------------------
+bulk_trie_intern(#Term,+Trie)
+--------------------------------------------------*/
+:- import call/1, arg/3, writeln/1 from standard.
+
+bulk_trie_intern(Callable_Term,Trie):- 	
+	arg(1,Callable_Term,TrieTerm),
+	dynamic_code_function(INTERNED_TRIE_CPS_CHECK,Trie,CantExpand,_,_),
+	(CantExpand == 1 -> 
+	    call(Callable_Term),
+	    i_trie_intern(TrieTerm,Trie,_Root,_Leaf,NO_CPS_CHECK,DONT_EXPAND_HASHES)
+	; 
+	    call(Callable_Term),
+	    i_trie_intern(TrieTerm,Trie,_Root,_Leaf,NO_CPS_CHECK,EXPAND_HASHES)),
+	fail.
+bulk_trie_intern(_Callable_Term,_Trie).
 
 /* reclaims nodes previously uninterned (but not deleted)
    with trie_unintern_nr */
 trie_reclaim_uninterned_nr(_Root) :- '_$builtin'(RECLAIM_UNINTERNED_NR).
 
-
 /* builtin calls */
-i_trie_intern(_Term,_Root,_Leaf,_Flag) :- '_$builtin'(TRIE_INTERN).
+i_trie_intern(_Term,_Root,_Leaf,_Flag,_Check,_Expand) :- '_$builtin'(TRIE_INTERN).
 i_trie_interned(_Term,_Root,_Leaf) :- '_$builtin'(TRIE_INTERNED).
-trie_dispose(_Root,_Leaf) :- '_$builtin'(TRIE_DISPOSE).
+trie_dispose(_Root,_Leaf,_DisposalType) :- '_$builtin'(TRIE_DISPOSE).
 bottom_up_unify(_Term,_Root,_Leaf) :- '_$builtin'(BOTTOM_UP_UNIFY).
 delete_trie(_Root,_Usage) :- '_$builtin'(DELETE_TRIE).
 trie_dispose_nr(_Root, _Leaf) :- '_$builtin'(TRIE_DISPOSE_NR).
