@@ -74,8 +74,10 @@ int do_wildmatch__(void)
   char *wild_ptr=NULL, *input_string=NULL;
   int ret_code;
   
+#ifdef MULTI_THREAD
   if( NULL == th)
 	th = xsb_get_main_thread();
+#endif
 
   wild_term = reg_term(CTXTc 1); /* Arg1: wildcard */
   input_string_term = reg_term(CTXTc 2); /* Arg2: string to find matches in */
@@ -143,8 +145,10 @@ int do_glob_directory__(void)
   char *wild_ptr=NULL;
   int conversion_required, return_code, i;
 
+#ifdef MULTI_THREAD
   if( NULL == th)
 	th = xsb_get_main_thread();
+#endif
 
   wild_term = reg_term(CTXTc 1); /* Arg1: wildcard */
   /* If arg 3 is bound to anything, then consider this as ignore case flag */
@@ -251,8 +255,10 @@ int do_convert_string__(void)
   prolog_term conversion_flag_term, output_term;
   int to_string_conversion_required=FALSE;
 
+#ifdef MULTI_THREAD
   if( NULL == th)
 	th = xsb_get_main_thread();
+#endif
 
   input_string_term = reg_term(CTXTc 1); /* Arg1: string to convert */
 
