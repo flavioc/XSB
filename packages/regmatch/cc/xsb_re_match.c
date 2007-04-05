@@ -101,8 +101,10 @@ static XSB_StrDefine(regexp_buffer);
 */
 int do_regmatch__(void)
 {
+#ifdef MULTI_THREAD
   if( NULL == th)
 	th = xsb_get_main_thread();
+#endif
 
   prolog_term listHead, listTail;
   /* Prolog args are first assigned to these, so we could examine the types
@@ -192,8 +194,10 @@ int do_regmatch__(void)
 */
 int do_bulkmatch__(void)
 {
+#ifdef MULTI_THREAD
   if( NULL == th)
 	th = xsb_get_main_thread();
+#endif
 
   prolog_term listHead, listTail;
   /* Prolog args are first assigned to these, so we could examine the types
@@ -282,8 +286,10 @@ int do_bulkmatch__(void)
 */
 int do_regsubstitute__(void)
 {
+#ifdef MULTI_THREAD
   if( NULL == th)
 	th = xsb_get_main_thread();
+#endif
 
   /* Prolog args are first assigned to these, so we could examine the types
      of these objects to determine if we got strings or atoms. */
@@ -412,8 +418,10 @@ int do_regsubstitute__(void)
 */
 int do_regsubstring__(void)
 {
+#ifdef MULTI_THREAD
   if( NULL == th)
 	th = xsb_get_main_thread();
+#endif
 
   /* Prolog args are first assigned to these, so we could examine the types
      of these objects to determine if we got strings or atoms. */
@@ -489,8 +497,10 @@ int do_regsubstring__(void)
 static XSB_StrDefine(temp_buffer);
 int do_regcharlist_to_string__(void)
 {
+#ifdef MULTI_THREAD
   if( NULL == th)
 	th = xsb_get_main_thread();
+#endif
 
   prolog_term input_term = reg_term(CTXTc 1);
 
@@ -507,8 +517,10 @@ static int make_flags(prolog_term flag_term, char *context)
   prolog_term aux_list=flag_term, head_trm;
   char *head;
 
+#ifdef MULTI_THREAD
   if( NULL == th)
 	th = xsb_get_main_thread();
+#endif
 
   if (is_var(flag_term))
     return REG_EXTENDED;
@@ -563,8 +575,10 @@ static int xsb_re_match(char *regexp_ptr, char *match_str, int flags,
   int idx, err_code;
   char err_msg[ERR_MSG_LEN];
 
+#ifdef MULTI_THREAD
   if( NULL == th)
 	th = xsb_get_main_thread();
+#endif
 
   *match_array = matches;
 
