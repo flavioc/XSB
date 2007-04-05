@@ -535,6 +535,17 @@ extern void  hashify_children(CTXTdeclc BTNptr, int);
      expand_trie_ht(CTXTc (BTHTptr)pHT);			\
  }
 
+// Want trieht expansion check in asserted code, but not in tables 
+#define Interned_TrieHT_ExpansionCheck(pHT,NumBucketContents) {		\
+    if ( (NumBucketContents > BUCKET_CONTENT_THRESHOLD) &&		\
+	 (TrieHT_NumContents(pHT) > TrieHT_NumBuckets(pHT)) ) {		\
+      if (cps_check_flag == CPS_CHECK)					\
+	expand_flag = interned_trie_cps_check(CTXTc *hook);		\
+      if (expand_flag == EXPAND_HASHES)					\
+	expand_trie_ht(CTXTc (BTHTptr)pHT);				\
+    }									\
+ }
+
    
 /*
  *  Insert a Trie Node into a hash table whose size is HashSeed+1.

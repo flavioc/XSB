@@ -56,6 +56,7 @@
 #include "debug_xsb.h"
 #include "subp.h"
 #include "call_graph_xsb.h" /* for incremental evaluation */
+#include "biassert_defs.h"
 
 /*----------------------------------------------------------------------*/
 /* The following variables are used in other parts of the system        */
@@ -748,7 +749,6 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
 }
 
 /*----------------------------------------------------------------------*/
-
 #define recvariant_trie(flag,TrieType) {				\
   int  j;								\
 									\
@@ -1768,8 +1768,99 @@ void remove_incomplete_tries(CTXTdeclc CPtr bottom_parameter)
 /*
  * For creating interned tries via buitin "trie_intern".
  */
+#define one_interned_node_chk_ins(Found,item,TrieType)		{	\
+									\
+   int count = 0;							\
+   BTNptr LocalNodePtr;							\
+									\
+   TRIE_W_LOCK();							\
+   if ( IsNULL(*GNodePtrPtr) ) {					\
+     New_BTN(LocalNodePtr,TrieType,INTERIOR_NT,item,Paren,NULL);	\
+     *GNodePtrPtr = Paren = LocalNodePtr;				\
+     Found = 0;								\
+   }									\
+   else if ( IsHashHeader(*GNodePtrPtr) ) {				\
+     BTHTptr ht = (BTHTptr)*GNodePtrPtr;				\
+     GNodePtrPtr = CalculateBucketForSymbol(ht,item);			\
+     IsInsibling(*GNodePtrPtr,count,Found,item,TrieType);		\
+     if (!Found) {							\
+       MakeHashedNode(LocalNodePtr);					\
+       BTHT_NumContents(ht)++;						\
+       Interned_TrieHT_ExpansionCheck(ht,count);					\
+     }									\
+   }									\
+   else {								\
+     BTNptr pParent = Paren;						\
+     IsInsibling(*GNodePtrPtr,count,Found,item,TrieType);		\
+     if (IsLongSiblingChain(count)) {					\
+       if (cps_check_flag == CPS_CHECK)					\
+	 expand_flag = interned_trie_cps_check(CTXTc *hook);		\
+       if (expand_flag == EXPAND_HASHES) {				\
+	 /* printf("hashing intrned node \n");*/			\
+	 hashify_children(CTXTc pParent,TrieType);			\
+       }								\
+     }									\
+   }									\
+       /* used to pass in GNodePtrPtr (ptr to hook) */			\
+   GNodePtrPtr = &(BTN_Child(LocalNodePtr));				\
+   TRIE_W_UNLOCK();							\
+}
 
-BTNptr whole_term_chk_ins(CTXTdeclc Cell term, BTNptr *hook, int *flagptr)
+#define recvariant_trie_intern(flag,TrieType) {				\
+  int  j;								\
+									\
+  while (!pdlempty ) {							\
+    xtemp1 = (CPtr) pdlpop;						\
+    XSB_CptrDeref(xtemp1);						\
+    tag = cell_tag(xtemp1);						\
+    switch (tag) {							\
+    case XSB_FREE:							\
+    case XSB_REF1:							\
+      if (! IsStandardizedVariable(xtemp1)) {				\
+	StandardizeAndTrailVariable(xtemp1,ctr);			\
+	item = EncodeNewTrieVar(ctr);					\
+	one_interned_node_chk_ins(flag, item, TrieType);				\
+	ctr++;								\
+      } else {								\
+	item = IndexOfStdVar(xtemp1);					\
+	item = EncodeTrieVar(item);					\
+	one_interned_node_chk_ins(flag, item, TrieType);				\
+      }									\
+      break;								\
+    case XSB_STRING:							\
+    case XSB_INT:							\
+    case XSB_FLOAT:							\
+      one_interned_node_chk_ins(flag, EncodeTrieConstant(xtemp1), TrieType);	\
+      break;								\
+    case XSB_LIST:							\
+      one_interned_node_chk_ins(flag, EncodeTrieList(xtemp1), TrieType);		\
+      pdlpush(cell(clref_val(xtemp1)+1));				\
+      pdlpush(cell(clref_val(xtemp1)));					\
+      break;								\
+    case XSB_STRUCT:							\
+      psc = (Psc) follow(cs_val(xtemp1));				\
+      item = makecs(psc);						\
+      one_interned_node_chk_ins(flag, item, TrieType);				\
+      for (j = get_arity(psc); j>=1 ; j--) {				\
+	pdlpush(cell(clref_val(xtemp1)+j));				\
+      }									\
+      break;								\
+    case XSB_ATTV:							\
+      /* Now xtemp1 can only be the first occurrence of an attv */	\
+      xtemp1 = clref_val(xtemp1); /* the VAR part of the attv */	\
+      StandardizeAndTrailVariable(xtemp1, ctr);				\
+      one_interned_node_chk_ins(flag, EncodeNewTrieAttv(ctr), INTERN_TRIE_TT);	\
+      attv_ctr++; ctr++;						\
+      pdlpush(cell(xtemp1+1));	/* the ATTR part of the attv */		\
+      break;								\
+    default:								\
+      xsb_abort("Bad type tag in recvariant_trie...\n");		\
+    }									\
+  }									\
+  resetpdl;								\
+}
+
+BTNptr whole_term_chk_ins(CTXTdeclc Cell term, BTNptr *hook, int *flagptr, int cps_check_flag, int expand_flag)
 {
     Psc  psc;
     CPtr xtemp1;
@@ -1796,11 +1887,11 @@ BTNptr whole_term_chk_ins(CTXTdeclc Cell term, BTNptr *hook, int *flagptr)
     case XSB_REF1:
       if (! IsStandardizedVariable(xtemp1)) {
 	StandardizeAndTrailVariable(xtemp1,ctr);
-	one_node_chk_ins(flag,EncodeNewTrieVar(ctr),
+	one_interned_node_chk_ins(flag,EncodeNewTrieVar(ctr),
 			 INTERN_TRIE_TT);
 	ctr++;
       } else {
-	one_node_chk_ins(flag,
+	one_interned_node_chk_ins(flag,
 			 EncodeTrieVar(IndexOfStdVar(xtemp1)),
 			 INTERN_TRIE_TT);
       }
@@ -1808,20 +1899,20 @@ BTNptr whole_term_chk_ins(CTXTdeclc Cell term, BTNptr *hook, int *flagptr)
     case XSB_STRING: 
     case XSB_INT:
     case XSB_FLOAT:
-      one_node_chk_ins(flag, EncodeTrieConstant(xtemp1), INTERN_TRIE_TT);
+      one_interned_node_chk_ins(flag, EncodeTrieConstant(xtemp1), INTERN_TRIE_TT);
       break;
     case XSB_LIST:
-      one_node_chk_ins(flag, EncodeTrieList(xtemp1), INTERN_TRIE_TT);
+      one_interned_node_chk_ins(flag, EncodeTrieList(xtemp1), INTERN_TRIE_TT);
       pdlpush(cell(clref_val(xtemp1)+1));
       pdlpush(cell(clref_val(xtemp1)));
-      recvariant_trie(flag,INTERN_TRIE_TT);
+      recvariant_trie_intern(flag,INTERN_TRIE_TT);
       break;
     case XSB_STRUCT:
-      one_node_chk_ins(flag, makecs(follow(cs_val(xtemp1))),INTERN_TRIE_TT);
+      one_interned_node_chk_ins(flag, makecs(follow(cs_val(xtemp1))),INTERN_TRIE_TT);
       for (j = get_arity((Psc)follow(cs_val(xtemp1))); j >= 1 ; j--) {
 	pdlpush(cell(clref_val(xtemp1)+j));
       }
-      recvariant_trie(flag,INTERN_TRIE_TT);
+      recvariant_trie_intern(flag,INTERN_TRIE_TT);
       break;
     case XSB_ATTV:
       /* Now xtemp1 can only be the first occurrence of an attv */
@@ -1832,13 +1923,13 @@ BTNptr whole_term_chk_ins(CTXTdeclc Cell term, BTNptr *hook, int *flagptr)
        * (after dereferencing).
        */
       StandardizeAndTrailVariable(xtemp1, ctr);	
-      one_node_chk_ins(flag, EncodeNewTrieAttv(ctr), INTERN_TRIE_TT);
+      one_interned_node_chk_ins(flag, EncodeNewTrieAttv(ctr), INTERN_TRIE_TT);
       attv_ctr++; ctr++;
       pdlpush(cell(xtemp1+1));	/* the ATTR part of the attv */
-      recvariant_trie(flag, INTERN_TRIE_TT);
+      recvariant_trie_intern(flag, INTERN_TRIE_TT);
       break;
     default:
-      xsb_abort("Bad type tag in whole_term_check_ins()");
+      xsb_abort("Bad type tag in whole_term_chk_ins()");
     }
 
     /*

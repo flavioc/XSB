@@ -131,6 +131,9 @@ int mem_flag;
 
 /*======================================================================*/
 extern struct token_t *GetToken(CTXTdeclc FILE *, STRFILE *, int);
+#ifndef MULTI_THREAD
+extern BTNptr *Set_ArrayPtr;
+#endif
 
 extern int  sys_syscall(CTXTdeclc int);
 extern xsbBool sys_system(CTXTdeclc int);
@@ -2398,7 +2401,9 @@ case WRITE_OUT_PROFILE:
   case DELETE_TRIE:
     if (strcmp(ptoc_string(CTXTc 2),"intern") == 0){
       int tmpval = ptoc_int(CTXTc 1);
-      delete_interned_trie(CTXTc tmpval);
+      if (!interned_trie_cps_check(CTXTc Set_ArrayPtr[tmpval])) 
+	delete_interned_trie(CTXTc tmpval);
+      else xsb_abort("[DELETE_TRIE] Backtracking through trie to be abolished.");
     }
     else {
       xsb_abort("[DELETE_TRIE] Invalid use of this operation");

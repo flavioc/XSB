@@ -349,7 +349,7 @@ extern void     free_trie_aux_areas(void);
 extern void     load_solution_trie(int, int, CPtr, BTNptr);
 extern void     variant_call_search(TabledCallInfo *, CallLookupResults *);
 extern BTNptr   one_term_chk_ins(CPtr, BTNptr, int *);
-extern BTNptr   whole_term_chk_ins(Cell, BTNptr *, int *);
+extern BTNptr   whole_term_chk_ins(Cell, BTNptr *, int *, int, int);
 extern BTNptr	get_next_trie_solution(ALNptr *);
 extern BTNptr	variant_answer_search(int, int, CPtr, struct subgoal_frame *,
 				      xsbBool *);
@@ -372,7 +372,7 @@ extern void     free_trie_aux_areas(struct th_context *);
 extern void     load_solution_trie(struct th_context *, int, int, CPtr, BTNptr);
 extern void     variant_call_search(struct th_context *, TabledCallInfo *, CallLookupResults *);
 extern BTNptr   one_term_chk_ins(struct th_context *, CPtr, BTNptr, int *);
-extern BTNptr   whole_term_chk_ins(struct th_context *, Cell, BTNptr *, int *);
+extern BTNptr   whole_term_chk_ins(struct th_context *, Cell, BTNptr *, int *, int, int);
 extern BTNptr	get_next_trie_solution(ALNptr *);
 extern BTNptr	variant_answer_search(struct th_context *, int, int, CPtr, 
 				      struct subgoal_frame *, xsbBool *);

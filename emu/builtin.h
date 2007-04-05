@@ -327,3 +327,6 @@
 #define BITSHIFTR_FUNCT 27
 #define UMINUS_FUNCT 28
 
+/* For trie disposal */
+#define USE_CPS_CHECK 0
+#define NO_CPS_CHECK  1

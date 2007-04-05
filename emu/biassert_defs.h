@@ -26,3 +26,12 @@
 #define DB_RETRACTALL0                          2
 #define INIT_DBCLAUSE_CGC_BLOCKS                3
 #define INIT_STANDARD_CGC_BLOCKS                4
+#define INTERNED_TRIE_CPS_CHECK                 5
+
+#define DONT_EXPAND_HASHES                      1
+#define EXPAND_HASHES                           0
+
+#define NO_CPS_CHECK                            0
+#define CPS_CHECK                               1
+
+

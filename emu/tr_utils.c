@@ -63,6 +63,7 @@
 #include "storage_xsb.h"
 #include "hash_xsb.h"
 #include "tables.h"
+#include "builtin.h"
 
 #include "call_graph_xsb.h" /* incremental evaluation */
 
@@ -1325,24 +1326,26 @@ Integer newtrie(CTXTdecl)
 }
 
 /*----------------------------------------------------------------------*/
+/* i_trie_intern(_Term,_Root,_Leaf,_Flag,_Check_CPS,_Expand_or_not)     */
 
 void trie_intern(CTXTdecl)
 {
   prolog_term term;
   int RootIndex;
-  int flag;
+  int flag, check_cps_flag, expand_flag;
   BTNptr Leaf;
 
   term = ptoc_tag(CTXTc 1);
   RootIndex = ptoc_int(CTXTc 2);
-
+  check_cps_flag = ptoc_int(CTXTc 5);
+  expand_flag = ptoc_int(CTXTc 6);
   xsb_dbgmsg((LOG_INTERN, "Interning "));
   dbg_printterm(LOG_INTERN,stddbg,term,25);
   xsb_dbgmsg((LOG_INTERN, "In trie with root %d", RootIndex));
 
   switch_to_trie_assert;
   SYS_MUTEX_LOCK(MUTEX_TRIE);
-  Leaf = whole_term_chk_ins(CTXTc term,&(Set_ArrayPtr[RootIndex]),&flag);
+  Leaf = whole_term_chk_ins(CTXTc term,&(Set_ArrayPtr[RootIndex]),&flag,check_cps_flag,expand_flag);
   SYS_MUTEX_UNLOCK(MUTEX_TRIE);
   switch_from_trie_assert;
   
@@ -1417,15 +1420,69 @@ void trie_dispose(CTXTdecl)
 {
   BTNptr Leaf;
   long Rootidx;
+  int disposalType;
 
   Rootidx = ptoc_int(CTXTc 1);
   Leaf = (BTNptr)ptoc_int(CTXTc 2);
+  disposalType = ptoc_int(CTXTc 3);
   SYS_MUTEX_LOCK(MUTEX_TRIE);
   switch_to_trie_assert;
   SYS_MUTEX_UNLOCK(MUTEX_TRIE);
-  delete_branch(CTXTc Leaf, &(Set_ArrayPtr[Rootidx]));
+  if (disposalType == NO_CPS_CHECK)     delete_branch(CTXTc Leaf, &(Set_ArrayPtr[Rootidx]));
+  else {
+    if (!interned_trie_cps_check(CTXTc Set_ArrayPtr[Rootidx])) {
+      //          printf(" really deleting branch \n");
+      delete_branch(CTXTc Leaf, &(Set_ArrayPtr[Rootidx]));
+    }
+    else {
+      //          printf(" safely deleting branch \n");
+      safe_delete_branch(Set_ArrayPtr[Rootidx]);
+    }
+  }
   switch_from_trie_assert;
 }
+
+/*----------------------------------------------------------------------*/
+
+#define is_trie_instruction(cp_inst) \
+ ((int) cp_inst >= 0x5c && (int) cp_inst < 0x80) \
+	   || ((int) cp_inst >= 0x90 && (int) cp_inst < 0x94) 
+
+int interned_trie_cps_check(CTXTdeclc BTNptr root) 
+{
+  CPtr cp_top1,cp_bot1 ;
+  byte cp_inst;
+  int found_interned;
+  BTNptr pLeaf;
+
+  cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
+
+  cp_top1 = breg ;				 
+  found_interned = 0;
+  while ( cp_top1 < cp_bot1 && !(found_interned)) {
+    cp_inst = *(byte *)*cp_top1;
+    // Want trie insts, but will need to distinguish from
+    // asserted and interned tries
+    if ( is_trie_instruction(cp_inst) ) {
+      // Below we want basic_answer_trie_tt, ts_answer_trie_tt
+      if (IsInInternTrie(((BTNptr) *cp_top1))) {
+	//	printf(" found interned trie instruction\n");
+	pLeaf = (BTNptr) *cp_top1;
+	while ( IsNonNULL(pLeaf) && (! IsTrieRoot(pLeaf)) && 
+		((int) TN_Instr(pLeaf) != trie_fail_unlock) ) {
+	  pLeaf = BTN_Parent(pLeaf);
+	}
+	if (pLeaf == root) {
+	  //	  printf(" found root!\n");
+	  found_interned = 1;
+	}
+      }
+    }
+    cp_top1 = cp_prevtop(cp_top1);
+  }
+  return found_interned;
+}
+
 
 /*----------------------------------------------------------------------*/
 
@@ -1714,10 +1771,6 @@ void trie_undispose(CTXTdeclc long rootIdx, BTNptr leafn)
 
 /* used by mt engine for shared tables */
 DelTFptr deltf_chain_begin = (DelTFptr) NULL;
-
-#define is_trie_instruction(cp_inst) \
- ((int) cp_inst >= 0x5c && (int) cp_inst < 0x80) \
-	   || ((int) cp_inst >= 0x90 && (int) cp_inst < 0x94) 
 
 /* - - - - - */
 

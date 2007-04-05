@@ -54,6 +54,8 @@ extern void trie_dispose(CTXTdecl);
 extern void trie_dispose_nr(CTXTdecl);
 extern void delete_interned_trie(CTXTdeclc Integer);
 extern void trie_undispose(CTXTdeclc long, BTNptr);
+extern int interned_trie_cps_check(CTXTdeclc BTNptr);
+
 // extern xsbBool check_table_cut;
 
 extern int abolish_table_predicate(CTXTdeclc Psc);
