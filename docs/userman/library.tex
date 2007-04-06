@@ -2308,66 +2308,142 @@ If the index specification is other than {\tt tries}, the predicate
 will issue a warning message and have no effect on the database.
 }
 
-\section{Low-level Trie Manipulation Utilities}
+\section{Interned Tries and Low-level Trie Manipulation Utilities}
 
-The following utilities are used to implement assert and retract when
-trie indexing is used, but they can also be used to implement special
-purpose operations, like backtrackable assert and retract. All the
-utilities in this section are very low-level and require good
-understanding of the trie mechanism in XSB.  The module {\tt storage}
-described in Volume 1 provides a higher-level and a more convenient
-interface to the XSB trie-based storage mechanism (as does vanilla
-assert and retract with trie indexing).
+Interned tries can be used to assert an retract facts in an extremely
+efficient manner.  Terms can be interned within different tries,
+designated by a {\tt Root}, or left as default.  Like trie-indexed
+dynamic code and unlike normal asserted code, interned tries have a
+set semantics: the variant of a term can occur in a trie only once,
+additional asserts have no effect.  In addition, no ordering of terms
+within the trie is guaranteed.  In \version{} of XSB, when multiple
+threads are used, all interned tries are private to a thread, so that
+information interned by one trie will not be visible to other threads.
 
-When multiple threads are used, all interned tries are private to a
-thread, so that information interned by one trie will not be visible
-to other threads.
+Section~\ref{sec:intern-basic} below provides an overview for the
+basic interface to interned tries, while
+Section~\ref{sec:intern-advanced} describes more advanced features.
+See also the module {\tt storage} in Volume 1 which uses interned
+tries for backtrackable updates and associative arrays.
 
-Terms can be interned within different tries, designated by a {\tt
-  Root}.  This root can be either explicit, or default.
+
+\subsection{A Basic API for Interned Tries} \label{sec:intern-basic}
 %%
 \begin{description}
   %%
 \ournewitem{new\_trie(-Root)}{intern} \index{\texttt{newtrie/1}}
         {\tt Root} is instantiated to a handle for a new trie.
 
+\ournewitem{trie\_intern(+Term,+Root)}{intern}
+\index{\texttt{trie\_intern/2}}
+% 
+Effectively asserts \texttt{Term} by interning into the trie
+designated by {\tt Root}.  If a variant of {\tt Term} is already in
+{\tt Root} the predicate succeeds, but a new copy of {\tt Term} is not
+added to the trie.
+
+\ournewitem{trie\_interned(?Term,+Root)}{intern}
+\index{\texttt{trie\_interned/2}}
+%%
+This predicate backtracks through the terms that unify with {\tt Term}
+and that are interned into the trie represented by the handle {\tt
+  Root}.  {\tt Term} may be free, or partially bound.
+
+\ournewitem{trie\_retractall(?Term,+Root)}{intern}
+\index{\texttt{trie\_retractall/2}}
+% 
+Uninterns from {\tt Root} all terms that unify with {\tt Term}.  If
+there are no failure continuations pointing to nodes in {\tt Root},
+space is reclaimed for the uninterned nodes; otherwise they are marked
+as deleted but space is not reclaimed.
+
+\ournewitem{bulk\_trie\_insert(+Generator,+Root)}{intern}
+\index{\texttt{bulk\_trie\_insert/2}}
+% 
+Used to insert multiple terms into {\tt Root}.  {\tt Generator} is a
+callable term.  Upon backtracking through {\tt Generator} its first
+argument should successively be instantiated to the terms to be
+interned in {\tt Root}.  When inserting many terms, {\tt
+  bulk\_trie\_insert/2} is faster than {\tt trie\_insert} as it does
+not need to make multiple checks that the choice point stack is free
+of failure continuations that point to nodes in the trie pointed to by
+{\tt Root}.
+
+\begin{example} \rm
+Given the predicate 
+\begin{verbatim}
+bulk_create(p(One,Two,Three),N):- 
+     for(One,1,N),
+     for(Two,1,N),
+     for(Three,1,N).
+\end{verbatim}
+The goal {\tt bulk\_trie\_intern(bulk\_create(\_Term,N),Trie)} will
+add $N^3$ terms to the trie with root {\tt Root}.
+\end{example}
+
+\ournewitem{delete\_trie(+Root)}{intern} \index{\texttt{delete\_trie/1}}
+%%
+Deletes all the terms in the trie pointed to by {\tt Root}.
+
+{\bf Error Cases}
+\begin{itemize}
+\item 	Failure continuations point to one or more nodes in the trie with root {\tt Root}
+\bi
+\item 	{\tt misc\_error}
+\ei
+\end{itemize}
+%%
+\end{description}
+
+%=======================
+
+\subsection{Low-level Trie Manipulation Utilities} \label{sec:intern-advanced}
+
+The utilities in this section are very low-level and require good
+understanding of the trie mechanism in XSB.  They can be used to
+implement modules such as the {\tt storae} module described in Volume
+1.
+%%
+\begin{description}
+  %%
 \ournewitem{trie\_intern(+Term,+Root,-Leaf,-Flag,-Skel)}{intern}
 \index{\texttt{trie\_intern/5}}
 %%
-\texttt{Term} is the Prolog term to be interned. {\tt Root} is the handle
-for a trie. {\tt Leaf} is the handle for the interned {\tt Term} in
-the trie.  {\tt Flag} is 1 if the term is ``old'' (already exists in
-the trie); it is 0, if the term is newly inserted.  {\tt Skel}
-represents the collection of all the variables in {\tt Term}. It has
-the form {\tt ret(V1,V2,...,VN)}, exactly as in {\tt get\_calls} (see
-Vol. 1 of the XSB manual).
+Acts as {\tt trie\_intern/2} but returns additional information: {\tt
+  Leaf} is the handle for the interned {\tt Term} in the trie.  {\tt
+  Flag} is 1 if the term is ``old'' (already exists in the trie); it
+is 0, if the term is newly inserted.  {\tt Skel} represents the
+collection of all the variables in {\tt Term}. It has the form {\tt
+  ret(V1,V2,...,VN)}, exactly as in {\tt get\_calls} (see Vol. 1 of
+the XSB manual).
 
 \ournewitem{trie\_intern(+Term,-Leaf,-Skel)}{intern}\index{\texttt{trie\_intern/3}}
 %%
-Interns {\tt Term} into the default trie. Does not return the new/old flag.
-
+Acts as {\tt trie\_intern/5}, but interns {\tt Term} into the default
+trie and does not return the new/old flag.
 
 \ournewitem{trie\_interned(?Term,+Root,?Leaf,-Skel)}{intern}
 \index{\texttt{trie\_interned/4}}
 %%
-This predicate will backtrack through the terms interned into the trie
-represented by the handle {\tt Root} if {\tt Leaf} is a free variable.
-Otherwise, if {\tt Leaf} is bound, it will backtrack over the terms in
-the trie that unify with the term pointed to by Leaf {\tt to}.  {\tt
-Term} is the term to be retrieved; it can be either (partially) bound
-or free.  {\tt Skel} is the collection of all the variables in {\tt
-Term}; it has the form {\tt ret(V1,...,Vn)}.
+This predicate backtracks through the terms that unify with {\tt Term}
+interned into the trie represented by the handle {\tt Root} if {\tt
+  Leaf} is a free variable.  Otherwise, if {\tt Leaf} is bound, it
+will backtrack over the terms in the trie that unify with the term
+pointed to by Leaf {\tt to}.  {\tt Term} is the term to be retrieved;
+it can be either (partially) bound or free.  {\tt Skel} is the
+collection of all the variables in {\tt Term}; it has the form {\tt
+  ret(V1,...,Vn)}.
 
 \ournewitem{trie\_interned(?Term,?Leaf,-Skel)}{intern} \index{\texttt{trie\_interned/3}}
 %%
 Similar to {\tt trie\_interned/4}  but uses the default trie.
 
-
 \ournewitem{trie\_unintern(+Root,+Leaf)}{intern} \index{\texttt{trie\_unintern/2}}
 %%
-Uninterns (deletes) a term from the trie indicated by root.  This predicate
-has to be called with care. Uninterning can be done only when the trie from
-which the term is being uninterned is not being actively accessed.
+Uninterns a term indicated by {\tt Leaf} from the trie indicated by
+root.  If there are failure continuations that point to trie nodes in
+{\tt Root}, the term is marked as deleted but space is not reclaimed.
+Otherwise, the term is really deleted.
 
 \ournewitem{trie\_unintern\_nr(+Root,+Leaf)}{intern}\index{\texttt{trie\_unintern\_nr/2}}
 %%
@@ -2384,16 +2460,12 @@ and becomes again a notmal interned term.
 \ournewitem{reclaim\_uninterned\_nr(+Root)}{intern}
 \index{\texttt{reclaim\_uninterned\_rn/1}}
 %%
-Not yet implemented.\\
-Runs through the chain of leaves of the trie {\tt Root} and
-deletes the terms that have been marked for deletion by
-{\tt trie\_unintern\_nr/2}. This is a garbage collection step that should
-be done just before returning to the top level.
-
-\ournewitem{delete\_trie(+Root)}{intern} \index{\texttt{delete\_trie/1}}
-%%
-Deletes all the terms in the trie pointed to by {\tt Root}.
-
+Runs through the chain of leaves of the trie {\tt Root} and deletes
+the terms that have been marked for deletion by {\tt
+  trie\_unintern\_nr/2}. This is a garbage collection step that should
+be done just before returning to the top level or when it can
+otherwise be ensure that no failure continuations point to a node in
+{\tt Root}.
 
 %%
 \end{description}
