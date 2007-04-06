@@ -1326,7 +1326,13 @@ Integer newtrie(CTXTdecl)
 }
 
 /*----------------------------------------------------------------------*/
-/* i_trie_intern(_Term,_Root,_Leaf,_Flag,_Check_CPS,_Expand_or_not)     */
+/* i_trie_intern(_Term,_Root,_Leaf,_Flag,_Check_CPS,_Expand_or_not)     
+* 
+* If called from trie_intern(), we'll need to check to see whether its
+* safe to expand -- hence check_cps_flag; if called from
+* bulk_trie_intern() we don't need to check, and expand_flag will be
+* set to tell us whether we can expand or not.
+*/
 
 void trie_intern(CTXTdecl)
 {
@@ -1414,6 +1420,12 @@ int trie_interned(CTXTdecl)
 /*
  * This is builtin #162: TRIE_DISPOSE(+ROOT, +LEAF), to dispose a branch
  * of the trie rooted at Set_ArrayPtr[ROOT].
+ * 
+ * If called within a trie_retractall(), the CPS check will already
+ * have been done: if it isn't safe to reclaim trie_dispose_nr() would
+ * have been called; otherwise its safe and we don't need to check
+ * here.  If called from within a trie_unintern() (maybe we should get
+ * the names straight) we do need to check.
  */
 
 void trie_dispose(CTXTdecl)
@@ -1443,6 +1455,11 @@ void trie_dispose(CTXTdecl)
 }
 
 /*----------------------------------------------------------------------*/
+/* 
+ * For interned tries, I'm checking whether there is a trie choice
+ * point with the same root as the the trie that we want to do
+ * something with.  
+ */
 
 #define is_trie_instruction(cp_inst) \
  ((int) cp_inst >= 0x5c && (int) cp_inst < 0x80) \
@@ -1485,6 +1502,9 @@ int interned_trie_cps_check(CTXTdeclc BTNptr root)
 
 
 /*----------------------------------------------------------------------*/
+/* 
+ * The check of whether this trie is safe to delete has already been done.
+ */
 
 #define DELETED_SET 1
 
@@ -1511,7 +1531,12 @@ void delete_interned_trie(CTXTdeclc Integer tmpval) {
 }
 
 
-/*  
+/*----------------------------------------------------------------------*/
+/*
+
+TLS -- 4/07 I'm keeping these in for now, but they may be taken out
+when/if the interned tries evolve.
+
  Changes made by Prasad Rao. Jun 20th 2000
 
  The solution for reclaiming the garbage nodes resulting
@@ -1647,28 +1672,6 @@ static void insertLeaf(IGRptr r, BTNptr leafn)
   r -> leaves = p;
 }
 
-
-/*
- * This is builtin : TRIE_DISPOSE_NR(+ROOT, +LEAF), to
- * mark for  disposal a branch
- * of the trie rooted at Set_ArrayPtr[ROOT].
- */
-void trie_dispose_nr(CTXTdecl)
-{
-  BTNptr Leaf;
-  long Rootidx;
-
-  Rootidx = ptoc_int(CTXTc 1);
-  Leaf = (BTNptr)ptoc_int(CTXTc 2);
-  switch_to_trie_assert;
-  SYS_MUTEX_LOCK(MUTEX_TRIE);
-  insertLeaf(getIGRnode(CTXTc Rootidx), Leaf);
-  SYS_MUTEX_UNLOCK(MUTEX_TRIE);
-  safe_delete_branch(Leaf);
-  switch_from_trie_assert;
-}
-
-
 void reclaim_uninterned_nr(CTXTdeclc long rootidx)
 {
   IGRptr r = getAndRemoveIGRnode(CTXTc rootidx);
@@ -1709,6 +1712,31 @@ void reclaim_uninterned_nr(CTXTdeclc long rootidx)
 }
 
 /*----------------------------------------------------------------------*/
+/*
+ * This is builtin : TRIE_DISPOSE_NR(+ROOT, +LEAF), to
+ * mark for disposal (safe delete) a branch
+ * of the trie rooted at Set_ArrayPtr[ROOT].
+ */
+void trie_dispose_nr(CTXTdecl)
+{
+  BTNptr Leaf;
+  long Rootidx;
+
+  Rootidx = ptoc_int(CTXTc 1);
+  Leaf = (BTNptr)ptoc_int(CTXTc 2);
+  switch_to_trie_assert;
+  SYS_MUTEX_LOCK(MUTEX_TRIE);
+  insertLeaf(getIGRnode(CTXTc Rootidx), Leaf);
+  SYS_MUTEX_UNLOCK(MUTEX_TRIE);
+  safe_delete_branch(Leaf);
+  switch_from_trie_assert;
+}
+
+/*----------------------------------------------------------------------*/
+/*
+ * This is builtin : TRIE_UNDISPOSE_NR(+ROOT, +LEAF), to
+ * unmark a safely deleted branch.
+ */
 
 void trie_undispose(CTXTdeclc long rootIdx, BTNptr leafn)
 {
@@ -1730,10 +1758,15 @@ void trie_undispose(CTXTdeclc long rootIdx, BTNptr leafn)
   }
 }
 
-/*----------------------------------------------------------------------*/
+/*======================================================================*/
 
-/* TABLE ABOLISHING AND GARBAGE COLLECTING 
- *
+/*
+ *              TABLE ABOLISHING AND GARBAGE COLLECTING 
+ *                    ===========================
+ */
+
+/*----------------------------------------------------------------------*/
+/* 
  * When a table is abolished, various checks must be made before its
  * space can be reclaimed.  First, the table must be completed, and
  * second it must be ensured that there are not any trie choice points

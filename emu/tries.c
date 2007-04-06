@@ -1764,10 +1764,14 @@ void remove_incomplete_tries(CTXTdeclc CPtr bottom_parameter)
 }
 
 /*----------------------------------------------------------------------*/
-
 /*
  * For creating interned tries via buitin "trie_intern".
+ * These differ from the trie inserts used by tables because there may
+ * be failure continuations pointing into the trie -- here we need to
+ * take these continuations into account before we hash.  Otherwise
+ * they are identical to their non interned versions.
  */
+
 #define one_interned_node_chk_ins(Found,item,TrieType)		{	\
 									\
    int count = 0;							\

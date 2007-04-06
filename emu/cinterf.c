@@ -1384,7 +1384,6 @@ DllExport int call_conv xsb_init(int argc, char *argv[])
 /*  vector in its second argument, and the argc count as the value of   */
 /*	the function.  (Will handle a max of 19 args.)			*/
 /*									*/
-/* For MT engine, synchronization is done in  */
 /************************************************************************/
 
 DllExport int call_conv xsb_init_string(char *cmdline_param) {
@@ -1481,8 +1480,8 @@ DllExport int call_conv writeln_to_xsb_stdin(char * input){
 /************************************************************************
 
  xsb_command() passes the command (i.e. query with no variables) to
- xsb.  The command must be put into xsb's register 1 as a term, by the
- caller who uses the c2p_* (and perhaps p2p_*) functions.  
+ XSB.  The command must be put into XSB's register 1 as a term, by the
+ caller who uses the c2p_* (and perhaps p2p_*) functions.
 
  It returns XSB_SUCCESS if it succeeds, XSB_FAILURE if it fails, in
  either case resetting register 1 back to a free variable.  It returns
@@ -1490,9 +1489,7 @@ DllExport int call_conv writeln_to_xsb_stdin(char * input){
 
  Note that because this command depends on the user mucking about with
  registers via c2p_xxx() it is difficult at best to ensure
- synchronization with the XSB thread that is being manipulated.  Thus,
- this routine should not be used if multiple C threads may call
- multiple XSB threads -- perhaps not in the MT engine at all?
+ synchronization with the XSB thread that is being manipulated.
                                                                       
 ************************************************************************/
 
@@ -1526,15 +1523,15 @@ DllExport int call_conv xsb_command(CTXTdecl)
 
 }
 
-/************************************************************************/
-/*                                                                      */
-/* xsb_command_string(char *goal) passes the command (e.g. a query      */
-/* which only succeeds or fails) to xsb.  The command must a string     */
-/* passed in the argument.  It returns 0 if it succeeds, 1 if it        */
-/* fails, in either case resetting register 1 back to a free            */
-/* variable.  It returns 2 if there is an error.                        */
-/*                                                                      */
-/************************************************************************/
+/************************************************************************
+                                                                      
+ xsb_command_string(char *goal) passes the command (e.g. a query which
+ only succeeds or fails) to XSB.  The command must a string passed in
+ the argument.  It returns XSB_SUCCESS if it succeeds, XSB_FAILURE if
+ it fails, in either case resetting register 1 back to a free
+ variable.  It returns XSB_ERROR if there is an error.
+
+************************************************************************/
 
 DllExport int call_conv xsb_command_string(CTXTdeclc char *goal)
 {
@@ -1585,15 +1582,19 @@ DllExport int call_conv xsb_kill_thread(CTXTdecl)
 
 
 /************************************************************************
-xsb_query() submits a query to xsb. The query must have been put into
+
+xsb_query() submits a query to XSB. The query must have been put into
 register 1 of XSB by the caller, using p2c_* (and perhaps p2p_*).  XSB
 will evaluate the query and return with the variables in the query
 bound to the first answer.  In addition, register 2 will contain a
 Prolog term of the form ret(V1,V2,..,Vn) with as many Vi's as
 variables in the original query and with Vi bound to the value for
 that variable in the first answer.  If the query fails, it returns
-XSB_FAILURE If the query succeeds, it returns XSB_SUCCESS. If there is
-an error, it returns XSB_ERROR.
+XSB_FAILURE.  If there is an error, it returns XSB_ERROR.  If the
+query succeeds, it returns XSB_SUCCESS, and the MT engine locks the
+XSB_QUERY mutex for the called thread.  The mutex will stay locked
+until the query is closed, failed out of, or an error is thrown.
+
 ************************************************************************/
 
 DllExport int call_conv xsb_query(CTXTdecl)
@@ -1624,17 +1625,23 @@ DllExport int call_conv xsb_query(CTXTdecl)
 }
 
 /************************************************************************
- xsb_query_string(char *) submits a query to xsb.  The string
- must be a goal that will be correctly read by xsb's reader, and it
- must be terminated with a period (.).  Register 2 may be a variable
- or it may be a term of the form ret(X1,X2,...,Xn), where n is the
- number of variables in the query.  The query will be parsed, and an
- answer term of the form ret(Y1,Y2,...,Yn) will be constructed where
- Y1, .... Yn are the variables in the parsed goal (in left-to-right
- order).  This answer term is unified with the argument in register 2.
- Then the goal is called.  If the goal succeeds, xsb_query_string
- returns XSB_SUCCESS and the first answer is in register 2.  If it
- fails, xsb_query_string returns XSB_FAILURE. 
+
+ xsb_query_string(char *) submits a query to xsb.  The string must be
+ a goal that will be correctly read by XSB's reader, and it must be
+ terminated with a period (.).  Register 2 may be a variable or it may
+ be a term of the form ret(X1,X2,...,Xn), where n is the number of
+ variables in the query.  The query will be parsed, and an answer term
+ of the form ret(Y1,Y2,...,Yn) will be constructed where Y1, .... Yn
+ are the variables in the parsed goal (in left-to-right order).  This
+ answer term is unified with the argument in register 2.  Then the
+ goal is called.  If the goal fails, xsb_query_string() returns
+ XSB_FAILURE, and if it throws an error, xsb_query_string() returns
+ XSB_ERROR.  If the goal succeeds, xsb_query_string returns
+ XSB_SUCCESS and the first answer is in register 2.  In addition, in
+ the MT engine the XSB_QUERY mutex is locked for the called thread.
+ The mutex will stay locked until the query is closed, failed out of,
+ or an error is thrown.
+
 ************************************************************************/
 
 DllExport int call_conv xsb_query_string(CTXTdeclc char *goal)
@@ -1742,15 +1749,18 @@ DllExport int call_conv
 }    
 
 /************************************************************************
-xsb_next() causes xsb to return the next answer.  If there is another
-answer, xsb_next returns XSB_SUCCESS and the variables in goal term
-(in xsb register 1) are bound to the answer values.  In addition xsb
+
+xsb_next() causes XSB to return the next answer.  If there is another
+answer, xsb_next() returns XSB_SUCCESS and the variables in goal term
+(in XSB register 1) are bound to the answer values.  In addition xsb
 register 2 will contain a term of the form ret(V1,V2,...,Vn) where the
-Vis are the values for the variables for the next answer.  xsb_next
+Vis are the values for the variables for the next answer.  xsb_next()
 returns XSB_SUCCESS if the next answer is found, XSB_FAILURE if there
 are no more answers, and XSB_ERROR if an error is encountered. If
 XSB_FAILURE or XSB_ERROR is returned, then the query is automatically
-closed.
+closed, and in the MT engine the XSB_QUERY mutex is unlocked for the
+called thread.
+
 ************************************************************************/
 
 DllExport int call_conv xsb_next(CTXTdecl)
@@ -1829,10 +1839,14 @@ DllExport int call_conv xsb_next_string_b(CTXTdeclc
 }
 
 /************************************************************************
+
  xsb_close_query_string() closes the current query, so that no more
  answers will be returned, and another query can be opened.  If the
  query was correctly closed, it resets xsb registers 1 and 2 to be
- variables, and returns 0.  If there is some error, it returns 2.
+ variables, and returns XSB_SUCCESS.  If there is some error, it
+ returns XSB_ERROR.  In the MT engine, the XSB_QUERY mutex is also
+ unlocked for the called thread.
+
  ************************************************************************/
 
 DllExport int call_conv xsb_close_query(CTXTdecl)
