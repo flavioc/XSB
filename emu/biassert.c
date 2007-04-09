@@ -1772,11 +1772,13 @@ static void find_usable_index(prolog_term Head, ClRef *s,
 #define CheckSOBClause(H, Ind, sob, Level )			\
 {    int h, t ;							\
      ClRef cl ;				    			\
-     t = ClRefHashSize(sob); 					\
-     h = hash_val( (Ind), (H), t ) ;				\
-     cl = (ClRef) ClRefHashTable(sob)[h] ;			\
-     if ((pb)cl != (pb)&dynfail_inst)				\
+     if (ClRefSOBOpCode(sob) != fail) {				\
+       t = ClRefHashSize(sob); 					\
+       h = hash_val( (Ind), (H), t ) ;				\
+       cl = (ClRef) ClRefHashTable(sob)[h] ;			\
+       if ((pb)cl != (pb)&dynfail_inst)				\
 	return IndPtrClRef(cl,Level) ;				\
+     }								\
 }
 
 /* This macro finds the next SOB to search in the indexing tree */
@@ -1787,13 +1789,15 @@ static void find_usable_index(prolog_term Head, ClRef *s,
 /* that possibility must be checked.    -- no longer]		*/
 
 #define NextSOB(sob,curLevel,IndLevel,Ind,Head)			\
-{   while( ClRefTryOpCode(sob) == dyntrustmeelsefail		\
+  { while( ClRefTryOpCode(sob) == dyntrustmeelsefail		\
 	|| ClRefTryOpCode(sob) == noop ) /* end of sob chain */	\
 	if( curLevel-- == 1 ) /* root of sob tree */		\
 		return 0 ;					\
 	else sob = ClRefUpSOB(sob) ; /* go up */		\
-    sob = ClRefNext(sob) ; /* follow sob chain */		\
-    if (curLevel == 1) { /* may have changed indexes?!? */	\
+    do {							\
+        sob = ClRefNext(sob); /* follow sob chain */		\
+    } while (ClRefSOBOpCode(sob) == fail);			\
+    if (curLevel == 1) { /* may have changed indexes?!? */ 	\
 	find_usable_index(Head,&sob,IndLevel,Ind);		\
 	curLevel = *IndLevel;					\
 	} 							\
@@ -1953,7 +1957,7 @@ ClRef next_clref( PrRef Pred, ClRef Clause, prolog_term Head,
 
 /* delete from a hash chain */
 
-static void delete_from_hashchain(CTXTdeclc ClRef Clause, int Ind, int NI )
+static void delete_from_hashchain(CTXTdeclc ClRef Clause, SOBRef sob, int Ind, int NI )
 {  
     CPtr PI = ClRefIndPtr(Clause,Ind) ;
     byte c = cell_opcode(PI) ;
@@ -1962,6 +1966,7 @@ static void delete_from_hashchain(CTXTdeclc ClRef Clause, int Ind, int NI )
 
     if( cell_opcode(PI) == dynnoop) {
       *IndRefPrev(PI) = (Cell) &dynfail_inst ;
+      ClRefNumNonemptyBuckets(sob)--;
     }
     /**    else if( cell_opcode(PI) == noop)
      *IndRefPrev(PI) = (Cell) &dynfail_inst ; **/
@@ -2803,23 +2808,19 @@ static int really_delete_clause(CTXTdeclc ClRef Clause)
 	      xsb_dbgmsg((LOG_RETRACT,
 			  "Addr %p : prev %p : next %p",
 			  sob, ClRefNext(sob), ClRefPrev(sob) ));
-	      delete_from_hashchain(CTXTc Clause,i,NI) ;
-	      if (sob && --ClRefNumNonemptyBuckets(sob) == 0) { 
+	      delete_from_hashchain(CTXTc Clause,sob,i,NI) ;
+	      if (sob && ClRefNumNonemptyBuckets(sob) == 0) { 
                 /* if emptied bucket, decrement count; if all empty, reclaim SOB */
 		if (!determine_if_sob_safe_to_delete((ClRef) sob)) {
 		  printf("!!! deleting improper sob %p\n",sob);
-		  // This doesn't seem to work -- I don't know why.
-		  //		  ClRefSOBOpCode(sob) = fail;
+		  ClRefSOBOpCode(sob) = fail;
 		  print_clref_sob(sob);
-		} 
-		//		else 
-		{
+		} else {
 		xsb_dbgmsg((LOG_RETRACT,"deleting sob - %p", sob ));
 		delete_from_sobchain(CTXTc sob) ;
 		mem_dealloc((pb)ClRefAddr(sob), ClRefSize(sob),ASSERT_SPACE);
 		}
 	      } 
-
             }
             break ;
         }
