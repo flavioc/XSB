@@ -1553,7 +1553,9 @@ int builtin_call(CTXTdeclc byte number)
       switch (token->type) {
         case TK_ATOM : case TK_FUNC : case TK_STR : case TK_LIST :
         case TK_VAR : case TK_VVAR : case TK_VARFUNC : case TK_VVARFUNC :
-	  ctop_string(CTXTc 4, string_find(token->value,1));  // NOW INTERNED, CALLER MUST DO SO SOON!!
+	  // TLS 070416 -- change to fix double interning (ctop_string calls string_find)
+	  //	  ctop_string(CTXTc 4, string_find(token->value,1));  // NOW INTERNED, CALLER MUST DO SO SOON!!
+	  ctop_string(CTXTc 4, token->value);  
 	  break;
         case TK_INT : case TK_INTFUNC :
 	  ctop_int(CTXTc 4, *(long *)(token->value));

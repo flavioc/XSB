@@ -913,6 +913,18 @@ inline static xsbBool file_function(CTXTdecl)
     break;
   }
 
+  case FILE_NL: 
+    io_port = ptoc_int(CTXTc 2);
+    SET_FILEPTR(fptr, io_port);
+#ifdef WIN_NT
+    XSB_STREAM_LOCK(io_port);
+    putc(CH_RETURN,fptr); putc(CH_NEWLINE,fptr);
+    XSB_STREAM_UNLOCK(io_port);
+#else
+    putc(CH_NEWLINE,fptr);
+#endif
+    break;
+
   default:
     xsb_abort("[FILE_FUNCTION]: Invalid file operation, %d\n", ptoc_int(CTXTc 1));
   }

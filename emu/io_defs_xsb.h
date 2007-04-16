@@ -52,6 +52,7 @@
 #define FILE_PEEK 23
 #define XSB_STREAM_LOCK_B 24
 #define XSB_STREAM_UNLOCK_B 25
+#define FILE_NL 26
 
 /* This sequence is for stream properties */
 #define STREAM_FILE_NAME              0
@@ -90,3 +91,7 @@
 #define STRING_STREAM                3
 #define PIPE_STREAM                    4
 #define CONSOLE_STREAM            5
+
+/* from char_defs in prolog_includes */
+#define CH_NEWLINE 10
+#define CH_RETURN 13

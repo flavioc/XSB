@@ -70,6 +70,7 @@ char *string_find(char *str, int insert) {
 
   char **ptr, *str0;
 
+  //  printf("interning %s\n",str);
   SYS_MUTEX_LOCK_NOERROR( MUTEX_STRING ) ;
   ptr = (char **)string_table.table + hash(str, 0, string_table.size);
   while (*ptr) {
