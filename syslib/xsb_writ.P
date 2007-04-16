@@ -30,6 +30,7 @@
 #include "token_defs_xsb.h"
 #include "flag_defs_xsb.h"
 #include "thread_defs_xsb.h"
+#include "io_defs_xsb.h"
 
 /* TLS: Note that file_puttoken is NOT locked, so locking must appear
    around it.  This is to avoid the need for recursive mutexes. */
@@ -39,13 +40,8 @@
 		/**************************/
 
 % TLS: removed mutex as file_put is locked via file_function.
-file_nl(File) :- %xsb_sys_mutex_lock(MUTEX_IO),
-		(windows_os_loader
-		 ->  file_put(File, CH_RETURN), file_put(File, CH_NEWLINE)
-		 ;   file_put(File, CH_NEWLINE)
-		 ).
-%		xsb_sys_mutex_unlock(MUTEX_IO).
-
+file_nl(File) :- 
+	file_function(FILE_NL, File, _).
 
 		/**************************/
 		/*	file_write/2	  */

@@ -854,7 +854,9 @@ read_lookup([_|T], X) :-
 
 %   gets the constant with the the name "String"
 
-read_getcon(String, Con) :- intern_string(String, Con).
+%read_getcon(String, Con) :- intern_string(String, Con).
+read_getcon(String, String).
+
 
 %   reads the next token from the input file when the C tokenizer is used.
 

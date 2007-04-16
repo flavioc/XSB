@@ -113,7 +113,7 @@
      from error_handler.
 :- import  check_nonvar_list/3 from error_handler.
 :- import '_$load_undef'/1 from loader.
-:- import windows_os_loader/0 from loader.
+
 
  :- import call0/1, conname/2,
           dynamic_code_function/5,

@@ -287,7 +287,8 @@ select(Element, [Element1|Rest_L1], [Element1|Rest_L2]) :-
 	select(Element, Rest_L1, Rest_L2).
 
 %%% for(?I,+B1,+B2) nondeterministically binds I to all integer values
-%%% from B1 to B2.  B1 and B2 must be integers, but either may be larger.
+%%% from B1 to B2 inclusive.  B1 and B2 must be integers, but either
+% may be larger.  
 for(I,B1,B2) :-
 	(B1 =< B2
 	 ->	forup(I,B1,B2)

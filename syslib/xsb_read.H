@@ -37,7 +37,7 @@
 :- import '_$hilog_symbol'/1 from hilogsym.
 :- import term_new/2, term_set_arg/4, 
 	  file_gettoken/5, psc_insert/4, conname/2, 
-	  conpsc/2, intern_string/2, term_psc/2, psc_set_prop/2, psc_prop/2
+	  conpsc/2, term_psc/2, psc_set_prop/2, psc_prop/2
      from machine.
 :- import banner_control/1 from banner.
 :- import concat_atom/2 from string.

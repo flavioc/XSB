@@ -236,10 +236,9 @@ nl(S_or_A) :-
 	check_open_stream_or_alias(S_or_A,nl/1,1,output,Str),
 	file_nl(Str).
 
-nl :- (windows_os_loader 
-      ->  put(CH_RETURN), put(CH_NEWLINE)
-      ;	  put(CH_NEWLINE) ).
-
+nl :- 
+	stat_flag(CURRENT_OUTPUT, Str), 
+	file_nl(Str).
 
 /* TLS: I'm using atom_codes for now, which is slow, but we should
 probably have a character-conversion table.  I want to think this
@@ -408,13 +407,6 @@ write(S_or_A,Term):-
 	file_write(Ostr,Term).
 
 write(T) :- stat_flag(CURRENT_OUTPUT, Str), file_write(Str, T).
-
-/* TLS: this seems to give problems, need to check.
-% TLS: rewritten to make it an atomic stream operation.
-writeln(S_or_A,Term):- 
-	check_open_stream_or_alias(S_or_A,writeln/2,1,output,Ostr),
-	file_writeln(Ostr,Term).
-*/
 
  writeln(S_or_A,Term):- 
 	check_open_stream_or_alias(S_or_A,writeln/2,1,output,Ostr),
