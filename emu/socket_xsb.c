@@ -578,10 +578,10 @@ xsbBool xsb_socket_request(CTXTdecl)
 	       }
 	       
 	       if (message_buffer != NULL) {
-		    ctop_string(CTXTc 3, (char*)string_find(message_buffer, 1));
+		    ctop_string(CTXTc 3, (char*)message_buffer);
 		    mem_dealloc(message_buffer,msg_len,OTHER_SPACE);
 	       } else {  /* this happens at end of file */
-		    ctop_string(CTXTc 3, (char*)string_find("", 1));
+		    ctop_string(CTXTc 3, (char*)"");
 	       }
 	       
 	       return set_error_code(CTXTc ecode, 4, "SOCKET_RECV");  

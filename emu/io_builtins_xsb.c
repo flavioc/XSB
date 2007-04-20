@@ -478,7 +478,7 @@ xsbBool fmt_write_string(CTXTdecl)
   /* fmt_write_string is used in places where interning of the string is needed
      (such as constructing library search paths)
      Therefore, must use string_find(..., 1). */
-  ctop_string(CTXTc 2, string_find(OutString.string,1));
+  ctop_string(CTXTc 2, OutString.string);
   
   return TRUE;
 }

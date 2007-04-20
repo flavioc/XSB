@@ -1736,7 +1736,7 @@ void ODBCGetInfo(CTXTdecl)
 		if(retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO)
   	    {
 			//printf("string type:%d:%s:%d\n",InfoType,strValue,pcbValue);
-			ctop_string(CTXTc 4,string_find(strValue,1));
+			ctop_string(CTXTc 4,strValue);
 			ctop_int(CTXTc 5,0);
   		} else {
 		  ctop_int(CTXTc 5,1);

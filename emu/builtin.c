@@ -467,9 +467,10 @@ DllExport void call_conv ctop_string(CTXTdeclc int regnum, char *value)
     xsb_abort("[CTOP_STRING] Wrong type of argument: %lux", addr);
 }
 
+/* TLS: do not need to intern here, as ctop_string is now interning */
 DllExport void call_conv extern_ctop_string(CTXTdeclc int regnum, char *value)
 {
-  ctop_string(CTXTc regnum,string_find(value,1)) ;
+  ctop_string(CTXTc regnum,value) ;
 }
 
 inline static void ctop_constr(CTXTdeclc int regnum, Pair psc_pair)
@@ -1075,7 +1076,8 @@ int builtin_call(CTXTdeclc byte number)
   switch (number) {
   case PSC_NAME: {	/* R1: +PSC; R2: -String */
     Psc psc = (Psc)ptoc_addr(1);
-    ctop_string(CTXTc 2, get_name(psc));
+    //    ctop_string(CTXTc 2, get_name(psc));  TLS -- avoid interning already interned string
+    extern_ctop_string(CTXTc 2, get_name(psc));
     break;
   }
   case PSC_ARITY: {	/* R1: +PSC; R2: -int */
@@ -1435,7 +1437,8 @@ int builtin_call(CTXTdeclc byte number)
   case STR_MATCH:
     return str_match(CTXT);
   case INTERN_STRING: /* R1: +String1; R2: -String2 ; Intern string */
-    ctop_string(CTXTc 2, string_find(ptoc_string(CTXTc 1), 1));
+    //    ctop_string(CTXTc 2, string_find(ptoc_string(CTXTc 1), 1)); 
+    ctop_string(CTXTc 2, ptoc_string(CTXTc 1));  // TLS: let's just intern once
     break;
   case STAT_STA: {		/* R1: +Amount */
     int value = ptoc_int(CTXTc 1);
@@ -1662,11 +1665,13 @@ int builtin_call(CTXTdeclc byte number)
 
   case EXPAND_FILENAME:	       /* R1: +FileName, R2: -ExpandedFileName */
     {char *filename = expand_filename(ptoc_longstring(CTXTc 1));
-    ctop_string(CTXTc 2, string_find(filename,1));
+      //    ctop_string(CTXTc 2, string_find(filename,1));
+    ctop_string(CTXTc 2, filename);
     mem_dealloc(filename,MAXPATHLEN,OTHER_SPACE);
     }
     break;
   case TILDE_EXPAND_FILENAME:  /* R1: +FileN, R2: -TildeExpanded FN */
+    /* TLS: we might be able to change this to a ctop_string without the string find? */
     ctop_string(CTXTc 2, tilde_expand_filename(ptoc_longstring(CTXTc 1)));
     break;
   case IS_ABSOLUTE_FILENAME: /* R1: +FN. Ret 1 if name is absolute, 0 else */
@@ -1706,7 +1711,7 @@ int builtin_call(CTXTdeclc byte number)
       /* otherwise, string_find dumps core */
       return FALSE;
     else
-      ctop_string(CTXTc 2, string_find(env,1));
+      ctop_string(CTXTc 2, env);
     break;
   }
   case SYS_SYSCALL:	/* R1: +int (call #, see <syscall.h> */
@@ -1925,7 +1930,7 @@ case WRITE_OUT_PROFILE:
     static char slash_string[2];
     slash_string[0] = SLASH;
     slash_string[1] = '\0';
-    ctop_string(CTXTc 1, string_find(slash_string, 1));
+    ctop_string(CTXTc 1, slash_string);
     break;
   }
   case FORMATTED_IO:
