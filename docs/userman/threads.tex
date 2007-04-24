@@ -23,17 +23,16 @@ despite our efforts, the multi-threaded engine may contain bugs not
 present in the single- threaded engine.  However the main reason is
 because in Version 3.0, not all libraries and packages have yet been
 made thread-safe so that not all configurations are supported with
-multi-threading.  All XSB libraries have been ported to the
-multi-threaded engine {\em except} the profiling library and the {\tt
-  string} library (which is not yet thread-safe).  The XSB-calling-C
-interface is supported by the multi-threaded engine, but the
-C-calling-XSB is not yet fully supported.  The packages {\tt ODBC} and
-{\tt CHR}, and {\tt FLORA-2} are supported by the multi-threaded
-engine, but the packages {\tt dbdrivers}, {\tt xpath}, {\tt
-  interprolog}, {\tt smodels}, {\tt perlmatch}, {\tt regmatch}, {\tt
-  libwww} and {\tt posix} are not.  We note, however that all
-basic/ISO Prolog functionality is thread-safe (at least, as far as we
-know :-).
+multi-threading.  Both the XSB-calling-C and the C-calling-XSB
+interfaces are supported in the multi-threaded engine.  All XSB
+libraries have been ported to the multi-threaded engine {\em except}
+the profiling library and the {\tt string} library (which is not yet
+thread-safe).  The packages {\tt ODBC} and {\tt CHR}, and {\tt
+  FLORA-2} are supported by the multi-threaded engine, but the
+packages {\tt dbdrivers}, {\tt xpath}, {\tt interprolog}, {\tt
+  smodels}, {\tt perlmatch}, {\tt regmatch}, {\tt libwww} and {\tt
+  posix} are not.  We note, however that all basic/ISO Prolog
+functionality is thread-safe (at least, as far as we know :-).
 
 With this in mind, making the multi-threaded engine is simple:
 configure and make XSB as in Chapter~\ref{chap:system}, but include
@@ -55,12 +54,12 @@ you should see something like
 {\tt Id = 1hello world} 
 \end{center} 
 %
-while the output is a little ugly, the simple ``hello world'' program
-does illustrate simple multi-threading at work.  The calling thread
+while the output is a little ugly, the ``hello world'' program does
+illustrate simple multi-threading at work.  The calling thread
 (i.e. the thread controlling the command-line interpreter which we
-call $T_{prompt}$) executes the predicate {\tt thread\_create/2}
-which creates a thread $T_{child}$ and immediately returns with the
-{\em XSB thread id} of the created thread.  Meanwhile, $T_{child}$
+call $T_{prompt}$) executes the predicate {\tt thread\_create/2} which
+creates a thread $T_{child}$ and immediately returns with the {\em XSB
+  thread id} of the created thread.  Meanwhile, $T_{child}$
 initializes its stacks and other memory areas and executes the goal
 {\tt writeln('hello world')}.  $T_{child}$ and $T_{prompt}$ share most
 of their process-level information: in particular they share a common
@@ -155,15 +154,15 @@ has been reclaimed.  Rather, (like most Prologs), XSB may garbage
 collect the space of the retracted clauses at a later time.  While
 clause garbage collection is simple enough to implement for a single
 thread, garbage collecting clauses for shared dynamic predicates is
-difficult to do when multiple threads are active.  XSB can reclaim
-space for retracted clauses for dynamic thread-private predicates when
-multiple threads are active: from the engine's perspective garbage
-collection is no different than in the sequential case.  However in
+difficult to do when multiple threads are active.  Accordingly, in
 \version , space for shared dynamic clauses is not reclaimed until
-there is a single active thread.  Thus one set of reasons for making
-dynamic predicates private by default are based on
-efficiency~\footnote{Future versions may offer more powerful garbage
-  collectors for shared predicates.}.
+there is a single active thread.  However for {\em thread-private}
+dynamic predicates, there is no problem in reclaiming space when
+multiple threads are active: from the engine's perspective garbage
+collection is no different than in the sequential case.  Thus one set
+of reasons for making dynamic predicates private by default are based
+on efficiency~\footnote{Future versions may offer more powerful
+  garbage collectors for shared predicates.}.
 
 The second reason for making dynamic predicates thread-private by
 default is semantic.  Suppose thread $T_1$ starts a tabled computation
@@ -197,8 +196,8 @@ the sequential case, while space for shared tables is not reclaimed
 until there is a single active thread.  However the precise semantics
 of how tabling information is shared depends on whether the
 multi-threaded engine is configured with the default local evaluation
-or with batched evaluation.  Recall from
-Chapter~\ref{chap:TablingOverview} that local evaluation is so-named
+or with batched evaluation.  As discussed in
+Chapter~\ref{chap:TablingOverview},xs local evaluation is so-named
 because computation always takes place in the SCC most recently
 created, and no answer is returned outside of an SCC until the SCC has
 been completely evaluated.  Within this scheduling strategy it is not
@@ -217,8 +216,9 @@ takes over recomputation of all tables in the SCC, and when the SCC is
 completed, any remaining answers are returned to other threads that
 had invoked goals in the SCC.  While $Thread_a$ is completing this
 computation, $Thread_b$ suspends until the SCC is complete.  Thus the
-semantics of Shared Completed Tables supports concurrency, but only
-supports the most coarse-grained parallelism.
+semantics of Shared Completed Tables supports concurrency for the
+well-founded semantics, but only supports the most coarse-grained
+parallelism.
 
 Batched evaluation, on the other hand, allows answers to be returned
 outside of an SCC before that SCC has been completed.  Concurrency
@@ -327,11 +327,12 @@ but C exit codes may conceivably be useful if XSB is called by one of
 the interfaces for C calling XSB~\footnote{The C calling XSB
   interfaces are not yet supported in \version.}.  By default when no
 call to {\tt thread\_exit/1} has been made, an XSB thread that
-terminates normally will have an exit code of {\tt 0}, a cancelled
-thread will have an exit code of {\tt 1} and a thread terminated with
-any other error will have an exit code of~{\tt 2}.
+terminates normally will have an exit code of {\tt XSB\_SUCCESS} ({\tt
+  0}), a cancelled thread will have an exit code of {\tt 1} and a
+thread terminated with any other error will have an exit code of~{\tt
+  XSB\_ERROR} ({\tt 2}).
 
-As with Pthreads, XSB threads are created as joinable by default, but
+As with p!threads, XSB threads are created as joinable by default, but
 can be created as detached using an option in {\tt thread\_create/3}.
 Alternatively, a thread created as joinable can be made detached by
 {\tt thread\_detach/1}.  Both of these predicates are described in
@@ -690,15 +691,18 @@ platforms.
 \ei
 \end{description}
 
-\subsection{Predicates for Thread Synchronization} \label{sec:mutex}
+\subsection{Predicates for Thread Synchronization and Communication} 
+\label{sec:synchronization}
 
 While the XSB engine itself is thread-safe, thread synchronization may
 be needed when calling a package that is not itself thread safe (see
 the beginning of this chapter for a list of which packages are and are
 not thread-safe).  Synchronization may also be needed to protect data
 accessed by foreign function calls, or to coordinate responses to
-external events.  
+external events.
 
+\subsubsection{User-defined Mutexes}~\label{sec:mutexes}
+%
 One of the simplest and most powerful primitives for thread
 synchronization are mutexes.  The mutexes provided by the following
 primitives are {\em recursive}: if a thread $T$ locks a recursive
@@ -719,7 +723,7 @@ recommend using it if possible, and making use of lower-level calls to
 only when {\tt with\_mutex/2} is not applicable.
 
 \begin{description}
-\ournewitem{with\_mutex(+Mutex,?Goal)}{thread}
+\ournewitem{with\_mutex(+Mutex,?Goal)}{mutex}
 \index{\texttt{with\_mutex/2}} 
 %
 Locks a current mutex {\tt Mutex}, executes {\tt Goal}
@@ -745,7 +749,7 @@ mutex has been successfully unlocked.
 \ei
 \ei
 
-\ournewitem{mutex\_create(?Mutex)}{thread}
+\ournewitem{mutex\_create(?Mutex)}{mutex}
 \index{\texttt{mutex\_create/1}} 
 %
 Creates a user mutex, {\tt Mutex}.  If {\tt Mutex} is instantiated to
@@ -765,7 +769,7 @@ not instantiated at call, a system-generated atom {\tt mutex}$n$
 \ei
 \ei
 
-\ournewitem{mutex\_destroy(+Mutex)}{thread}
+\ournewitem{mutex\_destroy(+Mutex)}{mutex}
 \index{\texttt{mutex\_destroy/1}} 
 %
 Destroys a current unlocked mutex {\tt Mutex} along with any memory it
@@ -787,7 +791,7 @@ uses.
 \ei
 \ei
 
-\ournewitem{mutex\_lock(+Mutex)}{thread}
+\ournewitem{mutex\_lock(+Mutex)}{mutex}
 \index{\texttt{mutex\_lock/1}} 
 %
 {\tt mutex\_lock(Mutex)} locks a (recursive) mutex. Locking and
@@ -810,7 +814,7 @@ exception.
 \ei
 \ei
 
-\ournewitem{mutex\_trylock(+Mutex)}{thread}
+\ournewitem{mutex\_trylock(+Mutex)}{mutex}
 \index{\texttt{mutex\_trylock/1}} 
 %
 Works as {\tt mutex\_lock/1} but fails immediately if {\tt Mutex} is
@@ -828,7 +832,7 @@ held by another thread rather than suspending the calling thread.
 \ei
 \ei
 
-\ournewitem{mutex\_unlock(+Mutex)}{thread}
+\ournewitem{mutex\_unlock(+Mutex)}{mutex}
 \index{\texttt{mutex\_unlock/1}} 
 %
 Unlocks {\tt Mutex} when called by the same thread that locked the mutex.
@@ -849,13 +853,13 @@ Unlocks {\tt Mutex} when called by the same thread that locked the mutex.
 \ei
 \ei
 
-\ournewitem{mutex\_unlock\_all}{thread}
+\ournewitem{mutex\_unlock\_all}{mutex}
 \index{\texttt{mutex\_unlock\_all/0}} 
 %
 {\tt mutex\_unlock\_all/0} unlocks all user mutexes owned by the
 current thread.  It has no error cases.
 
-\ournewitem{mutex\_property(?Mutex,?Property)}{thread}
+\ournewitem{mutex\_property(?Mutex,?Property)}{mutex}
 \index{\texttt{mutex\_property/2}} 
 %
 If {\tt Mutex} is instantiated, unifies {\tt Property} with current
@@ -883,4 +887,103 @@ number of times the mutex has been locked.
 mutex_statistics not yet implemented.
 }
 %--------------------------------------------------------------------
+
+\subsubsection{Prolog Message Queues}~\label{sec:mutexes}
+While Prolog predicates can communicate through shared dynamic code
+and tables, message queues provide a useful mechanism for one thread
+to pass a command to another or to synchronize on the return of data.
+A Prolog message queue can be defined to have a speficied or default
+$size$ and can have any number of consumerss and any number of
+producers.  When a producer writes a $Term$ into a queue, the term is
+copied into the queue so that no binding are shared between $Term$ and
+the producer's stacks.  $Term$ may include structures or lists and
+need not be bound, and any variable bindings within $Term$ are
+preserved.  If the queue already contains $size$ elements, the
+producer will suspend until one or more elements are removed from the
+queue.  When a consumer $T_{cons}$ accesses the queue it provides a
+goal $G$ and traverses the queue until it finds a term in the queue
+that unifies with $G$.  If $T_{cons}$ finds a term in the queue that
+unifies with $G$, it removes it from the queue and continues in its
+computation.  If there is no term in the queue that unifies with $G$,
+$T_{cons}$ will suspend until at least one other term is added to the
+queue.  When it awakens it will retraverse the queue from the
+beginning to find a term that unifies with $G$~\footnote{Note that
+  this traversal is necessary since the position of $T_{cons}$ may in
+  the queue may not be valid due to the addition and deletion of terms
+  by other threads.}.  Because of the behavior of message queues, it
+is usually good programming practice to ensure that terms written into
+the queue will unify with the goals of consumers.  This can usually be
+done by abstracting a consumers goal (say to a variable, {\tt X}) or
+by splitting one ``multiplexed'' queue into two separate queues.
+
+\begin{description}
+
+\ournewitem{message\_queue\_create(-Queue,+Options)}{mutex}
+\index{\texttt{message\_queue\_create/2}} 
+%
+Creates a new message queue with identifier {\tt Queue}.  If {\tt
+  Options} contains the term {\tt size(S)} the queue will have {\tt S}
+elements, otherwise it will have a default number of elements.  The
+default number of elements can be obtained via the query
+
+{\tt ?- xsb\_configuration(default\_message\_queue\_size,X)}
+
+{\bf Error Cases}
+\bi
+\item 	Queue is not a variable
+\bi
+\item 	{\tt type\_error(variable,Queue)}
+\ei
+\item Options is a partial list or a list with an element that is a
+  variable 
+\bi
+\item  instantiation error
+\ei
+\item Options is neither a partial list or a list
+\bi
+\item  type error(list, Options)
+\ei
+\ei
+
+\ournewitem{thread\_send\_message(Queue,\#Message)}{mutex}
+\index{\texttt{thread\_send\_message/2}} 
+%
+If there are fewer than elements on {\tt Queue} than its maximum size,
+{\tt thread\_send\_message/} puts {\tt Message} onto {\tt Queue}, and
+  returns immediately.  Otherwise, it suspends until there are fewer
+  elements on {\tt Queue} than its maximum size when it will be
+  awakened to put {\tt Message} onto queue.
+
+{\bf Error Cases}
+\bi
+\item Queue is a variable
+\bi
+\item instantiation error
+\ei
+\ei
+
+\ournewitem{thread\_get\_message(-Queue,?Message)}{mutex}
+\index{\texttt{thread\_get\_message/2}} 
+
+If there are elements on {\tt Queue} {\tt thread\_get\_message/}
+traverses the queue to obtain the first element of {\tt Queue} that
+unifies with {\tt Message}.  If it does, it returns with {\tt Message}
+bound to the most general unifier.  If there are no elements on {\tt
+  Queue} or if no elements unify with {\tt Message}, the thread
+suspends until elements are added to {\tt Queue}.  When it awakes, it
+will restart, rechecking {\tt Queue} from its beginning for a term that unifies
+with {\tt Message}.
+
+{\bf Error Cases}
+\bi
+\item Queue is a variable
+\bi
+\item instantiation error
+\ei
+\ei
+
+
+\end{description}
+
+
 
