@@ -23,12 +23,14 @@
 :- export mutex_create/1, mutex_lock/1, mutex_unlock/1,
           mutex_trylock/1, mutex_destroy/1, with_mutex/2.
 :- export mutex_unlock_all, mutex_property/2.
+:- export message_queue_create/1, message_queue_create/2, 
+   thread_get_message/2, thread_send_message/2,print_message_queue/1.
 
-:- import assert/1, (dynamic)/1, retractall/1 from assert.
-:- import check_atom/3, existence_error/4, permission_error/4, type_error/4 
+:- import assert/1, (dynamic)/1, retractall/1,code_to_buff/2 from assert.
+   :- import check_atom/3, existence_error/4, permission_error/4, type_error/4, check_var/3, check_nonvar/3, check_nonvar_list/3 
           from error_handler.
 :- import gensym/2 from gensym.
 :- import thread_request/8 from machine.
-:- import catch/3, (index)/2, throw/1 from standard.
-
+:- import catch/3, (index)/2, repeat/0, throw/1 from standard.
+:- import memberchk/2 from basics.
 

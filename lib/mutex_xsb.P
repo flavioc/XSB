@@ -21,6 +21,7 @@
 */
 
 :- compiler_options([xpp_on,sysmod]).
+
 #include "thread_defs_xsb.h"
 
 /* ==================================================================  */
@@ -125,3 +126,40 @@ mutex_property_list_1(This,Mutex,Property):-
 	    Next \== 0,
 	    mutex_property_list_1(Next,Mutex,Property) ).
 
+/* ==================================================================  */
+/* Proto-ISO Message Queues. */
+
+/* Need to add aliases and domain error for non-size elements */
+message_queue_create(Queue,Options):-
+	check_var(Queue,message_queue,2),
+	check_nonvar_list(Options,message_queue,2),
+	(memberchk(size(S),Options) -> Size = S ; Size = 0),
+	thread_request(MESSAGE_QUEUE_CREATE,Queue,Size,_,_,_,_,_).
+
+message_queue_create(Queue):-
+	check_var(Queue,message_queue_create,1),
+	thread_request(MESSAGE_QUEUE_CREATE,Queue,0,_,_,_,_,_).
+
+thread_send_message(Queue,Message):- 
+	check_nonvar(Queue,thread_send_message,2),
+	code_to_buff(call(_,_,Message),0),
+	thread_request(THREAD_SEND_MESSAGE,Queue,_,_,_,_,_,_).
+
+%:- import writeln/1 from standard.
+thread_get_message(Queue,Message):-
+	check_nonvar(Queue,thread_get_message,2),
+	thread_request(THREAD_TRY_MESSAGE,Queue,MaybeMessage,_,_,_,_,_),
+	(MaybeMessage = Message ->
+%	    writeln(accepted(MaybeMessage)),
+	    thread_request(THREAD_ACCEPT_MESSAGE,Queue,_,_,_,_,_,_)
+	  ; 
+    	    repeat,
+%	    writeln(retrying(MaybeMessage)),
+	    thread_request(THREAD_RETRY_MESSAGE,Queue,MaybeMessage1,_,_,_,_,_),
+%	    writeln(got(MaybeMessage1)),
+	    MaybeMessage1 = Message,
+%	    writeln(accepted(MaybeMessage1)),
+	    thread_request(THREAD_ACCEPT_MESSAGE,Queue,_,_,_,_,_,_)).
+  
+print_message_queue(Queue):- 
+	thread_request(PRINT_MESSAGE_QUEUE,Queue,_,_,_,_,_,_).
