@@ -69,7 +69,15 @@
 #define PTHREAD_SETCONCURRENCY          29
 #define PTHREAD_GETCONCURRENCY          30
 
-#define SET_XSB_READY 31
+#define SET_XSB_READY                   31
+
+#define MESSAGE_QUEUE_CREATE            32
+#define THREAD_SEND_MESSAGE             33
+#define THREAD_TRY_MESSAGE              34
+#define THREAD_RETRY_MESSAGE            35
+#define THREAD_ACCEPT_MESSAGE           36
+
+#define PRINT_MESSAGE_QUEUE             40
 
 #define MAX_THREADS		1024
 

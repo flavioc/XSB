@@ -139,13 +139,26 @@ int valid_tid( int tid );
 #endif
 #ifdef SHARED_COMPL_TABLES
 int get_waiting_for_tid( int t );
+
+#define DEFAULT_MQ_SIZE 100
+
+typedef struct XSB_Message_Queue {
+  pthread_mutex_t      mq_mutex;
+  pthread_cond_t       mq_has_free_cells;
+  pthread_cond_t       mq_has_messages;
+  MQ_Cell_Ptr          first_message;
+  MQ_Cell_Ptr          last_message;
+  int                  size;
+  int                  max_size;
+} XSB_MQ;
+typedef XSB_MQ *XSB_MQ_Ptr;
+
 #endif
 
 #define ENSURE_ONE_THREAD()						\
   { if( flags[NUM_THREADS] > 1 )					\
       xsb_abort( "Operation is permitted only when a single thread is active" ) ; \
   }
-
 
 /*
   TLS: the mt engine does not yet work for enable no cygwin, but this
