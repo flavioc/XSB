@@ -401,7 +401,7 @@ check_nonvar_list(Term,Predicate,Arg):-
 	check_nonvar(Term,Predicate,Arg),
 	(check_nonvar_list1(Term,Predicate,Arg) -> 
 	    true
-	 ;  domain_error(list,Term,Predicate,Arg)).
+	 ;  type_error(list,Term,Predicate,Arg)).
 	    
 check_nonvar_list1([],_Predicate,_Arg).
 check_nonvar_list1([H|T],Predicate,Arg):- 
