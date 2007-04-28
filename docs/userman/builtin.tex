@@ -581,7 +581,7 @@ there are things that only {\tt file\_clone} can do:
 %%
 \begin{verbatim} 
 | ?- file_clone(1,10,_). 
- \end{verbatim} 
+\end{verbatim} 
 %% 
 This means that I/O stream 10 now becomes clone of standard
 output. So, all subsequent I/O will now go to standard output instead
@@ -2046,6 +2046,13 @@ rem(Number1,Number2)} returns
 {\tt +Expr} evaluates to {\tt Number}, {\tt round(Number)} returns the
 nearest integer to {\tt Number} if {\tt Number} is a float, and {\tt
 Number} itself if {\tt Number} is an integer.
+
+\ournewitem{exp(+Expr1,+Expr2)}{Evaluable Functor} \index{\texttt{exp/2}} 
+%
+If {\tt Expr1} and {\tt Expr2} both evaluate to numbers, raises {\tt
+  Expr1} to the {\tt Expr2} power.  If {\tt Expr1} and {\tt Expr2} both
+evaluate to integers, an integer is returned; otherwise a float is
+returned.
 
 \ournewitem{sqrt(+Expr)}{Evaluable Functor}\index{\texttt{sqrt/1}}
 If {\tt +Expr} evaluates to {\tt Number}, {\tt sqrt(Number)}

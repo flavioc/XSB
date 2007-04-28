@@ -915,15 +915,17 @@ together.
 
 In the multi-threaded engine abolishing tables private to a thread
 behaves exactly as in the sequential engine, regardless of whether the
-tables are complete or incomplete, or contain conditional answers.
-However, abolishing shared tables can only be done when there is a
-single active thread.  In addition, tables private to a thread are
-abolished automatically and their space reclaimed when the thread
-exits (by normal termination or via an exception).
+tables are complete or incomplete, or contain conditional answers.  In
+addition, tables private to a thread are abolished automatically and
+their space reclaimed when the thread exits (by normal termination or
+via an exception).  Shared tables can be abolished at any time, but
+their space will not be reclaimed until there is a single active
+thread.
 
 Finally, we note that any incomplete tables are abolished
 \emph{automatically} by the system on exceptions (by the default
 system error handler) when the interpreter level is resumed.
+User-written 
 
 \vspace{2ex}
 
@@ -951,7 +953,8 @@ In the multi-threaded engine, if {\tt Pred} is shared reclamation for
 {\tt Pred} will be delayed until there is a single active thread and
 no answer in {\tt Pred} is active in the current execution
 environment.  Otherwise, the behavior of {\tt abolish\_table\_pred/1}
-is the same as in the sequential engine.
+is the same as in the sequential engine on tabled predicates that are
+thread-private.
 
 {\bf Error Cases}
 \bi
@@ -971,7 +974,7 @@ is the same as in the sequential engine.
  \item 	{\tt table\_error}
  \ei
 %
-\item There is currently an incomplete table for a atomic subgoal of
+\item There is currently an incomplete table for an atomic subgoal of
   {\tt Pred}
  \bi
  \item 	{\tt table\_error}
@@ -1000,13 +1003,8 @@ In the multi-threaded engine, if $S$ is a subgoal for a predicate that
 is shared, reclamation for $S$ will be delayed until there is a single
 active thread and no answer in $S$ is active in the current execution
 environment.  Otherwise, the behavior of {\tt abolish\_table\_call/1}
-is the same as in the sequential engine.
-
-
-Removes all table entries for the subgoals that unify with
-\code{CallTerm}, should any exist.  With regard to handling subgoals
-with answers active in the current environment, incomplete tables, and
-multi-threading the predicate acts as {\tt abolish\_table\_pred/1}.
+is the same as in the sequential engine on tabled predicates that are
+thread-private.
 
 {\bf Error Cases}
 \bi
@@ -1028,21 +1026,20 @@ multi-threading the predicate acts as {\tt abolish\_table\_pred/1}.
 \index{\texttt{abolish\_all\_tables/0}}
 %
 In the single-threaded engine, removes all tables presently in the
-system and frees all the memory held by XSB for these structures,
-including space for conditional answers.  Predicates which have been
-declared tabled remain so, but information in their table is deleted.
-{\tt abolish\_all\_tables/0} works directly on the memory structures
-allocated for table space.  This makes it very fast for abolishing a
-large amount of tables, and to maintain its speed it throws an error
-if any completed answer $A$ is active in the current execution
-environment.  
+system and frees all the memory held by XSB for these structures.
+Predicates that have been declared tabled remain so, but information
+in their table is deleted.  {\tt abolish\_all\_tables/0} works
+directly on the memory structures allocated for table space.  This
+makes it very fast for abolishing a large amount of tables, and to
+maintain its speed it throws an error if any completed answer $A$ is
+active in the current execution environment.
 
 In the multi-threaded engine {\tt abolish\_all\_tables/0} raises an
 error unless it is called when there is a single active thread.  In
 that case, all shared tables are abolished as well as all private
-tables for the main thread.  An error will be thrown if there any
-completed answer $A$ is active in the current environment, regardless
-of whether $A$ is thread-private or thread-shared.
+tables for the main thread.  An error will be thrown if any completed
+answer $A$ is active in the current environment, regardless of whether
+$A$ is thread-private or thread-shared.
 
 {\bf Error Cases}
 \bi

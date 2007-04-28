@@ -866,6 +866,15 @@ Error conditions for {\tt consult(+File)} are as follows:
 \bi
 \item 	{\tt type\_error(atom,File)}
 \ei
+\item 	{\tt File} does not exist in the current set of library directories
+\bi
+\item 	{\tt existence\_error(file,File)}
+\ei
+%
+\item 	{\tt File} has an object code extension (e.g. {\tt .xwam})
+\bi
+\item 	{\tt permission\_error(compile,file,File)}
+\ei
 %
 \item {\tt File} has been loaded previously in the session {\em and}
   there is more than one active thread.  \bi
@@ -967,7 +976,8 @@ is just a notational shorthand for the query:
 \demo{$|$ ?- compile(Files, []).}
 
 The standard predicates {\tt consult/[1,2]} call {\tt compile/1} (if
-necessary).  
+necessary).  Error conditions for {\tt compile/[1,2]} are similar to
+those for {\tt consult/[1,2]}.
 
 The list of compiler options {\tt OptionList}, if specified, 
 should be a proper Prolog list, i.e.\ a term of the form:
