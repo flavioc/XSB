@@ -2504,10 +2504,22 @@ case WRITE_OUT_PROFILE:
     break;
 
   /* TLS: useful for power function -- see eval.P */
-  case XSB_POW: 
-    ctop_float(CTXTc 3,pow(ptoc_int(CTXTc 1),ptoc_int(CTXTc 2))); 
-    return TRUE ;
-
+    case XSB_POW: {
+      Cell val = ptoc_tag(CTXTc 1);
+      if (isofloat(ptoc_tag(CTXTc 1))) {
+	if (isofloat(ptoc_tag(CTXTc 2)))
+	  ctop_float(CTXTc 3,powf(ptoc_float(CTXTc 1),ptoc_float(CTXTc 2))); 
+	else 
+	  ctop_float(CTXTc 3,powl(ptoc_float(CTXTc 1),ptoc_int(CTXTc 2))); 
+      }
+      else {
+	if (isofloat(ptoc_tag(CTXTc 2)))
+	  ctop_float(CTXTc 3,powl(ptoc_int(CTXTc 1),ptoc_float(CTXTc 2))); 
+	else 
+	  ctop_int(CTXTc 3,pow(ptoc_int(CTXTc 1),ptoc_int(CTXTc 2))); 
+      }
+      return TRUE ;
+    }
   case PRINT_LS: print_ls(CTXTc 1) ; return TRUE ;
   case PRINT_TR: print_tr(CTXTc 1) ; return TRUE ;
   case PRINT_HEAP: print_heap(CTXTc 0,2000,1) ; return TRUE ;
