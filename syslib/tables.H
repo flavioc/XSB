@@ -58,6 +58,8 @@
       (use_subsumptive_tabling)/1,
       (use_variant_tabling)/1.
 
+:- export find_components/1, find_forward_dependencies/1, find_backward_dependencies/1.
+
 :- import findall/3
      from setof.
 :- import add_trie_index/1
@@ -70,8 +72,9 @@
      from standard.
 :- import throw/1 from standard.
 
-:- import abolish_table_info/0, delete_attributes/1, term_psc/2, term_new/2
-     from machine.
+:- import abolish_table_info/0, delete_attributes/1, table_inspection_function/5,
+   term_psc/2, term_new/2 from machine.
+
 :- import numbervars/3, unnumbervars/2
      from num_vars.
 

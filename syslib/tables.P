@@ -31,6 +31,7 @@
 
 #include "builtin.h"
 #include "table_status_defs.h"
+#include "table_inspection_defs.h"
 
 /*----------------------------------------------------------------------*/
 
@@ -472,3 +473,24 @@ force_truth_value(AnsLeafNode,TruthValue) :-
 	force_truth_value(AnsLeafNode,TruthValue).
 
 /* ---------------------- end of file tables.P ------------------------ */
+/* 07/05/01  -- work area for functions under development */
+/* Need to change so that they traverse all answers for call */
+
+find_components(Call):- 
+	get_call(Call,CallStr,Return),	% vars of 'Call' are put into 'Return'
+	trie_get_return(CallStr,Return),
+	get_lastnode_cs_retskel(_,Leaf,_,_),
+	table_inspection_function(FIND_COMPONENTS,Leaf,_,_,_).
+
+find_forward_dependencies(Call):- 
+	get_call(Call,CallStr,Return),	% vars of 'Call' are put into 'Return'
+	trie_get_return(CallStr,Return),
+	get_lastnode_cs_retskel(_,Leaf,_,_),
+	table_inspection_function(FIND_FORWARD_DEPENDENCIES,Leaf,_,_,_).
+
+find_backward_dependencies(Call):- 
+	get_call(Call,CallStr,Return),	% vars of 'Call' are put into 'Return'
+	trie_get_return(CallStr,Return),
+	get_lastnode_cs_retskel(_,Leaf,_,_),
+	table_inspection_function(FIND_BACKWARD_DEPENDENCIES,Leaf,_,_,_).
+	

@@ -228,6 +228,9 @@ db_reclaim0(_Clause,_Type) :- '_$builtin'(DB_RECLAIM0).
 dynamic_code_function(Switch,One,Two,Three,Four):- 
 	dynamic_code_function(Switch,One,Two,Three,Four).
 
+table_inspection_function(_Switch,_One,_Two,_Three,_Four):- 
+	'_$builtin'(TABLE_INSPECTION_FUNCTION).
+	
 formatted_io(_OPnumber, _FileOrString,_Format,_ArgTerm,_RetCode) :-
 	'_$builtin'(FORMATTED_IO).
 

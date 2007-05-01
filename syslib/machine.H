@@ -128,6 +128,7 @@
 	db_abolish0/2,
 	db_reclaim0/2,
    dynamic_code_function/5,
+   table_inspection_function/5,
 	oracle_query/7,
 	odbc_exec_query/6,
         parsort/4,
