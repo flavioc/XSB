@@ -175,6 +175,7 @@ static PNDE current_pnde_block_top_gl = NULL; /* the top of current PNDE block*/
     asi_pdes(asi) = NULL;					\
     asi_subgoal(asi) = SUBG;					\
     asi_dl_list(asi) = NULL;					\
+    asi_scratchpad(asi) = 0;					\
   }
 
 /*

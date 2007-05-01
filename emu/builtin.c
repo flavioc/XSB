@@ -173,6 +173,7 @@ extern xsbBool db_get_last_clause(CTXTdecl);
 extern xsbBool db_build_prref(CTXTdecl), db_abolish0(CTXTdecl), 
 	       db_reclaim0(CTXTdecl), db_get_prref(CTXTdecl);
 extern xsbBool dynamic_code_function(CTXTdecl);
+extern xsbBool table_inspection_function(CTXTdecl);
 
 extern char *dirname_canonic(char *);
 extern xsbBool almost_search_module(CTXTdeclc char *);
@@ -2505,7 +2506,6 @@ case WRITE_OUT_PROFILE:
 
   /* TLS: useful for power function -- see eval.P */
     case XSB_POW: {
-      Cell val = ptoc_tag(CTXTc 1);
       if (isofloat(ptoc_tag(CTXTc 1))) {
 	if (isofloat(ptoc_tag(CTXTc 2)))
 	  ctop_float(CTXTc 3,powf(ptoc_float(CTXTc 1),ptoc_float(CTXTc 2))); 
@@ -2640,6 +2640,11 @@ case WRITE_OUT_PROFILE:
 
     case DYNAMIC_CODE_FUNCTION: {
       dynamic_code_function(CTXT);
+      break;
+    }
+
+    case TABLE_INSPECTION_FUNCTION: {
+      table_inspection_function(CTXT);
       break;
     }
 

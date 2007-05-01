@@ -151,7 +151,6 @@
 
 #define FILE_READ_CANONICAL	133
 #define GEN_RETRACT_ALL		134
-
 #define DB_GET_LAST_CLAUSE	135
 #define DB_RETRACT0		136
 #define DB_GET_CLAUSE		137
@@ -159,7 +158,6 @@
 #define DB_ABOLISH0		139
 #define DB_RECLAIM0		140
 #define DB_GET_PRREF		141
-
 #define FORMATTED_IO            142
 #define TABLE_STATUS            143
 #define GET_DELAY_LISTS		144
@@ -176,7 +174,6 @@
 #define TRIE_RETRACT_SAFE	155
 #define ABOLISH_MODULE_TABLES   156
 #define TRIE_ASSERT_HDR_INFO	157
-
 #define TRIMCORE		158
 #define NEWTRIE                 159
 #define TRIE_INTERN             160
@@ -189,9 +186,7 @@
 #define RECLAIM_UNINTERNED_NR   167
 #define GLOBALVAR               168
 #define CCALL_STORE_ERROR       169
-
 #define SET_TABLED_EVAL		170
-
 #define UNIFY_WITH_OCCURS_CHECK  171
 #define PUT_ATTRIBUTES		172
 #define GET_ATTRIBUTES		173
@@ -222,7 +217,6 @@
 #define ARG                     201
 #define UNIV			202
 #define IS_MOST_GENERAL_TERM    203
-
 #define HiLog_ARG		204
 #define HiLog_UNIV		205
 
@@ -239,7 +233,12 @@
 #define KEYSORT			221
 #define PARSORT			222
 
-#define DYNAMIC_CODE_FUNCTION   223
+/* This is the place to put new functions involving dynamic code 
+   assertion and retraction -- e.g. gc */
+#define DYNAMIC_CODE_FUNCTION     223
+/* This is the place to put new functions that inspect tables, such as 
+   answer completion */
+#define TABLE_INSPECTION_FUNCTION 224
 
 #define FINDALL_FREE    	229
 
@@ -250,7 +249,10 @@
 #define UNWIND_STACK            233
 #define CLEAN_UP_BLOCK          234
 
+/* This is the place to put new MT functions -- for thread_create, 
+   user mutexes, message queues, etc. */
 #define THREAD_REQUEST		235
+
 #define MT_RANDOM_REQUEST       236
 
 /* added by dsw to support profiling, and backtracing */

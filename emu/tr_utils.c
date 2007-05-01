@@ -66,6 +66,7 @@
 #include "builtin.h"
 
 #include "call_graph_xsb.h" /* incremental evaluation */
+#include "table_inspection_defs.h"
 
 /*----------------------------------------------------------------------*/
 
@@ -2899,4 +2900,280 @@ void abolish_table_info(CTXTdecl)
 *   }
 * }
 */
+
+//----------------------------------------------------------------------
+// This code under development -- TLS
+
+#ifdef BITS64
+#define VISITED_MASK 0xf000000000000000
+#else
+#define VISITED_MASK 0xf0000000
+#endif
+
+#ifdef BITS64
+#define STACK_MASK 0xfffffffffffffff
+#else
+#define STACK_MASK 0xfffffff
+#endif
+
+#define VISITED(as_leaf)  (asi_scratchpad((ASI) Child(as_leaf)) & VISITED_MASK)
+#define STACK_INDEX(as_leaf)  (asi_scratchpad((ASI) Child(as_leaf)) & STACK_MASK)
+#define MARK_VISITED(as_leaf) {asi_scratchpad((ASI) Child(as_leaf)) = VISITED_MASK;}
+
+extern void print_subgoal(CTXTdeclc FILE *, VariantSF);
+
+static int dfn = 0;
+
+struct answer_dfn {
+  BTNptr  answer;
+  int     dfn;
+  int     min_link;
+} ;
+typedef struct answer_dfn *answerDFN;
+
+#define component_stack_increment 1000
+
+int component_stack_top = 0;
+answerDFN component_stack = NULL;
+int component_stack_size = 0;
+
+#define push_comp_node(as_leaf,index) {				\
+  if (component_stack_top >= component_stack_size) {\
+    unsigned long old_component_stack_size = component_stack_size; \
+    component_stack_size = component_stack_size + component_stack_increment;\
+    component_stack = (answerDFN)mem_realloc(component_stack,		\
+					     old_component_stack_size*sizeof(struct answer_dfn), \
+					     component_stack_size*sizeof(struct answer_dfn), \
+					     TABLE_SPACE);		\
+  }\
+  component_stack[component_stack_top].dfn = dfn;		\
+  component_stack[component_stack_top].min_link = dfn++;	\
+  component_stack[component_stack_top].answer = as_leaf;	\
+  index = component_stack_top;				\
+  component_stack_top++;\
+  }
+
+/* for use when you don't need the index returned */
+#define push_comp_node_1(as_leaf) {			\
+    int index;						\
+    MARK_VISITED(as_leaf);				\
+    push_comp_node(as_leaf,index);			\
+  }
+
+#define pop_comp_node(node) {				\
+    component_stack_top--;				\
+    node = component_stack[component_stack_top];	\
+  }
+
+#define copy_pop_comp_node(node) {				\
+    push_done_node((component_stack_top-1),			\
+		   (component_stack[component_stack_top-1].dfn));	\
+    component_stack_top--;					\
+    node = component_stack[component_stack_top].answer;		\
+  }
+
+void print_comp_stack(CTXTdecl) {
+  int frame = 0;
+  while (frame < component_stack_top) {
+    printf("comp_frame %d answer %p dfn %d min_link %d  ",frame,component_stack[frame].answer,
+	   component_stack[frame].dfn,component_stack[frame].min_link);
+    print_subgoal(CTXTc stddbg, asi_subgoal((ASI) Child(component_stack[frame].answer)));
+    printf("\n");
+    frame++;
+  }
+}
+
+//----------------------------------------------------------------------
+struct done_answer_dfn {
+  BTNptr  answer;
+  int     scc;
+} ;
+typedef struct done_answer_dfn *doneAnswerDFN;
+
+int done_stack_top = 0;
+doneAnswerDFN done_stack = NULL;
+int done_stack_size = 0;
+
+#define push_done_node(index,dfn_num) {					\
+    if (done_stack_top >= done_stack_size) {				\
+      unsigned long old_done_stack_size = done_stack_size;		\
+      done_stack_size = done_stack_size + component_stack_increment;		\
+      done_stack = (doneAnswerDFN) mem_realloc(done_stack,		\
+					       old_done_stack_size*sizeof(struct done_answer_dfn), \
+					  done_stack_size*sizeof(struct done_answer_dfn), \
+					  TABLE_SPACE);			\
+    }									\
+    done_stack[done_stack_top].scc = dfn_num;				\
+    done_stack[done_stack_top].answer = component_stack[index].answer;	\
+    done_stack_top++;							\
+  }
+
+void print_done_stack(CTXTdecl) {
+  int frame = 0;
+  while (frame < done_stack_top) {
+    printf("done_frame %d answer %p scc %d  ",frame, 
+	   done_stack[frame].answer,done_stack[frame].scc);
+    print_subgoal(CTXTc stddbg, asi_subgoal((ASI) Child(done_stack[frame].answer)));
+    printf("\n");
+    frame++;
+  }
+}
+
+// reset the scratchpad for each answer in done stack
+void reset_done_stack() {
+  int frame = 0;
+  while (frame < done_stack_top) {
+    asi_scratchpad((ASI) Child(done_stack[frame].answer)) = 0;
+    frame++;
+  }
+}
+
+//----------------------------------------------------------------------
+/* Returns -1 when no answer found (not 0, as 0 can be an index */
+int visited_answer(BTNptr as_leaf) {		
+  int found = -1;
+  int cur_stack_frame = 0;
+
+  while (found < 0 && cur_stack_frame < done_stack_top) {
+    if (done_stack[cur_stack_frame].answer == as_leaf)
+      found = cur_stack_frame;
+    cur_stack_frame++;
+  } 
+
+  cur_stack_frame = 0;
+  while (found < 0 && cur_stack_frame < component_stack_top) {
+    if (component_stack[cur_stack_frame].answer == as_leaf)
+      found = cur_stack_frame;
+    cur_stack_frame++;
+  } 
+  return found;
+}
+
+BTNptr traverse_subgoal(VariantSF pSF) {
+  BTNptr cur_node = 0;
+
+  if ( subg_answers(pSF) == COND_ANSWERS && IsNonNULL(subg_ans_root_ptr(pSF))) {
+    cur_node = subg_ans_root_ptr(pSF);
+    while (!IsLeafNode(cur_node)) {
+      cur_node = BTN_Child(cur_node);
+    } 
+    return cur_node;
+  }
+  return 0;
+}
+
+#define  update_minlink_minlink(from_answer,to_answer) { \
+    if (component_stack[to_answer].min_link < component_stack[from_answer].min_link)	 \
+      component_stack[from_answer].min_link = component_stack[to_answer].min_link;	 \
+  }							 \
+
+#define  update_minlink_dfn(from_answer,to_answer) { \
+    if (component_stack[to_answer].dfn < component_stack[from_answer].min_link)	 \
+      component_stack[from_answer].min_link = component_stack[to_answer].dfn;	 \
+  }							 \
+
+
+
+int table_component_check(CTXTdeclc NODEptr from_answer) {
+  DL delayList;
+  DE delayElement;
+  BTNptr to_answer;
+  int to_answer_idx, from_answer_idx, component_num;
+
+  //  if (is_conditional_answer(from_answer)) {
+    push_comp_node(from_answer,from_answer_idx);
+       printf("starting: "); 
+       print_subgoal(CTXTc stddbg, asi_subgoal((ASI) Child(from_answer)));printf("\n");
+    //    print_comp_stack(CTXT);
+    delayList = asi_dl_list((ASI) Child(from_answer));
+    while (delayList) {
+      delayElement = dl_de_list(delayList);
+      while (delayElement) {
+	if (de_ans_subst(delayElement)) to_answer = de_ans_subst(delayElement);
+	else to_answer = traverse_subgoal(de_subgoal(delayElement));
+	if  (0 >  (to_answer_idx = visited_answer(to_answer))) {
+	  to_answer_idx = table_component_check(CTXTc to_answer);
+	  update_minlink_minlink(from_answer_idx,to_answer_idx);
+	} else update_minlink_dfn(from_answer_idx,to_answer_idx);
+	delayElement = de_next(delayElement);
+      }
+      delayList = de_next(delayList);
+    }
+      printf("checking: "); 
+      print_subgoal(CTXTc stddbg, asi_subgoal((ASI) Child(from_answer)));printf("\n");
+
+    if (component_stack[from_answer_idx].dfn 
+	== component_stack[from_answer_idx].min_link) {
+      component_num = component_stack[from_answer_idx].dfn;
+      while (from_answer_idx < component_stack_top) {
+	push_done_node(component_stack_top-1,component_num);
+	component_stack_top--;
+      }
+    }
+    print_comp_stack(CTXT); printf("\n");
+    return from_answer_idx;
+    // }
+}
+
+xsbBool table_inspection_function( CTXTdecl ) 
+{
+  switch (ptoc_int(CTXTc 1)) {
+
+  case FIND_COMPONENTS: {
+    table_component_check(CTXTc (NODEptr) ptoc_int(CTXTc 2));
+    print_done_stack(CTXT);
+    break;
+  }
+
+  case FIND_FORWARD_DEPENDENCIES: {
+  DL delayList;
+  DE delayElement;
+  BTNptr as_leaf, new_answer;
+  struct answer_dfn stack_node;
+
+  done_stack_top = 0; dfn = 0;
+  as_leaf = (NODEptr) ptoc_int(CTXTc 2);
+  if (is_conditional_answer(as_leaf)) {
+    push_comp_node_1(as_leaf);
+    while (component_stack_top != 0) {
+      //      print_comp_stack(CTXT);
+      pop_comp_node(stack_node);
+      as_leaf = stack_node.answer;
+      push_done_node((component_stack_top),component_stack[component_stack_top].dfn);
+      // print_subgoal(CTXTc stddbg, asi_subgoal((ASI) Child(as_leaf)));printf("\n");
+      delayList = asi_dl_list((ASI) Child(as_leaf));
+      while (delayList) {
+	delayElement = dl_de_list(delayList);
+	while (delayElement) {
+	  if (de_ans_subst(delayElement)) {
+	    if (!VISITED(de_ans_subst(delayElement)))
+	      push_comp_node_1(de_ans_subst(delayElement));
+	  } else {
+	    new_answer = traverse_subgoal(de_subgoal(delayElement));
+	    if (!VISITED(new_answer)) 
+	      push_comp_node_1(new_answer);
+	    }
+	    delayElement = de_next(delayElement);
+	  }
+	  delayList = de_next(delayList);
+	}
+      }
+    mem_dealloc(component_stack,component_stack_size*sizeof(struct answer_dfn),
+		TABLE_SPACE);
+    print_done_stack(CTXT);
+    // Don't deallocte done stack until done with its information.
+    reset_done_stack();
+  }
+  else  printf("found unconditional answer %p\n",as_leaf);
+    break;
+  }
+
+  case FIND_BACKWARD_DEPENDENCIES: {
+    break;
+  }
+
+  }
+
+  return TRUE;
+  }
 
