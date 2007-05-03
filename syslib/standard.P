@@ -1420,4 +1420,40 @@ throw(Ball) :-
 
 ?- dynamic_code_function(INIT_STANDARD_CGC_BLOCKS,_,_,_,_).
 
+:- import getenv/2 from machine.
+:- import append/3 from basics.
+
+expand_atom(Atom,Expanded):- 
+	atom_codes(Atom,Chars),
+	expand_atom_1(Chars,NewChars),
+	atom_codes(Expanded,NewChars).
+
+expand_atom_1([],[]).
+expand_atom_1([H],[H]):- !.
+expand_atom_1([H,H1|T],NewList):- 
+	(H == 36 ->
+	    (H1 == 123 -> 
+		read_until_right_brace(T,List,Rest)
+	     ;  read_alphanumeric_list([H1|T],List,Rest) ),
+	    atom_codes(NewAtom,List),
+	    getenv(NewAtom,Val),
+	    atom_codes(Val,NewList1),
+	    append(NewList1,Tout,NewList),
+	    expand_atom_1(Rest,Tout)
+	 ; 
+	    NewList = [H|Tout],
+	    expand_atom_1([H1|T],Tout)).
+	    
+read_alphanumeric_list([H|T],Tout,Return):- 
+	((H >= 97,H =< 122 ; H >=65,H =< 90 ; H >= 48,H =< 58 ; H = 95) -> 
+	    Tout = [H|Tout1],
+	    read_alphanumeric_list(T,Tout1,Return)
+	  ; Tout = [], [H|T] = Return).
+
+read_until_right_brace([H|T],Tout,Return):- 
+	(H == 125 -> 
+	    Tout = [], T = Return
+  	 ;  Tout = [H|Tout1],
+	    read_until_right_brace(T,Tout1,Return) ).
+
 /* --------------------- end of file standard.P ----------------------- */

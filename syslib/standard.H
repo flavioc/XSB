@@ -78,6 +78,8 @@
 	':'/2,		'_$cutto'/1,	'_$savecp'/1.	
 %%:- export (thread_shared)/1, (thread_private)/1.
 
+   :- export expand_atom/2.
+
 /* --------------------------------------------------------------- */
 /*  exported predicates used in other modules (but not "standard")  */
 /* --------------------------------------------------------------- */
