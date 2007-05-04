@@ -1444,6 +1444,7 @@ expand_atom_1([H,H1|T],NewList):-
 	    NewList = [H|Tout],
 	    expand_atom_1([H1|T],Tout)).
 	    
+read_alphanumeric_list([],[],[]).
 read_alphanumeric_list([H|T],Tout,Return):- 
 	((H >= 97,H =< 122 ; H >=65,H =< 90 ; H >= 48,H =< 58 ; H = 95) -> 
 	    Tout = [H|Tout1],
