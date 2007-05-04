@@ -2508,15 +2508,15 @@ case WRITE_OUT_PROFILE:
     case XSB_POW: {
       if (isofloat(ptoc_tag(CTXTc 1))) {
 	if (isofloat(ptoc_tag(CTXTc 2)))
-	  ctop_float(CTXTc 3,powf(ptoc_float(CTXTc 1),ptoc_float(CTXTc 2))); 
+	  ctop_float(CTXTc 3,powl(ptoc_float(CTXTc 1),ptoc_float(CTXTc 2))); 
 	else 
 	  ctop_float(CTXTc 3,powl(ptoc_float(CTXTc 1),ptoc_int(CTXTc 2))); 
       }
       else {
 	if (isofloat(ptoc_tag(CTXTc 2)))
-	  ctop_float(CTXTc 3,powl(ptoc_int(CTXTc 1),ptoc_float(CTXTc 2))); 
+	  ctop_float(CTXTc 3,powl((prolog_float)ptoc_int(CTXTc 1),ptoc_float(CTXTc 2))); 
 	else 
-	  ctop_int(CTXTc 3,pow(ptoc_int(CTXTc 1),ptoc_int(CTXTc 2))); 
+	  ctop_int(CTXTc 3,(Integer)powl((prolog_float)ptoc_int(CTXTc 1),(prolog_float)ptoc_int(CTXTc 2))); 
       }
       return TRUE ;
     }
