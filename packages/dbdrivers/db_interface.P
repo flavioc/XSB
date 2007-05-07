@@ -69,7 +69,7 @@ db_query(Connhandle, QueryHandle, SQLQueryList, ReturnList) :-
 	    queryConnection(Connhandle, QueryHandle, CanSQLQueryList, List)
 	-> db_term(ReturnList, List)
 	;
-	    %%!,  %% Saikat: why this cut????
+	    !,  %% supposed to cut off the recursive call
 	    (exception(Number, Mesg)
 	    ->  db_statement_close(QueryHandle),
 		throw(xsb_error(database(Number), Mesg))
@@ -97,7 +97,7 @@ db_prepare_execute(QueryHandle, BindList, ReturnList) :-
 	    executePreparedStatement(QueryHandle, CanBindList, List)
 	-> db_term(ReturnList, List)
 	;
-	    %%!,  %% Saikat: why this cut????
+	    !,  %% supposed to cut the recursive call
 	    (exception(Number, Mesg)
 	    -> throw(xsb_error(database(Number), Mesg))
 	    ;
