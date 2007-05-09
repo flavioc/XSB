@@ -1,6 +1,6 @@
-%% Generated automatically from odbc_init-wind.P
+%% Generated automatically from Misc/xpath_init-wind.P
 
-/* File:      odbc_init-wind.in -- dummy configuration info for ODBC in Windows
+/* File:      xpath_init-wind.P -- dummy configuration info for XPath in Windows
 ** Author(s): kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
@@ -20,14 +20,13 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id$
 ** 
 */
 
 
-:- export odbc_info/2.
+:- export xpath_info/2.
 
-odbc_info(support, 'yes').
-odbc_info(libdir,  '').
-odbc_info(ccflags, '').
-odbc_info(ldflags, '').
+xpath_info(support, 'yes').
+xpath_info(libdir,  '').
+xpath_info(ccflags, '').
+xpath_info(ldflags, '').

@@ -36,7 +36,11 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib \
 		/libpath:.\bin
 LINK32_OBJS=  "$(INTDIR)\$(MYPROGRAM).obj"
 
-"$(OUTDIR)\$(MYPROGRAM).dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+copy_misc :
+	  del ..\xpath_init.P
+	  copy ..\Misc\xpath_init-wind.P ..\xpath_init.P
+
+"$(OUTDIR)\$(MYPROGRAM).dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS) copy_misc
     $(LINK32) @<<
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<
