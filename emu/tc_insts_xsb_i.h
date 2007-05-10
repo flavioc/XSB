@@ -97,6 +97,64 @@ XSB_Start_Instr(trie_no_cp_numcon,_trie_no_cp_numcon)
 	non_ftag_lpcreg;
 XSB_End_Instr()
 
+
+#ifdef UNDEFINED
+%---------------------------------------------------------------------
+Play area for experimenting with trie code -- there should be some optimizations that we can make.
+
+XSB_Start_Instr(trie_no_cp_numcon,_trie_no_cp_numcon)
+	TRIE_R_LOCK();
+	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_no_cp_numcon:"));
+	NodePtr = (BTNptr) lpcreg;
+	non_ftag_lpcreg;
+	unify_with_trie_numcon;
+	reg_arrayptr--;
+XSB_End_Instr()
+
+XSB_Start_Instr(trie_no_cp_numcon,_trie_no_cp_numcon)
+	TRIE_R_LOCK();
+	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_no_cp_numcon:"));
+	NodePtr = (BTNptr) lpcreg;
+	non_ftag_lpcreg;
+    while (isref(*reg_arrayptr)) {							
+    if (*reg_arrayptr == follow(*reg_arrayptr))						
+      goto TRIE_NUMCON_VAR;						
+    *reg_arrayptr = follow(*reg_arrayptr);						    
+  }									
+  if (*reg_arrayptr != opatom) {						    
+    Fail1;								
+    XSB_Next_Instr();							
+  }									
+  reg_arrayptr--;							
+  XSB_Next_Instr();							
+									
+TRIE_NUMCON_VAR:							
+  while (isattv(*reg_arrayptr)) {							
+    if (cell((CPtr) dec_addr(*reg_arrayptr)) == dec_addr(*reg_arrayptr))		     
+      break; /* end of an attv */					
+    else {								
+      *reg_arrayptr = cell((CPtr) dec_addr(*reg_arrayptr));				    
+      while (isref(*reg_arrayptr)) {						
+	if (*reg_arrayptr == follow(*reg_arrayptr))					    
+          break;							
+	*reg_arrayptr = follow(*reg_arrayptr);						
+      }									
+    }									
+  }									
+  if (isref(*reg_arrayptr)) {							
+    bind_ref((CPtr)*reg_arrayptr, opatom);					    
+  }									
+  else if (isattv(*reg_arrayptr)) {						
+    attv_dbgmsg(">>>> add_interrupt in unify_with_trie_numcon\n");	
+    add_interrupt(CTXTc cell(((CPtr)dec_addr(*reg_arrayptr) + 1)), opatom);	
+    bind_int_tagged((CPtr)dec_addr(*reg_arrayptr), opatom);          		
+  }									
+  reg_arrayptr--;							
+  XSB_End_Instr();							
+End of play area
+%---------------------------------------------------------------------
+#endif
+
 XSB_Start_Instr(trie_try_numcon,_trie_try_numcon) 
 	CPtr tbreg;
 #ifdef SLG_GC
@@ -117,9 +175,9 @@ XSB_Start_Instr(trie_try_numcon,_trie_try_numcon)
 #endif
 	breg = tbreg;
 	hbreg = hreg;
+	non_ftag_lpcreg;
 	unify_with_trie_numcon;
 	reg_arrayptr--;
-	non_ftag_lpcreg;
 XSB_End_Instr()
 
 XSB_Start_Instr(trie_retry_numcon,_trie_retry_numcon) 
@@ -130,9 +188,9 @@ XSB_Start_Instr(trie_retry_numcon,_trie_retry_numcon)
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	cp_pcreg(breg) = (byte *) opfail;
+	non_ftag_lpcreg;
 	unify_with_trie_numcon;
 	reg_arrayptr--;
-	non_ftag_lpcreg;
 XSB_End_Instr()
 
 XSB_Start_Instr(trie_trust_numcon,_trie_trust_numcon) 
@@ -144,9 +202,9 @@ XSB_Start_Instr(trie_trust_numcon,_trie_trust_numcon)
 	restore_regs_and_vars(tbreg, CP_SIZE);
 	breg = cp_prevbreg(breg);
 	restore_trail_condition_registers(breg);
+	non_ftag_lpcreg;
 	unify_with_trie_numcon;
 	reg_arrayptr--;
-	non_ftag_lpcreg;
 XSB_End_Instr()
 
 /*----------------------------------------------------------------------*/

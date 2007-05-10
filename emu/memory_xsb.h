@@ -189,74 +189,6 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
 
 #define trail_cp_exception "! Trail/CP Stack Overflow Exception\n"
 
-#ifdef DEBUG_ASSERTIONS
-
-#define check_tcpstack_overflow {					\
-									\
-   CPtr cps_top;                                                        \
-   cps_top = top_of_cpstack;					        \
-									\
-   if ((pb)cps_top < (pb)top_of_trail + OVERFLOW_MARGIN) {		\
-     if ((pb)cps_top < (pb)top_of_trail) {				\
-       xsb_error("Trail clobbered Choice Point Stack");			\
-       print_statistics(CTXTc 1);					\
-       xsb_basic_abort(trail_cp_exception);				\
-     }									\
-     else {								\
-       fprintf(stdwarn,							\
-	       "\n++Warning: Trail / Choice Point Stack overflow:   "); \
-       if (pflags[STACK_REALLOC]) {					\
-	 fprintf(stdwarn, "Expanding ...\n");				\
-         tcpstack_realloc(CTXTc resize_stack(tcpstack.size,0));		\
-       }								\
-       else {								\
-         fprintf(stdwarn, "Reallocation turned OFF!\n");		\
-         print_statistics(CTXTc 1);					\
-         xsb_basic_abort(trail_cp_exception);				\
-       }								\
-     }									\
-   }									\
- }
-
-#define check_glstack_overflow(arity,PCREG,EXTRA)			   \
-   if ((pb)top_of_localstk < (pb)top_of_heap + OVERFLOW_MARGIN + EXTRA) {  \
-     if ((pb)top_of_localstk < (pb)top_of_heap+256*ZOOM_FACTOR) {	   \
-       xsb_basic_abort("\nFatal ERROR:  -- "				   \
-				 "Local Stack clobbered Heap --\n");	   \
-     }									   \
-     else {								   \
-       fprintf(stdwarn, "\n++Warning: Heap / Local Stack overflow:   ");   \
-       if (pflags[STACK_REALLOC]) {					   \
-	 fprintf(stdwarn, "Expanding ...\n");				   \
-	 glstack_realloc(CTXTc resize_stack(glstack.size,		   \
-			 EXTRA+OVERFLOW_MARGIN), arity);		   \
-       }								   \
-       else {								   \
-	 fprintf(stdwarn, "Reallocation turned OFF!\n");		   \
-	 print_statistics(CTXTc 1);					   \
-	 xsb_basic_abort(local_global_exception);			   \
-       }								   \
-     }									   \
-   }
-
-#define check_completion_stack_overflow					\
-   if ( (pb)openreg < (pb)complstack.low + OVERFLOW_MARGIN ) {		\
-     fprintf(stdwarn, "\n++Warning: Completion Stack overflow:   ");	\
-     if (pflags[STACK_REALLOC]) {					\
-       fprintf(stdwarn, "Expanding ...\n");				\
-       complstack_realloc(CTXTc resize_stack(complstack.size,0));	\
-     }									\
-     else {								\
-       fprintf(stdwarn, "Reallocation turned OFF!\n");			\
-       print_statistics(CTXTc 1);					\
-       xsb_basic_abort(complstack_exception);				\
-     }									\
-   }
-
-
-#else
-
-
 #define check_tcpstack_overflow {					\
 									\
    CPtr cps_top = top_of_cpstack;					\
@@ -299,6 +231,5 @@ extern Cell answer_return_inst, check_complete_inst, hash_handle_inst,
      }								\
    }
 
-#endif
 
 #endif /* _MEMORY_XSB_H_ */

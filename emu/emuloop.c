@@ -1192,6 +1192,28 @@ contcase:     /* the main loop */
       *(byte **)((byte *)op2 + ihash((Cell)op1, (Cell)op3) * sizeof(Cell));
   XSB_End_Instr()
 
+/*******************************************************************
+There are 3 "index" bytes in the switchon3bound instruction. (That's
+the 3.)  Each one indicates one argument of a joint index (or compound
+index?--I never remember this terminology).  So for a joint index of
+1+2, the three bytes would be 1,2,0.  (If there are fewer than 3
+argument positions, the remainder are set to 0.)
+
+Star indexing, also uses switchon3bound, and it is indicated with the
+argument position + 128.  So for example *(3) would be indicated with
+a switchon3bound with index bytes: 131,0,0 (Where 131=128+3.)
+
+So note that a star index can be a component of a joint index.
+E.g. 1+ *(3)+2
+would have index bytes: 1,131,2
+It would be used if the first and second arguments have the main
+functor symbol bound and the third argument had the first 5 symbols
+(in depthfirst traversal) bound.
+
+Note that this does mean that we can only index on the first 127
+argument positions.
+*******************************************************************/
+
   XSB_Start_Instr(switchon3bound,_switchon3bound) /* RRR-L-L */
     Def3ops
     int  i, j = 0;
