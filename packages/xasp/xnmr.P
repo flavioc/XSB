@@ -44,6 +44,8 @@
 
 :- nmr.
 
+:- comment(nmr/0,"@pred{nmr}: sets up top read-eval-print loop, very
+much as is done in @tt{x_interp.P}").
 nmr :-
         set_inthandler('_$keyboard_int'(_), MYSIG_KEYB),
         version_message,
@@ -57,6 +59,7 @@ nmr :-
 	catch(nmr1(_),Ball,default_error_handler(Ball)),
 	fail.
 
+/* repeat, read user query, and process it appropriately */
 nmr1(_) :-
 	repeat,
 	trimcore,
@@ -80,11 +83,25 @@ nmr1(_) :-
 read_in_stop(halt) :- halt.     % quit entire system, regardless of break level
 read_in_stop(end_of_file).	% pop a break level, out if at top
 
+:- comment(process_query/1,"@pred{process_query(+Query,+Vars)}
+processes a user query if not in xnmrmode, i.e., not with extended
+programs with explicit negation.  @tt{Query} is the user query to call
+and @tt{Vars} is a list of terms of form @tt{vv(VarName,Var)}
+representing the variables in the query.").
 process_query(X,Vars) :-
 	 abolish_all_tables,
 	 compute_query(X,Q1),
 	 process_nmr_query(Q1, Vars).
 
+:- comment(process_nmr_query/2,"@tt{process_nmr_query(Query,Vars)}
+processes answers to the tabled query @tt{Query} with variables
+@tt{Vars} (a list with terms of the form @tt{vv('VarName',Var)}).
+@tt{Query} has already been called and the table filled.  This
+predicate calls @tt{nmr_get_residual} to get variable bindings and the
+associated residual program.  It prints the variable bindings and
+then, depending on the user's request, processes the residual program
+by passing it to SModels and appropriately displaying the results.
+And then fails so the next query can be processed.").
 process_nmr_query(X, Vars) :- 
 	prompt(MorePrompt,MorePrompt,'_$more_prompt'(_)),
 	stat_flag(LETTER_VARS, LetterVars),
@@ -160,19 +177,29 @@ scan_to_nl :-
          ;      scan_to_nl
          ).
 	
-
+:- comment(compute_query/2,"@pred{compute_query(+UserGoal,-GoalCalled)}
+invokes a user-entered query, passed as @tt{UserGoal}.  If the goal is
+for a tabled predicate, then it calls it directly (after twiddling
+debug/trace bits appropriately.)  If the goal is *not* tabled, then it
+calls a tabling call so it is tabled.  The tabling call is the
+predicate '{}'/1, so that when it is printed for the user, it looks
+very much like the goal itself (just wrapped in braces.)  So either
+the goal itself is returned in @tt{GoalCalled} or the goal wrapped in
+'{}' is returned there.  @tt{GoalCalled} is required by caller in
+order to get answers out of the table.").
 compute_query(Q,Q1) :-
-	(Q == [] -> State = undef 
-         ; Q = [_|_] -> State = undef
-         ;	table_state(Q,State)
-        ),
+	(Q == []
+	 ->	State = undef
+	 ; Q = [_|_]
+	 ->	State = undef
+	 ;	table_state(Q,State)
+	),
 	(State == undef
-	 ->    Q1 = {Q},
-	       ('{}'(Q),fail ; true)
-	 ;     Q1 = Q,
-	       (untable_call(Q),fail ; true)
+	 ->	Q1 = {Q},
+		('{}'(Q),fail ; true)
+	 ;	Q1 = Q,
+		(untable_call(Q),fail ; true)
 	).
-
 
 :- table '{}'/1.
 :- use_variant_tabling '{}'(_).
@@ -331,6 +358,7 @@ set_nmr_mode :-
 process_eneg_query(X,Vars) :-
 	conset('_$answers_found',0),
 	process_eneg_query0(X,Vars).
+
 process_eneg_query0(X,Vars) :-
 	abolish_all_tables,
 	compute_query(X,Q1),
