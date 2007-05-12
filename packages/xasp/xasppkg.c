@@ -32,6 +32,9 @@
 #include "api.h"
 #include "atomrule.h"
 
+// These variables should not be global in the MT-engine.
+// They will soon be moved to the th_context structure so that
+// each thread can have its own Smodels instance.
 Smodels *smodels;
 Api *api;
 Atom **atoms;
