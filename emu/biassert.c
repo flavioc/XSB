@@ -1829,6 +1829,12 @@ ClRef first_clref( PrRef Pred, prolog_term Head, int *ILevel, int *Index )
 
     /* first findout what index shall we use */
     sob = Pred->FirstClRef;
+    
+    /* skip deleted ones */
+    while (ClRefType(sob) == SOB_RECORD && ClRefSOBOpCode(sob) == fail) { 
+      sob = ClRefNext(sob);
+    }
+
     find_usable_index(Head,&sob,ILevel,Index);
 
     if( *ILevel == 0 )	/* It's not indexable, so s points to first clause */
