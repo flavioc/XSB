@@ -408,6 +408,10 @@ static int xsb_thread_create(th_context *th)
 	       ptoc_int(CTXTc 6),ptoc_int(CTXTc 7)) ;
   new_th_ctxt->_reg[1] = copy_term_from_thread(new_th_ctxt, th, goal) ;
 
+  // TLS -- not locking here.
+  if (flags[NUM_THREADS] >= max_threads_glc) 
+        xsb_resource_error(CTXTc "maximum threads","thread_create",3);
+
   pthread_mutex_lock( &th_mutex );
   SYS_MUTEX_INCR( MUTEX_THREADS ) ;
   flags[NUM_THREADS]++ ;
@@ -455,7 +459,7 @@ static int xsb_thread_create(th_context *th)
   pthread_mutex_unlock( &th_mutex );
 
   if( pos == -1 )
-	xsb_abort("[THREAD] Too many threads");
+    xsb_resource_error(CTXTc "maximum system threads","thread_create",3);
   SET_THREAD_INCARN(id, th_vec[pos].incarn ) ;
 
   ctop_int( th, 3, id ) ;
@@ -481,6 +485,11 @@ call_conv int xsb_ccall_thread_create(th_context *th,th_context **thread_return)
   init_machine(new_th_ctxt,0,0,0,0);
 
   pthread_mutex_lock( &th_mutex );
+
+  // TLS -- not locking here.
+  if (flags[NUM_THREADS] >= max_threads_glc) 
+        xsb_resource_error(CTXTc "maximum threads","thread_create",3);
+
   SYS_MUTEX_INCR( MUTEX_THREADS ) ;
   flags[NUM_THREADS]++ ;
   max_threads_sofar = xsb_max( max_threads_sofar, flags[NUM_THREADS] );
