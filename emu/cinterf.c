@@ -440,12 +440,17 @@ void c_string_to_p_charlist(CTXTdeclc char *name, prolog_term list,
 {
   Cell new_list;
   CPtr top = 0;
-  int len=strlen(name), i;
+  int i;
+  int len=0;
 
   if (isnonvar(list)) {
     xsb_abort("[%s] A variable expected, %s", in_func, where);
   }
-  if (len == 0) {
+
+  if (NULL != name)
+	len=strlen(name);
+
+  if (0 == len) {
     bind_nil((CPtr)(list));
   } else {
     check_glstack_overflow(regs_to_protect, pcreg, 2*len*sizeof(Cell));
@@ -529,7 +534,7 @@ DllExport char *call_conv p2c_chars(CTXTdeclc prolog_term term, char *buf, int b
 
   p_charlist_to_c_string(CTXTc term, &bufvar, "p2c_chars", "list -> char*");
   
-  if (strlen(bufvar.string) > (size_t) bsize) {
+  if ((NULL != bufvar.string) && (strlen(bufvar.string) > (size_t) bsize)) {
     xsb_abort("Buffer overflow in p2c_chars");
   }
 
@@ -1387,7 +1392,7 @@ DllExport int call_conv xsb_init(int argc, char *argv[])
 /************************************************************************/
 
 DllExport int call_conv xsb_init_string(char *cmdline_param) {
-  int i = 0, argc = 0, length = 0;
+  int i = 0, argc = 0;
   char **argv, delim;
   char cmdline[2*MAXPATHLEN+1];
 
@@ -1399,11 +1404,13 @@ DllExport int call_conv xsb_init_string(char *cmdline_param) {
     th = main_thread_gl;
 #endif
 
-    if ((length = strlen(cmdline_param)) > 2*MAXPATHLEN) {
-      snprintf(cmdline,2*MAXPATHLEN+1,"command used to call XSB server is too long: %s",cmdline_param);
-      create_ccall_error(CTXTc "init_error",cmdline);
-      return(XSB_ERROR);
-    }
+	if (NULL != cmdline_param) {
+	  if ((strlen(cmdline_param)) > 2*MAXPATHLEN) {
+	    snprintf(cmdline,2*MAXPATHLEN+1,"command used to call XSB server is too long: %s",cmdline_param);
+	    create_ccall_error(CTXTc "init_error",cmdline);
+	    return(XSB_ERROR);
+	  }
+	}
     strncpy(cmdline, cmdline_param, 2*MAXPATHLEN - 1);
     argv = (char **) mem_alloc(20*sizeof(char *),OTHER_SPACE);  /* count space even if never released */
 
