@@ -2988,7 +2988,7 @@ int print_xsb_backtrace(CTXTdecl) {
     tmp_ereg = ereg;
     tmp_cpreg = cpreg;
     if (!tmp_cpreg) instruction = *(tmp_cpreg-2*sizeof(Cell));
-    else instruction = fail_inst;
+    else instruction = (unsigned char)fail_inst;
     while (tmp_cpreg && (instruction == call || instruction == trymeorelse) && 
 	   (backtrace_length++ < MAX_BACKTRACE_LENGTH)) {
       if (instruction == call) {
