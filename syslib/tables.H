@@ -25,9 +25,9 @@
 
 :- export
       abolish_all_tables/0,
-      abolish_table_call/1,
+      abolish_table_call/1,       abolish_table_call/2, 
       invalidate_tables_for/2,
-      abolish_table_pred/1,
+      abolish_table_pred/1,      abolish_table_pred/2,
       abolish_module_tables/1,
       delete_return/2,
       force_truth_value/2,
@@ -58,7 +58,8 @@
       (use_subsumptive_tabling)/1,
       (use_variant_tabling)/1.
 
-:- export find_components/1, find_forward_dependencies/1, find_backward_dependencies/1.
+   :- export find_components/1, find_forward_dependencies/1, find_backward_dependencies/1,
+   find_answers/1.
 
 :- import findall/3
      from setof.
@@ -71,6 +72,7 @@
 :- import (=..)/2, abort/1, call/1, functor/3, is_attv/1, tcall/1
      from standard.
 :- import throw/1 from standard.
+:- import domain_error/5, check_nonvar/3, type_error/4 from error_handler.
 
 :- import abolish_table_info/0, delete_attributes/1, table_inspection_function/5,
    term_psc/2, term_new/2 from machine.

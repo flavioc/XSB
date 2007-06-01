@@ -165,7 +165,7 @@ open(F,Mode,Stream,Options):-
 	examine_open_options(Options,Aliases,_Eof),
 	open(F,Mode,Stream),
 	%% writeln(open(F,Mode,Stream)),
-	add_aliases(Aliases,Stream).
+	add_aliases(Aliases,STREAM_ALIAS,Stream).
 
 examine_open_options([],[],[]).
 examine_open_options([reposition(_Bool)|T],Aliases,Eof):- !,
@@ -182,10 +182,10 @@ examine_open_options([alias(A)|T],[A|Aliases],Eof):- !,
 examine_open_options([Option|_],_,_):- 
 	domain_error(open_options,Option,open/4,4).
 
-add_aliases([],_Stream).
-add_aliases([H|T],Stream):- 
-	add_alias(H,Stream),
-	add_aliases(T,Stream).
+add_aliases([],_Type,_Stream).
+add_aliases([H|T],Type,Stream):- 
+	add_alias(H,Type,Stream),
+	add_aliases(T,Type,Stream).
 
 %------------------------------------------------
 close(user) :- !.
@@ -792,7 +792,9 @@ index(Ps,Arg,S) :-
 	check_nonneg_integer(S,(index)/3,3),
 	check_nonvar(Arg,(index)/3,1),
 	check_index(Arg),
-	add_index(Ps,Arg,S).
+	add_index(Ps,Arg,S),!.
+index(Ps,_Arg,_S) :-
+	type_error(predicate_indicator,Ps,(index)/3,1).
 
 index(Ps,Arg) :-
 	check_nonvar(Ps,(index)/2,1),
@@ -800,7 +802,9 @@ index(Ps,Arg) :-
 	(Arg == trie
 	 ->	add_trie_index(Ps)
 	 ;	check_index(Arg),add_index(Ps,Arg,0)
-	).
+	),!.
+index(Ps,_Arg) :-
+	type_error(predicate_indicator,Ps,(index)/2,1).
 
 check_index(X):-
 	(X = [_|_] -> 
@@ -1376,6 +1380,7 @@ set_timer(Seconds) :- stat_set_flag(SYS_TIMER, Seconds).
 /* ================ Garbage Collecting Shared Data/Code ===================*/
 
 gc_tables(Number):- 
+	check_var(Number,gc_tables/1,1),
 	gc_stuff(GC_GC_TABLED_PREDS,Number).
 
 gc_dynamic(Number):- 

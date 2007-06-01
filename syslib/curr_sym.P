@@ -717,7 +717,11 @@ xsb_flag(examine_data, ExamineYN) :-
 	->  stat_set_flag(EXAMINE_DATA,0)
 	;   warning('xsb_flag(examine_data,X) -> X should be no, yes or unbound.')
 	).
-
+xsb_flag(table_gc_action, Action) :-
+	stat_flag(TABLE_GC_ACTION, ActionFlag),
+	(ActionFlag == ABOLISH_TABLES_TRANSITIVELY -> 
+	    Action = abolish_tables_transitively
+	  ; Action = abolish_tables_singly).
 
 set_xsb_flag(Type,Val):- 
 	check_nonvar(Type,set_xsb_flag/2,1),
@@ -803,6 +807,14 @@ set_xsb_flag_1(examine_data, ExamineYN) :-  !,
 	;     domain_error([0,1],ExamineYN,set_xsb_flag/2,2,
 	                  'examine_data clause')
 	).
+set_xsb_flag_1(table_gc_action, Action) :-
+	(Action = abolish_tables_transitively -> 
+	    stat_set_flag(TABLE_GC_ACTION, ABOLISH_TABLES_TRANSITIVELY)
+	 ;  (Action = abolish_tables_singly -> 
+	       stat_set_flag(TABLE_GC_ACTION, ABOLISH_TABLES_SINGLY)
+	     ; domain_error([abolish_tables_transitively,
+	                     abolish_tables_singly],Action,set_xsb_flag/2,2,
+			     'table_gc_action clause') ) ).
 set_xsb_flag_1(Type, _) :-  
 	domain_error(xsb_flag,Type,set_xsb_flag/2,2).
 

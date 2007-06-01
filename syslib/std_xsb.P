@@ -36,9 +36,11 @@ standard_metapredicate(abolish,1,1).
 standard_symbol(abolish, 2, assert).			
 standard_symbol(abolish_all_tables, 0, tables).		
 standard_symbol(abolish_table_call, 1, tables).		
+standard_symbol(abolish_table_call, 2, tables).		
 standard_metapredicate(abolish_table_call,1,1).
 
 standard_symbol(abolish_table_pred, 1, tables).		
+standard_symbol(abolish_table_pred, 2, tables).		
 standard_symbol(abort, 0, standard).
 standard_symbol(abort, 1, standard).
 standard_symbol(analyze_table, 1, tables).		
