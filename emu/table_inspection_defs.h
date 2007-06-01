@@ -24,6 +24,7 @@
 #define FIND_COMPONENTS                          0
 #define FIND_FORWARD_DEPENDENCIES                1
 #define FIND_BACKWARD_DEPENDENCIES               2
+#define FIND_ANSWERS               3
 
 
 

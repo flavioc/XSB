@@ -103,8 +103,6 @@ interrupt flag
 #define SKIPPING	63	/* debugger, 1 = skip, 0 = not	   	NW */
 #define QUASI_SKIPPING	64	/* debugger, 1 = quasi skip, 0 = not	NW */
 
-/* The following flags may be obsolete */
-
 #define DCG_MODE        65      /* DGC mode: standard or xsb	           */
 
 /* This flag is used by the loader to tell itself whether it should look into
@@ -113,12 +111,13 @@ interrupt flag
    before checking the standard places. */
 #define LIBS_LOADED	  66
 
+/* The following Oracle flags may be obsolete */
 #define ORA_INPUTARRAY_LENGTH     67   /* max # simultaneous input tuples */
 #define ORA_INPUTARRAY_WIDTH      68   /* max size of each input value    */
 #define ORA_OUTPUTARRAY_LENGTH    69   /* max # simultaneous output tuples */
 
-#define STRING_GARBAGE_COLLECT    70 /* Turn string gc on or off */
-
+#define STRING_GARBAGE_COLLECT    70   /* Turn string gc on or off */
+#define TABLE_GC_ACTION           71   /* Action for recl. of tables with cond answers */
 
 #define MAX_FLAGS		75
 

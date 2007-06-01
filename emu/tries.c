@@ -1756,7 +1756,7 @@ void remove_incomplete_tries(CTXTdeclc CPtr bottom_parameter)
 	SET_TRIE_ALLOCATION_TYPE_SF(CallStrPtr); // set smBTN to private/shared
 	tif = subg_tif_ptr(CallStrPtr);
 	delete_branch(CTXTc CallStrPtr->leaf_ptr, &tif->call_trie); /* delete call */
-	delete_variant_sf_and_answers(CTXTc CallStrPtr); // delete answers + subgoal
+	delete_variant_sf_and_answers(CTXTc CallStrPtr,FALSE); // delete answers + subgoal
       } else remove_calls_and_returns(CTXTc CallStrPtr);
     }
     openreg += COMPLFRAMESIZE;

@@ -3673,7 +3673,8 @@ xsbBool db_abolish0(CTXTdecl/* R1: +PredEP , R2: +PSC */)
   PrRef prref = (PrRef)ptoc_int(CTXTc 1);
   Psc psc = (Psc)ptoc_int(CTXTc 2);
   int action = 0;
-  
+  TIFptr tif;
+
   prref = dynpredep_to_prref(CTXTc prref);
 
   if (!prref) return TRUE;
@@ -3686,7 +3687,10 @@ xsbBool db_abolish0(CTXTdecl/* R1: +PredEP , R2: +PSC */)
     if (!is_completed_table(get_tip(CTXTc psc))) {
       xsb_table_error(CTXTc 
 		    "Cannot abolish tabled predicate when table is incomplete");
-    } else fast_abolish_table_predicate(CTXTc psc);
+    } else {
+      tif = get_tip(CTXTc psc);
+      abolish_table_predicate_switch(CTXTc tif, psc, flags[TABLE_GC_ACTION], FALSE);
+    }
   }
 
   gc_dynamic(CTXT);    // part of gc strategy -- dont know how good

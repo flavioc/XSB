@@ -27,6 +27,13 @@
 
 #include "context.h"
 
+typedef struct I_Trie_Header *ITHptr;
+typedef struct I_Trie_Header {
+  BTNptr root;
+  ITHptr prev;
+  ITHptr next;
+} ITrie_Header;
+
 extern VariantSF get_variant_sf(CTXTdeclc Cell, TIFptr, Cell *);
 extern SubProdSF get_subsumer_sf(CTXTdeclc Cell, TIFptr, Cell *);
 extern BTNptr get_trie_root(BTNptr);
@@ -34,7 +41,7 @@ extern VariantSF get_call(CTXTdeclc Cell, Cell *);
 extern Cell build_ret_term(CTXTdeclc int, Cell[]);
 extern void construct_answer_template(CTXTdeclc Cell, SubProdSF, Cell[]);
 extern void breg_retskel(CTXTdecl);
-extern void delete_predicate_table(CTXTdeclc TIFptr);
+extern void delete_predicate_table(CTXTdeclc TIFptr,xsbBool);
 extern void reclaim_del_ret_list(CTXTdeclc VariantSF);
 extern void delete_return(CTXTdeclc BTNptr, VariantSF);
 extern void init_newtrie(CTXTdecl);
@@ -47,7 +54,7 @@ extern xsbBool is_completed_table(TIFptr);
 
 extern xsbBool has_unconditional_answers(VariantSF);
 
-extern Integer  newtrie(CTXTdecl);
+extern Integer newtrie(CTXTdeclc int);
 extern void trie_intern(CTXTdecl);
 extern int  trie_interned(CTXTdecl);
 extern void trie_dispose(CTXTdecl);
@@ -58,17 +65,17 @@ extern int interned_trie_cps_check(CTXTdeclc BTNptr);
 
 // extern xsbBool check_table_cut;
 
-extern int abolish_table_predicate(CTXTdeclc Psc);
-extern int fast_abolish_table_predicate(CTXTdeclc Psc);
-extern int abolish_table_call(CTXTdeclc VariantSF);
-extern int abolish_table_call_incr(CTXTdeclc VariantSF); /* incremental evaluation */
+extern void abolish_table_predicate(CTXTdeclc Psc, int);
+extern void abolish_table_predicate_switch(CTXTdeclc TIFptr, Psc, int, int);
+extern void abolish_table_call(CTXTdeclc VariantSF, int);
 extern void abolish_private_tables(CTXTdecl);
 extern void abolish_shared_tables(CTXTdecl);
-extern int gc_tabled_preds(CTXTdecl);
-extern void delete_variant_sf_and_answers(CTXTdeclc VariantSF pSF);
 extern void abolish_table_info(CTXTdecl);
 extern int abolish_usermod_tables(CTXTdecl);
 extern int abolish_module_tables(CTXTdeclc const char *module_name);
+extern int abolish_table_call_incr(CTXTdeclc VariantSF); /* incremental evaluation */
+extern int gc_tabled_preds(CTXTdecl);
+extern void delete_variant_sf_and_answers(CTXTdeclc VariantSF pSF, xsbBool warn);
 
 extern void release_any_pndes(CTXTdeclc PNDE firstPNDE);
 extern void delete_delay_trie(CTXTdeclc BTNptr root);
@@ -78,3 +85,5 @@ extern void release_all_tabling_resources(CTXTdecl);
 extern void hashtable1_destroy_all(int);
 
 #endif /* __TR_UTILS_H__ */
+
+

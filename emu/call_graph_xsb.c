@@ -900,7 +900,7 @@ void delete_calls(CTXTdecl){
 	goal=c->goal;
 	deletecallnode(c);
 	
-	abolish_table_call(CTXTc goal);
+	abolish_table_call(CTXTc goal,ABOLISH_TABLES_DEFAULT);
       }
     }
     SM_DeallocateStruct(smCall2List,n);

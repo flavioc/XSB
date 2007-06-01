@@ -262,17 +262,32 @@ DynamicStack  _tstSymbolStack;
 DynamicStack  _tstTrail;
 
   /* Error checking for TST unification */
-BTNptr _gAnsLeaf;    
-CPtr _gAnsTmplt;     
-int _gSizeTmplt;     
+  BTNptr _gAnsLeaf;    
+  CPtr _gAnsTmplt;     
+  int _gSizeTmplt;     
 
   /* delay, simplification, etc. */
-Cell _cell_array[500];
-CPtr *_copy_of_var_addr;
-int _copy_of_num_heap_term_vars;
+  Cell _cell_array[500];
+  CPtr *_copy_of_var_addr;
+  int _copy_of_num_heap_term_vars;
+
+  /* Variables for table traversal for abolishing tables */
+  int _answer_stack_top;
+  BTNptr * _answer_stack;
+  int _answer_stack_size;
+  //  int _answer_stack_current_pos;
+
+  int _done_subgoal_stack_top;
+  VariantSF * _done_subgoal_stack;
+  int _done_subgoal_stack_size;
+  //  int _done_subgoal_stack_current_pos;
+
+  int _done_tif_stack_top;
+  TIFptr * _done_tif_stack;
+  int _done_tif_stack_size;
 
   /********* Variables for array of interned tries *********/
-BTNptr *_Set_ArrayPtr;
+  BTNptr *_Set_ArrayPtr;
   Integer _first_free_set;
   int _Set_ArraySz;
   int _num_sets;
@@ -679,6 +694,18 @@ typedef struct th_context th_context ;
 #define  cell_array                         (th->_cell_array)
 #define  copy_of_var_addr                   (th->_copy_of_var_addr)
 #define  copy_of_num_heap_term_vars         (th->_copy_of_num_heap_term_vars)
+
+#define  answer_stack_top                  (th->_answer_stack_top)
+#define  answer_stack                      (th->_answer_stack)
+#define  answer_stack_size                 (th->_answer_stack_size)
+
+#define  done_subgoal_stack_top           (th->_done_subgoal_stack_top)
+#define  done_subgoal_stack               (th->_done_subgoal_stack)
+#define  done_subgoal_stack_size          (th->_done_subgoal_stack_size)
+
+#define  done_tif_stack_top           (th->_done_tif_stack_top)
+#define  done_tif_stack               (th->_done_tif_stack)
+#define  done_tif_stack_size          (th->_done_tif_stack_size)
 
 #define  Set_ArrayPtr           (th->_Set_ArrayPtr)
 #define  first_free_set         (th->_first_free_set)

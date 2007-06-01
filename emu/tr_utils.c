@@ -70,11 +70,15 @@
 
 /*----------------------------------------------------------------------*/
 
+extern void print_subgoal(CTXTdeclc FILE *, VariantSF);
+
 #define MAX_VAR_SIZE	200
 
 #include "ptoc_tag_xsb_i.h"
 #include "term_psc_xsb_i.h"
 
+/*----------------------------------------------------------------------*/
+/* various utility predicates and macros */
 /*----------------------------------------------------------------------*/
 
 xsbBool has_unconditional_answers(VariantSF subg)
@@ -100,6 +104,33 @@ xsbBool has_unconditional_answers(VariantSF subg)
   }
   return FALSE;
 }
+
+xsbBool has_conditional_answer(VariantSF subg)
+{
+
+  ALNptr node_ptr = subg_answers(subg);
+ 
+  if (subg_is_complete(subg)) 
+#ifndef CONC_COMPL
+    return (node_ptr == COND_ANSWERS);
+#else
+    return (subg_tag(subg) == COND_ANSWERS);
+#endif
+ 
+  /* If the subgoal has not been completed, or is early completed but its */
+  /* answer list has not been reclaimed yet, check each of its nodes. */
+  else { 
+    while (node_ptr) {
+      if (is_conditional_answer(ALN_Answer(node_ptr))) return TRUE;
+      node_ptr = ALN_Next(node_ptr);
+    }
+    return FALSE;
+  }
+}
+
+/* This is needed to find an actual trie node from a CP -- hash-handle must be special-cased */
+#define TrieNodeFromCP(pCP)  ((*(byte *)*pCP == hash_handle) \
+			      ? (BTNptr) string_val(*(pCP+CP_SIZE+1)) :(BTNptr) *pCP)
 
 /*----------------------------------------------------------------------*/
 
@@ -547,17 +578,15 @@ void release_conditional_answer_info(CTXTdeclc BTNptr node) {
  * TLS: since this deallocates from SMs, make sure
  * trie_allocation_type is set before using.
  */
-void delete_variant_sf_and_answers(CTXTdeclc VariantSF pSF) {
+void delete_variant_sf_and_answers(CTXTdeclc VariantSF pSF, xsbBool should_warn) {
   int node_stk_top = 0;
   BTNptr rnod, *Bkp; 
   BTHTptr ht;
-  xsbBool should_warn = TRUE;
   
   BTNptr *freeing_stack = NULL;
   int freeing_stack_size = 0;
 
   TRIE_W_LOCK();
-
   /* TLS: this checks whether any answer for this subgoal has a delay
      list: may overstate problems but will warn for any possible
      corruption. */
@@ -566,8 +595,8 @@ void delete_variant_sf_and_answers(CTXTdeclc VariantSF pSF) {
 #else
     if ( subg_tag(pSF) == COND_ANSWERS && should_warn) {
 #endif
-      xsb_warn("abolish_table_call/1 is deleting a table entry for %s/%d with conditional\
-                      answers: delay dependencies may be corrupted.\n",	    
+      xsb_warn("abolish_table_call/1 is deleting a table entry for %s/%d with conditional"
+                      " answers: delay dependencies may be corrupted.\n",	    
 	       get_name(TIF_PSC(subg_tif_ptr(pSF))),get_arity(TIF_PSC(subg_tif_ptr(pSF))));
       should_warn = FALSE;
     }
@@ -609,12 +638,11 @@ void delete_variant_sf_and_answers(CTXTdeclc VariantSF pSF) {
 
 extern void hashtable1_destroy(void *, int);
 
-static void delete_variant_table(CTXTdeclc BTNptr x, int incr) {
+ static void delete_variant_table(CTXTdeclc BTNptr x, int incr, xsbBool should_warn) {
 
   int node_stk_top = 0, call_nodes_top = 0;
   BTNptr node, rnod, *Bkp; 
   BTHTptr ht;
-  xsbBool should_warn = TRUE;
 
   BTNptr *freeing_stack = NULL;
   int freeing_stack_size = 0;
@@ -655,8 +683,13 @@ static void delete_variant_table(CTXTdeclc BTNptr x, int incr) {
 	  if ( subg_tag(pSF) == COND_ANSWERS && should_warn) {
 #endif
 	    xsb_warn("abolish_table_pred/1 is deleting a table entry for %s/%d with conditional\
+                      answers: delay dependencies may be corrupted flags %d.\n",	    
+		     get_name(TIF_PSC(subg_tif_ptr(pSF))),get_arity(TIF_PSC(subg_tif_ptr(pSF))),flags[TABLE_GC_ACTION]);
+	    /*
+	    xsb_warn("abolish_table_pred/1 is deleting a table entry for %s/%d with conditional\
                       answers: delay dependencies may be corrupted.\n",	    
 		     get_name(TIF_PSC(subg_tif_ptr(pSF))),get_arity(TIF_PSC(subg_tif_ptr(pSF))));
+	    */
 	    should_warn = FALSE;
 	  }
 
@@ -704,22 +737,26 @@ static void delete_variant_table(CTXTdeclc BTNptr x, int incr) {
 
 }
 
-void delete_predicate_table(CTXTdeclc TIFptr tif) {
-  /*  printf("smBTN %x smTableBTN %x private_smTableBTN %x\n",
-      smBTN, &smTableBTN,private_smTableBTN);
-      printf("smBTHT %x smTableBTHT %x private_smTableBTHT %x\n",
-      smBTHT, &smTableBTHT,private_smTableBTHT);*/
-  
+/* called when it is now known whether a predicate is variant or subsumptive */
+  void delete_predicate_table(CTXTdeclc TIFptr tif, xsbBool warn) {
   if ( TIF_CallTrie(tif) != NULL ) {
     SET_TRIE_ALLOCATION_TYPE_TIP(tif);
     if ( IsVariantPredicate(tif) ) {
-      delete_variant_table(CTXTc TIF_CallTrie(tif),get_incr(TIF_PSC(tif)));
+      delete_variant_table(CTXTc TIF_CallTrie(tif),get_incr(TIF_PSC(tif)),warn);
     }
     else
       delete_subsumptive_table(CTXTc tif);
     TIF_CallTrie(tif) = NULL;
     TIF_Subgoals(tif) = NULL;
   }
+}
+
+void transitive_delete_predicate_table(CTXTdeclc TIFptr tif, xsbBool should_warn) {
+
+  SET_TRIE_ALLOCATION_TYPE_TIP(tif);
+  delete_variant_table(CTXTc TIF_CallTrie(tif),get_incr(TIF_PSC(tif)),should_warn);
+  TIF_CallTrie(tif) = NULL;
+  TIF_Subgoals(tif) = NULL;
 }
 
 /* - - - - - */
@@ -731,13 +768,8 @@ void reclaim_deleted_subsumptive_table(CTXTdeclc DelTFptr);
 void reclaim_deleted_predicate_table(CTXTdeclc DelTFptr deltf_ptr) {
   TIFptr tif = subg_tif_ptr(DTF_Subgoals(deltf_ptr));
 
-  /*  printf("smBTN %x smTableBTN %x private_smTableBTN %x\n",
-      smBTN, &smTableBTN,private_smTableBTN);
-      printf("smBTHT %x smTableBTHT %x private_smTableBTHT %x\n",
-      smBTHT, &smTableBTHT,private_smTableBTHT);*/
-
   if ( IsVariantPredicate(tif) ) {
-    delete_variant_table(CTXTc DTF_CallTrie(deltf_ptr), get_incr(TIF_PSC(tif)));
+    delete_variant_table(CTXTc DTF_CallTrie(deltf_ptr), get_incr(TIF_PSC(tif)),DTF_Warn(deltf_ptr));
   } else reclaim_deleted_subsumptive_table(CTXTc deltf_ptr);
 }
 
@@ -1293,8 +1325,9 @@ void init_newtrie(CTXTdecl)
 /*----------------------------------------------------------------------*/
 
 /* Returns a handle to an unused interned trie. */
+/* Right now, this is the same as the old newtrie().  */
 
-Integer newtrie(CTXTdecl)
+Integer new_private_trie(CTXTdecl)
 {
   Integer i;
   Integer result;
@@ -1313,11 +1346,13 @@ Integer newtrie(CTXTdecl)
       temp_arrayptr = Set_ArrayPtr;
       temp_arraysz = Set_ArraySz;
       Set_ArraySz += ADJUST_SIZE;  /* adjust the array size */
-      Set_ArrayPtr = (BTNptr *) mem_calloc(Set_ArraySz ,sizeof(BTNptr),TABLE_SPACE);
+      Set_ArrayPtr = (BTNptr *) mem_calloc(Set_ArraySz ,
+					   sizeof(BTNptr),TABLE_SPACE);
       if (Set_ArrayPtr == NULL)
 	xsb_exit(CTXTc "Out of memory in new_trie/1");
-      for (i = 0; i < num_sets; i++)
+      for (i = 0; i < num_sets; i++) {
 	Set_ArrayPtr[i] = temp_arrayptr[i];
+      }
       mem_dealloc(temp_arrayptr,temp_arraysz,TABLE_SPACE);
     }
     result = (Integer)num_sets;
@@ -1325,6 +1360,41 @@ Integer newtrie(CTXTdecl)
   }
   return result;
 }
+
+/*----------------------------------------------------------------------*/
+
+/* TLS: Shared tries still need more testing, but I hope to have them
+   implemented soon */
+
+#ifdef MULTI_THREAD
+ITHptr shared_itrie_chain_begin = (ITHptr) NULL;
+
+ITHptr new_shared_trie(CTXTdecl)
+{
+  ITHptr pITH;
+  
+  pITH = (ITHptr)mem_alloc(sizeof(ITrie_Header),TABLE_SPACE);	
+  if ( IsNULL(pITH) )	
+     xsb_abort("Ran out of memory in allocation of Interned Trie Header");  
+  pITH->root = NULL;
+  pITH->prev = NULL;
+  pITH->next = shared_itrie_chain_begin;
+  if (shared_itrie_chain_begin)
+    shared_itrie_chain_begin->prev = pITH;
+  shared_itrie_chain_begin = pITH;
+  return pITH;
+}
+
+int newtrie(CTXTdeclc int sharedflag) {
+  if (sharedflag) 
+    return (int) new_shared_trie(CTXT);
+  else return new_private_trie(CTXT);
+}
+#else
+int newtrie(CTXTc int sharedflag) {
+  return new_private_trie(CTXT);
+}
+#endif
 
 /*----------------------------------------------------------------------*/
 /* i_trie_intern(_Term,_Root,_Leaf,_Flag,_Check_CPS,_Expand_or_not)     
@@ -1471,7 +1541,7 @@ int interned_trie_cps_check(CTXTdeclc BTNptr root)
   CPtr cp_top1,cp_bot1 ;
   byte cp_inst;
   int found_interned;
-  BTNptr pLeaf;
+  BTNptr pLeaf, trieNode;
 
   cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
 
@@ -1482,10 +1552,11 @@ int interned_trie_cps_check(CTXTdeclc BTNptr root)
     // Want trie insts, but will need to distinguish from
     // asserted and interned tries
     if ( is_trie_instruction(cp_inst) ) {
-      // Below we want basic_answer_trie_tt, ts_answer_trie_tt
-      if (IsInInternTrie(((BTNptr) *cp_top1))) {
+      // Below we want interned_trie_tt
+      trieNode = TrieNodeFromCP(cp_top1);
+      if (IsInInternTrie(trieNode)) {
 	//	printf(" found interned trie instruction\n");
-	pLeaf = (BTNptr) *cp_top1;
+	pLeaf = trieNode;
 	while ( IsNonNULL(pLeaf) && (! IsTrieRoot(pLeaf)) && 
 		((int) TN_Instr(pLeaf) != trie_fail_unlock) ) {
 	  pLeaf = BTN_Parent(pLeaf);
@@ -1887,11 +1958,60 @@ BTNptr get_call_trie_from_subgoal_frame(CTXTdeclc VariantSF subgoal)
 
 /* - - - - - */
 
+/* Creating two doubly-linked chains -- one for all DelTf, the other
+   for Deltfs for this predicate.  Depending on the value of
+   *chain_begin this can be used for either private or shared
+   predicates */
+DelTFptr inline New_DelTF_Pred(CTXTdeclc TIFptr pTIF, DelTFptr *chain_begin, xsbBool Warn) {		      
+  DelTFptr pDTF;
+  
+  pDTF = (DelTFptr)mem_alloc(sizeof(DeletedTableFrame),TABLE_SPACE);	
+  if ( IsNULL(pDTF) )							
+    xsb_abort("Ran out of memory in allocation of DeletedTableFrame");	
+   DTF_CallTrie(pDTF) = TIF_CallTrie(pTIF);				
+   DTF_Subgoals(pDTF) = TIF_Subgoals(pTIF);				
+   DTF_Type(pDTF) = DELETED_PREDICATE;					
+   DTF_Warn(pDTF) = (byte) Warn;					
+   DTF_Mark(pDTF) = 0;                                                  
+   DTF_PrevDTF(pDTF) = 0;						
+   DTF_PrevPredDTF(pDTF) = 0;						
+   DTF_NextDTF(pDTF) = *chain_begin;				
+   DTF_NextPredDTF(pDTF) = TIF_DelTF(pTIF);				
+   if (*chain_begin) DTF_PrevDTF(*chain_begin) = pDTF;	
+   if (TIF_DelTF(pTIF))  DTF_PrevPredDTF(TIF_DelTF(pTIF)) = pDTF;	
+   *chain_begin = pDTF;                                            
+   TIF_DelTF(pTIF) = pDTF;                                              
+   return pDTF;
+}
+
+DelTFptr inline New_DelTF_Subgoal(CTXTdeclc TIFptr pTIF, VariantSF pSubgoal,
+			      DelTFptr *chain_begin, xsbBool Warn) { 
+  DelTFptr pDTF;
+
+  pDTF = (DelTFptr)mem_alloc(sizeof(DeletedTableFrame),TABLE_SPACE);	
+   if ( IsNULL(pDTF) )							
+     xsb_abort("Ran out of memory in allocation of DeletedTableFrame");	
+   DTF_CallTrie(pDTF) = NULL;						
+   DTF_Subgoal(pDTF) = pSubgoal;					
+   DTF_Type(pDTF) = DELETED_SUBGOAL;					
+   DTF_Mark(pDTF) = 0;                                                  
+   DTF_Warn(pDTF) = (byte) Warn;					
+   DTF_PrevDTF(pDTF) = 0;						
+   DTF_PrevPredDTF(pDTF) = 0;						
+   DTF_NextDTF(pDTF) = *chain_begin;			
+   DTF_NextPredDTF(pDTF) = TIF_DelTF(pTIF);				
+   if (*chain_begin) DTF_PrevDTF(*chain_begin) = pDTF;			
+   if (TIF_DelTF(pTIF))  DTF_PrevPredDTF(TIF_DelTF(pTIF)) = pDTF;	
+   *chain_begin = pDTF;					
+   TIF_DelTF(pTIF) = pDTF;                                              
+   return pDTF;
+  }
+
 /* If there is a deltf with same subgoals and arity (can this be) dont
    add; otherwise if there is a subgoal for this pred, delete the
    deltf (it must be for this generation of the table)
 */
-void check_insert_global_deltf_pred(CTXTdeclc TIFptr tif) { 
+void check_insert_global_deltf_pred(CTXTdeclc TIFptr tif, xsbBool Warning) { 
   DelTFptr dtf = TIF_DelTF(tif), next_dtf; 
   BTNptr call_trie = TIF_CallTrie(tif); 
   VariantSF subgoals = TIF_Subgoals(tif); 
@@ -1911,7 +2031,7 @@ void check_insert_global_deltf_pred(CTXTdeclc TIFptr tif) {
     dtf = next_dtf;
   }
   if (!found) {
-    New_Global_DelTF_Pred(dtf,tif);
+    New_DelTF_Pred(CTXTc tif,&deltf_chain_begin,Warning);
   }
   TIF_CallTrie(tif) = NULL;
   TIF_Subgoals(tif) = NULL;
@@ -1919,7 +2039,7 @@ void check_insert_global_deltf_pred(CTXTdeclc TIFptr tif) {
 }
 
 /* Dont think I need to check for deleted subgoals. */
-void check_insert_global_deltf_subgoal(CTXTdeclc VariantSF subgoal) {
+void check_insert_global_deltf_subgoal(CTXTdeclc VariantSF subgoal,xsbBool Warning) {
   DelTFptr dtf;
   TIFptr tif;
 
@@ -1927,7 +2047,7 @@ void check_insert_global_deltf_subgoal(CTXTdeclc VariantSF subgoal) {
 
   tif = subg_tif_ptr(subgoal);
 
-  New_Global_DelTF_Subgoal(dtf,tif,subgoal);
+  dtf = New_DelTF_Subgoal(CTXTc tif,subgoal,&deltf_chain_begin,Warning);
 
   if (subg_prev_subgoal(subgoal) != 0) 
     subg_prev_subgoal(subgoal) = subg_next_subgoal(subgoal);
@@ -1944,14 +2064,11 @@ void check_insert_global_deltf_subgoal(CTXTdeclc VariantSF subgoal) {
 
 // extern void printTIF(TIFptr);
 
-void check_insert_private_deltf_pred(CTXTdeclc TIFptr tif) {
+void check_insert_private_deltf_pred(CTXTdeclc TIFptr tif, xsbBool Warning) {
   DelTFptr dtf = TIF_DelTF(tif), next_dtf;
   BTNptr call_trie = TIF_CallTrie(tif);
   VariantSF subgoals = TIF_Subgoals(tif);	
   int found = 0;
-
-  //  printf("\n.........starting cipdp\n");
-  //  printTIF(tif);
 
   while ( dtf != 0 ) {
     next_dtf = DTF_NextPredDTF(dtf);
@@ -1966,25 +2083,24 @@ void check_insert_private_deltf_pred(CTXTdeclc TIFptr tif) {
     dtf = next_dtf;
   }
   if (!found) {
-    New_Private_DelTF_Pred(dtf,tif);
+    //    New_Private_DelTF_Pred(CTXTc dtf,tif,Warning);
+    New_DelTF_Pred(CTXTc tif,&private_deltf_chain_begin,Warning);
   }
   TIF_CallTrie(tif) = NULL;
   TIF_Subgoals(tif) = NULL;
-  //  printf(".........ending\n");
-  //  printTIF(tif);
 }
 
-#define check_insert_shared_deltf_pred(context, tif)	\
-  check_insert_global_deltf_pred(context, tif)	 
+#define check_insert_shared_deltf_pred(context, tif, warning)	\
+  check_insert_global_deltf_pred(context, tif, warning)	 
 
 /* * * * * * * */
 
-void check_insert_private_deltf_subgoal(CTXTdeclc VariantSF subgoal)
+void check_insert_private_deltf_subgoal(CTXTdeclc VariantSF subgoal,xsbBool Warning)
 {
   DelTFptr dtf;
   TIFptr tif = subg_tif_ptr(subgoal);
 
-  New_Private_DelTF_Subgoal(dtf,tif,subgoal);
+  dtf = New_DelTF_Subgoal(CTXTc tif,subgoal,&private_deltf_chain_begin,Warning);
 
   if (subg_prev_subgoal(subgoal) != 0) 
     subg_prev_subgoal(subgoal) = subg_next_subgoal(subgoal);
@@ -1995,75 +2111,28 @@ void check_insert_private_deltf_subgoal(CTXTdeclc VariantSF subgoal)
   subg_deltf_ptr(subgoal) = dtf;
 }
 
-#define check_insert_shared_deltf_subgoal(context, subgoal)	\
-  check_insert_global_deltf_subgoal(context, subgoal)	 
+#define check_insert_shared_deltf_subgoal(context, subgoal,Warning)	\
+  check_insert_global_deltf_subgoal(context, subgoal,Warning)	 
 
 #else /* not MULTI_THREAD */
 
-#define check_insert_private_deltf_pred(tif)	\
-  check_insert_global_deltf_pred(tif)	 
+#define check_insert_private_deltf_pred(tif,warning)	\
+  check_insert_global_deltf_pred(tif,warning)	 
 
-#define check_insert_private_deltf_subgoal(subgoal)	\
-  check_insert_global_deltf_subgoal(subgoal)	 
+#define check_insert_private_deltf_subgoal(subgoal,Warning)	\
+  check_insert_global_deltf_subgoal(subgoal,Warning)	 
 
 #endif
 
 /* - - - - - - - - - - */
 
-/* Assumes cps check has already been done, so that mark bit is set on
- * TIFs.  Assumes TIF is non-null.  Tif chain is not changed,
- * therefore no need for mutex.  Reclaims space for shared tables only
- * if 1 active thread.
- */  
-
-int fast_abolish_table_predicate(CTXTdeclc Psc psc)
-{
-  TIFptr tif;
-
-  gc_tabled_preds(CTXT);
-
-  tif = get_tip(CTXTc psc);
-
-  if (IsVariantPredicate(tif) && IsNULL(TIF_CallTrie(tif))) {
-    return 1;
-  }
-
-  if ( ! is_completed_table(tif) ) {
-      xsb_abort("[abolish_table_pred] Cannot abolish incomplete table"
-		" of predicate %s/%d\n", get_name(psc), get_arity(psc));
-  }
-
-  /* incremental evaluation */
-  if(get_incr(psc)) {
-    xsb_warn("[abolish_table_pred] Abolish incremental table"
-		" of predicate %s/%d. This can cause unexpected behavior.\n", get_name(psc), get_arity(psc));
-  }
-
-  if (!TIF_Mark(tif) && (!get_shared(psc) || flags[NUM_THREADS] == 1)) {
-    delete_predicate_table(CTXTc tif);
-  }  else {
-    //    fprintf(stderr,"Delaying abolish of table in use: %s/%d\n",
-    //    get_name(psc),get_arity(psc));
-#ifndef MULTI_THREAD
-    check_insert_private_deltf_pred(CTXTc tif);
-#else
-    if (!get_shared(psc))
-      check_insert_private_deltf_pred(CTXTc tif);
-    else
-      check_insert_shared_deltf_pred(CTXT,tif);
-#endif
-  }
-return 1;
-}
-
-/* - - - - - - - - - - */
-
-void mark_cp_tables(CTXTdecl)
+void mark_cp_tabled_preds(CTXTdecl)
 {
   CPtr cp_top1,cp_bot1 ;
   byte cp_inst;
   TIFptr tif;
-  
+  BTNptr trieNode;
+
   cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
 
   cp_top1 = breg ;				 
@@ -2072,8 +2141,9 @@ void mark_cp_tables(CTXTdecl)
     // Want trie insts, but will need to distinguish from
     // asserted and interned tries
     if ( is_trie_instruction(cp_inst) ) {
-      if (IsInAnswerTrie((BTNptr) *cp_top1)) {
-	tif = get_tif_for_answer_trie_cp(CTXTc (BTNptr) *cp_top1);
+      trieNode = TrieNodeFromCP(cp_top1);
+      if (IsInAnswerTrie(trieNode)) {
+	tif = get_tif_for_answer_trie_cp(CTXTc trieNode);
 	cps_check_mark_tif(tif);
       }
     }
@@ -2081,11 +2151,12 @@ void mark_cp_tables(CTXTdecl)
   }
 }
 
-void unmark_cp_tables(CTXTdecl)
+void unmark_cp_tabled_preds(CTXTdecl)
 {
   CPtr cp_top1,cp_bot1 ;
   byte cp_inst;
   TIFptr tif;
+  BTNptr trieNode;
   
   cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
 
@@ -2095,8 +2166,9 @@ void unmark_cp_tables(CTXTdecl)
     // Want trie insts, but will need to distinguish from
     // asserted and interned tries
     if ( is_trie_instruction(cp_inst) ) {
-      if (IsInAnswerTrie((BTNptr) *cp_top1)) {
-	tif = get_tif_for_answer_trie_cp(CTXTc (BTNptr) *cp_top1);
+      trieNode = TrieNodeFromCP(cp_top1);
+      if (IsInAnswerTrie(trieNode)) {
+	tif = get_tif_for_answer_trie_cp(CTXTc trieNode);
 	cps_check_unmark_tif(tif);
       }
     }
@@ -2108,31 +2180,35 @@ void unmark_cp_tables(CTXTdecl)
 /* abolish_table_call() and supporting code */
 /*------------------------------------------------------------------*/
 
-/* 
-   Recurse through CP stack looking for trie nodes that match PSC.
-   Returns 1 if found a psc match, 0 if safe to delete now
-*/
+#define CAN_RECLAIM 0
+#define CANT_RECLAIM 1
 
+/* Used when deleting a single subgoal
+   Recurse through CP stack looking for trie nodes that match PSC.
+   Returns 1 if found a psc match, 0 if safe to delete now.
+*/
 int abolish_table_call_cps_check(CTXTdeclc VariantSF subgoal) 
 {
   CPtr cp_top1,cp_bot1 ;
   byte cp_inst;
   int found_subgoal_match;
+  BTNptr trieNode;
 
   cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
 
   cp_top1 = breg ;				 
-  found_subgoal_match = 0;
-  while ( cp_top1 < cp_bot1 && !(found_subgoal_match)) {
+  found_subgoal_match = CAN_RECLAIM;
+  while ( cp_top1 < cp_bot1 && (found_subgoal_match == CAN_RECLAIM)) {
     cp_inst = *(byte *)*cp_top1;
     // Want trie insts, but will need to distinguish from
     // asserted and interned tries
     if ( is_trie_instruction(cp_inst) ) {
       // Below we want basic_answer_trie_tt, ts_answer_trie_tt
-      if (IsInAnswerTrie(((BTNptr) *cp_top1))) {
+      trieNode = TrieNodeFromCP(cp_top1);
+      if (IsInAnswerTrie(trieNode)) {
 	if (subgoal == 
-	    get_subgoal_frame_for_answer_trie_cp(CTXTc (BTNptr) *cp_top1)) {
-	  found_subgoal_match = 1;
+	    get_subgoal_frame_for_answer_trie_cp(CTXTc trieNode)) {
+	  found_subgoal_match = CANT_RECLAIM;
 	}
       }
     }
@@ -2140,6 +2216,62 @@ int abolish_table_call_cps_check(CTXTdeclc VariantSF subgoal)
   }
   return found_subgoal_match;
 }
+
+/* Mark and unmark are used when deleting a set of depending subgoals */
+void mark_cp_tabled_subgoals(CTXTdecl)
+{
+  CPtr cp_top1,cp_bot1 ;
+  byte cp_inst;
+  VariantSF subgoal;
+  BTNptr trieNode;
+  
+  cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
+
+  cp_top1 = breg ;				 
+  while ( cp_top1 < cp_bot1 ) {
+    cp_inst = *(byte *)*cp_top1;
+    // Want trie insts, but will need to distinguish from
+    // asserted and interned tries
+    if ( is_trie_instruction(cp_inst) ) {
+      //  printf("found trie instruction %x %d\n",cp_inst,
+      //                 TSC_TrieType(((BTNptr)string_val(*(cp_top1+CP_SIZE+1)))));
+      trieNode = TrieNodeFromCP(cp_top1);
+      if (IsInAnswerTrie(trieNode)) {
+	//	printf("is in answer trie\n");
+	subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc trieNode);
+	//	printf("Marking ");print_subgoal(CTXTc stddbg, subgoal);printf("\n");
+	GC_MARK_SUBGOAL(subgoal);
+      }
+    }
+    cp_top1 = cp_prevtop(cp_top1);
+  }
+}
+
+void unmark_cp_tabled_subgoals(CTXTdecl)
+{
+  CPtr cp_top1,cp_bot1 ;
+  byte cp_inst;
+  VariantSF subgoal;
+  BTNptr trieNode;
+  
+  cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
+
+  cp_top1 = breg ;				 
+  while ( cp_top1 < cp_bot1 ) {
+    cp_inst = *(byte *)*cp_top1;
+    // Want trie insts, but will need to distinguish from
+    // asserted and interned tries
+    if ( is_trie_instruction(cp_inst) ) {
+      trieNode = TrieNodeFromCP(cp_top1);
+      if (IsInAnswerTrie(trieNode)) {
+	subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc trieNode);
+	GC_UNMARK_SUBGOAL(subgoal);
+      }
+    }
+    cp_top1 = cp_prevtop(cp_top1);
+  }
+}
+
 
 /* incremental */
 int abolish_table_call_incr(CTXTdeclc VariantSF subgoal) {
@@ -2149,55 +2281,514 @@ int abolish_table_call_incr(CTXTdeclc VariantSF subgoal) {
   return TRUE;
 }
 
+/*------------------------------------------------------------------
 
-int abolish_table_call(CTXTdeclc VariantSF subgoal) {
+In the presence of conditional answers, its not enough to simply
+delete (or invalidate) a table T for a subgoal S -- in most
+circumstances we should delete all other tables that depend on T along
+with T.  To do this we need to find all conditional answers for T, and
+check their back pointers transitively, and eventually obtain the set
+of subgoals that depend on T.
+
+The way the algorithm works is that pointers to all conditional
+answers to T are put the an answer_stack, and S is marked as visited.
+Back-pointers of these answes are traversed -- and if the newly
+visited answers belong to an unvisited subgoal S', S' is marked as
+visited and a pointer to S's subgoal frame is put on the done stack.
+This continues until all answers and subgoals have been traversed.  Of
+course, back-pointers from the visitied subgoals themselves are also
+traversed.
+
+So, at the end of find_answers_for_subgoal(S) the answer_stack is
+incremented to include all unconditional answers for S.  At the end of
+find_subgoal_backward_dependencies(), the done_stack contains all
+visited subgoals, while the answer_stack contains all conditional
+answers for all visited subgoals.
+
+-----------------------------------------------------------------*/
+
+// Answer stack utilities -------------------------------------
+
+#ifndef MULTI_THREAD
+int answer_stack_top = 0;
+BTNptr * answer_stack = NULL;
+int answer_stack_size = 0;
+#endif
+
+#define answer_stack_increment 1000
+
+void reset_answer_stack(CTXTdecl) {
+  answer_stack_top = 0;
+  //  answer_stack_current_pos = 0;
+}
+
+#define push_answer_node(as_leaf) {				                  \
+    if (answer_stack_top >= answer_stack_size) {			          \
+      unsigned long old_answer_stack_size = answer_stack_size;		          \
+      answer_stack_size = answer_stack_size + answer_stack_increment;	\
+      answer_stack = (BTNptr *) mem_realloc(answer_stack,			  \
+					  old_answer_stack_size*sizeof(BTNptr *), \
+					  answer_stack_size*sizeof(BTNptr *),     \
+					  TABLE_SPACE);			          \
+    }									          \
+    answer_stack[answer_stack_top] =     as_leaf;		                  \
+    answer_stack_top++;							          \
+  }
+
+void print_answer_stack(CTXTdecl) {
+  int frame = 0;
+  while (frame < answer_stack_top) {
+    printf("answer_frame %d answer %p ",frame, answer_stack[frame]);
+    print_subgoal(CTXTc stddbg, asi_subgoal((ASI) Child(answer_stack[frame]))); printf("\n");
+    frame++;
+  }
+  printf("Answer queue TOP = %d\n", answer_stack_top);
+  //  printf("Answer queue CURRENT = %d\n", answer_stack_current_pos);
+}
+
+// End of answer stack utilities -------------------------------------
+
+/* Trie traversal was copied from one of the delete routines. 
+   There's probably a cleaner way to do this.
+*/
+int find_answers_for_subgoal(CTXTdeclc VariantSF subgoal) {
+
+  BTNptr root, sib, chil;  
+  int trie_op_top = 0;
+  int trie_node_top = 0;
+  int trie_hh_top = -1;
+  int  num_leaves = 0;
+
+  char *delete_trie_op = NULL;
+  BTNptr *delete_trie_node = NULL;
+  BTHTptr *delete_trie_hh = NULL;
+  int trie_op_size, trie_node_size, trie_hh_size;
+
+  if (!delete_trie_op) {
+    delete_trie_op = (char *)mem_alloc(DELETE_TRIE_STACK_INIT*sizeof(char),TABLE_SPACE);
+    delete_trie_node = (BTNptr *)mem_alloc(DELETE_TRIE_STACK_INIT*sizeof(BTNptr),TABLE_SPACE);
+    delete_trie_hh = (BTHTptr *)mem_alloc(DELETE_TRIE_STACK_INIT*sizeof(BTHTptr),TABLE_SPACE);
+    trie_op_size = trie_node_size = trie_hh_size = DELETE_TRIE_STACK_INIT;
+  }
+
+  delete_trie_op[0] = 0;
+  delete_trie_node[0] = subg_ans_root_ptr(subgoal);
+  while (trie_op_top >= 0) {
+    switch (delete_trie_op[trie_op_top--]) {
+    case DT_DS:
+      root = delete_trie_node[trie_node_top--];
+      break;
+    case DT_HT:
+      trie_hh_top--;
+      break;
+    case DT_NODE:
+      root = delete_trie_node[trie_node_top--];
+      if ( IsNonNULL(root) ) {
+	if ( IsHashHeader(root) ) {
+	  BTHTptr hhdr;
+	  BTNptr *base, *cur;
+	  hhdr = (BTHTptr)root;
+	  base = BTHT_BucketArray(hhdr);
+	  push_delete_trie_hh(hhdr);
+	  for ( cur = base; cur < base + BTHT_NumBuckets(hhdr); cur++ ) {
+	    if (IsNonNULL(*cur)) {
+	      push_delete_trie_node(*cur,DT_NODE);
+	    }
+	  }
+	}
+	else {
+	  sib  = BTN_Sibling(root);
+	  chil = BTN_Child(root);      
+	  if (IsLeafNode(root)) {
+            // 12-05-07 
+            // put one more condition for an answer leaf to be added: it must not be visited before
+            // It might be visited before in find_single_backward_dependencies
+            // minhdt - Do we need this change???
+            // if ((is_conditional_answer(root)) && (!VISITED_ANSWER(root))){
+            if (is_conditional_answer(root)){
+	      push_answer_node(root);
+	      num_leaves++;
+	    }
+	    push_delete_trie_node(root,DT_DS);
+	    if (IsNonNULL(sib)) {
+	      push_delete_trie_node(sib,DT_NODE);
+	    }
+	  }
+	  else {
+	    push_delete_trie_node(root,DT_DS);
+	    if (IsNonNULL(sib)) {
+	      push_delete_trie_node(sib,DT_NODE);
+	    }
+	    if (IsNonNULL(chil)) {
+	      push_delete_trie_node(chil,DT_NODE);
+	    }
+	  }
+	}
+      } else
+	printf("null node");
+      break;
+    }
+  }
+  mem_dealloc(delete_trie_op,trie_op_size,TABLE_SPACE); delete_trie_op = NULL;
+  mem_dealloc(delete_trie_node,trie_node_size,TABLE_SPACE); delete_trie_node = NULL;
+  mem_dealloc(delete_trie_hh,trie_hh_size,TABLE_SPACE); delete_trie_hh = NULL;
+  trie_op_size = 0; 
+  //  print_answer_stack(CTXT);
+  return num_leaves;
+}
+
+// Done stack utilities -------------------------------------
+
+#ifndef MULTI_THREAD
+int done_subgoal_stack_top = 0;
+VariantSF *done_subgoal_stack = NULL;
+int done_subgoal_stack_size = 0;
+#endif
+
+#define done_subgoal_stack_increment 1000
+
+void inline push_done_subgoal_node(CTXTdeclc VariantSF Subgoal) {				
+    if (done_subgoal_stack_top >= done_subgoal_stack_size) {		
+      unsigned long old_done_subgoal_stack_size = done_subgoal_stack_size; 
+      done_subgoal_stack_size = done_subgoal_stack_size + done_subgoal_stack_increment; 
+      done_subgoal_stack = (VariantSF *) mem_realloc(done_subgoal_stack,	
+						    old_done_subgoal_stack_size*sizeof(VariantSF *), 
+						    done_subgoal_stack_size*sizeof(VariantSF *), 
+						    TABLE_SPACE);	
+    }									
+    done_subgoal_stack[done_subgoal_stack_top] = Subgoal;	
+    done_subgoal_stack_top++;						
+  }
+
+void print_done_subgoal_stack(CTXTdecl) {
+  int frame = 0;
+  while (frame < done_subgoal_stack_top) {
+    printf("done_subgoal_frame %d ",frame);
+    print_subgoal(CTXTc stddbg, done_subgoal_stack[frame]);
+    printf("\n");
+    frame++;
+  }
+}
+
+void reset_done_subgoal_stack(CTXTdecl) {
+  done_subgoal_stack_top = 0;
+}
+
+#define traverse_subgoal_ndes(subgoal)	{				\
+    DL nde_delayList;							\
+    BTNptr nde_as_prev;							\
+    PNDE ndeElement;							\
+    ndeElement = subg_nde_list(subgoal);				\
+    while (ndeElement) {						\
+      nde_delayList = pnde_dl(ndeElement);				\
+      nde_as_prev = dl_asl(nde_delayList);				\
+      if (nde_as_prev && !subg_deltf_ptr(asi_subgoal((ASI) Child(nde_as_prev))) \
+	  && !VISITED_SUBGOAL(asi_subgoal((ASI) Child(nde_as_prev)))) {	\
+	MARK_VISITED_SUBGOAL(asi_subgoal((ASI) Child(nde_as_prev)));	\
+	push_done_subgoal_node(CTXTc asi_subgoal((ASI) Child(nde_as_prev)));	\
+	find_answers_for_subgoal(CTXTc asi_subgoal((ASI) Child(nde_as_prev))); \
+      }									\
+      ndeElement = pnde_next(ndeElement);				\
+    }									\
+  }
+
+/* Start by marking input subgoal as visited (and put it on the done
+   stack).  Then find conditional answers for subgoal (putting them on
+   answer stack), and put these answers on the answer stack.  Finally,
+   traverse its ndes and set last_subgoal to subgoal.
+
+   Thereafter, go through each answer on the answer stack. If the
+   subgoal is different from the last subgoal, traverse the subgoal's
+   ndes (this works because all answers for any subgoal will form a
+   contiguous segment of the answer stack).  Also traverse the answers
+   backpointers as well.
+
+   Traversing either nde's or pde's marks new subgoals as they are
+   visited, and puts all of their conditional answes onto the answer
+   stack.
+
+   Thus, we examine pde's for each answer during the search exactly
+   once, and examine the nde's for each subgoal exactly once.  At the
+   end, the answer stack contains all answers that we've traversed,
+   and the done subgoal stack contains all subgoals that we've
+   traversed.
+
+   As of 5/07, fbsd() is the only system code that uses answer_stack.
+   For reasons of concurrency, it doesn't deallocate the answer stack
+   when its done -- I'm assuming that if an appliction gets abolishes
+   tables with conditional answers once, its likely to do so again --
+   if this is a bad assumption, a deallocate can be put in the end.
+*/
+
+int find_subgoal_backward_dependencies(CTXTdeclc VariantSF subgoal) {
+    BTNptr as_leaf;
+    PNDE pdeElement;
+    DL delayList;
+    BTNptr as_prev;
+    VariantSF last_subgoal;
+    int answer_stack_current_pos = 0;
+
+    reset_done_subgoal_stack(CTXT);
+    reset_answer_stack(CTXT);
+    MARK_VISITED_SUBGOAL(subgoal);
+    push_done_subgoal_node(CTXTc subgoal); 
+    find_answers_for_subgoal(CTXTc subgoal);
+    traverse_subgoal_ndes(subgoal);
+    last_subgoal = subgoal;
+
+    while (answer_stack_current_pos < answer_stack_top) {
+      as_leaf = answer_stack[answer_stack_current_pos];
+      if (asi_subgoal((ASI) Child(as_leaf)) != last_subgoal) {
+	last_subgoal = asi_subgoal((ASI) Child(as_leaf));
+	traverse_subgoal_ndes(last_subgoal);
+      }
+      pdeElement = asi_pdes((ASI) Child(as_leaf));
+      while (pdeElement) {
+        delayList = pnde_dl(pdeElement);
+        as_prev = dl_asl(delayList);
+	if (as_prev && !subg_deltf_ptr(asi_subgoal((ASI) Child(as_prev)))
+	   && !VISITED_SUBGOAL(asi_subgoal((ASI) Child(as_prev)))) {
+	  MARK_VISITED_SUBGOAL(asi_subgoal((ASI) Child(as_prev)));
+	  subgoal = asi_subgoal((ASI) Child(as_prev));
+	  push_done_subgoal_node(CTXTc subgoal);
+	  find_answers_for_subgoal(CTXTc subgoal);
+	}
+        pdeElement = pnde_next(pdeElement);
+      }
+      answer_stack_current_pos++;
+    }
+    //    print_answer_stack(CTXT);
+    reset_answer_stack(CTXT);
+    //    print_done_subgoal_stack(CTXT);
+    return done_subgoal_stack_top;
+  }
+
+// End of done stack utilities -------------------------------------
+
+/* For use when abolishing tabled subgoals that do not have conditional answers */
+void abolish_table_call_single(CTXTdeclc VariantSF subgoal) {
 
     TIFptr tif;
     Psc psc;
     int action;
 
-    //    subgoal = (VariantSF) ptoc_int(CTXTc 1);
     tif = subg_tif_ptr(subgoal);
     psc = TIF_PSC(tif);
 
-    if (!is_completed(subgoal)) {
-      xsb_abort("[abolish_table_call] Cannot abolish incomplete tabled call"
-		" of predicate %s/%d\n",get_name(psc),get_arity(psc));
-    }
-
     if (flags[NUM_THREADS] == 1 || !get_shared(psc)) {
       action = abolish_table_call_cps_check(CTXTc subgoal);
-    } else action = 1;
+    } else action = CANT_RECLAIM;
 
     SET_TRIE_ALLOCATION_TYPE_SF(subgoal); // set smBTN to private/shared
-    if (!action) {
+    if (action == CAN_RECLAIM) {
       delete_branch(CTXTc subgoal->leaf_ptr, &tif->call_trie); /* delete call */
-      delete_variant_sf_and_answers(CTXTc subgoal); // delete answers
-      return TRUE;
+      delete_variant_sf_and_answers(CTXTc subgoal, TRUE); // (warn if cond)
     }
     else {
       //      fprintf(stderr,"Delaying abolish of call in use for: %s/%d\n",
       //      get_name(psc),get_arity(psc));
 #ifndef MULTI_THREAD
       delete_branch(CTXTc subgoal->leaf_ptr, &tif->call_trie); /* delete call */
-      check_insert_private_deltf_subgoal(CTXTc subgoal);
+      check_insert_private_deltf_subgoal(CTXTc subgoal,TRUE);
 #else
       if (!get_shared(psc)) {
 	delete_branch(CTXTc subgoal->leaf_ptr, &tif->call_trie); /* delete call */
-	check_insert_private_deltf_subgoal(CTXTc subgoal);
+	check_insert_private_deltf_subgoal(CTXTc subgoal,TRUE);
       }
       else {
 	safe_delete_branch(subgoal->leaf_ptr); 
-	check_insert_shared_deltf_subgoal(CTXT, subgoal);
+	check_insert_shared_deltf_subgoal(CTXT, subgoal,TRUE);
       }
 #endif
-      return TRUE;
     }
+}
+
+/* Assuming no intermixing of shared and private tables */
+void abolish_table_call_transitive(CTXTdeclc VariantSF subgoal) {
+
+    TIFptr tif;
+    Psc psc;
+    int action;
+
+    tif = subg_tif_ptr(subgoal);
+    psc = TIF_PSC(tif);
+
+    find_subgoal_backward_dependencies(CTXTc subgoal);
+
+    if (flags[NUM_THREADS] == 1 || !get_shared(psc)) {
+      mark_cp_tabled_subgoals(CTXT);
+      action = CAN_RECLAIM;
+    } else action = CANT_RECLAIM;
+
+    SET_TRIE_ALLOCATION_TYPE_SF(subgoal); // set smBTN to private/shared
+    while (done_subgoal_stack_top) {
+      done_subgoal_stack_top--;
+      subgoal = done_subgoal_stack[done_subgoal_stack_top];
+      //      printf(" abolishing ");
+      //      print_subgoal(CTXTc stddbg, done_subgoal_stack[done_subgoal_stack_top]);  printf("\n");
+      tif = subg_tif_ptr(subgoal);
+      if (action == CAN_RECLAIM && !GC_MARKED_SUBGOAL(subgoal) ) {
+	//	printf("really abolishing\n");
+	delete_branch(CTXTc subgoal->leaf_ptr, &tif->call_trie); /* delete call */
+	delete_variant_sf_and_answers(CTXTc subgoal,FALSE); // delete answers (dont warn if cond)
+      }
+      else {
+	//	printf("Mark %x GC %x\n",subgoal->visited,GC_MARKED_SUBGOAL(subgoal));
+	if (!get_shared(psc)) {
+	  delete_branch(CTXTc subgoal->leaf_ptr, &tif->call_trie); /* delete call */
+	  check_insert_private_deltf_subgoal(CTXTc subgoal,FALSE);
+	}
+#ifdef MULTI_THREAD
+	else {
+	  safe_delete_branch(subgoal->leaf_ptr); 
+	  check_insert_shared_deltf_subgoal(CTXT, subgoal,FALSE);
+	}
+#endif
+      }
+    }
+    reset_done_subgoal_stack(CTXT);
+    unmark_cp_tabled_subgoals(CTXT);
+}
+
+/* Took check for incomplete out -- its been done in tables.P.
+However, we now need to check the default setting (settable in
+xsb_flag) as well as an option set by the options list, if any. */
+void abolish_table_call(CTXTdeclc VariantSF subgoal, int invocation_flag) {
+  if (has_conditional_answer(subgoal) 
+      && (invocation_flag != ABOLISH_TABLES_TRANSITIVELY 
+	  || (invocation_flag == ABOLISH_TABLES_DEFAULT 
+	      && flags[TABLE_GC_ACTION] == ABOLISH_TABLES_TRANSITIVELY))) {
+      abolish_table_call_transitive(CTXTc subgoal);
+    }
+  else abolish_table_call_single(CTXTc subgoal);
 }
 
 /*------------------------------------------------------------------*/
 /* abolish_table_pred() and supporting code */
 /*------------------------------------------------------------------*/
+
+// done_tif_stack stack utilities -------------------------------------
+
+#ifndef MULTI_THREAD
+int done_tif_stack_top = 0;
+TIFptr * done_tif_stack = NULL;
+int done_tif_stack_size = 0;
+#endif
+
+#define done_tif_stack_increment 1000
+
+void reset_done_tif_stack(CTXTdecl) {
+  done_tif_stack_top = 0;
+}
+
+void unvisit_done_tifs(CTXTdecl) {
+  int i;
+  for (i = 0; i < done_tif_stack_top; i++) {
+    TIF_Visited(done_tif_stack[i]) = 0;
+  }
+}
+
+void inline push_done_tif_node(CTXTdeclc TIFptr node) {					\
+    if (done_tif_stack_top >= done_tif_stack_size) {			\
+      unsigned long old_done_tif_stack_size = done_tif_stack_size;	\
+      done_tif_stack_size = done_tif_stack_size + done_tif_stack_increment;	\
+      done_tif_stack = (TIFptr *) mem_realloc(done_tif_stack,			  \
+					      old_done_tif_stack_size*sizeof(TIFptr *), \
+					      done_tif_stack_size*sizeof(TIFptr *), \
+					      TABLE_SPACE);		\
+    }									\
+    done_tif_stack[done_tif_stack_top] =     node;			\
+    done_tif_stack_top++;						\
+  }
+
+void print_done_tif_stack(CTXTdecl) {
+  int frame = 0;
+  while (frame < done_tif_stack_top) {
+    printf("done_tif_frame %d tif %p (%s/%d)\n",frame, done_tif_stack[frame],
+	   get_name(TIF_PSC(done_tif_stack[frame])),get_arity(TIF_PSC(done_tif_stack[frame])));
+    frame++;
+  }
+}
+
+//----------------------------------------------------------------------
+
+static void find_subgoals_and_answers_for_pred(CTXTdeclc TIFptr tif) {
+
+  TRIE_W_LOCK();
+  VariantSF pSF = TIF_Subgoals(tif);
+  if ( IsNULL(pSF) )   return;
+
+  while (pSF) {
+    if (has_conditional_answer(pSF)) {
+      push_done_subgoal_node(CTXTc pSF);
+      find_answers_for_subgoal(CTXTc pSF);
+	} 
+    pSF = subg_next_subgoal(pSF);
+  } /* there is a child of "node" */
+  TRIE_W_UNLOCK();
+}
+
+int find_pred_backward_dependencies(CTXTdeclc TIFptr tif) {
+    BTNptr as_leaf;
+    PNDE pdeElement, ndeElement;
+    DL delayList, nde_delayList;
+    BTNptr as_prev, nde_as_prev;
+    VariantSF subgoal;
+    int answer_stack_current_pos = 0;
+    int done_subgoal_stack_current_pos = 0;
+
+    reset_done_tif_stack(CTXT);
+    if (!TIF_Visited(tif)) {
+      TIF_Visited(tif) = 1;
+      push_done_tif_node(CTXTc tif); 
+      find_subgoals_and_answers_for_pred(CTXTc tif);
+
+      //      print_answer_stack(CTXT);
+    while (answer_stack_current_pos < answer_stack_top 
+	   || done_subgoal_stack_current_pos < done_subgoal_stack_top) {
+      while (answer_stack_current_pos < answer_stack_top) {
+	as_leaf = answer_stack[answer_stack_current_pos];
+	pdeElement = asi_pdes((ASI) Child(as_leaf));
+	while (pdeElement) {
+	  delayList = pnde_dl(pdeElement);
+	  as_prev = dl_asl(delayList);
+	  if (as_prev) tif = subg_tif_ptr(asi_subgoal((ASI) Child(as_prev)));
+	  if (/*!tif_deltf_ptr(tif) &&*/ !TIF_Visited(tif)) {
+	    TIF_Visited(tif) = 1;
+	    push_done_tif_node(CTXTc tif);
+	    find_subgoals_and_answers_for_pred(CTXTc tif);
+	  }
+	  pdeElement = pnde_next(pdeElement);
+	}
+	answer_stack_current_pos++;
+      }
+      while (done_subgoal_stack_current_pos < done_subgoal_stack_top) {
+	subgoal = done_subgoal_stack[done_subgoal_stack_current_pos];
+	ndeElement = subg_nde_list(subgoal);				
+	while (ndeElement) {						
+	  nde_delayList = pnde_dl(ndeElement);				
+	  nde_as_prev = dl_asl(nde_delayList);				
+	  if (nde_as_prev) tif = subg_tif_ptr(asi_subgoal((ASI) Child(nde_as_prev)));
+	  if (/*!tif_deltf_ptr(tif) &&*/ !TIF_Visited(tif)) {
+	    TIF_Visited(tif) = 1;
+	    push_done_tif_node(CTXTc tif);
+	    find_subgoals_and_answers_for_pred(CTXTc tif);
+	  }								
+	  ndeElement = pnde_next(ndeElement);				
+	}								
+	done_subgoal_stack_current_pos++;
+      }
+    }
+    }
+
+    //    print_answer_stack(CTXT);
+    //    print_done_subgoal_stack(CTXT);
+    //    print_done_tif_stack(CTXT);
+    unvisit_done_tifs(CTXT);
+    reset_answer_stack(CTXT);
+    reset_done_subgoal_stack(CTXT);
+    return done_tif_stack_top;
+  }
 
 /* 
    Recurse through CP stack looking for trie nodes that match PSC.
@@ -2209,20 +2800,22 @@ int abolish_table_pred_cps_check(CTXTdeclc Psc psc)
   CPtr cp_top1,cp_bot1 ;
   byte cp_inst;
   int found_psc_match;
+  BTNptr trieNode;
 
   cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
 
   cp_top1 = breg ;				 
-  found_psc_match = 0;
-  while ( cp_top1 < cp_bot1 && !(found_psc_match)) {
+  found_psc_match = CAN_RECLAIM;
+  while ( cp_top1 < cp_bot1 && (found_psc_match == CAN_RECLAIM)) {
     cp_inst = *(byte *)*cp_top1;
     // Want trie insts, but will need to distinguish from
     // asserted and interned tries
     if ( is_trie_instruction(cp_inst) ) {
       // Below we want basic_answer_trie_tt, ts_answer_trie_tt
-      if (IsInAnswerTrie(((BTNptr) *cp_top1))) {
-	if (psc == get_psc_for_answer_trie_cp(CTXTc (BTNptr) *cp_top1)) {
-	  found_psc_match = 1;
+      trieNode = TrieNodeFromCP(cp_top1);
+      if (IsInAnswerTrie(trieNode)) {
+	if (psc == get_psc_for_answer_trie_cp(CTXTc trieNode)) {
+	  found_psc_match = CANT_RECLAIM;
 	}
       }
     }
@@ -2236,60 +2829,128 @@ int abolish_table_pred_cps_check(CTXTdeclc Psc psc)
 
   abolish_table_predicate does not reclaim space for previously
  "abolished" tables in deltf frames.  Need to do gc tables for
-  that. */
+  that. 
 
-inline int abolish_table_predicate(CTXTdeclc Psc psc)
-{
-  TIFptr tif;
+  Don't need a warning flag for this predicate -- it must always warn
+*/
+inline void abolish_table_pred_single(CTXTdeclc TIFptr tif, int cps_check_flag) {
   int action;
 
-  //  printf("\n.........starting atp\n");
-  tif = get_tip(CTXTc psc);
-  //  printTIF(tif);
-  //  print_private_deltfs(CTXT);
-  gc_tabled_preds(CTXT);
-  if ( IsNULL(tif) ) {
-    xsb_abort("[abolish_table_pred] Attempt to delete non-tabled predicate (%s/%d)\n",
-	      get_name(psc), get_arity(psc));
-  }
-  /* incremental */
-  if(get_incr(psc)) {
+  if(get_incr(TIF_PSC(tif))) {  /* incremental */
     xsb_warn("[abolish_table_predicate] Abolish incremental table"
-		" of predicate %s/%d. This can cause unexpected behavior.\n", get_name(psc), get_arity(psc));
+	     " of predicate %s/%d. This can cause unexpected behavior.\n", 
+	     get_name(TIF_PSC(tif)), get_arity(TIF_PSC(tif)));
     free_incr_hashtables(tif);
   }
 
   if (IsVariantPredicate(tif) && IsNULL(TIF_CallTrie(tif))) {
-    return 1;
+    return ;
   }
 
   if ( ! is_completed_table(tif) ) {
       xsb_abort("[abolish_table_pred] Cannot abolish incomplete table"
-		" of predicate %s/%d\n", get_name(psc), get_arity(psc));
+		" of predicate %s/%d\n", get_name(TIF_PSC(tif)), get_arity(TIF_PSC(tif)));
   }
 
-  if (flags[NUM_THREADS] == 1 || !get_shared(psc)) {
-    action = abolish_table_pred_cps_check(CTXTc psc);
+  if (flags[NUM_THREADS] == 1 || !get_shared(TIF_PSC(tif))) {
+    if (cps_check_flag) action = abolish_table_pred_cps_check(CTXTc TIF_PSC(tif));
+    else action = TIF_Mark(tif);  /* 1 = CANT_RECLAIM; 0 = CAN_RECLAIM */
   }
-  else action = 1;
-  if (!action) {
-    delete_predicate_table(CTXTc tif);
-    return 1;
+  else action = CANT_RECLAIM;
+  if (action == CAN_RECLAIM) {
+    delete_predicate_table(CTXTc tif,TRUE);
   }
   else {
     //        fprintf(stderr,"Delaying abolish of table in use: %s/%d\n",
     //        get_name(psc),get_arity(psc));
 #ifndef MULTI_THREAD
-    check_insert_private_deltf_pred(CTXTc tif);
+    check_insert_private_deltf_pred(CTXTc tif,TRUE);
 #else
-    if (!get_shared(psc))
-      check_insert_private_deltf_pred(CTXTc tif);
+    if (!get_shared(TIF_PSC(tif)))
+      check_insert_private_deltf_pred(CTXTc tif,TRUE);
     else
-      check_insert_shared_deltf_pred(CTXT, tif);
+      check_insert_shared_deltf_pred(CTXT, tif,TRUE);
 #endif
-    return 1; 
   }
 }  
+
+inline void abolish_table_pred_transitive(CTXTdeclc TIFptr tif, int cps_check_flag) {
+  int action;
+
+  find_pred_backward_dependencies(CTXTc tif);
+
+  if (flags[NUM_THREADS] == 1 || !get_shared(TIF_PSC(tif))) {
+    if (cps_check_flag) mark_cp_tabled_preds(CTXT);
+    action = CAN_RECLAIM;
+  } else action = CANT_RECLAIM;
+
+  while (done_tif_stack_top) {
+    done_tif_stack_top--;
+    tif = done_tif_stack[done_tif_stack_top];
+
+    if(get_incr(TIF_PSC(tif))) {     /* incremental */
+      xsb_warn("[abolish_table_predicate] Abolish incremental table"
+	       " of predicate %s/%d. This can cause unexpected behavior.\n", 
+	       get_name(TIF_PSC(tif)), get_arity(TIF_PSC(tif)));
+      free_incr_hashtables(tif);
+    }
+
+    if ( ! is_completed_table(tif) ) 
+      xsb_abort("[abolish_table_pred] Cannot abolish incomplete table"
+		" of predicate %s/%d\n", get_name(TIF_PSC(tif)), get_arity(TIF_PSC(tif)));
+
+    //        printf(" abolishing %s/%d\n",get_name(TIF_PSC(tif)),get_arity(TIF_PSC(tif)));
+    if (action == CAN_RECLAIM && !TIF_Mark(tif) ) {
+      //            printf("   really abolishing %s/%d\n",get_name(TIF_PSC(tif)),get_arity(TIF_PSC(tif)));
+      transitive_delete_predicate_table(CTXTc tif,FALSE);
+    }
+    /* This check is needed to avoid makding a deltf frame multiple times for the same predicate, 
+       when it is encountered more tha once by find_pred_backwared_dependencies() */
+    else if (TIF_Subgoals(tif)) {
+      //        fprintf(stderr,"Delaying abolish of table in use: %s/%d\n",
+      //        get_name(psc),get_arity(psc));
+#ifndef MULTI_THREAD
+      //      print_deltf_chain(CTXT);
+      //      printTIF(tif);
+      check_insert_private_deltf_pred(CTXTc tif,FALSE);
+#else
+      if (!get_shared(TIF_PSC(tif)))
+	check_insert_private_deltf_pred(CTXTc tif,FALSE);
+      else
+	check_insert_shared_deltf_pred(CTXT, tif,FALSE);
+#endif
+      }
+  }
+  if (cps_check_flag) unmark_cp_tabled_preds(CTXT);
+}  
+
+inline void abolish_table_predicate_switch(CTXTdeclc TIFptr tif, Psc psc, int invocation_flag, 
+					  int cps_check_flag) {
+
+  if (get_variant_tabled(psc)
+      && (invocation_flag == ABOLISH_TABLES_TRANSITIVELY 
+	  || (invocation_flag == ABOLISH_TABLES_DEFAULT 
+	      && flags[TABLE_GC_ACTION] == ABOLISH_TABLES_TRANSITIVELY))) {
+    abolish_table_pred_transitive(CTXTc tif, cps_check_flag);
+  }
+    else abolish_table_pred_single(CTXTc tif, cps_check_flag);
+}
+
+/* When calling a_t_p_switch, cps_check_flag is set to true, to ensure a check. 
+ invocation_flag (default, transitive) has been set on Prolog side. */
+inline void abolish_table_predicate(CTXTdeclc Psc psc, int invocation_flag) {
+  TIFptr tif;
+
+  tif = get_tip(CTXTc psc);
+
+  gc_tabled_preds(CTXT);
+  if ( IsNULL(tif) ) {
+    xsb_abort("[abolish_table_pred] Attempt to delete non-tabled predicate (%s/%d)\n",
+	      get_name(psc), get_arity(psc));
+  }
+
+  abolish_table_predicate_switch(CTXTc tif, psc, invocation_flag, TRUE);
+}
 
 /*------------------------------------------------------------------*/
 /* Table gc and supporting code */
@@ -2308,7 +2969,7 @@ void mark_tabled_preds(CTXTdecl) {
   CPtr cp_top1,cp_bot1 ; byte cp_inst;
   TIFptr tif;
   VariantSF subgoal;
-  BTNptr call_trie;
+  BTNptr call_trie, trieNode;
 
   cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
 
@@ -2318,13 +2979,14 @@ void mark_tabled_preds(CTXTdecl) {
     // Want trie insts, but will need to distinguish from
     // asserted and interned tries
     if ( is_trie_instruction(cp_inst) ) {
-      if (IsInAnswerTrie((BTNptr) *cp_top1)) {
+      trieNode = TrieNodeFromCP(cp_top1);
+      if (IsInAnswerTrie(trieNode)) {
 	DelTFptr dtf;
 
 	/* Check for predicate DelTFs */
-	tif = get_tif_for_answer_trie_cp(CTXTc (BTNptr) *cp_top1);
+	tif = get_tif_for_answer_trie_cp(CTXTc trieNode);
 
-	subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc (BTNptr) *cp_top1);
+	subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc trieNode);
 	call_trie = get_call_trie_from_subgoal_frame(CTXTc subgoal);
 	//	printf("subgoal %p call_trie %p\n",subgoal,call_trie);
 	
@@ -2342,7 +3004,7 @@ void mark_tabled_preds(CTXTdecl) {
 	//	}
 	
 	/* Now check for subgoal DelTFs */
-	subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc (BTNptr) *cp_top1);
+	subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc trieNode);
 	if (is_completed(subgoal)) {
 	  if (subg_deltf_ptr(subgoal) != NULL) {
 	    DTF_Mark((DelTFptr) subg_deltf_ptr(subgoal)) = 1;
@@ -2362,7 +3024,7 @@ void mark_private_tabled_preds(CTXTdecl) {
   CPtr cp_top1,cp_bot1 ; byte cp_inst;
   TIFptr tif;
   VariantSF subgoal;
-  BTNptr call_trie;
+  BTNptr call_trie,trieNode;
   
   cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
 
@@ -2372,14 +3034,15 @@ void mark_private_tabled_preds(CTXTdecl) {
     // Want trie insts, but will need to distinguish from
     // asserted and interned tries
     if ( is_trie_instruction(cp_inst) ) {
-      if (IsInAnswerTrie((BTNptr) *cp_top1)) {
+      trieNode = TrieNodeFromCP(cp_top1);
+      if (IsInAnswerTrie(trieNode)) {
 	DelTFptr dtf;
 
 	/* Check for predicate DelTFs */
-	tif = get_tif_for_answer_trie_cp(CTXTc (BTNptr) *cp_top1);
+	tif = get_tif_for_answer_trie_cp(CTXTc trieNode);
 
 	if (!get_shared(TIF_PSC(tif))) {
-	  subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc (BTNptr) *cp_top1);
+	  subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc trieNode);
 	  call_trie = get_call_trie_from_subgoal_frame(CTXTc subgoal);
 	  //	printf("subgoal %p call_trie %p\n",subgoal,call_trie);
 	
@@ -2400,7 +3063,7 @@ void mark_private_tabled_preds(CTXTdecl) {
 	}
 
 	/* Now check for subgoal DelTFs */
-	subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc (BTNptr) *cp_top1);
+	subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc trieNode);
 	if (is_completed(subgoal) 
 	    && !get_shared(TIF_PSC(subg_tif_ptr(subgoal)))) {
 	  if (subg_deltf_ptr(subgoal) != NULL) {
@@ -2441,8 +3104,8 @@ int sweep_private_tabled_preds(CTXTdecl) {
 	if (DTF_Type(deltf_ptr) == DELETED_SUBGOAL) {
 	  tif_ptr = subg_tif_ptr(DTF_Subgoal(deltf_ptr));
 	  //	  fprintf(stderr,"Garbage Collecting Subgoal: %s/%d\n",
-	  //	  get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
-	  delete_variant_sf_and_answers(CTXTc DTF_Subgoal(deltf_ptr)); 
+	  //  get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
+	  delete_variant_sf_and_answers(CTXTc DTF_Subgoal(deltf_ptr),DTF_Warn(deltf_ptr)); 
 	  Free_Private_DelTF_Subgoal(deltf_ptr,tif_ptr);
 	}
     }
@@ -2475,6 +3138,7 @@ int sweep_tabled_preds(CTXTdecl) {
     else {
       if (DTF_Type(deltf_ptr) == DELETED_PREDICATE) {
 	tif_ptr = subg_tif_ptr(DTF_Subgoals(deltf_ptr));
+	//  printf("fia\n");printTIF((TIFptr) 0x54c620);
 	//	fprintf(stderr,"Garbage Collecting Predicate: %s/%d\n",
 	//get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
 	reclaim_deleted_predicate_table(CTXTc deltf_ptr);
@@ -2482,9 +3146,9 @@ int sweep_tabled_preds(CTXTdecl) {
       } else 
 	if (DTF_Type(deltf_ptr) == DELETED_SUBGOAL) {
 	  tif_ptr = subg_tif_ptr(DTF_Subgoal(deltf_ptr));
-	  //	  fprintf(stderr,"Garbage Collecting Subgoal: %s/%d\n",
-	  //  get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
-	  delete_variant_sf_and_answers(CTXTc DTF_Subgoal(deltf_ptr)); 
+	  //	    fprintf(stderr,"Garbage Collecting Subgoal: %s/%d\n",
+	  //   get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
+	  delete_variant_sf_and_answers(CTXTc DTF_Subgoal(deltf_ptr),DTF_Warn(deltf_ptr)); 
 	  Free_Global_DelTF_Subgoal(deltf_ptr,tif_ptr);
 	}
     }
@@ -2504,11 +3168,10 @@ int sweep_tabled_preds(CTXTdecl) {
  */
 
 #ifndef MULTI_THREAD
-int gc_tabled_preds(CTXTdecl) 
-{
-    mark_tabled_preds(CTXT);
-    return sweep_tabled_preds(CTXT);
-  return 0;
+int gc_tabled_preds(CTXTdecl) {
+  //  print_deltf_chain(CTXT);
+  mark_tabled_preds(CTXT);
+  return sweep_tabled_preds(CTXT);
 }
 #else
 int gc_tabled_preds(CTXTdecl) 
@@ -2535,8 +3198,9 @@ int abolish_usermod_tables(CTXTdecl)
   unsigned long i;
   Pair pair;
   Psc psc;
+  TIFptr tif;
 
-  mark_cp_tables(CTXT);
+  mark_cp_tabled_preds(CTXT);
 
   for (i=0; i<symbol_table.size; i++) {
     if ((pair = (Pair) *(symbol_table.table + i))) {
@@ -2549,12 +3213,13 @@ int abolish_usermod_tables(CTXTdecl)
 	    !strcmp(get_name(get_data(psc)),"usermod") ||
 	    !strcmp(get_name(get_data(psc)),"global")) 
 	  if (get_tabled(psc)) {
-	    fast_abolish_table_predicate(CTXTc psc);
+	    tif = get_tip(CTXTc psc);
+	    abolish_table_predicate_switch(CTXTc tif, psc, ABOLISH_TABLES_SINGLY, FALSE);
 	  }
     }
   }
 
-  unmark_cp_tables(CTXT);
+  unmark_cp_tabled_preds(CTXT);
 
   return TRUE;
 }
@@ -2566,8 +3231,9 @@ int abolish_module_tables(CTXTdeclc const char *module_name)
   Pair modpair, pair;
   byte type;
   Psc psc, module;
+  TIFptr tif;
   
-  mark_cp_tables(CTXT);
+  mark_cp_tabled_preds(CTXT);
   modpair = (Pair) flags[MOD_LIST];
   
   while (modpair && 
@@ -2588,11 +3254,12 @@ int abolish_module_tables(CTXTdeclc const char *module_name)
     type = get_type(psc);
     if (type == T_DYNA || type == T_PRED) 
       if (get_tabled(psc)) {
-	fast_abolish_table_predicate(CTXTc psc);
+	tif = get_tip(CTXTc psc);
+	abolish_table_predicate_switch(CTXTc tif, psc, ABOLISH_TABLES_SINGLY, FALSE);
       }
     pair = pair_next(pair);
   }
-  unmark_cp_tables(CTXT);
+  unmark_cp_tabled_preds(CTXT);
   return TRUE;
 }
 
@@ -2618,6 +3285,7 @@ int abolish_mt_tables_cps_check(CTXTdecl,xsbBool isPrivate)
   CPtr cp_top1,cp_bot1 ;
   byte cp_inst;
   int found_match;
+  BTNptr trieNode;
 
   cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
   cp_top1 = breg ;				 
@@ -2627,9 +3295,10 @@ int abolish_mt_tables_cps_check(CTXTdecl,xsbBool isPrivate)
     // Want trie insts, but will need to distinguish from
     // asserted and interned tries
     if ( is_trie_instruction(cp_inst) ) {
+      trieNode = TrieNodeFromCP(cp_top1);
       // Below we want basic_answer_trie_tt, ts_answer_trie_tt
-      if (IsInAnswerTrie(((BTNptr) *cp_top1))) {
-	if (get_private(get_psc_for_answer_trie_cp(CTXTc (BTNptr) *cp_top1)) == isPrivate) {
+      if (IsInAnswerTrie(trieNode)) {
+	if (get_private(get_psc_for_answer_trie_cp(CTXTc trieNode)) == isPrivate) {
 	  found_match = 1;
 	}
       }
@@ -2643,14 +3312,14 @@ int abolish_mt_tables_cps_check(CTXTdecl,xsbBool isPrivate)
 void abolish_shared_tables(CTXTdecl) {
   TIFptr abol_tif;
 
-  mark_cp_tables(CTXT);
+  mark_cp_tabled_preds(CTXT);
 
   for (abol_tif = tif_list.first ; abol_tif != NULL
 	 ; abol_tif = TIF_NextTIF(abol_tif) ) {
-      fast_abolish_table_predicate(CTXTc TIF_PSC(abol_tif));
+	abolish_table_predicate_switch(CTXTc abol_tif, TIF_PSC(abol_tif), ABOLISH_TABLES_SINGLY, FALSE);
   }
 
-  unmark_cp_tables(CTXT);
+  unmark_cp_tabled_preds(CTXT);
 
 }
 
@@ -2683,14 +3352,15 @@ void abolish_all_shared_tables(CTXTdecl) {
 void abolish_private_tables(CTXTdecl) {
   TIFptr abol_tif;
 
-  mark_cp_tables(CTXT);
+  mark_cp_tabled_preds(CTXT);
 
   for (abol_tif = private_tif_list.first ; abol_tif != NULL
 	 ; abol_tif = TIF_NextTIF(abol_tif) ) {
-      fast_abolish_table_predicate(CTXTc TIF_PSC(abol_tif));
+    //    printf("calling %s\n",get_name(TIF_PSC(abol_tif)));
+    abolish_table_predicate_switch(CTXTc abol_tif, TIF_PSC(abol_tif), ABOLISH_TABLES_SINGLY, FALSE);
   }
 
-  unmark_cp_tables(CTXT);
+  unmark_cp_tabled_preds(CTXT);
 
 }
 
@@ -2745,8 +3415,9 @@ void thread_free_private_tifs(CTXTdecl) {
     if (xsb_thread_entry <= tdispblk->MaxThread) {
       tip = (&(tdispblk->Thread0))[xsb_thread_entry];
       if (tip) {
-	(&(tdispblk->Thread0))[xsb_thread_entry] = (TIFptr) NULL;
-	Free_Private_TIF(tip);
+	(&(tdispblk->Thread0))[xsb_thread_entry] = (TIFptr) NULL; {
+	  Free_Private_TIF(tip);
+	}
       }
     }
   }
@@ -2819,7 +3490,7 @@ void abolish_all_tables_cps_check(CTXTdecl)
 {
   CPtr cp_top1,cp_bot1 ;
   byte cp_inst;
-  int trie_type;
+  BTNptr trieNode;
 
   cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
 
@@ -2828,10 +3499,9 @@ void abolish_all_tables_cps_check(CTXTdecl)
     cp_inst = *(byte *)*cp_top1;
     /* Check for trie instructions */
     if ( is_trie_instruction(cp_inst)) {
-      trie_type = (int) TN_TrieType((BTNptr) *cp_top1);
-      /* Here, we want call_trie_tt,basic_answer_trie_tt,
-	 ts_answer_trie_tt","delay_trie_tt */
-      if (IsInAnswerTrie(((BTNptr) *cp_top1))) {
+      trieNode = TrieNodeFromCP(cp_top1);
+      /* Here, we want call_trie_tt,basic_answer_trie_tt,ts_answer_trie_tt"*/
+      if (IsInAnswerTrie(trieNode)) {
 	xsb_abort("[abolish_all_tables/0] Illegal table operation"
 		  "\n\t Backtracking through tables to be abolished.");
       }
@@ -2902,7 +3572,9 @@ void abolish_table_info(CTXTdecl)
 */
 
 //----------------------------------------------------------------------
-// This code under development -- TLS
+// Code from here to end of file is under development -- TLS
+
+// Code for marking ASI scratchpad
 
 #ifdef BITS64
 #define VISITED_MASK 0xf000000000000000
@@ -2916,13 +3588,16 @@ void abolish_table_info(CTXTdecl)
 #define STACK_MASK 0xfffffff
 #endif
 
-#define VISITED(as_leaf)  (asi_scratchpad((ASI) Child(as_leaf)) & VISITED_MASK)
+#define VISITED_ANSWER(as_leaf)  (asi_scratchpad((ASI) Child(as_leaf)) & VISITED_MASK)
 #define STACK_INDEX(as_leaf)  (asi_scratchpad((ASI) Child(as_leaf)) & STACK_MASK)
-#define MARK_VISITED(as_leaf) {asi_scratchpad((ASI) Child(as_leaf)) = VISITED_MASK;}
-
-extern void print_subgoal(CTXTdeclc FILE *, VariantSF);
+#define MARK_VISITED_ANSWER(as_leaf) {asi_scratchpad((ASI) Child(as_leaf)) = VISITED_MASK;}
+#define MARK_STACK_INDEX(as_leaf,index) {			\
+    asi_scratchpad((ASI) Child(as_leaf)) = ( VISITED_MASK | index );}
 
 static int dfn = 0;
+
+//----------------------------------------------------------------------
+//  Component stack is used for SCC detection and DFS
 
 struct answer_dfn {
   BTNptr  answer;
@@ -2949,14 +3624,15 @@ int component_stack_size = 0;
   component_stack[component_stack_top].dfn = dfn;		\
   component_stack[component_stack_top].min_link = dfn++;	\
   component_stack[component_stack_top].answer = as_leaf;	\
-  index = component_stack_top;				\
-  component_stack_top++;\
+  index = component_stack_top;					\
+  MARK_STACK_INDEX(as_leaf,index);				\
+  component_stack_top++;					\
   }
 
 /* for use when you don't need the index returned */
 #define push_comp_node_1(as_leaf) {			\
     int index;						\
-    MARK_VISITED(as_leaf);				\
+    MARK_VISITED_ANSWER(as_leaf);				\
     push_comp_node(as_leaf,index);			\
   }
 
@@ -2983,47 +3659,60 @@ void print_comp_stack(CTXTdecl) {
   }
 }
 
+#define deallocate_comp_stack	{					\
+  mem_dealloc(component_stack,component_stack_size*sizeof(struct answer_dfn), \
+		TABLE_SPACE);						\
+  component_stack_size = 0;						\
+  component_stack = 0;							\
+  }
+
 //----------------------------------------------------------------------
+
 struct done_answer_dfn {
   BTNptr  answer;
   int     scc;
+  int     checked;
 } ;
+
 typedef struct done_answer_dfn *doneAnswerDFN;
 
-int done_stack_top = 0;
-doneAnswerDFN done_stack = NULL;
-int done_stack_size = 0;
+int done_answer_stack_top = 0;
+doneAnswerDFN done_answer_stack = NULL;
+int done_answer_stack_size = 0;
+#define done_answer_stack_increment 1000
 
 #define push_done_node(index,dfn_num) {					\
-    if (done_stack_top >= done_stack_size) {				\
-      unsigned long old_done_stack_size = done_stack_size;		\
-      done_stack_size = done_stack_size + component_stack_increment;		\
-      done_stack = (doneAnswerDFN) mem_realloc(done_stack,		\
-					       old_done_stack_size*sizeof(struct done_answer_dfn), \
-					  done_stack_size*sizeof(struct done_answer_dfn), \
+    if (done_answer_stack_top >= done_answer_stack_size) {				\
+      unsigned long old_done_answer_stack_size = done_answer_stack_size;		\
+      done_answer_stack_size = done_answer_stack_size + done_answer_stack_increment; \
+      done_answer_stack = (doneAnswerDFN) mem_realloc(done_answer_stack,		\
+					       old_done_answer_stack_size*sizeof(struct done_answer_dfn), \
+					  done_answer_stack_size*sizeof(struct done_answer_dfn), \
 					  TABLE_SPACE);			\
     }									\
-    done_stack[done_stack_top].scc = dfn_num;				\
-    done_stack[done_stack_top].answer = component_stack[index].answer;	\
-    done_stack_top++;							\
+    done_answer_stack[done_answer_stack_top].scc = dfn_num;				\
+    done_answer_stack[done_answer_stack_top].checked = 0;				\
+    done_answer_stack[done_answer_stack_top].answer = component_stack[index].answer;	\
+    MARK_STACK_INDEX(component_stack[index].answer,done_answer_stack_top);	\
+    done_answer_stack_top++;							\
   }
 
-void print_done_stack(CTXTdecl) {
+void print_done_answer_stack(CTXTdecl) {
   int frame = 0;
-  while (frame < done_stack_top) {
-    printf("done_frame %d answer %p scc %d  ",frame, 
-	   done_stack[frame].answer,done_stack[frame].scc);
-    print_subgoal(CTXTc stddbg, asi_subgoal((ASI) Child(done_stack[frame].answer)));
+  while (frame < done_answer_stack_top) {
+    printf("done_frame %d answer %p scc %d checked %d ",frame, 
+	   done_answer_stack[frame].answer,done_answer_stack[frame].scc,done_answer_stack[frame].checked);
+    print_subgoal(CTXTc stddbg, asi_subgoal((ASI) Child(done_answer_stack[frame].answer)));
     printf("\n");
     frame++;
   }
 }
 
 // reset the scratchpad for each answer in done stack
-void reset_done_stack() {
+void reset_done_answer_stack() {
   int frame = 0;
-  while (frame < done_stack_top) {
-    asi_scratchpad((ASI) Child(done_stack[frame].answer)) = 0;
+  while (frame < done_answer_stack_top) {
+    asi_scratchpad((ASI) Child(done_answer_stack[frame].answer)) = 0;
     frame++;
   }
 }
@@ -3031,24 +3720,11 @@ void reset_done_stack() {
 //----------------------------------------------------------------------
 /* Returns -1 when no answer found (not 0, as 0 can be an index */
 int visited_answer(BTNptr as_leaf) {		
-  int found = -1;
-  int cur_stack_frame = 0;
-
-  while (found < 0 && cur_stack_frame < done_stack_top) {
-    if (done_stack[cur_stack_frame].answer == as_leaf)
-      found = cur_stack_frame;
-    cur_stack_frame++;
-  } 
-
-  cur_stack_frame = 0;
-  while (found < 0 && cur_stack_frame < component_stack_top) {
-    if (component_stack[cur_stack_frame].answer == as_leaf)
-      found = cur_stack_frame;
-    cur_stack_frame++;
-  } 
-  return found;
+  if (!VISITED_ANSWER(as_leaf)) return -1;
+  else return STACK_INDEX(as_leaf);
 }
 
+/* Negative DEs dont have answer pointer -- so need to obtain it from subgoal */
 BTNptr traverse_subgoal(VariantSF pSF) {
   BTNptr cur_node = 0;
 
@@ -3072,8 +3748,6 @@ BTNptr traverse_subgoal(VariantSF pSF) {
       component_stack[from_answer].min_link = component_stack[to_answer].dfn;	 \
   }							 \
 
-
-
 int table_component_check(CTXTdeclc NODEptr from_answer) {
   DL delayList;
   DE delayElement;
@@ -3082,8 +3756,9 @@ int table_component_check(CTXTdeclc NODEptr from_answer) {
 
   //  if (is_conditional_answer(from_answer)) {
     push_comp_node(from_answer,from_answer_idx);
-       printf("starting: "); 
+    printf("starting: %d %d ; ",VISITED_ANSWER(from_answer),STACK_INDEX(from_answer)); 
        print_subgoal(CTXTc stddbg, asi_subgoal((ASI) Child(from_answer)));printf("\n");
+       
     //    print_comp_stack(CTXT);
     delayList = asi_dl_list((ASI) Child(from_answer));
     while (delayList) {
@@ -3115,13 +3790,59 @@ int table_component_check(CTXTdeclc NODEptr from_answer) {
     // }
 }
 
-xsbBool table_inspection_function( CTXTdecl ) 
-{
+void unfounded_component(CTXTdecl) {
+  int founded = 0;
+  int index;
+  int starting_index = 0;
+  int starting_scc = done_answer_stack[starting_index].scc;
+  DL delayList;
+  DE delayElement;
+  BTNptr cur_answer;
+
+  while (starting_index < done_answer_stack_top) {
+    founded = 0; 
+    index = starting_index;
+    starting_scc = done_answer_stack[index].scc;
+    while (!founded && done_answer_stack[index].scc == starting_scc) {
+      cur_answer = done_answer_stack[index].answer;
+      delayList = asi_dl_list((ASI) Child(cur_answer));
+      print_subgoal(CTXTc stddbg, asi_subgoal((ASI) Child(cur_answer)));printf("\n");
+      while (!founded && delayList) {
+	delayElement = dl_de_list(delayList);
+	while (!founded && delayElement) {
+	  if (!de_ans_subst(delayElement)) 
+	    founded = 1;
+	  else {
+	    if (done_answer_stack[STACK_INDEX(de_ans_subst(delayElement))].checked == 1)
+	      founded = 1;
+	  }
+	  delayElement = de_next(delayElement);
+	}
+	delayList = de_next(delayList);
+      }
+      index++;
+    }
+    if (!founded) {
+      printf("SCC %d is unfounded!\n",starting_scc);
+      // start simplification operations
+    }
+    else {
+      printf("SCC %d is founded\n",starting_scc);
+      for ( ; done_answer_stack[starting_index].scc == starting_scc && starting_index < done_answer_stack_top ; starting_index++) 
+	done_answer_stack[starting_index].checked = 1;
+    }
+  }
+}
+
+//----------------------------------------------------------------------
+int table_inspection_function( CTXTdecl ) {
   switch (ptoc_int(CTXTc 1)) {
 
   case FIND_COMPONENTS: {
     table_component_check(CTXTc (NODEptr) ptoc_int(CTXTc 2));
-    print_done_stack(CTXT);
+    print_done_answer_stack(CTXT);
+    unfounded_component(CTXT);
+    print_done_answer_stack(CTXT);
     break;
   }
 
@@ -3131,7 +3852,7 @@ xsbBool table_inspection_function( CTXTdecl )
   BTNptr as_leaf, new_answer;
   struct answer_dfn stack_node;
 
-  done_stack_top = 0; dfn = 0;
+  done_answer_stack_top = 0; dfn = 0;
   as_leaf = (NODEptr) ptoc_int(CTXTc 2);
   if (is_conditional_answer(as_leaf)) {
     push_comp_node_1(as_leaf);
@@ -3146,11 +3867,11 @@ xsbBool table_inspection_function( CTXTdecl )
 	delayElement = dl_de_list(delayList);
 	while (delayElement) {
 	  if (de_ans_subst(delayElement)) {
-	    if (!VISITED(de_ans_subst(delayElement)))
+	    if (!VISITED_ANSWER(de_ans_subst(delayElement)))
 	      push_comp_node_1(de_ans_subst(delayElement));
 	  } else {
 	    new_answer = traverse_subgoal(de_subgoal(delayElement));
-	    if (!VISITED(new_answer)) 
+	    if (!VISITED_ANSWER(new_answer)) 
 	      push_comp_node_1(new_answer);
 	    }
 	    delayElement = de_next(delayElement);
@@ -3158,22 +3879,24 @@ xsbBool table_inspection_function( CTXTdecl )
 	  delayList = de_next(delayList);
 	}
       }
-    mem_dealloc(component_stack,component_stack_size*sizeof(struct answer_dfn),
-		TABLE_SPACE);
-    print_done_stack(CTXT);
+    printf("component stack %p\n",component_stack);
+    deallocate_comp_stack;
+    print_done_answer_stack(CTXT);
     // Don't deallocte done stack until done with its information.
-    reset_done_stack();
+    reset_done_answer_stack();
+    return 0;
   }
   else  printf("found unconditional answer %p\n",as_leaf);
     break;
   }
-
-  case FIND_BACKWARD_DEPENDENCIES: {
-    break;
+  
+  case FIND_ANSWERS: {
+    return find_pred_backward_dependencies(CTXTc get_tip(CTXTc term_psc(ptoc_tag(CTXTc 2))));
   }
 
   }
+  return 0;
+}
 
-  return TRUE;
-  }
+
 

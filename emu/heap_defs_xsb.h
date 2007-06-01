@@ -35,6 +35,10 @@
 #define GC_GC_CLAUSES		4
 #define GC_GC_TABLED_PREDS	8
 
+#define ABOLISH_TABLES_TRANSITIVELY  0
+#define ABOLISH_TABLES_SINGLY        1
+#define ABOLISH_TABLES_DEFAULT       2
+
 /*--- The following are used for string-space collection ---------------*/
 
 #define mark_string_safe(tstr,msg)		\

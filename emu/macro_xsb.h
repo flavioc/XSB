@@ -47,8 +47,9 @@ typedef struct Deleted_Table_Frame *DelTFptr;
 typedef struct Deleted_Table_Frame {
   BTNptr call_trie;		/* pointer to the root of the call trie */
   VariantSF subgoals;		/* chain of predicate's subgoals */
-  byte      type;                /* Marked by scan of CP stack */
-  byte      mark;                /* Marked by scan of CP stack */
+  byte     type;                /* subgoal or predicate */
+  byte     mark;                /* Marked by scan of CP stack */
+  byte     warn;                /* Issue warning message? */
   DelTFptr next_delTF;		/* pointer to next table info frame */
   DelTFptr next_pred_delTF;	/* pointer to next table info frame same pred */
   DelTFptr prev_delTF;		/* pointer to prev table info frame */
@@ -60,6 +61,7 @@ typedef struct Deleted_Table_Frame {
 
 #define DTF_Mark(pDTF)	           ( (pDTF)->mark )
 #define DTF_Type(pDTF)	           ( (pDTF)->type )
+#define DTF_Warn(pDTF)	           ( (pDTF)->warn )
 #define DTF_CallTrie(pDTF)	   ( (pDTF)->call_trie )
 #define DTF_Subgoals(pDTF)	   ( (pDTF)->subgoals )
 #define DTF_Subgoal(pDTF)	   ( (pDTF)->subgoals )
@@ -68,46 +70,7 @@ typedef struct Deleted_Table_Frame {
 #define DTF_PrevDTF(pDTF)	   ( (pDTF)->prev_delTF )
 #define DTF_PrevPredDTF(pDTF)	   ( (pDTF)->prev_pred_delTF )
 
-/* Creating two doubly-linked chains -- one for all DelTf, the other
-   for Deltfs for this predicate.  */
-#define New_Global_DelTF_Pred(pDTF,pTIF) {				\
-   pDTF = (DelTFptr)mem_alloc(sizeof(DeletedTableFrame),TABLE_SPACE);	\
-   if ( IsNULL(pDTF) )							\
-     xsb_abort("Ran out of memory in allocation of DeletedTableFrame");	\
-   DTF_CallTrie(pDTF) = TIF_CallTrie(pTIF);				\
-   DTF_Subgoals(pDTF) = TIF_Subgoals(pTIF);				\
-   DTF_Type(pDTF) = DELETED_PREDICATE;					\
-   DTF_Mark(pDTF) = 0;                                                  \
-   DTF_PrevDTF(pDTF) = 0;						\
-   DTF_PrevPredDTF(pDTF) = 0;						\
-   DTF_NextDTF(pDTF) = deltf_chain_begin;				\
-   DTF_NextPredDTF(pDTF) = TIF_DelTF(pTIF);				\
-   if (deltf_chain_begin) DTF_PrevDTF(deltf_chain_begin) = pDTF;	\
-   if (TIF_DelTF(pTIF))  DTF_PrevPredDTF(TIF_DelTF(pTIF)) = pDTF;	\
-   deltf_chain_begin = pDTF;                                            \
-   TIF_DelTF(pTIF) = pDTF;                                              \
-  }
-
-/* Creating two doubly-linked chains -- one for all DelTf, the other
-   for Deltfs for this predicate -- this may not be necess for
-   _subgoal */
-#define New_Global_DelTF_Subgoal(pDTF,pTIF,pSubgoal) {			\
-   pDTF = (DelTFptr)mem_alloc(sizeof(DeletedTableFrame),TABLE_SPACE);	\
-   if ( IsNULL(pDTF) )							\
-     xsb_abort("Ran out of memory in allocation of DeletedTableFrame");	\
-   DTF_CallTrie(pDTF) = NULL;						\
-   DTF_Subgoal(pDTF) = pSubgoal;					\
-   DTF_Type(pDTF) = DELETED_SUBGOAL;						\
-   DTF_Mark(pDTF) = 0;                                                  \
-   DTF_PrevDTF(pDTF) = 0;						\
-   DTF_PrevPredDTF(pDTF) = 0;						\
-   DTF_NextDTF(pDTF) = deltf_chain_begin;				\
-   DTF_NextPredDTF(pDTF) = TIF_DelTF(pTIF);				\
-   if (deltf_chain_begin) DTF_PrevDTF(deltf_chain_begin) = pDTF;	\
-   if (TIF_DelTF(pTIF))  DTF_PrevPredDTF(TIF_DelTF(pTIF)) = pDTF;	\
-   deltf_chain_begin = pDTF;                                            \
-   TIF_DelTF(pTIF) = pDTF;                                              \
-  }
+/* Functions to create deltfs are inlined, and in tr_utils.c */
 
 /* In macro below, need to reset DTF chain, and Pred-level DTF chain.
  * No mutexes, because it is called only during gc, w. only 1 active
@@ -157,44 +120,6 @@ typedef struct Deleted_Table_Frame {
 }
 
 #ifdef MULTI_THREAD
-#define New_Private_DelTF_Pred(pDTF,pTIF) {				\
-   pDTF = (DelTFptr)mem_alloc(sizeof(DeletedTableFrame),TABLE_SPACE);	\
-   if ( IsNULL(pDTF) )							\
-     xsb_abort("Ran out of memory in allocation of DeletedTableFrame");	\
-   DTF_CallTrie(pDTF) = TIF_CallTrie(pTIF);				\
-   DTF_Subgoals(pDTF) = TIF_Subgoals(pTIF);				\
-   DTF_Type(pDTF) = DELETED_PREDICATE;					\
-   DTF_Mark(pDTF) = 0;                                                  \
-   DTF_PrevDTF(pDTF) = 0;						\
-   DTF_PrevPredDTF(pDTF) = 0;						\
-   DTF_NextDTF(pDTF) = private_deltf_chain_begin;			\
-   DTF_NextPredDTF(pDTF) = TIF_DelTF(pTIF);				\
-   if (private_deltf_chain_begin)					\
-     DTF_PrevDTF(private_deltf_chain_begin) = pDTF;			\
-   if (TIF_DelTF(pTIF))  DTF_PrevPredDTF(TIF_DelTF(pTIF)) = pDTF;	\
-   private_deltf_chain_begin = pDTF;					\
-   TIF_DelTF(pTIF) = pDTF;                                              \
-  }
-
-#define New_Private_DelTF_Subgoal(pDTF,pTIF,pSubgoal) {			\
-   pDTF = (DelTFptr)mem_alloc(sizeof(DeletedTableFrame),TABLE_SPACE);	\
-   if ( IsNULL(pDTF) )							\
-     xsb_abort("Ran out of memory in allocation of DeletedTableFrame");	\
-   DTF_CallTrie(pDTF) = NULL;						\
-   DTF_Subgoal(pDTF) = pSubgoal;					\
-   DTF_Type(pDTF) = DELETED_SUBGOAL;					\
-   DTF_Mark(pDTF) = 0;                                                  \
-   DTF_PrevDTF(pDTF) = 0;						\
-   DTF_PrevPredDTF(pDTF) = 0;						\
-   DTF_NextDTF(pDTF) = private_deltf_chain_begin;			\
-   DTF_NextPredDTF(pDTF) = TIF_DelTF(pTIF);				\
-   if (private_deltf_chain_begin)					\
-     DTF_PrevDTF(private_deltf_chain_begin) = pDTF;				\
-   if (TIF_DelTF(pTIF))  DTF_PrevPredDTF(TIF_DelTF(pTIF)) = pDTF;	\
-   private_deltf_chain_begin = pDTF;					\
-   TIF_DelTF(pTIF) = pDTF;                                              \
-  }
-
 /* In macro below, need to reset DTF chain, and Pred-level DTF chain.
  * No mutexes, because it is called only during gc, w. only 1 active
  * thread. */
@@ -363,6 +288,7 @@ typedef struct Table_Info_Frame {
   Psc  psc_ptr;			/* pointer to the PSC record of the subgoal */
   byte method;	                /* eval pred using variant or subsumption? */
   byte mark;                    /* (bit) to indicate tif marked for gc */
+  byte visited;                 /* (bit) to indicate tif visited during cascading deletes */
   DelTFptr del_tf_ptr;          /* pointer to first deletion frame for pred */
   BTNptr call_trie;		/* pointer to the root of the call trie */
   VariantSF subgoals;		/* chain of predicate's subgoals */
@@ -376,6 +302,7 @@ typedef struct Table_Info_Frame {
 #define TIF_DelTF(pTIF)	           ( (pTIF)->del_tf_ptr )
 #define TIF_EvalMethod(pTIF)	   ( (pTIF)->method )
 #define TIF_Mark(pTIF)	           ( (pTIF)->mark )
+#define TIF_Visited(pTIF)          ( (pTIF)->visited )
 #define TIF_CallTrie(pTIF)	   ( (pTIF)->call_trie )
 #define TIF_Subgoals(pTIF)	   ( (pTIF)->subgoals )
 #define TIF_NextTIF(pTIF)	   ( (pTIF)->next_tif )
@@ -445,7 +372,7 @@ extern TIFptr New_TIF(Psc);
       TIF_NextTIF(tTIF) = TIF_NextTIF((pTIF));				\
     }									\
     SYS_MUTEX_UNLOCK( MUTEX_TABLE );					\
-    delete_predicate_table(CTXTc pTIF);					\
+    delete_predicate_table(CTXTc pTIF,TRUE);				\
     free_call_trie_mutex(pTIF);						\
     mem_dealloc((pTIF),sizeof(TableInfoFrame),TABLE_SPACE);		\
   }
@@ -464,7 +391,7 @@ extern TIFptr New_TIF(Psc);
       TIF_NextTIF(tTIF) = TIF_NextTIF((pTIF));				\
     }									\
     SET_TRIE_ALLOCATION_TYPE_PRIVATE();					\
-    delete_predicate_table(CTXTc pTIF);					\
+    delete_predicate_table(CTXTc pTIF,TRUE);				\
     free_call_trie_mutex(pTIF);						\
     mem_dealloc((pTIF),sizeof(TableInfoFrame),TABLE_SPACE);		\
   }
@@ -677,6 +604,7 @@ typedef struct subgoal_frame {
   byte is_complete;	  /* If producer, whether its answer set is complete */
   byte is_reclaimed;	  /* Whether structs for supporting answer res from an
 			     incomplete table have been reclaimed */
+  byte visited;
   TIFptr tif_ptr;	  /* Table of which this call is a part */
   BTNptr leaf_ptr;	  /* Handle for call in the CallTrie */
   BTNptr ans_root_ptr;	  /* Root of the return trie */
@@ -729,6 +657,19 @@ typedef struct subgoal_frame {
 #define subg_tid(b)		( ((VariantSF)(b))->tid )
 #define subg_tag(b)		( ((VariantSF)(b))->tag )
 #define subg_grabbed(b)		( ((VariantSF)(b))->grabbed )
+
+/* The subgoal visited field can be used for both marking during GC
+   (the GC_MARK mask) and during table traversal to transitively remove
+   depending subgoals (the VISITED mask).  */
+#define VISITED_SUBGOAL_MASK  1
+#define GC_SUBGOAL_MASK  8
+#define VISITED_SUBGOAL(subgoal)  ((subgoal->visited) & VISITED_SUBGOAL_MASK)
+#define MARK_VISITED_SUBGOAL(subgoal) {(subgoal->visited) = VISITED_SUBGOAL_MASK | (subgoal->visited);}
+#define UNMARK_VISITED_SUBGOAL(subgoal) {(subgoal->visited) = (subgoal->visited) & GC_SUBGOAL_MASK;}
+#define GC_MARKED_SUBGOAL(subgoal)  ((subgoal->visited) & GC_SUBGOAL_MASK)
+#define GC_MARK_SUBGOAL(subgoal) {(subgoal->visited) = GC_SUBGOAL_MASK | (subgoal->visited);}
+
+#define GC_UNMARK_SUBGOAL(subgoal) {(subgoal->visited) =  (subgoal->visited) & VISITED_SUBGOAL_MASK;}
 
 /* Subsumptive Producer Subgoal Frame
    ---------------------------------- */
@@ -813,18 +754,24 @@ typedef struct SubsumedConsumerSubgoalFrame {
    NewChain = (VariantSF)pSF;				\
  }
 
+/* Need to be careful here.  In general we want to unchain this
+   subgoal frame from the chain of subgoal frames -- however, if this
+   subgoal frame is from an old generation of the table, we dont want
+   to update TIF_Subgoals (chain,newchain) to point to the
+   invalidated, "next" frame for this subgoal */
 #define subg_dll_remove_sf(pSF,Chain,NewChain) {			 \
    if ( IsNonNULL(subg_prev_subgoal(pSF)) ) {				 \
      subg_next_subgoal(subg_prev_subgoal(pSF)) = subg_next_subgoal(pSF); \
      NewChain = Chain;							 \
    }									 \
-   else									 \
-     NewChain = (VariantSF)subg_next_subgoal(pSF);			 \
+   else	{								\
+     if (pSF == TIF_Subgoals(subg_tif_ptr(pSF)))			\
+       NewChain = (VariantSF)subg_next_subgoal(pSF);			\
+   }									\
    if ( IsNonNULL(subg_next_subgoal(pSF)) )				 \
      subg_prev_subgoal(subg_next_subgoal(pSF)) = subg_prev_subgoal(pSF); \
    subg_prev_subgoal(pSF) = subg_next_subgoal(pSF) = NULL;		 \
  }
-
 
 #ifndef MULTI_THREAD
 extern ALNptr empty_return(VariantSF);
@@ -877,21 +824,20 @@ extern struct Structure_Manager smConsSF;
    ---------------------------- */
 
 /* NewProducerSF() is now a function, in tables.c */
-
 #define FreeProducerSF(SF) {					\
     release_any_pndes(CTXTc subg_nde_list(SF));			\
-   subg_dll_remove_sf(SF,TIF_Subgoals(subg_tif_ptr(SF)),	\
-		      TIF_Subgoals(subg_tif_ptr(SF)));		\
-   if ( IsVariantSF(SF) ) {					\
-     if (IsSharedSF(SF)) {					\
-       SM_DeallocateSharedStruct(smVarSF,SF);			\
-     } else {							\
-       SM_DeallocateStruct(smVarSF,SF);				\
-     }								\
-   }								\
-   else								\
-     SM_DeallocateStruct(smProdSF,SF)				\
- }
+    subg_dll_remove_sf(SF,TIF_Subgoals(subg_tif_ptr(SF)),	\
+			 TIF_Subgoals(subg_tif_ptr(SF)));	\
+    if ( IsVariantSF(SF) ) {					\
+      if (IsSharedSF(SF)) {					\
+	SM_DeallocateSharedStruct(smVarSF,SF);			\
+      } else {							\
+	SM_DeallocateStruct(smVarSF,SF);			\
+      }								\
+    }								\
+    else							\
+      SM_DeallocateStruct(smProdSF,SF);				\
+  }
 
 
 /*

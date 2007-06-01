@@ -661,11 +661,13 @@ void printTIF(TIFptr tif) {
   printf("TableInfoFrame  %p\n"
 	 "{ psc_ptr = %p  (%s/%d)\n"
 	 "  call_trie = %p\n"
-	 "  subgoals = %p  ",
+	 "  del_tf_ptr = %p\n"
+	 "  subgoals = %p  }",
 	 tif,
 	 TIF_PSC(tif), get_name(TIF_PSC(tif)), get_arity(TIF_PSC(tif)),
 	 //	 stringTabledEvalMethod(TIF_EvalMethod(tif)),
 	 TIF_CallTrie(tif),
+	 TIF_DelTF(tif),
 	 TIF_Subgoals(tif));
   subg_dll_length(TIF_Subgoals(tif),&forward,&back);
   if ( forward == back )
@@ -682,11 +684,11 @@ void printDelTF(DelTFptr dtf) {
 	 "  type = %d\n"
 	 "  mark = %d\n"
 	 "  next_delTF = %p\n"
-	 "  next_pred_delTF = %p\n"
 	 "  prev_delTF = %p\n"
+	 "  next_pred_delTF = %p\n"
 	 "  prev_pred_delTF = %p\n",
 	 dtf,DTF_CallTrie(dtf),DTF_Subgoals(dtf),DTF_Type(dtf),DTF_Mark(dtf),
-	 DTF_NextDTF(dtf),DTF_PrevDTF(dtf),DTF_PrevDTF(dtf),DTF_PrevPredDTF(dtf));
+	 DTF_NextDTF(dtf),DTF_PrevDTF(dtf),DTF_NextPredDTF(dtf),DTF_PrevPredDTF(dtf));
 }
 
 #ifdef MULTI_THREAD
@@ -702,6 +704,18 @@ void print_private_deltfs(CTXTdecl) {
 }
 #endif
 
+extern DelTFptr deltf_chain_begin;
+
+void print_deltf_chain(CTXTdecl) {
+  printf("========================== deltf chain\n");
+  DelTFptr dtf =   deltf_chain_begin;
+  while (dtf != NULL) {
+    printDelTF(dtf);
+    printf("\n");
+    dtf = DTF_NextDTF(dtf);
+  }
+  printf("==========================\n");
+}
 
 /*----- For table debugging --------------------------------------------*/ 
 

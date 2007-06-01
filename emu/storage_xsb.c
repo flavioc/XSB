@@ -68,7 +68,7 @@ static inline STORAGE_HANDLE *get_storage_handle(CTXTdeclc Cell name)
     xsb_dbgmsg((LOG_STORAGE,
 	       "GET_STORAGE_HANDLE: New trie created for %s\n", 
 	       string_val(name)));
-    handle_cell->handle= newtrie(CTXT);
+    handle_cell->handle= newtrie(CTXTc 0);  /* create as private */
     /* Note: not necessary to initialize snapshot_number&changed: handle_cell
        was calloc()'ed 
        handle_cell->snapshot_number=0;

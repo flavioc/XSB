@@ -114,8 +114,10 @@ typedef struct psc_pair *Pair;
 #define  get_tabled(psc)	((psc)->env & T_TABLED)
 #define  get_incr(psc)          (((psc)->incr & 3) == 1)  /* incremental */
 #define  get_opaque(psc)        (((psc)->incr & 3) == 2)  /* incremental */
-#define  get_subsumptive_tabled(psc)	((psc)->env & T_TABLED_VAR & ~T_TABLED_SUB)
-#define  get_variant_tabled(psc)	((psc)->env & T_TABLED_SUB & ~T_TABLED_VAR)
+
+// get_xxx_tabled will also succeed if tabling type is not yet known
+#define  get_subsumptive_tabled(psc)	((psc)->env & T_TABLED_SUB & ~T_TABLED_VAR)
+#define  get_variant_tabled(psc)	((psc)->env & T_TABLED_VAR & ~T_TABLED_SUB)
 #define  get_arity(psc)		((psc)->arity)
 #define  get_ep(psc)		((psc)->ep)
 #define  get_data(psc)		((psc)->data)

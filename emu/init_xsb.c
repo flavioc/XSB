@@ -911,12 +911,25 @@ void init_thread_structures(CTXTdecl)
   OldestCl = retracted_buffer;
   NewestCl = retracted_buffer;
 
-/*  call_intercept = init_call_intercept ; */
+  /* call_intercept = init_call_intercept ; */
 
   private_tif_list.first = NULL;
   private_tif_list.last = NULL;
   private_deltf_chain_begin = NULL;
   private_delcf_chain_begin = NULL;
+
+  /* Stuff for abolishing tables */
+  answer_stack_top = 0;
+  answer_stack = NULL;
+  answer_stack_size = 0;
+
+  done_subgoal_stack_top = 0;
+  done_subgoal_stack = NULL;
+  done_subgoal_stack_size = 0;
+
+  done_tif_stack_top = 0;
+  done_tif_stack = NULL;
+  done_tif_stack_size = 0;
 
   /******** Initialize Private structure managers ********/
 
