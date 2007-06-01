@@ -680,17 +680,16 @@ The order in which these options appear makes no difference.
     to clutter the picture.
 \end{description}
 
-\comment{
-As an example, a program which uses more heap and local stack than the
-default configuration of XSB might be run by invoking XSB with the command.
+As an example, if you would like to use XSB as part of a script, where
+XSB loads up a file {\tt foo.P}, and execute {\tt goal} simply
+use the command: 
 \begin{verbatim}
-         xsb -m 2000
+xsb --nobanner --quietload --noprompt -e "[foo], goal, halt."
 \end{verbatim}
-}
+
 
 \section{Memory Management}\label{memory_management}
-\index{memory management}
-\index{garbage collection}
+\index{memory management} \index{garbage collection}
 %===================================================
 All execution stacks are automatically expanded in \version{},
 including the local stack/heap region, the trail/choice point region,

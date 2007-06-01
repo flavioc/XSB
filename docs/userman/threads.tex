@@ -446,13 +446,12 @@ sh makexsb --config-tag=mt
 %
 When called from thread $T$, this predicate creates a new XSB thread
 $T_{new}$ to execute {\tt Goal}.  When goal either succeeds, throws an
-unhandled error, or fails, $T_{new}$ exits, but {\tt
-  thread\_create/2} will succeed immediately, binding {\tt
-  ThreadId} to the XSB thread id of $T_{new}$.  {\tt Goal} must be
-callable, but need not be fully instantiated.  No bindings from {\tt
-  Goal} are passed back from $T$ to $T_{new}$, so communication
-between $T_{new}$ and $T$ must be through tables, asserted code, or
-other side effects.
+unhandled error, or fails, $T_{new}$ exits, but {\tt thread\_create/2}
+will succeed immediately, binding {\tt ThreadId} to the XSB thread id
+of $T_{new}$.  {\tt Goal} must be callable, but need not be fully
+instantiated.  No bindings from {\tt Goal} are passed back from $T$ to
+$T_{new}$, so communication between $T_{new}$ and $T$ must be through
+tables, asserted code, message queues or other side effects.
 
 {\tt OptionList} allows optional parameters in the configuration for
 the initial size of XSB stacks and to indicate whether $T_{new}$ is to
@@ -945,7 +944,7 @@ default number of elements can be obtained via the query
 \ei
 \ei
 
-\ournewitem{thread\_send\_message(Queue,\#Message)}{mutex}
+\ournewitem{thread\_send\_message(+Queue,\#Message)}{mutex}
 \index{\texttt{thread\_send\_message/2}} 
 %
 If there are fewer than elements on {\tt Queue} than its maximum size,
@@ -962,7 +961,7 @@ If there are fewer than elements on {\tt Queue} than its maximum size,
 \ei
 \ei
 
-\ournewitem{thread\_get\_message(-Queue,?Message)}{mutex}
+\ournewitem{thread\_get\_message(+Queue,?Message)}{mutex}
 \index{\texttt{thread\_get\_message/2}} 
 
 If there are elements on {\tt Queue} {\tt thread\_get\_message/}

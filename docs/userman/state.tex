@@ -693,14 +693,22 @@ flag is private to each thread.  \\ \hline
 retracted clauses is allowed, and off otherwise. Default is {\tt
   on}.  This flag is private to each thread.  \\ \hline
 %
-{\tt string\_garbage\_collection} & {\tt on} if garbage collection for
+{\tt atom\_garbage\_collection} & {\tt on} if garbage collection for
 atomic constants is allowed, and off otherwise. Default is {\tt on}.
 This flag is global for all threads (currently, string garbage
 collection will only be invoked if there is a single active thread.)
 \\ \hline
 %
-{\tt goal} & the goal passed to XSB on command line with the
-`-e' switch; `{\tt true.}' if nothing is passed.  \\ \hline 
+{\tt table\_gc\_action} & {\tt abolish\_tables\_transitively} if
+  presicates or subgoals that depend on a conditional answer of an
+  abolished table are to be abolished automatically, and {\tt
+    abolish\_tables\_singly} if not.  Default is {\tt
+    abolish\_tables\_transitively}.  This flag affects all threads in
+  the process.\\ \hline 
+%
+{\tt goal} & the goal passed to XSB on command line with the `-e'
+switch; `{\tt true.}' if nothing is passed.  This flag may be
+examined, but not set. \\ \hline
 %
 {\tt tracing} & {\tt on} iff trace mode is on; {\tt off}
 otherwise. This flag affects all threads in the process.  \\ \hline
@@ -715,6 +723,7 @@ threads in the process.  \\ \hline
       i.e.}, settings that might change between sessions or within the same
     session. For static configuration information, the predicate {\tt
       xsb\_configuration/2} is used. \index{\texttt{xsb\_configuration/2}} 
+
 
 \ouritem{set\_xsb\_flag(+Flag\_Name, +Value)}
 \index{\texttt{set\_xsb\_flag/2}}

@@ -1,4 +1,4 @@
-%========================================================
+========================================================
 
 \newcommand{\retn}{\code{ret/n}}
 
@@ -868,11 +868,11 @@ all solutions.
 has not been declared tabled.
 \end{description}
 
-Exceptions:
-    \begin{description}
-    \item[{\tt type\_error}]
-        Argument 1 is not callable.
-    \end{description}
+| Exceptions:
+|     \begin{description}
+|     \item[{\tt type\_error}]
+|         Argument 1 is not callable.
+|     \end{description}
 }
 
 %--------------------------------------------------------------------------
@@ -882,79 +882,170 @@ Exceptions:
 \index{tabling!table deletion}
 
 The following predicates are used to semantically invalidate tables
-and/or reclaim their space.  These predicates share similar
-characteristics.  In the single-threaded XSB eng¶ine, incomplete
-tables may not be abolished by the user, a restriction that is made to
-ensure correct evaluations.  Accordingly, calling an {\tt
-  abolish\_xxx} predicate when tables are incomplete raises an error.
+and/or reclaim their space. The use of the word ``tables'' in this
+section is rather unspecific.  For the purpose of deletion a table can
+either be information pertaining to a single subgoal of a tabled
+predicate (which is called here a tabled subgoal), or pertaining to
+all subgoals of a tabled predicate.  Predicates are provided to
+invalidate tables not only for particular predicates and subgoals, but
+for all tabled predicates, all tabled predicates in a module, and in
+the multi-threaded engine all thread-private tabled predicates or all
+thread-shared tabled predicates.  Overall, these predicates share
+similar characteristics.
 
-Second, if the current execution environment contains a choice point
-into information that is being abolished, space for the abolished
-information is not immediately reclaimed.  More precisely, if the
-current execution envonment has a choice point that points to an
-answer $A$ we say that $A$ is {\em active in the current environment}.
-If a tabled predicate $P$ or subgoal $S$ to be abolished has an answer
-that is active in the current environment, reclamation of space for
-$P$ or $S$ will be delayed until no answers for $P$ or $S$ are active.
-New calls to $P$ or $S$, however, will derive a new table, rather than
-using the abolished information.
+First, an incomplete tabled subgoal $S$ may not be abolished by the
+user except under special circumstances described below.  This
+restriction is made since if $S$ is incomplete there may be pointers
+to $S$ from various elements of the current execution environment, and
+removing all of these pointers may be difficult to do.  If one of the
+deletion predicates is called when the current execution environment
+contains a choice point into a {\em completed} table that is being
+abolished, space for the abolished information is not immediately
+reclaimed.  More precisely, if the current execution envonment has a
+choice point that points to an answer $A$ we say that $A$ is {\em
+  active in the current environment}.  If a tabled predicate $P$ or
+subgoal $S$ to be abolished has an answer that is active in the
+current environment, reclamation of space for $P$ or $S$ will be
+delayed until no answers for $P$ or $S$ are active.  New calls to $P$
+or $S$, however, will derive a new table, rather than using the
+abolished information.
 
 When conditional answers are present, abolishing a specific table or
 call may lead to semantic or implementational complications.  Consider
-a conditional answer {\tt p(a):- q(b)|}.  If the predicate {\tt q/2)}
-(or subgoal {\tt q(b)}) is abolished and later rederived, the
-rederivation of {\tt q(b)} may have different semantics than the
-original derivation (e.g. if {\tt q(b)} depends on a dynamic predicate
-whose definition has changed).  As a separate issue, in \version{}, if
-space for {\tt q(b)} is reclaimed, then the call {\tt
-  get\_residual(p(a),X)} may core dump.  Accordingly, users of programs
-that give rise to conditional answers in completed tables are urged
-either to use one of the {\tt abolish\_all\_xxx} predicates, or to
-ensure that groups of mutually dependent tables are abolished
-together.
+the conditional answer {\tt r(a,b):- undef|} from
+Figure~\ref{ex:deletion}.  If the predicate {\tt r/2)} (or subgoal
+{\tt r(a,X)}) is abolished and later rederived, the rederivation of
+{\tt r(a,X)} might have different semantics than the original
+derivation (e.g. if {\tt undef} depended on a dynamic predicate whose
+definition has changed).  From an implementation perspective, if space
+for {\tt r(a,X))} is reclaimed, then the call {\tt
+  get\_residual(p(a,X),Y)} may core dump, even if there are no choice
+points for completed tables anywhere in the choice point stack.  To
+address this problem, by default abolishing a subgoal $S$ (predicate
+$P$) will abolish all subgoals (predicates) that (transtively) depend
+on $S$ ($P$)~\footnote{Dao Tran Minh contributed to implementing this
+  functionality.}.  In this case the goal {\tt
+  abolish\_table\_call(r(a,X))} would cause the deletion of {\tt
+  p(a,X)} while the goal {\tt abolish\_table\_pred(r/2)} would cause
+the deletion of {\tt p/2}, since there are tabled subgoals of {\tt
+  p/2} that depend on {\tt r/2}.  Only dependencies from subgoals or
+answers to the answers that are conditional on them are taken into
+account for table deletion: thus the deletion {\tt r(a,X)} deletes
+{\tt p(a,X)}, but not {\tt undef}.
+
+Users with programs that give rise to conditional answers in completed
+tables are encouraged to maintain this default behavior.  However the
+default behavior may be changed either by setting an XSB flag:
+%
+\begin{verbatim}
+?- set_xsb_flag(table_gc_action,abolish_tables_singly).
+\end{verbatim}
+%
+or by calling a 2-ary abolish command with {\tt abolish\_tables\_singly}
+in the options list.
+
+\begin{figure}[htb]
+\begin{center}
+\begin{tabular}{cc}\hline \hline
+%\multicolumn{2}{c}{\rule{0ex}{2.5ex}\textbf{Table Deletion Example}} \\ \hline \hline
+\rule[-2ex]{0ex}{5ex} \textbf{Program} & \textbf{Table} \\
+\begin{minipage}{14.5em}
+\begin{verbatim}
+:- table p/2, r/2.
+p(X,Y):- r(X,Y).
+
+r(a,b):- undef.
+r(a,c):- undef.
+r(a,d):- undef.
+r(a,e):- undef.
+
+:- table  s/0, t/0.
+s:- tnot(t).
+
+t:- tnot(undef).
+
+:- table undef/0.
+undef :- tnot(undef).
+\end{verbatim}
+\end{minipage}
+&
+\begin{tabular}{|c|c|c|} \hline
+  Subgoal & Answer Set & Status\\ \hline \hline
+  p(a,X)  & p(a,b):- r(a,b)$|$ & complete \\ 
+          & p(a,c):- r(a,c)$|$ & \\ \hline
+  p(b,X)  & p(b,d):- r(b,d)$|$ & complete \\ 
+          & p(b,d):- r(b,e)$|$ & \\ \hline \hline
+  r(a,X)  & r(a,b):- undef$|$  & complete \\ 
+          & r(a,c):- undef$|$  & \\ \hline
+  r(b,X)  & r(b,d):- undef$|$  & complete \\ 
+          & r(b,d):- undef$|$  & \\ \hline \hline
+  s       & s:- tnot(t)$|$     & complete \\ \hline \hline
+  t       & t:- tnot(undef)$|$ & complete \\ \hline \hline
+  undef   & undef:- tnot(undef)$|$ & complete \\ \hline \hline
+\end{tabular} \\
+\vspace*{-2ex} \\ \hline \hline
+\end{tabular}
+\end{center}
+\caption{Example for Deleting Tables (Call-Variance)} \label{ex:deletion}
+\end{figure}
+
 
 In the multi-threaded engine abolishing tables private to a thread
 behaves exactly as in the sequential engine, regardless of whether the
 tables are complete or incomplete, or contain conditional answers.  In
-addition, tables private to a thread are abolished automatically and
-their space reclaimed when the thread exits (by normal termination or
-via an exception).  Shared tables can be abolished at any time, but
-their space will not be reclaimed until there is a single active
-thread.
+addition, when a thread $T$ exits (by normal termination or via an
+exception), tables private to $T$ are abolished automatically and
+their space reclaimed, as are any incomplete shared tables owned by
+$T$ in local evaluation.  Shared tables can be abolished by the user
+at any time, but their space will not be reclaimed until there is a
+single active thread.
 
-Finally, we note that any incomplete tables are abolished
+As mentioned above, during normal execution, an incomplete tabled
+subgoal may not be abolished by the user, a restriction that is made
+to ensure correct evaluations.  Accordingly, calling an {\tt
+  abolish\_xxx} predicate when tables are incomplete raises an error.
+However, we note that any incomplete tables are abolished
 \emph{automatically} by the system on exceptions (by the default
 system error handler) when the interpreter level is resumed.
-User-written 
-
-\vspace{2ex}
-
-\begin{description}
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+\subsubsection{Table Deletion Predicates}
+
+\begin{description}
 
 \ournewitem{abolish\_table\_pred(+Pred)}{Tabling}
 \index{\texttt{abolish\_table\_pred/1}}
 %
-Invalidates all entries from the table for the predicate denoted by
-the predicate or term indicator \code{Pred}.  If the table for {\tt
+Invalidates all tabled subgoals for the predicate denoted by the
+predicate or term indicator \code{Pred}.  If any subgoal for {\tt
   Pred} contains an answer $A$ that is active in the current
-enviornment, {\tt Pred} space reclamation for $A$ will be delayed
-until $A$ is no longer active; otherwise the space for {\tt Pred} will
-be reclaimed immediately.  If {\tt Pred} contains a conditional
-answer, the warning
+enviornment, {\tt Pred} space reclamation for the {\tt Pred} tables
+will be delayed until $A$ is no longer active; otherwise the space for
+the {\tt Pred} tables will be reclaimed immediately.  
 
-{\tt abolish\_table\_pred/1 is deleting a table with conditional\ answers: \\
-delay dependencies may be corrupted.}
+If {\tt Pred} has a subgoal that contains a conditional answer, the
+default behavior will be to transitively abolish any tabled predicates
+with subgoals having answers that depend on any conditional answers of
+$S$.  This default may be changed either by setting an XSB flag:
+%
+\begin{verbatim}
+?- set_xsb_flag(table_gc_action,abolish_tables_singly).
+\end{verbatim}
+% 
+or by calling {\tt abolish\_table\_pred/2} with the appropriate
+option.  If the transitive abolishes are turned off, and {\tt Pred}
+contains a conditional answer, the warning
 
-will be issued (cf. the notes at the beginning of this section).  
+{\tt abolish\_table\_pred/[1,2] is deleting a table with
+  conditional\ answers: \\ delay dependencies may be corrupted.}
 
-In the multi-threaded engine, if {\tt Pred} is shared reclamation for
+will be issued.  
+
+In the multi-threaded engine, if {\tt Pred} is shared, reclamation for
 {\tt Pred} will be delayed until there is a single active thread and
 no answer in {\tt Pred} is active in the current execution
 environment.  Otherwise, the behavior of {\tt abolish\_table\_pred/1}
-is the same as in the sequential engine on tabled predicates that are
-thread-private.
+is the same as in the sequential engine.
 
 {\bf Error Cases}
 \bi
@@ -982,6 +1073,30 @@ thread-private.
 %
 \ei
 
+\ournewitem{abolish\_table\_pred(+CallTerm,+Options)}{Tabling}
+\index{\texttt{abolish\_table\_pred/2}}
+%
+Behaves as {abolish\_table\_pred/1}, but allows the default {\tt
+  table\_gc\_action} to be over-ridden with a flag, which can be either 
+{\tt abolish\_tables\_transitively} or {\tt abolish\_tables\_singly}.
+
+{\bf Error Cases} Error cases are the same as {\tt
+  abolish\_table\_pred/1} but with the additions: 
+\bi
+\item {\tt Options} is a variable, or contains a variable as an element
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item {\tt Options} is not a list
+\bi
+\item {\tt type\_error(list,Options)}
+\ei
+\item {\tt Options} contains an option {\tt O} that is not a
+  table abolish option.
+\bi
+\item {\tt domain\_error([abolish\_tables\_transitively, abolish\_tables\_singly,O)}
+\ei
+\ei
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 \ournewitem{abolish\_table\_call(+CallTerm)}{Tabling}
@@ -991,13 +1106,25 @@ Invalidates all entries from the table for the any subgoals that unify
 with {\tt CallTerm}.  If a subgoal $S$ unifying with {\tt CallTerm}
 contains an answer $A$ that is active in the current enviornment, the
 table entry for $S$ will not be reclaimed until $A$ is no longer
-active; otherwise the space for $S$ will be reclaimed immediately.  If
-$S$ contains a conditional answer, the warning
+active; otherwise the space for $S$ will be reclaimed immediately.  
 
-{\tt abolish\_table\_call/1 is deleting a table with conditional\ answers: \\ 
-delay dependencies may be corrupted.}
+If $S$ contains a conditional answer, the default behavior will be to
+transitively abolish any subgoals that depend on any conditional
+answers of $S$.  This default may be changed either by setting an XSB
+flag:
+%
+\begin{verbatim}
+?- set_xsb_flag(table_gc_action,abolish_tables_singly).
+\end{verbatim}
+% 
+or by calling {\tt abolish\_table\_call/2} with the appropriate
+option.  If the transitive abolishes are turned off, and $S$ contains
+a conditional answer, the warning
 
-will be issued (cf. the notes at the beginning of this section).  
+{\tt abolish\_table\_call/1 is deleting a table with
+  conditional\ answers: \\ delay dependencies may be corrupted.}
+
+will be issued.  
 
 In the multi-threaded engine, if $S$ is a subgoal for a predicate that
 is shared, reclamation for $S$ will be delayed until there is a single
@@ -1012,13 +1139,44 @@ thread-private.
 \bi
 \item 	{\tt table\_error}
 \ei
-\item {\tt CallTerm} unifies with a table that is incomplete, or is
-  formed from a predicate that does not use variant tabling.
+\item The term spec {\tt CallTerm} unifies with a tabled subgoal that is incomplete:
+\bi
+\item 	{\tt table\_error}
+\ei
+\item {\tt CallTerm} unifies with a table that is formed from a
+  predicate that does not use variant tabling.  
 \bi
 \item 	{\tt table\_error}
 \ei
 \ei
 %
+
+\ournewitem{abolish\_table\_call(+CallTerm,+Options)}{Tabling}
+\index{\texttt{abolish\_table\_call/2}}
+%
+Behaves as {abolish\_table\_call/1}, but allows the default {\tt
+  table\_gc\_action} to be over-ridden with a flag, which can be either 
+{\tt abolish\_tables\_transitively} or {\tt abolish\_tables\_singly}.
+
+{\bf Error Cases} Error cases are the same as {\tt
+  abolish\_table\_call/1} but with the additions: 
+\bi
+\item {\tt Options} is a variable, or contains a variable as an element
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item {\tt Options} is not a list
+\bi
+\item {\tt type\_error(list,Options)}
+\ei
+\item {\tt Options} contains an option {\tt O} that is not a
+  table abolish option.
+\bi
+\item {\tt domain\_error([abolish\_tables\_transitively, abolish\_tables\_singly,O)}
+\ei
+\ei
+
+
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -1066,7 +1224,7 @@ $A$ is thread-private or thread-shared.
 %
 In the multi-threaded engine, removes all tables private to the thread
 and frees all the memory held by XSB for these structures, including
-space for conditional answers.  Predicates which have been declared
+space for conditional answers.  Predicates that have been declared
 tabled remain so, but information in their table is deleted.  {\tt
   abolish\_all\_private\_tables/0} works directly on the memory
 structures allocated for table space.  This makes it very fast for
@@ -1199,18 +1357,31 @@ space reclamation will be deferred until a single thread is active.
 \ournewitem{gc\_tables(-Number)}{Tabling}
 \index{\texttt{gc\_tables/1}}
 %
-When a table $T$ is abolished, reclamation of its space may be
-postponed, for instance if choice points to a completed tabled call to
-$T$ are found on a choice point stack.  Space for all abolished tables
-is reclaimed whenever the engine re-executes the main command-line
-interpreter code, but this strategy is not adequate for all
-applications, especially when XSB is called from C or Java.  For this
-reason, the user can explicitly call the table ``garbage collector''
-to reclaim space for any deleted tables (for which choice points are
-not present on a choice point stack).  This predicate always succeeds,
-unifying {\tt Number} to $-1$ if garbage collection was not attempted
-(due to multiple active threads) and otherwise to the number of tables
-still unreclaimed at the end of garbage collection.
+When a tabled subgoal or predicate is abolished, reclamation of its
+space may be postponed if the subgoal or predicate has an answer that
+is active in the current environment.  A garbage collection routine is
+called at various points in execution to check which answers are
+active in the current environment, and to reclaim the space for
+subgoals and predicates with no active answers.  In particular, space
+for all abolished tables is reclaimed whenever the engine re-executes
+the main command-line or C thread interpreter code.  However for
+certain applications this strategy may not be adequate.  For this
+reason, the user can explicitly call the table garbage collector
+to reclaim space for any deleted tabled predicates or subgoals that no
+longer have active answers.
+
+{\tt gc\_tables/1} always succeeds, unifying {\tt Number} to $-1$ if
+garbage collection was not attempted (due to multiple active threads)
+and otherwise to the number of tables still unreclaimed at the end of
+garbage collection.
+
+{\bf Error Cases}
+\bi
+\item {\tt Number} is not a variable
+\bi
+\item 	{\tt type\_error(variable)}
+\ei
+\ei
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -1271,9 +1442,9 @@ asserted to, or retracted from, qdyn/2, the user could call
       :- invalidate_table_for(qdyn(A,B),_).
 \end{verbatim}
 
-The user could use the hook mechanisms in XSB (\ref{hooks}) to
-automatically invoke \\ {\tt invalidate\_tables\_for} whenever {\tt assert}
-and/or {\tt retract} is called.
+The user could use the hook mechanisms in XSB (Chapter~\ref{hooks}) to
+automatically invoke \\ {\tt invalidate\_tables\_for} whenever {\tt
+  assert} and/or {\tt retract} is called.
 
 \end{description}
 
