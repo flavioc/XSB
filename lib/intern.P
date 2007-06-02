@@ -35,8 +35,15 @@
 	new_trie(-Root)
    	Root is a handle for a new trie 
 --------------------------------------------------*/
+/*
+new_trie(_Root) :-
+	 '_$builtin'(NEWTRIE).
+*/
 
 new_trie(_Root) :-
+	new_trie(0,_Root).
+
+new_trie(_Type,_Root):- 
 	 '_$builtin'(NEWTRIE).
 
 /*--------------------------------------------------
@@ -178,7 +185,7 @@ trie_retractall(_Trie,_Term).
 /*--------------------------------------------------
 bulk_trie_intern(#Term,+Trie)
 --------------------------------------------------*/
-:- import call/1, arg/3, writeln/1 from standard.
+:- import call/1, arg/3 from standard.
 
 bulk_trie_intern(Callable_Term,Trie):- 	
 	arg(1,Callable_Term,TrieTerm),
