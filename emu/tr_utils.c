@@ -129,8 +129,21 @@ xsbBool has_conditional_answer(VariantSF subg)
 }
 
 /* This is needed to find an actual trie node from a CP -- hash-handle must be special-cased */
-#define TrieNodeFromCP(pCP)  ((*(byte *)*pCP == hash_handle) \
-			      ? (BTNptr) string_val(*(pCP+CP_SIZE+1)) :(BTNptr) *pCP)
+BTNptr TrieNodeFromCP(CPtr pCP) {							
+    prolog_int i;	
+    BTNptr pBTN;						
+    if (*(byte *)*pCP == hash_handle) {					
+      pBTN = (BTNptr) string_val(*(pCP+CP_SIZE+1));			
+      for (i = 0 ; i < BTHT_NumBuckets((BTHTptr) pBTN); i++) {		
+	if (BTHT_BucketArray((BTHTptr) pBTN)[i] != 0) {			
+	  return BTHT_BucketArray((BTHTptr) pBTN)[i];			
+	}									
+      }
+      return NULL;
+    }
+    else return (BTNptr) *pCP;						
+}
+
 
 /*----------------------------------------------------------------------*/
 
