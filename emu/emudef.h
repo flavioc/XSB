@@ -115,13 +115,19 @@ int asynint_code = 0;
 int asynint_val = 0;
 #endif
 
+#ifdef BITS64
+#define _FULL_ULONG_BITS 0xffffffffffffffff
+#else
+#define _FULL_ULONG_BITS 0xffffffff
+#endif
+
 int next_free_code = 0;
-unsigned long enc[16] = {0xffffffff,0xffffffff,0xffffffff,0xffffffff,
-			 0xffffffff,0xffffffff,0xffffffff,0xffffffff,
-			 0xffffffff,0xffffffff,0xffffffff,0xffffffff,
-			 0xffffffff,0xffffffff,0xffffffff,0xffffffff};
-unsigned long dec[8] = {0xffffffff,0xffffffff,0xffffffff,0xffffffff,
-			0xffffffff,0xffffffff,0xffffffff,0xffffffff};
+unsigned long enc[16] = {_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL_ULONG_BITS,
+			 _FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL_ULONG_BITS,
+			 _FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL_ULONG_BITS,
+			 _FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL_ULONG_BITS};
+unsigned long dec[8] = {_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL_ULONG_BITS,
+			_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL_ULONG_BITS};
 
 /* Replacements for labelled code in emusubs.i */
 

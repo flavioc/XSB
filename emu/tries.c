@@ -2241,7 +2241,7 @@ byte * trie_get_calls(CTXTdecl)
  */
 Cell get_lastnode_cs_retskel(CTXTdeclc Cell callTerm) {
 
-  int arity;
+  prolog_int arity;
   Cell *vector;
 
   arity = global_num_vars + 1;
@@ -2251,7 +2251,7 @@ Cell get_lastnode_cs_retskel(CTXTdeclc Cell callTerm) {
     if ( IsProperlySubsumed(sf) ) {
       construct_answer_template(CTXTc callTerm, conssf_producer(sf),
 				(Cell *)var_regs);
-      arity = (int)var_regs[0];
+      arity = (prolog_int)var_regs[0];
       vector = (Cell *)&var_regs[1];
     }
   }
