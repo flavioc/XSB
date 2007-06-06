@@ -796,6 +796,7 @@ inline TIFptr New_TIF(CTXTdeclc Psc pPSC) {
    }									
    TIF_CallTrie(pTIF) = NULL;						
    TIF_Mark(pTIF) = 0;                                                  
+   TIF_Visited(pTIF) = 0;  
    TIF_DelTF(pTIF) = NULL;						
    TIF_Subgoals(pTIF) = NULL;						
    TIF_NextTIF(pTIF) = NULL;						
