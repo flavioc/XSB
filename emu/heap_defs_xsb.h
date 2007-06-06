@@ -53,7 +53,7 @@
          Integer *pptr = ((Integer *)(str))-1;		\
          if (!( *(pptr) & 7)) *(pptr) |= 1;		\
      } else if (str) 					\
-         printf("Not interned: %s: '%s',%p\n",msg,str,str); \
+         printf("Not interned: %s: '%p',%s\n",msg,str,str); \
   } while(0)
 
 #define mark_if_string(tcell,msg) 		\
