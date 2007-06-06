@@ -134,7 +134,7 @@ BTNptr TrieNodeFromCP(CPtr pCP) {
     BTNptr pBTN;						
     if (*(byte *)*pCP == hash_handle) {					
       pBTN = (BTNptr) string_val(*(pCP+CP_SIZE+1));			
-      for (i = 0 ; i < BTHT_NumBuckets((BTHTptr) pBTN); i++) {		
+      for (i = 0 ; i < (prolog_int)BTHT_NumBuckets((BTHTptr) pBTN); i++) {		
 	if (BTHT_BucketArray((BTHTptr) pBTN)[i] != 0) {			
 	  return BTHT_BucketArray((BTHTptr) pBTN)[i];			
 	}									
@@ -2727,8 +2727,9 @@ void print_done_tif_stack(CTXTdecl) {
 
 static void find_subgoals_and_answers_for_pred(CTXTdeclc TIFptr tif) {
 
+  VariantSF pSF;
   TRIE_W_LOCK();
-  VariantSF pSF = TIF_Subgoals(tif);
+  pSF = TIF_Subgoals(tif);
   if ( IsNULL(pSF) )   return;
 
   while (pSF) {
