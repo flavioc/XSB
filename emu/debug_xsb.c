@@ -707,8 +707,8 @@ void print_private_deltfs(CTXTdecl) {
 extern DelTFptr deltf_chain_begin;
 
 void print_deltf_chain(CTXTdecl) {
-  printf("========================== deltf chain\n");
   DelTFptr dtf =   deltf_chain_begin;
+  printf("========================== deltf chain\n");
   while (dtf != NULL) {
     printDelTF(dtf);
     printf("\n");
