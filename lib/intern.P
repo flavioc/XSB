@@ -40,10 +40,11 @@ new_trie(_Root) :-
 	 '_$builtin'(NEWTRIE).
 */
 
+/* First arg is placeholder for shared/private */
 new_trie(_Root) :-
-	new_trie(0,_Root).
+	new_trie(_Root,0).
 
-new_trie(_Type,_Root):- 
+new_trie(_Root,_Type):- 
 	 '_$builtin'(NEWTRIE).
 
 /*--------------------------------------------------
@@ -112,7 +113,6 @@ version which interns into a fixed trie
 trie_interned(Term,Leaf,Skel) :- 
 	trie_interned(Term,0,Leaf,Skel).
 
-
 /*--------------------------------------------------
 trie_set_last_int(+Leaf,+IntVal)
 Leaf must be a pointer to a Leaf node obtained from
@@ -136,35 +136,34 @@ trie_unintern(+Root,+Leaf)
 this predicate has to be called with care. Uninterning
 can be done only when the trie from which the term is
 being uninterned is not being actively accessed. 
+
+Checking is done in C.
 --------------------------------------------------*/
 
 trie_unintern(Root,Leaf) :- 
-	(integer(Root),integer(Leaf) -> 
-	    trie_dispose(Root,Leaf,USE_CPS_CHECK)
-	    ; 
-	    abort(('Incorrect Arguments to',trie_unintern(Root,Leaf)))).
+	trie_dispose(Root,Leaf,USE_CPS_CHECK).
 
 /*--------------------------------------------------
 trie_unintern_nr(+Root, +Leaf)
+
+Checking is done in C.
 --------------------------------------------------*/
 trie_unintern_nr(Root,Leaf) :- 
-	integer(Root),
-	integer(Leaf),
 	trie_dispose_nr(Root,Leaf).
 
 /*--------------------------------------------------
 unmark_uninterned_nr(+Root, +Leaf)
+
+Checking is done in C.
 --------------------------------------------------*/
 unmark_uninterned_nr(Root,Leaf) :- 
-	integer(Root),
-	integer(Leaf),
 	trie_undispose(Root,Leaf).
-
 
 /*--------------------------------------------------
 delete_trie(+Root)
 --------------------------------------------------*/
-delete_trie(Root) :- delete_trie(Root,intern).
+/* Second argument is a placeholder -- not currently used */
+delete_trie(Root) :- delete_trie(Root,0).
 
 /*--------------------------------------------------
 trie_retractall(#Term,+Trie)
