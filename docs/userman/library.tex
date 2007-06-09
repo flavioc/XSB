@@ -2318,7 +2318,10 @@ set semantics: the variant of a term can occur in a trie only once,
 additional asserts have no effect.  In addition, no ordering of terms
 within the trie is guaranteed.  In \version{} of XSB, when multiple
 threads are used, all interned tries are private to a thread, so that
-information interned by one trie will not be visible to other threads.
+information interned by one trie will not be visible to other
+threads.  In order to ensure efficiency for these routines, not all
+possible error checking is done on their inputs.
+
 
 Section~\ref{sec:intern-basic} below provides an overview for the
 basic interface to interned tries, while
@@ -2342,12 +2345,38 @@ designated by {\tt Root}.  If a variant of {\tt Term} is already in
 {\tt Root} the predicate succeeds, but a new copy of {\tt Term} is not
 added to the trie.
 
+{\bf Error Cases}
+\begin{itemize}
+\item 	{\tt Root} is uninstantiated
+\bi
+\item 	 {\tt instantiation\_error}
+\ei
+\item 	{\tt Root} is instantiated, but not an integer (trie handle)
+\bi
+\item 	 {\tt type\_error(integer,Root)}
+\ei
+\end{itemize}
+%%
+
 \ournewitem{trie\_interned(?Term,+Root)}{intern}
 \index{\texttt{trie\_interned/2}}
 %%
 This predicate backtracks through the terms that unify with {\tt Term}
 and that are interned into the trie represented by the handle {\tt
   Root}.  {\tt Term} may be free, or partially bound.
+
+{\bf Error Cases}
+\begin{itemize}
+\item 	{\tt Root} is uninstantiated
+\bi
+\item 	 {\tt instantiation\_error}
+\ei
+\item 	{\tt Root} is instantiated, but not an integer (trie handle)
+\bi
+\item 	 {\tt type\_error(integer,Root)}
+\ei
+\end{itemize}
+%%
 
 \ournewitem{trie\_retractall(?Term,+Root)}{intern}
 \index{\texttt{trie\_retractall/2}}
@@ -2356,6 +2385,18 @@ Uninterns from {\tt Root} all terms that unify with {\tt Term}.  If
 there are no failure continuations pointing to nodes in {\tt Root},
 space is reclaimed for the uninterned nodes; otherwise they are marked
 as deleted but space is not reclaimed.
+
+{\bf Error Cases}
+\begin{itemize}
+\item 	{\tt Root} is uninstantiated
+\bi
+\item 	 {\tt instantiation\_error}
+\ei
+\item 	{\tt Root} is instantiated, but not an integer (trie handle)
+\bi
+\item 	 {\tt type\_error(integer,Root)}
+\ei
+\end{itemize}
 
 \ournewitem{bulk\_trie\_insert(+Generator,+Root)}{intern}
 \index{\texttt{bulk\_trie\_insert/2}}
@@ -2381,12 +2422,32 @@ The goal {\tt bulk\_trie\_intern(bulk\_create(\_Term,N),Trie)} will
 add $N^3$ terms to the trie with root {\tt Root}.
 \end{example}
 
+{\bf Error Cases}
+\begin{itemize}
+\item 	{\tt Root} is uninstantiated
+\bi
+\item 	 {\tt instantiation\_error}
+\ei
+\item 	{\tt Root} is instantiated, but not an integer (trie handle)
+\bi
+\item 	 {\tt type\_error(integer,Root)}
+\ei
+\end{itemize}
+
 \ournewitem{delete\_trie(+Root)}{intern} \index{\texttt{delete\_trie/1}}
 %%
 Deletes all the terms in the trie pointed to by {\tt Root}.
 
 {\bf Error Cases}
 \begin{itemize}
+\item 	{\tt Root} is uninstantiated
+\bi
+\item 	 {\tt instantiation\_error}
+\ei
+\item 	{\tt Root} is instantiated, but not an integer (trie handle)
+\bi
+\item 	 {\tt type\_error(integer,Root)}
+\ei
 \item 	Failure continuations point to one or more nodes in the trie with root {\tt Root}
 \bi
 \item 	{\tt misc\_error}
@@ -2400,9 +2461,12 @@ Deletes all the terms in the trie pointed to by {\tt Root}.
 \subsection{Low-level Trie Manipulation Utilities} \label{sec:intern-advanced}
 
 The utilities in this section are very low-level and require good
-understanding of the trie mechanism in XSB.  They can be used to
-implement modules such as the {\tt storae} module described in Volume
+understanding of the trie mechanism in XSB.  Improper calls to these
+predicates can cause core dumps, particularly if an improper trie
+value is passed to them.  Despite these drawbacks, they can be used to
+implement modules such as the {\tt storage} module described in Volume
 1.
+
 %%
 \begin{description}
   %%
@@ -2416,6 +2480,19 @@ is 0, if the term is newly inserted.  {\tt Skel} represents the
 collection of all the variables in {\tt Term}. It has the form {\tt
   ret(V1,V2,...,VN)}, exactly as in {\tt get\_calls} (see Vol. 1 of
 the XSB manual).
+
+{\bf Error Cases}
+\begin{itemize}
+\item 	{\tt Root} is uninstantiated
+\bi
+\item 	 {\tt instantiation\_error}
+\ei
+\item 	{\tt Root} is instantiated, but not an integer (trie handle)
+\bi
+\item 	 {\tt type\_error(integer,Root)}
+\ei
+\end{itemize}
+%%
 
 \ournewitem{trie\_intern(+Term,-Leaf,-Skel)}{intern}\index{\texttt{trie\_intern/3}}
 %%
@@ -2434,6 +2511,19 @@ it can be either (partially) bound or free.  {\tt Skel} is the
 collection of all the variables in {\tt Term}; it has the form {\tt
   ret(V1,...,Vn)}.
 
+{\bf Error Cases}
+\begin{itemize}
+\item 	{\tt Root} is uninstantiated
+\bi
+\item 	 {\tt instantiation\_error}
+\ei
+\item 	{\tt Root} is instantiated, but not an integer (trie handle)
+\bi
+\item 	 {\tt type\_error(integer,Root)}
+\ei
+\end{itemize}
+%%
+
 \ournewitem{trie\_interned(?Term,?Leaf,-Skel)}{intern} \index{\texttt{trie\_interned/3}}
 %%
 Similar to {\tt trie\_interned/4}  but uses the default trie.
@@ -2444,6 +2534,7 @@ Uninterns a term indicated by {\tt Leaf} from the trie indicated by
 root.  If there are failure continuations that point to trie nodes in
 {\tt Root}, the term is marked as deleted but space is not reclaimed.
 Otherwise, the term is really deleted.
+%%
 
 \ournewitem{trie\_unintern\_nr(+Root,+Leaf)}{intern}\index{\texttt{trie\_unintern\_nr/2}}
 %%
@@ -2451,11 +2542,39 @@ This is a safe version of {\tt trie\_unintern/2}. The term pointed to by
 {\tt Leaf} is marked as deleted, but is not deleted from the trie. This
 permits an efficient implementation of backtrackable updates.
 
+{\bf Error Cases}
+\begin{itemize}
+\item 	{\tt Root} or {\tt Leaf} is uninstantiated
+\bi
+\item 	 {\tt instantiation\_error}
+\ei
+\item 	{\tt Root} or {\tt Leaf} is instantiated, but not an integer
+  (trie handle or trie leaf) 
+\bi
+\item 	 {\tt type\_error(integer,Root)} or {\tt type\_error(integer,Leaf)}
+\ei
+\end{itemize}
+%%
+
 \ournewitem{unmark\_uninterned\_nr(+Root,+Leaf)}{intern}\index{\texttt{unmark\_uninterned\_nr/2}}
 The term pointed to by {\tt Leaf} should have been previously marked for
 deletion using
 {\tt trie\_unintern\_nr/2}. This term is then ``unmarked'' (or undeleted)
 and becomes again a notmal interned term.
+
+{\bf Error Cases}
+\begin{itemize}
+\item 	{\tt Root} or {\tt Leaf} is uninstantiated
+\bi
+\item 	 {\tt instantiation\_error}
+\ei
+\item 	{\tt Root} or {\tt Leaf} is instantiated, but not an integer
+  (trie handle or trie leaf) 
+\bi
+\item 	 {\tt type\_error(integer,Root)} or {\tt type\_error(integer,Leaf)}
+\ei
+\end{itemize}
+%%
 
 \ournewitem{reclaim\_uninterned\_nr(+Root)}{intern}
 \index{\texttt{reclaim\_uninterned\_rn/1}}
@@ -2466,6 +2585,19 @@ the terms that have been marked for deletion by {\tt
 be done just before returning to the top level or when it can
 otherwise be ensure that no failure continuations point to a node in
 {\tt Root}.
+
+{\bf Error Cases}
+\begin{itemize}
+\item 	{\tt Root} is uninstantiated
+\bi
+\item 	 {\tt instantiation\_error}
+\ei
+\item 	{\tt Root} is instantiated, but not an integer (trie handle)
+\bi
+\item 	 {\tt type\_error(integer,Root)}
+\ei
+\end{itemize}
+
 
 %%
 \end{description}
