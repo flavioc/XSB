@@ -421,8 +421,7 @@ xsbBool glstack_realloc(CTXTdeclc int new_size, int arity)
 
   if (new_size <= glstack.size) return 0;
 
-  xsb_dbgmsg((LOG_REALLOC, 
-	     "Reallocating the Heap and Local Stack data area"));
+  //  fprintf(stddbg,"Reallocating the Heap and Local Stack data area");
 #ifdef DEBUG_VERBOSE
   if (LOG_REALLOC <= cur_log_level) {
     if (glstack.size == glstack.init_size) {

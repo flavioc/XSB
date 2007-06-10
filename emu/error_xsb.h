@@ -100,8 +100,6 @@ extern FILE *stdwarn;	    	/* Stream for XSB warnings     	         */
 extern FILE *stddbg;	    	/* Stream for XSB debugging msgs         */
 extern FILE *stdfdbk;	    	/* Stream for XSB feedback msgs         */
 
-#define err(d, a, f, ar)	err_handle(CTXTc d, a, f, ar, NULL, (Cell)NULL)
-
 extern char *xsb_default_segfault_msg;
 
 extern char *xsb_segfault_message; /* Put your segfault message here prior to
@@ -121,16 +119,16 @@ extern void xsb_segfault_quitter(int);
 
 int unwind_stack(CTXTdecl);
 
-extern void call_conv xsb_domain_error(CTXTdeclc char *, Cell, char *, int, int) ;
+extern void call_conv xsb_domain_error(CTXTdeclc char *, Cell, char *, int) ;
 extern void call_conv xsb_existence_error(CTXTdeclc char *,Cell, char *,int, int) ;
-extern void call_conv xsb_instantiation_error(CTXTdeclc char *, int, int, char *) ;
+extern void call_conv xsb_instantiation_error(CTXTdeclc char *, int) ;
 extern void call_conv xsb_misc_error(CTXTdeclc char*,char*,int) ; 
 extern void call_conv xsb_permission_error(CTXTdeclc char *,char *,Cell,char *,int) ;
 extern void call_conv xsb_resource_error(CTXTdeclc char *,char *, int) ;
 extern void call_conv xsb_resource_error_nopred(CTXTdeclc char *,char *) ;
 extern void call_conv xsb_syntax_error(CTXTdeclc char *) ;
 extern void call_conv xsb_table_error(CTXTdeclc char *) ;
-extern void call_conv xsb_type_error(CTXTdeclc char *,Cell , char *,int, int) ;
+extern void call_conv xsb_type_error(CTXTdeclc char *,Cell , char *,int) ;
 
 extern void call_conv xsb_memory_error(char *, char *);
 

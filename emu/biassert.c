@@ -3788,10 +3788,6 @@ void init_standard_cgc_blocks(void) {
   standard_cgc_block_end_gl = (CPtr) (get_ep(psc) + 0x94);
 }
 
-/* Also includes trie stuff */
-#ifndef MULTI_THREAD
-extern BTNptr *Set_ArrayPtr;
-#endif
 xsbBool dynamic_code_function( CTXTdecl ) 
 {
   switch (ptoc_int(CTXTc 1)) {
@@ -3817,7 +3813,7 @@ xsbBool dynamic_code_function( CTXTdecl )
     break;
 
   case INTERNED_TRIE_CPS_CHECK:
-    ctop_int(CTXTc 3 ,interned_trie_cps_check(CTXTc Set_ArrayPtr[ptoc_int(CTXTc 2)]));
+    ctop_int(CTXTc 3 ,interned_trie_cps_check(CTXTc itrie_array[ptoc_int(CTXTc 2)].root));
     break;
 
   }

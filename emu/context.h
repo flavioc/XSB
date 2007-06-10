@@ -287,10 +287,8 @@ DynamicStack  _tstTrail;
   int _done_tif_stack_size;
 
   /********* Variables for array of interned tries *********/
-  BTNptr *_Set_ArrayPtr;
-  Integer _first_free_set;
-  int _Set_ArraySz;
-  int _num_sets;
+  int _itrie_array_first_free;
+  struct interned_trie_t* _itrie_array;
 
   /* for backtrackable updates & assoc arrays (storage_xsb) */
   xsbHashTable _bt_storage_hash_table;
@@ -707,10 +705,8 @@ typedef struct th_context th_context ;
 #define  done_tif_stack               (th->_done_tif_stack)
 #define  done_tif_stack_size          (th->_done_tif_stack_size)
 
-#define  Set_ArrayPtr           (th->_Set_ArrayPtr)
-#define  first_free_set         (th->_first_free_set)
-#define  Set_ArraySz            (th->_Set_ArraySz)
-#define  num_sets               (th->_num_sets)
+#define  itrie_array_first_free      (th->_itrie_array_first_free)
+#define  itrie_array                 (th->_itrie_array)
 
 #define  bt_storage_hash_table             (th-> _bt_storage_hash_table)
 

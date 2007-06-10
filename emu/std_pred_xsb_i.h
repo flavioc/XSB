@@ -101,17 +101,17 @@ inline static xsbBool functor_builtin(CTXTdecl)
 		err_handle(CTXTc RANGE, 3, "functor", 3,
 		       "integer in the range 0..255", arity);
 	      else 
-		xsb_type_error(CTXTc "integer",arity,"functor",3,3); 
+		xsb_type_error(CTXTc "integer",arity,"functor/3",3); 
 
 	    }
-	  else err(INSTANTIATION, 3, "functor", 3);
+	  else xsb_instantiation_error(CTXTc "functor/3", 3);
 	  }
       }
     }
       else {
       if (isnonvar(functor))
-	xsb_type_error(CTXTc "atom",functor,"functor",3,2); 
-      else err(INSTANTIATION, 2, "functor", 3);
+	xsb_type_error(CTXTc "atom",functor,"functor/3",2); 
+      else xsb_instantiation_error(CTXTc "functor/3",3);
       }
   }
   return TRUE;
@@ -140,11 +140,11 @@ inline static xsbBool arg_builtin(CTXTdecl)
 	  return unify(CTXTc (Cell)(clref_val(term)+disp-1),
 		       ptoc_tag(CTXTc 3));
 	} else return FALSE;	/* fail */
-      } else err(INSTANTIATION, 2, "arg", 3);
+      } else xsb_instantiation_error(CTXTc "arg/3",2);
     } else return FALSE;	/* fail */
   } else {
-    if (isnonvar(index)) xsb_type_error(CTXTc "integer",index,"arg",3,1); 
-    else err(INSTANTIATION, 1, "arg", 3);
+    if (isnonvar(index)) xsb_type_error(CTXTc "integer",index,"arg/3",1); 
+    else xsb_instantiation_error(CTXTc "arg/3",1);
   }
   return TRUE;
 }
@@ -233,7 +233,7 @@ inline static xsbBool univ_builtin(CTXTdecl)
 	      if (arity > MAX_ARITY)
 		xsb_abort("[In =..] Attempt to construct a functor with arity %d > %d",
 			  arity, MAX_ARITY);
-	      else xsb_type_error(CTXTc "list",list,"=..",2,2);  /* X =.. [foo|Y]. */
+	      else xsb_type_error(CTXTc "list",list,"=../2",2);  /* X =.. [foo|Y]. */
 	      return FALSE;
 	    }
 	  }
@@ -245,13 +245,13 @@ inline static xsbBool univ_builtin(CTXTdecl)
       }
       else
 	{
-	  xsb_type_error(CTXTc "list",list,"=..",2,2);  /* X =.. X =.. [2,a,b]. */
+	  xsb_type_error(CTXTc "list",list,"=../2",2);  /* X =.. X =.. [2,a,b]. */
 	  return(FALSE);
 	}
     }
     if (isnonvar(list))
-	  xsb_type_error(CTXTc "list",list,"=..",2,2);  /* X =.. a */
-    else err(INSTANTIATION, 2, "=..", 2);
+	  xsb_type_error(CTXTc "list",list,"=../2",2);  /* X =.. a */
+    else xsb_instantiation_error(CTXTc "=../2",2);
   }
   return TRUE;
 }
@@ -278,12 +278,12 @@ inline static xsbBool hilog_arg(CTXTdecl)
 	  return unify(CTXTc (Cell)(clref_val(term)+disp-1),
 		       ptoc_tag(CTXTc 3));
 	} else return FALSE;	/* fail */
-      } else err(INSTANTIATION, 2, "hilog_arg", 3);
+      } else xsb_instantiation_error(CTXTc "hilog_arg/3",2);
     } else return FALSE;	/* fail */
   } else {
     if (isnonvar(index))
-      xsb_type_error(CTXTc "integer",index,"hilog_arg",3,1);
-    else err(INSTANTIATION, 1, "hilog_arg", 3);
+      xsb_type_error(CTXTc "integer",index,"hilog_arg/3",1);
+    else xsb_instantiation_error(CTXTc "hilog_arg/3", 1);
   }
   return TRUE;
 }
@@ -302,7 +302,7 @@ inline static xsbBool atom_to_list(CTXTdeclc int call_type)
   Cell heap_addr, term, term2;
   Cell list, new_list;
   CPtr top = 0;
-  char *call_name = (call_type == ATOM_CODES ? "atom_codes" : "atom_chars");
+  char *call_name = (call_type == ATOM_CODES ? "atom_codes/2" : "atom_chars/2");
   char *elt_type = (call_type == ATOM_CODES ? "ASCII code" : "character atom");
 
   term = ptoc_tag(CTXTc 1);
@@ -325,9 +325,9 @@ inline static xsbBool atom_to_list(CTXTdeclc int call_type)
 	if (((call_type==ATOM_CODES) && !isinteger(heap_addr))
 	    || ((call_type==ATOM_CHARS) && !isstring(heap_addr))) {
 	  if (isnonvar(heap_addr)) {
-	    xsb_type_error(CTXTc elt_type,list,call_name,2,2); 
+	    xsb_type_error(CTXTc elt_type,list,call_name,2); 
 	  }
-	  else err(INSTANTIATION, 2, call_name, 2);
+	  else xsb_instantiation_error(CTXTc call_name,2);
 	  mem_dealloc(atomnameaddr,atomnamelen,LEAK_SPACE);
 	  return FALSE;	/* fail */
 	}
@@ -351,8 +351,8 @@ inline static xsbBool atom_to_list(CTXTdeclc int call_type)
 	*atomname++ = (char)c;
 	term2 = cell(clref_val(term2)+1);
       } else {
-	if (isref(term2)) err(INSTANTIATION, 2, call_name, 2);
-	else xsb_type_error(CTXTc "list",term2,call_name,2,2);  /* atom_chars(X,[1]) */
+	if (isref(term2)) xsb_instantiation_error(CTXTc call_name,2);
+	else xsb_type_error(CTXTc "list",term2,call_name,2);  /* atom_chars(X,[1]) */
 	mem_dealloc(atomnameaddr,atomnamelen,LEAK_SPACE);
 	return FALSE;	/* fail */
       }
@@ -394,7 +394,7 @@ inline static xsbBool atom_to_list(CTXTdeclc int call_type)
 	follow(top) = makenil;
 	return unify(CTXTc list, new_list);
       } 
-    } else xsb_type_error(CTXTc "atom",term,call_name,2,1);  /* atom_codes(1,F) */
+    } else xsb_type_error(CTXTc "atom",term,call_name,1);  /* atom_codes(1,F) */
   }
   return TRUE;
 }
@@ -437,8 +437,8 @@ inline static xsbBool number_to_list(CTXTdeclc int call_type)
 		&& !isstring(heap_addr)
 		&& !isinteger(heap_addr))) {
 	  if (isnonvar(heap_addr))
-	    xsb_type_error(CTXTc elt_type,list,call_name,2,2); /* number_chars(X,[a]) */
-	  else err(INSTANTIATION, 2, call_name, 2);
+	    xsb_type_error(CTXTc elt_type,list,call_name,2); /* number_chars(X,[a]) */
+	  else xsb_instantiation_error(CTXTc call_name,2);
 	  return FALSE;	/* fail */
 	}
 	if (call_type==NUMBER_CODES)
@@ -446,13 +446,13 @@ inline static xsbBool number_to_list(CTXTdeclc int call_type)
 	else if ((call_type==NUMBER_DIGITS) && (isinteger(heap_addr))) {
 	  tmpval = int_val(heap_addr);
 	  if ((tmpval < 0) || (tmpval > 9)) {
-	    xsb_type_error(CTXTc elt_type,list,call_name,2,2); /* number_chars(X,[11]) */
+	    xsb_type_error(CTXTc elt_type,list,call_name,2); /* number_chars(X,[11]) */
 	  }
 	  c = (long) '0' + int_val(heap_addr);
 	} else if (isstring(heap_addr))
 	  c = *string_val(heap_addr);
 	else {
-	    xsb_type_error(CTXTc "integer, digit, or atom",list,call_name,2,2); /* number_chars(X,[a]) */
+	    xsb_type_error(CTXTc "integer, digit, or atom",list,call_name,2); /* number_chars(X,[a]) */
 	}
 
 	if (c < 0 || c > 255) {
@@ -464,9 +464,9 @@ inline static xsbBool number_to_list(CTXTdeclc int call_type)
 	term2 = cell(clref_val(term2)+1);
       } else {
 	if (isref(term2))
-	  err(INSTANTIATION, 2, call_name, 2);
+	  xsb_instantiation_error(CTXTc call_name,2);
 	else
-	  xsb_type_error(CTXTc "list",term2,call_name,2,2);
+	  xsb_type_error(CTXTc "list",term2,call_name,2);
 	return FALSE;	/* fail */
       }
     } while (1);
@@ -497,7 +497,7 @@ inline static xsbBool number_to_list(CTXTdeclc int call_type)
 	if (isboxedinteger(term)) {
 	  sprintf(str,"%ld",(long)boxedint_val(term));
 	} else {
-	  xsb_type_error(CTXTc "number",term,call_name,2,1);
+	  xsb_type_error(CTXTc "number",term,call_name,1);
 	}
       }
     }
@@ -640,8 +640,8 @@ inline static xsbBool sort(CTXTdecl)
     if (islist(term2)) {
       len++; term2 = cell(clref_val(term2)+1);
     } else {
-      if (isref(term2)) err(INSTANTIATION, 1, "sort", 2);
-      else xsb_type_error(CTXTc "list",list,"sort",2,1);
+      if (isref(term2)) xsb_instantiation_error(CTXTc "sort/2",1);
+      else xsb_type_error(CTXTc "list",list,"sort/2",1);
     }
   } while(1);
   check_glstack_overflow(3, pcreg, (2*len)*sizeof(Cell)) ;
@@ -704,11 +704,11 @@ inline static xsbBool keysort(CTXTdecl)
 	  !strcmp(get_name(get_str_psc(heap_addr)), "-")) {
 	len++; term2 = cell(clref_val(term2)+1);
       } else {
-	xsb_type_error(CTXTc "pair of the form Key-Value", (Cell)NULL,"keysort",2,1);
+	xsb_type_error(CTXTc "pair of the form Key-Value", (Cell)NULL,"keysort/2",1);
       }
     } else {
-      if (isref(term2)) err(INSTANTIATION, 1, "keysort", 2);
-      else err_handle(CTXTc TYPE, 1, "keysort", 2, "list", list);
+      if (isref(term2)) xsb_instantiation_error(CTXTc "keysort/2",1);
+      else xsb_type_error(CTXTc "list",list,"keysort/2",1);
       return FALSE;	/* fail */
     }
   } while(1);
@@ -810,18 +810,19 @@ inline static xsbBool parsort(CTXTdecl)
 		   get_arity(get_str_psc(heap_addr)) == 1 &&
 		   !strcmp(get_name(get_str_psc(heap_addr)),"desc")) {
 	  par_spec.sort_par_dir[par_spec.sort_num_pars] = 0;
-	} else xsb_type_error(CTXTc "asc/1 or desc/1 term",heap_addr,"parsort",4,2);
+	} else xsb_type_error(CTXTc "asc/1 or desc/1 term",heap_addr,"parsort/4",2);
 	tmp_ind = cell(clref_val(heap_addr)+1); XSB_Deref(tmp_ind);
-	if (!isinteger(tmp_ind)) xsb_type_error(CTXTc "integer arg for asc/1 or desc/1",tmp_ind,"parsort",4,2);
+	if (!isinteger(tmp_ind)) xsb_type_error(CTXTc "integer arg for asc/1 or desc/1",tmp_ind,"parsort/4",2);
 	i = int_val(tmp_ind);
 	/* TLS: Should be range below */
-	if (i < 1 || i > 255) err_handle(CTXTc TYPE,2,"parsort",4,"arity-sized integer",tmp_ind);
+	if (i < 1 || i > 255) xsb_domain_error(CTXTc "arity_sized_integer",tmp_ind,
+					       "parsort/4",2) ;
 	par_spec.sort_par_ind[par_spec.sort_num_pars] = i;
 	if (i > max_ind) max_ind = i;
 	par_spec.sort_num_pars++;
 	term2 = cell(clref_val(term2)+1);
 	XSB_Deref(term2);
-      } else xsb_type_error(CTXTc "list",list,"parsort",4,2);
+      } else xsb_type_error(CTXTc "list",list,"parsort/4",2);
     }
       
   list = ptoc_tag(CTXTc 1);
@@ -837,12 +838,12 @@ inline static xsbBool parsort(CTXTdecl)
 	len++; term2 = cell(clref_val(term2)+1);
       } else {
 	sprintf(ermsg,"Term with arity at least %d", max_ind);
-	err_handle(CTXTc TYPE, 1, "parsort", 4, ermsg, (Cell)heap_addr);
+	xsb_domain_error(CTXTc ermsg,(Cell) heap_addr,"parsort/4",1) ;	
 	return FALSE;	/* fail */
       }
     } else {
-      if (isref(term2)) err(INSTANTIATION, 1, "parsort", 4);
-      else err_handle(CTXTc TYPE, 1, "parsort", 4, "list", list);
+      if (isref(term2)) xsb_instantiation_error(CTXTc "parsort/4",1);
+      else xsb_type_error(CTXTc "list",list,"parsort/4",1);
       return FALSE;	/* fail */
     }
   } while(1);

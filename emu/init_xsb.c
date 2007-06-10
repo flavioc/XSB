@@ -72,6 +72,7 @@
 #include "incr_xsb.h" /* for incremental evaluation */
 #include "deadlock.h"
 #include "cinterf.h"
+#include "storage_xsb.h"
 /*-----------------------------------------------------------------------*/
 
 /* Sizes of the Data Regions in K-byte blocks
@@ -1022,6 +1023,11 @@ void init_thread_structures(CTXTdecl)
   private_current_de_block_top = NULL; 
   private_current_dl_block_top = NULL;
   private_current_pnde_block_top = NULL;
+
+  bt_storage_hash_table.length = STORAGE_TBL_SIZE;
+  bt_storage_hash_table.bucket_size = sizeof(STORAGE_HANDLE);
+  bt_storage_hash_table.initted = FALSE;
+  bt_storage_hash_table.table = NULL;
 
   num_gc = 0;
   total_time_gc = 0;

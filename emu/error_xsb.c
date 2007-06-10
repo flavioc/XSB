@@ -179,14 +179,14 @@ DllExport void call_conv xsb_throw(CTXTdeclc prolog_term Ball)
 
 /*****************/
 void call_conv xsb_domain_error(CTXTdeclc char *valid_domain,Cell culprit, 
-					char *predicate,int arity, int arg) 
+					char *predicate,int arg) 
 {
   prolog_term ball_to_throw;
   int isnew;
   Cell *tptr; char message[255];
   unsigned long ball_len = 10*sizeof(Cell);
 
-  sprintf(message,"in arg %d of predicate %s/%d)",arg,predicate,arity);
+  sprintf(message,"in arg %d of predicate %s)",arg,predicate);
 
   tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
 
@@ -250,21 +250,14 @@ void call_conv xsb_existence_error(CTXTdeclc char *object,Cell culprit,
 
 
 /*****************/
-void call_conv xsb_instantiation_error(CTXTdeclc char *predicate,int arity,
-						 int arg,char *state) 
-{
+
+void call_conv xsb_instantiation_error(CTXTdeclc char *predicate,int arg) {
   prolog_term ball_to_throw;
   int isnew;
   Cell *tptr; char message[255];
   unsigned long ball_len = 10*sizeof(Cell);
 
-  if (! IsNULL(state)) {
-    sprintf(message," in arg %d of predicate %s/%d must be %s",arg,predicate,arity,
-	    state);
-  } else {
-    sprintf(message," in arg %d of predicate %s/%d",arg,predicate,arity);
-  }    
-
+  sprintf(message," in arg %d of predicate %s",arg,predicate);
   tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
 
   ball_to_throw = makecs(tptr);
@@ -534,14 +527,14 @@ void call_conv xsb_table_error(CTXTdeclc char *message)
 /**************/
 
 void call_conv xsb_type_error(CTXTdeclc char *valid_type,Cell culprit, 
-					char *predicate,int arity, int arg) 
+					char *predicate,int arg) 
 {
   prolog_term ball_to_throw;
   int isnew;
   Cell *tptr; char message[255];
   unsigned long ball_len = 10*sizeof(Cell);
 
-  sprintf(message,"in arg %d of predicate %s/%d)",arg,predicate,arity);
+  sprintf(message,"in arg %d of predicate %s)",arg,predicate);
 
   tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
 
@@ -881,19 +874,12 @@ DllExport void call_conv exit_xsb(char *description)
 
 /*----------------------------------------------------------------------*/
 
+/* TLS: obsolete for most error types */
 void err_handle(CTXTdeclc int description, int arg, char *f,
 		int ar, char *expected, Cell found)
 {
   char message[240];	/* Allow 3 lines of error reporting.	*/
   switch (description) {
-  case INSTANTIATION:
-    xsb_instantiation_error(CTXTc f,ar,arg,NULL);
-    /*
-    sprintf(message, 
-	    "! %s error in argument %d of %s/%d",
-	    err_msg_table[description], arg, f, ar);
-    break;
-    */
   case RANGE:	/* I assume expected != NULL */
     sprintf
       (message,
@@ -901,8 +887,6 @@ void err_handle(CTXTdeclc int description, int arg, char *f,
        err_msg_table[description], arg, f, 
        ar, expected, (int) int_val(found));
     break;
-  case TYPE:
-    xsb_type_error(CTXTc expected,found,f,ar,arg);
   case ZERO_DIVIDE:
     sprintf(message,
 	    "! %s error in %s\n! %s expected, but %lx found",

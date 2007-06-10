@@ -27,12 +27,17 @@
 
 #include "context.h"
 
-typedef struct I_Trie_Header *ITHptr;
-typedef struct I_Trie_Header {
-  BTNptr root;
-  ITHptr prev;
-  ITHptr next;
-} ITrie_Header;
+struct interned_trie_t {
+  BTNptr  root;
+  byte    valid;
+  int     next_entry;
+} ;
+typedef struct interned_trie_t *ITrieptr;
+
+/* Also includes trie stuff */
+#ifndef MULTI_THREAD
+extern ITrieptr itrie_array;
+#endif
 
 extern VariantSF get_variant_sf(CTXTdeclc Cell, TIFptr, Cell *);
 extern SubProdSF get_subsumer_sf(CTXTdeclc Cell, TIFptr, Cell *);

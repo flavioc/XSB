@@ -131,9 +131,6 @@ int mem_flag;
 
 /*======================================================================*/
 extern struct token_t *GetToken(CTXTdeclc FILE *, STRFILE *, int);
-#ifndef MULTI_THREAD
-extern BTNptr *Set_ArrayPtr;
-#endif
 
 extern int  sys_syscall(CTXTdeclc int);
 extern xsbBool sys_system(CTXTdeclc int);
@@ -245,6 +242,34 @@ DllExport prolog_int call_conv ptoc_int(CTXTdeclc int regnum)
   case XSB_LIST:
   case XSB_FLOAT: xsb_abort("[PTOC_INT] Integer argument expected, %d tag found\n",cell_tag(addr));
   case XSB_STRING: return (prolog_int)string_val(addr);	/* dsw */
+  case XSB_INT: return int_val(addr);
+  default: xsb_abort("[PTOC_INT] Argument of unknown type");
+  }
+  return FALSE;
+}
+
+/* TLS: unlike ptoc_int, this does NOT cast strings to integers */
+DllExport prolog_int call_conv iso_ptoc_int(CTXTdeclc int regnum,char * PredString)
+{
+  /* reg is global array in register.h in the single-threaded engine
+   * and is defined as a thread-specific macro in context.h in the
+   * multi-threaded engine
+   */  
+  register Cell addr = cell(reg+regnum);
+
+  /* XSB_Deref and then check the type */
+  XSB_Deref(addr);
+
+  switch (cell_tag(addr)) {
+  case XSB_FREE:
+  case XSB_REF1: 
+  case XSB_ATTV: xsb_instantiation_error(CTXTc PredString,regnum);
+  case XSB_STRUCT:
+    if (isboxedinteger(addr)) return(boxedint_val(addr));
+  case XSB_LIST:
+  case XSB_STRING:
+  case XSB_FLOAT: xsb_type_error(CTXTc "integer",addr,PredString,regnum);
+
   case XSB_INT: return int_val(addr);
   default: xsb_abort("[PTOC_INT] Argument of unknown type");
   }
@@ -433,7 +458,6 @@ DllExport void call_conv ctop_int(CTXTdeclc int regnum, prolog_int value)
     xsb_abort("[CTOP_INT] Wrong type of argument %lx (Reg = %d)", addr, regnum);
   }
 }
-
 
 /* from float value form an int node */
 DllExport void call_conv ctop_float(CTXTdeclc int regnum, prolog_float value)
@@ -1194,7 +1218,7 @@ int builtin_call(CTXTdeclc byte number)
     Cell arg, term = ptoc_tag(CTXTc 2);
     XSB_Deref(term);
     if (isref(term)) {
-      err_handle(CTXTc INSTANTIATION, 2, BuiltinName(TERM_NEW_MOD), 3, "", term);
+      xsb_instantiation_error(CTXTc "term_new_mod/3",2);
       break;
     }
     termpsc = term_psc(term);
@@ -1424,10 +1448,10 @@ int builtin_call(CTXTdeclc byte number)
       char *addr = string_val(term);
       if (isref(num) || (isinteger(num) && int_val(num) >= 0))
 	return int_unify(CTXTc makeint(strlen(addr)), num);
-      else if (!isinteger(num)) xsb_type_error(CTXTc "integer",num,"atom_length",2,2);
-      else xsb_domain_error(CTXTc "not_less_than_zero",num,"atom_length",2,2);
-    } else if (isref(term)) xsb_instantiation_error(CTXTc "atom_length",2,1,NULL);
-      else xsb_type_error(CTXTc "atom",term,"atom_length",2,1);
+      else if (!isinteger(num)) xsb_type_error(CTXTc "integer",num,"atom_length/2",2);
+      else xsb_domain_error(CTXTc "not_less_than_zero",num,"atom_length/2",2);
+    } else if (isref(term)) xsb_instantiation_error(CTXTc "atom_length/2",1);
+      else xsb_type_error(CTXTc "atom",term,"atom_length/2",1);
     return FALSE;
   }
   case STR_CAT:		/* R1: +Str1; R2: +Str2: R3: -Str3 */
@@ -1823,15 +1847,12 @@ int builtin_call(CTXTdeclc byte number)
 
     term = ptoc_tag(CTXTc regCallTerm);
     if ( isref(term) ) {
-      err_handle(CTXTc INSTANTIATION, regCallTerm,
-		 BuiltinName(GET_PRODUCER_CALL), Arity, "", term);
+      xsb_instantiation_error(CTXTc "get_producer_call/3",regCallTerm);
       break;
     }
     psc = term_psc(term);
     if ( IsNULL(psc) ) {
-      err_handle(CTXTc TYPE, regCallTerm,
-		 BuiltinName(GET_PRODUCER_CALL), Arity,
-		 "Callable term", term);
+      xsb_type_error(CTXTc "callable",term,"get_producer_call/3",regCallTerm);
       break;
     }
     tif = get_tip(CTXTc psc);
@@ -2023,7 +2044,6 @@ case WRITE_OUT_PROFILE:
      * equipped to predict how a new goal would have been treated had it
      * really been called.
      */
-    const int Arity = 4;
     const int regGoalHandle   = 1;   /* in:  either a term or a SF ptr */
     const int regPredType     = 2;   /* out: status (as INT) */
     const int regGoalType     = 3;   /* out: status (as INT) */
@@ -2035,8 +2055,7 @@ case WRITE_OUT_PROFILE:
 
     goalTerm = ptoc_tag(CTXTc regGoalHandle);
     if ( isref(goalTerm) ) {
-      err_handle(CTXTc INSTANTIATION, regGoalHandle, BuiltinName(TABLE_STATUS),
-		 Arity, "", goalTerm);
+      xsb_instantiation_error(CTXTc "table_status/4",regGoalHandle);
       break;
     }
     if ( is_encoded_addr(goalTerm) ) {
@@ -2063,8 +2082,7 @@ case WRITE_OUT_PROFILE:
       psc = term_psc(goalTerm);
 
       if ( IsNULL(psc) ) {
-	err_handle(CTXTc TYPE, regGoalHandle, BuiltinName(TABLE_STATUS),
-		   4, "Callable term", goalTerm);
+	xsb_type_error(CTXTc "callable",goalTerm,"table_status/4",regGoalHandle);
 	break;
       }
       tif = get_tip(CTXTc psc);
@@ -2153,7 +2171,7 @@ case WRITE_OUT_PROFILE:
     psc = term_psc(term);
     if ( IsNULL(psc) ) {
       xsb_domain_error(CTXTc "predicate_or_term_indicator",term,
-  		       "abolish_table_pred",1, 1) ;
+  		       "abolish_table_pred/1", 1) ;
       break;
     }
     abolish_table_predicate(CTXTc psc,ptoc_int(CTXTc 2));
@@ -2235,7 +2253,6 @@ case WRITE_OUT_PROFILE:
   }
 
   case TRIE_GET_RETURN: {
-    const int Arity = 2;
     const int regTableEntry = 1;   /* in: subgoal frame ref */
     const int regRetTerm    = 2;   /* in/out: ret/n term to unify against
 				              answer substitutions */
@@ -2254,8 +2271,7 @@ case WRITE_OUT_PROFILE:
 #endif
     retTerm = ptoc_tag(CTXTc regRetTerm);
     if ( isref(retTerm) ) {
-      err_handle(CTXTc INSTANTIATION, regRetTerm, BuiltinName(TRIE_GET_RETURN),
-		 Arity, "", retTerm);
+      xsb_instantiation_error(CTXTc "trie_get_return/2",regRetTerm);
       break;
     }
     pcreg = trie_get_returns(CTXTc sf, retTerm);
@@ -2352,7 +2368,7 @@ case WRITE_OUT_PROFILE:
     break;
 
   case NEWTRIE:
-    ctop_int(CTXTc 2,newtrie(CTXTc ptoc_int(CTXTc 1)));
+    ctop_int(CTXTc 1,newtrie(CTXTc ptoc_int(CTXTc 2)));
     break;
   case TRIE_INTERN:
     trie_intern(CTXT);
@@ -2366,10 +2382,11 @@ case WRITE_OUT_PROFILE:
     trie_dispose_nr(CTXT);
     break;
   case TRIE_UNDISPOSE:
-    trie_undispose(CTXTc ptoc_int(CTXTc 1), (BTNptr) ptoc_int(CTXTc 2));
+    trie_undispose(CTXTc iso_ptoc_int(CTXTc 1,"unmark_uninterned_nr/2"), 
+		   (BTNptr) iso_ptoc_int(CTXTc 2,"unmark_uninterned_nr/2"));
     break;
   case RECLAIM_UNINTERNED_NR:
-    reclaim_uninterned_nr(CTXTc ptoc_int(CTXTc 1));
+    reclaim_uninterned_nr(CTXTc iso_ptoc_int(CTXTc 1,"reclaim_uninterned_nr/1"));
     break;
   case GLOBALVAR:
     ctop_tag(CTXTc 1, ((Cell)glstack.low));
@@ -2401,12 +2418,10 @@ case WRITE_OUT_PROFILE:
    
   case BOTTOM_UP_UNIFY:
     return ( bottom_up_unify(CTXT) );
+
   case DELETE_TRIE:
-    if (strcmp(ptoc_string(CTXTc 2),"intern") == 0){
-      int tmpval = ptoc_int(CTXTc 1);
-      if (!interned_trie_cps_check(CTXTc Set_ArrayPtr[tmpval])) 
-	delete_interned_trie(CTXTc tmpval);
-      else xsb_abort("[DELETE_TRIE] Backtracking through trie to be abolished.");
+    if (ptoc_int(CTXTc 2) == 0) {
+      delete_interned_trie(CTXTc  iso_ptoc_int(CTXTc 1,"delete_trie/1"));
     }
     else {
       xsb_abort("[DELETE_TRIE] Invalid use of this operation");
@@ -2419,14 +2434,12 @@ case WRITE_OUT_PROFILE:
     int eval_meth = ptoc_int(CTXTc 2);
 
     if ( isref(term) ) {
-      err_handle(CTXTc INSTANTIATION, 1, BuiltinName(SET_TABLED_EVAL),
-		 2, "", term);
+      xsb_instantiation_error(CTXTc "set_tabled_eval/2",1);
       break;
     }
     psc = term_psc(term);
     if ( IsNULL(psc) ) {
-      err_handle(CTXTc TYPE, 1, BuiltinName(SET_TABLED_EVAL),
-		 2, "Predicate specification", term);
+      xsb_type_error(CTXTc "predicate_indicator",term,"set_tabled_eval/2",1);
       break;
     }      
     if ((eval_meth == VARIANT_EVAL_METHOD) && (get_tabled(psc) != T_TABLED_VAR)) {

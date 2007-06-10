@@ -45,8 +45,8 @@ static inline int prolog_call0(CTXTdeclc Cell term)
       psc = pair_psc(sym);
     } else {
       if (isnonvar(term))
-	err_handle(CTXTc TYPE, 1, "call", 1, "callable term", term);
-      else err(INSTANTIATION, 1, "call", 1);
+	xsb_type_error(CTXTc "callable",term,"call/1",1);
+      else xsb_instantiation_error(CTXTc "call/1",1);
       return FALSE;
     }
 #ifdef CP_DEBUG

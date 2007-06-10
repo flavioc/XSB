@@ -119,8 +119,8 @@
     if (isinteger(term)) {
       putc(int_val(term), fileptr(pflags[CURRENT_OUTPUT]));
     } else {
-      if (isnonvar(term)) err_handle(CTXTc TYPE, 1, "put", 1, "integer", term);
-      else err(INSTANTIATION, 1, "put", 1);
+      if (isnonvar(term)) xsb_type_error(CTXTc "integer",term,"put/1",1);
+      else xsb_instantiation_error(CTXTc "put/1",1);
     }
     break;
   }
@@ -131,8 +131,8 @@
       for (i=1; i<=int_val(term); i++)
 	putc(' ', fileptr(pflags[CURRENT_OUTPUT]));
     } else {
-      if (isnonvar(term)) err_handle(CTXTc TYPE, 1, "tab", 1, "integer", term);
-      else err(INSTANTIATION, 1, "tab", 1);
+      if (isnonvar(term)) xsb_type_error(CTXTc "integer",term,"tab/1",1);
+      else xsb_instantiation_error(CTXTc "tab/1",1);
     }
     break;
   }
