@@ -1311,7 +1311,7 @@ void init_newtrie(CTXTdecl) {
   int i ;
   
   itrie_array = 
-    mem_calloc(MAX_INTERNED_TRIES, sizeof(struct interned_trie_t), TABLE_SPACE);
+    mem_calloc(MAX_INTERNED_TRIES+1, sizeof(struct interned_trie_t), TABLE_SPACE);
 
   for( i = 0; i < MAX_INTERNED_TRIES; i++ ) {
     itrie_array[i].valid = FALSE;
