@@ -70,6 +70,7 @@ typedef struct Deleted_Table_Frame {
 #define DTF_PrevDTF(pDTF)	   ( (pDTF)->prev_delTF )
 #define DTF_PrevPredDTF(pDTF)	   ( (pDTF)->prev_pred_delTF )
 
+
 /* Functions to create deltfs are inlined, and in tr_utils.c */
 
 /* In macro below, need to reset DTF chain, and Pred-level DTF chain.
@@ -589,7 +590,6 @@ enum SubgoalFrameType {
 #define PRIVATE_SFT 0x00
 
 /* --------------------------------
-
    Variant (Producer) Subgoal Frame
 
    Note that the cp_ptr, which is not needed until a table is
@@ -597,6 +597,8 @@ enum SubgoalFrameType {
    usage will occur only after the table has been completed, so its
    safe.
 
+   Fields marked pre-compl are not needed after completion; post-compl
+   are not needed before completion.
    -------------------------------- */
 
 typedef struct subgoal_frame {
@@ -608,16 +610,16 @@ typedef struct subgoal_frame {
   TIFptr tif_ptr;	  /* Table of which this call is a part */
   BTNptr leaf_ptr;	  /* Handle for call in the CallTrie */
   BTNptr ans_root_ptr;	  /* Root of the return trie */
-  ALNptr ans_list_ptr;	  /* Pointer to the list of returns in the ret trie */
-  ALNptr ans_list_tail;	  /* pointer to the tail of the answer list */
+  ALNptr ans_list_ptr;	  /* Pointer to the list of returns in the ret trie (pre-compl)*/
+  ALNptr ans_list_tail;	  /* pointer to the tail of the answer list (pre-compl) */
   void *next_subgoal;	  
   void *prev_subgoal;
-  CPtr  cp_ptr;		  /* Pointer to the Generator CP */
-  CPtr asf_list_ptr;	  /* Pointer to list of (CP) active subgoal frames */
-  CPtr compl_stack_ptr;	  /* Pointer to subgoal's completion stack frame */
-  CPtr compl_suspens_ptr; /* SLGWAM: CP stack ptr */
+  CPtr  cp_ptr;		  /* Pointer to the Generator CP (pre-compl)*/
+  CPtr asf_list_ptr;	  /* Pointer to list of (CP) active subgoal frames (pre-compl) */
+  CPtr compl_stack_ptr;	  /* Pointer to subgoal's completion stack frame (pre-compl) */
+  CPtr compl_suspens_ptr; /* SLGWAM: CP stack ptr (pre-compl)  */
   PNDE nde_list;	  /* pointer to a list of negative DEs */
-  DelTFptr deltf_ptr;
+  DelTFptr deltf_ptr;     /* pointer to deltf (post-compl) */
 #ifdef MULTI_THREAD
   int tid;		  /* Thread id of the generator thread for this sg */
 #endif
@@ -662,14 +664,21 @@ typedef struct subgoal_frame {
    (the GC_MARK mask) and during table traversal to transitively remove
    depending subgoals (the VISITED mask).  */
 #define VISITED_SUBGOAL_MASK  1
+#define VISITED_SUBGOAL_NEG_MASK 10
+#define DELETED_SUBGOAL_MASK  2
 #define GC_SUBGOAL_MASK  8
+#define GC_SUBGOAL_NEG_MASK  3
+
 #define VISITED_SUBGOAL(subgoal)  ((subgoal->visited) & VISITED_SUBGOAL_MASK)
 #define MARK_VISITED_SUBGOAL(subgoal) {(subgoal->visited) = VISITED_SUBGOAL_MASK | (subgoal->visited);}
-#define UNMARK_VISITED_SUBGOAL(subgoal) {(subgoal->visited) = (subgoal->visited) & GC_SUBGOAL_MASK;}
+#define UNMARK_VISITED_SUBGOAL(subgoal) {(subgoal->visited) = (subgoal->visited) & (VISITED_SUBGOAL_NEG_MASK);}
 #define GC_MARKED_SUBGOAL(subgoal)  ((subgoal->visited) & GC_SUBGOAL_MASK)
 #define GC_MARK_SUBGOAL(subgoal) {(subgoal->visited) = GC_SUBGOAL_MASK | (subgoal->visited);}
+#define GC_UNMARK_SUBGOAL(subgoal) {(subgoal->visited) =  (subgoal->visited) & GC_SUBGOAL_NEG_MASK;}
 
-#define GC_UNMARK_SUBGOAL(subgoal) {(subgoal->visited) =  (subgoal->visited) & VISITED_SUBGOAL_MASK;}
+#define DELETED_SUBGOAL_FRAME(subgoal)  ((subgoal->visited) & DELETED_SUBGOAL_MASK)
+#define DELETE_SUBGOAL_FRAME(subgoal) {(subgoal->visited) = DELETED_SUBGOAL_MASK | (subgoal->visited);}
+
 
 /* Subsumptive Producer Subgoal Frame
    ---------------------------------- */
