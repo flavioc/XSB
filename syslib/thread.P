@@ -77,6 +77,12 @@ thread_create( Goal, ThreadId ) :-
 
 /*---------------*/
 
+
+thread_create( Goal ) :- 
+	thread_create( Goal, _, [detached(true)] ).
+
+/*---------------*/
+
 thread_exit( ExitCode ) 	    :- 
 	check_integer(ExitCode,thread_exit/1,1),
 	thread_request( XSB_THREAD_EXIT, ExitCode,_, _,_,_,_,_).
