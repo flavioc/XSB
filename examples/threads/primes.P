@@ -12,7 +12,7 @@ list_primes(I,F,L,T) :-
 	I1 is I + 1, list_primes(I1,F,L,T).
 
 partition_space(N,H,H1) :-
-	H is floor(N/2), H1 is H + 1.
+	H is N // 2, H1 is H + 1.
 	
 /* Sequential version */
 

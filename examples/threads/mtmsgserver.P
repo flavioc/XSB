@@ -16,7 +16,7 @@
 :- import 
 	socket_set_option/3 from socket.
 
-:- import thread_create/3 from thread.
+:- import thread_create/1, thread_create/3 from thread.
 :- import thread_join/2 from thread.
 :- import thread_cancel/1 from thread.
 :- import thread_exit/1 from thread.
@@ -39,7 +39,7 @@ server :-
 
 server_loop(Sockfd0) :-
 	socket_accept(Sockfd0, Sockfd0_out1),
-	thread_create(serve_client(Sockfd0_out1),_,[detached(true)]),
+	thread_create(serve_client(Sockfd0_out1)),
 	fail.
 server_loop(Sockfd0) :-
 	server_loop(Sockfd0).
