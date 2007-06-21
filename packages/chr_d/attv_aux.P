@@ -51,6 +51,9 @@ merge_attr_lists([A1|A1s],[A2|A2s],[A|As]) :-
 	append_unique(A1,A2,A),
 	merge_attr_lists(A1s,A2s,As).
 
+merge_attr_lists_ds(L1,L2,L) :-
+	append_unique(L1,L2,L).
+
 
 % merge_atts(Var,L1,L2,L):
 % L is sorted result of combining L1 and L2 
@@ -80,9 +83,13 @@ append_unique(Var,[X|L1],L2,[X|L3]) :-
 
 
 % append with no duplicates
-append_unique(L1,L2,L) :-
-	append(L1,L2,L3),
-	remove_duplicates(L3,L).
+append_unique([],L,L).
+append_unique([X|L1],L2,L) :-
+	append_unique(L1,L2,L3),
+	(var_member(X,L3)
+	 -> L = L3
+	  ; L = [X|L3]
+	).
 
 % remove duplicates from a list
 remove_duplicates([],[]).
@@ -146,12 +153,25 @@ get_nth_attr(V,Mod,N,Attr) :-
 	get_attr(V,Mod,Atts),
 	arg(N,Atts,Attr).
 
+% retrieve N-th non-empty attribute Attr from variable V's attribute set
+ne_get_nth_attr(V,Mod,N,Attr) :-
+	var(V),
+	get_attr(V,Mod,Atts),
+	arg(N,Atts,Attr),
+	Attr \= [].
+
 get_nth_attr(V,Mod,N,Pattern,Attr) :-
 	var(V),
 	get_attr(V,Mod,Atts),
 	arg(N,Atts,PosAtts),
 	match_pattern(PosAtts,Pattern,Attr),
 	Attr \= [].
+
+get_constr_pos_attr(V,Mod,Constr,Pos,Attr) :-
+	var(V),
+	get_attr(V,Mod,Atts),
+	member(Constr-Pos-Attr,Atts).
+
 
 match_pattern([],_,[]).
 match_pattern([X|Xs],Pattern,Ys) :-
@@ -205,6 +225,25 @@ abs_remove_f([X|Xs],Y,Zs) :-
 	    Zs = [X|Ws]
 	).
 
+abs_remove_attr([],_,_,_,[]).
+abs_remove_attr([A|As],Constr,Pos,Arg,L) :-
+	(A = Constr-Pos-L1
+	 -> abs_remove(L1,Arg,L2),
+	    (L2 = []
+	     -> L = As
+	      ; L = [Constr-Pos-L2|As]
+	    )
+	  ; abs_remove_attr(As,Constr,Pos,Arg,Ls),
+	    L = [A|Ls]
+	).
+
+
+select(Constr-Pos-List,[X|Xs],Ys) :-
+	(X = Constr-Pos-List
+	 -> Ys = Xs
+	  ; select(Constr-Pos-List,Xs,Zs),
+	    Ys = [X|Zs]
+	).
 
 % sort attribute sets into standard order
 % for sorted constraint storage -- currently not in use
@@ -284,6 +323,20 @@ atts2store_1([A|As],Var,F,I,[C|Cs]) :-
 	delete_ith(I,ArgsF,Var,ArgsA),
 	C =.. [F|ArgsF],
 	atts2store_1(As,Var,F,I,Cs).
+
+
+reconstruct_dynamic_store([],_,[]).
+reconstruct_dynamic_store([Attr|Atts],Var,Store) :-
+	reconstruct_constr_pos(Attr,Var,AttrStore),
+	reconstruct_dynamic_store(Atts,Var,AttsStore),
+	append(AttrStore,AttsStore,Store).
+
+reconstruct_constr_pos(_-_-[],_,[]).
+reconstruct_constr_pos(Constr-Pos-[ArgTerm|ArgTerms],Var,[C|Cs]) :-
+	ArgTerm =.. [attr|ArgList],
+	delete_ith(Pos,Args,Var,ArgList),
+	C =.. [Constr|Args],
+	reconstruct_constr_pos(Constr-Pos-ArgTerms,Var,Cs).
 
 
 

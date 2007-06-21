@@ -24,8 +24,6 @@
 ** 
 */
 
-:- export print_chrd/1.
-
 :- import numbervars/3 from num_vars.
 
 :- import nl/0 from standard.
@@ -35,7 +33,7 @@
 :- import put/1 from standard.
 :- import (\=)/2 from standard.
 :- import write/1 from standard.
-:- import copy_term/2 from basics.
+:- import length/2, copy_term/2 from basics.
 
 
 %:- import from lists.
@@ -84,6 +82,8 @@ print_chrd1(directive(D)):- !,
 	writeq(D).
 print_chrd1((H :- B)) :- !,
 	print_chrd2(H,B).
+print_chrd1(pragma(R,IDs,Pragmas)) :- !,
+	print_chrd_chr(R,IDs,Pragmas).
 print_chrd1(H):-
 	print_chrd2(H,true).
 
@@ -179,6 +179,71 @@ simple_goal(G) :-
 	G \= (_ , _),
 	G \= (_ ; _),
 	G \= (_ -> _).
+
+
+print_chrd_chr(Rule,IDs,Pragmas) :-
+	Rule = rule(H1,H2,_Guard,_Body),
+	(H1 = []
+	 -> print_chrd_propagation(Rule,IDs,Pragmas)
+	  ; (H2 = []
+	     -> print_chrd_simplification(Rule,IDs,Pragmas)
+	      ; print_chrd_simpagation(Rule,IDs,Pragmas)
+	    )
+	).
+
+print_chrd_propagation(Rule,_IDs,_Pragmas) :-
+	Rule = rule([],HeadL,Guard,Body),
+	print_chrd_list(HeadL),	
+	write(' ==> '),
+	print_chrd_guard(Guard),
+	and2list(Body,BodyL),
+	print_chrd_list(BodyL),
+	writeln('.').
+
+print_chrd_simplification(Rule,_IDs,_Pragmas) :-
+	Rule = rule(HeadL,[],Guard,Body),
+	print_chrd_list(HeadL),
+	write(' <=> '),
+	print_chrd_guard(Guard),
+	and2list(Body,BodyL),
+	print_chrd_list(BodyL),
+	writeln('.').
+
+print_chrd_simpagation(Rule,_IDs,_Pragmas) :-
+	Rule = rule(Head1L,Head2L,Guard,Body),
+	print_chrd_list(Head2L),
+	write(' \ '),
+	print_chrd_list(Head1L),	
+	write(' <=> '),
+	print_chrd_guard(Guard),
+	and2list(Body,BodyL),
+	print_chrd_list(BodyL),
+	writeln('.').
+
+
+print_chrd_list([X]) :-
+	!, writeq(X).
+print_chrd_list([X|Xs]) :-
+	writeq(X),
+	write(', '),
+	print_chrd_list(Xs).
+
+
+print_chrd_guard(true) :- !.
+print_chrd_guard(Guard) :-
+	and2list(Guard,GL),
+	clean_chrd_guard_list(GL,CleanGL),
+	print_chrd_list(CleanGL),
+	write(' | ').
+
+clean_chrd_guard_list([],[]).
+clean_chrd_guard_list([G|Gs],GL) :-
+	clean_chrd_guard_list(Gs,GL1),
+	(G = true
+	 -> GL = GL1
+	  ; GL = [G|GL1]
+	).
+
 
 end_of_file.
 
