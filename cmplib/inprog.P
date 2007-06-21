@@ -43,11 +43,10 @@
 inprog(Sym, clause(Args,Body,CPrag), clause(NArgs,NBody,CPrag)) :- 
     CPrag = crec(ARSize,_),
     VarTab = [head(VOList)|VarTab1],
+    inp_args(Args, NArgs, VOList, [], h, 1, VarList),
     ( Body = inlinegoal(true,0,_) -> 
-	inp_args(Args, NArgs, VOList, [], h, 1, VarList),
 	NBody = nil, VarTab1=[]
-    ; inp_args(Args, NArgs, VOList, [], h, 1, VarList),
-      inp_body(Body, NBody, VarTab1, [], 1, _ChunkOut, VarList)
+    ; inp_body(Body, NBody, VarTab1, [], 1, _ChunkOut, VarList)
 		% The id of the first chunk is 1, same as the head.
     ),
     varproc(VarList, VarTab, PvarCount),

@@ -139,8 +139,8 @@ flt_body(and(G1,G2), Gs) :-
 		 ;	append_and(G3,G4,Gs)  %%Gs = and(G3,G4)
 		)
 	).
-flt_body(and(G1,G2), and(G3,G4)) :- 
-	flt_body(G1, G3), flt_body(G2, G4).
+%%flt_body(and(G1,G2), and(G3,G4)) :- 
+%%	flt_body(G1, G3), flt_body(G2, G4).
 flt_body(or(G1,G2), or(G3,G4)) :-
 	flt_body(G1, G3), flt_body(G2, G4).
 flt_body(if_then_else(TG,G1,G2), if_then_else(FTG,G3,G4)) :- 

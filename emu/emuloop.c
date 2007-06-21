@@ -336,6 +336,9 @@ inline void bld_boxedfloat(CTXTdeclc CPtr addr, Float value) {
 	hbreg = cp_hreg(breg); \
       } 
 
+#define heap_local_overflow(Margin)					\
+  ((ereg<ebreg)?((ereg-hreg)<(Margin)):((ebreg-hreg)<(Margin)))
+
 /*----------------------------------------------------------------------*/
 
 extern int  builtin_call(CTXTdeclc byte), unifunc_call(CTXTdeclc int, CPtr);
@@ -1099,16 +1102,17 @@ contcase:     /* the main loop */
     Op2(get_xxxn);
     ADVANCE_PC(size_xxxX);
 #ifdef GC_TEST
-    if ((infcounter++ > GC_INFERENCES) || ((ereg - hreg) < (long)op2))
+    if ((infcounter++ > GC_INFERENCES) || heap_local_overflow((long)op2))
       {
 	infcounter = 0;
         fprintf(stddbg, ".");
 #else
-    if ((ereg - hreg) < (long)op2)
+	//    printf("t_h %d %p\n",(ereg-hreg),hreg);
+	if (heap_local_overflow((long)op2))
       {
 #endif
         if (gc_heap(CTXTc op1,FALSE)) { /* garbage collection potentially modifies hreg */
-	  if ((ereg - hreg) < (long)op2) {
+	  if (heap_local_overflow((long)op2)) {
 	    if (pflags[STACK_REALLOC]) {
 	      if (glstack_realloc(CTXTc resize_stack(glstack.size,(op2*sizeof(Cell))),op1) != 0) {
 		xsb_basic_abort(local_global_exception);
@@ -1785,6 +1789,7 @@ argument positions.
     ADVANCE_PC(size_xxxX);
     cpreg = lpcreg;
     psc = (Psc)op1;
+    //    printf("call %s/%d %p,%p,%p\n",get_name(psc),get_arity(psc),hreg,ereg,lpcreg);
 #ifdef CP_DEBUG
     pscreg = psc;
 #endif
@@ -1861,9 +1866,11 @@ argument positions.
       if (ereg_on_top(ereg)) op1 = (Cell)(ereg - *(cpreg-2*sizeof(Cell)+3));
       else op1 = (Cell)(ebreg-1);
     }
+    //    printf("allo %p,%p,%p,%p,",hreg,ereg,ebreg,cp_ebreg(breg));
     *(CPtr *)((CPtr) op1) = ereg;
     *((byte **) (CPtr)op1-1) = cpreg;
     ereg = (CPtr)op1; 
+    //    printf("%p,%p\n",ereg,lpcreg);
     {/* initialize all permanent variables not in the first chunk to unbound */
       int  i = ((Cell)op3) - op2;
       CPtr p = ((CPtr)op1) - op2;
@@ -1900,7 +1907,9 @@ argument positions.
   XSB_Start_Instr(deallocate,_deallocate) /* PPP */
     ADVANCE_PC(size_xxx);
     cpreg = *((byte **)ereg-1);
+    //    printf("dealloc %p,%p,",hreg,ereg);
     ereg = *(CPtr *)ereg;
+    //    printf("%p,%p\n",ereg,lpcreg);
   XSB_End_Instr()
 
   XSB_Start_Instr(deallocate_gc,_deallocate_gc) /* PPA -- instruction no longer used! */
@@ -1908,11 +1917,11 @@ argument positions.
     cpreg = *((byte **)ereg-1);
     ereg = *(CPtr *)ereg;
     /* following required for recursive loops that build structure on way back up. */
-    if (((pb)ereg - (pb)hreg) < 2048) { 
+    if (heap_local_overflow(2000)) { 
       Def1op
       Op1((lpcreg[-1]));  // already advanced pc, so look back
       if (gc_heap(CTXTc (int)op1,FALSE)) { // no regs, garbage collection potentially modifies hreg 
-	if (((pb)ereg - (pb)hreg) < 2048) {
+	if (heap_local_overflow(2000)) {
 	  if (pflags[STACK_REALLOC]) {
 	    if (glstack_realloc(CTXTc resize_stack(glstack.size,OVERFLOW_MARGIN),(int)op1) != 0) {
 	      xsb_basic_abort(local_global_exception);
@@ -1932,9 +1941,9 @@ argument positions.
 
   XSB_Start_Instr(proceed_gc,_proceed_gc) /* PPP */
     /* following required for recursive loops that build structure on way back up. */
-    if (((pb)ereg - (pb)hreg) < 2048) { 
+    if (heap_local_overflow(2000)) { 
       if (gc_heap(CTXTc 0,FALSE)) { // no regs, garbage collection potentially modifies hreg 
-	if (((pb)ereg - (pb)hreg) < 2048) {
+	if (heap_local_overflow(2000)) {
 	  if (pflags[STACK_REALLOC]) {
 	    if (glstack_realloc(CTXTc resize_stack(glstack.size,OVERFLOW_MARGIN),0) != 0) {
 	      xsb_basic_abort(local_global_exception);
@@ -1956,7 +1965,7 @@ argument positions.
     Psc psc;
 
     Op1(get_xxxs);
-    ADVANCE_PC(size_xxxX);
+    //    ADVANCE_PC(size_xxxX);
     psc = (Psc)op1;
 #ifdef MULTI_THREAD_LOGGING
     log_rec(CTXTc psc, "exec");
@@ -1965,6 +1974,7 @@ argument positions.
     pscreg = psc;
 #endif
     call_sub(psc);
+    //    printf("exec %s/%d (%p,%p,%p)\n",get_name(psc),get_arity(psc),hreg,ereg,lpcreg);
   XSB_End_Instr()
 
   XSB_Start_Instr(jump,_jump)   /* PPP-L */
