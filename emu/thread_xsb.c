@@ -404,11 +404,12 @@ static int xsb_thread_create(th_context *th)
   pthread_t_p thr ;
   Integer id, pos ;
        
-  // TLS -- not locking here.
-  if ( th_free_slots <= 0 ) 
-        xsb_resource_error(CTXTc "maximum threads","thread_create",3);
   pthread_mutex_lock( &th_mutex );
   SYS_MUTEX_INCR( MUTEX_THREADS ) ;
+  if (th_free_slots <= 0) 
+  {     pthread_mutex_unlock( &th_mutex );
+        xsb_resource_error(CTXTc "maximum threads","thread_create",3);
+  }
   flags[NUM_THREADS]++ ;
   th_free_slots-- ;
   max_threads_sofar = xsb_max( max_threads_sofar, flags[NUM_THREADS] );
@@ -480,11 +481,12 @@ call_conv int xsb_ccall_thread_create(th_context *th,th_context **thread_return)
   Integer id, pos ;
        
   // TLS -- not locking here.
-  if (th_free_slots <= 0) 
-        xsb_resource_error(CTXTc "maximum threads","thread_create",3);
-
   pthread_mutex_lock( &th_mutex );
   SYS_MUTEX_INCR( MUTEX_THREADS ) ;
+  if (th_free_slots <= 0) 
+  {     pthread_mutex_unlock( &th_mutex );
+        xsb_resource_error(CTXTc "maximum threads","thread_create",3);
+  }
   th_free_slots-- ;
   flags[NUM_THREADS]++ ;
   max_threads_sofar = xsb_max( max_threads_sofar, flags[NUM_THREADS] );
