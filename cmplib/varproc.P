@@ -23,8 +23,7 @@
 ** 
 */
 
-
-% :- import write/1, writeln/1, telling/1, told/0, tell/1 from standard.
+%%:- import writeln/2 from standard.
 
 varproc(VarList, VarTab, PvarCount) :-
 	get_lastchunk(VarTab, LastChunk),
@@ -128,7 +127,7 @@ mark_occ2(ifthenelse(A,B,C), N0, N, Pre, Last, Vid) :-
 
 mark_occ3([], N, N, Pre, Pre, _).
 mark_occ3([varocc(Vid0,Prag)|Rest], N0, N, Pre, Last, Vid) :-
-	( Vid0 = Vid ->
+	( Vid0 == Vid ->
 		mark_previous(Pre), N1 is N0 + 1, Med = pr(N1, Prag)
 	; N1 = N0, Med = Pre
 	),
@@ -217,7 +216,7 @@ mark_seen(VOList, CkId, Chunks, LastChunk, Safe, OKt, Vid) :-
 
 mark_seen1([], _, _, _, _, _, _).
 mark_seen1([varocc(Vid0,Prag)|Rest], CkId, Seen, LastChunk, Safe, OKt, Vid) :-
-    ( Vid0 = Vid -> 
+    ( Vid0 == Vid -> 
 	Seen = 1,	/* just bind Seen to a constant */
 	( member(CkId, LastChunk) -> vprag_lastchunk(Prag, 1)
 	; vprag_lastchunk(Prag, 0)
@@ -347,7 +346,7 @@ get_OccList([One|Rest], VOListIn, VOListOut, Arity) :-
 
 compute_use1([], HUse0,HUse0, BUse0,BUse0, NoUse0,NoUse0, _, _).
 compute_use1([varocc(I,Prag)|Rest],HUse0,HUseR,BUse0,BUseR,NoUse0,NoUseR,OccInChunk,Vid) :-
-	(I = Vid
+	(I == Vid
 	 ->	NoUse0=NoUseM, vprag_context(Prag, HB),
 		( HB == b -> OccInChunk = 1 /* just bind it */ ; true ),
 		vprag_level(Prag, Level),

@@ -3775,7 +3775,7 @@ void init_dbclause_cgc_blocks(void) {
 
   psc = ((Pair)insert("db_get_clauses1", 11, 
 		      pair_psc(insert_module(0, "dbclause")), &new)) -> psc_ptr;
-  dbclause_cgc_block_gl = (CPtr) (get_ep(psc) + 0xc8);
+  dbclause_cgc_block_gl = (CPtr) (get_ep(psc) + 0xc0);
 }
 
 void init_standard_cgc_blocks(void) {

@@ -354,7 +354,12 @@ compile_pred_block([PredDef|PRest], PilCode-PilCodeR, NCin, NCout) :-
 
 compile_predicate2(pred(Sym,Clauses,Prag), PilCode-PilCodeR, NC) :-
 	gennum(L),
-	PilCode = [label(pred,(Sym,L)),test_heap(Arity,Margin)|PilCode1],
+	PilCode = [label(pred,(Sym,L))|PilCode0],
+	(sym_prop(internal,Sym)
+	 ->	PilCode0 = PilCode1
+	 ;	PilCode0 = [test_heap(Arity,Margin)|PilCode1]
+	),
+%%	PilCode = [label(pred,(Sym,L)),test_heap(Arity,Margin)|PilCode1],
 	sym_name(Sym,_,Arity), Margin = 2000, % Margin is temporary
 	find_if_tabled(Sym, Tabled),
 	makeindex(Sym, Clauses, PilCode1, PilCodeM, Prag, Tabled),
