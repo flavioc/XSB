@@ -23,12 +23,13 @@
 ** 
 */
 
-%%:- import writeln/2 from standard.
+%%%:- import writeq/1,writeln/1,tell/1,telling/1 from standard.
+
 
 varproc(VarList, VarTab, PvarCount) :-
 	get_lastchunk(VarTab, LastChunk),
 	closetail(LastChunk), !,
-	mark_occurrence(VarList, VarTab), !,
+	mark_occurrences(VarTab), !,
 	mark_type(VarList, VarTab, LastChunk), !,
 	alloc_vars(VarList, VarTab, 0, PvarCount).
 % ,
@@ -64,94 +65,166 @@ get_lastchunk1(ifthenelse(_,B,C), LastChunk) :-
 
 
 /*======================================================================*/
-/* mark_occurrence(+VarList, #VarTab)		        		*/
+/* mark_occurrences(#VarTab)	[dsw rewrote]	        		*/
 /*	Fills in occurrence information (f, s, l, or v).		*/
-/*	      +VarList is a list of variable(Vid,VPrag) structures	*/
-/*		       where Vprag is uninstantiated yet.		*/
 /*	      #VarTab  has the occurrence attribute of the		*/
 /*		       varocc(Vid,vrec()) structures marked		*/
 /*		       after the exit from this predicate.		*/
 /*======================================================================*/
 
-mark_occurrence([], _).
-mark_occurrence([variable(Vid,_VCPrag)|Rest], VarTab) :-
-	mark_occ1(VarTab, 0, _, pr(0,_), LastOcc, Vid),
-	mark_last(LastOcc),
-	mark_occurrence(Rest, VarTab).
+mark_occurrences(VarTab) :-
+	collect_variables(VarTab,[],MarkTab),
+	leaflist(MarkTab,MarkList),
+	mark_collected_vars(MarkList).
 
 /*======================================================================*/
-/* mark_occ1(#VarTab, +CountIn, -CountOut,				*/
-/*	     +PrevOcc, -LastOcc, -FirstOcc)			        */
-/*	Fills in occurrence information (f, s, l, or v).		*/
+/* mark_collected_vars(#OccList) runs each variable occurrence		*/
+/* structure and binds the occurrence variables to the appropriate one	*/
+/* of f (first), s (subsequent), l (last) or v (void).  The occurrence	*/
+/* structure is collected so that the variables appear from the end of	*/
+/* the clause to the front, so, e.g., the first encountered is marked l	*/
+/* (last). (dsw) 							*/
 /*======================================================================*/
 
-mark_occ1([], N, N, Pre, Pre, _).
-mark_occ1([One|Rest], N0, N, Pre, Last, Vid) :-
-	mark_occ2(One, N0, N1, Pre, Med, Vid),
-	!,	% needed to cut unnecessary choice points... (bmd & kostis)
-	mark_occ1(Rest, N1, N, Med, Last, Vid).
+mark_collected_vars([]).
+mark_collected_vars([l(_,OccStr)|MarkList]) :-
+	mark_occ_str0(OccStr),
+	mark_collected_vars(MarkList).
 
-mark_occ2(goal(_,_,_,VOList), N0, N, Pre, Last, Vid) :-
-	mark_occ3(VOList, N0, N, Pre, Last, Vid).
-mark_occ2(head(VOList), N0, N, Pre, Last, Vid) :-
-	mark_occ3(VOList, N0, N, Pre, Last, Vid).
-mark_occ2(inlinegoal(_,F,_,VOList), N0, N, Pre, Last, Vid) :-
-	( F == is ->			% is/2 needs special treatment due to
-		VOList = [LHS|RHS],	%      its "reversed" directionality
-		mark_occ3(RHS, N0, N1, Pre, L1, Vid),
-		mark_occ3([LHS], N1, N, L1, Last, Vid)
-	; mark_occ3(VOList, N0, N, Pre, Last, Vid)
-	).
-mark_occ2(branch(A,B), N0, N, Pre, Last, Vid) :-
-	mark_occ1(A, N0, N1, Pre, Last1, Vid),
-	mark_occ1(B, N0, N2, Pre, Last2, Vid),
-	( N1 > N0, N2 > N0 -> N = N1, Last = br(Last1,Last2)
-	; N1 > N0, N2 =:= N0 -> N = N1, 
-		( N0 >= 1, Last = Last1
-		; N0 <  1, Last = br(Last1, no(Vid))
+% Nothing marked, first seen should be l (for last)
+mark_occ_str0([]).
+mark_occ_str0([One|Rest]) :-
+	(var(One)
+	 ->	(Rest == []
+		 ->	One = v
+		 ;	One = l,
+			mark_occ_str1(Rest)
 		)
-	; N1 =:= N0, N2 > N0 -> N = N2,
-		( N0 >= 1, Last = Last2
-		; N0 <  1, Last = br(no(Vid), Last2)
+	 ;	One = br(OneA,OneB),
+		mark_occ_str2(OneA,Rest),
+		mark_occ_str2(OneB,Rest),
+		mark_occ_str1(Rest)
+	).
+
+% last has been marked, so next ones will be s or f
+mark_occ_str1([]).
+mark_occ_str1([One|Rest]) :-
+	(var(One)
+	 ->	(Rest == []
+		 ->	One = f
+		 ;	One = s,
+			mark_occ_str1(Rest)
 		)
-	; % N1=N0, N2=N0,
-		N = N0, Last = Pre
-	).
-mark_occ2(ifthenelse(A,B,C), N0, N, Pre, Last, Vid) :-
-	mark_occ1(A, N0, N1, Pre, Med, Vid),
-	( C = [inlinegoal(_,fail,0,_)] ->
-		mark_occ1(B, N1, N, Med, Last, Vid)
-		% fail branch can contain no lamp vars, so this
-	; mark_occ2(branch(B,C), N1, N, Med, Last, Vid)
+	 ;	One = br(OneA,OneB),
+		mark_occ_str1(OneA,Rest),
+		mark_occ_str1(OneB,Rest),
+		mark_occ_str1(Rest)
 	).
 
-mark_occ3([], N, N, Pre, Pre, _).
-mark_occ3([varocc(Vid0,Prag)|Rest], N0, N, Pre, Last, Vid) :-
-	( Vid0 == Vid ->
-		mark_previous(Pre), N1 is N0 + 1, Med = pr(N1, Prag)
-	; N1 = N0, Med = Pre
-	),
-	mark_occ3(Rest, N1, N, Med, Last, Vid).
-
-mark_previous(pr(OccNum,Prag)) :-
-	( OccNum =:= 0 -> true
-	; OccNum =:= 1 -> vprag_occ(Prag, f)
-	; vprag_occ(Prag, s)
+% last has been marked, More is [] iff nothing follows
+mark_occ_str1([],_More).
+mark_occ_str1([One|Rest],More) :-
+	(var(One)
+	 ->	(Rest == [], More == []
+		 ->	One = f
+		 ;	One = s,
+			mark_occ_str1(Rest,More)
+		)
+	 ;	One = br(OneA,OneB),
+		(Rest == [] -> Rest1 = More ; Rest1 = Rest),
+		mark_occ_str1(OneA,Rest1),
+		mark_occ_str1(OneB,Rest1),
+		mark_occ_str1(Rest,More)
 	).
-mark_previous(br(Pre1, Pre2)) :-
-	mark_previous(Pre1),
-	mark_previous(Pre2).
-mark_previous(no(_Vid)).
 
-mark_last(pr(OccNum, Prag)) :-
-	( OccNum =:= 0 -> true
-	; OccNum =:= 1 -> vprag_occ(Prag, v)
-	; vprag_occ(Prag, l)
+% last still not yet marked, More is [] iff nothing follows
+mark_occ_str2([],_More).
+mark_occ_str2([One|Rest],More) :-
+	(var(One)
+	 ->	(Rest == [], More == []
+		 ->	One = v
+		 ;	One = l,
+			mark_occ_str1(Rest,More)
+		)
+	 ;	One = br(OneA,OneB),
+		(Rest == [] -> Rest1 = More ; Rest1 = Rest),
+		mark_occ_str2(OneA,Rest1),
+		mark_occ_str2(OneB,Rest1),
+		mark_occ_str1(Rest,More)
 	).
-mark_last(br(Pre1, Pre2)) :-
-	mark_last(Pre1),
-	mark_last(Pre2).
-mark_last(no(_Vid)).
+	
+
+/*======================================================================*/
+/* collect_variables(+OccList,+InitialTab,-FinalTab) runs the variable	*/
+/* occurrence structure and for each variable collects a structure	*/
+/* (containing variables) that represents its occurrences in the	*/
+/* clause.  The occurrences are put on the front of a list as they are	*/
+/* constructed, when we're done, e.g., the first variable in the list	*/
+/* is the last occurrence in the clause.  Each variable is the Occ	*/
+/* value in the varocc structure.  Conjunctions are represented as	*/
+/* lists; disjunctions are represented with br(A,B).  This returns a	*/
+/* 2-3 tree of pairs of variable ID and corresponding occurrence	*/
+/* structure. (dsw)							*/
+/*======================================================================*/
+collect_variables([],MarkTab,MarkTab).
+collect_variables([Goal|Goals],MarkTab0,MarkTab) :-
+	collect_variables_in_seg(Goal,MarkTab0,MarkTab1),
+	collect_variables(Goals,MarkTab1,MarkTab).
+
+collect_variables_in_seg(head(VOList),MarkTab0,MarkTab) :-
+	collect_variables_in_occ_list(VOList,MarkTab0,MarkTab).
+collect_variables_in_seg(goal(_,_,_,VOList),MarkTab0,MarkTab) :-
+	collect_variables_in_occ_list(VOList,MarkTab0,MarkTab).
+collect_variables_in_seg(inlinegoal(_,_,_,VOList),MarkTab0,MarkTab) :-
+	collect_variables_in_occ_list(VOList,MarkTab0,MarkTab).
+collect_variables_in_seg(branch(A,B),MarkTab0,MarkTab) :-
+	collect_variables(A,[],MarkTabA),
+	collect_variables(B,[],MarkTabB),
+	leaflist(MarkTabA,TabAList),
+	leaflist(MarkTabB,TabBList),
+	add_branch_occs(TabAList,TabBList,MarkTab0,MarkTab).
+collect_variables_in_seg(ifthenelse(A,B,C),MarkTab0,MarkTab) :-
+	collect_variables(A,MarkTab0,MarkTab1),
+	(C = [inlinegoal(_,fail,0,_)]
+	 ->	collect_variables(B,MarkTab1,MarkTab)
+	 ;	collect_variables_in_seg(branch(B,C),MarkTab1,MarkTab)  %% this looks wrong to me.
+	).
+
+collect_variables_in_occ_list([],MarkTab,MarkTab).
+collect_variables_in_occ_list([varocc(Vid,vrec(_,_,_,Occ,_,_))|VarOccs],MarkTab0,MarkTab) :-
+	prependval(MarkTab0,Vid,Occ,MarkTab1),
+	collect_variables_in_occ_list(VarOccs,MarkTab1,MarkTab).
+
+add_branch_occs(TabAList,TabBList,MarkTab0,MarkTab) :-
+	(TabAList == []
+	 ->	(TabBList == []
+		 ->	MarkTab = MarkTab0
+		 ;	TabBList = [l(Vid,Occs)|TabBList0],
+			prependval(MarkTab0,Vid,br([],Occs),MarkTab1),
+			add_branch_occs([],TabBList0,MarkTab1,MarkTab)
+		)
+	 ;	TabAList = [l(AVid,AOccs)|TabAList0],
+		(TabBList == []
+		 ->	prependval(MarkTab0,AVid,br(AOccs,[]),MarkTab1),
+			add_branch_occs(TabAList0,[],MarkTab1,MarkTab)
+		 ;	TabBList = [l(BVid,BOccs)|TabBList0],
+			(AVid == BVid
+			 ->	prependval(MarkTab0,AVid,br(AOccs,BOccs),MarkTab1),
+				add_branch_occs(TabAList0,TabBList0,MarkTab1,MarkTab)
+			 ; AVid @< BVid
+			 ->	prependval(MarkTab0,AVid,br(AOccs,[]),MarkTab1),
+				add_branch_occs(TabAList0,TabBList,MarkTab1,MarkTab)
+			 ;	prependval(MarkTab0,BVid,br([],BOccs),MarkTab1),
+				add_branch_occs(TabAList,TabBList0,MarkTab1,MarkTab)
+			)
+		)
+	).
+
+prependval(Tree0,Key,V,Tree) :-
+	(updatevs(Tree0,Key,OV,[V|OV],Tree) % add it if var is already there
+	 ->	true
+	 ;	addkey(Tree0,Key,[V],Tree)  % initialize if first occurrence
+	).
 
 
 /*======================================================================*/
@@ -456,6 +529,128 @@ vprag_type1(Prag, T) :-
 	 ->	vprag_use(Prag,T)
 	 ;	T = T0
 	).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/* 
+This is a set of routines that supports indexed tables. Tables
+are sets of key-value_list pairs. With each key is associated a list
+of values. It uses 2-3 trees for the index (modified by D.S. Warren
+from Ivan Bratko: ``Prolog Programming for Artificial
+Intelligence'', Addison Wesley, 1986). Operations are: 
+
+Keys must be ground! (so numbervar them)
+
+addkey(Tree,Key,V,Tree1) adds a new Key with value V, returning 
+    new Tree1. Fails if the key is already there.
+
+find(Tree,Key,V) finds the entry with Key and returns associated
+    values in V.
+
+updatevs(Tree,Key,OldV,NewV,Tree1) replaces value of entry with key
+    Key and value OldV with NewV.
+
+leaflist(Tree,List) returns a list of all l(K,V) in the Tree.
+
+*/
+
+
+addkey(Tree,X,V,Tree1) :-
+	ins2(Tree,X,V,Trees),
+	cmb0(Trees,Tree1).
+addkey([],X,V,l(X,V)).
+
+
+/*** unused here
+find(l(X,V),Xs,V) :- X == Xs.
+find(n2(T1,M,T2),X,V) :-
+	M @=< X
+	 ->	find(T2,X,V)
+	 ;	find(T1,X,V).
+find(n3(T1,M2,T2,M3,T3),X,V) :-
+	M2 @=< X
+	 ->	(M3 @=< X
+		 ->	find(T3,X,V)
+		 ;	find(T2,X,V)
+		)
+	 ;	find(T1,X,V).
+***/
+
+leaflist(Tree,List) :-
+	(Tree == []
+	 ->	List = []
+	 ;	leaflist(Tree,List,[])
+	).
+
+leaflist(Node,List0,List) :-
+	(Node @= l(_,_)
+	 ->	List0 = [Node|List]
+	 ; Node = n2(T1,_,T2)
+	 ->	leaflist(T1,List0,List1),
+		leaflist(T2,List1,List)
+	 ;	Node = n3(T1,_,T2,_,T3),
+		leaflist(T1,List0,List1),
+		leaflist(T2,List1,List2),
+		leaflist(T3,List2,List)
+	).
+
+% updatevs(Tab0,X,Ov,Nv,Tab) updates Tab0 to Tab, by replacing
+% Ov of entry with key X by Nv.
+
+updatevs(l(X,Ov),Xs,Ov,Nv,l(X,Nv)) :- X == Xs.
+updatevs(n2(T1,M,T2),X,Ov,Nv,n2(NT1,M,NT2)) :-
+	M @=< X
+	 ->	NT1=T1, updatevs(T2,X,Ov,Nv,NT2)
+	 ;	NT2=T2, updatevs(T1,X,Ov,Nv,NT1).
+updatevs(n3(T1,M2,T2,M3,T3),X,Ov,Nv,n3(NT1,M2,NT2,M3,NT3)) :-
+	M2 @=< X
+	 ->	(M3 @=< X
+		 ->	NT2=T2, NT1=T1, updatevs(T3,X,Ov,Nv,NT3)
+		 ;	NT1=T1, NT3=T3, updatevs(T2,X,Ov,Nv,NT2)
+		)
+	 ;	NT2=T2, NT3=T3, updatevs(T1,X,Ov,Nv,NT1).
+
+ins2(n2(T1,M,T2),X,V,Tree) :- 
+	M @=< X
+	 ->	ins2(T2,X,V,Tree1),
+		cmb2(Tree1,T1,M,Tree)
+	 ;	ins2(T1,X,V,Tree1),
+		cmb1(Tree1,M,T2,Tree).
+ins2(n3(T1,M2,T2,M3,T3),X,V,Tree) :- 
+	M2 @=< X
+	 ->	(M3 @=< X
+		 ->	ins2(T3,X,V,Tree1),
+			cmb4(Tree1,T1,M2,T2,M3,Tree)
+		 ;	ins2(T2,X,V,Tree1),
+			cmb5(Tree1,T1,M2,M3,T3,Tree)
+		)
+	 ;	ins2(T1,X,V,Tree1),
+		cmb3(Tree1,M2,T2,M3,T3,Tree).
+ins2(l(A,V),X,Vn,Tree) :-
+	A @=< X
+	 ->	(X @=< A
+		 ->	fail
+		 ;	Tree = t(l(A,V),X,l(X,Vn))
+		)
+	 ;	Tree = t(l(X,Vn),A,l(A,V)).
+
+cmb0(t(Tree),Tree).
+cmb0(t(T1,M,T2),n2(T1,M,T2)).
+
+cmb1(t(NT1),M,T2,t(n2(NT1,M,T2))).
+cmb1(t(NT1a,Mb,NT1b),M,T2,t(n3(NT1a,Mb,NT1b,M,T2))).
+
+cmb2(t(NT2),T1,M,t(n2(T1,M,NT2))).
+cmb2(t(NT2a,Mb,NT2b),T1,M,t(n3(T1,M,NT2a,Mb,NT2b))).
+
+cmb3(t(NT1),M2,T2,M3,T3,t(n3(NT1,M2,T2,M3,T3))).
+cmb3(t(NT1a,Mb,NT1b),M2,T2,M3,T3,t(n2(NT1a,Mb,NT1b),M2,n2(T2,M3,T3))).
+
+cmb4(t(NT3),T1,M2,T2,M3,t(n3(T1,M2,T2,M3,NT3))).
+cmb4(t(NT3a,Mb,NT3b),T1,M2,T2,M3,t(n2(T1,M2,T2),M3,n2(NT3a,Mb,NT3b))).
+
+cmb5(t(NT2),T1,M2,M3,T3,t(n3(T1,M2,NT2,M3,T3))).
+cmb5(t(NT2a,Mb,NT2b),T1,M2,M3,T3,t(n2(T1,M2,NT2a),Mb,n2(NT2b,M3,T3))).
 
 force_varproc_loaded.
 
