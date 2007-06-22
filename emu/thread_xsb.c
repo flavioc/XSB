@@ -108,6 +108,8 @@ typedef struct xsb_thread_s
 static xsb_thread_t *th_vec;
 static xsb_thread_t *th_first_free, *th_last_free, *th_first_thread;
 
+static int th_free_slots ;
+
 extern void findall_clean_all(CTXTdecl);
 extern void release_private_dynamic_resources(CTXTdecl);
 extern void release_private_tabling_resources(CTXTdecl);
@@ -205,6 +207,8 @@ static void init_thread_table(void)
 	th_last_free = &th_vec[max_threads_glc-1];
 	th_last_free->next_entry = NULL;
 	th_first_thread = NULL;
+
+	th_free_slots = max_threads_glc ;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -400,6 +404,16 @@ static int xsb_thread_create(th_context *th)
   pthread_t_p thr ;
   Integer id, pos ;
        
+  // TLS -- not locking here.
+  if ( th_free_slots <= 0 ) 
+        xsb_resource_error(CTXTc "maximum threads","thread_create",3);
+  pthread_mutex_lock( &th_mutex );
+  SYS_MUTEX_INCR( MUTEX_THREADS ) ;
+  flags[NUM_THREADS]++ ;
+  th_free_slots-- ;
+  max_threads_sofar = xsb_max( max_threads_sofar, flags[NUM_THREADS] );
+  pthread_mutex_unlock( &th_mutex );
+
   goal = ptoc_tag(th, 2) ;
   new_th_ctxt = mem_alloc(sizeof(th_context),THREAD_SPACE) ;
 
@@ -407,16 +421,6 @@ static int xsb_thread_create(th_context *th)
   init_machine(new_th_ctxt,ptoc_int(CTXTc 4),ptoc_int(CTXTc 5),
 	       ptoc_int(CTXTc 6),ptoc_int(CTXTc 7)) ;
   new_th_ctxt->_reg[1] = copy_term_from_thread(new_th_ctxt, th, goal) ;
-
-  // TLS -- not locking here.
-  if (flags[NUM_THREADS] >= max_threads_glc) 
-        xsb_resource_error(CTXTc "maximum threads","thread_create",3);
-
-  pthread_mutex_lock( &th_mutex );
-  SYS_MUTEX_INCR( MUTEX_THREADS ) ;
-  flags[NUM_THREADS]++ ;
-  max_threads_sofar = xsb_max( max_threads_sofar, flags[NUM_THREADS] );
-  pthread_mutex_unlock( &th_mutex );
 
   is_detached = ptoc_int(CTXTc 8);
 
@@ -475,6 +479,17 @@ call_conv int xsb_ccall_thread_create(th_context *th,th_context **thread_return)
   pthread_t_p thr ;
   Integer id, pos ;
        
+  // TLS -- not locking here.
+  if (th_free_slots <= 0) 
+        xsb_resource_error(CTXTc "maximum threads","thread_create",3);
+
+  pthread_mutex_lock( &th_mutex );
+  SYS_MUTEX_INCR( MUTEX_THREADS ) ;
+  th_free_slots-- ;
+  flags[NUM_THREADS]++ ;
+  max_threads_sofar = xsb_max( max_threads_sofar, flags[NUM_THREADS] );
+  pthread_mutex_unlock( &th_mutex );
+
   new_th_ctxt = mem_alloc(sizeof(th_context),THREAD_SPACE) ;
   new_th_ctxt->_xsb_ready = 0;  
   pthread_mutex_init( &new_th_ctxt->_xsb_synch_mut, NULL ) ;
@@ -483,17 +498,6 @@ call_conv int xsb_ccall_thread_create(th_context *th,th_context **thread_return)
   copy_pflags(new_th_ctxt, th) ;
 
   init_machine(new_th_ctxt,0,0,0,0);
-
-  pthread_mutex_lock( &th_mutex );
-
-  // TLS -- not locking here.
-  if (flags[NUM_THREADS] >= max_threads_glc) 
-        xsb_resource_error(CTXTc "maximum threads","thread_create",3);
-
-  SYS_MUTEX_INCR( MUTEX_THREADS ) ;
-  flags[NUM_THREADS]++ ;
-  max_threads_sofar = xsb_max( max_threads_sofar, flags[NUM_THREADS] );
-  pthread_mutex_unlock( &th_mutex );
 
   pthread_cond_init( &new_th_ctxt->_xsb_started_cond, NULL ) ;
   pthread_cond_init( &new_th_ctxt->_xsb_done_cond, NULL ) ;
@@ -550,6 +554,7 @@ void init_system_threads( th_context *ctxt )
 	xsb_abort( "[THREAD] Error initializing thread table" );
 
   max_threads_sofar = 1 ;
+  th_free_slots-- ;
 }
 
 /* * * * * * */
@@ -786,7 +791,9 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  th_vec[i].ctxt = NULL;
 	  if( i >= 0 )
 	  {	if( th_vec[i].detached )
-	    		th_delete(i);
+		{	th_delete(i);
+			th_free_slots++ ;
+		}
 		else
 	    		th_vec[i].exited = TRUE;
 	  }
@@ -823,6 +830,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  pthread_mutex_lock( &th_mutex );
           SYS_MUTEX_INCR( MUTEX_THREADS ) ;
 	  th_delete(THREAD_ENTRY(id));
+	  th_free_slots++;
 	  pthread_mutex_unlock( &th_mutex );
 	  ctop_int( CTXTc 3, rval ) ;
 	  break ;
@@ -854,7 +862,10 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  pthread_mutex_lock( &th_mutex );
           SYS_MUTEX_INCR( MUTEX_THREADS ) ;
 	  if( th_vec[id].exited )
+	  {
 		th_delete(id) ;
+		th_free_slots++ ;
+	  }
 	  else
 	  	th_vec[THREAD_ENTRY(id)].detached = TRUE;
 	  pthread_mutex_unlock( &th_mutex );
