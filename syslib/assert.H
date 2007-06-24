@@ -33,6 +33,7 @@
 :- export clause0/2, clause/2.
 :- export (dynamic)/1.
 :- export t_assert/2.
+   :- export code_to_buff/2. % for message queues
 :- export exchange_definitions/2.
 
 :- import append/3, memberchk/2 from basics.
