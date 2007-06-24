@@ -30,7 +30,7 @@
    :- import check_atom/3, existence_error/4, permission_error/4, type_error/4, check_var/3, check_nonvar/3, check_nonvar_list/3 
           from error_handler.
 :- import gensym/2 from gensym.
-:- import thread_request/8 from machine.
+:- import thread_request/9 from machine.
 :- import catch/3, (index)/2, repeat/0, throw/1 from standard.
 :- import memberchk/2 from basics.
 

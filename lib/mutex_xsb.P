@@ -39,32 +39,32 @@ mutex_create(MutOrAls):-
 		   permission_error(create,mutex,MutOrAls,mutex_create/1)
 		 ;  true)
 	     ; type_error(mutex_or_alias,MutOrAls,mutex_create/1,1) ) ),
-	 thread_request( XSB_MUTEX_INIT,Ptr,_,_,_,_,_,_),
+	 thread_request( XSB_MUTEX_INIT,Ptr,_,_,_,_,_,_,_),
 	 assert('_$user_mutex'(MutOrAls,Ptr)).
 	
 mutex_lock(MutexOrAlias):- 
 	check_atom(MutexOrAlias,mutex_lock/1,1),
 	('_$user_mutex'(MutexOrAlias,Ptr) -> 
-	    thread_request( XSB_MUTEX_LOCK,Ptr,_,_,_,_,_,_)
+	    thread_request( XSB_MUTEX_LOCK,Ptr,_,_,_,_,_,_,_)
 	 ;  existence_error(mutex_or_alias,MutexOrAlias,mutex_lock/1,1) ).
 
 mutex_unlock(MutexOrAlias):- 
 	check_atom(MutexOrAlias,mutex_unlock/1,1),
 	('_$user_mutex'(MutexOrAlias,Ptr) -> 
-	    thread_request( XSB_MUTEX_UNLOCK,Ptr,_,_,_,_,_,_)
+	    thread_request( XSB_MUTEX_UNLOCK,Ptr,_,_,_,_,_,_,_)
 	 ;  existence_error(mutex_or_alias,MutexOrAlias,mutex_unlock/1,1) ).
 
 mutex_trylock(MutexOrAlias):- 
 	check_atom(MutexOrAlias,mutex_trylock/1,1),
 	('_$user_mutex'(MutexOrAlias,Ptr),
-	thread_request( XSB_MUTEX_TRYLOCK,Ptr,_,_,_,_,_,_)
+	thread_request( XSB_MUTEX_TRYLOCK,Ptr,_,_,_,_,_,_,_)
 	 ;  existence_error(mutex_or_alias,MutexOrAlias,mutex_trylock/1,1) ).
 
 mutex_destroy(MutexOrAlias):- 
 	check_atom(MutexOrAlias,mutex_destroy/1,1),
 	('_$user_mutex'(MutexOrAlias,Ptr) -> 
 	    retractall('_$user_mutex'(MutexOrAlias,Ptr)),
-	    thread_request( XSB_MUTEX_DESTROY,Ptr,_,_,_,_,_,_)
+	    thread_request( XSB_MUTEX_DESTROY,Ptr,_,_,_,_,_,_,_)
 	 ;  existence_error(mutex_or_alias,MutexOrAlias,mutex_destroy/1,1) ).
 
 with_mutex(Mutex,Goal):- 
@@ -81,13 +81,13 @@ with_mutex_handler(Ball,Mutex):-
 	throw(Ball).
 
 get_first_mutex_property(This,Locks,Owner,Next):-
-	thread_request( GET_FIRST_MUTEX_PROPERTY,This,Locks,Owner,Next,_,_,_).
+	thread_request( GET_FIRST_MUTEX_PROPERTY,This,Locks,Owner,Next,_,_,_,_).
 
 get_next_mutex_property(Ptr,Locks,Owner,Next):-
-	thread_request( GET_NEXT_MUTEX_PROPERTY,Ptr,Locks,Owner,Next,_,_,_).
+	thread_request( GET_NEXT_MUTEX_PROPERTY,Ptr,Locks,Owner,Next,_,_,_,_).
 
 mutex_unlock_all:- 
-	thread_request( MUTEX_UNLOCK_ALL,_,_,_,_,_,_,_).
+	thread_request( MUTEX_UNLOCK_ALL,_,_,_,_,_,_,_,_).
 
 mutex_property(Mutex,Property):-
 	(atom(Mutex) -> 
@@ -134,32 +134,32 @@ message_queue_create(Queue,Options):-
 	check_var(Queue,message_queue,2),
 	check_nonvar_list(Options,message_queue,2),
 	(memberchk(size(S),Options) -> Size = S ; Size = 0),
-	thread_request(MESSAGE_QUEUE_CREATE,Queue,Size,_,_,_,_,_).
+	thread_request(MESSAGE_QUEUE_CREATE,Queue,Size,_,_,_,_,_,_).
 
 message_queue_create(Queue):-
 	check_var(Queue,message_queue_create,1),
-	thread_request(MESSAGE_QUEUE_CREATE,Queue,0,_,_,_,_,_).
+	thread_request(MESSAGE_QUEUE_CREATE,Queue,0,_,_,_,_,_,_).
 
 thread_send_message(Queue,Message):- 
 	check_nonvar(Queue,thread_send_message,2),
 	code_to_buff(call(_,_,Message),0),
-	thread_request(THREAD_SEND_MESSAGE,Queue,_,_,_,_,_,_).
+	thread_request(THREAD_SEND_MESSAGE,Queue,_,_,_,_,_,_,_).
 
 %:- import writeln/1 from standard.
 thread_get_message(Queue,Message):-
 	check_nonvar(Queue,thread_get_message,2),
-	thread_request(THREAD_TRY_MESSAGE,Queue,MaybeMessage,_,_,_,_,_),
+	thread_request(THREAD_TRY_MESSAGE,Queue,MaybeMessage,_,_,_,_,_,_),
 	(MaybeMessage = Message ->
 %	    writeln(accepted(MaybeMessage)),
-	    thread_request(THREAD_ACCEPT_MESSAGE,Queue,_,_,_,_,_,_)
+	    thread_request(THREAD_ACCEPT_MESSAGE,Queue,_,_,_,_,_,_,_)
 	  ; 
     	    repeat,
 %	    writeln(retrying(MaybeMessage)),
-	    thread_request(THREAD_RETRY_MESSAGE,Queue,MaybeMessage1,_,_,_,_,_),
+	    thread_request(THREAD_RETRY_MESSAGE,Queue,MaybeMessage1,_,_,_,_,_,_),
 %	    writeln(got(MaybeMessage1)),
 	    MaybeMessage1 = Message,
 %	    writeln(accepted(MaybeMessage1)),
-	    thread_request(THREAD_ACCEPT_MESSAGE,Queue,_,_,_,_,_,_)).
+	    thread_request(THREAD_ACCEPT_MESSAGE,Queue,_,_,_,_,_,_,_)).
   
 print_message_queue(Queue):- 
-	thread_request(PRINT_MESSAGE_QUEUE,Queue,_,_,_,_,_,_).
+	thread_request(PRINT_MESSAGE_QUEUE,Queue,_,_,_,_,_,_,_).
