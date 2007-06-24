@@ -371,18 +371,32 @@ check_stream_or_alias(S_or_A,Predicate,Arg,Stream) :-
 		;   domain_error(stream_or_alias,S_or_A,Predicate,Arg) )
 	    ;  domain_error(stream_or_alias,S_or_A,Predicate,Arg) ) ).
 
-:- dynamic '_$alias_dynamic'/2.
-
 '_$alias'(userin,0).
 '_$alias'(user_in,0).
 '_$alias'(user_input,0).
 '_$alias'(userout,1).
 '_$alias'(user_out,1).
 '_$alias'(user_output,1).
-'_$alias'(In,Out):-  '_$alias_dynamic'(In,Out).
+'_$alias'(In,Out):-  '_$alias_dynamic'(In,STREAM_ALIAS,Out).
 
-add_alias(Alias,Stream):- 
-	asserta('_$alias_dynamic'(Alias,Stream)).
+:- dynamic '_$alias_dynamic'/3.
+:- thread_shared '_$alias_dynamic'/3.
+
+add_aliases([],_Type,_Stream,_Pred).
+add_aliases([H|T],Type,Stream,Pred):- 
+	add_alias(H,Type,Stream,Pred),
+	add_aliases(T,Type,Stream,Pred).
+
+add_alias(Alias,Type,Stream,Predicate):- 
+	'_$alias_dynamic'(Alias,Type,_Stream) -> 
+  	   permission_error(create,alias,Alias,Predicate)
+	 ; asserta('_$alias_dynamic'(Alias,Type,Stream)).
+
+get_alias(Alias,Type,Stream):- 
+	'_$alias_dynamic'(Alias,Type,Stream).
+
+remove_alias(Alias,Type,Stream):- 
+	retractall('_$alias_dynamic'(Alias,Type,Stream)).
 
 %-----
 check_open_stream_or_alias(S_or_A,Predicate,Arg,Mode,Stream) :- 

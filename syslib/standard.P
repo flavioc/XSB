@@ -165,7 +165,7 @@ open(F,Mode,Stream,Options):-
 	examine_open_options(Options,Aliases,_Eof),
 	open(F,Mode,Stream),
 	%% writeln(open(F,Mode,Stream)),
-	add_aliases(Aliases,STREAM_ALIAS,Stream).
+	add_aliases(Aliases,STREAM_ALIAS,Stream,open/4).
 
 examine_open_options([],[],[]).
 examine_open_options([reposition(_Bool)|T],Aliases,Eof):- !,
@@ -181,11 +181,6 @@ examine_open_options([alias(A)|T],[A|Aliases],Eof):- !,
 	examine_open_options(T,Aliases,Eof).
 examine_open_options([Option|_],_,_):- 
 	domain_error(open_options,Option,open/4,4).
-
-add_aliases([],_Type,_Stream).
-add_aliases([H|T],Type,Stream):- 
-	add_alias(H,Type,Stream),
-	add_aliases(T,Type,Stream).
 
 %------------------------------------------------
 close(user) :- !.

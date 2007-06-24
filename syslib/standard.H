@@ -102,7 +102,7 @@
 :- import dcg/2 from dcg.
 :- import eval/2 from eval.
 :- import file_open/3, file_open/4, file_close/2, file_get/2, file_put/2,
-  check_stream_or_alias/4, check_open_stream_or_alias/5, add_alias/3,
+  check_stream_or_alias/4, check_open_stream_or_alias/5, add_aliases/4,
   fd2iostream/3      from file_io.
 :- import add_ops/3, op_priority/1, op_specifier/1, add_index/3,
   add_trie_index/1, add_table/1, add_incr_table/1, add_incr_dynamic/1, add_opaque/1 /* incremental */
