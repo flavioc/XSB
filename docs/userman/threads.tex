@@ -454,14 +454,14 @@ $T_{new}$, so communication between $T_{new}$ and $T$ must be through
 tables, asserted code, message queues or other side effects.
 
 {\tt OptionList} allows optional parameters in the configuration for
-the initial size of XSB stacks and to indicate whether $T_{new}$ is to
-be created as detached.  Note that XSB threads allow automatic stack
-allocation, so that the size options may be most useful for
-applications with very large numbers of threads.  In this case,
-setting initial stack sizes to be small may allow more threads to be
-created on a given hardware platform.  Also note that only XSB stacks
-are affected, the stack size of the underlying Pthread remains
-unaltered.
+the initial size of XSB stacks, for aliases, and to indicate whether
+$T_{new}$ is to be created as detached.  Note that XSB threads allow
+automatic stack allocation, so that the size options may be most
+useful for (32-bit) applications with very large numbers of threads.
+In this case, setting initial stack sizes to be small may allow more
+threads to be created on a given hardware platform.  Also note that
+only XSB stacks are affected, the stack size of the underlying Pthread
+remains unaltered.
 %
 \bi
 \item {\tt glsize(N)}: create thread with global (heap) plus local
@@ -483,29 +483,49 @@ unaltered.
 \item {\tt detached(Boolean)}: if {\tt Boolean} is true, creates
   detached thread.  If {\tt Boolean} is false or the option is not
   specified, the thread created will be joinable.  
-\ei
+%
+\item {\tt alias(Alias)}: Allow thread {\tt ThreadId} to be referred
+  to via {\tt Alias} in all standard thread predicates.  {\tt Alias}
+  remains active for {\tt ThreadId} until it is joined.  \ei
 
 {\bf Error Cases}
 \bi
-\item 	{\tt Goal} is not callable.
+\item 	{\tt Goal} is a variable
 \bi
-\item 	{\tt type\_error(callable,Goal)}
+\item 	{\tt instantiation\_error}.
+\ei
+\item 	{\tt Goal} is not callable
+\bi
+\item 	{\tt type\_error(callable,Goal)}.
 \ei
 \item 	{\tt ThreadId} is not a variable
 \bi
 \item 	{\tt type\_error(variable,ThreadId)}
 \ei
-\item   No more system threads are available (EAGAIN)
-\bi
-\item {\tt resource\_error(system threads)}
-\ei
-\item 	{\tt OptionList} is a variable
+\item 	{\tt OptionList} is a partial list or contains an option that is a variable
 \bi
 \item 	{\tt instantiation\_error}
 \ei
+\item 	{\tt OptionList} is neither a list nor a partial list
+\bi
+\item 	{\tt type\_error(list,OptionsList)}
+\ei
 \item 	{\tt OptionList} contains an option, {\tt Option} not described above
 \bi
-\item 	{\tt domain\_error(thread\_create\_option,Option)}
+\item 	{\tt domain\_error(thread\_option,Option)}
+\ei
+\item An element of {\tt OptionsList} is alias(A) and A is already
+  associated with an existing thread, queue or stream 
+\bi
+\item {\tt permission\_error(create,alias, A)}
+\ei
+\item An element of {\tt OptionsList} is alias(A) and A is not an atom
+\bi
+\item {\tt type\_error(atom,A)}
+\ei
+\item   No more system threads are available (EAGAIN)
+\bi
+\item {\tt resource\_error(system threads)}
 \ei
 \ei
 
