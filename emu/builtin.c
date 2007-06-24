@@ -276,6 +276,33 @@ DllExport prolog_int call_conv iso_ptoc_int(CTXTdeclc int regnum,char * PredStri
   return FALSE;
 }
 
+inline Cell iso_ptoc_callable(CTXTdeclc int regnum,char * PredString)
+{
+  /* reg is global array in register.h in the single-threaded engine
+   * and is defined as a thread-specific macro in context.h in the
+   * multi-threaded engine
+   */  
+  register Cell addr = cell(reg+regnum);
+
+  /* XSB_Deref and then check the type */
+  XSB_Deref(addr);
+
+  if ((isconstr(addr) && !isboxed(addr)) || isstring(addr) || islist(addr))
+    return addr;
+  else if (isref(addr))  xsb_instantiation_error(CTXTc PredString,regnum);
+  else xsb_type_error(CTXTc "callable",addr,PredString,regnum);
+  return FALSE;
+}
+
+inline void iso_check_var(CTXTdeclc int regnum,char * PredString) {
+  register Cell addr = cell(reg+regnum);
+
+  XSB_Deref(addr);
+  if (!isref(addr)) xsb_type_error(CTXTc "variable",addr,PredString,regnum);
+}
+
+
+
 DllExport prolog_float call_conv ptoc_float(CTXTdeclc int regnum)
 {
   /* reg is global array in register.h in the single-threaded engine
@@ -357,11 +384,11 @@ DllExport prolog_float call_conv ptoc_number(CTXTdeclc int regnum)
   case XSB_FREE:
   case XSB_REF1: 
   case XSB_ATTV:
-  case XSB_LIST: xsb_abort("[PTOC_INT] Float-convertable argument expected");
+  case XSB_LIST: xsb_abort("[PTOC_NUMBER] Float-convertable argument expected");
   case XSB_FLOAT: return (prolog_float)float_val(addr);
   case XSB_STRING: return (prolog_int)string_val(addr);	/* dsw */
   case XSB_INT: return int_val(addr);
-  default: xsb_abort("[PTOC_INT] Argument of unknown type");
+  default: xsb_abort("[PTOC_NUMBER] Argument of unknown type");
   }
   return 0.0;
 }

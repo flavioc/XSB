@@ -98,6 +98,7 @@ typedef struct xsb_thread_s
 	unsigned int		valid : 1;
 	unsigned int		detached : 1;
 	unsigned int		exited : 1;
+        unsigned int            aliased : 1;
 	th_context *		ctxt ;
 } xsb_thread_t ;
 
@@ -232,13 +233,16 @@ static int th_find( pthread_t_p tid )
 }
 
 /* On normal termination, returns xsb_thread_id for a (usu. newly
-   created) thread */
+   created) thread.
+
+   Need to ensure this is called with thread mutex locked (except for
+   initialization)*/
 static int th_new( pthread_t_p t, th_context *ctxt )
 {
 	xsb_thread_t *pos ;
 	int i ;
-	if( (i = th_find(t)) != -1 )
-		return i ;
+		if( (i = th_find(t)) != -1 )
+		  return i ;
 
 	/* get entry from free list */
 	if( !th_first_free )
@@ -283,6 +287,7 @@ static int th_new( pthread_t_p t, th_context *ctxt )
 	pos->detached = FALSE;
 	pos->exited = FALSE;
 	pos->valid = TRUE;
+	pos -> aliased = FALSE;
 	return pos - th_vec ;
 }
 
@@ -398,12 +403,16 @@ static void copy_pflags( th_context *to, th_context *from )
 
 static int xsb_thread_create(th_context *th)
 {
-  int rc, is_detached ;
+  int rc, is_detached,is_aliased ;
   Cell goal ;
   th_context *new_th_ctxt ;
   pthread_t_p thr ;
   Integer id, pos ;
        
+  goal = iso_ptoc_callable(th, 2,"thread_create/[2,3]");
+  //  goal = ptoc_tag(th, 2) ;
+  iso_check_var(th, 3,"thread_create/[2,3]"); // should check here, rather than at end
+
   pthread_mutex_lock( &th_mutex );
   SYS_MUTEX_INCR( MUTEX_THREADS ) ;
   if (th_free_slots <= 0) 
@@ -415,7 +424,6 @@ static int xsb_thread_create(th_context *th)
   max_threads_sofar = xsb_max( max_threads_sofar, flags[NUM_THREADS] );
   pthread_mutex_unlock( &th_mutex );
 
-  goal = ptoc_tag(th, 2) ;
   new_th_ctxt = mem_alloc(sizeof(th_context),THREAD_SPACE) ;
 
   copy_pflags(new_th_ctxt, th) ;
@@ -424,6 +432,7 @@ static int xsb_thread_create(th_context *th)
   new_th_ctxt->_reg[1] = copy_term_from_thread(new_th_ctxt, th, goal) ;
 
   is_detached = ptoc_int(CTXTc 8);
+  is_aliased = ptoc_int(CTXTc 8);
 
 #ifdef WIN_NT
   thr = mem_alloc(sizeof(pthread_t),THREAD_SPACE);
@@ -460,6 +469,7 @@ static int xsb_thread_create(th_context *th)
 
   id = pos = th_new( thr, new_th_ctxt ) ;
   if (pos >= 0 && is_detached) th_vec[pos].detached = TRUE;
+  if (pos >= 0 && is_aliased) th_vec[pos].aliased = TRUE;
 
   pthread_mutex_unlock( &th_mutex );
 
@@ -809,7 +819,8 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  break ;
 
 	case XSB_THREAD_JOIN: {
-	  id = ptoc_int( CTXTc 2 ) ;
+	  id = iso_ptoc_int( CTXTc 2 ,"thread_join/[1,2]") ;
+          iso_check_var(th, 3,"thread_join/[1,1]"); 
 	  pthread_mutex_lock( &th_mutex );
           SYS_MUTEX_INCR( MUTEX_THREADS ) ;
 	  tid = th_get( id ) ;
@@ -829,6 +840,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 	    }
 	  }
 
+	  ctop_int( CTXTc 4, th_vec[THREAD_ENTRY(id)].aliased) ;
 	  pthread_mutex_lock( &th_mutex );
           SYS_MUTEX_INCR( MUTEX_THREADS ) ;
 	  th_delete(THREAD_ENTRY(id));
