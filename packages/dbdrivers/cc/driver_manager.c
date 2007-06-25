@@ -469,6 +469,17 @@ DllExport int call_conv exception(void)
   return FALSE;
 }
 
+DllExport int call_conv moreResults(void)
+{
+  char* handle;
+  struct xsb_queryHandle* qHandle;
+
+  handle = ptoc_string(1);
+  if ((qHandle = isQueryHandle(handle)) != NULL && qHandle->state != QUERY_BEGIN) {
+    return TRUE;
+  }
+  return FALSE;
+}
 
 static char* buildSQLQuery(prolog_term sqlQueryList)
 {

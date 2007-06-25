@@ -69,7 +69,6 @@ db_query(Connhandle, QueryHandle, SQLQueryList, ReturnList) :-
 	    queryConnection(Connhandle, QueryHandle, CanSQLQueryList, List)
 	-> db_term(ReturnList, List)
 	;
-	    !,  %% supposed to cut off the recursive call
 	    (exception(Number, Mesg)
 	    ->  db_statement_close(QueryHandle),
 		throw(xsb_error(database(Number), Mesg))
@@ -78,7 +77,11 @@ db_query(Connhandle, QueryHandle, SQLQueryList, ReturnList) :-
 	).
 
 db_query(Connhandle, QueryHandle, SQLQueryList, ReturnList) :-
-	db_query(Connhandle, QueryHandle, SQLQueryList, ReturnList).
+        (moreResults(QueryHandle)
+	-> db_query(Connhandle, QueryHandle, SQLQueryList, ReturnList)
+	;
+	    fail
+	).
 
 
 %% prepared statements
@@ -97,7 +100,6 @@ db_prepare_execute(QueryHandle, BindList, ReturnList) :-
 	    executePreparedStatement(QueryHandle, CanBindList, List)
 	-> db_term(ReturnList, List)
 	;
-	    !,  %% supposed to cut the recursive call
 	    (exception(Number, Mesg)
 	    -> throw(xsb_error(database(Number), Mesg))
 	    ;
@@ -105,7 +107,11 @@ db_prepare_execute(QueryHandle, BindList, ReturnList) :-
 	).
 
 db_prepare_execute(QueryHandle, BindList, ReturnList) :-
-	db_prepare_execute(QueryHandle, BindList, ReturnList).
+        (moreResults(QueryHandle)
+	-> db_prepare_execute(QueryHandle, BindList, ReturnList)
+	;
+	    fail
+	).
 
 
 %% closing statements

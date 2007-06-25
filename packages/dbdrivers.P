@@ -51,8 +51,8 @@
 	    path_sysop(newerthan,ConfigSharedMod,ModuleSourceFile)
 	%% module compiled and is current, so just load
 	-> [Basename]
-	;   (search_module(Basename,Dir,_Mod,_Ext,BaseDir,ModuleO)
-	    -> path_sysop(unlink,ModuleO)
+	;   (search_module(Basename,Dir,_Mod,_Ext,BaseDir,ModuleO),
+	    path_sysop(unlink,ModuleO), !
 	    ; true
 	    ),
 	    [Basename],
