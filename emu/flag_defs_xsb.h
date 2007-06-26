@@ -118,8 +118,13 @@ interrupt flag
 
 #define STRING_GARBAGE_COLLECT    70   /* Turn string gc on or off */
 #define TABLE_GC_ACTION           71   /* Action for recl. of tables with cond answers */
+#define THREAD_GLSIZE             72   /* Initial GLSize for created thread */
+#define THREAD_TCPSIZE             73   /* Initial TCSize for created thread */
+#define THREAD_COMPLSIZE          74   /* Initial COMPLSize for created thread */
+#define THREAD_PDLSIZE            75   /* Initial PDLSize for created thread */
+#define THREAD_DETACHED           76   /* Initial Detached flag for created thread */
 
-#define MAX_FLAGS		75
+#define MAX_FLAGS		80
 
 #define MAXTOINDEX 5              /* depth in term to go when using deep indexing */
 

@@ -71,10 +71,6 @@
 int emuloop(CTXTdeclc byte *startaddr);
 void cleanup_thread_structures(CTXTdecl);
 void init_machine(CTXTdeclc int, int, int, int);
-void set_init_glstack_size(int);
-void set_init_tcpstack_size(int);
-void set_init_pdl_size(int);
-void set_init_complstack_size(int);
 Cell copy_term_from_thread( th_context *th, th_context *from, Cell arg1 );
 int copy_term_to_message_queue(th_context *th, Cell arg1);
 
@@ -377,9 +373,9 @@ static void copy_pflags( th_context *to, th_context *from )
 
 /*-------------------*/
 
-static int xsb_thread_create(th_context *th)
-{
-  int rc, is_detached,is_aliased ;
+static int xsb_thread_create(th_context *th, int glsize, int tcsize, int complsize,int pdlsize,
+			     int is_detached, int is_aliased) {
+  int rc;
   Cell goal ;
   th_context *new_th_ctxt ;
   pthread_t *thr ;
@@ -389,9 +385,6 @@ static int xsb_thread_create(th_context *th)
   //  goal = ptoc_tag(th, 2) ;
   iso_check_var(th, 3,"thread_create/[2,3]"); // should check here, rather than at end
 
-  is_detached = ptoc_int(CTXTc 8);
-  is_aliased = ptoc_int(CTXTc 8);
-
   new_th_ctxt = mem_alloc(sizeof(th_context),THREAD_SPACE) ;
 
   pthread_mutex_lock( &th_mutex );
@@ -399,6 +392,7 @@ static int xsb_thread_create(th_context *th)
   id = pos = th_new( new_th_ctxt, is_detached, is_aliased );
   if (pos < 0) 
   {     pthread_mutex_unlock( &th_mutex );
+        mem_dealloc(new_th_ctxt,sizeof(th_context),THREAD_SPACE);
         xsb_resource_error(CTXTc "maximum threads","thread_create",3);
   }
   flags[NUM_THREADS]++ ;
@@ -406,13 +400,13 @@ static int xsb_thread_create(th_context *th)
   pthread_mutex_unlock( &th_mutex );
 
   copy_pflags(new_th_ctxt, th) ;
-  init_machine(new_th_ctxt,ptoc_int(CTXTc 4),ptoc_int(CTXTc 5),
-	       ptoc_int(CTXTc 6),ptoc_int(CTXTc 7)) ;
+  init_machine(new_th_ctxt,glsize,tcsize,complsize,pdlsize);
   new_th_ctxt->_reg[1] = copy_term_from_thread(new_th_ctxt, th, goal) ;
   SET_THREAD_INCARN(id, th_vec[pos].incarn ) ;
   new_th_ctxt->tid = id ;
 
   thr = &th_vec[pos].tid ;
+
   if (is_detached) { /* set detached */
     rc = pthread_create(thr, &detached_attr_gl, &xsb_thread_run, 
 			 (void *)new_th_ctxt ) ;
@@ -420,8 +414,9 @@ static int xsb_thread_create(th_context *th)
   else {
     rc = pthread_create(thr, &normal_attr_gl, &xsb_thread_run, (void *)new_th_ctxt ) ;
   }
-  th_vec[pos].valid = TRUE ;
 
+  //  printf("creating %p %p\n",thr,th_vec[pos].tid);
+  usleep(100);
   if (rc == EAGAIN) {
     xsb_resource_error(th,"system threads","xsb_thread_create",2);
   } else {
@@ -718,8 +713,16 @@ xsbBool xsb_thread_request( CTXTdecl )
 
 	switch( request_num )
 	{
-	case XSB_THREAD_CREATE:
-	  rc = xsb_thread_create(th) ;
+	    /* Flags use default values, params have explicit
+	       parameters sent in */
+	case XSB_THREAD_CREATE_FLAGS:
+	  rc = xsb_thread_create(th,flags[THREAD_GLSIZE],flags[THREAD_TCPSIZE],flags[THREAD_COMPLSIZE],
+				   flags[THREAD_PDLSIZE],flags[THREAD_DETACHED],0) ;
+	  break ;
+
+	case XSB_THREAD_CREATE_PARAMS:
+	  rc = xsb_thread_create(th,ptoc_int(CTXTc 4),ptoc_int(CTXTc 5),
+				 ptoc_int(CTXTc 6),ptoc_int(CTXTc 7), ptoc_int(CTXTc 8), ptoc_int(CTXTc 9));
 	  break ;
 
 	  /* TLS: replaced thread_free_tab_blks() by
@@ -729,6 +732,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 	     structure managers directly.  */
 
 	case XSB_THREAD_EXIT:
+	  //	  printf("exiting %p\n",pthread_self());
 	  rval = ptoc_int(CTXTc 2 ) ;
 	  release_held_mutexes(CTXT);
 	  release_private_tabling_resources(CTXT);
@@ -943,35 +947,6 @@ xsbBool xsb_thread_request( CTXTdecl )
 	    if (sys_mut[i].owner > 0) 
 	      printf("Mutex %s (%d): %d\n",mutex_names[i],i,sys_mut[i].owner);
 	  }
-	  rc = 0;
-	  break;
-
-	case XSB_SET_INIT_GLSTACK_SIZE:
-	  i = ptoc_int(CTXTc 2) ;
-	  if( !VALID_THREAD(i) )
-		xsb_abort( "[THREAD] Invalid Thread Id" ) ;
-	  set_init_glstack_size(i);
-	  rc = 0;
-	  break;
-	case XSB_SET_INIT_TCPSTACK_SIZE:
-	  i = ptoc_int(CTXTc 2) ;
-	  if( !VALID_THREAD(i) )
-		xsb_abort( "[THREAD] Invalid Thread Id" ) ;
-	  set_init_tcpstack_size(i);
-	  rc = 0;
-	  break;
-	case XSB_SET_INIT_PDL_SIZE:
-	  i = ptoc_int(CTXTc 2) ;
-	  if( !VALID_THREAD(i) )
-		xsb_abort( "[THREAD] Invalid Thread Id" ) ;
-	  set_init_pdl_size(i);
-	  rc = 0;
-	  break;
-	case XSB_SET_INIT_COMPLSTACK_SIZE:
-	  i = ptoc_int(CTXTc 2) ;
-	  if( !VALID_THREAD(i) )
-		xsb_abort( "[THREAD] Invalid Thread Id" ) ;
-	  set_init_complstack_size(i);
 	  rc = 0;
 	  break;
 

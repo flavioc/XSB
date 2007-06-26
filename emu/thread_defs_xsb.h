@@ -28,7 +28,7 @@
  
 /* THREAD PRIMITIVES */
 
-#define XSB_THREAD_CREATE	 1
+#define XSB_THREAD_CREATE_FLAGS	 1
 #define XSB_THREAD_EXIT		 2
 #define XSB_THREAD_JOIN		 3
 #define XSB_THREAD_DETACH	 4
@@ -78,6 +78,8 @@
 #define THREAD_ACCEPT_MESSAGE           36
 
 #define PRINT_MESSAGE_QUEUE             40
+
+#define XSB_THREAD_CREATE_PARAMS        41
 
 #define MAX_THREADS		1024
 

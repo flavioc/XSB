@@ -113,16 +113,6 @@ pdl = {NULL, NULL, 0,
 		TCPSTACK_DEFAULT_SIZE},   /* Trail + CP Stack      */
       complstack = {NULL, NULL, 0,
 		    COMPLSTACK_DEFAULT_SIZE};   /* Completion Stack  */
-#else
-static System_Stack
-init_pdl = {NULL, NULL, 0,
-       PDL_DEFAULT_SIZE},             /* PDL                   */
-  init_glstack = {NULL, NULL, 0,
-	     GLSTACK_DEFAULT_SIZE},     /* Global + Local Stacks */
-    init_tcpstack = {NULL, NULL, 0,
-		TCPSTACK_DEFAULT_SIZE},   /* Trail + CP Stack      */
-      init_complstack = {NULL, NULL, 0,
-		    COMPLSTACK_DEFAULT_SIZE};   /* Completion Stack  */
 #endif
 
 Exec_Mode xsb_mode;     /* How XSB is run: interp, disassem, user spec, etc. */
@@ -224,6 +214,11 @@ static void init_flags(CTXTdecl)
   pflags[BACKTRACE] = 1;           /* Backtrace on error by default */
   pflags[CLAUSE_GARBAGE_COLLECT] = 1;           /* Clause GC on by default */
   flags[STRING_GARBAGE_COLLECT] = 1;           /* String GC on by default */
+
+  flags[THREAD_PDLSIZE] = PDL_DEFAULT_SIZE;
+  flags[THREAD_GLSIZE] = GLSTACK_DEFAULT_SIZE;
+  flags[THREAD_TCPSIZE] = TCPSTACK_DEFAULT_SIZE;
+  flags[THREAD_COMPLSIZE] = COMPLSTACK_DEFAULT_SIZE;
 }
 
 /*==========================================================================*/
@@ -356,7 +351,7 @@ static int process_long_option(char *option,int *ctr,char *argv[],int argc)
 }
 
 /*==========================================================================*/
-/* Currently done on process startup after init_para(). Do not use elsewhere, 
+/* Currently done on process startup before init_para(). Do not use elsewhere, 
    to avoid problems with multi-threading. */
 
 FILE *stream_err, *stream_out; 
@@ -366,7 +361,6 @@ void perform_IO_Redirect(CTXTdeclc int argc, char *argv[])
     int i;
 
     init_flags(CTXT);	// We set one of them
-
     /*
 	    This needs to be done early so that embedded applications can catch meaningful 
 	    initialization failures in the log files
@@ -530,7 +524,7 @@ int pipe_input_stream() {
 #ifndef MULTI_THREAD
 	sscanf(argv[i]+2, "%ld", &pdl.init_size);
 #else
-	sscanf(argv[i]+2, "%ld", &init_pdl.init_size);
+	sscanf(argv[i]+2, "%ld", &flags[THREAD_PDLSIZE]);
 #endif
       else {
 	i++;
@@ -538,7 +532,7 @@ int pipe_input_stream() {
 #ifndef MULTI_THREAD
 	  sscanf(argv[i], "%ld", &pdl.init_size);
 #else
-	  sscanf(argv[i], "%ld", &init_pdl.init_size);
+	sscanf(argv[i], "%ld", &flags[THREAD_PDLSIZE]);
 #endif
 	else
 	  xsb_warn("Missing size value for -u");
@@ -549,7 +543,7 @@ int pipe_input_stream() {
 #ifndef MULTI_THREAD
 	sscanf(argv[i]+2, "%ld", &glstack.init_size);
 #else
-	sscanf(argv[i]+2, "%ld", &init_glstack.init_size);
+	sscanf(argv[i]+2, "%ld", &flags[THREAD_GLSIZE]);
 #endif
       else {
 	i++;
@@ -557,7 +551,8 @@ int pipe_input_stream() {
 #ifndef MULTI_THREAD
 	  sscanf(argv[i], "%ld", &glstack.init_size);
 #else
-	  sscanf(argv[i], "%ld", &init_glstack.init_size);
+	  sscanf(argv[i], "%ld", &flags[THREAD_GLSIZE]);
+	  
 #endif
 	else
 	  xsb_warn("Missing size value for -m");
@@ -568,7 +563,7 @@ int pipe_input_stream() {
 #ifndef MULTI_THREAD
 	sscanf(argv[i]+2, "%ld", &tcpstack.init_size);
 #else
-	sscanf(argv[i]+2, "%ld", &init_tcpstack.init_size);
+	sscanf(argv[i]+2, "%ld", &flags[THREAD_TCPSIZE]);
 #endif
       else {
 	i++;
@@ -576,7 +571,7 @@ int pipe_input_stream() {
 #ifndef MULTI_THREAD
 	  sscanf(argv[i], "%ld", &tcpstack.init_size);
 #else
-	  sscanf(argv[i], "%ld", &init_tcpstack.init_size);
+	  sscanf(argv[i], "%ld", &flags[THREAD_TCPSIZE]);
 #endif
 	else
 	  xsb_warn("Missing size value for -c");
@@ -587,7 +582,7 @@ int pipe_input_stream() {
 #ifndef MULTI_THREAD
 	sscanf(argv[i]+2, "%ld", &complstack.init_size);
 #else
-	sscanf(argv[i]+2, "%ld", &init_complstack.init_size);
+	sscanf(argv[i]+2, "%ld", &flags[THREAD_COMPLSIZE]);
 #endif
       else {
 	i++;
@@ -595,7 +590,7 @@ int pipe_input_stream() {
 #ifndef MULTI_THREAD
 	  sscanf(argv[i], "%ld", &complstack.init_size);
 #else
-	  sscanf(argv[i], "%ld", &init_complstack.init_size);
+	  sscanf(argv[i], "%ld", &flags[THREAD_COMPLSIZE]);
 #endif
 	else
 	  xsb_warn("Missing size value for -o");
@@ -834,32 +829,9 @@ int pipe_input_stream() {
 /*==========================================================================*/
 #ifdef MULTI_THREAD
 
-void set_init_glstack_size(int s)
-{
-	init_glstack.size = s ;
-}
-
-void set_init_tcpstack_size(int s)
-{
-	init_tcpstack.size = s ;
-}
-
-void set_init_pdl_size(int s)
-{
-	init_pdl.size = s ;
-}
-
-void set_init_complstack_size(int s)
-{
-	init_complstack.size = s ;
-}
-
-
-
 /* To be called each time a thread is created: initializes
  * thread-private memory areas that are cleaned up in
  * cleanup_thread_structures() */
-
 
 void init_thread_structures(CTXTdecl)
 {
@@ -869,10 +841,10 @@ void init_thread_structures(CTXTdecl)
   asynint_code = 0;
   asynint_val = 0;
 
-  pdl		= init_pdl ;
-  glstack	= init_glstack ;
-  tcpstack	= init_tcpstack ;
-  complstack	= init_complstack ;
+  pdl.low = NULL; pdl.high = NULL; pdl.size = 0, pdl.init_size = (long) flags[THREAD_PDLSIZE];
+  tcpstack.low = NULL; tcpstack.high = NULL; tcpstack.size = 0, tcpstack.init_size = (long) flags[THREAD_TCPSIZE];
+  glstack.low = NULL; glstack.high = NULL; glstack.size = 0, glstack.init_size = (long) flags[THREAD_GLSIZE];
+  complstack.low = NULL; complstack.high = NULL; complstack.size = 0, complstack.init_size = (long) flags[THREAD_COMPLSIZE];
 
   findall_solutions = NULL;
 
