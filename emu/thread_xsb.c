@@ -406,7 +406,6 @@ static int xsb_thread_create(th_context *th, int glsize, int tcsize, int complsi
   new_th_ctxt->tid = id ;
 
   thr = &th_vec[pos].tid ;
-
   if (is_detached) { /* set detached */
     rc = pthread_create(thr, &detached_attr_gl, &xsb_thread_run, 
 			 (void *)new_th_ctxt ) ;
@@ -414,9 +413,9 @@ static int xsb_thread_create(th_context *th, int glsize, int tcsize, int complsi
   else {
     rc = pthread_create(thr, &normal_attr_gl, &xsb_thread_run, (void *)new_th_ctxt ) ;
   }
+  th_vec[pos].valid = TRUE ;
 
   //  printf("creating %p %p\n",thr,th_vec[pos].tid);
-  usleep(100);
   if (rc == EAGAIN) {
     xsb_resource_error(th,"system threads","xsb_thread_create",2);
   } else {
