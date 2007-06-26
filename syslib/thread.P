@@ -39,7 +39,7 @@ thread_create( Goal, ThreadId , Options) :-
 	(Alias == [] -> 
 	    Aliased = 0
 	 ;  Aliased = 1),
-	thread_request( XSB_THREAD_CREATE, Goal, ThreadId, 
+	thread_request( XSB_THREAD_CREATE_PARAMS, Goal, ThreadId, 
 	                GLSize,TCSize,ComplSize,PDLSize,Detached,Aliased),
 	(Aliased == 1 -> add_aliases(Alias,THREAD_ALIAS,ThreadId,thread_create/3) ; true).
     
@@ -55,12 +55,12 @@ check_options_list_1([],GLSize,TCSize,ComplSize,PDLSize,Detached,[]):- !,
 	(var(Detached) -> Detached = 0 ; true).
 check_options_list_1([Option|Rest],GLSize,TCSize,ComplSize,PDLSize,Detached,Alias):- !,
 	check_nonvar(Option,thread_create/3,3),
-	(Option @= glsize(_) ->  Option = glsize(N),set_thread_create_arg(N,GLSize,glsize)
-          ; (Option @= tcsize(_) -> Option = tcsize(N),set_thread_create_arg(N,TCSize,tcsize)
-            ; (Option @= complsize(_) -> Option = complsize(N),set_thread_create_arg(N,ComplSize,complsize)
-              ; (Option @= pdlsize(_) -> Option = pdlsize(N),set_thread_create_arg(N,PDLSize,pdlsize)
-                ; (Option @= detached(Boolean) -> 
-		    (Boolean == true -> Detached = 1 ; Detached = 0)
+	(Option @= glsize(_) ->  Option = glsize(N),set_thread_create_arg(N,GLSize,glsize), Alias = R
+          ; (Option @= tcsize(_) -> Option = tcpsize(N),set_thread_create_arg(N,TCSize,tcsize), Alias = R
+            ; (Option @= complsize(_) -> Option = complsize(N),set_thread_create_arg(N,ComplSize,complsize), Alias = R
+              ; (Option @= pdlsize(_) -> Option = pdlsize(N),set_thread_create_arg(N,PDLSize,pdlsize), Alias = R
+                ; (Option @= detached(_) -> 
+		    (Option = detached(Boolean),Boolean == true -> Detached = 1 ; Detached = 0),Alias = R
 		  ; (Option @= alias(_) -> 
 		        Option = alias(A),check_atom(A,thread_create/3,3),Alias = [A|R]
 	            ; 	domain_error(thread_option,Option,thread_create/3,3,'') ) ) ) ) ) ),
@@ -79,7 +79,7 @@ set_thread_create_arg(Option,Arg,OptionName):-
 thread_create( Goal, ThreadId ) :- 
 %	check_callable(Goal,thread_create/2,1),
 %	check_var(ThreadId,thread_create/2,2),
-	thread_request( XSB_THREAD_CREATE, Goal, ThreadId, 0,0,0,1,0,0).
+	thread_request( XSB_THREAD_CREATE_FLAGS, Goal, ThreadId, 0,0,0,0,0,0).
 
 /*---------------*/
 

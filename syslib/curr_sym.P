@@ -722,6 +722,14 @@ xsb_flag(table_gc_action, Action) :-
 	(ActionFlag == ABOLISH_TABLES_TRANSITIVELY -> 
 	    Action = abolish_tables_transitively
 	  ; Action = abolish_tables_singly).
+xsb_flag(thread_pdlsize, Size) :-
+	stat_flag(THREAD_PDLSIZE, Size).
+xsb_flag(thread_glsize, Size) :-
+	stat_flag(THREAD_GLSIZE, Size).
+xsb_flag(thread_tcpsize, Size) :-
+	stat_flag(THREAD_TCPSIZE, Size).
+xsb_flag(thread_complsize, Size) :-
+	stat_flag(THREAD_COMPLSIZE, Size).
 
 set_xsb_flag(Type,Val):- 
 	check_nonvar(Type,set_xsb_flag/2,1),
@@ -807,7 +815,7 @@ set_xsb_flag_1(examine_data, ExamineYN) :-  !,
 	;     domain_error([0,1],ExamineYN,set_xsb_flag/2,2,
 	                  'examine_data clause')
 	).
-set_xsb_flag_1(table_gc_action, Action) :-
+set_xsb_flag_1(table_gc_action, Action) :- !,
 	(Action = abolish_tables_transitively -> 
 	    stat_set_flag(TABLE_GC_ACTION, ABOLISH_TABLES_TRANSITIVELY)
 	 ;  (Action = abolish_tables_singly -> 
@@ -815,6 +823,14 @@ set_xsb_flag_1(table_gc_action, Action) :-
 	     ; domain_error([abolish_tables_transitively,
 	                     abolish_tables_singly],Action,set_xsb_flag/2,2,
 			     'table_gc_action clause') ) ).
+set_xsb_flag_1(thread_pdlsize, Size) :-!,
+	stat_set_flag(THREAD_PDLSIZE, Size).
+set_xsb_flag_1(thread_glsize, Size) :-!,
+	stat_set_flag(THREAD_GLSIZE, Size).
+set_xsb_flag_1(thread_tcpsize, Size) :-!,
+	stat_set_flag(THREAD_TCPSIZE, Size).
+set_xsb_flag_1(thread_complsize, Size) :-!,
+	stat_set_flag(THREAD_COMPLSIZE, Size).
 set_xsb_flag_1(Type, _) :-  
 	domain_error(xsb_flag,Type,set_xsb_flag/2,2).
 
