@@ -828,7 +828,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  break ;
 
        case XSB_THREAD_SELF:
-	 rc = id = xsb_thread_self() ;
+	 rc = id = th->tid ;
 	 ctop_int( CTXTc 2, id ) ;
 	 break ;
 
