@@ -105,8 +105,6 @@ typedef struct xsb_thread_s
 static xsb_thread_t *th_vec;
 static xsb_thread_t *th_first_free, *th_last_free, *th_first_thread;
 
-static int th_free_slots ;
-
 extern void findall_clean_all(CTXTdecl);
 extern void release_private_dynamic_resources(CTXTdecl);
 extern void release_private_tabling_resources(CTXTdecl);
@@ -204,8 +202,6 @@ static void init_thread_table(void)
 	th_last_free = &th_vec[max_threads_glc-1];
 	th_last_free->next_entry = NULL;
 	th_first_thread = NULL;
-
-	th_free_slots = max_threads_glc ;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -240,8 +236,6 @@ static int th_new( th_context *ctxt, int is_detached, int is_aliased )
 	/* get entry from free list */
 	if( !th_first_free )
 		return -1;
-
-        th_free_slots-- ;
 
 	pos = th_first_free ;
 	th_first_free = th_first_free->next_entry ;
@@ -321,7 +315,6 @@ static void th_delete( int i )
 		th_last_free->next_entry = NULL;
 	}
 	th_vec[i].valid = FALSE;
-        th_free_slots++ ;
 }
 
 /* calls _$thread_run/1 in thread.P */
@@ -403,13 +396,13 @@ static int xsb_thread_create(th_context *th)
 
   pthread_mutex_lock( &th_mutex );
   SYS_MUTEX_INCR( MUTEX_THREADS ) ;
-  if (th_free_slots <= 0) 
+  id = pos = th_new( new_th_ctxt, is_detached, is_aliased );
+  if (pos < 0) 
   {     pthread_mutex_unlock( &th_mutex );
         xsb_resource_error(CTXTc "maximum threads","thread_create",3);
   }
   flags[NUM_THREADS]++ ;
   max_threads_sofar = xsb_max( max_threads_sofar, flags[NUM_THREADS] );
-  id = pos = th_new( new_th_ctxt, is_detached, is_aliased );
   pthread_mutex_unlock( &th_mutex );
 
   copy_pflags(new_th_ctxt, th) ;
@@ -453,14 +446,14 @@ call_conv int xsb_ccall_thread_create(th_context *th,th_context **thread_return)
 
   pthread_mutex_lock( &th_mutex );
   SYS_MUTEX_INCR( MUTEX_THREADS ) ;
-  if (th_free_slots <= 0) 
+  id = pos = th_new( new_th_ctxt, 0, 0 );
+  if (pos < 0) 
   {     pthread_mutex_unlock( &th_mutex );
         xsb_resource_error(CTXTc "maximum threads","thread_create",3);
   }
   flags[NUM_THREADS]++ ;
   max_threads_sofar = xsb_max( max_threads_sofar, flags[NUM_THREADS] );
 
-  id = pos = th_new( new_th_ctxt, 0, 0 );
   pthread_mutex_unlock( &th_mutex );
 
   new_th_ctxt->_xsb_ready = 0;  
@@ -1227,7 +1220,7 @@ case THREAD_ACCEPT_MESSAGE: {
         {
                 
 		case XSB_THREAD_SELF:
-			ctop_int( CTXTc 2, xsb_thread_self() ) ;
+			ctop_int( CTXTc 2, 0 ) ;
 			break;
                 case XSB_SYS_MUTEX_LOCK:
                 case XSB_SYS_MUTEX_UNLOCK:
