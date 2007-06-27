@@ -2,37 +2,33 @@
 
 Starting with Version 3.0, XSB supports the use of Posix threads to
 perform separable computations, and in certain cases to parallelize
-them~\footnote{\version{} of XSB is the first version to include
-  multi-threading, and is still under development.  Users who want to
-  develop XSB applications using multi-threading should consider
-  checking out the latest stable CVS version of XSB for extensions to
-  features and bug fixes.}.Posix threads have a simple and clear API,
-and are available on all Unixes and, by using open-source libraries,
-on Windows as well (see Section~\ref{sec:mt-windows} to configure
-under Windows).  This chapter introduces how to program with threads
-in XSB through a series of examples.  Later sections discuss
-performance aspects of our implementation as well as describing
-relevant predicates.  A general knowledge of multi-threaded
-programming is assumed, such as can be found in \cite{LewB98,Bute97}.
+them.  Posix threads have a simple and clear API, and are available on
+all Unixes and, by using open-source libraries, on Windows as well
+(see Section~\ref{sec:mt-windows} to configure under Windows).  This
+chapter introduces how to program with threads in XSB through a series
+of examples.  Later sections discuss performance aspects of our
+implementation as well as describing relevant predicates.  A general
+knowledge of multi-threaded programming is assumed, such as can be
+found in \cite{LewB98,Bute97}.
 
 \section{Getting Started with Multi-Threading}
 %
-In Version 3.0 the default configuration of XSB does not include
+In \version{} the default configuration of XSB does not include
 multi-threading.  This is partly because multi-threading is new, and
 despite our efforts, the multi-threaded engine may contain bugs not
-present in the single- threaded engine.  However the main reason is
-because in Version 3.0, not all libraries and packages have yet been
+present in the single-threaded engine.  However the main reason is
+because in \version , not all libraries and packages have yet been
 made thread-safe so that not all configurations are supported with
 multi-threading.  Both the XSB-calling-C and the C-calling-XSB
 interfaces are supported in the multi-threaded engine.  All XSB
 libraries have been ported to the multi-threaded engine {\em except}
 the profiling library and the {\tt string} library (which is not yet
-thread-safe).  The packages {\tt ODBC} and {\tt CHR}, and {\tt
-  FLORA-2} are supported by the multi-threaded engine, but the
+thread-safe).  The packages {\tt ODBC} and {\tt CHR}, {\tt FLORA-2},
+and {\tt regmatch} are supported by the multi-threaded engine, but the
 packages {\tt dbdrivers}, {\tt xpath}, {\tt interprolog}, {\tt
-  smodels}, {\tt perlmatch}, {\tt regmatch}, {\tt libwww} and {\tt
-  posix} are not.  We note, however that all basic/ISO Prolog
-functionality is thread-safe (at least, as far as we know :-).
+  smodels}, {\tt perlmatch}, {\tt libwww} and {\tt posix} are not
+(yet).  We note, however that all basic/ISO Prolog functionality is
+thread-safe (at least, as far as we know :-).
 
 With this in mind, making the multi-threaded engine is simple:
 configure and make XSB as in Chapter~\ref{chap:system}, but include
@@ -100,17 +96,18 @@ fact that no error ball was found.
 
 So far, we've introduced a few concepts that have not been fully
 discussed.  First is the concept of an {\em XSB thread id}: XSB
-manages up to {\tt MAXTHREAD} active threads using XSB thread
-ids~\footnote{This number can be reset via a command line option to
-  XSB, see Section~\ref{sec:EmuOptions}}.  It should be noted that the
-XSB thread id of a thread is different from the identifier of the
-underlying Pthread.  An XSB thread id is a Prolog term, and unlike
-Posix thread ids, XSB thread ids can be compared for equality using
-unification.  The actual form of an XSB thread id, however, is subject
-to change between versions, so programs should not make use of the
-exact form of an XSB thread id.  In the multi-threaded engine, the XSB
-thread id of any thread can be queried using the predicate {\tt
-  thread\_self/1}.
+manages up to $M$ active threads using XSB thread ids.  The default
+for $M$ in \version{} is 1024, but $M$ can be reset via a command line
+option to XSB (cf. Section~\ref{sec:EmuOptions}), and can be obtained
+at run time via the XSB flag {\tt max\_threads}
+(cf. Section~\ref{State}).  It should be noted that the XSB thread id
+of a thread is different from the identifier of the underlying
+Pthread.  An XSB thread id is a Prolog term, and unlike Posix thread
+ids, XSB thread ids can be compared for equality using unification.
+The actual form of an XSB thread id, however, is subject to change
+between versions, so programs should not make use of the exact form of
+an XSB thread id.  In the multi-threaded engine, the XSB thread id of
+any thread can be queried using the predicate {\tt thread\_self/1}.
 
 \section{Communication among Threads}
 
@@ -466,23 +463,37 @@ remains unaltered.
 \bi
 \item {\tt glsize(N)}: create thread with global (heap) plus local
   stack size initially set to {\tt N} kbytes.  If not specified, the
-  default size is used (cf. Section~\ref{sec:EmuOptions}).
+  default size is used.  The default size can be set at the command
+  line (cf. Section~\ref{sec:EmuOptions}), and altered at run time by
+  the xsb flag {\tt thread\_glsize} (cf. Section~\ref{State}).
 %
-\item {\tt tcsize(N)}: create thread with trail plus choice point 
+\item {\tt tcpsize(N)}: create thread with trail plus choice point
   stack size initially set to {\tt N} kbytes.  If not specified, the
-  default size is used (cf. Section~\ref{sec:EmuOptions}).
+  default size is used (cf. Section~\ref{sec:EmuOptions}).  The
+  default size can be set at the command line
+  (cf. Section~\ref{sec:EmuOptions}), and altered at run time by the
+  xsb flag {\tt thread\_tcpsize} (cf. Section~\ref{State}).
 %
-\item {\tt complsize(N)}: create thread with completion
-  stack size initially set to {\tt N} kbytes. If not specified, the
-  default size is used (cf. Section~\ref{sec:EmuOptions}).
+\item {\tt complsize(N)}: create thread with completion stack size
+  initially set to {\tt N} kbytes. If not specified, the default size
+  is used (cf. Section~\ref{sec:EmuOptions}).  The default size can be
+  set at the command line (cf. Section~\ref{sec:EmuOptions}), and
+  altered at run time by the xsb flag {\tt thread\_complsize}
+  (cf. Section~\ref{State}).
 %
 \item {\tt pdlsize(N)}: create thread with {\tt N} kbytes of
-  unification stack.  If not specified, the
-  default size is used (cf. Section~\ref{sec:EmuOptions}).
+  unification stack.  If not specified, the default size is used
+  (cf. Section~\ref{sec:EmuOptions}).  The default size can be set at
+  the command line (cf. Section~\ref{sec:EmuOptions}), and altered at
+  run time by the xsb flag {\tt thread\_pdlsize}
+  (cf. Section~\ref{State}).
 %
 \item {\tt detached(Boolean)}: if {\tt Boolean} is true, creates
-  detached thread.  If {\tt Boolean} is false or the option is not
-  specified, the thread created will be joinable.  
+  detached thread.  If {\tt Boolean} is false, the thread created will
+  be joinable, while if no option is given the default will be used.
+  In \version{} threads are created joinable by default, but this
+  default can be altered at run time by the xsb flag {\tt
+    thread\_default} (cf. Section~\ref{State}).
 %
 \item {\tt alias(Alias)}: Allow thread {\tt ThreadId} to be referred
   to via {\tt Alias} in all standard thread predicates.  {\tt Alias}
@@ -617,18 +628,13 @@ on success or (final) failure of a thread's goal.
 \ei
 \ei
 
-\ournewitem{thread\_self(-ThreadId)}{thread}
+\ournewitem{thread\_self(?ThreadId\_or\Alias)}{thread}
 \index{\texttt{thread\_self/1}} 
 %
-Returns the XSB thread id of the calling thread.
-
-{\bf Error Cases}
-\bi
-\item 	{\tt ThreadId} is not a variable
-\bi
-\item 	{\tt type\_error(variable,ThreadId)}
-\ei
-\ei
+If {\tt ThreadId} is an atom, unifies {\tt ThreadId\_or\_Alias} with
+an alias of the calling thread.  Otherwise, unifies {\tt
+  ThreadId\_or\_Alias} with the XSB thread id of the calling thread.
+There are no error conditions.
 
 \ournewitem{thread\_detach(+ThreadId)}{thread}
 \index{\texttt{thread\_detach/1}} 
