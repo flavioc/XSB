@@ -469,6 +469,8 @@ call_conv int xsb_ccall_thread_create(th_context *th,th_context **thread_return)
   pthread_mutex_init( &new_th_ctxt->_xsb_query_mut, NULL ) ;
   new_th_ctxt->_xsb_inquery = 0;
 
+  *thread_return = new_th_ctxt;
+
   thr = &th_vec[pos].tid ;
   rc = pthread_create(thr, &normal_attr_gl, &ccall_xsb_thread_run, (void *)new_th_ctxt ) ;
   th_vec[pos].valid = TRUE ;
@@ -479,8 +481,6 @@ call_conv int xsb_ccall_thread_create(th_context *th,th_context **thread_return)
     if (rc != 0) 
       xsb_abort("[THREAD] Failure to create thread: error %d\n",rc);
   }
-
-  *thread_return = new_th_ctxt;
 
   while (!(new_th_ctxt->_xsb_ready))
 	pthread_cond_wait( &new_th_ctxt->_xsb_done_cond, 
