@@ -355,6 +355,8 @@ static void *ccall_xsb_thread_run( void *arg )
         th_vec[pos].valid = TRUE ;
         pthread_mutex_unlock( &th_mutex );
 
+	pthread_mutex_lock( &ctxt->_xsb_synch_mut ) ;
+
 	emuloop( ctxt, get_ep(ccall_psc)) ;
 	printf("exiting emuloop\n");
 
@@ -480,13 +482,10 @@ call_conv int xsb_ccall_thread_create(th_context *th,th_context **thread_return)
 
   *thread_return = new_th_ctxt;
 
-  while (!(new_th_ctxt->_xsb_ready)) {
-#ifdef WIN_NT
-    Sleep(1);
-#else
-    usleep(1000);
-#endif
-  }
+  while (!(new_th_ctxt->_xsb_ready))
+	pthread_cond_wait( &new_th_ctxt->_xsb_done_cond, 
+			   &new_th_ctxt->_xsb_synch_mut  );
+  pthread_mutex_unlock( &new_th_ctxt->_xsb_synch_mut ) ;
   return rc ;
 }  /* xsb_thread_create */
 
