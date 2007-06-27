@@ -55,7 +55,7 @@
 
 :- import retractall/1 from assert. 
  
-:- import check_integer/3, check_nonvar/3, check_var/3, check_atom/3,
+:- import check_integer/3, check_nonvar/3, check_atom/3,
           default_error_handler/1,domain_error/5,
    instantiation_error/3, misc_error/1, permission_error/4, type_error/4
       from error_handler.
@@ -67,7 +67,7 @@
 
 :- import '_$thread_exit_ball'/2 from usermod.
 
-:- import add_aliases/4, remove_alias/3 from file_io.
+			     :- import add_aliases/4, remove_alias/3, get_alias/3 from file_io.
 
 /* Higher level */
 :- export par_execute/1, n_par_execute/2.

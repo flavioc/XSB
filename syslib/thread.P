@@ -30,7 +30,6 @@
 
 /* ==================================================================  */
 /* User-level API */
-:- import writeln/1 from standard.
 /* Error checking for pthread_create() done in C -- all args are input.*/
 thread_create( Goal, ThreadId , Options) :- 
 %	check_callable(Goal,thread_create/2,1),
@@ -88,6 +87,7 @@ thread_create( Goal ) :-
 	thread_create( Goal, _, [detached(true)] ).
 
 /*---------------*/
+:- import writeln/1 from standard.
 
 thread_exit( ExitCode ) 	    :- 
 	check_integer(ExitCode,thread_exit/1,1),
@@ -128,8 +128,11 @@ thread_join( ThreadId )	    :- thread_join( ThreadId, _).
 /*---------------*/
 
 thread_self( ThreadId )	    :- 
-	check_var(ThreadId,thread_self/1,1),
-	thread_request( XSB_THREAD_SELF, ThreadId, _, _, _, _, _, _ ,_).
+%	check_var(ThreadId,thread_self/1,1),
+	thread_request( XSB_THREAD_SELF, Tid, _, _, _, _, _, _ ,_),
+	(atom(ThreadId) -> 
+	    get_alias(ThreadId,THREAD_ALIAS,Tid)
+	 ;  ThreadId = Tid).      
 
 /*---------------*/
 
