@@ -442,7 +442,7 @@ int pipe_input_stream() {
   reset_stat_total();
 #endif
 
-  max_threads_glc = MAX_THREADS;
+  max_threads_glc = MAX_THREADS; 
   pflags[STACK_REALLOC] = TRUE;
 #ifdef GC
   pflags[GARBAGE_COLLECT] = INDIRECTION_SLIDE_GC;
@@ -744,6 +744,7 @@ int pipe_input_stream() {
   flags[CMD_LINE_GOAL] = (Cell) mem_alloc(strlen(cmd_line_goal) + 1,OTHER_SPACE);
   strcpy( (char *)flags[CMD_LINE_GOAL], cmd_line_goal );
   
+  flags[MAX_THREAD_FLAG] = max_threads_glc;
 
   /* Set the Prolog startup files.
      ----------------------------- */
