@@ -768,7 +768,7 @@ extern void hashtable1_destroy(void *, int);
 
 void transitive_delete_predicate_table(CTXTdeclc TIFptr tif, xsbBool should_warn) {
 
-  printf("delete_variant_table %p\n",tif);
+  //  printf("delete_variant_table %p\n",tif);
   SET_TRIE_ALLOCATION_TYPE_TIP(tif);
   delete_variant_table(CTXTc TIF_CallTrie(tif),get_incr(TIF_PSC(tif)),should_warn);
   TIF_CallTrie(tif) = NULL;
@@ -3095,8 +3095,8 @@ int sweep_private_tabled_preds(CTXTdecl) {
       } else 
 	if (DTF_Type(deltf_ptr) == DELETED_SUBGOAL) {
 	  tif_ptr = subg_tif_ptr(DTF_Subgoal(deltf_ptr));
-	 	  fprintf(stderr,"Garbage Collecting Subgoal: %s/%d\n",
-			  get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
+	  //	 	  fprintf(stderr,"Garbage Collecting Subgoal: %s/%d\n",
+	  //			  get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
 	  delete_variant_sf_and_answers(CTXTc DTF_Subgoal(deltf_ptr),DTF_Warn(deltf_ptr)); 
 	  Free_Private_DelTF_Subgoal(deltf_ptr,tif_ptr);
 	}

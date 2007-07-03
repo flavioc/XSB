@@ -306,7 +306,7 @@ Please use -c N or cpsize(N) to start with a larger choice point stack"
   cps_top = (byte *)top_of_cpstack;
   trail_top = (byte *)top_of_trail;
 
-  fprintf(stddbg,"Reallocating the Trail and Choice Point Stack data area");
+  //  fprintf(stddbg,"Reallocating the Trail and Choice Point Stack data area\n");
 
   /* Expand the Trail / Choice Point Stack Area
      ------------------------------------------ */
