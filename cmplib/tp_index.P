@@ -56,8 +56,12 @@ makeindex(Sym, Clauses, Pil, Pilr, _Prag, Tabled) :-
 
 makeindex(Sym, Clauses, Pil, Pilr, Prag, Tabled) :-
 	sym_name(Sym, _, Arity),
-	( member(index(Narg), Prag), nonvar(Narg), !
-	; Narg = 1				% Default index on arg 1
+	(member(index(Narg), Prag), integer(Narg)
+	 ->	true
+	 ; var(Narg)
+	 ->	Narg = 1		% Default index on arg 1
+	 ;	warning(('Illegal index specification: ',Narg)),
+		fail
 	),
 	( Narg =:= 0 ->
 	    makeNOindex(Clauses, Arity, Pil, Pilr, Tabled)

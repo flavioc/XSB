@@ -26,7 +26,6 @@
 
 :- export force_inprog_loaded/0, inprog/3.
 
-:- import memberchk/2 from basics.
 :- import gennum/1 from gensym.
 :- import sym_name/3, sym_type/2 from symtab.
 :- import varproc/3, vprag_common/2, vprag_argno/2, vprag_level/2,
@@ -34,4 +33,4 @@
      from varproc.
 :- import error/1 from auxlry.
 :- import abort/0 from standard.
-
+:- import find/3, addkey/4 from varproc.
