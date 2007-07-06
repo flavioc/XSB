@@ -3020,9 +3020,13 @@ int print_xsb_backtrace(CTXTdecl) {
     }
   } else {
     fprintf(stdout,"Partial Forward Continuation...\n");
+    if ((pb)top_of_localstk < (pb)top_of_heap+256*ZOOM_FACTOR) {
+      fprintf(stdout,"  Local Stack clobbered, no backtrace available\n");
+      return TRUE;
+    }
     tmp_ereg = ereg;
     tmp_cpreg = cpreg;
-    if (!tmp_cpreg) instruction = *(tmp_cpreg-2*sizeof(Cell));
+    if (tmp_cpreg) instruction = *(tmp_cpreg-2*sizeof(Cell));
     else instruction = (unsigned char)fail_inst;
     while (tmp_cpreg && (instruction == call || instruction == trymeorelse) && 
 	   (backtrace_length++ < MAX_BACKTRACE_LENGTH)) {
@@ -3036,7 +3040,7 @@ int print_xsb_backtrace(CTXTdecl) {
       }
       tmp_cpreg = *((byte **)tmp_ereg-1);
       tmp_ereg = *(CPtr *)tmp_ereg;
-      if (!tmp_cpreg) instruction = *(tmp_cpreg-2*sizeof(Cell));
+      if (tmp_cpreg) instruction = *(tmp_cpreg-2*sizeof(Cell));
     }
   }
   return TRUE;
