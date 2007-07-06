@@ -495,14 +495,16 @@ call_conv int xsb_ccall_thread_create(th_context *th,th_context **thread_return)
 void init_system_threads( th_context *ctxt )
 {
   pthread_t tid = pthread_self();
-  int pos;
+  int id, pos;
 
   /* this should build an invalid thread id */
   init_thread_table();
-  pos = th_new(ctxt, 0, 0) ;
+  id = pos = th_new(ctxt, 0, 0) ;
   th_vec[pos].tid = tid ;
   th_vec[pos].valid = TRUE ;
-  if( pos != 0 )
+  SET_THREAD_INCARN(id, th_vec[pos].incarn ) ;
+  ctxt->tid = id ;
+  if( id != 0 )
 	xsb_abort( "[THREAD] Error initializing thread table" );
 
   max_threads_sofar = 1 ;
