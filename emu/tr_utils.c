@@ -1372,13 +1372,13 @@ ITHptr new_shared_trie(CTXTdecl)
   return pITH;
 }
 
-int newtrie(CTXTdeclc int sharedflag) {
+Integer newtrie(CTXTdeclc int sharedflag) {
   if (sharedflag) 
     return (int) new_shared_trie(CTXT);
   else return new_private_trie(CTXT);
 }
 #else
-int newtrie(CTXTdeclc int sharedflag) {
+Integer newtrie(CTXTdeclc int sharedflag) {
   return new_private_trie(CTXT);
 }
 #endif
