@@ -31,17 +31,35 @@
 /* ==================================================================  */
 /* User-level API */
 /* Error checking for pthread_create() done in C -- all args are input.*/
+/* ==================================================================  */
+
+
+/* For thread aliases, need to create alias BEFORE thread, and retract
+   AFTER thread is gone.  Three cases for retract: 1) when joinable
+   thread is joined 2) when detached thread exits 3) when exited
+   thread is set to detached.
+
+   If aliases were kept in a hash table, more code could be in C,
+   rather than weaving back and forth.
+ */
+
 thread_create( Goal, ThreadId , Options) :- 
 %	check_callable(Goal,thread_create/2,1),
 %	check_var(ThreadId,thread_create/2,2),
 	check_options_list(Options,GLSize,TCSize,ComplSize,PDLSize,Detached,Alias),
 	(Alias == [] -> 
-	    Aliased = 0
-	 ;  Aliased = 1),
-	thread_request( XSB_THREAD_CREATE_PARAMS, Goal, ThreadId, 
-	                GLSize,TCSize,ComplSize,PDLSize,Detached,Aliased),
-	(Aliased == 1 -> add_aliases(Alias,THREAD_ALIAS,ThreadId,thread_create/3) ; true).
-    
+	    thread_request( XSB_THREAD_CREATE_PARAMS, Goal, ThreadId, 
+	                GLSize,TCSize,ComplSize,PDLSize,Detached,0)
+	 ;  thread_request( XSB_THREAD_SETUP, _Goal, ThreadId, 
+	                GLSize,TCSize,ComplSize,PDLSize,Detached,Pos),
+	    add_aliases_flag_error(Alias,THREAD_ALIAS,ThreadId,Flag),
+	    (Flag == 1 -> 
+		thread_request( XSB_RECLAIM_THREAD_SETUP, ThreadId,_,_,_,_,_,_,_),
+		permission_error(create,alias,Alias,thread_create/3)
+	     ; 
+		thread_request( XSB_THREAD_CREATE_ALIAS, Goal, _ThreadId,
+	                GLSize,TCSize,ComplSize,PDLSize,Detached,Pos) ) ).
+
 check_options_list(Options,GLSize,TCSize,ComplSize,PDLSize,Detached,Alias):- 
 	check_nonvar(Options,thread_create/3,3),
 	check_options_list_1(Options,GLSize,TCSize,ComplSize,PDLSize,Detached,Alias).
@@ -82,18 +100,32 @@ thread_create( Goal, ThreadId ) :-
 
 /*---------------*/
 
-
 thread_create( Goal ) :- 
 	thread_create( Goal, _, [detached(true)] ).
 
 /*---------------*/
 :- import writeln/1 from standard.
 
-thread_exit( ExitCode ) 	    :- 
-	check_integer(ExitCode,thread_exit/1,1),
-	thread_request( XSB_THREAD_EXIT, ExitCode,_, _,_,_,_,_,_).
+/* Upon user-called exit, If thread is detached and aliased, remove
+   aliases.  if thread is joinable, assert an exit term; if thread is
+   detached and non-aliased, no special action is necessary */
+thread_exit(ExitTerm):- 
+	thread_request( XSB_CHECK_ALIASES_ON_EXIT,AliasedDetached,Detached,_,_,_,_,_,_),
+        (AliasedDetached == 1 -> 
+	    remove_alias(_Alias,THREAD_ALIAS,Id) 
+	  ; (Detached == 0 -> 
+	        thread_self(Id),asserta('_$thread_exit_ball'(Id,exited(ExitTerm))) 
+	      ; true) ),
+	thread_request( XSB_THREAD_EXIT,THREAD_EXITED,_, _, _,_,_,_,_).
 
-thread_exit 		    :- thread_exit( 0).
+internal_thread_exit(ExitCode):- 
+	thread_request( XSB_CHECK_ALIASES_ON_EXIT,AliasedDetached,_,_,_,_,_,_,_),
+        (AliasedDetached == 1 -> 
+	    thread_self(Id),remove_alias(_Alias,THREAD_ALIAS,Id) 
+	  ; true),
+	thread_request( XSB_THREAD_EXIT, ExitCode,_, _, _,_,_,_,_).
+
+thread_exit 		    :- internal_thread_exit( 0).
 
 /*---------------*/
 
@@ -104,24 +136,25 @@ thread_join(Input, ExitCode) :-
 	(var(Input) -> 
 	    instantiation_error(thread_join/2,1,ground)
 	;  (integer(Input) -> 
+	       thread_join_1(Input,ExitCode)
+    	   ;  (atom(Input),get_alias(Input,THREAD_ALIAS,Tid) -> 
+	          thread_join_1(Tid,ExitCode)
+	       ;  (Input = [Id|Rest] -> 
+  	            thread_join_1(Id,Return),
+	            ExitCode = [Return|ERest],
+	            thread_join(Rest, ERest) 
+	          ; (Input = [] -> 
+		      ExitCode = []
+		    ; domain_error(listof(thread_or_alias),Input,thread_join/1,2,'')
+	      ) ) ) ) ).
+
+thread_join_1(Input,Return):-
 	       thread_request( XSB_THREAD_JOIN,Input,Exit,Aliased,_,_,_,_ ,_),
 	       (Aliased == 1 -> remove_alias(_Alias,THREAD_ALIAS,Id) ; true),
-	       ExitCode = Ball - Exit,
-	       ('_$thread_exit_ball'(Id,Ball) -> 
-		     retractall('_$thread_exit_ball'(Id,_))
-		   ; Ball = no_error_ball)
-	    ; (Input = [Id|Rest] -> 
-	         ExitCode = [Ball-Exit|ERest],
-	         thread_request(XSB_THREAD_JOIN, Id,Exit,Aliased,_,_,_,_,_),
-		 (Aliased == 1 -> remove_alias(_Alias,THREAD_ALIAS,Id) ; true),
-		 ('_$thread_exit_ball'(Id,Ball) -> 
-		     retractall('_$thread_exit_ball'(Id,_))
-		   ; Ball = no_error_ball),
-	         thread_join(Rest, ERest) 
-	       ; (Input = [] -> 
-		    ExitCode = []
-		  ; domain_error(listof_threadid,Input,thread_join/1,2,'')
-	      ) ) ) ).
+	       (Exit == THREAD_SUCCEEDED -> Return = true ; 
+	        Exit == THREAD_FAILED -> Return = false ;
+		   '_$thread_exit_ball'(Id,Return),
+		   retractall('_$thread_exit_ball'(Id,_)) ).
 
 thread_join( ThreadId )	    :- thread_join( ThreadId, _).
 
@@ -132,13 +165,29 @@ thread_self( ThreadId )	    :-
 	thread_request( XSB_THREAD_SELF, Tid, _, _, _, _, _, _ ,_),
 	(atom(ThreadId) -> 
 	    get_alias(ThreadId,THREAD_ALIAS,Tid)
-	 ;  ThreadId = Tid).      
+	 ;  Tid = ThreadId).
 
 /*---------------*/
 
-thread_detach(ThreadId) :-
-	check_integer(ThreadId,thread_detach/1,1),
-	thread_request( XSB_THREAD_DETACH, ThreadId, _, _, _ , _, _, _,_).
+thread_detach(ThreadAlias) :-
+	(var(ThreadAlias) -> 
+	    instantiation_error(thread_detach/1,1,ground)
+    	 ;  (integer(ThreadAlias) ->
+	       thread_detach_1(ThreadAlias)
+	     ; (atom(ThreadAlias) -> 
+	          (get_alias(ThreadAlias,THREAD_ALIAS,Tid) -> 
+		     thread_detach_1(Tid)
+	           ; domain_error(thread_or_alias,ThreadAlias,thread_detach/1,1,'')
+	        ; domain_error(thread_or_alias,ThreadAlias,thread_detach/1,1,'') ) ) ) ).
+
+thread_detach_1(ThreadId):- 
+	thread_request(XSB_THREAD_DETACH,ThreadId,NeedsAliasRetract,NeedsExitBallRetract,_,_,_,_,_),
+	(NeedsAliasRetract == 0 -> 
+	    true
+	  ; remove_alias(_Alias,THREAD_ALIAS,ThreadId) ),
+	(NeedsExitBallRetract == 0 -> 
+	    true
+	  ; retractall('_$thread_exit_ball'(ThreadId,_)) ).
 
 /*---------------*/
 
@@ -179,13 +228,15 @@ abolish_all_shared_tables:-
 set_xsb_ready:- 
 	thread_request( SET_XSB_READY, _,_,_, _, _, _, _,_).
 
+usleep(X):- thread_request( XSB_USLEEP, X,_,_, _, _, _, _,_).
+
 /* ==================================================================  */
 /* Routines used internally. */
 
 '_$thread_run'( Goal ) :-
-	(catch(call(Goal),Ball,(default_error_handler(Ball))), thread_exit
+	(catch((call(Goal),internal_thread_exit(THREAD_SUCCEEDED)),Ball,(default_error_handler(Ball)))
 	 ;
-	 thread_exit
+	 internal_thread_exit(THREAD_FAILED)
 	).
 
 /* store thread flag predicate in THREAD_RUN flag */

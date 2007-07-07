@@ -382,6 +382,19 @@ check_stream_or_alias(S_or_A,Predicate,Arg,Stream) :-
 :- dynamic '_$alias_dynamic'/3.
 :- thread_shared '_$alias_dynamic'/3.
 
+add_aliases_flag_error([],_Type,_Obj,Flag):- (var(Flag) -> Flag = 0 ; true).
+add_aliases_flag_error([H|T],Type,Obj,Flag):- 
+	add_alias_flag_error(H,Type,Obj,Flag),
+	(Flag == 1 -> 
+	    remove_alias(_,Type,Obj)
+	 ; 
+	    add_aliases_flag_error(T,Type,Obj,Flag) ).
+
+add_alias_flag_error(Alias,Type,Obj,Flag):- 
+	'_$alias_dynamic'(Alias,Type,_Stream) -> 
+	   Flag = 1
+	 ; asserta('_$alias_dynamic'(Alias,Type,Obj)).
+
 add_aliases([],_Type,_Stream,_Pred).
 add_aliases([H|T],Type,Stream,Pred):- 
 	add_alias(H,Type,Stream,Pred),

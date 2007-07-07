@@ -25,13 +25,13 @@
 :- export thread_cancel/1,
           thread_create/1, thread_create/2,thread_create/3,
           thread_detach/1,
-	  thread_exit/1,
+          thread_exit/1, internal_thread_exit/1,
           thread_exit/0,
 	  thread_join/2, 
           thread_join/1,
           thread_property/2,
    thread_self/1,set_xsb_ready/0,
-   thread_yield/0.
+   thread_yield/0, usleep/1.
 
 :- export abolish_private_tables/0,abolish_shared_tables/0.
 :- export abolish_all_private_tables/0,abolish_all_shared_tables/0.
@@ -44,21 +44,18 @@
           xsb_thread_exit/0,  % obsolescent
 	  xsb_thread_join/2, 
           xsb_thread_join/1,  % obsolescent
-          xsb_thread_property/2,
+   xsb_thread_property/2,
           xsb_thread_self/1,
           xsb_thread_yield/0.
 
 :- export xsb_sys_mutex_lock/1, xsb_sys_mutex_unlock/1.
 :- export xsb_show_mutexes/0.
 
-%%:- export get_first_mutex_property/4, get_next_mutex_property/4.
-
-:- import retractall/1 from assert. 
+:- import retractall/1,asserta/1 from assert. 
  
-:- import check_integer/3, check_nonvar/3, check_atom/3,
-          default_error_handler/1,domain_error/5,
-   instantiation_error/3, misc_error/1, permission_error/4, type_error/4
-      from error_handler.
+:- import check_nonvar/3, check_atom/3,default_error_handler/1,domain_error/5,
+          instantiation_error/3, misc_error/1, permission_error/4, type_error/4
+          from error_handler.
 
 :- import thread_request/9 from machine.
 :- import stat_set_flag/2, term_psc/2 from machine.
@@ -67,16 +64,10 @@
 
 :- import '_$thread_exit_ball'/2 from usermod.
 
-			     :- import add_aliases/4, remove_alias/3, get_alias/3 from file_io.
+:- import add_aliases_flag_error/4, remove_alias/3, get_alias/3 from file_io.
 
 /* Higher level */
 :- export par_execute/1, n_par_execute/2.
 
-%:- export xsb_user_mutex_lock/1, xsb_user_mutex_unlock/1.
-%:- export xsb_set_init_glstack_size/1, xsb_set_init_tcpstack_size/1,
-%	  xsb_set_init_pdl_size/1, xsb_set_init_complstack_size/1.
-%:-export xsb_mutex_trylock/1,xsb_mutex_unlock/1, xsb_mutex_destroy/1.
-
-%:- export exmut_execute/2, console_exmut/1.
 
 
