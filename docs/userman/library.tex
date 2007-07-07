@@ -1182,6 +1182,18 @@ For instance, {\tt $\sim$john///doe/dir1//../foo.bar} will be parsed into:
 \index{\texttt{sleep/1}}
 Put XSB to sleep for a given number of seconds.
 
+{\bf Error Cases}
+\bi
+\item 	{\tt Seconds} is a variable
+\bi
+\item 	{\tt instantiation\_error}.
+\ei
+\item 	{\tt Seconds} is not an integer
+\bi
+\item 	{\tt type\_error(integer, Seconds)}.
+\ei
+\ei
+
 \ournewitem{sys\_pid(-Pid)}{shell}
 \index{\texttt{pid/1}}
 Get Id of the current process.

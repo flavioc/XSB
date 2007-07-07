@@ -83,16 +83,16 @@ $T_{prompt}$ and $T_{child}$ as follows
 hello world
 
 Id = 1
-ExitCode = no_error_ball - 0
+ExitCode = true
 \end{verbatim}
 %
 In this case, as soon as $T_{prompt}$ has issued a command to create
 $T_{child}$, it executes {\tt thread\_join/2}.  This latter predicate
 makes a system call to the underlying operating system to suspend
 $T_{prompt}$ until $T_{child}$ has exited.  {\tt thread\_join/2}
-returns both the error ball (if any) and the exit code of $T_{child}$.
-As usual, a value of {\tt 0} indicates normal termination, as does the
-fact that no error ball was found.
+returns a status term indicating whether the goal to thread {\tt Id}
+succeeded, failed, exited with an error term, or was cancelled (in
+this case it succeeded).
 
 So far, we've introduced a few concepts that have not been fully
 discussed.  First is the concept of an {\em XSB thread id}: XSB
@@ -245,7 +245,7 @@ depend on thread-private or thread-shared dynamic code.  In addition,
 a predicate may be {\em both} dynamic and tabled, and its clauses and
 tables may be either thread-private or thread-shared.
 
-\section{Error Conditions: Joinable and Detached Threads}
+\section{Thread Statuses: Joinable and Detached Threads}
 
 So far we have assumed that the goal called in {\tt
   thread\_create/2} terminates normally --- by success or
@@ -308,32 +308,59 @@ is output to {\tt STDERR}, and may be redirected.  The call
 returns
 %
 \begin{verbatim}
-Error = error(instantiation_error, in arg 2 of predicate functor/3,
+
+Error = exception(error(instantiation_error, in arg 2 of predicate functor/3,
               [[Forward Continuation...,... standard:call/1,... standard:catch/3],
-                Backward Continuation...]) - 0
+                Backward Continuation...]))
 \end{verbatim}
 %
-In other words, {\tt Error} is instantiated to a {\tt -/2} structure,
-the first argument of which is a standard XSB error term (including
-backtrace), and the second argument of which is the exit code of the
-thread.
+In other words, {\tt Error} is instantiated to a {\tt exception/1}
+structure, containing a standard XSB error term (including backtrace).
 \end{example}
 %
-Error terms in XSB provide much more information than C exit codes,
-but C exit codes may conceivably be useful if XSB is called by one of
-the interfaces for C calling XSB~\footnote{The C calling XSB
+The error term in the above example is one example of a {\em thread
+  status} term.  In XSB, these thread statuses are as follows.
+\index{thread!thread status}
+\label{page:thread-status} 
+%
+\bi
+\item {\tt running} The thread is still executing
+%
+\item {\tt true} The thread has exited and successfully evaluated its goal.
+%
+\item {\tt false} The thread has exited and failed its goal.
+%
+\item {\tt exception(Exception)} The thread has been terminated due to
+  an uncaught exception, represented by the term {\tt Exception} which
+  is a standard XSB error term.
+%
+\item {\tt cancelled(Exception)} The thread has been terminated due to
+  a thread cancellation, represented by the term {\tt Exception} which
+  is a standard XSB error term.
+%
+\item {\tt exited(ExitTerm)} The thread has been terminated using the
+  predicate {\tt thread exit/1} with {\tt ExitTerm} as its argument.
+\ei 
+%
+Any of these statuses except {\tt running} may be returned by {\tt
+  thread\_join/2}.  In Prolog, the statuses of exited threads `
+provide much more information than C exit codes.  
+
+\comment{but C exit codes may conceivably be useful if XSB is called by one
+of the interfaces for C calling XSB~\footnote{The C calling XSB
   interfaces are not yet supported in \version.}.  By default when no
 call to {\tt thread\_exit/1} has been made, an XSB thread that
 terminates normally will have an exit code of {\tt XSB\_SUCCESS} ({\tt
   0}), a cancelled thread will have an exit code of {\tt 1} and a
 thread terminated with any other error will have an exit code of~{\tt
   XSB\_ERROR} ({\tt 2}).
-
-As with p!threads, XSB threads are created as joinable by default, but
+}
+%
+As with pthreads, XSB threads are created as joinable by default, but
 can be created as detached using an option in {\tt thread\_create/3}.
 Alternatively, a thread created as joinable can be made detached by
-{\tt thread\_detach/1}.  Both of these predicates are described in
-Section~\ref{sec:mt-threading}.
+{\tt thread\_detach/1}.  All of the predicates mentioned in this
+section are fully described in Section~\ref{sec:mt-threading}.
 
 \section{Thread Cancellation}
 %
@@ -435,6 +462,12 @@ sh makexsb --config-tag=mt
 \end{itemize}
 
 \section{Predicates for Multi-Threading} \label{sec:mt-threading}
+
+The predicates described in this section do not address tabling or
+dynamic code.  With only a few minor deviations the provisional
+working standard described in \cite{Prolog-MT-ISO} is supported.  As a
+result, these predicates are substantially the same as those in SWI,
+YAP, and other Prologs.
 
 \begin{description}
 
@@ -545,54 +578,35 @@ remains unaltered.
 %
 Acts as {\tt thread\_create(Goal,ThreadId,[])}.
 
-\ournewitem{thread\_join(+ThreadIds,-ExitDesignators)}{thread}
+\ournewitem{thread\_join(+Threads\_or\_aliases,-ExitDesignators)}{thread}
 \index{\texttt{thread\_join/2}} 
 % 
 When {\tt thread\_join/2} is called by thread $T$, {\tt
-  ThreadIds} must be instantiated to either an XSB thread id, or a
-list of XSB thread ids; in either case, {\tt ExitDesignators} must be
-uninstantiated.  The action of the predicate is to suspend $T$ until
-all of the threads denoted by {\tt ThreadIds} have exited.  At this
-time, any remaining resources for the threads in {\tt ThreadIds} is
-reclaimed, and {\tt ExitCode} is either an element of the form:
-\begin{center}
-{\tt ExitBall -  ExitCode} 
-\end{center}
-%
-or a list of such elements.  For each XSB thread id $T_1$ in
-{ThreadIds}, {\tt ExitBall} is either
-\begin{itemize}
-%
-\item {\tt no\_error\_ball} if $T_1$ exited normally (through success or
-  failure), without throwing an error or being cancelled.
-%
-\item An error ball if $T_1$ threw an error that was not explicitly
-  handled by a catch or user error handler.
-%
-\item A special error ball of the form {\tt
-  error(thead\_cancel,$T_1$,Backtrace)} if $T_1$ was cancelled by some
-  other thread.  In this case, {\tt Backtrace} is an empty backtrace,
-  added for conformability with other error forms.
-\end{itemize}
-%
-ExitCode is either {\tt 0} for normal termination, or the value
-specified by an explicit call to {\tt thread\_exit/1}.
+  Threads\_or\_aliases} must be instantiated to either 1) an XSB
+thread id or alias; or 2) a list where each element is an XSB thread
+id or an alias; {\tt ExitDesignators} must be uninstantiated.  The
+action of the predicate is to suspend $T$ until all of the threads
+denoted by {\tt Threads\_or\_aliases} have exited.  At this time, any
+remaining resources for the threads in {\tt ThreadIds} will have been
+reclaimed.  Upon success {\tt ExitDesignators} is either a the thread
+status of the associated thread (see page~\pageref{page:thread-status}) 
+or a list of such elements.  
 
 {\bf Error Cases}
 \bi
-\item 	{\tt ThreadIds} is not instantiated
+\item 	{\tt Thread\_or\_Aliases} is not instantiated
 \bi
 \item 	{\tt instantiation\_error}
 \ei
 %
-\item 	{\tt ThreadIds} is not a list of XSB thread ids
+\item 	{\tt Threads\_or\_aliases} is not a list of XSB thread ids or aliases
 \bi
-\item 	{\tt domain\_error(listof\_threadids,ThreadIds)}
+\item 	{\tt domain\_error(listof(thread\_or\_alias),ThreadIds)}
 \ei
 %
-\item 	{\tt ExitCodes} is not a variable
+\item 	{\tt ExitDesignators} is not a variable
 \bi
-\item 	{\tt type\_error(variable,ExitCodes)}
+\item 	{\tt type\_error(variable,ExitDesignatorst)}
 \ei
 %
 \item   {\tt ThreadId} does not correspond to a valid thread
@@ -610,25 +624,25 @@ specified by an explicit call to {\tt thread\_exit/1}.
 a) Thread is a variable  instantiation_error
 }
 
-\ournewitem{thread\_exit(+ExitCode)}{thread}
+\ournewitem{thread\_exit(+ExitTerm)}{thread}
 \index{\texttt{thread\_exit/1}} 
 %
-Exits a thread $T$ with {\tt ExitCode} after releasing any mutexes
+Exits a thread $T$ with {\tt ExitTerm} after releasing any mutexes
 held by $T$, freeing any thread-specific memory allocated for $T$ (we
-hope).  {\tt ExitCode} will be used if the caller of $T$ joins to $T$,
+hope).  {\tt ExitTerm} will be used if the caller of $T$ joins to $T$,
 but will be ignored in other cases.  There is no need to call this
 routine on normal termination of a thread as it is called implicitly
 on success or (final) failure of a thread's goal.
 
 {\bf Error Cases}
 \bi
-\item 	{\tt ExitCode} is not an integer
+\item 	{\tt ExitCode} is a variable
 \bi
-\item 	{\tt type\_error(integer,ExitCode)}
+\item 	{\tt instantiation\_error}
 \ei
 \ei
 
-\ournewitem{thread\_self(?ThreadId\_or\Alias)}{thread}
+\ournewitem{thread\_self(?ThreadId\_or\_Alias)}{thread}
 \index{\texttt{thread\_self/1}} 
 %
 If {\tt ThreadId} is an atom, unifies {\tt ThreadId\_or\_Alias} with
@@ -636,30 +650,42 @@ an alias of the calling thread.  Otherwise, unifies {\tt
   ThreadId\_or\_Alias} with the XSB thread id of the calling thread.
 There are no error conditions.
 
-\ournewitem{thread\_detach(+ThreadId)}{thread}
+%-------------------------------------------------------------------
+
+\ournewitem{thread\_detach(+Thread\_or\_Alias)}{thread}
 \index{\texttt{thread\_detach/1}} 
 %
-Detaches a joinable thread denoted by {\tt ThreadId} so that all
-resources will be reclaimed upon its exit.  The thread denoted by {\tt
-  ThreadId} will no longer be joinable, once it is detached.
+Detaches a joinable thread denoted by {\tt Thread\_or\_Alais} so that
+all resources will be reclaimed upon its exit.  The thread denoted by
+{\tt ThreadId} will no longer be joinable, once it is detached.  If
+{\tt Thread\_or\_Alias} has already exited, all resources used by {\tt
+  Thread\_or\_Alias} are removed from the system.
 
-Note, if it is known at thread creation time that a thread should be
-detached, it is better to create the thread as detached via {\tt
-  thread\_create/3}.
+%Note, if it is known at thread creation time that a thread should be
+%detached, it is better practice to create the thread as detached via {\tt
+%  thread\_create/3}.
 
 {\bf Error Cases}
 \bi
-\item 	{\tt ThreadId} is not an integer
+%
+\item 	{\tt Thread\_or\_Alias} is a variable
 \bi
-\item 	{\tt type\_error(integer,ExitCode)}
+\item 	{\tt instantiation\_error}
 \ei
-\item   {\tt ThreadId} does not correspond to a valid thread
+%
+\item 	{\tt Thread\_or\_Alias} is not a thread id or alias
 \bi
-\item   {\tt existence\_error(valid\_thread,ThreadId)}
+\item 	{\tt domain\_error(thread\_or\_alias,Thread\_or\_Alias)}
 \ei
-\item 	{\tt ThreadId} is active but not joinable
+%
+\item   {\tt Thread\_or\_Alias} does not correspond to a valid thread
 \bi
-\item 	{\tt permission\_error(thread\_detach,non\_joinable\_thread,ThreadId)}
+\item   {\tt existence\_error(valid\_thread,Thread\_or\_alias)}
+\ei
+%
+\item 	{\tt Thread\_or\_Alias} is active but not joinable
+\bi
+\item 	{\tt permission\_error(thread\_detach,thread,Thread\_or\_Alias)}
 \ei
 \ei
 
@@ -714,6 +740,29 @@ platforms.
 \item 	{\tt misc\_error}
 \ei
 \ei
+
+\ournewitem{usleep(+Microseconds)}{thread}
+\index{\texttt{usleep/1}} 
+%
+Causes the calling thread to sleep approximately {\tt Microseconds}
+before resuming.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Microseconds} is a variable
+\bi
+\item 	{\tt instantiation\_error}.
+\ei
+\item 	{\tt Microseconds} is not an integer
+\bi
+\item 	{\tt type\_error(integer, Microseconds)}.
+\ei
+\ei
+
+
+
+% 
+
 \end{description}
 
 \subsection{Predicates for Thread Synchronization and Communication} 
