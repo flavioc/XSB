@@ -80,6 +80,11 @@
 #define PRINT_MESSAGE_QUEUE             40
 
 #define XSB_THREAD_CREATE_PARAMS        41
+#define XSB_USLEEP                      42
+#define XSB_THREAD_SETUP                43
+#define XSB_THREAD_CREATE_ALIAS         44
+#define XSB_CHECK_ALIASES_ON_EXIT       45
+#define XSB_RECLAIM_THREAD_SETUP        46
 
 #define MAX_THREADS		1024
 
@@ -160,5 +165,14 @@
 #define INIT_MT_RANDOM          0
 #define MT_RANDOM               1
 #define MT_RANDOM_INTERVAL      2
+
+#define THREAD_RUNNING          0
+#define THREAD_SUCCEEDED        1
+#define THREAD_FAILED           2
+#define THREAD_EXITED           3
+#define THREAD_EXCEPTION        4
+#define THREAD_CANCELLED        5
+
+
 
 #endif /* __THREAD_DEFS_XSB_H__ */

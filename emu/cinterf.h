@@ -219,6 +219,8 @@ DllExport extern prolog_int call_conv ptoc_int(CTXTdeclc reg_num);
 						/* defined in builtin.c */
 DllExport extern prolog_int call_conv iso_ptoc_int(CTXTdeclc int reg_num,char *PredString);
 						/* defined in builtin.c */
+DllExport extern prolog_int call_conv iso_ptoc_int_arg(CTXTdeclc int reg_num,char *PredString,int arg);
+						/* defined in builtin.c */
 DllExport extern char* call_conv ptoc_string(CTXTdeclc reg_num);
 						/* defined in builtin.c */
 DllExport extern char* call_conv ptoc_longstring(CTXTdeclc reg_num);

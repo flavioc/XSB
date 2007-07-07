@@ -195,9 +195,9 @@ xsbBool sys_system(CTXTdeclc int callno)
     return TRUE;
   case SLEEP_FOR_SECS:
 #ifdef WIN_NT
-    Sleep(ptoc_int(CTXTc 2) * 1000);
+    Sleep(iso_ptoc_int_arg(CTXTc 2,"sleep/1",1) * 1000);
 #else
-    sleep(ptoc_int(CTXTc 2));
+    sleep(iso_ptoc_int_arg(CTXTc 2,"sleep/1",1));
 #endif
     return TRUE;
   case GET_TMP_FILENAME:

@@ -30,6 +30,7 @@
 #include "heap_defs_xsb.h"
 #include "standard.h"
 #include "char_defs.h"
+#include "thread_defs_xsb.h"
 
 :- import default_user_error_handler/1 from usermod.
 :- dynamic default_user_error_handler/1.
@@ -115,22 +116,21 @@ transform_error_message_1(A,NewA):-
 	(integer(A) ; atom(A)) -> A = NewA ; term_to_atom(A,NewA).
 	
 %-----
-
 % Cancellation.
 default_sys_error_handler_nonmain(thread_cancel,Thread,Backtrace,Msg):- !,
 	(xsb_thread_property(Thread,joinable) -> 
 	       get_backtrace(Backtrace,ReadBT),
 	       asserta('_$thread_exit_ball'(Thread,
-	                                    error(thread_cancel,Msg,ReadBT)))
+	                                    cancallation(error(thread_cancel,Msg,ReadBT))))
 	     ; true),
-	xsb_thread_exit(1).
+	internal_thread_exit(THREAD_CANCELLED).
 % Error: non-cancellation.
 default_sys_error_handler_nonmain(Error,Thread,Backtrace,Msg):- 
 	(xsb_thread_property(Thread,joinable) -> 
 	       get_backtrace(Backtrace,ReadBT),
-	       asserta('_$thread_exit_ball'(Thread,error(Error,Msg,ReadBT)))
+	       asserta('_$thread_exit_ball'(Thread,exception(error(Error,Msg,ReadBT))))
 	     ; true),
-	xsb_thread_exit(2).
+	internal_thread_exit(THREAD_EXCEPTION).
 
 % get_sys_error_description/3
 get_sys_error_description(error(Error,Msg,Backtrace), 

@@ -276,6 +276,37 @@ DllExport prolog_int call_conv iso_ptoc_int(CTXTdeclc int regnum,char * PredStri
   return FALSE;
 }
 
+/* TLS: unlike ptoc_int, this does NOT cast strings to integers.  Like
+   iso_ptoc_int, but passes explicit argument for error message -- for
+   use by thread_request and other non-builtin builtins.
+*/
+DllExport prolog_int call_conv iso_ptoc_int_arg(CTXTdeclc int regnum,char * PredString, int arg)
+{
+  /* reg is global array in register.h in the single-threaded engine
+   * and is defined as a thread-specific macro in context.h in the
+   * multi-threaded engine
+   */  
+  register Cell addr = cell(reg+regnum);
+
+  /* XSB_Deref and then check the type */
+  XSB_Deref(addr);
+
+  switch (cell_tag(addr)) {
+  case XSB_FREE:
+  case XSB_REF1: 
+  case XSB_ATTV: xsb_instantiation_error(CTXTc PredString,arg);
+  case XSB_STRUCT:
+    if (isboxedinteger(addr)) return(boxedint_val(addr));
+  case XSB_LIST:
+  case XSB_STRING:
+  case XSB_FLOAT: xsb_type_error(CTXTc "integer",addr,PredString,arg);
+
+  case XSB_INT: return int_val(addr);
+  default: xsb_abort("[PTOC_INT] Argument of unknown type");
+  }
+  return FALSE;
+}
+
 inline Cell iso_ptoc_callable(CTXTdeclc int regnum,char * PredString)
 {
   /* reg is global array in register.h in the single-threaded engine

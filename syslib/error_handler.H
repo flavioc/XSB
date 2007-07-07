@@ -56,5 +56,5 @@
            throw/1,integer/1 from standard.
 :- import concat_atom/2, term_to_atom/2 from string.
 :- import xsb_flag/2 from curr_sym.
-:- import xsb_thread_exit/1, 
+:- import internal_thread_exit/1, 
           xsb_thread_property/2 , xsb_thread_self/1 from thread.
