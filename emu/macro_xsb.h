@@ -1044,7 +1044,9 @@ void tstCreateTSIs(struct th_context *,TSTNptr);
 
 /*----------------------------------------------------------------------*/
 
-#define pdlpush(cell)	*(pdlreg) = cell;  pdlreg--
+#define pdlpush(cell)	*(pdlreg) = cell;				\
+                        if (pdlreg-- < (CPtr)pdl.low)	       		\
+			  xsb_exit(CTXTc "PANIC: pdl overflow; large or cyclic structure?")
 
 #define pdlpop		*(++pdlreg)
 
