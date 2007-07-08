@@ -1250,7 +1250,11 @@ case THREAD_ACCEPT_MESSAGE: {
 	}
 
 	case XSB_USLEEP: {
+#ifdef WIN_NT
+	  Sleep(floor(iso_ptoc_int_arg(CTXTc 2,"usleep/1",1) / 1000));
+#else
 	  usleep(iso_ptoc_int_arg(CTXTc 2,"usleep/1",1));
+#endif
 	  break;
 	}
 
