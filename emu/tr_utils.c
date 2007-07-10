@@ -949,11 +949,13 @@ void delete_branch(CTXTdeclc BTNptr lowest_node_in_branch, BTNptr *hook) {
 
 void safe_delete_branch(BTNptr lowest_node_in_branch) {
 
-  byte choicepttype;
+  byte instruction;
 
   MakeStatusDeleted(lowest_node_in_branch);
-  choicepttype = 0x3 & BTN_Instr(lowest_node_in_branch);
-  BTN_Instr(lowest_node_in_branch) = choicepttype | trie_no_cp_fail;
+  instruction = BTN_Instr(lowest_node_in_branch);
+  if (instruction != trie_root) instruction = (instruction & 0x3) | trie_no_cp_fail;
+  else instruction = trie_no_cp_fail;
+  BTN_Instr(lowest_node_in_branch) = trie_no_cp_fail;
 }
 
 void undelete_branch(BTNptr lowest_node_in_branch) {
@@ -1500,7 +1502,7 @@ void trie_dispose(CTXTdecl)
       delete_branch(CTXTc Leaf, &(itrie_array[Rootidx].root));
     }
     else {
-      //          printf(" safely deleting branch \n");
+      //      printf(" safely deleting branch %x\n",BTN_Instr(itrie_array[Rootidx].root));
       safe_delete_branch(itrie_array[Rootidx].root);
     }
   }
