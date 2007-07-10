@@ -272,11 +272,12 @@ int     delay_it;
       new_heap_free(hreg);					\
     }								\
     reg_arrayptr += arity;					\
+    check_glstack_overflow(0,pcreg,0);				\
   }								\
   else if (isattv(*reg_arrayptr)) {				\
     attv_dbgmsg(">>>> add_interrupt in unify_with_trie_str\n");	\
     add_interrupt(CTXTc cell(((CPtr)dec_addr(*reg_arrayptr) + 1)), makecs(hreg));	\
-    bind_copy((CPtr)dec_addr(*reg_array), makecs(hreg));                       \
+    bind_copy((CPtr)dec_addr(*reg_array), makecs(hreg));        \
     reg_arrayptr--;						\
     *(hreg++) = (Cell) psc;					\
     for (i = arity; i >= 1; i--) {				\
@@ -284,6 +285,7 @@ int     delay_it;
       new_heap_free(hreg);					\
     }								\
     reg_arrayptr += arity;					\
+    check_glstack_overflow(0,pcreg,0);				\
   }   								\
   else {							\
     CPtr temp = (CPtr)*reg_arrayptr;				\
@@ -311,6 +313,7 @@ int     delay_it;
     *(++reg_arrayptr) = (Cell) hreg;        /* tail of list */		\
     new_heap_free(hreg);						\
     new_heap_free(hreg);						\
+    check_glstack_overflow(0,pcreg,0);					\
   }									\
   else if (isattv(*reg_arrayptr)) {					\
     attv_dbgmsg(">>>> add_interrupt in unify_with_trie_list\n");	\
@@ -321,6 +324,7 @@ int     delay_it;
     *(++reg_arrayptr) = (Cell) hreg;        /* head of list */		\
     new_heap_free(hreg);						\
     new_heap_free(hreg);						\
+    check_glstack_overflow(0,pcreg,0);					\
   }									\
   else {								\
     CPtr temp = (CPtr)*reg_arrayptr;					\
@@ -394,6 +398,7 @@ int     delay_it;
   new_heap_free(hreg);							\
   *reg_arrayptr = (Cell) hreg;						\
   new_heap_free(hreg);							\
+  check_glstack_overflow(0,pcreg,0);					\
 }
 
 /*----------------------------------------------------------------------*/

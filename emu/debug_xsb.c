@@ -186,6 +186,10 @@ static void print_call(CTXTdeclc Psc psc)
    instruction debugger with multiple active threads.  It hasn't been
    tested out, however. */
 
+#ifdef DEBUG_VM
+static void debug_interact(CTXTdecl);
+#endif
+
 int call_step_gl = 0;
 int hitrace_suspend_gl = 0;
 
@@ -927,8 +931,6 @@ int register_watch_flag = 0;
 #endif
 
 #ifdef DEBUG_VM
-static void debug_interact(CTXTdecl);
-
 CPtr decode_ptr(Cell cell) {
   return ( clref_val(cell) );
 }
@@ -986,6 +988,7 @@ void print_help(void)
 
 /*----- For table debugging --------------------------------------------*/ 
 
+/*** already defined above ???
 static char *compl_stk_frame_field[] = {
   "subgoal_ptr", "level_num",
   "del_ret_list", "visited", 
@@ -1004,7 +1007,7 @@ void print_completion_stack(CTXTdecl)
   fprintf(stddbg,"openreg -> ");
   while (temp < COMPLSTACKBOTTOM) {
     if ((i % COMPLFRAMESIZE) == 0) {
-      fprintf(stddbg,EOFR);	/* end of frame */
+      fprintf(stddbg,EOFR);
       subg = (VariantSF) *temp;
       print_subg_header(subg);
     }
@@ -1020,7 +1023,7 @@ void print_completion_stack(CTXTdecl)
   }
   fprintf(stddbg, EOS);
 }
-
+*********************/
 /*----------------------------------------------------------------------*/
 
 static void print_pdlstack(CTXTdecl)
@@ -1458,8 +1461,8 @@ static void print_cpfs(CTXTdeclc int overlap)
     for (i = 0; (i < frames) && (cpf < cp_stack_bottom); i++) {
       if ( cpf == bfreg )
 	xsb_dbgmsg((LOG_DEBUG,"bfreg"));
-      analyze_cpf(cpf, &length, &type);
-      print_cpf(cpf, length, type);
+      //      analyze_cpf(cpf, &length, &type);  // not defined...
+      //      print_cpf(cpf, length, type);  // wrong num of args, figure out later
       cpf = cpf + length;
     }
     if (cpf < cp_stack_bottom) {

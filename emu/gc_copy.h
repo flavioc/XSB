@@ -202,6 +202,7 @@ static CPtr copy_heap(CTXTdeclc int marked, CPtr begin_new_h, CPtr end_new_h, in
     int  tag; 
     Cell contents;
 
+    printf("garbage collection: copying\n");
     gc_offset = heap_bot-begin_new_h;
     gc_scan = gc_next = begin_new_h; 
 
@@ -301,6 +302,20 @@ static CPtr copy_heap(CTXTdeclc int marked, CPtr begin_new_h, CPtr end_new_h, in
 	    }
         }
     }
+
+    /* now do the reg_array registers, if nec */
+
+    if (reg_array && (reg_arrayptr >= reg_array))
+      { CPtr p;
+	printf("gc_copy: reg_array adjust\n");
+	for (p = reg_array; p <= reg_arrayptr; p++)
+	  { contents = cell(p) ;
+	    q = hp_pointer_from_cell(CTXTc contents,&tag) ;
+	    if (!q) continue ;
+	    if (h_marked(q-heap_bot)) { find_and_copy_block(CTXTc q); }
+	    adapt_external_heap_pointer(p,q,tag);
+	  }
+      }
 
     if (gc_next != end_new_h) { 
       xsb_dbgmsg((LOG_GC, "heap copy gc - inconsistent hreg: %d cells not copied. (num_gc=%d)\n",

@@ -869,6 +869,10 @@ int mark_heap(CTXTdeclc int arity, int *marked_dregs)
   if (delayreg != NULL) {
     marked += mark_root(CTXTc (Cell)delayreg);
   }
+  if (reg_array) {
+    //    printf("marking reg_array: %p to %p\n",reg_array,reg_arrayptr);
+    marked += mark_region(CTXTc reg_array,reg_arrayptr);
+  }
   /* Heap[0] is a global variable */
   marked += mark_root(CTXTc (Cell)glstack.low);
   

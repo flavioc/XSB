@@ -415,6 +415,7 @@ xsbBool glstack_realloc(CTXTdeclc int new_size, int arity)
 
   CPtr   *cell_ptr ;
   Cell   cell_val ;
+  int  i, rnum_in_reg_array = (reg_arrayptr-reg_array)+1;
 
   size_t new_size_in_bytes, new_size_in_cells ; /* what a mess ! */
   double   expandtime ;
@@ -431,7 +432,6 @@ xsbBool glstack_realloc(CTXTdeclc int new_size, int arity)
     }
   }
 #endif
-
   expandtime = cpu_time();
 
   new_size_in_bytes = new_size*K ;
@@ -525,6 +525,14 @@ xsbBool glstack_realloc(CTXTdeclc int new_size, int arity)
     arity-- ;  
   }
 
+  i = 0;
+  while (i < rnum_in_reg_array) {
+    cell_ptr = (CPtr *)(reg_array+i);
+    //    printf(" reallocate reg_array[%d]=%p\n",i,cell_ptr);
+    reallocate_heap_or_ls_pointer(cell_ptr) ;
+    i++;
+  }
+
   /* Update the attributed variables interrupt list --lfcastro */
   { 
     int size = int_val(cell(interrupt_reg));
@@ -576,6 +584,7 @@ int gc_heap(CTXTdeclc int arity, int ifStringGC)
     begin_stringtime, end_stringtime;
   int  marked = 0, marked_dregs = 0, i;
   int  start_heap_size;
+  int  rnum_in_reg_array = (reg_arrayptr-reg_array)+1;
   DECL_GC_PROFILE;
 
   INIT_GC_PROFILE;
@@ -620,8 +629,13 @@ int gc_heap(CTXTdeclc int arity, int ifStringGC)
 	*hreg = reg[i];
 	hreg++;
       }
+      arity += rnum_in_reg_array;
+      for (i = 0; i < rnum_in_reg_array; i++) {
+	*(hreg++) = reg_array[i];
+      }
+      //      printf("extended heap: hreg=%p, arity=%d, rnum_in=%d\n",hreg,arity, rnum_in_reg_array);
     }
-    
+
 #ifdef SLG_GC
     /* in SLGWAM, copy hfreg to the heap */
     if (slide) {
@@ -703,10 +717,14 @@ int gc_heap(CTXTdeclc int arity, int ifStringGC)
 	
 	p = hreg;
 	
+	arity -= rnum_in_reg_array;
 	for (i = 1; i <= arity; i++)
 	  reg[i] = *p++ ;
 	if (delayreg != NULL)
 	  delayreg = (CPtr)reg[arity--];
+	for (i = 0; i < rnum_in_reg_array; i++) {
+	  reg_array[i] = *p++;
+	}
 
 	end_slidetime = cpu_time();
 	
