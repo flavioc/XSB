@@ -955,7 +955,7 @@ void safe_delete_branch(BTNptr lowest_node_in_branch) {
   instruction = BTN_Instr(lowest_node_in_branch);
   if (instruction != trie_root) instruction = (instruction & 0x3) | trie_no_cp_fail;
   else instruction = trie_no_cp_fail;
-  BTN_Instr(lowest_node_in_branch) = trie_no_cp_fail;
+  BTN_Instr(lowest_node_in_branch) = instruction;
 }
 
 void undelete_branch(BTNptr lowest_node_in_branch) {
