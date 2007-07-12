@@ -123,7 +123,8 @@ interrupt flag
 #define THREAD_COMPLSIZE          74   /* Initial COMPLSize for created thread */
 #define THREAD_PDLSIZE            75   /* Initial PDLSize for created thread */
 #define THREAD_DETACHED           76   /* Initial Detached flag for created thread */
-#define MAX_THREAD_FLAG           77   /* Initial Detached flag for created thread */
+#define MAX_THREAD_FLAG           77   /* Maximum number of threads (not changeable after startup) */
+#define MAX_QUEUE_TERMS           78   /* Default Maximum number of terms in a message queue*/
 
 #define MAX_FLAGS		80
 

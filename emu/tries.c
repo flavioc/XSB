@@ -1427,7 +1427,7 @@ xsbBool bottom_up_unify(CTXTdecl)
 
 /*----------------------------------------------------------------------*/
 
-void handle_heap_overflow_trie(CPtr *cptr, int arity, int heap_needed) {
+void handle_heap_overflow_trie(CTXTdeclc CPtr *cptr, int arity, int heap_needed) {
   int i;
 
   if (*cptr > (CPtr)glstack.low && *cptr < hreg) {
@@ -1470,7 +1470,7 @@ void load_solution_trie(CTXTdeclc int arity, int attv_num, CPtr cptr, BTNptr Tri
     }
     heap_needed = follow_par_chain(CTXTc TriePtr);
     if (glstack_overflow(heap_needed*sizeof(Cell))) 
-      handle_heap_overflow_trie(&cptr,arity,heap_needed);
+      handle_heap_overflow_trie(CTXTc &cptr,arity,heap_needed);
     load_solution_from_trie(CTXTc arity,cptr);
   }
 }
@@ -1483,7 +1483,7 @@ void load_delay_trie(CTXTdeclc int arity, CPtr cptr, BTNptr TriePtr)
      int heap_needed;
      heap_needed = follow_par_chain(CTXTc TriePtr);
      if (glstack_overflow(heap_needed*sizeof(Cell))) 
-       handle_heap_overflow_trie(&cptr,arity,heap_needed);
+       handle_heap_overflow_trie(CTXTc &cptr,arity,heap_needed);
      load_solution_from_trie(CTXTc arity,cptr);
    }
 }

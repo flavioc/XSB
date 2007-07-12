@@ -937,7 +937,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  id->num_locks++;
 	  id->owner = xsb_thread_id;
 	  if (rc == EINVAL) {
-	    xsb_permission_error(CTXTc "lock mutex","invalid mutex",
+	    xsb_existence_error(CTXTc "lock mutex","invalid mutex",
 				 reg[2],"xsb_mutex_lock",2); 
 	  } else if (rc == EDEADLK) { 
 	    xsb_permission_error(CTXTc "lock mutex","deadlocking mutex",
@@ -1113,7 +1113,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  xsb_mq->last_message = 0;
 	  xsb_mq->size = 0;
 	  if ((declared_size = ptoc_int(CTXTc 3)) == 0)
-	    xsb_mq->max_size = DEFAULT_MQ_SIZE;
+	    xsb_mq->max_size = flags[MAX_QUEUE_TERMS];
 	  else xsb_mq->max_size = declared_size;
 
 	  pthread_mutex_init(&xsb_mq->mq_mutex, NULL ) ;
@@ -1233,6 +1233,10 @@ case THREAD_ACCEPT_MESSAGE: {
   else   pthread_mutex_unlock(&message_queue->mq_mutex);
   break;
  }
+
+	case XSB_MESSAGE_QUEUE_DESTROY:
+	  xsb_abort("message_queue_destroy/1 not yet implemented\n");
+	  break;
 
 	case PRINT_MESSAGE_QUEUE: {
 	  XSB_MQ_Ptr xsb_mq = (XSB_MQ_Ptr) ptoc_int(CTXTc 2);

@@ -219,6 +219,9 @@ static void init_flags(CTXTdecl)
   flags[THREAD_GLSIZE] = GLSTACK_DEFAULT_SIZE;
   flags[THREAD_TCPSIZE] = TCPSTACK_DEFAULT_SIZE;
   flags[THREAD_COMPLSIZE] = COMPLSTACK_DEFAULT_SIZE;
+#ifdef MULTI_THREAD
+  flags[MAX_QUEUE_TERMS] = DEFAULT_MQ_SIZE;
+#endif
 }
 
 /*==========================================================================*/

@@ -76,6 +76,7 @@
 #define THREAD_TRY_MESSAGE              34
 #define THREAD_RETRY_MESSAGE            35
 #define THREAD_ACCEPT_MESSAGE           36
+#define XSB_MESSAGE_QUEUE_DESTROY       37
 
 #define PRINT_MESSAGE_QUEUE             40
 
