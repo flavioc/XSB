@@ -530,7 +530,8 @@ remains unaltered.
 %
 \item {\tt alias(Alias)}: Allow thread {\tt ThreadId} to be referred
   to via {\tt Alias} in all standard thread predicates.  {\tt Alias}
-  remains active for {\tt ThreadId} until it is joined.  \ei
+  remains active for {\tt ThreadId} until it is joined.  
+\ei
 
 {\bf Error Cases}
 \bi
@@ -559,7 +560,7 @@ remains unaltered.
 \item 	{\tt domain\_error(thread\_option,Option)}
 \ei
 \item An element of {\tt OptionsList} is alias(A) and A is already
-  associated with an existing thread, queue or stream 
+  associated with an existing thread, queue, mutex or stream 
 \bi
 \item {\tt permission\_error(create,alias, A)}
 \ei
@@ -800,7 +801,7 @@ only when {\tt with\_mutex/2} is not applicable.
 \ournewitem{with\_mutex(+Mutex,?Goal)}{mutex}
 \index{\texttt{with\_mutex/2}} 
 %
-Locks a current mutex {\tt Mutex}, executes {\tt Goal}
+Locks a current mutex or alias{\tt Mutex}, executes {\tt Goal}
 deterministically, then unlocks {\tt Mutex}.  If {\tt Goal} leaves
 choice-points, these are destroyed.  {\tt Mutex} is unlocked
 regardless of whether {\tt Goal} succeeds, fails or raises an
@@ -809,52 +810,100 @@ mutex has been successfully unlocked.
 
 {\bf Error Cases}
 \bi
-\item 	{\tt Mutex} is not an atom
+\item 	{\tt Mutex} is a variable
 \bi
-\item 	{\tt type\_error(atom,Mutex)}
+\item 	{\tt instantiation\_error}
 \ei
+%
+\item 	{\tt Mutex} is not a mutex id or alias
+\bi
+\item 	{\tt domain\_error(mutex\_or\_alias,Mutex\_or\_Alias)}
+\ei
+%
 \item 	{\tt Mutex} is not associated with a current mutex.
 \bi
 \item 	{\tt existence\_error(mutex,Mutex)}
 \ei
-\item 	{\tt Mutex} is locked
+\item Locking {\tt Mutex} would give rise to a deadlock~\footnote{This
+  error case handles the {\tt EDEADLK} return code on OS X, and other
+  platforms.}
 \bi
-\item 	{\tt permission\_error(mutex,destroy,Mutex)}
+\item 	{\tt permission\_error(mutex,lock,Mutex)}
 \ei
+\item {\tt Goal} is a variable
+\bi
+\item  instantiation error
+\ei
+%
+\item {\tt Goal} is neither a variable nor a callable term
+\bi
+\item type error(callable, Goal)
+\ei
+%
 \ei
 
 \ournewitem{mutex\_create(?Mutex)}{mutex}
 \index{\texttt{mutex\_create/1}} 
 %
-Creates a user mutex, {\tt Mutex}.  If {\tt Mutex} is instantiated to
-an atom upon call, the mutex will have that name; if {\tt Mutex} is
-not instantiated at call, a system-generated atom {\tt mutex}$n$
-($N>0$) will be returned.  The mutex itself will be recursive.
+Creates a new recursive user mutex with identifier {\tt Mutex}.  {\tt
+  Options} allows optional parameters to be passed, currently only for
+aliases of the mutex.
+%
+\bi
+\item {\tt alias(Mutex)}: Allow queue {\tt Mutex} to be referred to
+  via {\tt Mutex} in all standard queue predicates.  {\tt Mutex}
+  remains active for {\tt Mutex} until it is destroyed.
+\ei
 
 {\bf Error Cases}
 \bi
-\item 	{\tt Mutex} is not a variable or an atom
+\item 	Mutex is not a variable
 \bi
-\item 	{\tt domain\_error(variable\_or\_atom,Mutex)}
+\item 	{\tt type\_error(variable,Mutex)}
 \ei
-\item 	{\tt Mutex} is already associated with a mutex.
+\item Options is a partial list or a list with an element that is a
+  variable 
 \bi
-\item 	{\tt permission\_error(create,mutex,Mutex)}
+\item  instantiation error
+\ei
+\item Options is neither a partial list or a list
+\bi
+\item  type error(list, Options)
+\ei
+\item 	{\tt Options} contains an option, {\tt Option} not described above
+\bi
+\item 	{\tt domain\_error(mutex\_option,Option)}
+\ei
+%
+\item An element of {\tt Options} is {\tt alias(A)} and {\tt A} is
+  already associated with an existing thread, queue, mutex or stream 
+\bi
+\item {\tt permission\_error(create,alias, A)}
+\ei
+\item An element of {\tt Options} is {\tt alias(A)} and {\tt A} is not an atom
+\bi
+\item {\tt type\_error(atom,A)}
 \ei
 \ei
 
 \ournewitem{mutex\_destroy(+Mutex)}{mutex}
 \index{\texttt{mutex\_destroy/1}} 
 %
-Destroys a current unlocked mutex {\tt Mutex} along with any memory it
-uses.
+Destroys a current unlocked mutex with alias or id {\tt Mutex} along
+with any memory it uses.
 
 {\bf Error Cases}
 \bi
-\item 	{\tt Mutex} is not an atom
+\item 	{\tt Mutex} is a variable
 \bi
-\item 	{\tt type\_error(atom,Mutex)}
+\item 	{\tt instantiation\_error}
 \ei
+%
+\item 	{\tt Mutex} is not a mutex id or alias
+\bi
+\item 	{\tt domain\_error(mutex\_or\_alias,Mutex\_or\_Alias)}
+\ei
+%
 \item 	{\tt Mutex} is not associated with a current mutex.
 \bi
 \item 	{\tt existence\_error(mutex,Mutex)}
@@ -868,23 +917,35 @@ uses.
 \ournewitem{mutex\_lock(+Mutex)}{mutex}
 \index{\texttt{mutex\_lock/1}} 
 %
-{\tt mutex\_lock(Mutex)} locks a (recursive) mutex. Locking and
-unlocking mutexes should be paired carefully in order to avoid
-deadlocks. In particular, a programmer needs to ensure that mutexes
-are properly unlocked even if the protected code fails or raises an
-exception.
+{\tt mutex\_lock(Mutex)} locks a (recursive) mutex with alias or id
+{\tt Mutex}. Locking and unlocking mutexes should be paired carefully
+in order to avoid deadlocks. In particular, a programmer needs to
+ensure that mutexes are properly unlocked even if the protected code
+fails or raises an exception.
 %For most common cases, the built-in predicate with mutex/2 (3.4.3)
 %provides a safer way for using mutexes.
 
 {\bf Error Cases}
 \bi
-\item 	{\tt Mutex} is not an atom
+\item 	{\tt Mutex} is a variable
 \bi
-\item 	{\tt type\_error(atom,Mutex)}
+\item 	{\tt instantiation\_error}
 \ei
+%
+\item 	{\tt Mutex} is not a mutex id or alias
+\bi
+\item 	{\tt domain\_error(mutex\_or\_alias,Mutex\_or\_Alias)}
+\ei
+%
 \item 	{\tt Mutex} is not associated with a current mutex.
 \bi
 \item 	{\tt existence\_error(mutex,Mutex)}
+\ei
+\item Locking {\tt Mutex} would give rise to a deadlock~\footnote{This
+  error case handles the {\tt EDEADLK} return code on OS X, and other
+  platforms.}
+\bi
+\item 	{\tt permission\_error(mutex,lock,Mutex)}
 \ei
 \ei
 
@@ -892,14 +953,20 @@ exception.
 \index{\texttt{mutex\_trylock/1}} 
 %
 Works as {\tt mutex\_lock/1} but fails immediately if {\tt Mutex} is
-held by another thread rather than suspending the calling thread.
+held by another thread,  rather than suspending the calling thread.
 
 {\bf Error Cases}
 \bi
-\item 	{\tt Mutex} is not an atom
+\item 	{\tt Mutex} is a variable
 \bi
-\item 	{\tt type\_error(atom,Mutex)}
+\item 	{\tt instantiation\_error}
 \ei
+%
+\item 	{\tt Mutex} is not a mutex id or alias
+\bi
+\item 	{\tt domain\_error(mutex\_or\_alias,Mutex\_or\_Alias)}
+\ei
+%
 \item 	{\tt Mutex} is not associated with a current mutex.
 \bi
 \item 	{\tt existence\_error(mutex,Mutex)}
@@ -909,14 +976,21 @@ held by another thread rather than suspending the calling thread.
 \ournewitem{mutex\_unlock(+Mutex)}{mutex}
 \index{\texttt{mutex\_unlock/1}} 
 %
-Unlocks {\tt Mutex} when called by the same thread that locked the mutex.
+Unlocks the mutex with alias or id {\tt Mutex} when called by the same
+thread that locked {\tt Mutex}.
 
 {\bf Error Cases}
 \bi
-\item 	{\tt Mutex} is not an atom
+\item 	{\tt Mutex} is a variable
 \bi
-\item 	{\tt type\_error(atom,Mutex)}
+\item 	{\tt instantiation\_error}
 \ei
+%
+\item 	{\tt Mutex} is not a mutex id or alias
+\bi
+\item 	{\tt domain\_error(mutex\_or\_alias,Mutex\_or\_Alias)}
+\ei
+%
 \item 	{\tt Mutex} is not associated with a current mutex.
 \bi
 \item 	{\tt existence\_error(mutex,Mutex)}
@@ -995,12 +1069,21 @@ by splitting one ``multiplexed'' queue into two separate queues.
 \ournewitem{message\_queue\_create(-Queue,+Options)}{mutex}
 \index{\texttt{message\_queue\_create/2}} 
 %
-Creates a new message queue with identifier {\tt Queue}.  If {\tt
-  Options} contains the term {\tt size(S)} the queue will have {\tt S}
-elements, otherwise it will have a default number of elements.  The
-default number of elements can be obtained via the query
-
-{\tt ?- xsb\_configuration(default\_message\_queue\_size,X)}
+Creates a new message queue with identifier {\tt Queue}.  {\tt
+  Options} allows optional parameters to be passed for the maximum
+number of terms in the queue, and for aliases of the queue.
+%
+\bi
+\item {\tt max\_terms(N)}: create queue so that it can contain at most
+  {\tt N} terms before writes to the queue block.  If not specified,
+  the default size is used.  This default can be queried and altered
+  at run time via the xsb flag {\tt queue\_max\_terms}.
+  (cf. Section~\ref{State}).
+%
+\item {\tt alias(Alias)}: Allow queue {\tt Queue} to be referred to
+  via {\tt Alias} in all standard queue predicates.  {\tt Alias}
+  remains active for {\tt Queue} until it is destroyed.
+\ei
 
 {\bf Error Cases}
 \bi
@@ -1017,45 +1100,99 @@ default number of elements can be obtained via the query
 \bi
 \item  type error(list, Options)
 \ei
+\item 	{\tt Options} contains an option, {\tt Option} not described above
+\bi
+\item 	{\tt domain\_error(queue\_option,Option)}
+\ei
+%
+\item An element of {\tt Options} is {\tt alias(A)} and {\tt A} is
+  already associated with an existing thread, queue, mutex or stream 
+\bi
+\item {\tt permission\_error(create,alias, A)}
+\ei
+\item An element of {\tt Options} is {\tt alias(A)} and {\tt A} is not an atom
+\bi
+\item {\tt type\_error(atom,A)}
+\ei
 \ei
 
-\ournewitem{thread\_send\_message(+Queue,\#Message)}{mutex}
+\ournewitem{message\_queue\_detroy(+Queue\_or\_Alias,\#Message)}{mutex}
+\index{\texttt{message\_queue\_destroy/1}} 
+%
+Destroys a message queue with alias or id {\tt Queue\_or\_alias}, as
+created by {\tt message\_queue\_create/[1,2]}.
+%  It is not allowed to
+%de- stroy the queue of a thread. 
+If any threads are currently waiting on {\tt Queue\_or\_Alias}, an
+error will be thrown.
+% or may try to wait for later?
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Queue\_or\_Alias} is a variable
+\bi
+\item 	{\tt instantiation\_error}
+\ei
+%
+\item 	{\tt Queue\_or\_Alias} is not a queue id or alias
+\bi
+\item 	{\tt domain\_error(queue\_or\_alias,Queue\_or\_Alias)}
+\ei
+\ei
+%
+
+
+\ournewitem{thread\_send\_message(+Queue\_or\_Alias,\#Message)}{mutex}
 \index{\texttt{thread\_send\_message/2}} 
 %
-If there are fewer than elements on {\tt Queue} than its maximum size,
-{\tt thread\_send\_message/} puts {\tt Message} onto {\tt Queue}, and
-  returns immediately.  Otherwise, it suspends until there are fewer
-  elements on {\tt Queue} than its maximum size when it will be
-  awakened to put {\tt Message} onto queue.
+If there are fewer terms on {\tt Queue\_or\_Alias} than the queue's
+maximum allowed number {\tt thread\_send\_message/2} puts {\tt
+  Message} onto {\tt Queue\_or\_Alias}, and returns immediately.
+Otherwise, the calling thread suspends until there are fewer elements
+on {\tt Queue\_or\_Alias} than the queue's maximum allowed number,
+when the thread will be awakened to put {\tt Message} onto the queue.
 
 {\bf Error Cases}
 \bi
-\item Queue is a variable
+\item 	{\tt Queue\_or\_Alias} is a variable
 \bi
-\item instantiation error
+\item 	{\tt instantiation\_error}
+\ei
+%
+\item 	{\tt Queue\_or\_Alias} is not a queue id or alias
+\bi
+\item 	{\tt domain\_error(queue\_or\_alias,Queue\_or\_Alias)}
 \ei
 \ei
+%
 
-\ournewitem{thread\_get\_message(+Queue,?Message)}{mutex}
+\ournewitem{thread\_get\_message(+Queue\_or\_Alias,?Message)}{mutex}
 \index{\texttt{thread\_get\_message/2}} 
 
-If there are elements on {\tt Queue} {\tt thread\_get\_message/}
-traverses the queue to obtain the first element of {\tt Queue} that
-unifies with {\tt Message}.  If it does, it returns with {\tt Message}
-bound to the most general unifier.  If there are no elements on {\tt
-  Queue} or if no elements unify with {\tt Message}, the thread
-suspends until elements are added to {\tt Queue}.  When it awakes, it
-will restart, rechecking {\tt Queue} from its beginning for a term that unifies
-with {\tt Message}.
+If there are terms on {\tt Queue\_or\_Alias} {\tt
+  thread\_get\_message/2} traverses {\tt Queue\_or\_Alias} to obtain
+the first term $T$ that unifies with {\tt Message}.  If $T$ exists,
+the predicate returns with {\tt Message} bound to the most general
+unifier of {\tt Message} and $T$.  If there are no terms on {\tt
+  Queue\_or\_Alias} or if no terms unify with {\tt Message}, the
+calling thread suspends until at least one term is added to {\tt
+  Queue\_or\_Alias}.  When the thread awakes, it will recheck {\tt
+  Queue} from its beginning for a term that unifies with {\tt
+  Message}.
 
 {\bf Error Cases}
 \bi
-\item Queue is a variable
+\item 	{\tt Queue\_or\_Alias} is a variable
 \bi
-\item instantiation error
+\item 	{\tt instantiation\_error}
+\ei
+%
+\item 	{\tt Queue\_or\_Alias} is not a queue id or alias
+\bi
+\item 	{\tt domain\_error(queue\_or\_alias,Queue\_or\_Alias)}
 \ei
 \ei
-
+%
 
 \end{description}
 

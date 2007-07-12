@@ -753,8 +753,13 @@ threads in the process.
   joinable.  If this flag is not set, its default is {\tt false}.
 
 \item {\tt max\_threads} In the multi-threaded engine, the maximum
-  number of valid threads.  By default this is 1024, but it may be set
-  by the command-line option {\tt --max\_threads}.
+  number of valid threads.  By default this is 1024 and this value may
+  not be reset at runtime, but it may be set by the command-line
+  option {\tt --max\_threads}.
+
+\item {\tt max\_queue\_size} In the multi-threaded engine, the default
+  maximum number of terms a message queue contains before writes to
+  the message queue block.  By default this is 100.
 
 \end{itemize}
     
