@@ -57,6 +57,7 @@
 #include "subp.h"
 #include "call_graph_xsb.h" /* for incremental evaluation */
 #include "biassert_defs.h"
+#include "loader_xsb.h" /* for XOOM_FACTOR */
 
 /*----------------------------------------------------------------------*/
 /* The following variables are used in other parts of the system        */
@@ -614,13 +615,20 @@ void expand_trie_ht(CTXTdeclc BTHTptr pHT) {
  * Push the symbols along the path from the leaf to the root in a trie
  * onto the termstack.
  */
-static void follow_par_chain(CTXTdeclc BTNptr pLeaf)
+static int follow_par_chain(CTXTdeclc BTNptr pLeaf)
 {
+  int heap_space = 0;
+  Cell sym;
+
   term_stackptr = -1; /* Forcibly Empty term_stack */
   while ( IsNonNULL(pLeaf) && (! IsTrieRoot(pLeaf)) ) {
-    push_term((BTN_Symbol(pLeaf)));
+    sym = BTN_Symbol(pLeaf);
+    push_term(sym);
+    if (TrieSymbolType(sym) == XSB_STRUCT) heap_space+=2;
+    else heap_space++;
     pLeaf = BTN_Parent(pLeaf);
   }
+  return heap_space;
 }
 
 /*----------------------------------------------------------------------*/
@@ -690,7 +698,6 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
       return;								\
     }									\
   }									\
-  if (top_of_localstk < top_of_heap) xsb_abort("Heap overflow: should expand"); \
 }
 
 /*----------------------------------------------------------------------*/
@@ -745,7 +752,6 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
     xsb_abort("Bad tag in macro_make_heap_term");			\
     return;								\
   }									\
-  if (top_of_localstk < top_of_heap) xsb_abort("Heap overflow: should expand"); \
 }
 
 /*----------------------------------------------------------------------*/
@@ -1366,10 +1372,16 @@ static void bottomupunify(CTXTdeclc Cell term, BTNptr Root, BTNptr Leaf)
   CPtr Dummy_Addr;
   Cell returned_val, xtemp2;
   CPtr gen;
-  int  i;
+  int  i, heap_needed;
+
 
   num_heap_term_vars = 0;     
-  follow_par_chain(CTXTc Leaf);
+  heap_needed = follow_par_chain(CTXTc Leaf);
+  if (glstack_overflow(heap_needed*sizeof(Cell))) {
+    reg[1] = term;
+    check_glstack_overflow(1,pcreg,heap_needed*sizeof(Cell));
+    term = reg[1];
+  }
   XSB_Deref(term);
   gen = (CPtr) term;
   macro_make_heap_term(gen,returned_val,Dummy_Addr);
@@ -1415,6 +1427,26 @@ xsbBool bottom_up_unify(CTXTdecl)
 
 /*----------------------------------------------------------------------*/
 
+void handle_heap_overflow_trie(CPtr *cptr, int arity, int heap_needed) {
+  int i;
+
+  if (*cptr > (CPtr)glstack.low && *cptr < hreg) {
+    if (arity <= 254) {
+      reg[1] = (Cell)*cptr;
+      for (i = 1; i <= arity; i++) reg[i+1] = *(*cptr-arity+i);
+      check_glstack_overflow(arity+1,pcreg,heap_needed*sizeof(Cell));
+      *cptr = (CPtr)reg[1];
+      for (i = 1; i <= arity; i++) *(*cptr-arity+i) = reg[i+1];
+    } else xsb_abort("Heap overflow; Cannot garbage collect\n");
+    /* if this happens, change to do stack_realloc only */
+  } else if (arity <= 255) {
+    for (i = 1; i <= arity; i++) reg[i] = *(*cptr-arity+i);
+    check_glstack_overflow(arity,pcreg,heap_needed*sizeof(Cell));
+    for (i = 1; i <= arity; i++) *(*cptr-arity+i) = reg[i];
+  } else xsb_abort("Heap overflow; Cannot garbage collect\n");
+}
+
+
 /*
  * `TriePtr' is a leaf in the answer trie, and `cptr' is a vector of
  * variables for receiving the substitution.
@@ -1422,6 +1454,7 @@ xsbBool bottom_up_unify(CTXTdecl)
 void load_solution_trie(CTXTdeclc int arity, int attv_num, CPtr cptr, BTNptr TriePtr)
 {
   CPtr xtemp;
+  int heap_needed;
   
   num_heap_term_vars = 0;
   if (arity > 0) {
@@ -1435,7 +1468,9 @@ void load_solution_trie(CTXTdeclc int arity, int attv_num, CPtr cptr, BTNptr Tri
 	}
       }
     }
-    follow_par_chain(CTXTc TriePtr);
+    heap_needed = follow_par_chain(CTXTc TriePtr);
+    if (glstack_overflow(heap_needed*sizeof(Cell))) 
+      handle_heap_overflow_trie(&cptr,arity,heap_needed);
     load_solution_from_trie(CTXTc arity,cptr);
   }
 }
@@ -1445,7 +1480,10 @@ void load_solution_trie(CTXTdeclc int arity, int attv_num, CPtr cptr, BTNptr Tri
 void load_delay_trie(CTXTdeclc int arity, CPtr cptr, BTNptr TriePtr)
 {
    if (arity) {
-     follow_par_chain(CTXTc TriePtr);
+     int heap_needed;
+     heap_needed = follow_par_chain(CTXTc TriePtr);
+     if (glstack_overflow(heap_needed*sizeof(Cell))) 
+       handle_heap_overflow_trie(&cptr,arity,heap_needed);
      load_solution_from_trie(CTXTc arity,cptr);
    }
 }

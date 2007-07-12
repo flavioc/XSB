@@ -55,7 +55,7 @@
 
 extern int  gc_heap(CTXTdeclc int, int);
 extern int  mark_heap(CTXTdeclc int,int *);
-extern xsbBool glstack_ensure_space(CTXTdeclc int,int);
+extern void glstack_ensure_space(CTXTdeclc int,int);
 extern xsbBool glstack_realloc(CTXTdeclc int,int);
 extern char *string_find_safe(char *str);
 extern void initialize_glstack(CPtr, CPtr);
