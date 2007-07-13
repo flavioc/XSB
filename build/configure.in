@@ -30,7 +30,7 @@ dnl
 dnl
 
 
-AC_PREREQ(2.12)dnl
+AC_PREREQ(2.53)dnl
 
 AC_INIT(../emu/emuloop.c)
 dnl
@@ -41,6 +41,7 @@ if test -f buildxsb.lock ; then
 ***If this is a stale lock, remove ./buildxsb.lock and run configure again."
    exit 1
 fi
+
 
 SHELL=/bin/sh
 
@@ -67,6 +68,44 @@ AC_ARG_WITH(os,
 [  --with-os=wind               build XSB for Windows NT/95/98])
 AC_ARG_WITH(wind,
 [  --with-wind                  build XSB for Windows NT/95/98])
+AC_ARG_WITH(bits64,
+[  --with-bits64                build XSB for a 64 bit architecture])
+AC_ARG_WITH(aout,
+[  --with-aout                  build XSB for a Unix system with .aout binary format])
+AC_ARG_WITH(optimization,
+[  --with-optimization=Ox       build XSB with compiler optimization level O, O1, ..., O4])
+AC_ARG_WITH(config-tag,
+[  --with-config-tag=TAG        Makes the configuration directory name look like
+                          	CONFIG_PREFIX/configuration-TAG. If TAG is missing
+				the directory is CONFIG_PREFIX/configuration
+                          	TAG is used for debugging, so one can have
+                          	different builds under the same architecture])
+AC_ARG_WITH(site-prefix,
+[  --with-site-prefix=DIR       Site-specific XSB libraries are found in DIR])
+AC_ARG_WITH(includes,
+[  --with-includes=DIR          These might be needed if it is necessary to tell
+                          	the compiler about additional header files to
+                          	include with the -I option. This need arises if
+                          	your standard header files are in odd places or
+                          	if XSB is compiled with ODBC support.
+                          	You can specify a list of libraries by
+				enclosing them in quotes])
+AC_ARG_WITH(static-libraries,
+[  --with-static-libraries=DIR  These might be needed, if compiling with support
+                          	for statically linked packages (such as Oracle)
+                          	or if your standard C libraries are in 
+                          	odd places. These libraries are added as
+				-L options during XSB compilation. One can
+                          	specify a list of libraries by enclosing them
+                          	in quotes. This list is automatically added to
+                          	loader flags to ensure that the packages will
+                          	be linked in])
+AC_ARG_WITH(dynamic-libraries,
+[  --with-dynamic-libraries=DIR This specifies the list of libraries used by 
+                          	packages linked dynamically with XSB. These
+                          	libraries are automatically added to the XSB 
+                          	library search path, so they could be loaded at
+                          	run time])
 AC_ARG_WITH(libwww,
 [  --with-libwww=DIR            the libwww library used for Web access is at DIR])
 AC_ARG_WITH(xpath,
@@ -81,9 +120,9 @@ AC_ARG_WITH(iodbc,
 [  --with-iodbc                 use iODBC driver manager])
 AC_ARG_WITH(interprolog,
 [  --with-interprolog           compile with support for InterProlog.
-                                It is possible you would need to use --site-includes
-                                option to specify locations of jni.h and jni_md.h
-                                files])
+                                You might need to use the --with-site-includes
+                                option to specify the location of the files
+				jni.h and jni_md.h])
 AC_ARG_WITH(smodels,
 [  --with-smodels=path          use SMODELS for the XNMR module.
                                 path is the path where smodels has
@@ -140,11 +179,33 @@ AC_ARG_ENABLE(fast-floats,
 [  --enable-fast-floats         compile with single precision floats],
                    fast_floats=yes)
 AC_ARG_ENABLE(ccmpl,
-[  --enable-ccmpl                 compile mt engine with concurrent completion])
+[  --enable-ccmpl               compile mt engine with concurrent completion])
 AC_ARG_ENABLE(profiling,
 [  --enable-profiling           force gcc to generate information for profiling])
 AC_ARG_ENABLE(electric-fence,
 [  --enable-electric-fence      link with the electric fence malloc debugger])
+
+
+build=NONE
+host=NONE
+no_create=
+nonopt=NONE
+configuration=NONE
+no_recursion=
+prefix=NONE
+silent=
+srcdir=
+target=NONE
+verbose=
+with_config_tag=NONE
+dnl Installation directory options.
+dnl These are left unexpanded so users can "make install site_prefix=/foo"
+dnl and all the variables that are supposed to be based on exec_prefix
+dnl by default will actually change.
+dnl Use braces instead of parens because sh, perl, etc. also accept them.
+with_site_prefix=NONE
+mandir=NONE
+
 
 if test "${fast_floats}" = "yes" ; then
    AC_DEFINE(FAST_FLOATS)
@@ -323,8 +384,8 @@ fi
 config_prefix=${topdir}/config
 install_config_prefix=${prefix}/config
 
-if test "$config_tag" != "NONE" -a -n "$config_tag" ; then
-    config_tag="-$config_tag"
+if test "$with_config_tag" != "NONE" -a -n "$with_config_tag" ; then
+    config_tag="-$with_config_tag"
 fi
 
 if test "${with_gcc+set}" = "set" ; then
@@ -346,16 +407,16 @@ fi
 
 dnl Some more tags
 
-dnl If the user didn't specify --config-tag, check maybe -aout, -bits-64,
+dnl If the user didn't specify --with-config-tag, check maybe -aout, -bits-64,
 dnl or -dbg are appropriate
-if test "${config_tag}" = "NONE" ; then
+if test "${with_config_tag}" = "NONE" ; then
     config_tag=
-    dnl add -bits64 to the config tag, if --force64 is set on command line
-    if test -n "$ac_force64" ; then
+    dnl add -bits64 to the config tag, if --with-bits64 is set on command line
+    if test -n "$with_bits64" ; then
        config_tag="${config_tag}-bits64"
     fi
-    dnl add -aout to the config tag, if --linuxaout is set on command line
-    if test -n "$ac_linuxaout" ; then
+    dnl add -aout to the config tag, if --with-aout is set on command line
+    if test -n "$with_aout" ; then
        config_tag="${config_tag}-aout"
     fi
     dnl add -ss to config tag if compiling for simplescalar
@@ -432,6 +493,8 @@ case "$with_os" in
 
     dnl Check configuration for a Unix variant
     AC_CANONICAL_HOST
+    canonical=$host
+    configuration=${host_alias-${build_alias-$host}}
     if test "$configuration" = "NONE" ; then
         echo '
 - You did not tell me what kind of host system you want to configure.
@@ -448,7 +511,7 @@ case "$with_os" in
         rm -f  buildxsb.lock
         exit 1
         else
-        AC_CHECKING(host system type... $canonical)
+        AC_MSG_NOTICE([checking host system type... $canonical])
         fi
     fi
 
@@ -501,7 +564,12 @@ arch_config_file=${arch_config_libdir}/xsb_configuration.P
 
 # site-specific directories
 # where the site is
-test "$site_prefix" = "NONE" && site_prefix=${orig_prefix}/site
+if test "$with_site_prefix" = "NONE" ; then
+   site_prefix=${orig_prefix}/site
+else
+   site_prefix=$with_site_prefix
+fi
+
 # site-specific config-independent XSB libraries
 site_libdir=${site_prefix}/lib
 # site-specific config-dependent stuff goes
@@ -681,7 +749,8 @@ AC_AIX
 AC_CHECK_PROG(has_gcc, gcc, "yes", "no")
 
 AC_MSG_CHECKING(whether we are using SunPro C)
-AC_TRY_COMPILE([],[#ifndef __SUNPRO_C
+AC_COMPILE_IFELSE([
+#ifndef __SUNPRO_C
 #error Not a  SunPro compiler :-(
 ******* ======= ******** &&&&&&&&
 #endif
@@ -694,51 +763,51 @@ dnl set some basic flags
 # with gcc and lower optimization levels
 if test -n "$with_gcc" ; then
    if test "${CC}" = "sslittle-na-sstrix-gcc" ; then
-        emuloop_opt_level=-${optimization_level-"O1"}
-        trutils_opt_level=-${optimization_level-"O1"}
-        builtins_opt_level=-${optimization_level-"O1"}
-        loader_opt_level=-${optimization_level-"O1"}
+        emuloop_opt_level=-${with_optimization-"O1"}
+        trutils_opt_level=-${with_optimization-"O1"}
+        builtins_opt_level=-${with_optimization-"O1"}
+        loader_opt_level=-${with_optimization-"O1"}
         CFLAGS=""
         c_inline_level=""
    else
-        emuloop_opt_level=-${optimization_level-"O3 -fno-strict-aliasing"}
-        trutils_opt_level=-${optimization_level-"O3 -fno-strict-aliasing"}
-        builtins_opt_level=-${optimization_level-"O3 -fno-strict-aliasing"}
-        loader_opt_level=-${optimization_level-"O3 -fno-strict-aliasing"}
+        emuloop_opt_level=-${with_optimization-"O3 -fno-strict-aliasing"}
+        trutils_opt_level=-${with_optimization-"O3 -fno-strict-aliasing"}
+        builtins_opt_level=-${with_optimization-"O3 -fno-strict-aliasing"}
+        loader_opt_level=-${with_optimization-"O3 -fno-strict-aliasing"}
 
         CFLAGS="-Wall -pipe -ansi -pedantic"
    fi
 else
     case $CC in
-        gcc)    emuloop_opt_level=-${optimization_level-"O3 -fno-strict-aliasing"}
-                trutils_opt_level=-${optimization_level-"O3 -fno-strict-aliasing"}
-                builtins_opt_level=-${optimization_level-"O3 -fno-strict-aliasing"}
-                loader_opt_level=-${optimization_level-"O3 -fno-strict-aliasing"}
+        gcc)    emuloop_opt_level=-${with_optimization-"O3 -fno-strict-aliasing"}
+                trutils_opt_level=-${with_optimization-"O3 -fno-strict-aliasing"}
+                builtins_opt_level=-${with_optimization-"O3 -fno-strict-aliasing"}
+                loader_opt_level=-${with_optimization-"O3 -fno-strict-aliasing"}
 
                 CFLAGS="-Wall -pipe -ansi -pedantic"
         ;;
         cc) if test "$__sunpro_c" = "no"; then
-                emuloop_opt_level=-${optimization_level-"O4"}
-                trutils_opt_level=-${optimization_level-"O4"}
-                builtins_opt_level=-${optimization_level-"O4"}
-                loader_opt_level=-${optimization_level-"O4"}
+                emuloop_opt_level=-${with_optimization-"O4"}
+                trutils_opt_level=-${with_optimization-"O4"}
+                builtins_opt_level=-${with_optimization-"O4"}
+                loader_opt_level=-${with_optimization-"O4"}
             else
                 # emuloop_opt_level is the optimization level for emuloop.c
                 # Using xO4 would take SunPro more than an hour, hence xO2.
-                emuloop_opt_level=-${optimization_level-"xO2"}
-                trutils_opt_level=-${optimization_level-"xO4"}
-                builtins_opt_level=-${optimization_level-"xO4"}
-                loader_opt_level=-${optimization_level-"xO4"}
+                emuloop_opt_level=-${with_optimization-"xO2"}
+                trutils_opt_level=-${with_optimization-"xO4"}
+                builtins_opt_level=-${with_optimization-"xO4"}
+                loader_opt_level=-${with_optimization-"xO4"}
             fi
 
             c_inline_level=""
             CFLAGS=""
         ;;
         acc) # acc also seems to choke on high optimization levels for emuloop.c
-            emuloop_opt_level=-${optimization_level-"O2"}
-            trutils_opt_level=-${optimization_level-"O4"}
-            builtins_opt_level=-${optimization_level-"O4"}
-            loader_opt_level=-${optimization_level-"O4"}
+            emuloop_opt_level=-${with_optimization-"O2"}
+            trutils_opt_level=-${with_optimization-"O4"}
+            builtins_opt_level=-${with_optimization-"O4"}
+            loader_opt_level=-${with_optimization-"O4"}
 
             c_inline_level=""
             CFLAGS="-Xa"
@@ -757,9 +826,9 @@ ld_site_libraries=
 c_site_includes=
 
 dnl --site-static-libraries (multiple dirs)
-if test -n "$site_static_libraries"; then
+if test -n "$with_static_libraries"; then
     echo "    Adding static libraries to loader flags:"
-    for arg in $site_static_libraries; do
+    for arg in $with_static_libraries; do
         case "$arg" in
             dnl If it is a loader option, just pass it on, don't add -L
             -* ) ;;
@@ -772,9 +841,9 @@ if test -n "$site_static_libraries"; then
 fi
 
 dnl --site-includes (multiple dirs)
-if test -n "$site_includes"; then
+if test -n "$with_includes"; then
     echo "    Appending directories to the C include path:"
-    for arg in $site_includes; do
+    for arg in $with_includes; do
         arg=`echo "-I${arg}" | sed 's,\([[^/]]\)/*$,\1,'`
         c_site_includes="${c_site_includes} $arg"
         echo "		$arg"
@@ -821,7 +890,7 @@ dnl This warning is really a buglet in the AC_CHECK_SIZEOF macro:
 dnl it invokes AC_TRY_RUN without specifying an action for cross-compilation,
 dnl if the second arg to AC_CHECK_SIZEOF is not given.
 AC_CHECK_SIZEOF(long,4)
-if test "${ac_cv_sizeof_long}" = 8 -o "$ac_force64" = "yes" ; then
+if test "${ac_cv_sizeof_long}" = 8 -o "$with_bits64" = "yes" ; then
     AC_DEFINE(BITS64)
     machine64bit=yes
     echo ""
@@ -1049,9 +1118,9 @@ win_ld_site_libraries=
 if test "$with_os" = wind ; then
     dnl --site-includes (multiple dirs)
 
-    if test -n "$site_includes"; then
+    if test -n "$with_includes"; then
         echo "    Appending directories to the C library path:"
-        for arg in $site_includes; do
+        for arg in $with_includes; do
             arg=`echo "/I\"${arg}\"" | sed 's,\([[^/]]\)/*$,\1,'`
             win_site_includes="${win_site_includes} $arg"
             echo "		\"$arg\""
@@ -1059,9 +1128,9 @@ if test "$with_os" = wind ; then
     fi
 
     dnl --site-static-libraries (multiple dirs)
-    if test -n "$site_static_libraries"; then
+    if test -n "$with_static_libraries"; then
         echo "    Appending directories to the C include path:"
-        for arg in $site_static_libraries; do
+        for arg in $with_static_libraries; do
             arg=`echo "/LIBPATH:\"${arg}\"" | sed 's,\([[^/]]\)/*$,\1,'`
             win_ld_site_libraries="${win_ld_site_libraries} $arg"
             echo "		\"$arg\""
@@ -1287,12 +1356,12 @@ dnl lfcastro
 # SGI64 must have O1 and 32 bit SGI's can have O2
 if test "$__sunpro_c" = "no"; then
     if test "$CC" = "gcc" ; then
-        c_opt_level=-${optimization_level-"O3 -fno-strict-aliasing"}
+        c_opt_level=-${with_optimization-"O3 -fno-strict-aliasing"}
     else
-        c_opt_level=-${optimization_level-"O4"}
+        c_opt_level=-${with_optimization-"O4"}
     fi
 else
-    c_opt_level=-${optimization_level-"xO4"}
+    c_opt_level=-${with_optimization-"xO4"}
 fi
 
 
@@ -1300,7 +1369,7 @@ fi
 TEMP_LDFLAGS=$LDFLAGS
 LDFLAGS="-Wl,-export-dynamic"
 AC_MSG_CHECKING(whether loader understands -Wl,-export-dynamic)
-AC_TRY_LINK([],[], __export_dynamic=yes, __export_dynamic=no)
+AC_LINK_IFELSE([], __export_dynamic=yes, __export_dynamic=no)
 AC_MSG_RESULT($__export_dynamic)
 LDFLAGS=$TEMP_LDFLAGS
 ####### End of test for -export-dynamic option of ld
@@ -1334,7 +1403,7 @@ case "$canonical" in
                     ;;
                     dnl Linux a.out
                     *)
-                    if test "${ac_linuxaout+set}" = "set" ; then
+                    if test "${with_aout+set}" = "set" ; then
                         AC_DEFINE(LINUX_AOUT)
                     else
                         dnl Linux ELF
@@ -1384,11 +1453,11 @@ case "$canonical" in
     *sgi* )     AC_DEFINE(FOREIGN_ELF)
                 if test "${machine64bit}" = yes ; then
                     AC_DEFINE(SGI64)
-                    c_opt_level=-${optimization_level-"O1"}
-                    emuloop_opt_level=-${optimization_level-"O1"}
-                    trutils_opt_level=-${optimization_level-"O1"}
-                    builtins_opt_level=-${optimization_level-"O1"}
-                    loader_opt_level=-${optimization_level-"O1"}
+                    c_opt_level=-${with_optimization-"O1"}
+                    emuloop_opt_level=-${with_optimization-"O1"}
+                    trutils_opt_level=-${with_optimization-"O1"}
+                    builtins_opt_level=-${with_optimization-"O1"}
+                    loader_opt_level=-${with_optimization-"O1"}
 
                     if test ! "$CC" = gcc ; then
                         CFLAGS="${CFLAGS} -64 -OPT:Olimit=9500"
@@ -1398,11 +1467,11 @@ case "$canonical" in
                     fi
                 else
                     AC_DEFINE(SGI)
-                    c_opt_level=-${optimization_level-"O2"}
-                    emuloop_opt_level=-${optimization_level-"O2"}
-                    trutils_opt_level=-${optimization_level-"O2"}
-                    builtins_opt_level=-${optimization_level-"O2"}
-                    loader_opt_level=-${optimization_level-"O1"}
+                    c_opt_level=-${with_optimization-"O2"}
+                    emuloop_opt_level=-${with_optimization-"O2"}
+                    trutils_opt_level=-${with_optimization-"O2"}
+                    builtins_opt_level=-${with_optimization-"O2"}
+                    loader_opt_level=-${with_optimization-"O1"}
 
                     if test ! "$CC" = gcc ; then
                         CFLAGS="${CFLAGS} -OPT:Olimit=7500"
@@ -1454,8 +1523,8 @@ case "$canonical" in
     *-cygwin*)  AC_DEFINE(CYGWIN)
                 real_host_os=cygwin
 
-                builtins_opt_level=-${optimization_level-"O3 -fno-strict-aliasing"}
-                loader_opt_level=-${optimization_level-"O3 -fno-strict-aliasing"}
+                builtins_opt_level=-${with_optimization-"O3 -fno-strict-aliasing"}
+                loader_opt_level=-${with_optimization-"O3 -fno-strict-aliasing"}
 
                 if test "${enable_no_cygwin}" = "yes"; then
                     echo 'Configuring for host system type... no-cygwin'
@@ -1469,7 +1538,7 @@ case "$canonical" in
                     GPPWNTFLAG="-D WIN_NT"
 
 #                    if test "${xsb_scheduling_strategy}" = "local" ; then
-#                        emuloop_opt_level=-${optimization_level-"O1 -fomit-frame-pointer"}
+#                        emuloop_opt_level=-${with_optimization-"O1 -fomit-frame-pointer"}
 #                    fi
 
                     LDFLAGS="$LDFLAGS -lwsock32 -luser32"
@@ -1528,7 +1597,7 @@ dnl special flags for simplescalar
 if test "${CC}" = "sslittle-na-sstrix-gcc"; then
     AC_DEFINE(SIMPLESCALAR)
     CROSS_SIMULATOR="sim-fast"
-    c_opt_level=-${optimization_level-"O1"}
+    c_opt_level=-${with_optimization-"O1"}
     LD=sslittle-na-sstrix-ld
 fi
 
@@ -1825,9 +1894,9 @@ case "$with_interprolog" in
     ;;
 esac
 
-if test -n "$site_dynamic_libraries" ; then
+if test -n "$with_dynamic_libraries" ; then
    echo "  Configured with dynamic libraries:"
-   for arg in $site_dynamic_libraries ; do
+   for arg in $with_dynamic_libraries ; do
     dnl Strip the trailing slashes
     arg=`echo "${arg}" | sed 's,\([[^/]]\)/*$,\1,'`
     echo "			      $arg"
@@ -1876,14 +1945,14 @@ chmod a+t ${arch_install_config_libdir};
 
 
 dnl Add site dynamic libraries to XSB library path
-if test -n "$site_dynamic_libraries"; then
+if test -n "$with_dynamic_libraries"; then
   tempfile=/tmp/libpath.$$
   echo ""
   echo "Appending dynamic libraries to the XSB library search path:"
   echo "" > $tempfile
   echo "%% ---	DO NOT EDIT THIS LINE AND BELOW: reserved for the configure script" >> $tempfile
   echo "" >> $tempfile
-  for arg in $site_dynamic_libraries; do
+  for arg in $with_dynamic_libraries; do
     dnl Strip the trailing slashes
     arg=`echo "${arg}" | sed 's,\([[^/]]\)/*$,\1,'`
     echo ":- assert(library_directory('${arg}'))." >> ${tempfile}

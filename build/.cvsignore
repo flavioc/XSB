@@ -1,9 +1,10 @@
 *.cache
-*.xwam
 *.log
 *.status
+*.xwam
 .*.tmp
 Installation*
 MS_VC_Mfile.mak
+config.status.lineno
 makexsb
 xsb_wrap_smodels.c
