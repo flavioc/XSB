@@ -150,17 +150,17 @@ arch_config_objlibdir=$(src_config_prefix)/saved.o
 emumake_goal=@emumake_goal@
 
 # Normal user
-all: prepare emu xsbmod xsbdll gpp remake_dot_O_files register emu_clean
+all: prepare emulator xsbmod xsbdll gpp_exe remake_dot_O_files register emu_clean
 
 # Developer who just checked out or updated CVS copy
-devel: prepare emu xsbmod xsbdll gpp remake_dot_O_files emu_clean
+devel: prepare emulator xsbmod xsbdll gpp_exe remake_dot_O_files emu_clean
 
-superdevel: prepare emu xsbmod xsbdll gpp remake_dot_O_files_force packages emu_clean
+superdevel: prepare emulator xsbmod xsbdll gpp_exe remake_dot_O_files_force packages emu_clean
 
 # Developer who needs a quick re-make of the executable, don't make .O files
-fast: prepare emu gpp do_cleaning
+fast: prepare emulator gpp_exe do_cleaning
 # very fast: like fast, but without gpp
-vfast: prepare emu do_cleaning
+vfast: prepare emulator do_cleaning
 
 
 # Packages
@@ -178,6 +178,7 @@ finish_packages:
 	@cat $(srcdir)/build/.*.tmp 2> /dev/null | \
 			tee -a Installation_summary
 prepare:
+	@echo ""; echo "Preparing..."
 	@cd $(src_emudir); \
 	  rm -f *.o Makefile  2> /dev/null || echo "" ; \
 	  ln -s ${src_config_objlibdir}/*.o . 2> /dev/null || echo "" ; \
@@ -187,9 +188,10 @@ prepare:
 	  ln -s ${src_config_prefix}/gppMakefile ./Makefile
 	@rm -f $(srcdir)/build/.*.tmp
 
-emu: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
-	@cd ${src_emudir}; \
-		make depend; \
+emulator: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
+	@echo ""; echo "Making emulator..." ; \
+		cd ${src_emudir} ; \
+		makedepend || echo "" ; \
 		rm -f $(srcdir)/build/.xsb_build_failed; \
 		(make EXECUTABLE="$(EXECUTABLE)" $(emumake_goal) || \
 			$(srcdir)/build/touch.sh $(srcdir)/build/.xsb_build_failed) \
@@ -197,7 +199,7 @@ emu: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
 		(test ! -f $(srcdir)/build/.xsb_build_failed || \
 					(rm -f $(srcdir)/build/.xsb_build_failed; exit 1))
 
-gpp:
+gpp_exe:
 	@echo ""; echo "Making gpp"
 	@cd $(srcdir)/gpp; make 2>&1 | tee -a ../build/Installation_summary
 
@@ -221,6 +223,7 @@ cygdll: prepare loccygdll do_cleaning inform_module
 # if supporting Oracle, then emumake_goal=xsbora; else emumake_goal=xsb
 # This invokes xsboramod and xsbmod goals in emuMakefile, respectively
 xsbmod: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
+	@echo ""; echo "Making XSB module..."
 	@cd ${src_emudir}; \
 		make $(emumake_goal)mod
 
@@ -229,6 +232,7 @@ xsbdynmod: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
 		make $(emumake_goal)dynmod
 
 xsbdll: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h
+	@echo ""; echo "Making DLL..."
 	@cd ${src_emudir}; make dll
 
 loccygdll: ${src_config_prefix}/xsb_config.h ${src_config_prefix}/xsb_debug.h

@@ -1393,7 +1393,7 @@ Optional Packages:
   --with-odbc                  compile with support for ODBC
   --with-iodbc                 use iODBC driver manager
   --with-interprolog           compile with support for InterProlog.
-                                You might need to use the --with-site-includes
+                                You might need to use the --with-includes
                                 option to specify the location of the files
 				jni.h and jni_md.h
   --with-smodels=path          use SMODELS for the XNMR module.
@@ -2127,22 +2127,6 @@ fi
 
 
 
-build=NONE
-host=NONE
-no_create=
-nonopt=NONE
-configuration=NONE
-no_recursion=
-prefix=NONE
-silent=
-srcdir=
-target=NONE
-verbose=
-with_config_tag=NONE
-with_site_prefix=NONE
-mandir=NONE
-
-
 if test "${fast_floats}" = "yes" ; then
    cat >>confdefs.h <<\_ACEOF
 #define FAST_FLOATS 1
@@ -2346,7 +2330,7 @@ fi
 config_prefix=${topdir}/config
 install_config_prefix=${prefix}/config
 
-if test "$with_config_tag" != "NONE" -a -n "$with_config_tag" ; then
+if test -n "$with_config_tag" ; then
     config_tag="-$with_config_tag"
 fi
 
@@ -2368,7 +2352,7 @@ fi
 
 
 
-if test "${with_config_tag}" = "NONE" ; then
+if test -z "${with_config_tag}" ; then
     config_tag=
         if test -n "$with_bits64" ; then
        config_tag="${config_tag}-bits64"
@@ -2524,7 +2508,7 @@ case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 
     canonical=$host
     configuration=${host_alias-${build_alias-$host}}
-    if test "$configuration" = "NONE" ; then
+    if test "$configuration" = "NONE" -o -z "$configuration" ; then
         echo '
 - You did not tell me what kind of host system you want to configure.
 - I will attempt to guess the kind of system this is.
@@ -2591,7 +2575,7 @@ arch_config_file=${arch_config_libdir}/xsb_configuration.P
 
 # site-specific directories
 # where the site is
-if test "$with_site_prefix" = "NONE" ; then
+if test -z "$with_site_prefix" ; then
    site_prefix=${orig_prefix}/site
 else
    site_prefix=$with_site_prefix
@@ -2621,11 +2605,6 @@ arch_install_config_prefix=${install_config_prefix}/${full_config_name}
 arch_install_bindir=${arch_install_config_prefix}/bin
 arch_install_config_libdir=${arch_install_config_prefix}/lib
 arch_install_objdir=${arch_install_config_prefix}/saved.o
-
-
-
-ac_config_headers="$ac_config_headers ${arch_config_prefix}/xsb_config.h:${config_dot_h_templ} ${arch_config_prefix}/xsb_debug.h:def_debug.in"
-
 
 
 
@@ -7667,7 +7646,7 @@ else
 #	cat <<EOT
 #
 #    Checking whether XSB can be built with ODBC support.
-#    If this fails, you will have to use the --site-includes option
+#    If this fails, you will have to use the --with-includes option
 #    of \`configure' to tell where the ODBC .h files live and,
 #    possibly, the --site-libraries option to specify the directory
 #    where ODBC libraries live.
@@ -7675,7 +7654,7 @@ else
 #EOT
 #	dnl Here we provide additional directories to check headers in
 #	dnl AC_CHECK_HEADERS uses CPPFLAGS to find the include path.
-#	dnl Since these aren't standard headers, we must use --site-includes
+#	dnl Since these aren't standard headers, we must use --with-includes
 #	saved_cpp_flags="${CPPFLAGS}"
 #	CPPFLAGS="${c_site_includes} ${CPPFLAGS}"
 #	AC_CHECK_HEADERS(odbcinst.h SQL.H SQLEXT.H windows.h, \
@@ -8028,7 +8007,7 @@ fi
 
 
 if test "${java_support}" = "yes"; then
-        javac="$ac_dir"/javac
+        javac="$as_dir"/javac
 else
     javac=javac
 fi
@@ -9409,6 +9388,11 @@ xsb_dcl_extension=.$xsb_dcl_extension_sans_dot
 
 
 
+
+
+
+
+ac_config_headers="$ac_config_headers ${arch_config_prefix}/xsb_config.h:${config_dot_h_templ} ${arch_config_prefix}/xsb_debug.h:def_debug.in"
 
 
 

@@ -442,8 +442,8 @@ i.e. {\tt \$XSBENV} is the directory into which XSB is installed.
 \item To configure with windows enter the commands: 
 \begin{verbatim}
 sh configure --enable-mt --with-wind \
---site-includes='c:\XSBSYS\XSBENV\pthreads\Pre-built\include \
---site-static-libraries='c:\XSBSYS\XSBENV\pthreads\Pre-built\lib
+--with-includes='c:\XSBSYS\XSBENV\pthreads\Pre-built\include \
+--with-static-libraries='c:\XSBSYS\XSBENV\pthreads\Pre-built\lib
 
 makexsb_wind
 \end{verbatim}
@@ -453,8 +453,8 @@ reconfigure.
 \item To configure with cygwin enter the commands:
 \begin{verbatim}
 sh configure --enable-mt \
-  --site-includes='/cygdrive/c/XSBSYS/XSBENV/pthreads/Pre-built/include' \
-  --site-static-libraries='/cygdrive/c/XSBSYS/XSBENV/pthreads/Pre-built/lib'
+  --with-includes='/cygdrive/c/XSBSYS/XSBENV/pthreads/Pre-built/include' \
+  --with-static-libraries='/cygdrive/c/XSBSYS/XSBENV/pthreads/Pre-built/lib'
 
 sh makexsb --config-tag=mt
 \end{verbatim}

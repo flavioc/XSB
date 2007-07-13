@@ -62,7 +62,7 @@ but this can be changed with the --with-site-prefix option:
 
 If your C libraries or include files are in odd places or if you are
 building XSB with Oracle support, you might need to tell where these
-libraries are using the --site-static-libraries and --site-includes
+libraries are using the --with-static-libraries and --with-includes
 options. (Note: these refer to C libraries needed to compile XSB; these
 libraries are different from the programs written using XSB for a specific
 site and which go into the aforesaid SITE-DIR). You can specify one or more 

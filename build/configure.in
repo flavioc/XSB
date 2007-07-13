@@ -120,7 +120,7 @@ AC_ARG_WITH(iodbc,
 [  --with-iodbc                 use iODBC driver manager])
 AC_ARG_WITH(interprolog,
 [  --with-interprolog           compile with support for InterProlog.
-                                You might need to use the --with-site-includes
+                                You might need to use the --with-includes
                                 option to specify the location of the files
 				jni.h and jni_md.h])
 AC_ARG_WITH(smodels,
@@ -184,27 +184,6 @@ AC_ARG_ENABLE(profiling,
 [  --enable-profiling           force gcc to generate information for profiling])
 AC_ARG_ENABLE(electric-fence,
 [  --enable-electric-fence      link with the electric fence malloc debugger])
-
-
-build=NONE
-host=NONE
-no_create=
-nonopt=NONE
-configuration=NONE
-no_recursion=
-prefix=NONE
-silent=
-srcdir=
-target=NONE
-verbose=
-with_config_tag=NONE
-dnl Installation directory options.
-dnl These are left unexpanded so users can "make install site_prefix=/foo"
-dnl and all the variables that are supposed to be based on exec_prefix
-dnl by default will actually change.
-dnl Use braces instead of parens because sh, perl, etc. also accept them.
-with_site_prefix=NONE
-mandir=NONE
 
 
 if test "${fast_floats}" = "yes" ; then
@@ -384,7 +363,7 @@ fi
 config_prefix=${topdir}/config
 install_config_prefix=${prefix}/config
 
-if test "$with_config_tag" != "NONE" -a -n "$with_config_tag" ; then
+if test -n "$with_config_tag" ; then
     config_tag="-$with_config_tag"
 fi
 
@@ -409,7 +388,7 @@ dnl Some more tags
 
 dnl If the user didn't specify --with-config-tag, check maybe -aout, -bits-64,
 dnl or -dbg are appropriate
-if test "${with_config_tag}" = "NONE" ; then
+if test -z "${with_config_tag}" ; then
     config_tag=
     dnl add -bits64 to the config tag, if --with-bits64 is set on command line
     if test -n "$with_bits64" ; then
@@ -495,7 +474,7 @@ case "$with_os" in
     AC_CANONICAL_HOST
     canonical=$host
     configuration=${host_alias-${build_alias-$host}}
-    if test "$configuration" = "NONE" ; then
+    if test "$configuration" = "NONE" -o -z "$configuration" ; then
         echo '
 - You did not tell me what kind of host system you want to configure.
 - I will attempt to guess the kind of system this is.
@@ -564,7 +543,7 @@ arch_config_file=${arch_config_libdir}/xsb_configuration.P
 
 # site-specific directories
 # where the site is
-if test "$with_site_prefix" = "NONE" ; then
+if test -z "$with_site_prefix" ; then
    site_prefix=${orig_prefix}/site
 else
    site_prefix=$with_site_prefix
@@ -594,16 +573,6 @@ arch_install_config_prefix=${install_config_prefix}/${full_config_name}
 arch_install_bindir=${arch_install_config_prefix}/bin
 arch_install_config_libdir=${arch_install_config_prefix}/lib
 arch_install_objdir=${arch_install_config_prefix}/saved.o
-
-
-dnl When running autoheader, uncoment these 2 lines and comment the next 2.
-dnl Then move xsb_config.h.in to def_config.in.
-dnl There probably will be no need to run autoheader any more!
-dnl AC_CONFIG_HEADER(${arch_config_prefix}/xsb_config.h:def_config.in
-dnl ${arch_config_prefix}/xsb_debug.h:def_debug.in])
-
-AC_CONFIG_HEADER([${arch_config_prefix}/xsb_config.h:${config_dot_h_templ}
-${arch_config_prefix}/xsb_debug.h:def_debug.in])
 
 
 dnl Find the source directory.
@@ -840,7 +809,7 @@ if test -n "$with_static_libraries"; then
     done
 fi
 
-dnl --site-includes (multiple dirs)
+dnl --with-includes (multiple dirs)
 if test -n "$with_includes"; then
     echo "    Appending directories to the C include path:"
     for arg in $with_includes; do
@@ -1070,7 +1039,7 @@ else
 #	cat <<EOT
 #
 #    Checking whether XSB can be built with ODBC support.
-#    If this fails, you will have to use the --site-includes option
+#    If this fails, you will have to use the --with-includes option
 #    of \`configure' to tell where the ODBC .h files live and,
 #    possibly, the --site-libraries option to specify the directory
 #    where ODBC libraries live.
@@ -1078,7 +1047,7 @@ else
 #EOT
 #	dnl Here we provide additional directories to check headers in
 #	dnl AC_CHECK_HEADERS uses CPPFLAGS to find the include path.
-#	dnl Since these aren't standard headers, we must use --site-includes
+#	dnl Since these aren't standard headers, we must use --with-includes
 #	saved_cpp_flags="${CPPFLAGS}"
 #	CPPFLAGS="${c_site_includes} ${CPPFLAGS}"
 #	AC_CHECK_HEADERS(odbcinst.h SQL.H SQLEXT.H windows.h, \
@@ -1116,7 +1085,7 @@ win_site_includes=
 win_ld_site_libraries=
 
 if test "$with_os" = wind ; then
-    dnl --site-includes (multiple dirs)
+    dnl --with-includes (multiple dirs)
 
     if test -n "$with_includes"; then
         echo "    Appending directories to the C library path:"
@@ -1192,8 +1161,8 @@ AC_SUBST(perl_libs)
 # Java support
 AC_CHECK_PROG(java_support, javac, "yes", "no")
 if test "${java_support}" = "yes"; then
-    dnl after AC_CHECK_PROG, ac_dir holds the directory where javac is found
-    javac="$ac_dir"/javac
+    dnl after AC_CHECK_PROG, as_dir holds the directory where javac is found
+    javac="$as_dir"/javac
 else
     javac=javac
 fi
@@ -1233,7 +1202,7 @@ if test "${with_interprolog+set}" = "set"; then
     INTERPROLOGOBJ="interprolog_callback.o"
     c_site_includes="${c_site_includes} -I${JAVA_HEADER_PATH}"
     dnl also needed to pass jni include file locations
-    dnl to windows make file through site-includes
+    dnl to windows make file through --with-includes
 fi
 
 
@@ -1809,6 +1778,16 @@ AC_SUBST(xsb_hdr_extension)
 AC_SUBST(xsb_obj_extension)
 AC_SUBST(xsb_asm_extension)
 AC_SUBST(xsb_dcl_extension)
+
+dnl When running autoheader, uncoment these 2 lines and comment the next 2.
+dnl Then move xsb_config.h.in to def_config.in.
+dnl There probably will be no need to run autoheader any more!
+dnl AC_CONFIG_HEADER(${arch_config_prefix}/xsb_config.h:def_config.in
+dnl ${arch_config_prefix}/xsb_debug.h:def_debug.in])
+
+AC_CONFIG_HEADERS([${arch_config_prefix}/xsb_config.h:${config_dot_h_templ}
+${arch_config_prefix}/xsb_debug.h:def_debug.in])
+
 
 AC_OUTPUT([ ${arch_config_prefix}/topMakefile:topMakefile.in
         ${arch_config_prefix}/emuMakefile:emuMakefile.in

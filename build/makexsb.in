@@ -67,8 +67,11 @@ if test "$force_devel" = "yes"; then
     makeargs="$makeargs devel"
 fi
 
-config=`@topdir@/build/config.guess`
-dir=@topdir@/config/`@topdir@/build/config.sub $config`${suffix}
+#config=`@topdir@/build/config.guess`
+#dir=@topdir@/config/`@topdir@/build/config.sub $config`${suffix}
+config=`./config.guess`
+#dir=@topdir@/config/`./config.sub $config`${suffix}
+dir=../config/`./config.sub $config`${suffix}
 makefile=${dir}/topMakefile
 
 
@@ -78,7 +81,7 @@ if test -r "$makefile" ; then
    echo ""
    make -f ${makefile}  $makeargs
 else
-   echo "${makefile}: doesn't exist or is not readable."
+   echo "${makefile}: does not exist or is not readable."
    echo "Have you configured XSB for this architecture?"
    echo ""
 fi
