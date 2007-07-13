@@ -141,10 +141,10 @@ specified.  A full listing can be obtained by typing {\tt
   would have to give {\tt configure} an additional directive {\tt
     --with-cc} (or {\tt --with-acc}).  If you must use some special
   compiler, use {\tt --with-cc=your-own-compiler}.  You can also use
-  the {\tt optimization-level} option to disable the default C
+  the {\tt --with-optimization} option to change the default C
   compiler optimization level.  (or {\tt --disable-optimization} to
   disable all compiler optimizations).  {\tt --enable-debug}, and
-  there are many other options.  Finally, the {\tt force64} option
+  there are many other options.  Finally, the {\tt --with-bits64} option
   forces compilation to use 64 bit mode on 64-bit machines that
   default to 32 bit compilation.  Type {\tt configure --help} to see
   them all. Also see the file~\verb'$XSB_DIR/INSTALL' for more
@@ -191,12 +191,12 @@ www.declarativa.com} for details of specific interfaces
 While the XSB configuration mechanism can detect most include and
 library paths, use of certain interfaces may require information about
 particular directories.  In particular the {\tt
---site-static-libraries} option might be needed if compiling with
+--with-static-libraries} option might be needed if compiling with
 support for statically linked packages (such as Oracle) or if your
 standard C libraries are in odd places. Alternately, dynamic libraries
 on odd places may need to be speficied at configuation time using the
-{\tt --site-dynamic-libraries} option.  and finally, the {\tt
---site-includes} option might be needed if your standard header files
+{\tt --with-dynamic-libraries} option.  and finally, the {\tt
+--with-includes} option might be needed if your standard header files
 (or your {\tt jni.h} file) are in odd places, or if XSB is compiled
 with ODBC support.  Type {\tt configure --help} for more details.
 

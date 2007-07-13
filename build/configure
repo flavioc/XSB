@@ -1745,6 +1745,22 @@ echo "$as_me: loading site script $ac_site_file" >&6;}
   fi
 done
 
+if test -r "$cache_file"; then
+  # Some versions of bash will fail to source /dev/null (special
+  # files actually), so we avoid doing that.
+  if test -f "$cache_file"; then
+    { echo "$as_me:$LINENO: loading cache $cache_file" >&5
+echo "$as_me: loading cache $cache_file" >&6;}
+    case $cache_file in
+      [\\/]* | ?:[\\/]* ) . "$cache_file";;
+      *)                      . "./$cache_file";;
+    esac
+  fi
+else
+  { echo "$as_me:$LINENO: creating cache $cache_file" >&5
+echo "$as_me: creating cache $cache_file" >&6;}
+  >$cache_file
+fi
 
 # Check that the precious variables saved in the cache have kept the same
 # value.

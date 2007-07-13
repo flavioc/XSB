@@ -23,7 +23,7 @@ If everything worked, you can now run XSB using the shell script
 
 	XSB/bin/xsb
 
-The command-line options --config-tag, --linuxaout, --force64, and
+The command-line options --with-config-tag, --with-aout, --with-bits64, and
 --enable-debugging (see below)  may affect the name of the script that you
 should run. For instance, if --enable-debugging is given on command line,
 the script name might be xsb-dbg instead of xsb. When makexsb finishes, it
@@ -56,9 +56,9 @@ The site directory is normally in
 
 	 INSTALL-DIR/site
 
-but this can be changed with the --site-prefix option:
+but this can be changed with the --with-site-prefix option:
 
-	 ./configure --site-prefix=SITE-DIR
+	 ./configure --with-site-prefix=SITE-DIR
 
 If your C libraries or include files are in odd places or if you are
 building XSB with Oracle support, you might need to tell where these
@@ -82,7 +82,7 @@ Control:
   --help                  print this message
   --cache                 use cached test results from a previous run
                           of `configure', if available
-  --force64               on 64 bit machines that default to the 32 bit mode,
+  --with-bits64           on 64 bit machines that default to the 32 bit mode,
                           force the 64 bit mode.
 			  If you haven't specified --config-tag on command
 			  line (see below), the suffix -bits64 will be
@@ -90,7 +90,7 @@ Control:
 			  bin/xsb script name (i.e., it will be
 			  bin/xsb-bits64). 
 
-  --linuxaout		  If you are using an older Linux system that
+  --with-aout		  If you are using an older Linux system that
 			  utilizez the a.out format, you must tell us, or
 			  else XSB won't be configured correctly.
 			  If you haven't specified --config-tag on command
@@ -99,7 +99,7 @@ Control:
 			  bin/xsb script name (i.e., it will be
 			  bin/xsb-aout). 
 
-  --optimization-level=level
+  --with-optimization=level
                           You can override the default optimization settings by
                           specifying something like O2 (or xO2, for some
                           compilers).
@@ -111,9 +111,9 @@ Control:
 Directory and file names:
   --prefix=PREFIX         install architecture-independent files in PREFIX
                           [/usr/local]
-  --site-prefix=DIR       site-specific libraries & code in DIR [PREFIX/site]
+  --with-site-prefix=DIR  site-specific libraries & code in DIR [PREFIX/site]
 
-  --site-static-libraries=DIR
+  --with-static-libraries=DIR
                           These might be needed, if compiling with support 
                           for statically linked packages (such as Oracle)
                           or if your standard C libraries are in 
@@ -123,13 +123,13 @@ Directory and file names:
                           them in quotes. This list is automatically added 
                           to the loader flags to ensure that the packages will
                           be linked in.
-  --site-dynamic-libraries=DIR
+  --with-dynamic-libraries=DIR
                           This specifies the list of libraries used by 
                           packages linked dynamically with XSB.
                           These libraries are automatically added to the XSB 
                           library search path, so they could be loaded at
                           run time.
-  --site-includes=DIR     These might be needed if it is necessary to tell 
+  --with-includes=DIR     These might be needed if it is necessary to tell 
                           the compiler about additional header files to
                           include with the -I option. This need arises if
                           your standard header files are in odd places or
@@ -137,7 +137,7 @@ Directory and file names:
                           You can specify a list of libraries by enclosing 
                           them in quotes.
 
-  --config-tag=TAG        makes the configuration directory name look like
+  --with-config-tag=TAG   makes the configuration directory name look like
                           [CONFIG_PREFIX]/configuration-TAG. If TAG is missing,
                           the directory is [CONFIG_PREFIX]/[configuration].
                           TAG is used for debugging, so one can have
