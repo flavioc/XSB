@@ -937,8 +937,8 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  id->num_locks++;
 	  id->owner = xsb_thread_id;
 	  if (rc == EINVAL) {
-	    xsb_existence_error(CTXTc "lock mutex","invalid mutex",
-				 reg[2],"xsb_mutex_lock",2); 
+	    xsb_existence_error(CTXTc "invalid mutex",
+				reg[2],"xsb_mutex_lock",2,2); 
 	  } else if (rc == EDEADLK) { 
 	    xsb_permission_error(CTXTc "lock mutex","deadlocking mutex",
 				 reg[2],"xsb_mutex_lock",2); 
