@@ -234,54 +234,52 @@ char *expand_filename(char *filename) {
    of times, so it's ok. */
 DllExport char * call_conv strip_names_from_path(char* path, int how_many)
 {
-  int i, abort_flag=FALSE;
-  char *cutoff_ptr;
-  char *buffer = malloc(MAXPATHLEN);  // can't change to mem_alloc for mt, lock not initted?
-
+	int i, abort_flag=FALSE;
+	char *cutoff_ptr;
+	char *buffer = malloc(MAXPATHLEN);  // can't change to mem_alloc for mt, lock not initted?
+	
+	if (!buffer)
+		printf("no space to allocate buffer in strip_names_from_path.\n");
+	else
 #ifdef SIMPLESCALAR
-  if (!buffer)
-    printf("no space to allocate buffer in strip_names_from_path.\n");
-  
-/*   rectify_pathname(path,buffer); */
-  strcpy(buffer,path);
-
-  cutoff_ptr = buffer + strlen(buffer);
-
-  while (cutoff_ptr != buffer && how_many > 0) {
-    if (*cutoff_ptr == SLASH) {
-      how_many--;
-      *cutoff_ptr = '\0';
-    }
-    cutoff_ptr--;
-  }
-
-  if (how_many > 0)
-      xsb_abort("[PATHNAME] There is no directory %d levels below %s",
-		how_many, path);
-  return buffer;
-
+	{
+		/*   rectify_pathname(path,buffer); */
+		strcpy(buffer,path);
+		
+		cutoff_ptr = buffer + strlen(buffer);
+		
+		while (cutoff_ptr != buffer && how_many > 0) {
+			if (*cutoff_ptr == SLASH) {
+				how_many--;
+				*cutoff_ptr = '\0';
+			}
+			cutoff_ptr--;
+		}
+		if (how_many > 0)
+		xsb_abort("[PATHNAME] There is no directory %d levels below %s", how_many, path);
+	}
 #endif
-
-  rectify_pathname(path,buffer);
-
-  for (i=0; i < how_many; i++) {
-    if (abort_flag) {
-      xsb_abort("[PATHNAME] There is no directory %d levels below %s",
-		how_many, path);
-    }
-    cutoff_ptr = strrchr(buffer, SLASH);
-    if (cutoff_ptr == NULL)
-      return "";
-    if ((cutoff_ptr - buffer) > 0)
-      /* we have more than just a slash between the beginning of buffer and
-	 cutoff_ptr: replace slash with end of string */
-      *cutoff_ptr = '\0';
-    else {       /* we are at the top of the file hierarchy */
-      *(cutoff_ptr+1) = '\0';
-      abort_flag=TRUE;
-    }
-  }
-  return buffer;
+	{
+		rectify_pathname(path,buffer);
+		
+		for (i=0; i < how_many; i++) {
+			if (abort_flag) {
+				xsb_abort("[PATHNAME] There is no directory %d levels below %s",how_many, path);
+			}
+			cutoff_ptr = strrchr(buffer, SLASH);
+			if (cutoff_ptr == NULL)
+				return "";
+			if ((cutoff_ptr - buffer) > 0)
+			/* we have more than just a slash between the beginning of buffer and
+			 cutoff_ptr: replace slash with end of string */
+				*cutoff_ptr = '\0';
+			else {       /* we are at the top of the file hierarchy */
+				*(cutoff_ptr+1) = '\0';
+				abort_flag=TRUE;
+			}
+		}
+	}
+	return buffer;
 }
 
 
