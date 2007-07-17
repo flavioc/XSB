@@ -1,4 +1,4 @@
-/*  /cygdrive/h/XSB/XSB/emu/extensions_xsb.h.  Generated from extensions_xsb.in by configure. 
+/*  /home/users/kifer/XSB/XSB/emu/extensions_xsb.h.  Generated from extensions_xsb.in by configure. 
 **
 **   This file defines all file extensions used in XSB
 **

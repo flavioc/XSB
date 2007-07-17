@@ -183,9 +183,6 @@ struct xsb_data** driverODBC_query(struct xsb_queryHandle* handle)
     }
     handle->numResultCols = query->resultmeta->numCols;
     if (query->resultmeta->numCols == 0) {
-      //printf("num=%d\n",numQueries);
-      if (odbcHandles[numQueries]==NULL)
-	odbcQueries[numQueries++] = query;
       return NULL;
     }
 
