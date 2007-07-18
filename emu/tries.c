@@ -2276,20 +2276,20 @@ byte * trie_get_calls(CTXTdecl)
 Cell get_lastnode_cs_retskel(CTXTdeclc Cell callTerm) {
 
   prolog_int arity;
-  Cell *vector;
+  Cell *vectr;
 
   arity = global_num_vars + 1;
-  vector = (Cell *)var_regs;
+  vectr = (Cell *)var_regs;
   if ( IsInCallTrie(Last_Nod_Sav) ) {
     VariantSF sf = CallTrieLeaf_GetSF(Last_Nod_Sav);
     if ( IsProperlySubsumed(sf) ) {
       construct_answer_template(CTXTc callTerm, conssf_producer(sf),
 				(Cell *)var_regs);
       arity = (prolog_int)var_regs[0];
-      vector = (Cell *)&var_regs[1];
+      vectr = (Cell *)&var_regs[1];
     }
   }
-  return ( build_ret_term(CTXTc arity, vector) );
+  return ( build_ret_term(CTXTc arity, vectr) );
 }
 
 /*----------------------------------------------------------------------*/
