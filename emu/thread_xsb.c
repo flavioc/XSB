@@ -81,6 +81,8 @@ pthread_attr_t normal_attr_gl;
 
 pthread_mutexattr_t attr_rec_gl ;
 
+static int threads_initialized = FALSE;
+
 typedef struct xsb_thread_s
 {	
 	pthread_t		tid;
@@ -199,6 +201,8 @@ static void init_thread_table(void)
 	th_last_free = &th_vec[max_threads_glc-1];
 	th_last_free->next_entry = NULL;
 	th_first_thread = NULL;
+
+	threads_initialized = TRUE;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -708,6 +712,9 @@ int xsb_thread_self()
 #ifdef MULTI_THREAD
 	int pos, id;
         pthread_t tid = pthread_self();
+
+	if( !threads_initialized )
+		return 0 ;
 
         pthread_mutex_lock( &th_mutex );
         SYS_MUTEX_INCR( MUTEX_THREADS ) ;
