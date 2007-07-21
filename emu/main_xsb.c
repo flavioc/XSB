@@ -55,6 +55,8 @@
 #include "orient_xsb.h"
 #include "basicdefs.h"
 
+#include "thread_xsb.h"
+
 int main(int argc, char *argv[])
 { 
 #ifdef MULTI_THREAD
@@ -80,6 +82,7 @@ int main(int argc, char *argv[])
 
 #ifdef MULTI_THREAD
   th = malloc( sizeof( th_context ) ) ;  /* don't use mem_alloc */
+  main_thread_gl = th ;
 #endif
 
   xsb(CTXTc XSB_INIT, argc, argv);  /* init xsb */

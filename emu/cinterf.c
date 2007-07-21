@@ -1284,7 +1284,6 @@ jmp_buf ccall_init_env;
 // In the multi-threaded engine this will be used only for initialization errors.
 
 #ifdef MULTI_THREAD
-th_context *main_thread_gl = NULL;
 struct ccall_error_t init_ccall_error;
 
 #else

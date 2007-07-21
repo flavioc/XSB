@@ -93,6 +93,8 @@ extern pthread_attr_t normal_attr_gl;
 
 extern counter max_threads_sofar ;
 
+extern th_context *main_thread_gl ;
+
 #ifdef __cplusplus
 extern "C" {
 #endif

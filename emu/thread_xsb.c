@@ -83,6 +83,8 @@ pthread_mutexattr_t attr_rec_gl ;
 
 static int threads_initialized = FALSE;
 
+th_context * main_thread_gl = NULL;
+
 typedef struct xsb_thread_s
 {	
 	pthread_t		tid;
@@ -151,7 +153,9 @@ int thread_exited(int tid) {
 
 th_context *find_context( int id )
 {
-	if ( th_vec[THREAD_ENTRY(id)].incarn == THREAD_INCARN(id) )
+	if( !threads_initialized )
+		return main_thread_gl ;
+	else if ( th_vec[THREAD_ENTRY(id)].incarn == THREAD_INCARN(id) )
 		return th_vec[THREAD_ENTRY(id)].ctxt;
 	else
 		return NULL;
