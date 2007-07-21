@@ -34,8 +34,8 @@
 
 mutex_create(Mut):- 
 	(var(Mut) -> 
-	    thread_request( XSB_MUTEX_INIT,Ptr,_,_,_,_,_,_,_)
-	  ; type_error(mutex_or_alias,Ptr,mutex_create/1,1) ).
+	    thread_request( XSB_MUTEX_INIT,Mut,_,_,_,_,_,_,_)
+	  ; type_error(mutex_or_alias,Mut,mutex_create/1,1) ).
 
 mutex_create(Mut,Options):- 
 	(var(Mut) -> 
