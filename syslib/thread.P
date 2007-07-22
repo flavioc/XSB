@@ -197,8 +197,17 @@ thread_property(Id,Property) :-
 
 /*---------------*/
 
-thread_cancel(Id):- 
-	check_nonvar(Id,thread_cancel/1,1),
+thread_cancel(Input) :-
+	(var(Input) -> 
+	    instantiation_error(thread_cancel/1,1,ground)
+	;  (integer(Input) -> 
+	       thread_cancel_1(Input)
+    	   ;  (atom(Input),get_alias(Input,THREAD_ALIAS,Tid) -> 
+	          thread_cancel_1(Tid)
+	      ; domain_error(listof(thread_or_alias),Input,thread_cancel/1,2,'')
+	      ) ) ).
+
+thread_cancel_1(Id):- 
 	(Id == 0 -> 
 	    permission_error(cancel,main_thread,0,thread_cancel/1)
 	  ; true),
