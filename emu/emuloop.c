@@ -2410,6 +2410,13 @@ DllExport int call_conv xsb(CTXTdeclc int flag, int argc, char *argv[])
 #endif
 #endif
 
+#ifdef MULTI_THREAD
+/* this has to be initialized here and not in main_xsb.c because
+   of windows linkage problems for the variable main_thread_gl
+ */
+   main_thread_gl = th ;
+#endif
+
    if (flag == XSB_INIT || flag == XSB_C_INIT) {  /* initialize xsb */
 
      if (flag == XSB_C_INIT) xsb_mode = C_CALLING_XSB;

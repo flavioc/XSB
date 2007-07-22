@@ -27,6 +27,7 @@
 #include "context.h"
 #include "thread_defs_xsb.h"
 #include "basictypes.h"
+#include "export.h"
 
 xsbBool xsb_thread_request( CTXTdecl ) ;
 xsbBool mt_random_request( CTXTdecl ) ;

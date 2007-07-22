@@ -52,6 +52,7 @@
 #include "orient_xsb.h"
 #include "loader_xsb.h"
 #include "context.h"
+#include "thread_xsb.h"
 
 
 /*
@@ -1331,8 +1332,6 @@ DllExport char * call_conv xsb_get_error_message(CTXTdecl) {
   }
 
 #ifdef MULTI_THREAD
-extern th_context *main_thread_gl;
-
 th_context * xsb_get_main_thread() {
   return main_thread_gl;
 }
