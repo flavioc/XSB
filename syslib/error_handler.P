@@ -121,7 +121,7 @@ default_sys_error_handler_nonmain(thread_cancel,Thread,Backtrace,Msg):- !,
 	(xsb_thread_property(Thread,joinable) -> 
 	       get_backtrace(Backtrace,ReadBT),
 	       asserta('_$thread_exit_ball'(Thread,
-	                                    cancellation(error(thread_cancel,Msg,ReadBT))))
+	                                    cancelled(error(thread_cancel,Msg,ReadBT))))
 	     ; true),
 	internal_thread_exit(THREAD_CANCELLED).
 % Error: non-cancellation.
