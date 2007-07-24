@@ -424,13 +424,17 @@ static int xsb_thread_create_1(th_context *th, Cell goal, int glsize, int tcsize
   int rc;
   pthread_t *thr ;
   th_context *new_th_ctxt = th_vec[pos].ctxt;
-  Integer id = new_th_ctxt->tid;
+/* the Thread Id needs to be saved because it somehow gets 
+   changed in the following function calls */
+  Integer Id = new_th_ctxt->tid ; 
 
   thr = &th_vec[pos].tid ;
   copy_pflags(new_th_ctxt, th) ;
   init_machine(new_th_ctxt,glsize,tcsize,complsize,pdlsize);
   new_th_ctxt->_reg[1] = copy_term_from_thread(new_th_ctxt, th, goal) ;
-  new_th_ctxt->tid = id ;
+  new_th_ctxt->tid = Id ;
+  new_th_ctxt->enable_cancel = FALSE ;
+  new_th_ctxt->to_be_cancelled = FALSE ;
   if (is_detached) { /* set detached */
     rc = pthread_create(thr, &detached_attr_gl, &xsb_thread_run, 
 			 (void *)new_th_ctxt ) ;
@@ -502,6 +506,8 @@ call_conv int xsb_ccall_thread_create(th_context *th,th_context **thread_return)
   copy_pflags(new_th_ctxt, th) ;
 
   init_machine(new_th_ctxt,0,0,0,0);
+  new_th_ctxt->enable_cancel = FALSE ;
+  new_th_ctxt->to_be_cancelled = FALSE ;
 
   SET_THREAD_INCARN(id, th_vec[pos].incarn ) ;
   new_th_ctxt->tid = id ;
@@ -1046,13 +1052,16 @@ xsbBool xsb_thread_request( CTXTdecl )
             SYS_MUTEX_INCR( MUTEX_THREADS ) ;
 	    ctxt_ptr = th_vec[THREAD_ENTRY(i)].ctxt;
 	    if( ctxt_ptr )
-	    {	ctxt_ptr->_asynint_val |= THREADINT_MARK;
+            	if( ctxt_ptr->enable_cancel )
+	    	{	ctxt_ptr->_asynint_val |= THREADINT_MARK;
 #ifdef WIN_NT
-	    	PTHREAD_KILL( &th_vec[THREAD_ENTRY(i)].tid, SIGINT );
+	    		PTHREAD_KILL( &th_vec[THREAD_ENTRY(i)].tid, SIGINT );
 #else
-	    	PTHREAD_KILL( th_vec[THREAD_ENTRY(i)].tid, SIGINT );
+	    		PTHREAD_KILL( th_vec[THREAD_ENTRY(i)].tid, SIGINT );
 #endif
-	    }
+	    	}
+		else
+			ctxt_ptr->to_be_cancelled = TRUE ;
 	    pthread_mutex_unlock( &th_mutex ) ;
 	  } else {
 	    bld_int(reg+2,i);
@@ -1291,6 +1300,21 @@ case THREAD_ACCEPT_MESSAGE: {
 	    th_delete(ptoc_int(CTXTc 2));
 	    rc = 0;
 	    break;
+
+	case THREAD_ENABLE_CANCEL:
+	    th->enable_cancel = TRUE ;
+	    if( th->to_be_cancelled )
+	    {
+	    	th->_asynint_val |= THREADINT_MARK;
+		th->to_be_cancelled = 0 ;
+	    }
+	    rc = 0;
+	    break ;
+
+	case THREAD_DISABLE_CANCEL:
+	    th->enable_cancel = FALSE ;
+	    rc = 0;
+	    break ;
 
 	default:
 	  rc = 0 ; /* Keep compiler happy */

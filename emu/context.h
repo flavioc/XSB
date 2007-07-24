@@ -470,6 +470,10 @@ unsigned long _slide_buf_size;
 int	_gc_offset;
 CPtr	_gc_scan;
 CPtr	_gc_next;
+
+/* enabling and disabling thread_cancel */
+unsigned int	enable_cancel : 1 ;
+unsigned int	to_be_cancelled :  1 ;
 } ;
 
 typedef struct th_context th_context ;
