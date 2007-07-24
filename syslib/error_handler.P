@@ -76,6 +76,7 @@ ccall_error_handler(Error) :-
 	  ; 
 	    default_sys_error_handler_nonmain(Error,Thread,Backtrace,Msg) ).
 
+default_sys_error_handler(error(thread_cancel,_)) :- !.
 default_sys_error_handler(error(Error,Msg)) :-
 	get_sys_error_description(error(Error,Msg),NewMsg),
 	messageln(NewMsg,STDERR),!.
