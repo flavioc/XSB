@@ -474,6 +474,9 @@ CPtr	_gc_next;
 /* enabling and disabling thread_cancel */
 unsigned int	enable_cancel : 1 ;
 unsigned int	to_be_cancelled :  1 ;
+
+/* allowing blocked threads to be wake up by signals */
+pthread_cond_t * cond_var_ptr ;
 } ;
 
 typedef struct th_context th_context ;

@@ -42,13 +42,11 @@ typedef pthread_t* pthread_t_p;
 #define PTHREAD_CREATE(a,b,c,d) pthread_create(&a,b,c,d);
 #define PTHREAD_DETACH(a) pthread_detach(*a);
 #define PTHREAD_CANCEL(a) pthread_cancel(*a);
-#define PTHREAD_KILL(a,s) pthread_kill(*a,s);
 #else
 typedef pthread_t pthread_t_p;
 #define PTHREAD_CREATE(a,b,c,d) pthread_create(a,b,c,d);
 #define PTHREAD_DETACH(a) pthread_detach(a);
 #define PTHREAD_CANCEL(a) pthread_cancel(a);
-#define PTHREAD_KILL(a,s) pthread_kill(a,s);
 #endif
 
 #define INC_MASK_RIGHT			0x3ff

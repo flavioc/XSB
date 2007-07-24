@@ -409,6 +409,9 @@ void keyint_proc(int sig)
 {
 #ifdef MULTI_THREAD
   th_context *th = find_context(xsb_thread_self());
+
+  if (th->cond_var_ptr != NULL)
+	pthread_cond_broadcast( th->cond_var_ptr ) ;
 #endif
 #ifndef LINUX
   init_interrupt();  /* reset interrupt, if using signal */

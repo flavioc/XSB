@@ -435,6 +435,7 @@ static int xsb_thread_create_1(th_context *th, Cell goal, int glsize, int tcsize
   new_th_ctxt->tid = Id ;
   new_th_ctxt->enable_cancel = FALSE ;
   new_th_ctxt->to_be_cancelled = FALSE ;
+  new_th_ctxt->cond_var_ptr = NULL ;
   if (is_detached) { /* set detached */
     rc = pthread_create(thr, &detached_attr_gl, &xsb_thread_run, 
 			 (void *)new_th_ctxt ) ;
@@ -508,6 +509,7 @@ call_conv int xsb_ccall_thread_create(th_context *th,th_context **thread_return)
   init_machine(new_th_ctxt,0,0,0,0);
   new_th_ctxt->enable_cancel = FALSE ;
   new_th_ctxt->to_be_cancelled = FALSE ;
+  new_th_ctxt->cond_var_ptr = NULL ;
 
   SET_THREAD_INCARN(id, th_vec[pos].incarn ) ;
   new_th_ctxt->tid = id ;
@@ -1054,11 +1056,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 	    if( ctxt_ptr )
             	if( ctxt_ptr->enable_cancel )
 	    	{	ctxt_ptr->_asynint_val |= THREADINT_MARK;
-#ifdef WIN_NT
-	    		PTHREAD_KILL( &th_vec[THREAD_ENTRY(i)].tid, SIGINT );
-#else
-	    		PTHREAD_KILL( th_vec[THREAD_ENTRY(i)].tid, SIGINT );
-#endif
+	    		pthread_kill( th_vec[THREAD_ENTRY(i)].tid, SIGINT );
 	    	}
 		else
 			ctxt_ptr->to_be_cancelled = TRUE ;
@@ -1155,7 +1153,13 @@ xsbBool xsb_thread_request( CTXTdecl )
 
 	  pthread_mutex_lock(&message_queue->mq_mutex);
 	  while (message_queue->size >= message_queue->max_size) {
+            /* this is to allow the signal handler to wake the thread */
+            th->cond_var_ptr = &message_queue->mq_has_free_cells ;
 	    pthread_cond_wait(&message_queue->mq_has_free_cells,&message_queue->mq_mutex);
+            th->cond_var_ptr = NULL ;
+	    /* check for thread interrupt */
+ 	    if( asynint_val & THREADINT_MARK )
+	      return success ;
 	  }
 	  
 	  this_cell = mem_alloc(asrtBuff->Size+sizeof(MQ_Cell),THREAD_SPACE);
@@ -1189,7 +1193,13 @@ case THREAD_TRY_MESSAGE: {
 
 	  pthread_mutex_lock(&message_queue->mq_mutex);
 	  while (!message_queue->first_message) {
+            /* this is to allow the signal handler to wake the thread */
+            th->cond_var_ptr = &message_queue->mq_has_messages ;
 	    pthread_cond_wait(&message_queue->mq_has_messages,&message_queue->mq_mutex);
+            th->cond_var_ptr = NULL ;
+	    /* check for thread interrupt */
+ 	    if( asynint_val & THREADINT_MARK )
+	      return success ;
 	  }
 	  current_mq_cell = message_queue->first_message;
 	  pcreg =  (byte *)(current_mq_cell+1);
@@ -1216,7 +1226,13 @@ case THREAD_RETRY_MESSAGE: {
 	  if (current_mq_cell == message_queue->last_message) {
 	      pthread_cond_wait(&message_queue->mq_has_messages,&message_queue->mq_mutex);
 	    while (!message_queue->first_message) {
+              /* this is to allow the signal handler to wake the thread */
+              th->cond_var_ptr = &message_queue->mq_has_messages ;
 	      pthread_cond_wait(&message_queue->mq_has_messages,&message_queue->mq_mutex);
+              th->cond_var_ptr = NULL ;
+	      /* check for thread interrupt */
+ 	      if( asynint_val & THREADINT_MARK )
+		return success ;
 	    }
 	    current_mq_cell = message_queue->first_message;
 	  } 
