@@ -95,8 +95,6 @@ extern void arithmetic_abort(CTXTdeclc Cell, char *, Cell);
 extern void arithmetic_comp_abort(CTXTdeclc Cell, char *, int);
 extern void err_handle(CTXTdeclc int, int, char *, int, char *, Cell);
 
-extern int wam_initialized ;
-
 extern FILE *stdmsg;	    	/* Stream for XSB messages     	         */
 extern FILE *stdwarn;	    	/* Stream for XSB warnings     	         */
 extern FILE *stddbg;	    	/* Stream for XSB debugging msgs         */

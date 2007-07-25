@@ -26,6 +26,8 @@
 #include "export.h"
 #include "context.h"
 
+extern int wam_initialized ;
+
 DllExport extern int call_conv xsb(CTXTdeclc int, int, char **);
 
 /*----------------------------------------------------------------------*/

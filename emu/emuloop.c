@@ -119,6 +119,8 @@ void log_rec(CTXTdeclc Psc psc, char *ctype) {
 }
 #endif
 
+int wam_initialized = FALSE ;
+
 /*----------------------------------------------------------------------*/
 
 #include "tr_delay.h"
@@ -438,6 +440,8 @@ int emuloop(CTXTdeclc byte *startaddr)
 #define GC_INFERENCES 66 /* make sure the garbage collection test is hard */
   static int infcounter = 0;
 #endif
+
+  wam_initialized = TRUE ;
 
   xsb_segfault_message = xsb_default_segfault_msg;
   rreg = reg; /* for SUN (TLS ???) */

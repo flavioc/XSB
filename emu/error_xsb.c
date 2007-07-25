@@ -51,6 +51,7 @@
 #include "flags_xsb.h"
 #include "term_psc_xsb_i.h"
 #include "thread_xsb.h"
+#include "emuloop.h"
 
 extern void remove_incomplete_tries(CTXTdeclc CPtr);
 extern PrRef get_prref(CTXTdeclc Psc psc);
