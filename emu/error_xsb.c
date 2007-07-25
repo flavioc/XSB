@@ -605,7 +605,7 @@ void call_conv xsb_basic_abort(char *message)
   char mtmessage[MAXBUFSIZE];
   int tid = xsb_thread_self();
   th_context *th;
-  th = find_context(xsb_thread_self());
+  th = find_context(tid);
 #endif
 
   if( !wam_initialized )
@@ -616,8 +616,7 @@ void call_conv xsb_basic_abort(char *message)
 
   tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
   ball_to_throw = makecs(tptr);
-  bld_functor(tptr, pair_psc(insert("error",3,
-				    (Psc)flags[CURRENT_MODULE],&isnew)));
+  bld_functor(tptr, pair_psc(insert("error",3,(Psc)flags[CURRENT_MODULE],&isnew)));
 
   tptr++;
   bld_string(tptr,string_find("misc_error",1));
