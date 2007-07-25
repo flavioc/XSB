@@ -101,7 +101,7 @@ typedef struct xsb_thread_s
 
 typedef enum 
 {
-	MSG_SEND, MSG_RECV
+	MSG_SEND, MSG_RECV, MSG_DESTROY
 } op_type;
 
 #define VALID_THREAD(tid)	( tid >= 0 &&\
@@ -751,20 +751,29 @@ int xsb_thread_self()
 #endif
 }
 
-void check_deleted( th_context *th, XSB_MQ_Ptr q, op_type send )
+void check_deleted( th_context *th, XSB_MQ_Ptr q, op_type op )
 {
 	  char *pred ;
+	  int arity, arg ;
 	  Integer iq ;
 
 	  if( q->deleted )
 	  {
 		pthread_mutex_unlock( &q->mq_mutex ) ;
-	  	if( send == MSG_SEND )
+	  	if( op == MSG_SEND )
+		{	arg = arity = 2 ;
 			pred = "thread_send_message" ;
-		else
+		}
+		else if( op == MSG_RECV )
+		{	arg = arity = 2 ;
 			pred = "thread_get_message" ;
+		}
+		else
+		{	arg = arity = 1 ;
+			pred = "message_queue_destroy";
+		}
 		iq = makeint((Integer)q) ;
-		xsb_existence_error( th, "message queue", iq, pred, 2, 2 ) ;
+		xsb_existence_error(th, "message queue", iq, pred, arity, arg);
 	  }
 }
 /* releasing the memory from a message queue */
@@ -1358,6 +1367,7 @@ case THREAD_ACCEPT_MESSAGE: {
 	  XSB_MQ_Ptr xsb_mq = (XSB_MQ_Ptr) ptoc_int(CTXTc 2);
 
 	  pthread_mutex_lock( &xsb_mq->mq_mutex ) ;
+	  check_deleted(th, xsb_mq, MSG_DESTROY) ;
 	  xsb_mq->deleted = TRUE ;
 	  if( xsb_mq->n_threads == 0 )
 	  {	pthread_mutex_unlock( &xsb_mq->mq_mutex ) ;
