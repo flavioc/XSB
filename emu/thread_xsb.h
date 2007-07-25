@@ -158,8 +158,10 @@ typedef struct XSB_Message_Queue {
   pthread_cond_t       mq_has_messages;
   MQ_Cell_Ptr          first_message;
   MQ_Cell_Ptr          last_message;
-  int                  size;
+  int                  size;		/* number of messages in the queue */
   int                  max_size;
+  int		       n_threads;	/* number of threads waiting */
+  int		       deleted;		/* true if is to be deleted */
 } XSB_MQ;
 typedef XSB_MQ *XSB_MQ_Ptr;
 #endif
