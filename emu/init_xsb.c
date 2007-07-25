@@ -120,6 +120,8 @@ int max_threads_glc;
 
 int xsb_profiling_enabled = 0;
 
+int wam_initialized = FALSE ;
+
 /* from pathname_xsb.c */
 DllExport extern char * call_conv strip_names_from_path(char*, int);
 
@@ -1282,6 +1284,8 @@ void init_machine(CTXTdeclc int glsize, int tcpsize,
   slide_buffering = 0;
   slide_buf_size = 0;
 #endif
+
+  wam_initialized = TRUE ;
 
 } /* init_machine() */
 

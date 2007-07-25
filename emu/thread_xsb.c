@@ -751,6 +751,8 @@ int xsb_thread_self()
 #endif
 }
 
+#ifdef MULTI_THREAD
+
 void check_deleted( th_context *th, XSB_MQ_Ptr q, op_type op )
 {
 	  char *pred ;
@@ -842,6 +844,8 @@ int wait_on_queue( th_context *th, XSB_MQ_Ptr q, op_type send )
 	}
 	return FALSE ;
 }
+
+#endif
 
 /*-------------------------------------------------------------------------*/
 /* Thread Requests  */

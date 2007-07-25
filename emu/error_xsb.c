@@ -607,6 +607,12 @@ void call_conv xsb_basic_abort(char *message)
   th = find_context(xsb_thread_self());
 #endif
 
+  if( !wam_initialized )
+  {
+	fprintf(stderr, "Error initializing: %s\n", message ) ;
+	exit(1) ;
+  }
+
   tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
   ball_to_throw = makecs(tptr);
   bld_functor(tptr, pair_psc(insert("error",3,
