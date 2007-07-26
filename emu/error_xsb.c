@@ -76,6 +76,62 @@ static char *err_msg_table[] = {
 
 /*----------------------------------------------------------------------*/
 
+DllExport void call_conv xsb_initialization_exit(char *description, ...)
+{
+  va_list args;
+
+  if (xsb_mode != C_CALLING_XSB) {
+    va_start(args, description);
+    vfprintf(stderr, description, args);
+    va_end(args);
+
+    fprintf(stdfdbk, "\nExiting XSB abnormally...\n");
+    exit(1);
+  }
+  else {
+    sprintf(xsb_get_init_error_type(),"init_error");
+    va_start(args, description);
+    vsprintf(xsb_get_init_error_message(), description, args);
+    va_end(args);
+    longjmp(ccall_init_env, XSB_ERROR);
+  }
+}
+
+void xsb_unrecoverable_error(CTXTdeclc char *);
+
+DllExport void call_conv xsb_exit(CTXTdeclc  char *description, ...)
+{
+  va_list args;
+  char message[MAXBUFSIZE];
+
+  if (xsb_mode != C_CALLING_XSB) {
+    va_start(args, description);
+    vfprintf(stderr, description, args);
+    va_end(args);
+
+    fprintf(stdfdbk, "\nExiting XSB abnormally...\n");
+    exit(1);
+  }
+  else {
+    va_start(args, description);
+    vsnprintf(message,MAXBUFSIZE, description, args);
+    va_end(args);
+    xsb_unrecoverable_error(CTXTc message);
+  }
+}
+
+/* This gives an absolute exit -- used only in memory errors, 
+   and perhaps shouldn't even be used there.*/
+DllExport void call_conv exit_xsb(char *description)
+{
+  fprintf(stderr, description);
+
+  fprintf(stdfdbk, "\nExiting XSB abnormally...\n");
+  exit(1);
+}
+
+/*----------------------------------------------------------------------*/
+
 #ifndef HAVE_SNPRINTF
 #include <stdarg.h>
 int vsnprintf(char *buffer, size_t count, const char *fmt, va_list ap) {
@@ -610,8 +666,7 @@ void call_conv xsb_basic_abort(char *message)
 
   if( !wam_initialized )
   {
-	fprintf(stderr, "Error initializing: %s\n", message ) ;
-	exit(1) ;
+	xsb_initialization_exit(message) ;
   }
 
   tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
@@ -823,60 +878,6 @@ DllExport void call_conv dbgmsg1_xsb(int log_level, char *description)
   }
 }
 #endif
-
-/*----------------------------------------------------------------------*/
-
-DllExport void call_conv xsb_initialization_exit(char *description, ...)
-{
-  va_list args;
-
-  if (xsb_mode != C_CALLING_XSB) {
-    va_start(args, description);
-    vfprintf(stderr, description, args);
-    va_end(args);
-
-    fprintf(stdfdbk, "\nExiting XSB abnormally...\n");
-    exit(1);
-  }
-  else {
-    sprintf(xsb_get_init_error_type(),"init_error");
-    va_start(args, description);
-    vsprintf(xsb_get_init_error_message(), description, args);
-    va_end(args);
-    longjmp(ccall_init_env, XSB_ERROR);
-  }
-}
-
-DllExport void call_conv xsb_exit(CTXTdeclc  char *description, ...)
-{
-  va_list args;
-  char message[MAXBUFSIZE];
-
-  if (xsb_mode != C_CALLING_XSB) {
-    va_start(args, description);
-    vfprintf(stderr, description, args);
-    va_end(args);
-
-    fprintf(stdfdbk, "\nExiting XSB abnormally...\n");
-    exit(1);
-  }
-  else {
-    va_start(args, description);
-    vsnprintf(message,MAXBUFSIZE, description, args);
-    va_end(args);
-    xsb_unrecoverable_error(CTXTc message);
-  }
-}
-
-/* This gives an absolute exit -- used only in memory errors, 
-   and perhaps shouldn't even be used there.*/
-DllExport void call_conv exit_xsb(char *description)
-{
-  fprintf(stderr, description);
-
-  fprintf(stdfdbk, "\nExiting XSB abnormally...\n");
-  exit(1);
-}
 
 /*----------------------------------------------------------------------*/
 

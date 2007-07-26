@@ -2453,16 +2453,6 @@ DllExport int call_conv xsb(CTXTdeclc int flag, int argc, char *argv[])
 	init_symbols(CTXT);		/* preset a few symbols in PSC table */
 	init_interrupt();		/* catch ^C interrupt signal */
 
-#ifdef MULTI_THREAD
-	if (pthread_cond_init( &(th->_xsb_started_cond), NULL )) 
-	  printf("xsb_started_cond not initialized \n");
-	if (pthread_cond_init( &(th->_xsb_done_cond), NULL ))
-	  printf("xsb_done_cond not initialized \n");
-	pthread_mutex_init( &(th->_xsb_ready_mut), NULL ) ;
-	pthread_mutex_init( &(th->_xsb_synch_mut), NULL ) ;
-	xsb_ready = 0;
-#endif
-
 	/* "b" does nothing in UNIX, denotes binary file in Windows -- 
 	   needed in Windows for reading byte-code files */
 	fd = fopen(startup_file, "rb");

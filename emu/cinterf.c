@@ -1352,6 +1352,15 @@ DllExport int call_conv xsb_init(int argc, char *argv[])
     main_thread_gl = malloc( sizeof( th_context ) ) ;  /* don't use mem_alloc */
   }
   th = main_thread_gl;
+  if (pthread_cond_init( &(th->_xsb_started_cond), NULL )) 
+    printf("xsb_started_cond not initialized \n");
+  if (pthread_cond_init( &(th->_xsb_done_cond), NULL ))
+    printf("xsb_done_cond not initialized \n");
+  pthread_mutex_init( &(th->_xsb_ready_mut), NULL ) ;
+  pthread_mutex_init( &(th->_xsb_synch_mut), NULL ) ;
+  pthread_mutex_init( &(th->_xsb_query_mut), NULL ) ;
+  xsb_ready = 0;
+  th->_xsb_inquery = 0;
 #endif
 
   reset_ccall_error(CTXT);
