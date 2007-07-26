@@ -180,8 +180,9 @@ char *xsb_executable_full_path(char *myname)
     sprintf(executable_path_gl, "%s%c%s", current_dir_gl, SLASH, myname_augmented);
   }
 
-  /* found executable by prepending cwd */
-  if (!stat(executable_path_gl, &fileinfo)) return executable_path_gl;
+  /* found executable by prepending cwd. Make sure we haven't found a directory named xsb */
+  if ((!stat(executable_path_gl, &fileinfo)) && (S_ISREG(fileinfo.st_mode))) return executable_path_gl;
+                                          //  or (!S_ISDIR(fileinfo.st_mode))
 
   /* Otherwise, search PATH environment var.
      This code is a modified "which" shell builtin */
