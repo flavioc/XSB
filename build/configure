@@ -8302,8 +8302,13 @@ fi
 ####### Test for -export-dynamic option of ld
 TEMP_LDFLAGS=$LDFLAGS
 LDFLAGS="-Wl,-export-dynamic"
-{ echo "$as_me:$LINENO: checking whether loader understands -Wl" >&5
-echo $ECHO_N "checking whether loader understands -Wl... $ECHO_C" >&6; }
+{ echo "$as_me:$LINENO: checking whether loader understands -Wl,-export-dynamic" >&5
+echo $ECHO_N "checking whether loader understands -Wl,-export-dynamic... $ECHO_C" >&6; }
+# Ideally we should use AC_LINK_IFELSE instead of the obsolete AC_TRY_LINK
+#AC_TRY_LINK([],[], __export_dynamic=yes, __export_dynamic=no)
+cat >conftest.$ac_ext <<_ACEOF
+main(){return 0;}
+_ACEOF
 rm -f conftest.$ac_objext conftest$ac_exeext
 if { (ac_try="$ac_link"
 case "(($ac_try" in
@@ -8347,7 +8352,7 @@ sed 's/^/| /' conftest.$ac_ext >&5
 fi
 
 rm -f core conftest.err conftest.$ac_objext \
-      conftest$ac_exeext
+      conftest$ac_exeext conftest.$ac_ext
 { echo "$as_me:$LINENO: result: $__export_dynamic" >&5
 echo "${ECHO_T}$__export_dynamic" >&6; }
 LDFLAGS=$TEMP_LDFLAGS

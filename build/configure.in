@@ -1337,8 +1337,10 @@ fi
 ####### Test for -export-dynamic option of ld
 TEMP_LDFLAGS=$LDFLAGS
 LDFLAGS="-Wl,-export-dynamic"
-AC_MSG_CHECKING(whether loader understands -Wl,-export-dynamic)
-AC_LINK_IFELSE([], __export_dynamic=yes, __export_dynamic=no)
+AC_MSG_CHECKING([whether loader understands -Wl,-export-dynamic])
+# Ideally we should use AC_LINK_IFELSE instead of the obsolete AC_TRY_LINK
+#AC_TRY_LINK([],[], __export_dynamic=yes, __export_dynamic=no)
+AC_LINK_IFELSE([[main(){return 0;}]], __export_dynamic=yes, __export_dynamic=no)
 AC_MSG_RESULT($__export_dynamic)
 LDFLAGS=$TEMP_LDFLAGS
 ####### End of test for -export-dynamic option of ld
