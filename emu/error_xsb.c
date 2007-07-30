@@ -97,7 +97,7 @@ DllExport void call_conv xsb_initialization_exit(char *description, ...)
   }
 }
 
-void xsb_unrecoverable_error(CTXTdeclc char *);
+void call_conv xsb_unrecoverable_error(CTXTdeclc char *);
 
 DllExport void call_conv xsb_exit(CTXTdeclc  char *description, ...)
 {
