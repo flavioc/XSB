@@ -323,7 +323,7 @@ subgoal $S$ if $C$ is a variant of $S$~---~\footnote{Formally, $C$ and
   $\theta_2$ such that the ranges of $\theta_1$ and $\theta_2$ consist
   only of variables, and $C\theta_1 = S$, and $S\theta_2 = C$.}.  As
 an example {\tt p(X,Y,X)} is a variant of {\tt p(A,B,A)}, but not of
-{\tt p(X,Y,Y)}, or {\tt p(X,Y,Z)}.  Varicance-based call similarity
+{\tt p(X,Y,Y)}, or {\tt p(X,Y,Z)}.  Variance-based call similarity
 was used in the original formulation of SLG resolution \cite{ChWa96}
 for the evaluation of normal logic programs according to the
 well-founded semantics and interacts well with many of Prolog's
@@ -492,8 +492,8 @@ literal selection strategy as Prolog for definite programs.  However,
 in tabling there is also a choice of when to return derived answers to
 subgoals that consume these answers.  While full discussion of
 scheduling strategies for tabling is not covered here
-(see~\cite{JFLP-Scheduling}) we discuss two scheduling straqtegies
-that have been implmented for XSB \version~\footnote{Many other
+(see~\cite{JFLP-Scheduling}) we discuss two scheduling strategies
+that have been implemented for XSB \version~\footnote{Many other
   scheduling strategies are possible.  For instance, \cite{FrSW97}
   describes a tabling strategy implemented for the SLG-WAM that
   emulates magic sets under semi-naive evaluation.  This scheduling
@@ -657,7 +657,7 @@ programs.\fillBox
 \end{example}
 
 In XSB's compilation, the cut above is compiled so that it is valid to
-use with either local or batched (a non-default) evaluaiton.  An
+use with either local or batched (a non-default) evaluation.  An
 example of a cut that is valid neither in batched nor in local
 evaluation is as follows.
 
@@ -686,7 +686,7 @@ To summarize, the behavior of cuts with tables depends on dynamic
 operational properties, and we have seen examples of programs in which
 a cut is valid in both local and batched scheduling, in local but not
 batched scheduling, and in neither batched nor local scheduling.  In
-general, any program and goal that allows cuts in batched scheulding
+general, any program and goal that allows cuts in batched scheduling
 will allow them in local scheduling as well, and there are programs
 for which cuts are allowed in local scheduling but not in batched.
 

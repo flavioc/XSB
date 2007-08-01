@@ -29,7 +29,7 @@ XSB asserts WAM code for such clauses so that that the execution time
 of dynamic code is similar to compiled code for unit and binary
 clauses.  Furthermore, tabling can be used by explicitly declaring a
 predicate to be both dynamic and tabled.  In \version{}, when the
-clause of a dynamic predicatw is asserted as WAM code, the {\em
+clause of a dynamic predicate is asserted as WAM code, the {\em
   ``immediate semantics''} rather than the ISO Semantics of
 assert/retract~\cite{LiOk87}.  The immediate semantics allows assert
 and retract to be fast and spatially efficient, but requires that
@@ -76,7 +76,7 @@ of issuing an {\sf ``Undefined predicate''} error message.
 
 \ouritem{asserta(+Clause)}\index{\texttt{asserta/1}} 
 %
-If the index specification for the preicate is not {\tt trie}, this
+If the index specification for the predicate is not {\tt trie}, this
 predicate adds a dynamic clause, {\tt Clause}, to the database {\em
 before} any other clauses for the same predicate currently in the
 database.  If the index specification for the predicate is {\tt trie},
@@ -99,7 +99,7 @@ containing this operator requires an extra set of parentheses: {\tt
 \item 	{\tt domain\_error(callable,Clause)}
 \ei
 %
-\item 	{\tt Clause} has a head that is a static builtin
+\item 	{\tt Clause} has a head that is a static built-in
 \bi
 \item 	{\tt permission\_error(modify,builtin,Clause)}
 \ei
@@ -141,7 +141,7 @@ containing this operator requires an extra set of parentheses: {\tt
 This is a lower-level interface to (non-trie-indexed) assert.  It is
 normally not needed except in one particular situation, when assert
 aborts because it needs too many registers.  In this case, this
-loswer-level assert may allow the offending clause to be correctly
+lower-level assert may allow the offending clause to be correctly
 asserted.
 
 The default implementation of non-trie-indexed assert generates code
@@ -179,7 +179,7 @@ retract is called, a check is made to determine whether it is safe to
 reclaim space for that clause.  Safety is ensured when:
 \begin{itemize}
 \item A check is made of the choice point stack indicating that no
-  choice point will backtack into space that is being reclaimed; AND
+  choice point will backtrack into space that is being reclaimed; AND
 \begin{itemize}
 \item The predicate is thread-private; OR 
 \item there is a single active thread
@@ -204,7 +204,7 @@ later be reclaimed through garbage collection.  (See {\tt
 \item 	{\tt domain\_error(callable,Clause)}
 \ei
 %
-\item 	{\tt Clause} has a head that is a static builtin
+\item 	{\tt Clause} has a head that is a static built-in
 \bi
 \item 	{\tt permission\_error(modify,builtin,Clause)}
 \ei
@@ -230,7 +230,7 @@ form {\tt Pred/Arity}.  Everything about the abolished predicate is
 completely forgotten by the system (including the {\tt dynamic or
   static} property, whether the predicate is tabled, and whether the
 predicate is thread-shared or thread-private)~\footnote{For
-  compatability with older Prologs, there is also an {\tt abolish/2}
+  compatibility with older Prologs, there is also an {\tt abolish/2}
   which takes {\tt Pred} and {\tt Arity} as its two arguments.}.  Any
 completed tables for the predicate are also removed.
 
@@ -263,7 +263,7 @@ safe to use.
 \item 	{\tt domain\_error(arity\_indicator,Arity)}
 \ei
 %
-\item 	{\tt PredInd} indicates a static builtin
+\item 	{\tt PredInd} indicates a static built-in
 \bi
 \item 	{\tt permission\_error(modify,builtin,Predind)}
 \ei
@@ -307,7 +307,7 @@ matches {\tt Head} and Body matches {\tt Body}.  For facts the {\tt Body} is
 \item 	{\tt domain\_error(callable,Head)}
 \ei
 %
-\item 	{\tt Head} is a static builtin
+\item 	{\tt Head} is a static built-in
 \bi
 \item 	{\tt permission\_error(access,builtin,Head)}
 \ei
@@ -383,8 +383,8 @@ Now obsolete, what with GC.
 | it is provided for (partial) compatibility with SB-Prolog.
 }
 \comment{ 
-TLS: I dont think we need hashtable size given that we use dynamic
-hashing.  We still are supporting it, but we dont need to encourage it
+TLS: I don't think we need hashtable size given that we use dynamic
+hashing.  We still are supporting it, but we don't need to encourage it
 \vspace{-.35in}
 \ouritem{index(+PredSpec, +IndexSpec, +HashTableSize)}\index{\texttt{index/3}}
 
@@ -402,11 +402,11 @@ asserted.
 
 As an example, one could specify: {\tt index(p/5,[1+2,1,4],300)}.
 After clauses are asserted to it, a call to {\tt p/5} would first
-check to see if both the first and second arguments are nonvariable
+check to see if both the first and second arguments are non-variable
 and if so, use an index based on both those values. Otherwise, it
-would see if the second argument is nonvariable and if so, use an
+would see if the second argument is non-variable and if so, use an
 index based on it. Otherwise, it would see if the fourth argument is
-nonvariable and if so use an index based on it. As a last resort, it would
+non-variable and if so use an index based on it. As a last resort, it would
 use no index but backtrack through all the clauses in the predicate.
 (Notice that it may well make sense to include an argument that 
 appears in a joint specification later alone, as 1 in this example,
@@ -461,10 +461,10 @@ by the {\tt +} (plus) operator, e.g., {\tt 1+2+3}.
 For example, {\tt index(p/3,[2,1])} indicates that clauses asserted to
 the predicate {\tt p/3} should be indexed on both the second and the
 first argument.  Subsequent calls to {\tt p/3} will first check to see
-if the second argument is nonvariable, and if so use that index, using
+if the second argument is non-variable, and if so use that index, using
 the main functor symbol of that argument. If the second argument is
 variable, it will next check to see if the first argument is
-nonvariable and if so, use that index, built on the main functor
+non-variable and if so, use that index, built on the main functor
 symbol of the first argument.  
 
 {\tt index(p/3,[*(2),1])} would result in similar behavior as the
@@ -474,11 +474,11 @@ argument position (not just the main functor symbol.)
 
 As another example, one could specify: {\tt index(p/5,[1+2,1,4])}.
 After clauses are asserted to it, a call to {\tt p/5} would first
-check to see if both the first and second arguments are nonvariable
+check to see if both the first and second arguments are non-variable
 and if so, use an index based on both those values. Otherwise, it
-would see if the first argument is nonvariable and if so, use an index
+would see if the first argument is non-variable and if so, use an index
 based on it. Otherwise, it would see if the fourth argument is
-nonvariable and if so use an index based on it. As a last resort, it
+non-variable and if so use an index based on it. As a last resort, it
 would use no index but backtrack through all the clauses in the
 predicate.  In all these cases, the indexes are built using only the
 main functor symbol in the indicated argument position. (Notice that
@@ -554,8 +554,8 @@ predicate to be tabled.
 \subsection{Reading Dynamic Code from Files} \label{sec:LoadDyn}
 %===============================================
 
-Several builtin predicates are available that can assert the contents
-of a file into XSB's databse.  These predicates are useful when code
+Several built-in predicates are available that can assert the contents
+of a file into XSB's database.  These predicates are useful when code
 needs to be dynamic, or when the they contain a large number of
 clauses or facts.  Configured properly, files containing millions of
 facts can be read and asserted into memory in under a minute, making
@@ -576,7 +576,7 @@ Sections~\ref{LibPath} and~\ref{sec:filenames} for details.
     All existing clauses of the predicates in the file that already
     appear in the database, are retracted, unless there is a {\tt
     multifile/1} declaration for them.  An indexing declaration of a
-    predcate {\tt p/n} in {\tt FileName} will be observed as long as
+    predicate {\tt p/n} in {\tt FileName} will be observed as long as
     the declarations occur before the first clause of {\tt p/n}.  file
     will be observed as Clauses in {\tt FileName} must be in a format
     that {\tt read/1} will process.  So, for example, operators are
@@ -641,7 +641,7 @@ Sections~\ref{LibPath} and~\ref{sec:filenames} for details.
 \ei
 %
 \item 	{\tt Dir} is not equal to {\tt a} or {\tt z}~\footnote{For
-backward compatability, {\tt 0} and {\tt 1} are also allowed.}: 
+backward compatibility, {\tt 0} and {\tt 1} are also allowed.}: 
 \bi
 \item 	{\tt domain\_error(a\_or\_z,Dir)}
 \ei
@@ -740,7 +740,7 @@ backward compatability, {\tt 0} and {\tt 1} are also allowed.}:
 \ei
 %
 \item 	{\tt Dir} is not instantiated to {\tt a} or {\tt z}~\footnote{For
-backward compatability, {\tt 0} and {\tt 1} are also allowed.}: 
+backward compatibility, {\tt 0} and {\tt 1} are also allowed.}: 
 \bi
 \item 	{\tt domain\_error(a\_or\_z,Dir)}
 \ei
@@ -882,11 +882,11 @@ Similar to keypair insertion, but this primitive inserts facts rather than
 key pairs.
 
 \ouritem{storage\_delete\_fact(+StorageName, +Fact, ?Inserted)}\index{\texttt{storage\_delete\_fact/3}}
-Similar to keypair deletion, but this primitive deletes facts rather than
+Similar to key-pair deletion, but this primitive deletes facts rather than
 key pairs.
 
 \ouritem{storage\_find\_fact(+StorageName, +Fact)}\index{\texttt{storage\_find\_fact/2}}
-Similar to keypair finding, but this primitive finds facts facts rather than
+Similar to key-pair finding, but this primitive finds facts facts rather than
 key pairs.
 %%
 \end{description}

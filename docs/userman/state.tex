@@ -71,7 +71,7 @@ mean the following:
 \index{\texttt{current\_prolog\_flag/2}}
 %
 {\tt current\_prolog\_flag/2} allows the user to examine both dynamic
-aspects of XSB along with certain non-changable ISO
+aspects of XSB along with certain non-changeable ISO
 flags~\footnote{The ISO flags {\tt
 char\_conversion} and {\tt double\_quotes} are not yet
 implemented.}.  This predicate is based upon the predicate {\tt
@@ -697,7 +697,7 @@ collection will only be invoked if there is a single active thread.)
 
 %
 \item {\tt table\_gc\_action}  {\tt abolish\_tables\_transitively} if
-  presicates or subgoals that depend on a conditional answer of an
+  predicates or subgoals that depend on a conditional answer of an
   abolished table are to be abolished automatically, and {\tt
     abolish\_tables\_singly} if not.  Default is {\tt
     abolish\_tables\_transitively}.  This flag affects all threads in
@@ -1036,7 +1036,7 @@ Displays usage information on the current output stream, including:
 %
 \item SLG completion stack for the calling thread.  The completion
   stack is used to perform incremental completion for sets of mutually
-  dependant tabled subgoals.  One completion stack frame is allocated
+  dependent tabled subgoals.  One completion stack frame is allocated
   per tabled subgoal \cite{SaSw98} but the size of these frames is
   version-dependent.
 %
@@ -1064,7 +1064,7 @@ overall is given, including all producer and consumer calls.
 %
 \item Call Subsumption Answer Operations.  In call subsumptive
 tabling, answer lists are copied from producer subgoals to subsumed
-consumer subgoals (this opration is not required in variant tabling).
+consumer subgoals (this operation is not required in variant tabling).
 The number of {\tt answer ident} operations represents the number of
 times this copy is done.  In addition, the number of consumptions
 performed by all consuming subsumptive table entries is also given.

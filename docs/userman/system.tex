@@ -305,7 +305,7 @@ resolution for predicates.
 
 Whenever XSB is invoked, a large set of {\em standard} predicates are
 defined and can be called from the interpreter or other
-interface~\footnote{Such predicates are sometimes called ``builtins''
+interface~\footnote{Such predicates are sometimes called ``built-ins''
 in other Prologs.}.  These predicates include the various ISO
 predicates~\cite{}, along with predicates for tabling, I/O and for
 interaction with the operating system, for HiLog, and for other
@@ -701,8 +701,8 @@ until it is not possible to do so with available system memory.  At
 that point XSB tries to find the maximal amount of space that will
 still fit in system memory.  When a thread is created within an XSB
 process, the size of the thread's execution stacks may be set by {\tt
-  xsb\_thread\_create/3}, otherwise the default values indicated in
-Section~\ref{sec:EmuOptions} are used.  In addtion, whenever a thread
+  thread\_create/3}, otherwise the default values indicated in
+Section~\ref{sec:EmuOptions} are used.  In addition, whenever a thread
 exits, memory specific to that thread is reclaimed.
 
 Heap garbage collection is automatically included in XSB
@@ -748,7 +748,7 @@ dynamically asserted code.  Unlike some Prologs, however, there is no
 difference between compiled and consulted code.  Abstractly,
 ``Compiling'' in XSB means creation of a file containing SLG-WAM
 byte-code; ``Consulting'' means loading such a byte-code file, (and
-perhaps creating the file itsef, via compilation).  Compiled code may
+perhaps creating the file itself, via compilation).  Compiled code may
 be more optimized than asserted code, but certain types of indexing,
 such as trie and star indexing are (currently) available only for
 dynamically asserted predicates (see {\tt index/2}).
@@ -805,7 +805,7 @@ There are two steps to name resolution: determining the proper
 directory prefix and determining the proper file extension.  When {\tt
 FileName} is absolute (i.e. it contains a path from the file to the
 root of the file system) determining the proper directory prefix is
-straightforward.  If {\tt FileName} is relative, i.e. it conains a
+straightforward.  If {\tt FileName} is relative, i.e. it contains a
 {\tt '/'} in Unix or {\tt '/'} in Windows, {\tt FileName} is expanded
 to a directory prefix in an OS-dependent way, resolving symbols like
 {\tt '.'}, {\tt '..'} and {\tt '\~{}'} when applicable.  However, the
@@ -1451,7 +1451,7 @@ _$ordered(X, [Y|Z]) :- X @=< Y, _$ordered(Y, Z).
 \end{center}
 %%$
 %%
-We note that in the presense of cuts or side-effects, the code
+We note that in the presence of cuts or side-effects, the code
 replacement operation is not always sound, i.e.  there are cases when
 the original and the residual program are not computationally equivalent
 (with respect to the answer substitution semantics).  The compiler
@@ -1870,7 +1870,7 @@ Calls to inline predicates are compiled into a sequence of WAM
 instructions in-line, i.e. without actually making a call to the
 predicate.  Thus, for example, relational predicates (like {\tt >/2},
 {\tt >=/2}, etc.) compile to, essentially, a subtraction followed by a
-conditional branch.  As a resut, calls to inline predicates will not
+conditional branch.  As a result, calls to inline predicates will not
 be trapped by the debugger, and their evaluation will not be visible
 during a trace of program execution.  Inline predicates are expanded
 specially by the compiler and thus {\em cannot be redefined by the
@@ -1900,11 +1900,11 @@ interfere with some of XSB's internal predicates.  The situation may
 be particularly severe for predicates like {\tt '\_\$builtin'/1} that
 are treated specially by the XSB compiler.
 
-\section{A Note on ISO Compatability} \label{sec:iso}
+\section{A Note on ISO Compatibility} \label{sec:iso}
 
-In \version, an effort has been made to ensure compatability with the
+In \version, an effort has been made to ensure compatibility with the
 Prolog ISO standard.  In this section, we mention the differences with
-the ISO standard.  XSB implements almost all ISO builtins, although
+the ISO standard.  XSB implements almost all ISO built-ins, although
 there are certain semantic differences between XSB's implementation
 and that of the ISO standard in certain cases.
 
@@ -1927,7 +1927,7 @@ processed more than binary files.
 
 The final difference involves error handling in XSB.  XSB implements a
 catch and throw mechanism that is similar to the ISO standard.  In
-addition, XSB usually thows errors for ISO-predicates under the same
+addition, XSB usually throws errors for ISO-predicates under the same
 conditions as specified in the standard.  The only differences in
 error handling are: (1) the type of error thrown may differ in XSB due
 to an effort to minimize the amount of checking performed; and (2) ISO
@@ -1936,7 +1936,7 @@ errors.  The reasons for this have to do with XSB's nascent type
 system, as described in Section~\ref{sec:types}.  The difference in
 error terms should cause minimal portability problems, as it only
 affects the type terms thrown at error, and these terms are
-implementation-dependant as defined in the standard.
+implementation-dependent as defined in the standard.
 
 
 

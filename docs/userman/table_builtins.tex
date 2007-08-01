@@ -10,13 +10,13 @@ In XSB, tables are designed so that they can be used transparently by
 computations.  However, it is necessary to first inform the system of
 which predicates should be evaluated using tabled resolution
 (\refsec{sec:CompilerOptions}), and whether variant or subsumptive
-tabling shoud be used (\refchap{chap:TablingOverview}).  Further, it
+tabling should be used (\refchap{chap:TablingOverview}).  Further, it
 is often useful to be able to explicitly inspect a table, or to alter
 its state.  The predicates described in this section are provided for
 these purposes.  In order to ground the discussion of these
 predicates, we continue our overview of tables and table creation from
 \refchap{chap:TablingOverview}.  For a detailed description of the
-implemntation of table access routines in XSB, the reader is referred
+implementation of table access routines in XSB, the reader is referred
 to~\cite{RRSSW98,TST99,CuSW99b} and other papers listed in the
 bibliography.
 
@@ -28,7 +28,7 @@ Abstractly, a table can be seen as a set of entry triples $\langle
 S,\cA,Status \rangle$ where $S$ is a subgoal, $\cA$ is its associated
 answer set, and $Status$ its status~---~whether it is
 \texttt{complete} or \texttt{incomplete}.  In terms of implementation,
-``the table'' is actually a set of minitables, each one containing
+``the table'' is actually a set of mini-tables, each one containing
 entries for a particular predicate.  Hence, we may refer to the table
 containing entries for some predicate \code{p/n} as ``the table for
 \code{p/n}.''  Further recall that a particular predicate may be
@@ -56,13 +56,13 @@ distinct variables in a left-to-right traversal of $S$.  Each answer
 in $\cA$ substitutes values for the variables in the substitution
 factor of $S$; this substitution is sometimes called an answer
 substitution.  The table inspection predicates allow access to
-substition factors and answer substitutions through a family of terms
+substitution factors and answer substitutions through a family of terms
 whose principle functors are \retn, where \code{n} is the size of the
 substitution factor.
 
 \begin{example}
 Let $S =$ \code{p(X,f(Y))} be a producer subgoal (or simply, a subgoal
-if call-variance is used).  Using the \retn notation, the substution
+if call-variance is used).  Using the \retn notation, the substitution
 factor can be depicted as \code{ret(X,Y)}, while the answer
 substitution \code{\{X=a,Y=b\}} is depicted as \code{ret(a,b)}.  Note
 that the application of the answer substitution to the producer
@@ -105,7 +105,7 @@ a variant of $S$, selects all returns of $S$ such that
 A \emph{skeleton} for a functor \code{f/n} is a structure of the form
 \code{f($Arg_1$,\ldots,$Arg_n$)} where each $Arg_i$ is a distinct
 variable.  Similarly the skeleton of a term is the skeleton formed
-from the prinicple functor of the turm, so that skeletons from the
+from the principal functor of the term, so that skeletons from the
 terms \code{f(1,2)} and \code{f(A,B)} are the same.  A \emph{return
   skeleton} is a specific application of this notion to answer
 returns.  From it, one may discern the size of the template for a
@@ -1534,7 +1534,7 @@ properties such as subgoal subsumption.
 %{\tt ReturnSkeleton} to ret/n as in {\tt get\_calls/3} and 
 %{\tt SubgoalStructurePtr} to the pointer to the subgoal structure.
 
-%Warning:This builtin works for tabling predicates only.
+%Warning:This built-in works for tabling predicates only.
 
 }
 
