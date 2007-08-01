@@ -262,7 +262,7 @@ While such a definition would also work correctly if a DCG rule were
 tabled, the need to copy sequences into or out of a table can lead to
 behavior quadratic in the length of the input sequence (See Section
 \ref{sec:TablingPitfalls}).  As an alternative, XSB allows a mode of
-DCGs that defines {\tt 'C'/3} as a call to a Datalog predicte {\tt
+DCGs that defines {\tt 'C'/3} as a call to a Datalog predicate {\tt
 word/3} \index{\texttt{word/3}}:
 
 \stuff{\> \> 'C'(Pos,Token,Next\_pos):- word(Pos,Token,Next\_pos).}
@@ -325,7 +325,7 @@ The library predicates of XSB that support DCGs are the following:
     any term which would
     be accepted as a nonterminal of the grammar (or in general, it can 
     be any  grammar rule body), and must be instantiated to a
-    nonvariable term  at the time of the call; otherwise an error
+    non-variable term  at the time of the call; otherwise an error
     message is sent to the standard error stream and the predicate fails. 
     This predicate is the usual way to commence execution of grammar rules.
 
@@ -343,7 +343,7 @@ The library predicates of XSB that support DCGs are the following:
 
     The database of {\tt word/3} facts is assumed to have been
     previously set up via a call to {\tt tphrase\_set\_string/1} (or variant).  If
-    the databse of {\tt word/3} facts is empty, {\tt tphrase/1} will
+    the database of {\tt word/3} facts is empty, {\tt tphrase/1} will
     abort.
 
 % TLS: handle error condition better in predicate.
@@ -357,7 +357,7 @@ The library predicates of XSB that support DCGs are the following:
     {\tt Rest} is what remains unparsed after {\tt Phrase} has been
     found. Again, {\tt Phrase} can be any term which
     would be accepted as a nonterminal of the grammar (or in general, any
-    grammar rule body), and must be instantiated to a nonvariable term
+    grammar rule body), and must be instantiated to a non-variable term
     at the time of the call; otherwise an error message is sent to the
     standard error stream and the predicate fails.
 

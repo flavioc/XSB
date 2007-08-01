@@ -20,7 +20,7 @@ catch(Goal,Catcher,Handler)} is called.  At this point a continuation
 is saved (i.e. a Prolog choice point), and {\tt Goal} is called.  If
 no exceptions are encountered, answers for {\tt Goal} are obtained as
 usual.  Within the execution of {\tt Goal}, an exception can be
-signalled by a call to {\tt throw(Error)}.  This predicate searches
+signaled by a call to {\tt throw(Error)}.  This predicate searches
 for an ancestor of the current environment called by {\tt catch/3} and
 whose catcher (second argument) unifies with {\tt Error}.  If such an
 ancestor is found, program execution reverts to the ancestor and all
@@ -136,7 +136,7 @@ Section~\ref{sec:backtrace}).  Alternately, in the second case, when
 {\tt -1} is entered, the error term {\tt mydiv1(error2(-1))} is thown,
 which is caught within {\tt userdiv/2} and handled by {\tt
   handleUserdiv/2}.  Finally, when {\tt 0} is entered for the
-denomonator, an error term of the form {\tt
+denominator, an error term of the form {\tt
   error(zerodivision,userdiv/1)} is thrown, and that this term does
 not unify with the second argument of the {\tt catch/3} literal in the
 body of {\tt userdiv/1}, or with a known ISO error.  The error is
@@ -203,7 +203,7 @@ performing various error checks.
 In the following predicates, {\tt Msg} is either a list of HiLog terms
 or a comma-list of HiLog terms.  Each of the {\tt error/2} terms below
 can also be represented as {\tt error/3} terms, where the third
-arugment is instantiated to the representation of a backtrace.
+argument is instantiated to the representation of a backtrace.
 
 \begin{description}
 \item [error(domain\_error(Valid\_type,Culprit),Msg)] is the format of
@@ -264,7 +264,7 @@ errors.
 \end{description}
 
 In \version{} of XSB, errors for ISO predicates are not always ISO
-compliant.  First, when XSB determines it is out of avalable memory,
+compliant.  First, when XSB determines it is out of available memory,
 recovering from such an error may be difficult at best.  Accordingly
 the computation is aborted in the sequential engine, or XSB exits in
 the multi-threaded engine.  Second, errors in XSB code sometimes arise
@@ -275,7 +275,7 @@ types.
 When XSB generates a memory exception, it prints out a backtrace and
 exits.  This should be caused only by a bug in XSB or included code.
 The first predicate in the backtrace that is printed in these
-circumstances may be incorrect or redundant.  This is becasue the
+circumstances may be incorrect or redundant.  This is because the
 memory structures used to generate the backtrace are not always
 completely consistent, and so an interrupt at an unexpected point may
 result in the use of somewhat inconsistent information.
@@ -391,7 +391,7 @@ above are not applicable, and the type of error is not of interest for
 structured error handling.  Such situations occur can occur for
 instance in debugging, during program development, or in small-special
 purpose programs.  Note that this {\tt misc\_error/2} replaces the
-obsolecent {\tt abort/1} and {\tt abort/2}.
+obsolescent {\tt abort/1} and {\tt abort/2}.
 %
 \end{description}
 %

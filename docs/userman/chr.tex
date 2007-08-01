@@ -6,7 +6,7 @@
 
 Constraint Handling Rules (CHR) is a committed-choice bottom-up
 language embedded in XSB. It is designed for writing constraint
-solvers and is particularily useful for providing application-specific
+solvers and is particularly useful for providing application-specific
 constraints.  It has been used in many kinds of applications, like
 scheduling, model checking, abduction, type checking among many
 others.
@@ -102,7 +102,7 @@ way. The active constraint is matched with a constraint in the head of the
 rule. If more constraints appear in the head they are looked for among the
 suspended constraints, which are called passive constraints in this context. If
 the necessary passive constraints can be found and all match with the head of
-the rule and the gaurd of the rule succeeds, then the rule is committed and
+the rule and the guard of the rule succeeds, then the rule is committed and
 the body of the rule executed.  If not all the necessary passive constraint
 can be found, the matching fails or the guard fails, then the body is not
 executed and the process of trying and executing simply continues with 
@@ -117,7 +117,7 @@ case the active constraint becomes suspended.
 
 A suspended constraint is eligible as a passive constraint for an active
 constraint. The other way it may interact again with the rules, is when
-a variable appearing in the constraint becomes bound to either a nonvariable
+a variable appearing in the constraint becomes bound to either a non-variable
 or another variable involved in one or more constraints. In that case the
 constraint is triggered, i.e. it becomes an active constraint and all the rules
 are tried.
@@ -178,7 +178,7 @@ a declaration of the constraints used:
 where each \texttt{ConstraintSpec} is a functor description of the form name$\slash$arity pair. Ordinary code
 may be freely written between the CHR rules.
 
-The CHR constraints defined in a particulary .chr file are associated
+The CHR constraints defined in a particular .chr file are associated
 with a CHR module. The CHR module name can be any atom. The default module is
 \texttt{user}. A different module name can be declared as follows:
 \begin{verbatim}

@@ -29,14 +29,14 @@ can be extended to other calling languages.
 
 New to Version 3.1 are extensions to the C API to allow multiple XSB
 threads to be called from multiple C threads~\footnote{XSB's threading
-  model is based on Posix threads, which can be called in Windows
-  through a variety of Posix APIs -- see Volume 1 chapter 8 {\em
+  model is based on POSIX threads, which can be called in Windows
+  through a variety of POSIX APIs -- see Volume 1 chapter 8 {\em
     Multi-threaded Programming in XSB}.}.  In this Chapter, we provide
 an overview of XSB's C API, and then elaborate its use through a
 series of examples, beginning with a single XSB thread called by a
 single C thread, then showing how a C thread can interact with
 multiple XSB threads, and finally discuss how multiple XSB threads can
-interact with multiple Posix threads.  Finally, Section~\ref{sec:CAPI}
+interact with multiple POSIX threads.  Finally, Section~\ref{sec:CAPI}
 describes each C function in the API.
 
 %
@@ -57,7 +57,7 @@ interact with XSB in a number of ways.
   the other hand, a non-deterministic query can be evaluated so that
   its answer substitutions are retrieved one at a time, as they are
   produced, just as if XSB were called on a command line.  Alternately
-  a nondeterminstic query can be closed in the case where not every
+  a non-deterministic query can be closed in the case where not every
   answer to the query is needed.  Only one query per thread can be
   active at a time.  I.e., an application must completely finish
   processing one query to a given thread $T$ (either by retrieving all
@@ -446,7 +446,7 @@ int main(int argc, char *argv[])
 
 Figure~\ref{fig:varstringex1} shows how relevant portions of the
 previous {\tt VarString} example can be adapted to use the
-multi-thraded engine.  The main change is that a new variable is
+multi-threaded engine.  The main change is that a new variable is
 introduced on the C side that points to the context of the main
 thread.  As pointed out in Chapter~\ref{foreign}, each thread in the
 multi-threaded engine has a {\em context} in which is kept much of its
@@ -492,7 +492,7 @@ automatically exit upon completion of its command.  As a somewhat
 technical point, there are two different ways of referring to XSB
 threads.  The foreign language interfaces described in
 Chapter~\ref{foreign} and here use pointers to thread contexts so that
-the intefaces use much of the same code as the XSB engine.  However
+the interfaces use much of the same code as the XSB engine.  However
 Prolog refers to threads using thread identifiers.  The two different
 forms can be converted into each other by the functions {\tt
   xsb\_thread\_id\_to\_context()} and {\tt
@@ -567,7 +567,7 @@ int main(int argc, char *argv[])
 \end{figure}
 
 Figure~\ref{fig:varstringex2} illustrates a very simple example of
-this.  XSB is initalized and the file {\tt edb.P} consulted exactly as
+this.  XSB is initialized and the file {\tt edb.P} consulted exactly as
 in Figure~\ref{fig:varstringex2}.  However, the function {\tt
   xsb\_ccall\_thread\_create()} causes the XSB thread {\tt p\_th} to
 create a new thread, causes the new thread to call the same command
@@ -627,7 +627,7 @@ multiple XSB threads are called from multiple C threads.  For
 instance, one issue is fairness.  When called from the C API each XSB
 thread $X_T$ makes use of mutexes to ensure that it answers only one
 query or command at a time.  If multiple C threads are are waiting for
-$X_T$ to respond to requests or queries, there is no guarentee that
+$X_T$ to respond to requests or queries, there is no guarantee that
 the requests will be processed in any sort of order, or even that a
 request will eventually be handled (In order to ensure this, the
 calling program would have to use a queue or some other scheduling
@@ -730,7 +730,7 @@ of how mutexes can be used to protect XSB threads.
 \ouritem{int xsb\_init\_string(char *options)}
 \index{\texttt{xsb\_init\_string}} This function is used to initialize
 XSB via an initialization string {\tt *options}, and must be called
-before any other calls can be made.  The initiaization string must
+before any other calls can be made.  The initialization string must
 include the path to the XSB directory installation directory {\tt
 \$XSB\_DIR}, which is expanded to an absolute path by XSB.  Any other
   command line options may be included just as in a command line
@@ -754,7 +754,7 @@ which initializes XSB with the goal {\tt ?- startup.}
 \item {\tt init\_error} if any error occurred during initialization. 
 
 \item {\tt permission\_error} if {\tt xsb\_init\_string()} is called
-  after XSB has aleady been correctly initialized.  
+  after XSB has already been correctly initialized.  
 \ei
 %
 \ei
@@ -797,7 +797,7 @@ The return codes for {\tt xsb\_init()} are the same as those for {\tt
 %
 This routine closes the entire connection to XSB .  After this, no
 more calls can be made (not even calls to {\tt xsb\_init\_string()} or
-{\tt xsb\_init()}).  In \version{}, no guarentee is made that all
+{\tt xsb\_init()}).  In \version{}, no guarantee is made that all
 space used by XSB will be restored to the process (even when the
 process has dynamically linked to XSB), but space for any XSB tables
 is freed.
@@ -898,7 +898,7 @@ example call is:
 rc = xsb_query_string_string(th, "append(X,Y,[a,b,c]).",buff,";");
 \end{verbatim}
 The second argument is the period-terminated query string.  The third
-argument is a ponter to a variable string buffer in which the
+argument is a pointer to a variable string buffer in which the
 subroutine returns the answer (if any.) The variable string data type
 {\tt VarString} is explained in Section~\ref{sec-varstring}. (Use {\tt
   xsb\_query\_string\_string\_b()} if you cannot declare a parameter

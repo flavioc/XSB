@@ -1,8 +1,8 @@
 \chapter{Multi-Threaded Programming in XSB} \label{chap:threads}
 
-Starting with Version 3.0, XSB supports the use of Posix threads to
+Starting with Version 3.0, XSB supports the use of POSIX threads to
 perform separable computations, and in certain cases to parallelize
-them.  Posix threads have a simple and clear API, and are available on
+them.  POSIX threads have a simple and clear API, and are available on
 all Unixes and, by using open-source libraries, on Windows as well
 (see Section~\ref{sec:mt-windows} to configure under Windows).  This
 chapter introduces how to program with threads in XSB through a series
@@ -78,8 +78,8 @@ produces good output.  One way to do this is to {\em join}
 $T_{prompt}$ and $T_{child}$ as follows 
 %
 \begin{verbatim}
-?- xsb_thread_create(writeln('hello world'),Id),
-   xsb_thread_join(Id,ExitCode).
+?- thread_create(writeln('hello world'),Id),
+   thread_join(Id,ExitCode).
 hello world
 
 Id = 1
@@ -102,7 +102,7 @@ option to XSB (cf. Section~\ref{sec:EmuOptions}), and can be obtained
 at run time via the XSB flag {\tt max\_threads}
 (cf. Section~\ref{State}).  It should be noted that the XSB thread id
 of a thread is different from the identifier of the underlying
-Pthread.  An XSB thread id is a Prolog term, and unlike Posix thread
+Pthread.  An XSB thread id is a Prolog term, and unlike POSIX thread
 ids, XSB thread ids can be compared for equality using unification.
 The actual form of an XSB thread id, however, is subject to change
 between versions, so programs should not make use of the exact form of
@@ -117,7 +117,7 @@ Consider the program fragment
 \begin{verbatim}
 :- dynamic p/1.
 
-test:- xsb_thread_create(assert(p(1)),_X).
+test:- thread_create(assert(p(1)),_X).
 \end{verbatim}
 If you type the goal {\tt ?- test} and then the goal {\tt ?- p(X)},
 the call {\tt p(X)} will fail.  
@@ -185,7 +185,7 @@ threads~\footnote{In \version, tabled predicates using
 %
 To some extent, tabling considerations for making a predicate
 thread-shared or thread-private are like those of dynamic code.
-Thread-private tables require fewer synchonization points overall.
+Thread-private tables require fewer synchronization points overall.
 The situation for reclaiming space for abolished tables is analogous
 to reclaiming space for retracted dynamic clauses: the garbage
 collector treats abolished tables for thread-private predicates as in
@@ -208,7 +208,7 @@ mutually dependent tables $Table_a$ and $Table_b$ are called
 concurrently by two different threads, $Thread_a$ and $Thread_b$,
 nothing is done until it is detected that $Table_a$ and $Table_b$ are
 both incomplete and are contained in the same SCC of the table
-dependency grahp.  At that time, one of the threads (e.g. $Thread_a$)
+dependency graph.  At that time, one of the threads (e.g. $Thread_a$)
 takes over recomputation of all tables in the SCC, and when the SCC is
 completed, any remaining answers are returned to other threads that
 had invoked goals in the SCC.  While $Thread_a$ is completing this
@@ -263,7 +263,7 @@ $T_{dead}$ has terminated, status information about $T_{dead}$
 persists until some other thread joins it --- at which time the
 information is removed.  On the other hand, if $T_{dead}$ is detached,
 status information is removed as soon as $T_{dead}$ terminates.
-Reclamation of thread status information may be constrasted to that of
+Reclamation of thread status information may be contrasted to that of
 thread-specific data structures such as stacks.  Upon normal or
 exceptional termination of $T_{dead}$, any memory automatically
 allocated in the process of initializing $T_{dead}$'s, or executing
@@ -280,7 +280,7 @@ when joining a joinable thread, but not otherwise~\footnote{This
 \begin{example}
 Suppose the goal 
 \begin{verbatim}
- ?- xsb_thread_create(functor(X,Y,Z),F).
+ ?- thread_create(functor(X,Y,Z),F).
 \end{verbatim}
 %
 is executed.  By default, this will produce the result
@@ -302,7 +302,7 @@ error message
 is output to {\tt STDERR}, and may be redirected.  The call
 %
 \begin{verbatim}
-?- xsb_thread_join(2,Error).
+?- thread_join(2,Error).
 \end{verbatim}
 %
 returns
@@ -387,7 +387,7 @@ systems.
 For running programs that do not use multiple threads, the
 multi-threaded engine has a minimal overhead compared to the
 single-threaded engine.  Times for single-threaded execution of Prolog
-or tabled programs range from about 10-20\% slower to 10-20\% {\em
+or tabled programs range from about 10--20\% slower to 10--20\% {\em
   faster} for the multi-threaded engine compared to the
 single-threaded engine.  Speedups for running multiple threads on
 multiple processors depends heavily on the applications run and on the
@@ -471,7 +471,7 @@ YAP, and other Prologs.
 
 \begin{description}
 
-\ournewitem{thread\_create(+Goal,ThreadId,,+OptionsList)}{thread}
+\ournewitem{thread\_create(+Goal,ThreadId,+OptionsList)}{thread}
 \index{\texttt{thread\_create/3}}
 %
 When called from thread $T$, this predicate creates a new XSB thread
@@ -656,7 +656,7 @@ There are no error conditions.
 \ournewitem{thread\_detach(+Thread\_or\_Alias)}{thread}
 \index{\texttt{thread\_detach/1}} 
 %
-Detaches a joinable thread denoted by {\tt Thread\_or\_Alais} so that
+Detaches a joinable thread denoted by {\tt Thread\_or\_Alias} so that
 all resources will be reclaimed upon its exit.  The thread denoted by
 {\tt ThreadId} will no longer be joinable, once it is detached.  If
 {\tt Thread\_or\_Alias} has already exited, all resources used by {\tt
@@ -731,12 +731,12 @@ can cancel any other thread.
 % 
 Make the calling thread ready to be run {\em after} other threads of
 the same priority.  This predicate relies on the real-time extensions
-to Pthreads specified in Posix 1b, and may not be available on all
+to Pthreads specified in POSIX 1b, and may not be available on all
 platforms.
 
 {\bf Error Cases}
 \bi
-\item 	The current platform does not support Posix real-time extensions
+\item 	The current platform does not support POSIX real-time extensions
 \bi
 \item 	{\tt misc\_error}
 \ei
@@ -825,7 +825,7 @@ mutex has been successfully unlocked.
 \item 	{\tt existence\_error(mutex,Mutex)}
 \ei
 \item Locking {\tt Mutex} would give rise to a deadlock~\footnote{This
-  error case handles the {\tt EDEADLK} return code on OS X, and other
+  error case handles the {\tt EDEADLK} return code on MacOS X, and other
   platforms.}
 \bi
 \item 	{\tt permission\_error(mutex,lock,Mutex)}
@@ -942,7 +942,7 @@ fails or raises an exception.
 \item 	{\tt existence\_error(mutex,Mutex)}
 \ei
 \item Locking {\tt Mutex} would give rise to a deadlock~\footnote{This
-  error case handles the {\tt EDEADLK} return code on OS X, and other
+  error case handles the {\tt EDEADLK} return code on MacOS X, and other
   platforms.}
 \bi
 \item 	{\tt permission\_error(mutex,lock,Mutex)}
@@ -1040,8 +1040,8 @@ mutex_statistics not yet implemented.
 While Prolog predicates can communicate through shared dynamic code
 and tables, message queues provide a useful mechanism for one thread
 to pass a command to another or to synchronize on the return of data.
-A Prolog message queue can be defined to have a speficied or default
-$size$ and can have any number of consumerss and any number of
+A Prolog message queue can be defined to have a specified or default
+$size$ and can have any number of consumers and any number of
 producers.  When a producer writes a $Term$ into a queue, the term is
 copied into the queue so that no binding are shared between $Term$ and
 the producer's stacks.  $Term$ may include structures or lists and
