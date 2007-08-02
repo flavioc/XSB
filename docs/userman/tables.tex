@@ -981,7 +981,7 @@ is used
 \begin{verbatim}
 ngr_skp:- sk_not(ngr_tp(_)).
 \end{verbatim}
-the nonground semantics is allowed.  
+the non-ground semantics is allowed.  
 \end{exercise}
 
 {\tt sk\_not/1} works by
@@ -996,7 +996,7 @@ non-tabled predicates as well, ensuring tabling.
 
 The description of {\tt tnot/1} in Section \ref{sec:control} describes
 other small differences between \not and {\tt tnot/1} as implemented
-in XSB\@.Before leaving the subject of stratification, we note that the
+in XSB\@. Before leaving the subject of stratification, we note that the
 concepts of stratification also underly XSB's evaluation of tabled
 findall: {\tt tfindall/3}.  Here, the idea is that a program is
 stratified if it contains no loop through tabled findall (See the

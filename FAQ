@@ -16,7 +16,7 @@ with the system. An HTML version is available online at
 Send us a report at xsb-development@sourceforge.net
 
 
-- Virtual memory exhausted error duting compilation.
+- Virtual memory exhausted error during compilation.
 
 This is a known problem with some compilers on some systems.
 Try to disable optimization by configuring with --disable optimization

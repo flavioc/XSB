@@ -38,7 +38,7 @@ Under Windows, the command
     makexsb_wind  
 \end{verbatim}
 %%
-in the diectory {\tt XSB$\backslash$build} will normally configure the ODBC
+in the directory {\tt XSB$\backslash$build} will normally configure the ODBC
 driver without problems. For the MySQL driver one has to edit the file
 %%
 \begin{verbatim}
@@ -69,7 +69,7 @@ Under Cygwin, the ODBC libraries come with the distribution; they are
 located in the directory {\tt /cygdrive/c/cygwin/lib/w32api/} and are called
 {\tt odbc32.a} and {\tt odbccp32.a}. (Check if your installation is complete
 and has these libraries!)
-Otherwise, the configuration of the interface under cygwin is
+Otherwise, the configuration of the interface under Cygwin is
 same as in unix (you do not need to provide any ODBC-specific parameters to
 the configure script under Cygwin).
 
@@ -269,7 +269,7 @@ for a given advisor is accomplished by the call:
 where {\tt ha} and {\tt qa} are respectively the connection handle and query
 handle name the user chose.
 
-Observe that the query list is composed of the sql string and a ground value
+Observe that the query list is composed of the SQL string and a ground value
 for the advisor. The return list is made of one variable corresponding to
 the student name. The failure drive loop retrieves all the tuples.
 

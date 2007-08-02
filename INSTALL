@@ -91,7 +91,7 @@ Control:
 			  bin/xsb-bits64). 
 
   --with-aout		  If you are using an older Linux system that
-			  utilizez the a.out format, you must tell us, or
+			  utilizes the a.out format, you must tell us, or
 			  else XSB won't be configured correctly.
 			  If you haven't specified --config-tag on command
 			  line (see below), the suffix -aout will be

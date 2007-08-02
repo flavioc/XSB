@@ -3,7 +3,7 @@
 
 1. Linux systems using the a.out format aren't recognized automatically.
    To circumvent this, you must supply the --linuxaout option to the
-   configure script. If you havent specified --config-tag on command line,
+   configure script. If you haven't specified --config-tag on command line,
    this will add -aout to the configuration tag, and 
    you will need to use makexsb --config-tag=-aout to compile the system.
    (You will be told which tag to use once configure is done working.)
@@ -16,7 +16,7 @@
    So, you might have to use -bits-dbg with makexsb. When configure script
    finishes, it tells you which tag to use.)
 
-3. Installing for Windows is a whole bew ball game.
+3. Installing for Windows is a whole new ball game.
    See INSTALL_WINDOWS.
 
 4. If your system doesn't have `makedepend', you will get an error message
