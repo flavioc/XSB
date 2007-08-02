@@ -35,7 +35,7 @@ used to create and execute the Perl Interpreter Object.
 
 After loading the Perl interpreter, the C program with
 embedded Perl can be compiled into an executable program.
-We illustrate the ideas using the example of Perl patterm matching
+We illustrate the ideas using the example of Perl pattern matching
 functions.
 
 In the Perl language, the pattern matching syntax is as follows:
@@ -100,7 +100,7 @@ to {\tt char (the flag {\tt na} tells SvPV tt to put a string terminating
   character at the end. The second \%s is replaced by the value of {\em
     pattern}.  As a result, the Perl variable \$\_\_text\_\_ is initialized
   with the value of {\em string\/}, and then it is matched against {\em
-    pattern}. (The oprator \verb|=~| performs pattern matching in Perl.)
+    pattern}. (The operator \verb|=~| performs pattern matching in Perl.)
   The actual evaluation of the command string is done using the library
   function {\tt perl\_eval\_sv}.  The flag {G\_SCALAR} means that we call
   the Perl subroutine in a scalar context ({\em context\/} is a special
@@ -159,7 +159,7 @@ into shared, dynamically loaded libraries, which are linked to XSB
 executable when needed.
 
 Just like with Perl, XSB data structures cannot be directly used in C, and
-vice versa. Therefore, the folowing converter functions are provided:
+vice versa. Therefore, the following converter functions are provided:
 
 \noindent
 {\tt int ptoc\_int(int N)}: Get argument number N from an XSB predicate,
@@ -178,7 +178,7 @@ to this Prolog atom.
 
 \noindent
 {\tt void ctop\_int(int N, int V)}: Argument number N is assumed to hold a
-free Prolog variable; this variabl is then bound to the value V which must
+free Prolog variable; this variable is then bound to the value V which must
 be an integer.
 
 \noindent
@@ -191,11 +191,11 @@ free Prolog variable; this function binds that variable to the string
 pointed to by V.
 
 
-To illustrate how arguments are marshalled back and forth, consider
+To illustrate how arguments are marshaled back and forth, consider
 the following query:
 
 \begin{verbatim}
-    :- try_match( 'hellow world', 'm/\wl/g' ).
+    :- try_match( 'hello world', 'm/\wl/g' ).
 \end{verbatim}
 
 
@@ -217,7 +217,7 @@ void try_match( void ) {
 Here, functions {\tt ptoc\_string(1)} and {\tt ptoc\_string(2)} pass the
 first and the second arguments from XSB to the C function {\tt
   try\_match()}. These values are them passed to the function {\tt
-  match()}.  As discused earlier, the latter function passes these values
+  match()}.  As discussed earlier, the latter function passes these values
 further to the Perl interpreter for evaluation. The return value then
 eventually passed back to XSB. If the return value is non-0, then XSB
 considers the built-in predicate {\tt try\_match()} as having executed
@@ -258,7 +258,7 @@ can tell the following about itself:
 
 \noindent
 The XSB-Perl buffer module (which contains both {\tt match()} and {\tt
-  try\_match()}) can then be compiled as folows:
+  try\_match()}) can then be compiled as follows:
 
 \begin{verbatim}
    CC <CCFlags> -I<Archbib>  ...

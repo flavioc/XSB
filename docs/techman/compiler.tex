@@ -59,7 +59,7 @@ position in the following list reflects various dependencies between them.
 	mode information is known.
 	A related step with the declaration of tabled predicates is a step
 	that checks for semantic violations in the use of tabling
-	(i.e. uses of cuts or nots accross tabled predicates).
+	(i.e. uses of cuts or nots across tabled predicates).
 \end{description}
 By the end of the module level compilation phase, the symbol table
 should be complete and it could be dumped into the byte code and the
@@ -129,7 +129,7 @@ Finally, there is yet another form:
 %====================================================
 \begin{description}
 \item[compile.P] The top-level driver of the compiler.
-\item[parse.P]	Uses Prolog's builtin predicate {\tt read/2} to parse
+\item[parse.P]	Uses Prolog's built-in predicate {\tt read/2} to parse
 		the source module and performs initial symbol table registry.
 		Uses {\bf singleton.P} to check for singleton variables in
 		clauses, and the methods of {\bf symtab.P} (the symbol table
@@ -548,7 +548,7 @@ Attribute	& Value			& Access method			\\
 
 The attributes {\sf type, location, use} and {\sf nouse} are shared
 by all occurrences of the same variable, while the other attributes
-depend on the specific occurence.
+depend on the specific occurrence.
 
 For temporary variables, the {\sf location} attribute records the
 register number, while for permanent variables it is the offset in

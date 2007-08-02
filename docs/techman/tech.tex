@@ -304,7 +304,7 @@ where $N$ is the number assigned to the specific primitive predicate.
 (Need to introduce internal data structures here!!!)
 
 The symbolic names of the primitive predicates and their semantics
-are introdued in the {\it User Manual}. Appendix B lists
+are introduced in the {\it User Manual}. Appendix B lists
 their internal numbers.
 
 These predicates are available when the module using them is compiled
@@ -360,7 +360,7 @@ value and the other is for tags and other usage.
 XSB supports both a single word format and a double word
 format.  In the single word version, 4 bits are used as tags, and the
 remaining 28 bits are for all types of values. Integers are therefore coded only 
-with 28 bits. Floating point values maintain double precision (64 bits) by defualt, 
+with 28 bits. Floating point values maintain double precision (64 bits) by default, 
 but do so by being stored as single-word references to an internal structure that
 contains the 64 bits of data. The double word version of XSB uses two host machine 
 words (64 bits) as a Prolog word. One machine word is used for tag, and the other 
@@ -552,7 +552,7 @@ of the symbol in the byte code file.  Table \ref{t:envset} shows the
 setting.
 %
 \item {\tt byte entry\_type}; The {\tt entry\_type} field contains
-values as shown in Table \ref{t:ep} In general these valuse are
+values as shown in Table \ref{t:ep} In general these values are
 derived from the entry type value of the symbol when it is loaded {\em
 except} that symbols representing modules are set to {\tt T\_ORDI} if
 unloaded, and then set to {\tt T\_MODU} when loaded.  This will not
@@ -632,7 +632,7 @@ information used by the debugger.  Bits x10 and x20 are used to
 indicate that the predicate is a shared predicate (for
 multi-threading).  Bit x20 is 1 for a thread-shared predicate and 0
 for thread_private.  Bit x10 is 1 if Bit x20 has been explicitly set
-and is unchangable, and is 0 if it hasn't yet been set and can still
+and is unchangeable, and is 0 if it hasn't yet been set and can still
 be defaulted.  Bits x04 and x08 indicate that the predicate is tabled:
 If they are both 0, the predicate is not tabled.  If they are both 1,
 the predicate is tabled but it has not yet been determined whether it
@@ -714,14 +714,14 @@ The linking is done by using {\it psc\_pairs} which have the form
 A dynamic predicate $p$ is stored differently from a compiled
 predicate.  A dynamic predicate is stored as WAM bytecode with a
 possibly complex index structure.  The entry point field of a psc
-record for a (nontabled) dynamic predicate points to a {\em Predicate
+record for a (non-tabled) dynamic predicate points to a {\em Predicate
 Reference} structure (PrRef), whose first field contains a bytecode
 instruction that enters the executable code defining the dynamic
 predicate.  (The instruction is a fail if there are no clauses at
 all.)  If the code is a trie (when using trie indexing), this
 instruction is a jump to the root trie-node.  If the code is regular
 dynamic code, the instruction is a jumptbreg, which saves a pointer
-(actually displacement) to the current choicepoint in a register (made
+(actually displacement) to the current choice-point in a register (made
 to be the next unused argument register) for use by cuts, and then
 jumps to enter the code that implements the asserted clauses.
 
@@ -759,7 +759,7 @@ register allocation strategy.  If a clause has a complex body, then
 the body will be compiled as a single call to the ``,'' (or
 conjunction, or or, or if-then-else, or whatever control) predicate.
 Cuts are supported by transforming the clause to have an extra
-argument which is the choicepoint address (actually displacement) to
+argument which is the choice-point address (actually displacement) to
 use when cutting (with put(tp)breg).  This address is set during
 execution by the jumptbreg that initially enters the dynamic code.
 
@@ -800,7 +800,7 @@ clause anywhere in the chain, since it is doubly linked.
 
 Next we turn to considering how indexed clauses are represented.  In
 XSB a predicate may have multiple indexes.  In this case if a given
-call has arugments bound enough for the first index to apply, it will
+call has arguments bound enough for the first index to apply, it will
 be used; if not, it will see if the second index can be used and, if
 so, will use it, etc.  This means that a single clause may have
 multiple indexes and so may be on multiple different hash chains.
@@ -939,15 +939,15 @@ Assert and retract manipulate this data structure to maintain its
 consistency and correctness.  Both assert and retract operate directly
 on these data structures when they are called.  Note that this means
 that there may be references to these data structures in the
-choicepoint stack when the structures are modified.  In such cases
+choice-point stack when the structures are modified.  In such cases
 there may be problems.  For assert, structures are only extended.  We
 have been careful to try to be sure that assert will always leave the
 data structures in a state that is consistent for any computation
-waiting on the choicepoint stack.  So the semantics of asserting into
+waiting on the choice-point stack.  So the semantics of asserting into
 a clause when backtracking through it is not specified (and surely
 weird), but at least the user should get something.  For retract, the
 situation is more serious.  Since retract removes buffers and there
-may be pointers to them from the choicepoint stack, the system will
+may be pointers to them from the choice-point stack, the system will
 crash in some of these cases.  There is a version of retract, called
 retract\_nr (for ``No Reclaim'', I believe), that leaves all buffers in
 place, overwriting code with fail instructions to get the effect of
@@ -1382,18 +1382,18 @@ node        +------------+  | |         When empty, the next/prev
 	\demo{       \#define {\it Name} {\it number}		}
 
   \item Add in one case entry in {\tt emu/builtin.c} to implement the
-	 builtin.
+	 built-in.
   \item In {\tt syslib/machine.P}, add a Prolog interface to it.
   \item In {\tt cmplib/builtin.P}, add an inline entry for it.
   \item Modifying the documentation appropriately.
 \end{enumerate}
 
-The style of builtin predicates: they are normally in a much lower level
+The style of built-in predicates: they are normally in a much lower level
 than standard predicates as those provided at the language level. All
-builtin predicates are deterministic, never fails, and usually do not perform
-tag checking or mode checking. When C procedure that implements builtin
+built-in predicates are deterministic, never fails, and usually do not perform
+tag checking or mode checking. When C procedure that implements built-in
 predicates returns a 0 value, the emulator will fail the current path
-and backtrack; otherwise the emulator assumes the builtin predicates
+and backtrack; otherwise the emulator assumes the built-in predicates
 succeed and continue the current instruction flow.
 
 \subsection{Adding a New Abstract Machine Instruction}
@@ -1481,10 +1481,10 @@ pointer (pscs are explained in PSB tech ref manual).
 	-- load_seg.c contains routines for initializing these
 structures, using info from .O files.
 
-	-- emu/builtin.c contains several builtins which access
+	-- emu/builtin.c contains several built-ins which access
 information in tables through table information structures, and
-'tip's, which are pointers to them.  The builtins are used mostly in
-lib/tables.P.  (builtins generally are described in the PSB tech
+'tip's, which are pointers to them.  The built-ins are used mostly in
+lib/tables.P.  (built-ins generally are described in the PSB tech
 reference manual).
 
 Memory Management (such as it is) is in memory.h
@@ -1510,7 +1510,7 @@ The instruction level debugger is a powerful aid to improving the
 emulator.  If you add or modify existing SLG-WAM instructions, you
 will sooner or later need to use it or something like it.
 
-Instruction level debugging can be involked from the interpreter in
+Instruction level debugging can be invoked from the interpreter in
 two ways.  The most general way is to use the predicate {\tt
 set\_pil\_on/0} from tables.P.  The goal
 \begin{center} 
@@ -1531,7 +1531,7 @@ set a memory or register watch to a particular value.  It is suggested
 that debugging be done from a shell that allows scrolling and
 searching, such as a shell invoked from emacs.
 
-Each instruction is prinded out in the format
+Each instruction is printed out in the format
 \begin{center}
 {\em instruction-number instruction-address  instruction  parameters}
 \end{center}
@@ -1539,11 +1539,11 @@ The instruction printed out will be executed {em next}.  After an
 instruction or instructions are printed out, the debugger waits for a
 prompt from the user.  Some useful values are presented below, but see
 debug.c for a full set.  All addresses are assumed to be in
-hexidecimal.
+hexadecimal.
 
 \begin{itemize}
 	\item {\em q} quits 	
-\item {\em d} dissasembles all loaded
+\item {\em d} disassembles all loaded
 code.  	
 \item {\em r num} prints the cell value, and deref'ed value of
 a register.  	
@@ -1555,8 +1555,7 @@ permanent variable.
 address.  	
 \item {\em 1} prints table stack starting from tabreg.
 Several lines are printed out and the user is prompted to continue.
-\item {\em 2} prints table heap starting from threg.  Se
-veral lines
+\item {\em 2} prints table heap starting from threg.  Several lines
 are printed out and the user is prompted to continue.  
 \item {\em P}
 prints unification stack starting from pdlreg.  Several lines are
@@ -1618,7 +1617,7 @@ instructions, XPIL1 dumps information about indexing and table copy
 subinstructions, and OLDTTRACE prints out information about table
 calls and solutions.
 
-\section                 {Miscellinious}
+\section                 {Miscellaneous}
 %                        ===============
 
 \subsection{Save Status File Format}
