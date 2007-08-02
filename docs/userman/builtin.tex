@@ -129,7 +129,7 @@ file\_clone/3}.
 
 Streams may also be aliased: the default input and output streams can
 be denoted by {\tt user\_in} and {\tt user\_out} and they refer to the
-process'es standard input and standard output streams. \footnote{For
+process'es standard input and standard output streams \footnote{For
 backwards compatibility, the default input stream can also be aliased
 by {\tt user} or {\tt userin}, and the default output stream by {\tt
 user} or {\tt userout}.}.
@@ -150,7 +150,7 @@ files differ, while on UNIX they are the same.
 \item {\tt Atom} XSB can read from an atom, just as it can from a file.
 Atoms are considered to be textual and repositionable.  Writing to
 atoms via streams is not currently available in XSB, although 
-the predicate {\tt term\_to\_atom/\{2,3\}} contains much of the
+the predicate {\tt term\_to\_atom/[2,3]} contains much of the
 functionality that such streams would provide.
 
 \item {\tt Pipe} XSB can also open pipes either directly, or as part
@@ -353,8 +353,8 @@ option.
 
 \ournewitem{close(+Stream\_or\_alias)}{ISO}\index{\texttt{close/1}}
 %
-{\tt close/1} closes the stream or alias {\tt Stream\_or\_alias}.
-Behaves as  {\tt close(Stream\_or\_alias,[force(false)])}.
+{\tt close/1} closes the stream or alias {\tt Stream\_or\_alias}.\\
+Behaves as {\tt close(Stream\_or\_alias,[force(false)])}.
 
 \ournewitem{set\_input(+Stream\_or\_alias)}{ISO}\index{\texttt{set\_input/1}}
     Makes file {\tt Stream\_or\_alias} the current input stream. 
@@ -996,7 +996,7 @@ Puts the ASCII code {\tt Code} to the current output stream.
 %  is reached before the current term is read.  
 %\end{description} 
 %
-In \version, {\tt read/\{1,2\}} are non ISO-compliant in how they
+In \version, {\tt read/[1,2]} are non ISO-compliant in how they
 handle syntax errors or their behavior when encountering an end of
 file indicator.
 
@@ -1029,7 +1029,7 @@ on stderr and returns the atom {\tt read\_canonical\_error}. This is
 significantly faster than {\tt read/1}, but requires the input to be
 in canonical form.
 
-In \version, {\tt read\_canonical/\{1,2\}} are non ISO-compliant in how they
+In \version, {\tt read\_canonical/[1,2]} are non ISO-compliant in how they
 handle syntax errors or their behavior when encountering an end of
 file indicator.
 
@@ -1279,9 +1279,9 @@ parenthesized).
 \end{itemize}
 
 From the following examples it can be seen that {\tt
-write\_term/\{2,3\}} can duplicate the behavior of a number of other
-I/O predicates such as {\tt write/\{1,2\}}, {\tt writeq/\{1,2\}}, {\tt
-write\_canonical/\{1,2\}}, etc.
+write\_term/[2,3]} can duplicate the behavior of a number of other
+I/O predicates such as {\tt write/[1,2]}, {\tt writeq/[1,2]}, {\tt
+write\_canonical/[1,2]}, etc.
 {\small
 \begin{verbatim}
 
@@ -3135,8 +3135,8 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
 %
 Converts {\tt +Term} to an atomic form according to a list of write
 options, {\tt Options}, that are similar to those used by {\tt
-write\_term/\{2,3\}}.  The various options of {\tt
-term\_to\_atom/\{2,3\}} are especially useful for the interface from C
+write\_term/[2,3]}.  The various options of {\tt
+term\_to\_atom/[2,3]} are especially useful for the interface from C
 to XSB (see {\em Calling XSB from C} in Volume 2 of this manual).
 %
 \begin{itemize}
