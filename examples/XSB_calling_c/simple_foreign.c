@@ -4,6 +4,8 @@
 #include <math.h>
 
 #include "cinterf.h"
+/* context.h is necessary for the type of a thread context. */
+#include "context.h"
 
 /* call as: change_char(+String,+CharPos,+ReplacementString,-ResultString)
    Will take String and replace the character at position CharPos with the
@@ -39,7 +41,7 @@ DllExport int call_conv change_char(CTXTdecl)
 
 int my_sqrt(CTXTdecl)
 {
-   int i = ptoc_int(1);
+   int i = extern_ptoc_int(1);
 
    extern_ctop_float(2, (float) pow((double)i, 0.5));
    return TRUE;
