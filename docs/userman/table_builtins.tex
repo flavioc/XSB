@@ -1429,15 +1429,15 @@ they should be used.  The intention is that {\tt Mode} will be either
 made.
 
 Consider a simple example of the use of these predicates: Assume the
-definition of tabled predicate ptab/2 depends on dynamic predicate
-qdyn/2.  In this case, the user could initially call:
+definition of tabled predicate {\tt ptab/3} depends on dynamic predicate
+{\tt qdyn/2}.  In this case, the user could initially call:
 \begin{verbatim}
       :- assert((invalidate_table_for(qdyn(_,_),_) :-
                     abolish_table_pred(ptab(_,_,_)))).
 \end{verbatim}
-to declare that when qdyn/2 changes (in any way), the table for ptab/3
+to declare that when {\tt qdyn/2} changes (in any way), the table for {\tt ptab/3}
 should be abolished.  Then each time a fact such as {\tt qdyn(A,B)} is
-asserted to, or retracted from, qdyn/2, the user could call
+asserted to, or retracted from, {\tt qdyn/2}, the user could call
 \begin{verbatim}
       :- invalidate_table_for(qdyn(A,B),_).
 \end{verbatim}

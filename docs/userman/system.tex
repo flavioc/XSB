@@ -128,8 +128,8 @@ base file name plus the suffix ``{\tt .xwam}''.
       defined in that module.
 \end{itemize}
 %
-Most of the XSB system predicates, such as {\tt consult/\{1,2\}}, {\tt
-compile/\{1,2\}} and others are somewhat flexible in how they allow
+Most of the XSB system predicates, such as {\tt consult/[1,2]}, {\tt
+compile/[1,2]} and others are somewhat flexible in how they allow
 file designation.  A file may be designated by a {\em file designator}
 which can be a base file name, a source file name; or the relative or
 absolute paths to a base or source file name.  Unfortunately, the
@@ -757,7 +757,7 @@ dynamically asserted predicates (see {\tt index/2}).
 The standard predicate {\tt consult/[1,2]} is the most convenient
 method for entering static source code rules into XSB's
 database~\footnote{In XSB, {\tt reconsult/[1,2]} is defined to have
-the same actions as {\tt consult/\{1,2\}}.}.  {\tt consult/1} has the
+the same actions as {\tt consult/[1,2]}.}.  {\tt consult/1} has the
 form: 
 %
 \begin{center}
@@ -902,12 +902,12 @@ defined.
 %
 \item The {\tt multifile} declaration should be trusted only for
 static code.  Multifile declarations are not supported for code that
-is dynamically loaded (via {\tt load\_dyn/\{1,2\}} or {\tt
-load\_dync/\{1,2\}}).
+is dynamically loaded (via {\tt load\_dyn/[1,2]} or {\tt
+load\_dync/[1,2]}).
 %
 \end{itemize}
 
-Other predicates for loading files are {\tt ensure\_loaded/\{1,2\}}.  
+Other predicates for loading files are {\tt ensure\_loaded/[1,2]}.  
 
 \begin{description}
 \ouritem{ensure\_loaded(+FileName)}\index{\texttt{ensure\_loaded/1}}

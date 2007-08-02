@@ -194,7 +194,7 @@ until there is a single active thread.  However the precise semantics
 of how tabling information is shared depends on whether the
 multi-threaded engine is configured with the default local evaluation
 or with batched evaluation.  As discussed in
-Chapter~\ref{chap:TablingOverview},xs local evaluation is so-named
+Chapter~\ref{chap:TablingOverview}, local evaluation is so-named
 because computation always takes place in the SCC most recently
 created, and no answer is returned outside of an SCC until the SCC has
 been completely evaluated.  Within this scheduling strategy it is not
@@ -498,34 +498,34 @@ remains unaltered.
   stack size initially set to {\tt N} kbytes.  If not specified, the
   default size is used.  The default size can be set at the command
   line (cf. Section~\ref{sec:EmuOptions}), and altered at run time by
-  the xsb flag {\tt thread\_glsize} (cf. Section~\ref{State}).
+  the XSB flag {\tt thread\_glsize} (cf. Section~\ref{State}).
 %
 \item {\tt tcpsize(N)}: create thread with trail plus choice point
   stack size initially set to {\tt N} kbytes.  If not specified, the
   default size is used (cf. Section~\ref{sec:EmuOptions}).  The
   default size can be set at the command line
   (cf. Section~\ref{sec:EmuOptions}), and altered at run time by the
-  xsb flag {\tt thread\_tcpsize} (cf. Section~\ref{State}).
+  XSB flag {\tt thread\_tcpsize} (cf. Section~\ref{State}).
 %
 \item {\tt complsize(N)}: create thread with completion stack size
   initially set to {\tt N} kbytes. If not specified, the default size
   is used (cf. Section~\ref{sec:EmuOptions}).  The default size can be
   set at the command line (cf. Section~\ref{sec:EmuOptions}), and
-  altered at run time by the xsb flag {\tt thread\_complsize}
+  altered at run time by the XSB flag {\tt thread\_complsize}
   (cf. Section~\ref{State}).
 %
 \item {\tt pdlsize(N)}: create thread with {\tt N} kbytes of
   unification stack.  If not specified, the default size is used
   (cf. Section~\ref{sec:EmuOptions}).  The default size can be set at
   the command line (cf. Section~\ref{sec:EmuOptions}), and altered at
-  run time by the xsb flag {\tt thread\_pdlsize}
+  run time by the XSB flag {\tt thread\_pdlsize}
   (cf. Section~\ref{State}).
 %
 \item {\tt detached(Boolean)}: if {\tt Boolean} is true, creates
   detached thread.  If {\tt Boolean} is false, the thread created will
   be joinable, while if no option is given the default will be used.
   In \version{} threads are created joinable by default, but this
-  default can be altered at run time by the xsb flag {\tt
+  default can be altered at run time by the XSB flag {\tt
     thread\_default} (cf. Section~\ref{State}).
 %
 \item {\tt alias(Alias)}: Allow thread {\tt ThreadId} to be referred
@@ -701,7 +701,7 @@ cancellation error, which can be caught within {\tt ThreadId} like any
 other error.  Usually, this means that {\tt ThreadId} will abort and
 exit.  Note that the high-level upon which thread cancellation is
 implemented allows for simplicity and portability of thread
-cancellation.  \footnote{While interrupt vector is not checked upon
+cancellation \footnote{While interrupt vector is not checked upon
   every SLG-WAM instruction, it is checked on every {\sf call} and
   {\sf execute} instruction, and should should be suitable for almost
   any need for cancellation.}.
@@ -1077,7 +1077,7 @@ number of terms in the queue, and for aliases of the queue.
 \item {\tt max\_terms(N)}: create queue so that it can contain at most
   {\tt N} terms before writes to the queue block.  If not specified,
   the default size is used.  This default can be queried and altered
-  at run time via the xsb flag {\tt queue\_max\_terms}.
+  at run time via the XSB flag {\tt queue\_max\_terms}.
   (cf. Section~\ref{State}).
 %
 \item {\tt alias(Alias)}: Allow queue {\tt Queue} to be referred to
