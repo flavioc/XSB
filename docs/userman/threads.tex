@@ -798,7 +798,7 @@ recommend using it if possible, and making use of lower-level calls to
 only when {\tt with\_mutex/2} is not applicable.
 
 \begin{description}
-\ournewitem{with\_mutex(+Mutex,?Goal)}{mutex}
+\ournewitem{with\_mutex(+Mutex,?Goal)}{mutex\_xsb}
 \index{\texttt{with\_mutex/2}} 
 %
 Locks a current mutex or alias{\tt Mutex}, executes {\tt Goal}
@@ -842,7 +842,7 @@ mutex has been successfully unlocked.
 %
 \ei
 
-\ournewitem{mutex\_create(?Mutex)}{mutex}
+\ournewitem{mutex\_create(?Mutex)}{mutex\_xsb}
 \index{\texttt{mutex\_create/1}} 
 %
 Creates a new recursive user mutex with identifier {\tt Mutex}.  {\tt
@@ -886,7 +886,7 @@ aliases of the mutex.
 \ei
 \ei
 
-\ournewitem{mutex\_destroy(+Mutex)}{mutex}
+\ournewitem{mutex\_destroy(+Mutex)}{mutex\_xsb}
 \index{\texttt{mutex\_destroy/1}} 
 %
 Destroys a current unlocked mutex with alias or id {\tt Mutex} along
@@ -914,7 +914,7 @@ with any memory it uses.
 \ei
 \ei
 
-\ournewitem{mutex\_lock(+Mutex)}{mutex}
+\ournewitem{mutex\_lock(+Mutex)}{mutex\_xsb}
 \index{\texttt{mutex\_lock/1}} 
 %
 {\tt mutex\_lock(Mutex)} locks a (recursive) mutex with alias or id
@@ -949,7 +949,7 @@ fails or raises an exception.
 \ei
 \ei
 
-\ournewitem{mutex\_trylock(+Mutex)}{mutex}
+\ournewitem{mutex\_trylock(+Mutex)}{mutex\_xsb}
 \index{\texttt{mutex\_trylock/1}} 
 %
 Works as {\tt mutex\_lock/1} but fails immediately if {\tt Mutex} is
@@ -973,7 +973,7 @@ held by another thread,  rather than suspending the calling thread.
 \ei
 \ei
 
-\ournewitem{mutex\_unlock(+Mutex)}{mutex}
+\ournewitem{mutex\_unlock(+Mutex)}{mutex\_xsb}
 \index{\texttt{mutex\_unlock/1}} 
 %
 Unlocks the mutex with alias or id {\tt Mutex} when called by the same
@@ -1001,13 +1001,13 @@ thread that locked {\tt Mutex}.
 \ei
 \ei
 
-\ournewitem{mutex\_unlock\_all}{mutex}
+\ournewitem{mutex\_unlock\_all}{mutex\_xsb}
 \index{\texttt{mutex\_unlock\_all/0}} 
 %
 {\tt mutex\_unlock\_all/0} unlocks all user mutexes owned by the
 current thread.  It has no error cases.
 
-\ournewitem{mutex\_property(?Mutex,?Property)}{mutex}
+\ournewitem{mutex\_property(?Mutex,?Property)}{mutex\_xsb}
 \index{\texttt{mutex\_property/2}} 
 %
 If {\tt Mutex} is instantiated, unifies {\tt Property} with current
@@ -1066,7 +1066,7 @@ by splitting one ``multiplexed'' queue into two separate queues.
 
 \begin{description}
 
-\ournewitem{message\_queue\_create(-Queue,+Options)}{mutex}
+\ournewitem{message\_queue\_create(-Queue,+Options)}{mutex\_xsb}
 \index{\texttt{message\_queue\_create/2}} 
 %
 Creates a new message queue with identifier {\tt Queue}.  {\tt
@@ -1116,7 +1116,7 @@ number of terms in the queue, and for aliases of the queue.
 \ei
 \ei
 
-\ournewitem{message\_queue\_detroy(+Queue\_or\_Alias,\#Message)}{mutex}
+\ournewitem{message\_queue\_detroy(+Queue\_or\_Alias,\#Message)}{mutex\_xsb}
 \index{\texttt{message\_queue\_destroy/1}} 
 %
 Destroys a message queue with alias or id {\tt Queue\_or\_alias}, as
@@ -1142,7 +1142,7 @@ error will be thrown.
 %
 
 
-\ournewitem{thread\_send\_message(+Queue\_or\_Alias,\#Message)}{mutex}
+\ournewitem{thread\_send\_message(+Queue\_or\_Alias,\#Message)}{mutex\_xsb}
 \index{\texttt{thread\_send\_message/2}} 
 %
 If there are fewer terms on {\tt Queue\_or\_Alias} than the queue's
@@ -1166,7 +1166,7 @@ when the thread will be awakened to put {\tt Message} onto the queue.
 \ei
 %
 
-\ournewitem{thread\_get\_message(+Queue\_or\_Alias,?Message)}{mutex}
+\ournewitem{thread\_get\_message(+Queue\_or\_Alias,?Message)}{mutex\_xsb}
 \index{\texttt{thread\_get\_message/2}} 
 
 If there are terms on {\tt Queue\_or\_Alias} {\tt
