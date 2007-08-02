@@ -435,14 +435,14 @@ struct TDispBlkHdr_t {
 };
 
 /* If private predicate in MT engine, find the thread's private TIF,
-   otherwise leave unchanged */
+   otherwise leave unchanged.
+
+   TLS: took out check of MaxThread -- MaxThread is always set to max_threads_glc  */
 #define  handle_dispatch_block(tip)					\
   if ( isPrivateTIF(tip) ) {						\
     TDBptr tdispblk;							\
     tdispblk = (TDBptr) tip;						\
-    if (xsb_thread_entry > TDB_MaxThread(tdispblk))				\
-      xsb_abort("Table Dispatch block too small");			\
-    tip = TDB_PrivateTIF(tdispblk,xsb_thread_entry);				\
+    tip = TDB_PrivateTIF(tdispblk,xsb_thread_entry);			\
     if (!tip) {								\
       /* this may not be possible, as it may always be initted in get_tip? */\
       tip = New_TIF(CTXTc tdispblk->psc_ptr);			\
