@@ -70,7 +70,7 @@ To obtain a free copy of XSB and associated documentation (including
 installation notes) see http://www.cs.sunysb.edu/~sbprolog/.
 
 The GUI components of the system are implemented in iTCL/Tk, which is
-avaliable from http://www.tcltk.com/itcl/.  The web site
+available from http://www.tcltk.com/itcl/.  The web site
 includes links to a source distribution and installation notes.  This
 distribution of iTcl/Tk can be run on Unix systems, Windows 95/NT as
 well as Macintosh systems.
@@ -172,8 +172,8 @@ underlined with ^^^ ; the rest are the responses of the XMC system].
 	$
 
 For measuring the time taken to modelcheck or the space consumed,
-you can use XSB's builtin predicates cputime(_) and statisitics.
-Please see XSB manual for usage notes on these builtins.
+you can use XSB's built-in predicates cputime(_) and statistics.
+Please see XSB manual for usage notes on these built-ins.
 
 Please send comments about the XMC system, suggestions for improvements,
 and bug reports to lmc@cs.sunysb.edu.

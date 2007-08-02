@@ -7,7 +7,7 @@ Coding Conventions:
        control to ensure thread safety, its important to keep track of
        their use in XSB.  (This can be done by the gdb "info
        variables" command).  Currently, when XSB is compiled for
-       multh-threading there are over 100 of these.  These global
+       multi-threading there are over 100 of these.  These global
        variables represent process-level information and may either be
        changeable, or constant-like (not changeable after an
        initialization).
@@ -15,7 +15,7 @@ Coding Conventions:
        Changeable global variables are usually protected by mutexes or
        some other concurrency control.  Constant-like variables, on
        the other hand are perfectly safe for multi-threading.
-       However, when updating XSB for new code, it is necessesary to
+       However, when updating XSB for new code, it is necessary to
        ensure that all global variables are "accounted for" -- either
        are constants, are controlled by mutexes, or are safe
        (e.g. global counters).  In order to aid this process, please
@@ -32,7 +32,7 @@ Coding Conventions:
 
        Other constant-like variables: xxx_glc
 
-Other global varibles that I have checked out but have not changed to
+Other global variables that I have checked out but have not changed to
 follow these conventions:
 
 File biassert.c:

@@ -1,4 +1,4 @@
-1. INCREMENTAL DECLRATIONS:
+1. INCREMENTAL DECLARATIONS:
 
   All table predicates that have to be maintained incrementally should
   be declared as incr. 

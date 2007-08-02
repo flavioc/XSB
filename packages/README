@@ -3,7 +3,7 @@ To add a package do:
 
 1. Put the package in a new subdirectory.
 
-2. Write a short bootsrtapping file: look at the existing ones in the
+2. Write a short bootstrapping file: look at the existing ones in the
    packages directory. Most likely, you can reuse an existing one by
    changing the name of the package and the source directory.
 
@@ -28,7 +28,7 @@ package_configuration(dir(<packageName>), <source-directory>).
 This is done through bootstrap_package/2. This function also asserts
 package_configuration(loaded(<packageName>), yes).
 when the package is loaded. This allows XSB to query which
-packages are instaled.
+packages are installed.
 
 Your bootstrapping code might assert other things there, such as
 package_configuration(version(<packageName>), <version-number>).

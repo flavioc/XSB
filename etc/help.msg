@@ -17,7 +17,7 @@ Usage:	xsb [flags] [-l] [-i]
 	     the file module.xwam must be on the library search path.
       	boot_module:
              This is a developer's option.
-	     The -B flags tells XSB which bootstraping module to use instead
+	     The -B flags tells XSB which bootstrapping module to use instead
 	     of the standard loader.  The loader must be specified using its
 	     full pathname, and boot_module.xwam must exist.
     	module_to_disassemble:

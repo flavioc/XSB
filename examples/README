@@ -8,7 +8,7 @@ first.P		A program that computes FIRST's for a context-free grammar.
 		recursive definition can be directly transcribed into XSB
 		and executed with tabling.
 
-ptq.P		PTQ grammar. (Consulting this one automaticallly loads 
+ptq.P		PTQ grammar. (Consulting this one automatically loads 
 				the others.)
 parser.P	Parser used by the PTQ grammar.
 ptq_examples.P	Examples to show how the PTQ grammar works.
@@ -16,14 +16,14 @@ ptq_utils.P	Utilities for PTQ grammar.
 ptqlex.P	lexicon for PTQ.
 		A grammar for Montague's PTQ (The Proper Treatment of 
 		Quantification in Ordinary English.) This includes
-		quantification and pronominalization. It is confingured
+		quantification and pronominalization. It is configured
 		to handle just the syntax, but contains code that can
 		be used to handle the semantics as well. This example
 		shows the power of tabling in that the PTQ grammar is
 		very simple when tabling handles the recursion.
 
 shortest_path.P	A simple program that computes shortest paths in a graph.
-		It uses tabling and the tabling builtins. It handles
+		It uses tabling and the tabling built-ins. It handles
 		cyclic graphs and converges towards the shortest paths.
 
 wfs.P		Well-founded semantics meta-interpreter.
