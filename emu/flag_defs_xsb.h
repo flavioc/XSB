@@ -125,8 +125,9 @@ interrupt flag
 #define THREAD_DETACHED           76   /* Initial Detached flag for created thread */
 #define MAX_THREAD_FLAG           77   /* Maximum number of threads (not changeable after startup) */
 #define MAX_QUEUE_TERMS           78   /* Default Maximum number of terms in a message queue*/
+#define RECOMPILE_OVERRIDE        79
 
-#define MAX_FLAGS		80
+#define MAX_FLAGS		85
 
 #define MAXTOINDEX 5              /* depth in term to go when using deep indexing */
 

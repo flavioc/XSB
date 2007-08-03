@@ -1569,7 +1569,9 @@ int builtin_call(CTXTdeclc byte number)
 				/* R2: -int, addr of 1st instruction;	     */
 				/*	0 indicates an error                 */
 				/* R3 = 1 if exports to be exported, 0 otw   */
+    SYS_MUTEX_LOCK( MUTEX_LOADER );
     ctop_int(CTXTc 2, (Integer)loader(CTXTc ptoc_string(CTXTc 1), ptoc_int(CTXTc 3)));
+    SYS_MUTEX_UNLOCK( MUTEX_LOADER );
     break;
 
   case PSC_INSERT: {	/* R1: +String, symbol name
@@ -1808,9 +1810,7 @@ int builtin_call(CTXTdeclc byte number)
 			   from/to the shell command. */
     {
       xsbBool sys_system_return;
-      SYS_MUTEX_LOCK( MUTEX_SYS_SYSTEM );
       sys_system_return = sys_system(CTXTc ptoc_int(CTXTc 1));
-      SYS_MUTEX_UNLOCK( MUTEX_SYS_SYSTEM );
       return sys_system_return;
     }
   case SYS_GETHOST: {

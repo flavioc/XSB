@@ -106,10 +106,6 @@
 #define MAX_SYS_MUTEXES		40
 
 /* Be sure to update this if you add a recusive mutex */
-#define LAST_REC_MUTEX		8
-
-/* If you add a mutex, also update mutex_names[] in thread_xsb.c */
-/* first mutexes are recursive */
 
 /* Handles various data structures for dynamic code, including
    dispatch blocks. */
@@ -122,7 +118,8 @@
 /* MUTEX_TABLE handles global table data structures: lists of tifs,
    dispatch blocks, table dispatch blocks, and
    deleted_table_info_frames. */
-
+/* If you add a mutex, also update mutex_names[] in thread_xsb.c */
+/* first mutexes are recursive */
 
 #define MUTEX_TABLE		2
 #define MUTEX_TRIE		3
@@ -131,6 +128,9 @@
 #define MUTEX_LOAD_UNDEF	6	/* Must be recursive */
 #define MUTEX_DELAY		7
 #define MUTEX_SYS_SYSTEM	8      /* recursive prob. not necess */
+#define MUTEX_LOADER            9
+
+#define LAST_REC_MUTEX		10
 
 /* pseudo mutexes are used to count accesses to mutexes or sets of mutexes
    that couldn't adequately be treated has system mutexes */

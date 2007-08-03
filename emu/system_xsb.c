@@ -62,6 +62,8 @@
 #include "register.h"
 #include "psc_xsb.h"
 #include "memory_xsb.h"
+#include "thread_defs_xsb.h"
+#include "thread_xsb.h"
 
 #define MAX_CMD_LEN 1024
 
@@ -184,6 +186,14 @@ int sys_syscall(CTXTdeclc int callno)
   return result;
 }
 
+/* TLS: making a conservative guess at which system calls need to be
+   mutexed.  I'm doing it whenever I see the process table altered or
+   affected, so this is the data structure that its protecting.
+
+   At some point, the SET_FILEPTRs should be protected against other
+   threads closing that stream.  Perhaps for such things a
+   thread-specific stream table should be used.
+*/
 xsbBool sys_system(CTXTdeclc int callno)
 {
   int pid;
@@ -272,6 +282,8 @@ xsbBool sys_system(CTXTdeclc int callno)
     char *callname=NULL;
     xsbBool params_are_in_a_list=FALSE;
 
+    SYS_MUTEX_LOCK( MUTEX_SYS_SYSTEM );
+
     init_process_table();
 
     if (callno == SPAWN_PROCESS)
@@ -350,6 +362,7 @@ xsbBool sys_system(CTXTdeclc int callno)
     /* -1 means: no space left */
     if ((tbl_pos = get_free_process_cell()) < 0) {
       xsb_warn("Can't create subprocess because XSB process table is full");
+      SYS_MUTEX_UNLOCK( MUTEX_SYS_SYSTEM );
       return FALSE;
     }
 
@@ -363,6 +376,7 @@ xsbBool sys_system(CTXTdeclc int callno)
 
     if (pid_or_status < 0) {
       xsb_warn("[%s] Subprocess creation failed", callname);
+      SYS_MUTEX_UNLOCK( MUTEX_SYS_SYSTEM );
       return FALSE;
     }
 
@@ -391,6 +405,7 @@ xsbBool sys_system(CTXTdeclc int callno)
     concat_array(params, " ",
 		 xsb_process_table.process[tbl_pos].cmdline,MAX_CMD_LEN);
     
+    SYS_MUTEX_UNLOCK( MUTEX_SYS_SYSTEM );
     return TRUE;
   }
 
@@ -400,6 +415,7 @@ xsbBool sys_system(CTXTdeclc int callno)
     prolog_term table_term_tail, listHead;
     prolog_term table_term=reg_term(CTXTc 2);
 
+    SYS_MUTEX_LOCK( MUTEX_SYS_SYSTEM );
     init_process_table();
 
     if (!isref(table_term))
@@ -423,11 +439,14 @@ xsbBool sys_system(CTXTdeclc int callno)
       }
     }
     c2p_nil(CTXTc table_term_tail); /* bind tail to nil */
+    SYS_MUTEX_UNLOCK( MUTEX_SYS_SYSTEM );
     return p2p_unify(CTXTc table_term, reg_term(CTXTc 2));
   }
 
   case PROCESS_STATUS: {
     prolog_term pid_term=reg_term(CTXTc 2), status_term=reg_term(CTXTc 3);
+
+    SYS_MUTEX_LOCK( MUTEX_SYS_SYSTEM );
 
     init_process_table();
 
@@ -460,6 +479,7 @@ xsbBool sys_system(CTXTdeclc int callno)
     default:
       c2p_string(CTXTc "unknown", status_term);
     }
+    SYS_MUTEX_UNLOCK( MUTEX_SYS_SYSTEM );
     return TRUE;
   }
 
@@ -468,6 +488,7 @@ xsbBool sys_system(CTXTdeclc int callno)
     int status;
     prolog_term pid_term=reg_term(CTXTc 2), signal_term=reg_term(CTXTc 3);
 
+    SYS_MUTEX_LOCK( MUTEX_SYS_SYSTEM );
     init_process_table();
 
     if (!(isinteger(pid_term)|isboxedinteger(pid_term)))
@@ -475,11 +496,14 @@ xsbBool sys_system(CTXTdeclc int callno)
     pid = int_val(pid_term);
 
     if (isstring(signal_term) && strcmp(string_val(signal_term), "kill")==0) {
-      if (KILL_FAILED(pid))
+      if (KILL_FAILED(pid)) {
+	SYS_MUTEX_UNLOCK( MUTEX_SYS_SYSTEM );
 	return FALSE;
+      }
 #ifdef WIN_NT
-	CloseHandle((HANDLE) pid);
+      CloseHandle((HANDLE) pid);
 #endif
+      SYS_MUTEX_UNLOCK( MUTEX_SYS_SYSTEM );
       return TRUE;
     }
     if (isconstr(signal_term)
@@ -487,8 +511,10 @@ xsbBool sys_system(CTXTdeclc int callno)
 	&& p2c_arity(signal_term)==1) {
       int exit_status;
 
-      if (WAIT(pid, status) < 0)
+      if (WAIT(pid, status) < 0) {
+	SYS_MUTEX_UNLOCK( MUTEX_SYS_SYSTEM );
 	return FALSE;
+      }
 
 #ifdef WIN_NT
       exit_status = status;
@@ -500,6 +526,7 @@ xsbBool sys_system(CTXTdeclc int callno)
 #endif
 
       p2p_unify(CTXTc p2p_arg(signal_term,1), makeint(exit_status));
+      SYS_MUTEX_UNLOCK( MUTEX_SYS_SYSTEM );
       return TRUE;
     }
 
