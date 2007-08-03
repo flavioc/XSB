@@ -246,8 +246,8 @@ set_xsb_ready:-
 usleep(X):- thread_request( XSB_USLEEP, X,_,_, _, _, _, _,_).
 
 thread_sleep(Seconds) :-
-	Miliseconds is Seconds * 1000000,
-	thread_request( XSB_USLEEP, Miliseconds,_,_, _, _, _, _,_).
+	Microseconds is Seconds * 1000000,
+	thread_request( XSB_USLEEP, Microseconds,_,_, _, _, _, _,_).
 
 /* ==================================================================  */
 /* Routines used internally. */
