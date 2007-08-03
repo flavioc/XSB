@@ -67,7 +67,7 @@
 	  assert_code_to_buff/1, assert_buff_to_clref/6,
 	  conpsc/2, psc_type/2, psc_name/2, slash/1, psc_arity/2, 
 	  existing_file_extension/2, almost_search_module/5, db_get_prref/2,
-	  term_psc/2, psc_set_shared/2, psc_set_private/2
+          term_psc/2, psc_set_shared/2, psc_set_private/2, stat_flag/2
      from machine.
 :- import get_p_mod/3, change_multifile_directive/3, open_or_xpp_file/2,
 	  '_$multifile'/1, '_$multifile1'/1,

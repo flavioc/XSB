@@ -107,25 +107,32 @@ reconsult(Path, Options, Ensure_loaded) :-
 
 /* TLS: restricting to only one thread for now.  Its possible that if
  * the file hasn't been loaded before, we could load it, but I'm not 
- * doing that yet. */
+ * doing that yet. 
+
+   Added over-ride flag for LogTalk.  */
+
+check_one_thread_w_override:- 
+	((stat_flag(RECOMPILE_OVERRIDE,X),X == 1) -> 
+	    true
+	 ; check_one_thread(load,file,reconsult/3) ).
 
 reconsult0(Path, Options, Ensure_loaded) :-
 	(Path == user
 	 ->	
-	        (check_one_thread(load,file,reconsult/3),
+	        (check_one_thread_w_override,
 	         compile_load_user(Options))
 	 ;	(search_module(Path, Dir, Mod, SExt, Base, Obj)
 		 ->	expand_filename(Obj,ExpObj),
 			((SExt \== XSB_OBJ_EXTENSION_ATOM_SANS_DOT,
 			  i_want_compile(SExt, Base, Obj))
-			 ->	check_one_thread(load,file,reconsult/3),
+ 		          ->    check_one_thread_w_override,
 			        compile_f(SExt,Base,Options,_ExList,Mod,Dir),
 				load_exec(Obj, Mod),
 				(consult_file_loaded(ExpObj)
 				 ->	true
 				 ;	assert(consult_file_loaded(ExpObj))
 				)
-			 ;      /* Compilation not required */
+			 ;     /* Compilation not required */
   			       (Ensure_loaded==true ->  
 			                (consult_file_loaded(ExpObj)
 				         ->     true
@@ -134,7 +141,7 @@ reconsult0(Path, Options, Ensure_loaded) :-
 						assert(consult_file_loaded(ExpObj)) 
 					 )
 			         ;	/* Ensure_loaded == false */
-				       check_one_thread(load,file,reconsult/3),
+				       check_one_thread_w_override,
 				       load_exec(Obj, Mod),
 				       (consult_file_loaded(ExpObj)
 				        ->	true
@@ -152,14 +159,14 @@ reconsult0(Path, Options, Ensure_loaded) :-
 i_want_compile(SExt, Base, Obj) :-
 	( not(file_exists(Obj)) -> true
 	;
-	    needs_recompile(SExt, Base, Obj) ).
+	 needs_recompile(SExt, Base, Obj) ).
 
 needs_recompile(XSB_SRC_EXTENSION_ATOM_SANS_DOT, Base, Obj) :-
 	( str_cat(Base, XSB_SRC_EXTENSION_ATOM, PFileName),
 	    path_sysop(newerthan,PFileName,Obj)
 	)
 	;
-	( str_cat(Base, XSB_HDR_EXTENSION_ATOM, HFileName),
+	(str_cat(Base, XSB_HDR_EXTENSION_ATOM, HFileName),
 	  file_time(Obj, time(OTime1,Otime2)),
 	  %% If no header file exists, then HTime = 0
 	  file_time(HFileName, time(HTime1,HTime2)), 
