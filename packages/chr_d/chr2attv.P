@@ -67,14 +67,26 @@ write_content([C|Cs]) :-
 % customized translation -- simple, with argument indexing (not finished yet),
 % or with dynamic constraint store
 translate_chr(Option,CHR,Attv) :-
-	split_clauses(CHR, ConstrDeclarations, NeverStored, Rules, Other, Mod),
+%	split_clauses(CHR, ConstrDeclarations, NeverStored, Rules, Other, Mod),
+	split_clauses(CHR, ConstrDeclarations, ModesDeclarations, NeverStored, Rules, Other, Mod),
 	(var(Mod) -> Mod = chrd_module; true),
-	check_rules(Rules,ConstrDeclarations,_RCnt),
-	generate_attribute_declaration(ConstrDeclarations,AttrDecl),
-	select_stored_constraints(ConstrDeclarations,NeverStored,Declarations),
-	check_arg_indexing(Rules,[],IndexedArgs),
-	generate_aux_preds(Option,Declarations,Mod,IndexedArgs,AuxPreds),	
-	compile_chr_rules(Option,ConstrDeclarations,Declarations,Mod,Rules,RuleClauses),
+	check_rules_m(Rules,ConstrDeclarations,ModesDeclarations,_RCnt),
+	% This is not really needded ...
+	%generate_attribute_declaration(ConstrDeclarations,AttrDecl),
+	select_stored_constraints(ConstrDeclarations,NeverStored,StoredConstrDeclarations),
+	select_stored_constraints(ModesDeclarations,NeverStored,StoredModesDeclarations),
+	get_nonground_arities(StoredModesDeclarations,Modes),
+	% not fully supported yet ...
+	%check_arg_indexing(Rules,[],IndexedArgs),
+	%generate_aux_preds(Option,Declarations,Mod,IndexedArgs,AuxPreds),
+	generate_aux_preds_m(Option,StoredConstrDeclarations,Modes,Mod,_IndexedArgs,AuxPreds),!,
+	get_f/a_declarations(ModesDeclarations,ModesConstrDeclarations),
+	append(ConstrDeclarations,ModesConstrDeclarations,AllConstrDeclarations),
+	get_f/a_declarations(StoredModesDeclarations,StoredModesConstrDeclarations),
+	append(StoredConstrDeclarations,StoredModesConstrDeclarations,AllStoredConstrDeclarations),
+	get_f/a_declarations(Modes,StoredModesNongroundArities),
+	append(StoredConstrDeclarations,StoredModesNongroundArities,AllStoredNongroundArities),
+	compile_chr_rules(Option,AllConstrDeclarations,AllStoredConstrDeclarations,AllStoredNongroundArities,Mod,Rules,RuleClauses),
 	append_lists([[(:-compiler_options([singleton_warnings_off]))],
 		      [(:- import install_verify_attribute_handler/4,
 			          get_attr/3,
@@ -89,7 +101,7 @@ translate_chr(Option,CHR,Attv) :-
 		      [(:- import delete_ith/4 from listutil)],
 		      [(:- [chr_d])],
 		      Other,
-		      AttrDecl,
+		      %AttrDecl,
 	              AuxPreds,
 		      RuleClauses,
 		      [(show_atts(X) :- show_atts(X,Mod))]],
@@ -105,45 +117,82 @@ generate_aux_preds(Option,Declarations,Mod,IndexedArgs,AuxPreds) :-
 	    )
 	).
 
+% With mode declarations
+generate_aux_preds_m(Option,Declarations,Modes,Mod,_IndexedArgs,AuxPreds) :-
+	(Option == ds
+	 -> write('Compiling '), write(Mod), write(' with dynamic constraint store'),
+	    nl,
+	    generate_aux_preds_ds(Declarations,Modes,Mod,AuxPreds)
+%	  ; (Option == ai
+%	     -> generate_aux_preds_ai(Declarations,Modes,Mod,IndexedArgs,AuxPreds)
+	      ; write('Compiling '), write(Mod), write(' with static constraint store'),
+	        nl,
+	        generate_aux_preds_m(Declarations,Modes,Mod,AuxPreds)
+%	    )
+	).
+
 
 
 % divide chr file contents [C|Cs] into constraint declarations Declarations,
-% never_stored declarations NeverStored, chr rules Rules, other clauses Other
-% and module name Mod
-split_clauses([],[],[],[],[],_).
-split_clauses([C|Cs], Declarations,NeverStored,Rules,Other,Mod) :-
+% mode-constraint declarations Modes, never_stored declarations NeverStored,
+% chr rules Rules, other clauses Other and module name Mod
+split_clauses([],[],[],[],[],[],_).
+split_clauses([C|Cs], Declarations,Modes,NeverStored,Rules,Other,Mod) :-
 	(is_rule(C,R)
 	 -> Declarations = Ds,
+	    Modes = Ms,
 	    NeverStored = Ns,
 	    Rules = [R|Rs],
 	    Other = Os
-	  ; is_constr_declaration(C,D)
+	  ; is_constr_declaration(C,D,M)
 	    -> append(D,Ds,Declarations),
+	       append(M,Ms,Modes),
 	       NeverStored = Ns,
 	       Rules = Rs,
 	       Other = Os
 	     ; is_never_stored_declaration(C,N)
 	       -> append(N,Ns,NeverStored),
 	          Declarations = Ds,
+	          Modes = Ms,
 	          Rules = Rs,
 	          Other = Os
 	        ; C = ( :- chr_module(Mod))
 	          -> Declarations = Ds,
+	             Modes = Ms,
 	             NeverStored = Ns,
 	             Rules = Rs,
 	             Other = Os
 	           ; Declarations = Ds,
+	             Modes = Ms,
 	             NeverStored = Ns,
 	             Rules = Rs,
 	             Other = [C|Os]
 	),
-	split_clauses(Cs,Ds,Ns,Rs,Os,Mod).
+	split_clauses(Cs,Ds,Ms,Ns,Rs,Os,Mod).
 
 
 % parse constraint declaration
 is_constr_declaration((:- DC),Constraints) :-
 	DC =.. [constraints,Cs],
 	and2list(Cs,Constraints).
+
+is_constr_declaration((:- DC),Constraints,ModeConstraints) :-
+	DC =.. [constraints,Cs],
+	and2list(Cs,AllCs),
+	split_constr_decl(AllCs,Constraints,ModeConstraints).
+
+split_constr_decl([],[],[]).
+split_constr_decl([C|Cs],Constrs,ModeConstrs) :-
+	(C = F/A
+	 -> Constrs = [C|Constrs1],
+	    ModeConstrs = ModeConstrs1
+	  ; C =.. [F|Modes],
+	    length(Modes,A),
+	    Constrs = Constrs1,
+	    ModeConstrs = [F/A-Modes|ModeConstrs1]
+	),
+	split_constr_decl(Cs,Constrs1,ModeConstrs1).
+
 
 
 % parse never-stored declaration
@@ -235,9 +284,32 @@ check_head_constr([C|_],_) :-
 	write('Undefined constraint: '), writeln(C),
 	fail.
 
+% check rules with mode declarations
+check_rules_m(Rs,Ds,Ms,RCnt) :-
+	check_rules_m(Rs,Ds,Ms,0,RCnt).
+
+check_rules_m([],_,_,N,N).
+check_rules_m([pragma(rule(Head1,Head2,_G,_B),_,_)|Rs],Declarations,Modes,N1,N2) :-
+	append(Head1,Head2,HeadConstr),
+	check_head_constr_m(HeadConstr,Declarations,Modes),
+	N is N1+1,
+	check_rules_m(Rs,Declarations,Modes,N,N2).
+
+check_head_constr_m([],_,_).
+check_head_constr_m([C|Cs],Ds,Ms) :-
+	functor(C,F,A),
+	(member(F/A, Ds)
+	 -> true
+	  ; member(F/A-_M, Ms)
+	),
+	check_head_constr_m(Cs,Ds,Ms).
+check_head_constr_m([C|_],_,_) :-
+	write('Undefined constraint: '), writeln(C),
+	fail.
 
 
 
+% This is not needed
 % generate declaration of attributes corresponding to chr constraints
 generate_attribute_declaration(ConstrDs,AttrDecl) :-
 	list2and(ConstrDs,Atts),
@@ -247,13 +319,41 @@ generate_attribute_declaration(ConstrDs,AttrDecl) :-
 % store manipulation predicates are needed only for stored constraints
 % extract declarations of these
 select_stored_constraints([],_,[]).
-select_stored_constraints([D|Ds],NeverStored,StoredDeclarations) :-
+select_stored_constraints([F/A|Ds],NeverStored,StoredDeclarations) :-
 	select_stored_constraints(Ds,NeverStored,StoredDs),
-	(member(D,NeverStored)
+	(member(F/A,NeverStored)
 	 -> StoredDeclarations = StoredDs
-	  ; StoredDeclarations = [D|StoredDs]
+	  ; StoredDeclarations = [F/A|StoredDs]
 	).
-	
+select_stored_constraints([F/A-Modes|Ds],NeverStored,StoredDeclarations) :-
+	select_stored_constraints(Ds,NeverStored,StoredDs),
+	(member(F/A,NeverStored)
+	 -> StoredDeclarations = StoredDs
+	  ; StoredDeclarations = [F/A-Modes|StoredDs]
+	).
+
+
+% reduce the arity of each constraint with mode declaration
+% by the number of its always-ground arguments
+get_nonground_arities([],[]).
+get_nonground_arities([F/A-Modes|Fs],[F/A1-Modes|F1s]) :-
+	get_ground_arg_cnt(Modes,GA),
+	A1 is A-GA,
+	get_nonground_arities(Fs,F1s).
+
+get_ground_arg_cnt([],0).
+get_ground_arg_cnt([M|Ms],N) :-
+	get_ground_arg_cnt(Ms,N1),
+	(M = g
+	 -> N is N1+1
+	  ; N is N1
+	).
+
+
+get_f/a_declarations([],[]).
+get_f/a_declarations([F/A-_Modes|FAMs],[F/A|FAs]) :-
+	get_f/a_declarations(FAMs,FAs).
+
 
 
 % argument indexing
@@ -303,26 +403,6 @@ check_indexing([Arg|Args],I,FA,OtherVars,IndexedArgsIn,IndexedArgsOut) :-
 % Auxiliary predicate generation
 %
 
-generate_aux_preds_ds(Declarations,Mod,AuxPreds) :-
-	generate_unification_handler_ds(Declarations,Mod,UnificationHandler),
-	generate_get_attr_clause_ds(Mod,GetAttrClause),
-	generate_put_attr_clause_ds(Mod,PutAttrClause),
-	generate_check_constr_clauses_ds(Declarations,Mod,CheckClauses),
-	generate_match_constr_clauses_ds(Declarations,Mod,MatchClauses),
-	generate_add_constr_clauses_ds(Declarations,Mod,AddClauses),
-	generate_remove_constr_clauses_ds(Declarations,Mod,RmClauses),
-	generate_reconstruct_dynamic_store_clause(Mod,RSClause),
-	append_lists([UnificationHandler,
-		      GetAttrClause,
-		      PutAttrClause,
-		      CheckClauses,
-		      MatchClauses,
-		      AddClauses,
-		      RmClauses,
-		      RSClause],
-		     AuxPreds).
-
-
 generate_aux_preds(Declarations,Mod,AuxPreds) :-
 	get_attr_cnt(Declarations,AttrCnt),
 	generate_unification_handler(Declarations,Mod,UnificationHandler),
@@ -344,6 +424,51 @@ generate_aux_preds(Declarations,Mod,AuxPreds) :-
 		     AuxPreds).
 
 
+% With dynamic constraint store
+generate_aux_preds_ds(Declarations,Mod,AuxPreds) :-
+	generate_unification_handler_ds(Declarations,Mod,UnificationHandler),
+	generate_get_attr_clause_ds(Mod,GetAttrClause),
+	generate_put_attr_clause_ds(Mod,PutAttrClause),
+	generate_check_constr_clauses_ds(Declarations,Mod,CheckClauses),
+	generate_match_constr_clauses_ds(Declarations,Mod,MatchClauses),
+	generate_add_constr_clauses_ds(Declarations,Mod,AddClauses),
+	generate_remove_constr_clauses_ds(Declarations,Mod,RmClauses),
+	generate_reconstruct_dynamic_store_clause(Mod,RSClause),
+	append_lists([UnificationHandler,
+		      GetAttrClause,
+		      PutAttrClause,
+		      CheckClauses,
+		      MatchClauses,
+		      AddClauses,
+		      RmClauses,
+		      RSClause],
+		     AuxPreds).
+
+
+% With mode declarations
+generate_aux_preds_m(Declarations,Modes,Mod,AuxPreds) :-
+	get_attr_cnt(Declarations,AttrCnt1),
+	get_attr_cnt(Modes,AttrCnt2),
+	AttrCnt is AttrCnt1+AttrCnt2,
+	generate_unification_handler_m(AttrCnt,Declarations,Modes,Mod,UnificationHandler),
+	generate_get_attr_clause(AttrCnt,Mod,GetAttrClause),
+	generate_put_attr_clause(AttrCnt,Mod,PutAttrClause),
+	generate_check_constr_clauses_m(Declarations,Modes,AttrCnt,Mod,CheckClauses),
+	generate_match_constr_clauses_m(Declarations,Modes,AttrCnt,Mod,MatchClauses),
+	generate_add_constr_clauses_m(Declarations,Modes,AttrCnt,Mod,AddClauses),
+	generate_remove_constr_clauses_m(Declarations,Modes,AttrCnt,Mod,RmClauses),
+	generate_reconstruct_store_clause_m(Declarations,Modes,Mod,RSClause),
+	append_lists([UnificationHandler,
+		      GetAttrClause,
+		      PutAttrClause,
+		      CheckClauses,
+		      MatchClauses,
+		      AddClauses,
+		      RmClauses,
+		      RSClause],
+		     AuxPreds).
+
+% With argument indexing
 generate_aux_preds_ai(Declarations,Mod,IndexedArgs,AuxPreds) :-
 	get_attr_cnt(Declarations,AttrCnt),
 	get_indexed_attr_cnt(Declarations,IndexedArgs,IndexedAttrCnt),
@@ -581,6 +706,86 @@ generate_check_constr_body_ds(F,A,ArgId,Args,Mod,ArgCode) :-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% check constraints with mode declarations 
+generate_check_constr_clauses_m(Declarations,Modes,AttrCnt,Mod,CheckClauses) :-
+	generate_check_constr_clauses_m(1,Declarations,Modes,AttrCnt,Mod,CheckClauses).
+
+generate_check_constr_clauses_m(_,[],[],_,_,[]).
+generate_check_constr_clauses_m(Off,[F/A|FAs],Modes,AttrCnt,Mod,[C|Cs]) :-
+	generate_check_constr_clause_1_m(Off,AttrCnt,F,A,Mod,C),
+	Off1 is Off + A,
+	generate_check_constr_clauses_m(Off1,FAs,Modes,AttrCnt,Mod,Cs).
+generate_check_constr_clauses_m(Off,[],[F/A-Modes|FAs],AttrCnt,Mod,[C|Cs]) :-
+	length(Modes,FA),
+	generate_check_constr_clause_2_m(Off,AttrCnt,F,A,FA,Modes,Mod,C),
+	Off1 is Off + A,
+	generate_check_constr_clauses_m(Off1,[],FAs,AttrCnt,Mod,Cs).
+
+generate_check_constr_clause_1_m(Off,AttrCnt,F,A,Mod,Clause) :-
+	length(Args,A),
+	fmt_write_string(HeadName, "check_%s", arg(F)),
+	Head =.. [HeadName|Args],
+	generate_check_constr_body_1_m(Off,AttrCnt,A,0,Args,Mod,Body),
+	Clause = (Head :- Body).
+
+generate_check_constr_body_1_m(Off,AttrCnt,A,ArgId,Args,Mod,ArgCode) :-
+	ArgNum is ArgId + 1,
+	delete_ith(ArgNum,Args,Arg,OtherArgs),
+	
+	AttrNum is ArgId + Off,
+	GetAttsCall = get_nth_attr(Arg,Mod,AttrNum,IdAttr),
+	ArgAttr =.. ['attr'|OtherArgs],
+
+	ArgCode = (attvar(Arg)
+		   -> GetAttsCall,
+		      var_member(ArgAttr,IdAttr)
+		    ; NextArgCode),
+	(ArgNum == A
+	 -> NextArgCode = fail
+	  ; generate_check_constr_body_1_m(Off,AttrCnt,A,ArgNum,Args,Mod,NextArgCode)
+	).
+
+generate_check_constr_clause_2_m(Off,AttrCnt,F,A,FA,Modes,Mod,Clause) :-
+	length(Args,FA),
+	fmt_write_string(HeadName, "check_%s", arg(F)),	
+	Head =.. [HeadName|Args],
+	generate_check_constr_body_2_m(Off,AttrCnt,A,0,Args,FA,Modes,true,Mod,Body),
+	Clause = (Head :- Body).
+
+generate_check_constr_body_2_m(Off,AttrCnt,A,ArgId,Args,FA,[M|Modes],AllGround,Mod,ArgCode) :-
+	ArgNum is ArgId + 1,
+
+	(M = g
+ 	 -> NextAllGround = AllGround,
+	    ArgCode = NextArgCode
+	
+	  ; delete_ith(ArgNum,Args,Arg,OtherArgs),
+
+	    NextAllGround = false,
+	
+	    AttrNum is ArgId + Off,
+	    GetAttsCall = get_nth_attr(Arg,Mod,AttrNum,IdAttr),
+	    (AllGround,
+             all_ground(Modes)
+	     -> ChkMemberPred = member
+	      ; ChkMemberPred = var_member
+	    ),
+	    ArgAttr =.. ['attr'|OtherArgs],
+	    ChkMemberCall =..[ChkMemberPred,ArgAttr,IdAttr],
+
+	    ArgCode = (attvar(Arg)
+		      -> GetAttsCall,
+			 ChkMemberCall %var_member(ArgAttr,IdAttr)
+		       ; NextArgCode)
+	),
+	(ArgNum == FA
+	 -> NextArgCode = fail
+	  ; generate_check_constr_body_2_m(Off,AttrCnt,A,ArgNum,Args,FA,Modes,NextAllGround,Mod,NextArgCode)
+	).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -665,6 +870,76 @@ generate_match_constr_body(Off,AttrCnt,A,ArgId,Args,Mod,ArgCode) :-
 	 ->	NextArgCode = fail
 	 ;	generate_match_constr_body(Off,AttrCnt,A,ArgNum,Args,Mod,NextArgCode)
 	).
+
+
+% match constraints with mode declarations
+generate_match_constr_clauses_m(Declarations,Modes,AttrCnt,Mod,MatchClauses) :-
+	generate_match_constr_clauses_m(1,Declarations,Modes,AttrCnt,Mod,MatchClauses).
+
+generate_match_constr_clauses_m(_,[],[],_,_,[]).
+generate_match_constr_clauses_m(Off,[F/A|FAs],Modes,AttrCnt,Mod,[C|Cs]) :-
+	generate_match_constr_clause_1_m(Off,AttrCnt,F,A,Mod,C),
+	Off1 is Off + A,
+	generate_match_constr_clauses_m(Off1,FAs,Modes,AttrCnt,Mod,Cs).
+generate_match_constr_clauses_m(Off,[],[F/A-Modes|FAs],AttrCnt,Mod,[C|Cs]) :-
+	length(Modes,FA),
+	generate_match_constr_clause_2_m(Off,AttrCnt,F,A,FA,Modes,Mod,C),
+	Off1 is Off + A,
+	generate_match_constr_clauses_m(Off1,[],FAs,AttrCnt,Mod,Cs).
+
+generate_match_constr_clause_1_m(Off,AttrCnt,F,A,Mod,Clause) :-
+	length(Args,A),
+	fmt_write_string(HeadName, "match_%s", arg(F)),
+	Head =.. [HeadName|Args],
+	generate_match_constr_body_1_m(Off,AttrCnt,A,0,Args,Mod,Body),
+	Clause = (Head :- Body).
+
+generate_match_constr_body_1_m(Off,AttrCnt,A,ArgId,Args,Mod,ArgCode) :-
+	ArgNum is ArgId + 1,
+	delete_ith(ArgNum,Args,Arg,OtherArgs),
+
+	AttrNum is ArgId + Off,
+	GetAttsCall = get_nth_attr(Arg,Mod,AttrNum,IdAttr),
+	ArgAttr =.. ['attr'|OtherArgs],
+
+	ArgCode = (attvar(Arg)
+		   -> GetAttsCall,
+		      member(ArgAttr,IdAttr)
+		    ; NextArgCode),
+	(ArgNum == A
+	 ->	NextArgCode = fail
+	 ;	generate_match_constr_body_1_m(Off,AttrCnt,A,ArgNum,Args,Mod,NextArgCode)
+	).
+
+generate_match_constr_clause_2_m(Off,AttrCnt,F,A,FA,Modes,Mod,Clause) :-
+	length(Args,FA),
+	fmt_write_string(HeadName, "match_%s", arg(F)),
+	Head =.. [HeadName|Args],
+	generate_match_constr_body_2_m(Off,AttrCnt,A,0,Args,FA,Modes,Mod,Body),
+	Clause = (Head :- Body).
+
+generate_match_constr_body_2_m(Off,AttrCnt,A,ArgId,Args,FA,[M|Modes],Mod,ArgCode) :-
+	ArgNum is ArgId + 1,
+	delete_ith(ArgNum,Args,Arg,OtherArgs),
+
+	(M = g
+	 -> ArgCode = NextArgCode
+	  
+	  ; AttrNum is ArgId + Off,
+	    GetAttsCall = get_nth_attr(Arg,Mod,AttrNum,IdAttr),
+	    ArgAttr =.. ['attr'|OtherArgs],
+	    
+	    ArgCode = (attvar(Arg)
+		       -> GetAttsCall,
+			  member(ArgAttr,IdAttr)
+		        ; NextArgCode)
+	),
+	
+	(ArgNum == FA
+	 ->	NextArgCode = fail
+	 ;	generate_match_constr_body_2_m(Off,AttrCnt,A,ArgNum,Args,FA,Modes,Mod,NextArgCode)
+	).
+
 
 
 % match constraints with dynamic constraint store
@@ -805,7 +1080,123 @@ generate_add_constr_body(Off,AttrCnt,F,A,ArgId,Args,Mod,CodeList,Code) :-
 	generate_add_constr_body(Off,AttrCnt,F,A,ArgNum,Args,Mod,CL,Code).
 
 
+
+% add constraints with mode declarations
+generate_add_constr_clauses_m(Declarations,Modes,AttrCnt,Mod,AddClauses) :-
+	generate_add_constr_clauses_m(1,Declarations,Modes,AttrCnt,Mod,AddClauses).
+
+generate_add_constr_clauses_m(_,[],[],_,_,[]).
+generate_add_constr_clauses_m(Off,[F/A|Cs],Modes,AttrCnt,Mod,AddClauses) :-
+	generate_add_constr_clause_1_m(Off,AttrCnt,F,A,Mod,Clause),
+	Off_A is Off + A,
+	generate_add_constr_clauses_m(Off_A,Cs,Modes,AttrCnt,Mod,Clauses),
+	append(Clause,Clauses,AddClauses).
+generate_add_constr_clauses_m(Off,[],[F/A-Modes|Cs],AttrCnt,Mod,AddClauses) :-
+	length(Modes,FA),
+	generate_add_constr_clause_2_m(Off,AttrCnt,F,A,FA,Modes,Mod,Clause),
+	Off_A is Off + A,
+	generate_add_constr_clauses_m(Off_A,[],Cs,AttrCnt,Mod,Clauses),
+	append(Clause,Clauses,AddClauses).
+
+generate_add_constr_clause_1_m(Off,AttrCnt,F,A,Mod,[CheckClause,AddClause]) :-
+
+	length(AddArgs,A),
+	fmt_write_string(AddHeadName, "add_%s_1", arg(F)),	
+	AddHead =.. [AddHeadName|AddArgs],
+	generate_add_constr_body_1_m(Off,AttrCnt,F,A,0,AddArgs,Mod,_,AddBody),
+	AddClause = (AddHead :- AddBody),
 	
+	length(CheckArgs,A),
+	fmt_write_string(CheckHeadName, "add_%s", arg(F)),
+	CheckHead =.. [CheckHeadName|CheckArgs],
+	fmt_write_string(CheckStmtName, "check_%s", arg(F)),
+	CheckStmt =.. [CheckStmtName|CheckArgs],
+	AddCall =.. [AddHeadName|CheckArgs],
+	CheckClause = (CheckHead :- (CheckStmt -> true ; AddCall)).
+
+
+generate_add_constr_body_1_m(_,_,_,A,A,_,_,CodeList,Code) :-
+	list2and(CodeList,Code).
+generate_add_constr_body_1_m(Off,AttrCnt,F,A,ArgId,Args,Mod,CodeList,Code) :-
+	ArgNum is ArgId + 1,
+	delete_ith(ArgNum,Args,Arg,OtherArgs),
+	
+	fmt_write_string(GetAttsName, "get_%s_atts", arg(Mod)),
+	length(ArgAtts,AttrCnt),
+	AttrNum is ArgId + Off,
+	delete_ith(AttrNum,ArgAtts,IdAttr,RestArgAtts),
+	GetAttsCall =.. [GetAttsName,Arg|ArgAtts],
+
+	ArgAttr =.. ['attr'|OtherArgs],	
+	InsertCall = (NewIdAttr = [ArgAttr|IdAttr]),
+
+	fmt_write_string(PutAttsName, "put_%s_atts", arg(Mod)),
+	delete_ith(AttrNum,NewArgAtts,NewIdAttr,RestArgAtts),
+	PutAttsCall =.. [PutAttsName,Arg|NewArgAtts],
+	
+	ArgCode = (var(Arg)
+		   -> GetAttsCall,
+		      InsertCall,
+		      PutAttsCall
+		    ; true),
+	append(CodeList,[ArgCode],CL),
+	generate_add_constr_body_1_m(Off,AttrCnt,F,A,ArgNum,Args,Mod,CL,Code).
+
+
+generate_add_constr_clause_2_m(Off,AttrCnt,F,A,FA,Modes,Mod,[CheckClause,AddClause]) :-
+
+	length(AddArgs,FA),
+	fmt_write_string(AddHeadName, "add_%s_1", arg(F)),
+	AddHead =.. [AddHeadName|AddArgs],
+	generate_add_constr_body_2_m(Off,AttrCnt,F,A,0,AddArgs,0,Modes,Mod,_,AddBody),
+	AddClause = (AddHead :- AddBody),
+	
+	length(CheckArgs,FA),
+	fmt_write_string(CheckHeadName, "add_%s", arg(F)),
+	CheckHead =.. [CheckHeadName|CheckArgs],
+	fmt_write_string(CheckStmtName, "check_%s", arg(F)),
+	CheckStmt =.. [CheckStmtName|CheckArgs],
+	AddCall =.. [AddHeadName|CheckArgs],
+	CheckClause = (CheckHead :- (CheckStmt -> true ; AddCall)).
+
+
+generate_add_constr_body_2_m(_,_,_,_,_,_,_,[],_,CodeList,Code) :-
+	list2and(CodeList,Code).
+generate_add_constr_body_2_m(Off,AttrCnt,F,A,ArgId,Args,AttrId,[M|Modes],Mod,CodeList,Code) :-
+	ArgNum is ArgId + 1,
+
+	(M = g
+	 -> AttrId1 = AttrId,
+	    CL = CodeList
+	
+	  ; delete_ith(ArgNum,Args,Arg,OtherArgs),
+	
+	    fmt_write_string(GetAttsName, "get_%s_atts", arg(Mod)),
+	    length(ArgAtts,AttrCnt),
+	    AttrNum is AttrId + Off,
+	    delete_ith(AttrNum,ArgAtts,IdAttr,RestArgAtts),
+	    GetAttsCall =.. [GetAttsName,Arg|ArgAtts],
+
+	    ArgAttr =.. ['attr'|OtherArgs],	
+	    InsertCall = (NewIdAttr = [ArgAttr|IdAttr]),
+
+	    fmt_write_string(PutAttsName, "put_%s_atts", arg(Mod)),
+	    delete_ith(AttrNum,NewArgAtts,NewIdAttr,RestArgAtts),
+	    PutAttsCall =.. [PutAttsName,Arg|NewArgAtts],
+	
+	    ArgCode = (var(Arg)
+		      -> GetAttsCall,
+			  InsertCall,
+			  PutAttsCall
+		      ; true),
+	    AttrId1 is AttrId + 1,
+	    append(CodeList,[ArgCode],CL)
+	),
+	
+	generate_add_constr_body_2_m(Off,AttrCnt,F,A,ArgNum,Args,AttrId1,Modes,Mod,CL,Code).
+
+
+
 	
 % add constraints with dynamic constraint store
 generate_add_constr_clauses_ds([],_,[]).
@@ -970,6 +1361,103 @@ generate_remove_constr_body(Off,AttrCnt,F,A,ArgId,Args,Mod,CodeList,Code) :-
 
 
 
+
+% remove constraints with mode declarations
+generate_remove_constr_clauses_m(Declarations,Modes,AttrCnt,Mod,Clauses) :-
+	generate_remove_constr_clauses_m(1,Declarations,Modes,AttrCnt,Mod,Clauses).
+
+generate_remove_constr_clauses_m(_,[],[],_,_,[]).
+generate_remove_constr_clauses_m(Off,[F/A|Cs],Modes,AttrCnt,Mod,[Clause|Clauses]) :-
+	generate_remove_constr_clause_1_m(Off,AttrCnt,F,A,Mod,Clause),
+	Off_A is Off + A,
+	generate_remove_constr_clauses_m(Off_A,Cs,Modes,AttrCnt,Mod,Clauses).
+generate_remove_constr_clauses_m(Off,[],[F/A-Modes|Cs],AttrCnt,Mod,[Clause|Clauses]) :-
+	length(Modes,FA),
+	generate_remove_constr_clause_2_m(Off,AttrCnt,F,A,FA,Modes,Mod,Clause),
+	Off_A is Off + A,
+	generate_remove_constr_clauses_m(Off_A,[],Cs,AttrCnt,Mod,Clauses).
+
+generate_remove_constr_clause_1_m(Off,AttrCnt,F,A,Mod,Clause) :-
+	length(Args,A),
+	fmt_write_string(HeadName, "remove_%s", arg(F)),
+	Head =.. [HeadName|Args],
+	generate_remove_constr_body_1_m(Off,AttrCnt,F,A,0,Args,Mod,_,Body),
+	Clause = (Head :- Body).
+
+generate_remove_constr_body_1_m(_,_,_,A,A,_,_,CodeList,Code) :-
+	list2and(CodeList,Code).
+generate_remove_constr_body_1_m(Off,AttrCnt,F,A,ArgId,Args,Mod,CodeList,Code) :-
+	ArgNum is ArgId + 1,
+	delete_ith(ArgNum,Args,Arg,OtherArgs),
+	
+	fmt_write_string(GetAttsName, "get_%s_atts", arg(Mod)),
+	length(ArgAtts,AttrCnt),
+	AttrNum is ArgId + Off,
+	delete_ith(AttrNum,ArgAtts,IdAttr,RestArgAtts),
+	GetAttsCall =.. [GetAttsName,Arg|ArgAtts],
+
+	ArgAttr =.. ['attr'|OtherArgs],
+
+	AbsRemoveCall =.. ['abs_remove',IdAttr,ArgAttr,NewIdAttr],
+
+	fmt_write_string(PutAttsName, "put_%s_atts", arg(Mod)),
+	delete_ith(AttrNum,NewArgAtts,NewIdAttr,RestArgAtts),
+	PutAttsCall =.. [PutAttsName,Arg|NewArgAtts],
+
+	ArgCode = (var(Arg)
+		   -> GetAttsCall,
+		      AbsRemoveCall,
+		      PutAttsCall
+		    ; true),
+	append(CodeList,[ArgCode],CL),
+	generate_remove_constr_body_1_m(Off,AttrCnt,F,A,ArgNum,Args,Mod,CL,Code).
+
+
+generate_remove_constr_clause_2_m(Off,AttrCnt,F,A,FA,Modes,Mod,Clause) :-
+	length(Args,FA),
+	fmt_write_string(HeadName, "remove_%s", arg(F)),
+	Head =.. [HeadName|Args],
+	generate_remove_constr_body_2_m(Off,AttrCnt,F,A,0,Args,0,Modes,Mod,_,Body),
+	Clause = (Head :- Body).
+
+generate_remove_constr_body_2_m(_,_,_,_,_,_,_,[],_,CodeList,Code) :-
+	list2and(CodeList,Code).
+generate_remove_constr_body_2_m(Off,AttrCnt,F,A,ArgId,Args,AttrId,[M|Modes],Mod,CodeList,Code) :-
+	ArgNum is ArgId + 1,
+
+	(M = g
+	 -> AttrId1 = AttrId,
+	    CL = CodeList
+	
+	  ; delete_ith(ArgNum,Args,Arg,OtherArgs),
+	
+	    fmt_write_string(GetAttsName, "get_%s_atts", arg(Mod)),
+	    length(ArgAtts,AttrCnt),
+	    AttrNum is AttrId + Off,
+	    delete_ith(AttrNum,ArgAtts,IdAttr,RestArgAtts),
+	    GetAttsCall =.. [GetAttsName,Arg|ArgAtts],
+
+	    ArgAttr =.. ['attr'|OtherArgs],
+	    
+	    AbsRemoveCall =.. ['abs_remove',IdAttr,ArgAttr,NewIdAttr],
+
+	    fmt_write_string(PutAttsName, "put_%s_atts", arg(Mod)),
+	    delete_ith(AttrNum,NewArgAtts,NewIdAttr,RestArgAtts),
+	    PutAttsCall =.. [PutAttsName,Arg|NewArgAtts],
+
+	    ArgCode = (var(Arg)
+		       -> GetAttsCall,
+			  AbsRemoveCall,
+			  PutAttsCall
+		        ; true),
+	    AttrId1 is AttrId + 1,
+	    append(CodeList,[ArgCode],CL)
+	),
+	generate_remove_constr_body_2_m(Off,AttrCnt,F,A,ArgNum,Args,AttrId1,Modes,Mod,CL,Code).
+
+
+
+
 % remove constraints with dynamic constraint store
 generate_remove_constr_clauses_ds([],_,[]).
 generate_remove_constr_clauses_ds([F/A|Cs],Mod,[Clause|Clauses]) :-
@@ -1017,6 +1505,16 @@ generate_reconstruct_store_clause(Declarations,Mod,RSClause) :-
 		reconstruct_store(Declarations,Var,AttrList,Store)
 	       ),
 	RSClause = [(Head :- Body)].
+
+
+generate_reconstruct_store_clause_m(Declarations,Modes,Mod,RSClause) :-
+	Head = reconstruct_store(Var,Store),
+	Body = (get_attr(Var,Mod,AttrTerm),
+		AttrTerm =.. [v|AttrLists],
+		reconstruct_store_m(Declarations,Modes,Var,AttrLists,Store)
+	       ),
+	RSClause = [(Head :- Body)].
+
 
 generate_reconstruct_dynamic_store_clause(Mod,RSClause) :-
 	Head = reconstruct_store(Var,Store),
@@ -1120,6 +1618,32 @@ generate_unification_handler_many(Declarations,Mod,[Clause|Clauses]) :-
 	generate_pose_constr_clauses(PoseConstrName,AttrCnt,Declarations,Clauses).
 
 
+% unification handler with mode declarations
+generate_unification_handler_m(AttrCnt,Declarations,Modes,Mod,[Clause|Clauses]) :-
+	length(VarAttrList,AttrCnt),
+	VarAtts =.. [v|VarAttrList],
+	Head = attr_unify_hook(VarAtts,Term),
+
+	length(TermAttrList,AttrCnt),
+	length(AttrList,AttrCnt),
+	fmt_write_string(GetAttrName, "get_%s_atts", arg(Mod)),
+	TermGetAttrCall =.. [GetAttrName,Term|TermAttrList],
+
+	fmt_write_string(PoseConstrName, "pose_all_%s_constr", arg(Mod)),
+	PoseAttrConstrCall =.. [PoseConstrName,Term,AttrList],
+	PoseVAttrConstrCall =.. [PoseConstrName,Term,VarAttrList],
+	
+	Body = (var(Term)
+	        -> TermGetAttrCall,
+		   merge_attr_lists(VarAttrList,TermAttrList,AttrList),
+		   PoseAttrConstrCall
+	         ; PoseVAttrConstrCall
+	       ),
+	Clause = (Head :- Body),
+	generate_pose_constr_clauses_m(PoseConstrName,AttrCnt,Declarations,Modes,Clauses).
+
+
+
 
 % unification handler with dynamic constratint store
 generate_unification_handler_ds(Declarations,Mod,[Clause|Clauses]) :-
@@ -1148,6 +1672,9 @@ generate_unification_handler_ds(Declarations,Mod,[Clause|Clauses]) :-
 
 get_attr_cnt([],0).
 get_attr_cnt([_F/A|Ds],N) :-
+	get_attr_cnt(Ds,N1),
+	N is N1+A.
+get_attr_cnt([_F/A-_Modes|Ds],N) :-
 	get_attr_cnt(Ds,N1),
 	N is N1+A.
 
@@ -1226,6 +1753,134 @@ generate_pose_constr_1(F/A,I,[BaseCase,RecCase|Clauses]) :-
 
 %
 % END: pose-constraints generation WITHOUT argument indexing
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% BEGIN: generate pose-constraints clauses with mode declarations
+%
+generate_pose_constr_clauses_m(PoseConstrName,AttrCnt,Declarations,Modes,[Prelude|Clauses]) :-
+	generate_pose_constr_prelude_m(PoseConstrName,AttrCnt,Declarations,Modes,Prelude),
+	generate_pose_constr_m(Declarations,Modes,Clauses).
+
+generate_pose_constr_prelude_m(PoseConstrName,AttrCnt,Declarations,Modes,Prelude) :-
+	length(AttrList,AttrCnt),
+	Head =.. [PoseConstrName,Term,AttrList],
+	generate_pose_constr_prelude_body_m(Declarations,Modes,Term,AttrList,BodyClauses),
+	list2and(BodyClauses,Body),
+	Prelude = (Head :- Body).
+
+generate_pose_constr_prelude_body_m([],[],_,_,[]).
+generate_pose_constr_prelude_body_m([F/A|Fs],Modes,Term,AttrList,Clauses) :-
+	generate_pose_constr_prelude_body_m_1(F/A,Term,AttrList,0,FsAttrList,FClauses),
+	generate_pose_constr_prelude_body_m(Fs,Modes,Term,FsAttrList,FsClauses),
+	append(FClauses,FsClauses,Clauses).
+generate_pose_constr_prelude_body_m([],[F/A-Modes|Fs],Term,AttrList,Clauses) :-
+	length(Modes,FA),
+	generate_pose_constr_prelude_body_m_2(F/A,FA,Modes,Term,AttrList,0,FsAttrList,FClauses),
+	generate_pose_constr_prelude_body_m([],Fs,Term,FsAttrList,FsClauses),
+	append(FClauses,FsClauses,Clauses).
+
+generate_pose_constr_prelude_body_m_1(_/A,_,AttrList,A,AttrList,[]).
+generate_pose_constr_prelude_body_m_1(F/A,Term,[Attr|Atts],I,AttrList,[Call|Calls]) :-
+	I < A,
+	Pos is I+1,
+	fmt_write_string(CallName, "pose_constr_%s_%d", args(F,Pos)),
+	Call =.. [CallName,Term,Attr],
+	generate_pose_constr_prelude_body_m_1(F/A,Term,Atts,Pos,AttrList,Calls).
+
+%generate_pose_constr_prelude_body_m_2(_,FA,_,_,AttrList,FA,AttrList,[]).
+generate_pose_constr_prelude_body_m_2(_,_,[],_,_,_,_,[]).
+generate_pose_constr_prelude_body_m_2(_,_,Modes,_,[],_,_,[]) :-
+	all_ground(Modes).
+generate_pose_constr_prelude_body_m_2(F/A,FA,[M|Ms],Term,[Attr|Atts],I,AttrList,Calls) :-
+	I < FA,
+	Pos is I+1,
+	(M = g
+	 -> Atts1 = [Attr|Atts],
+	    Calls = Calls1
+	  ; fmt_write_string(CallName, "pose_constr_%s_%d", args(F,Pos)),
+	    Call =.. [CallName,Term,Attr],
+	    Calls = [Call|Calls1],
+	    Atts1 = Atts
+	),
+	generate_pose_constr_prelude_body_m_2(F/A,FA,Ms,Term,Atts1,Pos,AttrList,Calls1).
+
+
+generate_pose_constr_m([],[],[]).
+generate_pose_constr_m([F/A|Fs],Modes,Clauses) :-
+	generate_pose_constr_m_1(F/A,FClauses),
+	generate_pose_constr_m(Fs,Modes,FsClauses),
+	append(FClauses,FsClauses,Clauses).
+generate_pose_constr_m([],[F/A-Modes|Fs],Clauses) :-
+	generate_pose_constr_m_2(F/A,Modes,FClauses),
+	generate_pose_constr_m([],Fs,FsClauses),
+	append(FClauses,FsClauses,Clauses).
+
+generate_pose_constr_m_1(F/A,Clauses) :-
+	generate_pose_constr_m_1(F/A,0,Clauses).
+
+generate_pose_constr_m_1(_/A,A,[]).
+generate_pose_constr_m_1(F/A,I,[BaseCase,RecCase|Clauses]) :-
+	I < A,
+	Pos is I+1,
+	fmt_write_string(Name, "pose_constr_%s_%d", args(F,Pos)),
+
+	BaseCase =.. [Name,_,[]],
+
+	A1 is A-1,
+	length(CompList,A1),
+	CompTerm =.. [attr|CompList],
+	RecHead =.. [Name,Term,[CompTerm|CompTs]],
+
+	fmt_write_string(ConstrCallName, "%s_%d", args(F,1)),
+	delete_ith(Pos,AttrList,Term,CompList),
+	ConstrCall =.. [ConstrCallName|AttrList],
+	RecCall =.. [Name,Term,CompTs],
+	RecCase = (RecHead :-
+		      ConstrCall,
+		      RecCall
+		  ),
+	
+	generate_pose_constr_m_1(F/A,Pos,Clauses).
+
+
+generate_pose_constr_m_2(F/A,Modes,Clauses) :-
+	length(Modes,FA),
+	generate_pose_constr_m_2(F/A,FA,Modes,0,Clauses).
+
+generate_pose_constr_m_2(_,FA,_,FA,[]).
+generate_pose_constr_m_2(F/A,FA,[M|Ms],I,Clauses) :-
+	I < FA,
+	Pos is I+1,
+	(M = g
+	 -> Clauses = Clauses1
+	  ; fmt_write_string(Name, "pose_constr_%s_%d", args(F,Pos)),
+
+	    BaseCase =.. [Name,_,[]],
+
+	    A1 is FA-1,
+	    length(CompList,A1),
+	    CompTerm =.. [attr|CompList],
+	    RecHead =.. [Name,Term,[CompTerm|CompTs]],
+
+	    fmt_write_string(ConstrCallName, "%s_%d", args(F,1)),
+	    delete_ith(Pos,AttrList,Term,CompList),
+	    ConstrCall =.. [ConstrCallName|AttrList],
+	    RecCall =.. [Name,Term,CompTs],
+	    RecCase = (RecHead :-
+		          ConstrCall,
+			  RecCall
+		      ),
+	    Clauses = [BaseCase,RecCase|Clauses1]
+	),
+	
+	generate_pose_constr_m_2(F/A,FA,Ms,Pos,Clauses1).
+%
+% END: generate pose-constraints clauses with mode declarations
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1389,19 +2044,19 @@ generate_pose_constr_1_ai(F/A,[I|Is],[BaseCase,RecCase|Clauses]) :-
 %
 
 % compile chr rule into attv code
-compile_chr_rules(Option,Constrs,StoredConstrs,Mod,Rules,Clauses) :-
-	constraints_code(Option,Constrs,Mod,StoredConstrs,Rules,Clauses,[]).
+compile_chr_rules(Option,Constrs,StoredConstrs,StoredNGArities,Mod,Rules,Clauses) :-
+	constraints_code(Option,Constrs,Mod,StoredConstrs,StoredNGArities,Rules,Clauses,[]).
 
-constraints_code(_,[],_,_,_,L,L).
-constraints_code(Option,[C|Cs],Mod,Constrs,Rules,L,T) :-
-	constraint_code(Option,C,Mod,Constrs,Rules,L,T1),
-	constraints_code(Option,Cs,Mod,Constrs,Rules,T1,T).
+constraints_code(_,[],_,_,_,_,L,L).
+constraints_code(Option,[C|Cs],Mod,Constrs,NongroundArities,Rules,L,T) :-
+	constraint_code(Option,C,Mod,Constrs,NongroundArities,Rules,L,T1),
+	constraints_code(Option,Cs,Mod,Constrs,NongroundArities,Rules,T1,T).
 
 
-constraint_code(Option,C,Mod,Constrs,Rules,L,T) :-
+constraint_code(Option,C,Mod,Constrs,NongroundArities,Rules,L,T) :-
 	constraint_prelude(C,Constrs,Prelude),
 	L = [Prelude|L1],
-	rule_clauses(Option,Rules,Mod,C,false,1,N,Constrs,L1,L2),
+	rule_clauses(Option,Rules,Mod,C,false,1,N,Constrs,NongroundArities,L1,L2),
 	(N = 1
 	 -> (member(C,Constrs)
 	     -> build_add_constr(C,N,L2,T)
@@ -1454,19 +2109,19 @@ build_fail(F/A,N,L,T) :-
 	L = [(Head :- fail)|T].
 
 
-rule_clauses(_Option,[],_Mod,_Constr,_,R,R,_Constrs,L,L).
-rule_clauses(Option,[R|Rs],Mod,Constr,AddedConstr,RI,RN,Constrs,L,T) :-
+rule_clauses(_Option,[],_Mod,_Constr,_,R,R,_Constrs,_NGArities,L,L).
+rule_clauses(Option,[R|Rs],Mod,Constr,AddedConstr,RI,RN,Constrs,NongroundArities,L,T) :-
 	(\+ more_rules_for_constr(Constr,Rs,Constrs)
-	 -> rule_code(Option,R,true,Constr,AddedConstr,_,RI,RN,Constrs,Mod,L,T)
-	  ; rule_code(Option,R,false,Constr,AddedConstr,AddedConstrJ,RI,RJ,Constrs,Mod,L,T1),
-	    rule_clauses(Option,Rs,Mod,Constr,AddedConstrJ,RJ,RN,Constrs,T1,T)
+	 -> rule_code(Option,R,true,Constr,AddedConstr,_,RI,RN,Constrs,NongroundArities,Mod,L,T)
+	  ; rule_code(Option,R,false,Constr,AddedConstr,AddedConstrJ,RI,RJ,Constrs,NongroundArities,Mod,L,T1),
+	    rule_clauses(Option,Rs,Mod,Constr,AddedConstrJ,RJ,RN,Constrs,NongroundArities,T1,T)
 	).
 
-rule_code(Option,R,LastRule,F/A,AddedI,AddedN,RI,RN,Constrs,Mod,L,T) :-
+rule_code(Option,R,LastRule,F/A,AddedI,AddedN,RI,RN,Constrs,NGAs,Mod,L,T) :-
 	R = pragma(rule(Head1,Head2,_Guard,_Body),IDs,_Pragmas),
 	IDs = (IDs1,IDs2),
 	head1code(Head1,LastRule,AddedI,[],IDs1,[],R,F/A,RI,RJ,Constrs,L,L1),
-	head2code(Option,Head2,LastRule,AddedJ,[],IDs2,[],R,F/A,RJ,RN,Constrs,Mod,L1,T),
+	head2code(Option,Head2,LastRule,AddedJ,[],IDs2,[],R,F/A,RJ,RN,Constrs,NGAs,Mod,L1,T),
 	logic_or(AddedI,AddedJ,AddedN).
 	    
 
@@ -1510,8 +2165,8 @@ head1code_1(H,LastRule,AddedF,OtherHs,_OtherIDs,Rule,F/A,I,N,Constrs,L,T) :-
 
 
 
-head2code(_,[],_,_,_,[],_,_,_,I,I,_,_,L,L).
-head2code(Option,[H|Hs],LastRule,AddedF,RestHs,[ID|IDs],RestIDs,R,F/A,RI,RN,Constrs,Mod,L,T) :-
+head2code(_,[],_,_,_,[],_,_,_,I,I,_,_,_,L,L).
+head2code(Option,[H|Hs],LastRule,AddedF,RestHs,[ID|IDs],RestIDs,R,F/A,RI,RN,Constrs,NGAs,Mod,L,T) :-
 	R = pragma(Rule,(ID1s,_ID2s),Pragmas),	
 	Rule = rule(Head1,_Head2,_Guard,_Body),
 	(functor(H,F,A),
@@ -1532,18 +2187,18 @@ head2code(Option,[H|Hs],LastRule,AddedF,RestHs,[ID|IDs],RestIDs,R,F/A,RI,RN,Cons
 	    logic_and(LastRule,LastFHead,LastFOccurrence),
 	    append(Hs,RestHs,OtherKeepHs),
 	    append(IDs,RestIDs,KeepHsIDs),
-	    head2code_1(Option,H,LastFOccurrence,OtherKeepHs,KeepHsIDs,Rule,F/A,RI,RJ,Constrs,Mod,L,L1)
+	    head2code_1(Option,H,LastFOccurrence,OtherKeepHs,KeepHsIDs,Rule,F/A,RI,RJ,Constrs,NGAs,Mod,L,L1)
 	  ; Hs2Match = Hs, IDs2Match = IDs, AddedH = false, RJ = RI, L1 = L
 	),
-	head2code(Option,Hs2Match,LastRule,AddedHs,[H|RestHs],IDs2Match,[ID|RestIDs],R,F/A,RJ,RN,Constrs,Mod,L1,T),
+	head2code(Option,Hs2Match,LastRule,AddedHs,[H|RestHs],IDs2Match,[ID|RestIDs],R,F/A,RJ,RN,Constrs,NGAs,Mod,L1,T),
 	logic_or(AddedH,AddedHs,AddedF).
 
 
-head2code_1(Option,H,LastRule,OtherHs,_OtherIDs,Rule,F/A,RI,RN,Constrs,Mod,L,T) :-
+head2code_1(Option,H,LastRule,OtherHs,_OtherIDs,Rule,F/A,RI,RN,Constrs,NGAs,Mod,L,T) :-
 	Rule = rule(Head1,_Head2,_Guard,_Body),
 	(Head1 == []
-	 -> propagation_code(Option,H,LastRule,OtherHs,Rule,F/A,RI,RN,Constrs,Mod,L,T)
-	  ; simpagation2_code(Option,H,LastRule,OtherHs,Rule,F/A,RI,RN,Constrs,Mod,L,T)
+	 -> propagation_code(Option,H,LastRule,OtherHs,Rule,F/A,RI,RN,Constrs,NGAs,Mod,L,T)
+	  ; simpagation2_code(Option,H,LastRule,OtherHs,Rule,F/A,RI,RN,Constrs,NGAs,Mod,L,T)
 	).
 
 	
@@ -1660,7 +2315,7 @@ simpagation1_code(Head,LastRule,AddedF,OtherHs,R,F/A,I,N,Constrs,L,T) :-
 	
 
 
-simpagation2_code(Option,Head,LastRule,KeepHeads,R,F/A,I,N,Constrs,Mod,L,T) :-
+simpagation2_code(Option,Head,LastRule,KeepHeads,R,F/A,I,N,Constrs,NGAs,Mod,L,T) :-
 	Head =.. [F|Args],
 	build_head(F/A,I,HeadVs,RHeadLabel,RHead),	
 	N is I+1,
@@ -1701,7 +2356,7 @@ simpagation2_code(Option,Head,LastRule,KeepHeads,R,F/A,I,N,Constrs,Mod,L,T) :-
 
 	
 	build_head_arg_passive_head_match(HeadVs,GetNthAttrHeads,AttrVarMatches),
-	build_get_nth_attr_clauses(Option,AttrVarMatches,Constrs,Mod,
+	build_get_nth_attr_clauses(Option,AttrVarMatches,NGAs,Mod,
 		          GetNthAttrClauseList,NthAtts,AttrLists,AttrChecks),
 	list2and(GetNthAttrClauseList,GetNthAttrClauses),
 
@@ -1763,7 +2418,7 @@ simpagation2_code(Option,Head,LastRule,KeepHeads,R,F/A,I,N,Constrs,Mod,L,T) :-
 %	      ; simpagation_worker_all(LastRule,F,HeadVs,I,1,A,AttrLists,AttrChecks,Constrs,Mod,
 %					       HeadCp,FirstMatchList,MatchRmHeads,MatchKeepHeads,RmHeadsCp,
 %					       BoundParGuards,BodyCp,L1,T)
-	      ; simpagation_worker_all(Option,LastRule,F,HeadVs,I,1,A,AttrLists,AttrChecks,Constrs,Mod,HeadCp,
+	      ; simpagation_worker_all(Option,LastRule,F,HeadVs,I,1,A,AttrLists,AttrChecks,Constrs,NGAs,Mod,HeadCp,
 				       FirstMatchList,MatchHeads,RmHeadsCp,BoundParGuards,BodyCp,L1,T)
 					       
 	    )
@@ -1850,7 +2505,7 @@ simpagation_worker_one(LastRule,HeadLabel,HeadArgs,I,N,A,[[Attr|Atts]|_],Constrs
 %                           [_AttrCheck|_AttrChecks],Constrs,Mod,Head,FirstMatchList,MatchRmHs,
 %			   MatchKeepHs,RemoveHs,Guard,Body,L,T) :-
 simpagation_worker_all(Option,LastRule,HeadLabel,HeadArgs,I,N,A,[[Attr|Atts]|_AttrRest],
-                           [_AttrCheck|_AttrChecks],Constrs,Mod,Head,FirstMatchList,MatchHs,
+                           [_AttrCheck|_AttrChecks],Constrs,NGAs,Mod,Head,FirstMatchList,MatchHs,
 			   RemoveHs,Guard,Body,L,T) :-
 	
 	fmt_write_string(HeadName,"%s_%d_%d", args(HeadLabel,I,N)),
@@ -1956,7 +2611,7 @@ simpagation_worker_all(Option,LastRule,HeadLabel,HeadArgs,I,N,A,[[Attr|Atts]|_At
 */
 
 	build_head_arg_passive_head_match(AllVs,GetNthAttrHeads,AttrVarMatches),
-	build_get_nth_attr_clauses(Option,AttrVarMatches,Constrs,Mod,
+	build_get_nth_attr_clauses(Option,AttrVarMatches,NGAs,Mod,
 		          GetNthAttrClauseList,NthAtts,AttrLists,AttrChecks),
 	list2and(GetNthAttrClauseList,GetNthAttrClauses),
 
@@ -2008,7 +2663,7 @@ simpagation_worker_all(Option,LastRule,HeadLabel,HeadArgs,I,N,A,[[Attr|Atts]|_At
 %	    ; simpagation_worker_all(LastRule,HeadLabel,AllVs,I,NextN,A,AttrLists,AttrChecks,Constrs,Mod,
 %					       HeadCp,AllMatchList,MatchRmHeads,MatchKeepHeads,RemoveHsCp,
 %					       BoundParGuards,BodyCp,L1,T)
-	    ; simpagation_worker_all(Option,LastRule,HeadLabel,AllVs,I,NextN,A,AttrLists,AttrChecks,Constrs,Mod,
+	    ; simpagation_worker_all(Option,LastRule,HeadLabel,AllVs,I,NextN,A,AttrLists,AttrChecks,Constrs,NGAs,Mod,
 				     HeadCp,AllMatchList,MatchHeads,RemoveHsCp,BoundParGuards,BodyCp,L1,T)
 	    )
 	).
@@ -2023,10 +2678,10 @@ simpagation_worker_all(Option,LastRule,HeadLabel,HeadArgs,I,N,A,[[Attr|Atts]|_At
 %%
 
 
-propagation_code(Option,H,LastRule,OtherHs,R,F/A,I,N,Constrs,Mod,L,T) :-
+propagation_code(Option,H,LastRule,OtherHs,R,F/A,I,N,Constrs,NGAs,Mod,L,T) :-
 	(OtherHs == []
 	 -> propagation_single_head(H,LastRule,R,F/A,I,N,Constrs,L,T)
-	  ; propagation_mutli_head(Option,H,LastRule,OtherHs,R,F/A,I,N,Constrs,Mod,L,T)
+	  ; propagation_mutli_head(Option,H,LastRule,OtherHs,R,F/A,I,N,Constrs,NGAs,Mod,L,T)
 	).
 
 
@@ -2075,7 +2730,7 @@ propagation_single_head(Head,LastRule,R,F/A,I,N,Constrs,L,T) :-
 	L = [RCode|T].
 
 
-propagation_mutli_head(Option,Head,LastRule,OtherHs,R,F/A,I,N,Constrs,Mod,L,T) :-
+propagation_mutli_head(Option,Head,LastRule,OtherHs,R,F/A,I,N,Constrs,NGAs,Mod,L,T) :-
 	Head =.. [F|Args],
 
 	build_head(F/A,I,HeadVs,RHeadLabel,RHead),	
@@ -2094,7 +2749,7 @@ propagation_mutli_head(Option,Head,LastRule,OtherHs,R,F/A,I,N,Constrs,Mod,L,T) :
 
 	build_constr_check_match(HeadVs,Constrs,AllFreeParsHs,CheckAllFreeHsClauses),
 	build_head_arg_passive_head_match(HeadVs,FreeParHs,HeadArgMatchList),
-	build_get_nth_attr_clauses(Option,HeadArgMatchList,Constrs,Mod,
+	build_get_nth_attr_clauses(Option,HeadArgMatchList,NGAs,Mod,
 			           GetNthAttrClauseList,NthAtts,AttrLists,_),
 	list2and(GetNthAttrClauseList,GetNthAttrClauses),
 
@@ -2142,7 +2797,7 @@ propagation_mutli_head(Option,Head,LastRule,OtherHs,R,F/A,I,N,Constrs,Mod,L,T) :
 
 	L = [RCode|L1],
 	propagation_recursive_code(Option,F,I,LastRule,RHeadLabel,HeadVs,FirstMatchList,A,AttrLists,
-				   Constrs,Mod,BoundParsHs,BoundParGuards,BodyCp,L1,T).
+				   Constrs,NGAs,Mod,BoundParsHs,BoundParGuards,BodyCp,L1,T).
 
 
 
@@ -2153,17 +2808,17 @@ propagation_mutli_head(Option,Head,LastRule,OtherHs,R,F/A,I,N,Constrs,Mod,L,T) :
  * (all get_attr calls can be, and are, done in the top-level recursive clause)
  */
 
-propagation_recursive_code(_,_,_,_,_,_,_,_,[],_,_,_,_,_,L,L) :- !.
+propagation_recursive_code(_,_,_,_,_,_,_,_,[],_,_,_,_,_,_,L,L) :- !.
 
 propagation_recursive_code(Option,F,OccurNum,LastRule,HeadLb,HeadVs,FirstMatchList,A,
-			   AttrLists,Constrs,Mod,BoundParsHs,Guard,Body,L,T) :-
+			   AttrLists,Constrs,NGAs,Mod,BoundParsHs,Guard,Body,L,T) :-
 	propagation_recursive_code(Option,F,OccurNum,LastRule,HeadLb,HeadVs,FirstMatchList,1,
-				   A,AttrLists,Constrs,Mod,BoundParsHs,Guard,Body,L,T).
+				   A,AttrLists,Constrs,NGAs,Mod,BoundParsHs,Guard,Body,L,T).
 
 
 %% No OtherHs ( == constraints to be matched) left -- call body
 propagation_recursive_code(_Option,F,OccurNum,LastRule,HeadLabel,HeadArgs,FirstMatchList,N,A,
-			 [[Attr|Atts]],_Constrs,_Mod,[],Guard,Body,L,T) :-
+			 [[Attr|Atts]],_Constrs,_NGAs,_Mod,[],Guard,Body,L,T) :-
 	fmt_write_string(HeadName,"%s_%d", args(HeadLabel,N)),
 
 	length(BaseHeadVs,A),
@@ -2218,7 +2873,7 @@ propagation_recursive_code(_Option,F,OccurNum,LastRule,HeadLabel,HeadArgs,FirstM
 
 %% More constraints to match -- generate another level of recursion
 propagation_recursive_code(Option,F,OccurNum,LastRule,HeadLabel,HeadArgs,FirstMatchList,
-			   N,A,[[Attr|Atts]],Constrs,Mod,OtherHs,Guard,Body,L,T) :-
+			   N,A,[[Attr|Atts]],Constrs,NGAs,Mod,OtherHs,Guard,Body,L,T) :-
 	fmt_write_string(HeadName,"%s_%d", args(HeadLabel,N)),
 
 	length(BaseHeadVs,A),
@@ -2260,7 +2915,7 @@ propagation_recursive_code(Option,F,OccurNum,LastRule,HeadLabel,HeadArgs,FirstMa
 
 	build_constr_check_match(AttrVs,Constrs,AllFreeParsHs,CheckAllFreeHsClauses),
 	build_head_arg_passive_head_match(AttrVs,FreeParHs,AttrVarMatches),
-	build_get_nth_attr_clauses(Option,AttrVarMatches,Constrs,Mod,
+	build_get_nth_attr_clauses(Option,AttrVarMatches,NGAs,Mod,
 				   GetNthAttrClauseList,NthAtts,AttrLists,_),
 	list2and(GetNthAttrClauseList,GetNthAttrClauses),
 
@@ -2292,14 +2947,14 @@ propagation_recursive_code(Option,F,OccurNum,LastRule,HeadLabel,HeadArgs,FirstMa
 	A1 is A+AA,
 	
 	propagation_recursive_code(Option,F,OccurNum,LastRule,HeadLabel,HeadArgs1,AllMatchList,NextN,A1,
-				   AttrLists,Constrs,Mod,BoundParsHs,BoundParGuards,BodyCp,L1,T).
+				   AttrLists,Constrs,NGAs,Mod,BoundParsHs,BoundParGuards,BodyCp,L1,T).
 
 
 
 %% this may need two cases, for OtherHs empty and non-empty,
 %% similarly as the previous one
 propagation_recursive_code(Option,F,OccurNum,LastRule,HeadLabel,HeadArgs,FirstMatchList,N,A,
-			   [[Attr|Atts]|AttrRest],Constrs,Mod,OtherHs,Guard,Body,L,T) :-
+			   [[Attr|Atts]|AttrRest],Constrs,NGAs,Mod,OtherHs,Guard,Body,L,T) :-
 	AttrRest \= [],
 	fmt_write_string(HeadName,"%s_%d", args(HeadLabel,N)),
 
@@ -2346,7 +3001,7 @@ propagation_recursive_code(Option,F,OccurNum,LastRule,HeadLabel,HeadArgs,FirstMa
 
 	build_constr_check_match(AttrVs,Constrs,AllFreeParsHs,CheckAllFreeHsClauses),
 	build_head_arg_passive_head_match(AttrVs,FreeParHs,AttrVarMatches),
-	build_get_nth_attr_clauses(Option,AttrVarMatches,Constrs,Mod,
+	build_get_nth_attr_clauses(Option,AttrVarMatches,NGAs,Mod,
 				   GetNthAttrClauseList,NthAtts,AttrLists,_),
 	list2and(GetNthAttrClauseList,GetNthAttrClauses),
 
@@ -2379,7 +3034,7 @@ propagation_recursive_code(Option,F,OccurNum,LastRule,HeadLabel,HeadArgs,FirstMa
 	append(AttrLists,AttrRestCp,OtherAtts),
 	
 	propagation_recursive_code(Option,F,OccurNum,LastRule,HeadLabel,HeadArgs1,AllMatchList,NextN,A1,
-				   OtherAtts,Constrs,Mod,BoundParsHs,BoundParGuards,BodyCp,L1,T).
+				   OtherAtts,Constrs,NGAs,Mod,BoundParsHs,BoundParGuards,BodyCp,L1,T).
 	
 
 

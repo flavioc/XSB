@@ -325,6 +325,68 @@ atts2store_1([A|As],Var,F,I,[C|Cs]) :-
 	atts2store_1(As,Var,F,I,Cs).
 
 
+reconstruct_store_m([],[],_,[],[]).
+reconstruct_store_m([F/A|FAs],Modes,Var,Atts,Store) :-
+	length(AttsF,A),
+	append(AttsF,AttsFs,Atts),
+	atts2store_1_m(AttsF,Var,F,ConstrF),
+	reconstruct_store_m(FAs,Modes,Var,AttsFs,ConstrFs),
+	append(ConstrF,ConstrFs,Store).
+reconstruct_store_m([],[F/A-Modes|FAs],Var,Atts,Store) :-
+%	length(Modes,FA),
+	length(AttsF,A),
+	append(AttsF,AttsFs,Atts),
+	atts2store_2_m(AttsF,Var,F,Modes,ConstrF),
+	reconstruct_store_m([],FAs,Var,AttsFs,ConstrFs),
+	append(ConstrF,ConstrFs,Store).
+
+atts2store_1_m(Atts,Var,F,Store) :-
+	atts2store_1_m(Atts,Var,F,1,Store).
+
+atts2store_1_m([],_,_,_,[]).
+atts2store_1_m([A|As],Var,F,I,Constraints) :-
+	atts2store_1_m_1(A,Var,F,I,CA),
+	I1 is I+1,
+	atts2store_1_m(As,Var,F,I1,CAs),
+	append(CA,CAs,Constraints).
+
+atts2store_1_m_1([],_,_,_,[]).
+atts2store_1_m_1([A|As],Var,F,I,[C|Cs]) :-
+	A =.. [attr|ArgsA],
+	delete_ith(I,ArgsF,Var,ArgsA),
+	C =.. [F|ArgsF],
+	atts2store_1_m_1(As,Var,F,I,Cs).
+
+atts2store_2_m(Atts,Var,F,Modes,Store) :-
+	atts2store_2_m(Atts,Var,F,1,Modes,Store).
+
+atts2store_2_m([],_,_,_,[],[]).
+atts2store_2_m([],_,_,_,Modes,[]) :-
+	all_ground(Modes).
+atts2store_2_m([A|As],Var,F,I,[M|Modes],Constraints) :-
+	I1 is I+1,
+	atts2store_2_m(As,Var,F,I1,Modes,CAs),
+	(M = g
+	 -> Constraints = CAs
+	  ; atts2store_2_m_1(A,Var,F,I,CA),
+	    append(CA,CAs,Constraints)
+	).
+
+atts2store_2_m_1([],_,_,_,[]).
+atts2store_2_m_1([A|As],Var,F,I,[C|Cs]) :-
+	A =.. [attr|ArgsA],
+	delete_ith(I,ArgsF,Var,ArgsA),
+	C =.. [F|ArgsF],
+	atts2store_2_m_1(As,Var,F,I,Cs).
+
+
+all_ground([]).
+all_ground([g|L]) :-
+	all_ground(L).
+
+
+
+
 reconstruct_dynamic_store([],_,[]).
 reconstruct_dynamic_store([Attr|Atts],Var,Store) :-
 	reconstruct_constr_pos(Attr,Var,AttrStore),
