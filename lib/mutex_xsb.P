@@ -238,8 +238,8 @@ thread_send_message(Queue,Message):-
 %:- import writeln/1 from standard.
 
 thread_get_message(Message) :-
-	thread_self(Thread),
-	thread_get_message(Thread, Message).
+	thread_request(XSB_THREAD_SELF, Tid, _, _, _, _, _, _ ,_),
+	thread_get_message_1(Tid, Message).
 
 thread_get_message(Queue,Message):-
 	(integer(Queue) -> 
