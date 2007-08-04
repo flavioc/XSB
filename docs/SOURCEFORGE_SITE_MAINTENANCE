@@ -1,0 +1,22 @@
+
+As of 2007 the old homepage/SOURCEFORGE_SITE_MAINTENANCE seems
+out-dated.  Among other things, shadow_site is owned by lfcastro, so
+the approach of checking things into CVS does not work in general.
+Nor could I get cvs to work directly under htdocs.
+
+So, to update the web page do the following steps.
+
+1) make whatever changes you need in docs/newpages, and when you are
+   done update cvs.
+
+2) log in to shell.sourceforge.net as xsb then cd to xsb/htdocs (full
+path is /home/groups/x/xs/xsb/htdocs).  Copy into this directory any
+of the .html or other files you need.
+
+3) There are several other directories that may need to be updated.
+
+api -- has generated documentation for XSB
+manual1 -- subdirectory for manual vol. 1
+manual2 -- subdirectory for manual vol. 2
+packages -- subdirecotry for packages manuals
+

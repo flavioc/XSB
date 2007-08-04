@@ -1,4 +1,5 @@
 
-homepage/          - the XSB home page files
+newpages/          - the XSB home page files
+homepage/          - obsolete XSB home page files that I'm too chicken to delete.
 techman/    	   - the XSB technical manual
 userman/    	   - the XSB user manual
