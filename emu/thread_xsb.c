@@ -1448,6 +1448,47 @@ case THREAD_ACCEPT_MESSAGE: {
 	    rc = 0;
 	    break ;
 
+	case THREAD_PEEK_MESSAGE: {	 
+	  XSB_MQ_Ptr message_queue = (XSB_MQ_Ptr) ptoc_int(CTXTc 2);
+	  int islast = 0;
+
+	  pthread_mutex_lock(&message_queue->mq_mutex);
+	  if (!message_queue->first_message) {
+	    islast = 1;
+	    ctop_int(CTXTc 4,islast);
+	    return success;
+	  }
+	  else {
+	    current_mq_cell = message_queue->first_message;
+	    ctop_int(CTXTc 4,islast);
+	    pcreg =  (byte *)(current_mq_cell+1);
+	  }
+	  break;
+	}
+
+	case THREAD_REPEEK_MESSAGE: {	 
+	  XSB_MQ_Ptr message_queue = (XSB_MQ_Ptr) ptoc_int(CTXTc 2);
+	  int islast = 0;
+
+	  if (message_queue->last_message == current_mq_cell) {
+	    islast = 1;
+	    ctop_int(CTXTc 4,islast);
+	    return success;
+	  }
+	  else {
+	    current_mq_cell = current_mq_cell->next;
+	    ctop_int(CTXTc 4,islast);
+	    pcreg = (byte *) (current_mq_cell+1); // offset for compiled code.
+	  }
+	  break;
+	} 
+
+	case THREAD_UNLOCK_QUEUE: {
+	  XSB_MQ_Ptr message_queue = (XSB_MQ_Ptr) ptoc_int(CTXTc 2);
+	  pthread_mutex_unlock(&message_queue->mq_mutex);
+	  break;
+	}
+	  
 	default:
 	  rc = 0 ; /* Keep compiler happy */
 	  xsb_abort( "[THREAD] Invalid thread operation requested %d",request_num);

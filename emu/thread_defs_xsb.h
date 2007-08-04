@@ -89,6 +89,9 @@
 
 #define THREAD_ENABLE_CANCEL		47
 #define THREAD_DISABLE_CANCEL		48
+#define THREAD_PEEK_MESSAGE             49
+#define THREAD_REPEEK_MESSAGE           50
+#define THREAD_UNLOCK_QUEUE             51
 
 #define MAX_THREADS		1024
 
