@@ -23,7 +23,7 @@ interface to retrieve data from a connected database.  The {\it
 relation level} allows users to declare XSB predicates that connect to
 individual tables in a connected database, and which when executed
 support tuple-at-a-time retrieval from the base table.  The {\it view
-level} allows users to use a complex XSB query, including conjuction,
+level} allows users to use a complex XSB query, including conjunction,
 negation and aggregates, to specify a database query.  A listing of
 the features that the XSB-ODBC interface provides is as follows:
 \begin{itemize} 
@@ -263,7 +263,7 @@ findall_odbc_sql(ConnName,BindVals,SQLStmt,ResultRow):-
 \end{verbatim}
 %
 As a convenience, therefore, the predicates {\tt findall\_odbc\_sql/3}
-and {\tt findall\_odbc\_sql/4}.are defined in the ODBC interface.
+and {\tt findall\_odbc\_sql/4} are defined in the ODBC interface.
 
 \subsection{Accessing Tables in Data Sources through the Relation Level}
 
@@ -706,7 +706,7 @@ Note that you have to commit your inserts or deletes to tables to make
 them permanent.  (See section \ref{TransactionManagement}).
 
 These predicates also have the form in which an additional first
-argument indicates a connection, for use with multiple datasources.
+argument indicates a connection, for use with multiple data sources.
 
 Also, some ODBC drivers have been found that do not accept the form of
 SQL generated for deletes.  In these cases, you must use the
@@ -789,7 +789,7 @@ odbc_create_index('Doctor', 'DocKey', index(_,'DId')).
 
 Depending on how the transaction options are set in ODBC.INI for data
 sources, changes to the data source tables may not be
-committed (i.e., the changes become permanent) until the user expicitly
+committed (i.e., the changes become permanent) until the user explicitly
 issues a commit statement.  Some ODBC drivers support autocommit,
 which, if on, means that every update operation is immediately
 committed upon execution.  If autocommit is off, then an explicit
@@ -964,7 +964,7 @@ interface running properly.
   (200)''. Now, you create a query of the form ``SELECT $f$ FROM A
   WHERE ...'' If, in the result set, the largest size of $f$ is 52,
   that's the length that SQLDescribeCol will return. This breaks XSB's
-  caching of query-related datastructures. In order to prevent this
+  caching of query-related data-structures. In order to prevent this
   behavior, you should configure your DSN setup so that you pass
   ``Option=1'' to MyODBC.
 

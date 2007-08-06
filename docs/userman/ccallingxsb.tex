@@ -217,7 +217,7 @@ The program begins by including some standard C headers: note that
 necessary for the XSB C API.  Since the program in
 Figure~\ref{fig:varstringex} uses functions in the {\tt VarString}
 interface, within {\tt main()} the routine {\tt
-  XSB\_StrDefine(return\_string)} decares and initializes a structure
+  XSB\_StrDefine(return\_string)} declares and initializes a structure
 of type {\tt VarString}, named {\tt return\_string}.
 
 The next order of business is to initialize XSB.  In order to do this,
@@ -372,7 +372,7 @@ If the answer to be returned (including separators) is longer than
 {\tt anslen}, {\tt xsb\_query\_string\_string\_b()} will return {\tt
   XSB\_OVERFLOW}.  If this happens, a new answer buffer can be used
 (here the old one is realloc-ed) and the answer retrieved via {\tt
-  xsb\_get\_last\_anwer\_string}.  Similarly, further answers are
+  xsb\_get\_last\_answer\_string}.  Similarly, further answers are
 obtained via {\tt xsb\_next\_string\_b()} whose length must be
 checked.  Thus the only difference between the fixed-string level and
 the {\tt VarString} level is that the length of each answer should be
@@ -1193,7 +1193,7 @@ but otherwise has no effect.
 %
 Used to find error messages if {\tt xsb\_init\_string()} or {\tt
   xsb\_init()} returns {\tt XSB\_ERROR}.  Any errors returned by these
-functions have type {\tt init\_error}.  Because inialization errors
+functions have type {\tt init\_error}.  Because initialization errors
 occur before XSB or any of its threads have been initialized,
 initialization errors do not require a thread context for input.
 
@@ -1221,7 +1221,7 @@ portion of execution, messages are as in Volume 1 {\em Exception
 
 \begin{description}
 
-\ouritem{int xsb\_ccall\_thread\_create(th\_contex *callingThread, th\_context **newThrea)}
+\ouritem{int xsb\_ccall\_thread\_create(th\_context *callingThread, th\_context **newThrea)}
 \index{xsb\_ccall\_thread\_create}
 %
 Causes {\tt callingThread} to create a thread pointed to by {\tt
@@ -1335,7 +1335,7 @@ provided for that purpose:
       increment} becomes the new increment by which {\tt vstr} is adjusted.
     Since {\tt VarString} is automatically shrunk by {\tt XSB\_StrSet}, it
     is rarely necessary to shrink a {\tt VarString} explicitly.  However,
-    one might want to change the adustment increment using this macro (the
+    one might want to change the adjustment increment using this macro (the
     default increment is 128).
   \item {\tt XSB\_StrDestroy(VarString *vstr)}:~
     Destroys a {\tt VarString}.  Explicit destruction is necessary for

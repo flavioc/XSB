@@ -281,11 +281,11 @@ value of this attribute is a list of terms.
 
 fd_handler(Da, Target) :-
         (var(Target),                       % Target is an attributed variable
-         get_attr(Target, fd, Db) ->            % has a domain
+         get_attr(Target, fd, Db) ->        % has a domain
            intersection(Da, Db, [E|Es]),    % intersection not empty
            (Es = [] ->                      % exactly one element
               Target = E                    % bind Var (and Value) to E
-           ;  put_attr(Target, fd, [E|Es]) % update Var's (and Value's)
+           ;  put_attr(Target, fd, [E|Es])  % update Var's (and Value's)
            )
         ;  member(Target, Da)               % is Target a member of Da?
         ).
@@ -304,7 +304,7 @@ domain(X, List) :-
         List = [El|Els],                     % at least one element 
         (Els = []                            % exactly one element
          -> X = El                           % implied binding 
-        ;  put_attr(Fresh, fd, List),       % create a new attributed variable
+        ;  put_attr(Fresh, fd, List),        % create a new attributed variable
            X = Fresh                         % may call verify_attributes/2
         ).
 
@@ -329,7 +329,7 @@ bindings that are commonly used to implement CHR and other constraint
 libraries.
 
 When processing constraints, it is often useful to delay a goal based
-on the instiation level of a term or set of terms.  For instance a
+on the instantiation level of a term or set of terms.  For instance a
 {\tt 3 > X + Y} should be delayed until both {\tt X} and {\tt Y} are
 instantiated.  However the goal should be reinvoked as soon as
 possible after both are instantiated in order to prune search paths
@@ -342,7 +342,7 @@ in computing the well-founded semantics, and is not based on the state
 of instantiation of a term.}.
 
 \begin{description}
-\ournewitem{when(+Condition,Goal)}{constriantLib}\index{\texttt{when/2}}
+\ournewitem{when(+Condition,Goal)}{constraintLib}\index{\texttt{when/2}}
 %
 Delays the execution of {\tt Goal} until {\tt Condition} is satisfied,
 whereupon {\tt Goal} will be executed.  Condition can have the form
@@ -350,7 +350,7 @@ whereupon {\tt Goal} will be executed.  Condition can have the form
 \item {\tt ?=(Term1,Term2)}
 \item {\tt nonvar(Term)}
 \item {\tt ground(Term)}~\footnote{To use {\tt ground/1} in the
-condition, it must be imported into the file where it is used.}. 
+condition, it must be imported into the file where it is used.}
 \item {\tt (Condition,Condition)}
 \item {\tt (Condition ; Condition)}
 \end{itemize}
@@ -372,7 +372,7 @@ X = f(_h245)
 \ournewitem{unifiable(X, Y, -Unifier)}{constraintLib}
 \index{\texttt{unifiable/3}}
 %
-If {\tt X} and {\tt Y} can unify, succeeds unifing {\tt Unifier} with
+If {\tt X} and {\tt Y} can unify, succeeds unifying {\tt Unifier} with
 a list of terms of the form {\tt Var = Value} representing a most
 general unifier of {\tt X} and {\tt Y}.\  {\tt unifiable/3} can handle
 cyclic terms. Attributed variables are handles as normal
@@ -514,7 +514,7 @@ actual terms that will be output.  Thus
 will print {\tt Hello world!}.
 
 If there is only one control sequence, the corresponding element may
-be supplied alone in {\tt Control}.  If there are more, {\tt Contol}
+be supplied alone in {\tt Control}.  If there are more, {\tt Control}
 must be a list of these elements. If there are none then {\tt Control}
 must be an empty list. There have to be as many elements in {\tt
 Control} as control sequences in {\tt String}.
@@ -589,7 +589,7 @@ times to print the character.
 
 %-------------------------------------------------------------------------
 \comment{
-Various shadings dont work -- TLS
+Various shadings don't work -- TLS
 \item \verb|~Ne|
 \item \verb|~NE|
 \item \verb|~Nf|
@@ -747,7 +747,7 @@ Hello +(+(a,b),c) world!
 {\tt print/2}.  Example:
 
 \noindent
-suposing the user has defined the predicate
+supposing the user has defined the predicate
 
 \begin{verbatim}
 portray([X|Y]) :- print(cons(X,Y)).
@@ -978,7 +978,7 @@ another is not.)
 {\tt Beg} unifies with the offset of the first character where {\tt Sub}
 matched, and {\tt End} unifies with the offset of the next character to the
 right of {\tt Sub} (such a character might not exist, but the offset is
-stil defined). Offsets start from 0.
+still defined). Offsets start from 0.
 
 Both {\tt Beg} and {\tt End} can be bound to negative integers.
 In this case, the value represents the offset from the \emph{second}
@@ -1132,13 +1132,13 @@ suitable for scripts that involve text processing.  There are several
 ways to access script-writing commands from XSB.  The first is to
 execute the command via the predicates {\tt shell/1} or {\tt shell/2}.
 These predicates can execute any command but they do not provide
-streamablity across UNIX and Windows commands, and they do not return
+streamability across UNIX and Windows commands, and they do not return
 any output of commands to Prolog.  Special predicates are provided to
-handle cross-platform compatability and to bring output into XSB.
+handle cross-platform compatibility and to bring output into XSB.
 
 Effort has been made to make the these thread-safe; however in
 \version, calls to the XSB script writing utilities go through a
-single mutex, and may couse contention if many threads seek to
+single mutex, and may cause contention if many threads seek to
 concurrently use sockets.
 
 \begin{description}
@@ -1147,7 +1147,7 @@ concurrently use sockets.
 %
 Expands the file name passed as the first argument and binds the
 variable in the second argument to the expanded name. This includes
-(1) expanding Unix tildas, (2) prepending {\tt FileName} to the
+(1) expanding Unix tildes, (2) prepending {\tt FileName} to the
 current directory, and (3) ``rectifying'' the expanded file name.  In
 rectification, the expanded file name is ``rectified'' so that
 multiple repeated slashes are replaced with a single slash, the
@@ -1158,12 +1158,12 @@ be converted into {\tt /home/abc/ff/b}.
 
 Under Windows, this predicates does rectification as described above,
 (using backslashes when appropriate), but it does not expand the
-tildas.
+tildes.
 
 \ournewitem{expand\_filename\_no\_prepend(+FileName,-ExpandedName)}{shell}
 \index{\texttt{expand\_filename\_no\_prepend/2}}
 This predicate behaves as {\tt expand\_filename/2}, but only expands
-tildas and does rectification. It does not prepend the current working
+tildes and does rectification. It does not prepend the current working
 directory to relative file names.
 
 \ournewitem{parse\_filename(+FileName,-Dir,-Base,-Extension)}{machine}
@@ -1203,7 +1203,7 @@ Get Id of the current process.
 %---------------------------------------------------------------------------------------
 \comment{
 TLS: Taken out of doc.  But I didn't touch the code, so as to not
-introduce any incompatabilities.
+introduce any incompatibilities.
 
 \ournewitem{rm(+Path)}{shell}
 \index{\texttt{rm/1}}
@@ -1380,7 +1380,7 @@ another mode of interprocess communication.
 
 In addition, the predicate {\tt pipe\_open/2} described in this
 section lets one create any number of pipes (that do not need to be
-connected to the standard I/O streem) and talk to child processes
+connected to the standard I/O stream) and talk to child processes
 through these pipes.
 %
 All predicates in this section, except {\tt pipe\_open/2} and {\tt
@@ -1577,7 +1577,7 @@ the following shell command:
   \ouritem{process\_status(+Pid,-Status)}\index{\texttt{process\_status/2}}
   This predicate always succeeds. Given a process id, it binds the second
   argument (which must be an unbound variable) to one of the following
-  atoms: {\tt running}, {\tt stopped}, {\tt exited\_normaly}, {\tt
+  atoms: {\tt running}, {\tt stopped}, {\tt exited\_normally}, {\tt
     exited\_abnormally}, {\tt aborted}, {\tt invalid}, and {\tt unknown}.
   The {\tt invalid} status is given to processes that never existed or that
   are not children of the parent XSB process. The {\tt unknown} status is
@@ -1647,7 +1647,7 @@ command failed.
     
     The {\tt shell/5} predicate is similar to \verb|spawn_process| in
     that it spawns another process and can capture that process' input
-    and output sreams.
+    and output streams.
 %    
     The important difference, however, is that XSB will ways until the
     process spawned by {\tt shell/5} terminates. In contrast, the process
@@ -1866,7 +1866,7 @@ represents the length of the message body.
 
 Effort has been made to make the socket interface thread-safe; however
 in \version, calls to the XSB socket interface go through a single
-mutex, and may couse contention if many threads seek to concurrently
+mutex, and may cause contention if many threads seek to concurrently
 use sockets.
 
 We now describe the XSB socket interface.  All predicates below must be
@@ -2572,7 +2572,7 @@ permits an efficient implementation of backtrackable updates.
 The term pointed to by {\tt Leaf} should have been previously marked for
 deletion using
 {\tt trie\_unintern\_nr/2}. This term is then ``unmarked'' (or undeleted)
-and becomes again a notmal interned term.
+and becomes again a normal interned term.
 
 {\bf Error Cases}
 \begin{itemize}
