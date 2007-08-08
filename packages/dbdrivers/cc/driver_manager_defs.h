@@ -32,7 +32,6 @@
 #define XSB_DLL
 #endif
 
-
 #define MAX_CONNECTIONS 25
 #define MAX_HANDLES 25
 #define MAX_DRIVERS 25

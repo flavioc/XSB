@@ -534,7 +534,7 @@ static char* buildSQLQuery(prolog_term sqlQueryList)
     }
   }
 
-  return sqlQuery;  
+  return sqlQuery;
 }
 
 
