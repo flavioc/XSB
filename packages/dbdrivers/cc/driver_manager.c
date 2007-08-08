@@ -31,6 +31,7 @@
 #include <string.h>
 
 #include "xsb_config.h"
+#include "context.h"
 #include "cell_xsb.h"
 
 #ifdef WIN_NT
