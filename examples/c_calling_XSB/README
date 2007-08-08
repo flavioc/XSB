@@ -45,3 +45,15 @@ is to be made into an executable cmain.
    $XSB_HOME/config/<your system architecture/saved.o 
    under the proper compiler flags to create cmain.
 
+*******************************************
+FURTHER NOTES:
+
+If the executables are not created due to unresolved references, check
+that the CFLAGS are correct for your system and compiler.  This can be
+done by running XSB and executing:
+| ?- xsb_configuration(compiler,Compiler),
+	xsb_configuration(compiler_flags,CFLAGS).
+
+and checking that the C compiler and flags are correct for the system
+you are running, and fixing them if not.
+
