@@ -23,6 +23,8 @@
 */
 
 #include "xsb_config.h"
+#include "auxlry.h"
+#include "context.h"
 #include "cell_xsb.h"
 
 #ifdef CYGWIN
@@ -53,13 +55,11 @@
 #include "ptoc_tag_xsb_i.h"
 #include "io_builtins_xsb.h"
 #include "flags_xsb.h"
-#include "auxlry.h"
 #include "flag_defs_xsb.h"
 #include "loader_xsb.h"
 #include "memory_xsb.h"
 #include "heap_xsb.h"
 //#include "error_xsb.h"
-#include "context.h"
 #include "varstring_xsb.h"
 #include "thread_xsb.h"
 

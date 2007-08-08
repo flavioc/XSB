@@ -29,12 +29,12 @@
 #include <stdio.h>
 
 #include "auxlry.h"
+#include "context.h"
 #include "cell_xsb.h"
 #include "register.h"
 #include "psc_xsb.h"
 #include "tries.h"
 #include "macro_xsb.h"
-#include "context.h"
 #include "scc_xsb.h"
 
 #if (!defined(LOCAL_EVAL))

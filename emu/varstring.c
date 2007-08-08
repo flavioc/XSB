@@ -64,6 +64,7 @@
 #include "wind2unix.h"
 
 #include "auxlry.h"
+#include "context.h"
 #include "cell_xsb.h"
 #include "memory_xsb.h"
 #ifndef DEBUG_VARSTRING

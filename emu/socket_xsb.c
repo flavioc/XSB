@@ -58,6 +58,8 @@
 #endif 
 
 #include "xsb_config.h"
+#include "auxlry.h"
+#include "context.h"
 #include "xsb_debug.h"
 #include "socket_xsb.h"
 #include "flags_xsb.h"
@@ -65,7 +67,6 @@
 #include "thread_defs_xsb.h"
 #include "timer_xsb.h" 
 
-#include "auxlry.h"
 #include "cell_xsb.h"
 #include "error_xsb.h"
 #include "cinterf.h"
@@ -76,7 +77,6 @@
 #include "psc_xsb.h"
 #include "register.h"
 #include "memory_xsb.h"
-#include "context.h"
 
 #ifdef WIN_NT
 typedef int socklen_t;

@@ -47,6 +47,7 @@
 
 #include "auxlry.h"
 #include "binding.h"
+#include "context.h"
 #include "cell_xsb.h"
 #include "memory_xsb.h"
 #include "register.h"

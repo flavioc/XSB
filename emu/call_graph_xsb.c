@@ -37,6 +37,7 @@
 #include "hashtable_itr.h"
 #include "debugs/debug_tries.h"
 #include "auxlry.h"
+#include "context.h"   
 #include "cell_xsb.h"   
 #include "inst_xsb.h"
 #include "psc_xsb.h"

@@ -31,6 +31,7 @@
 #include <stdlib.h>
 
 #include "auxlry.h"
+#include "context.h"
 #include "cell_xsb.h"  	     /* cell_xsb.h must be included before deref.h */
 #include "deref.h"
 #include "register.h"
@@ -43,7 +44,6 @@
 #include "flags_xsb.h"
 #include "loader_xsb.h"
 #include "cinterf.h"
-#include "context.h"
 #include "findall.h"
 #include "thread_xsb.h"
 #include "debug_xsb.h"

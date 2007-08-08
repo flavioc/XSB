@@ -41,13 +41,13 @@
 #include <stdlib.h>
 
 #include "xsb_config.h"
+#include "context.h"
 #include "cell_xsb.h"
 #include "cinterf.h"
 #include "deref.h"
 #include "register.h"
 #include "ptoc_tag_xsb_i.h"
 #include "error_xsb.h"
-#include "context.h"
 #include "memory_xsb.h"
 
 #ifndef MULTI_THREAD

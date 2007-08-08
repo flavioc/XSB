@@ -32,11 +32,11 @@
 #include <stdlib.h>
 
 #include "auxlry.h"
+#include "context.h"
 #include "cell_xsb.h"
 #include "psc_xsb.h"
 #include "subp.h"
 #include "register.h"
-#include "context.h"
 #include "error_xsb.h"
 #include "io_builtins_xsb.h"
 #include "cinterf.h"
@@ -73,6 +73,22 @@ static char *err_msg_table[] = {
 	"Operator", "Overflow", "Range", "Syntax", "Type",
 	"Undefined predicate/function", "Undefined value",
 	"Underflow", "Zero division" };
+
+/*----------------------------------------------------------------------*/
+
+#ifndef HAVE_SNPRINTF
+#include <stdarg.h>
+int vsnprintf(char *buffer, size_t count, const char *fmt, va_list ap) {
+       int ret;
+
+       ret = _vsnprintf(buffer, count-1, fmt, ap);
+       if (ret < 0) {
+               buffer[count-1] = '\0';
+       }
+
+       return ret;
+}
+#endif
 
 /*----------------------------------------------------------------------*/
 
@@ -129,22 +145,6 @@ DllExport void call_conv exit_xsb(char *description)
   fprintf(stdfdbk, "\nExiting XSB abnormally...\n");
   exit(1);
 }
-
-/*----------------------------------------------------------------------*/
-
-#ifndef HAVE_SNPRINTF
-#include <stdarg.h>
-int vsnprintf(char *buffer, size_t count, const char *fmt, va_list ap) {
-       int ret;
-
-       ret = _vsnprintf(buffer, count-1, fmt, ap);
-       if (ret < 0) {
-               buffer[count-1] = '\0';
-       }
-
-       return ret;
-}
-#endif
 
 #if defined(DEBUG_VERBOSE) && defined(CP_DEBUG)
 extern void print_cp_backtrace();

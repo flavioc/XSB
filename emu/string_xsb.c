@@ -30,6 +30,7 @@
 #include <string.h>
 
 #include "auxlry.h"
+#include "context.h"
 #include "cell_xsb.h"
 #include "error_xsb.h"
 #include "psc_xsb.h"

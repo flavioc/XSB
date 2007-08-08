@@ -32,6 +32,7 @@
 #include "debugs/debug_tries.h"
 
 #include "auxlry.h"
+#include "context.h"
 #include "cell_xsb.h"
 #include "inst_xsb.h"
 #include "register.h"

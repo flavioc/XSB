@@ -35,6 +35,7 @@
 
 
 #include "auxlry.h"
+#include "context.h"
 #include "cell_xsb.h"
 #include "cinterf.h"
 #include "binding.h"

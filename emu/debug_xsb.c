@@ -31,13 +31,13 @@
 #include <string.h>
 
 #include "auxlry.h"
+#include "context.h"
 #include "cell_xsb.h"
 #include "error_xsb.h"
 #include "binding.h"
 #include "psc_xsb.h"
 #include "memory_xsb.h"
 #include "flags_xsb.h"
-#include "context.h"
 #include "register.h"
 #include "deref.h"
 #include "trie_internals.h"

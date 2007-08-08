@@ -40,6 +40,7 @@
 #endif
 
 #include "auxlry.h"
+#include "context.h"
 #include "cell_xsb.h"
 #include "register.h"
 #include "error_xsb.h"
@@ -49,7 +50,6 @@
 #include "memory_xsb.h"
 #include "heap_xsb.h"
 #include "sig_xsb.h"
-#include "context.h"
 #include "varstring_xsb.h"
 #include "emudef.h"
 #include "loader_xsb.h"

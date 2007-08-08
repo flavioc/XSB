@@ -2615,6 +2615,9 @@ case WRITE_OUT_PROFILE:
     return TRUE;
   }
   case FLOAT_OP:
+#ifdef FAST_FLOATS
+    {xsb_error("Builtin float_op/10 not implemented in this configuration (FAST_FLOATS)");}
+#else
   {
     char * operator = ptoc_string(CTXTc 1);
     Float result;
@@ -2654,6 +2657,7 @@ case WRITE_OUT_PROFILE:
     ctop_int(CTXTc 10, (FLOAT_LOW_24_BITS(result)));    
     return TRUE;
   }
+#endif
 
     /* This is the builtin where people should put their private, experimental
        builtin code. SEE THE EXAMPLE IN private_builtin.c to UNDERSTAND HOW TO

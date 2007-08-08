@@ -31,8 +31,8 @@
 #include <math.h>
 
 #include "auxlry.h"
-#include "cell_xsb.h"
 #include "context.h"
+#include "cell_xsb.h"
 #include "token_xsb.h"
 #include "psc_xsb.h"
 #include "subp.h"

@@ -29,13 +29,13 @@
 #include <math.h>
 
 #include "auxlry.h"
+#include "context.h"
 #include "cell_xsb.h"
 #include "register.h"
 #include "memory_xsb.h"
 #include "deref.h"
 #include "heap_xsb.h"
 #include "binding.h"
-#include "context.h"
 
 #define FUN_PLUS   1
 #define FUN_MINUS  2

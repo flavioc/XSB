@@ -45,6 +45,7 @@
 #include "export.h"
 #include "basicdefs.h"
 #include "basictypes.h"
+#include "context.h"
 #include "cell_xsb.h"
 #include "error_xsb.h"
 #include "extensions_xsb.h"

@@ -31,6 +31,7 @@
 #include <string.h>
 
 #include "auxlry.h"
+#include "context.h"
 #include "cell_xsb.h"
 #include "psc_xsb.h"
 #include "cinterf.h"

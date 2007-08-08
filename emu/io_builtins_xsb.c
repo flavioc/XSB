@@ -37,8 +37,8 @@
 
 #include "setjmp_xsb.h"
 #include "auxlry.h"
-#include "cell_xsb.h"
 #include "context.h"
+#include "cell_xsb.h"
 #include "error_xsb.h"
 #include "cinterf.h"
 #include "memory_xsb.h"

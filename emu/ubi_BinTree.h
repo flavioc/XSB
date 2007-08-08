@@ -29,6 +29,17 @@
  * -------------------------------------------------------------------------- **
  *
  * $Log$
+ * Revision 1.4  2007/08/08 17:50:53  dwarren
+ * Fix problem with --enable-fast-floats compilation.
+ * Almost all these changes were due to the fact that cell_xsb.h
+ * included context.h only in the case of not fast-floats. I decided
+ * (maybe unwisely) not have the cell_xsb.h file include context.h at
+ * all.  This meant that context.h must be included before cell_xsb.h
+ * is included.  Thus all the changes.  My generaly feeling is that
+ * I don't like .h files including other .h files, and this follows
+ * that feeling.  But maybe that's better and I should have just
+ * made cell_xsb.h include context.h.
+ *
  * Revision 1.3  2005/01/14 18:31:39  ruim
  * Integration of multithreaded system
  *
@@ -201,6 +212,7 @@
 
 #include "xsb_config.h"
 #include "auxlry.h"
+#include "context.h"
 #include "cell_xsb.h"
 #include "psc_xsb.h"
 

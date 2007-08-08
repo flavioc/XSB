@@ -43,6 +43,7 @@
 #include <stdio.h>
 
 #include "xsb_time.h"
+#include "context.h"
 #include "cell_xsb.h"
 #include "error_xsb.h"
 #include "setjmp_xsb.h"

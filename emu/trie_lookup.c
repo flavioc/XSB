@@ -32,6 +32,7 @@
 #include <stdlib.h>
 
 #include "auxlry.h"
+#include "context.h"
 #include "cell_xsb.h"
 #include "error_xsb.h"
 #include "psc_xsb.h"
@@ -42,7 +43,6 @@
 #include "subp.h"
 #include "debug_xsb.h"
 #include "flags_xsb.h"
-#include "context.h"
 #include "memory_xsb.h"
 #if (defined(DEBUG_VERBOSE) || defined(DEBUG_ASSERTIONS))
 #include "tst_utils.h"

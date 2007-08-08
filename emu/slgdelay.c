@@ -34,6 +34,7 @@
 #include "debugs/debug_delay.h"
 
 #include "auxlry.h"
+#include "context.h"
 #include "cell_xsb.h"
 #include "psc_xsb.h"
 #include "register.h"

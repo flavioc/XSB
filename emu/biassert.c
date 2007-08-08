@@ -36,6 +36,7 @@
 
 #include "setjmp_xsb.h"
 #include "auxlry.h"
+#include "context.h"
 #include "cell_xsb.h"
 #include "psc_xsb.h"
 #include "error_xsb.h"
@@ -53,7 +54,6 @@
 #include "macro_xsb.h"
 #include "tr_utils.h"
 #include "trassert.h"
-#include "context.h"
 #include "thread_xsb.h"
 #include "debug_xsb.h"
 #include "biassert_defs.h"

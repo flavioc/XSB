@@ -35,6 +35,7 @@
 #include <errno.h>
 
 #include "auxlry.h"
+#include "context.h"
 #include "cell_xsb.h"
 #include "memory_xsb.h"
 #include "register.h"
@@ -51,7 +52,6 @@
 #include "error_xsb.h"
 #include "orient_xsb.h"
 #include "loader_xsb.h"
-#include "context.h"
 #include "thread_xsb.h"
 
 

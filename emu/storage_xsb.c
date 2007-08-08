@@ -29,6 +29,7 @@
 #include <stdlib.h>
 
 #include "auxlry.h"
+#include "context.h"
 #include "cell_xsb.h"
 #include "psc_xsb.h"
 #include "cinterf.h"
@@ -40,7 +41,6 @@
 
 #include "debug_xsb.h"
 #include "flags_xsb.h"
-#include "context.h"
 
 /* this func would insert handle into hashtable, if it isn't there */
 #define find_or_insert_storage_handle(name)  \

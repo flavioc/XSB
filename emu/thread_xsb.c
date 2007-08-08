@@ -39,9 +39,9 @@
 #include "basicdefs.h"
 #include "auxlry.h"
 
+#include "context.h"
 #include "cell_xsb.h"
 #include "register.h"
-#include "context.h"
 #include "cinterf.h"
 #include "error_xsb.h"
 
