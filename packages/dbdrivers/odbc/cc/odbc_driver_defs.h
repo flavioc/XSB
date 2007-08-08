@@ -81,4 +81,5 @@ DllExport int call_conv driverODBC_register();
 DllExport extern int call_conv registerXSBDriver(char* dr, int num);
 DllExport extern int call_conv registerXSBFunction(char* dr, int type, union functionPtrs* func);
 
+#define NUMBER_OF_ODBC_DRIVER_FUNCTIONS  7
 

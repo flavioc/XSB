@@ -488,7 +488,7 @@ static void driverODBC_error(SQLSMALLINT handleType, SQLHANDLE handle)
   }
 
   errorMesg = (SQLCHAR *)malloc(SQL_MAX_MESSAGE_LENGTH * sizeof(SQLCHAR));
-  sqlState = (SQLCHAR *)malloc(6 * sizeof(SQLCHAR));
+  sqlState = (SQLCHAR *)malloc((SQL_SQLSTATE_SIZE+1) * sizeof(SQLCHAR));
   SQLGetDiagRec(handleType, handle, 1, sqlState, NULL, errorMesg, SQL_MAX_MESSAGE_LENGTH - 1, NULL);
   free(sqlState);
 }
@@ -504,7 +504,7 @@ DllExport int call_conv driverODBC_register(void)
   union functionPtrs* funcCloseStmt;
   union functionPtrs* funcErrorMesg;
 
-  registerXSBDriver("odbc", 7);
+  registerXSBDriver("odbc", NUMBER_OF_ODBC_DRIVER_FUNCTIONS);
 
   funcConnect = (union functionPtrs *)malloc(sizeof(union functionPtrs));
   funcConnect->connectDriver = driverODBC_connect;
