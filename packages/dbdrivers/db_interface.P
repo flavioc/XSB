@@ -65,7 +65,7 @@ db_disconnect(Handle) :-
 
 db_query(Connhandle, QueryHandle, SQLQueryList, ReturnList) :-
 	(length(ReturnList, N), length(List, N), 
-	    db_canonise_term(SQLQueryList, CanSQLQueryList),
+	    stringify_compound_terms(SQLQueryList, CanSQLQueryList),
 	    queryConnection(Connhandle, QueryHandle, CanSQLQueryList, List)
 	-> db_term(ReturnList, List)
 	;
@@ -87,7 +87,7 @@ db_query(Connhandle, QueryHandle, SQLQueryList, ReturnList) :-
 %% prepared statements
 
 db_prepare(ConnHandle, QueryHandle, SQLQueryList) :-
-	(db_canonise_term(SQLQueryList, CanSQLQueryList)
+	(stringify_compound_terms(SQLQueryList, CanSQLQueryList)
 	->  prepareStatement(ConnHandle, QueryHandle, CanSQLQueryList)
 	;
 	    exception(Number, Mesg),
@@ -96,7 +96,7 @@ db_prepare(ConnHandle, QueryHandle, SQLQueryList) :-
 
 db_prepare_execute(QueryHandle, BindList, ReturnList) :-
 	(length(ReturnList, N), length(List, N),
-	    db_canonise_term(BindList, CanBindList), 
+	    stringify_compound_terms(BindList, CanBindList), 
 	    executePreparedStatement(QueryHandle, CanBindList, List)
 	-> db_term(ReturnList, List)
 	;
@@ -137,13 +137,13 @@ db_term([X|ReturnListTail], [term(Y)|ListTail]):-
 db_term([X|ReturnListTail], [X|ListTail]) :-
 	db_term(ReturnListTail, ListTail).
 
-db_canonise_term([], []).
+stringify_compound_terms([], []).
 
-db_canonise_term([X|List], [Z|CanonicalList]) :-
+stringify_compound_terms([X|List], [Z|CanonicalList]) :-
         ((compound(X) ; X == [])
 	-> term_to_atom(X, Y, [ignore_ops(canonical),quoted(true)]),
 	    atom_concat(DB_INTERFACE_TERM_SYMBOL,Y,Z)
 	; Z = X
 	),
-	db_canonise_term(List, CanonicalList).
+	stringify_compound_terms(List, CanonicalList).
 
