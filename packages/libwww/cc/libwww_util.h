@@ -40,6 +40,7 @@
 #include "auxlry.h"
 #include "xsb_config.h"
 #include "wind2unix.h"
+#include "context.h"
 #include "cell_xsb.h"
 #include "error_xsb.h"
 #include "cinterf.h"
