@@ -36,6 +36,7 @@
 /* wind2unix.h must be included after sys/stat.h */
 #include "wind2unix.h"
 #include "auxlry.h"
+#include "context.h"
 #include "cell_xsb.h"
 #include "memory_xsb.h"
 #include "inst_xsb.h"
