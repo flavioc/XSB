@@ -3768,7 +3768,7 @@ void init_dbclause_cgc_blocks(void) {
 
   psc = ((Pair)insert("db_get_clauses1", 11, 
 		      pair_psc(insert_module(0, "dbclause")), &new)) -> psc_ptr;
-  dbclause_cgc_block_gl = (CPtr) (get_ep(psc) + 0xc0);
+  dbclause_cgc_block_gl = (CPtr) (get_ep(psc) + ZOOM_FACTOR * 0xc0);
 }
 
 void init_standard_cgc_blocks(void) {
@@ -3778,7 +3778,7 @@ void init_standard_cgc_blocks(void) {
   psc = ((Pair)insert(";", 2, 
 		      pair_psc(insert_module(0, "standard")), &new))-> psc_ptr;
   standard_cgc_block_begin_gl = (CPtr) (get_ep(psc));
-  standard_cgc_block_end_gl = (CPtr) (get_ep(psc) + 0x94);
+  standard_cgc_block_end_gl = (CPtr) (get_ep(psc) +  ZOOM_FACTOR * 0x94);
 }
 
 xsbBool dynamic_code_function( CTXTdecl ) 
