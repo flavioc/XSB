@@ -32,12 +32,13 @@
 #include <fnmatch.h>
 #include <glob.h>
 
+/* context.h is necessary for the type of a thread context. */
+#include "context.h"
+
 #include "auxlry.h"
 #include "cell_xsb.h"
 #include "error_xsb.h"
 #include "cinterf.h"
-/* context.h is necessary for the type of a thread context. */
-#include "context.h"
 
 /* Casefolding seems to be defined in some versions of gcc, but not in
    others. So, it is really not that portable.

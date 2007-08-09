@@ -29,12 +29,13 @@
 #include <string.h>
 #include <regex.h>
 
+/* context.h is necessary for the type of a thread context. */
+#include "context.h"
+
 #include "auxlry.h"
 #include "cell_xsb.h"
 #include "error_xsb.h"
 #include "cinterf.h"
-/* context.h is necessary for the type of a thread context. */
-#include "context.h"
 
 
 #include "heap_xsb.h"
