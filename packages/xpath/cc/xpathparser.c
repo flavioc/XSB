@@ -74,7 +74,8 @@ DllExport int call_conv parse_xpath__()
 {
   /*Temporary prolog terms to handle the input*/
   prolog_term source_term, xpath_expr_term, output_term, tmp_term, ns_term;
-  char *source = NULL, *tmpsource = NULL, *xpath_expr = NULL, *tmp = NULL, flag = 0, server[MAXSTRLEN], fname[MAXSTRLEN], *namespace = NULL;
+  char *source = NULL, *tmpsource = NULL, *tmp = NULL, flag = 0, server[MAXSTRLEN], fname[MAXSTRLEN];
+  xmlChar *xpath_expr = NULL, *namespace = NULL;
   int ret = 0,  n=0;
 
   /*Initialize the xpath parser*/  
@@ -85,80 +86,78 @@ DllExport int call_conv parse_xpath__()
   ns_term = reg_term(4);
   
   /*Parse the xml source term*/
-  if( is_functor( source_term)){
+  if (is_functor(source_term)){
 
-    tmp = p2c_functor( source_term);
+    tmp = p2c_functor(source_term);
 
-    tmp_term = p2p_arg( source_term, 1);
+    tmp_term = p2p_arg(source_term, 1);
     /*Source is a file*/ 
-    if( !strcmp( tmp, "file")){
-      source = p2c_string( tmp_term);
+    if (!strcmp(tmp, "file")){
+      source = p2c_string(tmp_term);
       flag = 1;
     }
     /*Source is a string*/
-    else if( !strcmp( tmp, "string")){
-      source = p2c_string( tmp_term);
+    else if (!strcmp(tmp, "string")){
+      source = p2c_string(tmp_term);
       flag = 0;
     }
     /*Source is a url*/
-    else if( !strcmp( tmp, "url")){
+    else if (!strcmp(tmp, "url")){
 
-      tmpsource = p2c_string( tmp_term);
-      source = malloc( strlen( tmpsource));
-      strcpy( source, tmpsource);
-      if( parse_url( source, server, fname) != FALSE){
+      tmpsource = p2c_string(tmp_term);
+      source = malloc(strlen(tmpsource)+1);
+      strcpy(source, tmpsource);
+      if (parse_url(source, server, fname) != FALSE){
 
 	/*Source is a url is of the form file:// */
-	if( !strcmp( server, "file")){
-	  strcpy( source, fname);
+	if (!strcmp(server, "file")){
+	  strcpy(source, fname);
 	  flag = 1;
 	}
 	else{
 	  n = 0;
 	  /*Fetch file from remote location*/
-	  if( get_file_www( server, fname, &source) == FALSE){
-	    return xpath_error( ERR_DOMAIN, "url", tmp_term);
+	  if (get_file_www(server, fname, &source) == FALSE){
+	    return xpath_error(ERR_DOMAIN, "url", tmp_term);
 	  }
 	  else{
-	    n = strlen( source);
+	    n = strlen(source);
 	  }
 	}
       }
       else{
-	return xpath_error( ERR_DOMAIN, "url", tmp_term);
+	return xpath_error(ERR_DOMAIN, "url", tmp_term);
       }
     }
   }
 
   /*Extract the xpath expression from prolog input*/
   xpath_expr_term = reg_term(2);
-  if( is_nil( xpath_expr_term)){
-    return xpath_error( ERR_DOMAIN, "xpath expression", xpath_expr_term);
+  if (is_nil(xpath_expr_term)){
+    return xpath_error(ERR_DOMAIN, "xpath expression", xpath_expr_term);
   }
-  xpath_expr = p2c_string( xpath_expr_term);
-  if( !xpath_expr){
-    return xpath_error( ERR_DOMAIN, "xpath expression", xpath_expr_term);
+  xpath_expr = (xmlChar *)p2c_string(xpath_expr_term);
+  if (!xpath_expr){
+    return xpath_error(ERR_DOMAIN, "xpath expression", xpath_expr_term);
   }
 
   /* Takes care of the bug in libxml2. Converts the '/' input expression 
    * to '/\*'
    */
-  if(!strcmp( xpath_expr, "/"))
-    {
+  if (!strcmp((char *)xpath_expr, "/")) {
       free(xpath_expr);
-      xpath_expr = malloc( 3);
-      strcpy( xpath_expr, "/*");
+      xpath_expr = (xmlChar *)malloc(3); // 3 = length("/*")+1
+      strcpy((char *)xpath_expr, "/*");
     }		     
 
   /*Extract the namespace prefix list from the prolog input*/
   ns_term = reg_term(4);
-  if( is_string( ns_term))
-    {
-      namespace = p2c_string( ns_term);
+  if (is_string(ns_term)) {
+    namespace = (xmlChar *)p2c_string(ns_term);
     }
   /*This is the function which evaluates the xpath expression on xml input*/
-  ret = execute_xpath_expression( source, xpath_expr, namespace, output_term, flag);
-  if( ret == FALSE){
+  ret = execute_xpath_expression(source, xpath_expr, namespace, output_term, flag);
+  if (ret == FALSE){
     return xpath_error(ERR_MISC, "xpath", "Unable to parse the xpath expression");
   }
   xmlCleanupParser();
@@ -183,28 +182,28 @@ execute_xpath_expression(const char * xmlsource, const xmlChar* xpathExpr, const
   char *output_buffer=NULL, *ptr=NULL;
     
   /* Load XML document */
-  if( flag == 1){
+  if (flag == 1){
     doc = xmlParseFile(xmlsource);
-    if( doc == NULL){
+    if (doc == NULL){
       return FALSE;
     }
   }
   else{
-    doc = xmlParseMemory(xmlsource, strlen( xmlsource ));
-    if( doc == NULL){
+    doc = xmlParseMemory(xmlsource, strlen(xmlsource));
+    if (doc == NULL){
       return FALSE;
     }
   }
 
   /* Create xpath evaluation context */
   xpathCtx = xmlXPathNewContext(doc);
-  if(xpathCtx == NULL) {
+  if (xpathCtx == NULL) {
     xmlFreeDoc(doc); 
     return FALSE;
   }
     
   /* Register namespaces from list (if any) */
-  if((nsList != NULL) && (register_namespaces(xpathCtx, nsList) < 0)) {
+  if ((nsList != NULL) && (register_namespaces(xpathCtx, nsList) < 0)) {
     xmlXPathFreeContext(xpathCtx); 
     xmlFreeDoc(doc); 
     return FALSE;
@@ -212,7 +211,7 @@ execute_xpath_expression(const char * xmlsource, const xmlChar* xpathExpr, const
 
   /* Evaluate xpath expression */
   xpathObj = xmlXPathEvalExpression(xpathExpr, xpathCtx);
-  if(xpathObj == NULL) {
+  if (xpathObj == NULL) {
     xmlXPathFreeContext(xpathCtx); 
     xmlFreeDoc(doc); 
     return FALSE;
@@ -220,35 +219,34 @@ execute_xpath_expression(const char * xmlsource, const xmlChar* xpathExpr, const
    
   size = xpathObj->nodesetval->nodeNr;
 
-  buf = malloc( size * sizeof( xmlBufferPtr));
-  if(!buf){
+  buf = malloc(size * sizeof(xmlBufferPtr)+1);
+  if (!buf){
     return FALSE;
   }
   /*Store the resultant xml in buffer*/
-  xmlSetBufferAllocationScheme( XML_BUFFER_ALLOC_EXACT);
+  xmlSetBufferAllocationScheme(XML_BUFFER_ALLOC_EXACT);
     
-  for( i = 0; i < size; i++){
+  for (i = 0; i < size; i++){
     buf[i]=xmlBufferCreate();
-    xmlNodeDump( buf[i], doc, xpathObj->nodesetval->nodeTab[i],0,0);
-    bufsize+=strlen(buf[i]->content); 
+    xmlNodeDump(buf[i], doc, xpathObj->nodesetval->nodeTab[i],0,0);
+    bufsize+=strlen((char *)buf[i]->content); 
   }
 
-  output_buffer = malloc( bufsize);
-  if(!output_buffer){
+  output_buffer = malloc(bufsize+1);
+  if (!output_buffer){
     return FALSE;
   }
 
   ptr = output_buffer;
-  for(j=0;j<i;j++){
-    strcpy( ptr, buf[j]->content);
-    ptr+=strlen(buf[j]->content);
+  for (j=0;j<i;j++){
+    strcpy(ptr, (char *)buf[j]->content);
+    ptr+=strlen((char *)buf[j]->content);
   }
   *ptr='\0';
 
   /*Store the resultant xml in output term*/
-  if( is_var( output_term))
-    {
-      c2p_string( output_buffer, output_term); 
+  if (is_var(output_term)) {
+    c2p_string(output_buffer, output_term); 
     }
   else
     {
@@ -257,7 +255,7 @@ execute_xpath_expression(const char * xmlsource, const xmlChar* xpathExpr, const
   
   /* Cleanup */
   free(output_buffer);
-  for(j=0;j<size;j++){
+  for (j=0;j<size;j++){
     xmlBufferFree(buf[j]);
   }
   free(buf);
@@ -285,7 +283,7 @@ register_namespaces(xmlXPathContextPtr xpathCtx, const xmlChar* nsList) {
   assert(nsList);
 	
   nsListDup = xmlStrdup(nsList);
-  if(nsListDup == NULL) {
+  if (nsListDup == NULL) {
     return FALSE;	
   }
     
@@ -293,12 +291,12 @@ register_namespaces(xmlXPathContextPtr xpathCtx, const xmlChar* nsList) {
   while(next != NULL) {
     /* skip spaces */
     while((*next) == ' ') next++;
-    if((*next) == '\0') break;
+    if ((*next) == '\0') break;
 
     /* find prefix */
     prefix = next;
     next = (xmlChar*)xmlStrchr(next, '=');
-    if(next == NULL) {
+    if (next == NULL) {
       xmlFree(nsListDup);
       return FALSE;	
     }
@@ -307,12 +305,12 @@ register_namespaces(xmlXPathContextPtr xpathCtx, const xmlChar* nsList) {
     /* find href */
     href = next;
     next = (xmlChar*)xmlStrchr(next, ' ');
-    if(next != NULL) {
+    if (next != NULL) {
       *(next++) = '\0';	
     }
 
     /* do register namespace */
-    if(xmlXPathRegisterNs(xpathCtx, prefix, href) != 0) {
+    if (xmlXPathRegisterNs(xpathCtx, prefix, href) != 0) {
       xmlFree(nsListDup);
       return FALSE;	
     }
@@ -352,11 +350,11 @@ xpath_error(plerrorid id, ...)
 	    case ENOMEM:
 	  
 	      c2p_functor("xpath", 1, tmp1); 	
-	      tmp = p2p_arg( tmp1, 1);
-	      c2p_functor( "resource_error", 1, tmp);
+	      tmp = p2p_arg(tmp1, 1);
+	      c2p_functor("resource_error", 1, tmp);
 	      
-	      c2p_string( "no_memory", p2p_arg( tmp, 1));
-	      p2p_unify( tmp1, formal); 
+	      c2p_string("no_memory", p2p_arg(tmp, 1));
+	      p2p_unify(tmp1, formal); 
 	      break;
 	      /*Permission denied error*/
 	    case EACCES:
@@ -365,14 +363,14 @@ xpath_error(plerrorid id, ...)
 		const char *action = va_arg(args, const char *);
 
 		c2p_functor("xpath", 1, tmp1);
-		tmp = p2p_arg( tmp1, 1);
+		tmp = p2p_arg(tmp1, 1);
 
-		c2p_functor( "permission_error", 3, tmp);
-		c2p_string( (char*)action, p2p_arg(tmp, 1));
-		c2p_string( "file", p2p_arg(tmp, 2));
-		c2p_string ( (char*)file, p2p_arg(tmp, 3));
+		c2p_functor("permission_error", 3, tmp);
+		c2p_string((char*)action, p2p_arg(tmp, 1));
+		c2p_string("file", p2p_arg(tmp, 2));
+		c2p_string ((char*)file, p2p_arg(tmp, 3));
 
-		p2p_unify( tmp1, formal);
+		p2p_unify(tmp1, formal);
 		break;
 	      }
 	      /*Entity not found*/
@@ -380,14 +378,14 @@ xpath_error(plerrorid id, ...)
 	      { 
 		const char *file = va_arg(args, const char *);
 		c2p_functor("xpath", 1, tmp1);
-		tmp = p2p_arg( tmp1, 1);
+		tmp = p2p_arg(tmp1, 1);
 
-		c2p_functor( "permission_error", 2, tmp);
+		c2p_functor("permission_error", 2, tmp);
 	  		  
-		c2p_string( "file", p2p_arg(tmp, 1));
-		c2p_string ( (char*)file, p2p_arg(tmp, 2));
+		c2p_string("file", p2p_arg(tmp, 1));
+		c2p_string ((char*)file, p2p_arg(tmp, 2));
 
-		p2p_unify( tmp1, formal); 
+		p2p_unify(tmp1, formal); 
 
 		break;
 	      }
@@ -395,10 +393,10 @@ xpath_error(plerrorid id, ...)
 	    default:
 	      {
 	        c2p_functor("xpath", 1, tmp1);
-	        tmp = p2p_arg( tmp1, 1);
+	        tmp = p2p_arg(tmp1, 1);
 
 		c2p_string("system_error", tmp);
-		p2p_unify( tmp1, formal);
+		p2p_unify(tmp1, formal);
 		break;
 	      }
 	    }
@@ -412,22 +410,18 @@ xpath_error(plerrorid id, ...)
 
 
 	c2p_functor("xpath", 1, tmp1);
-	tmp = p2p_arg( tmp1, 1);
+	tmp = p2p_arg(tmp1, 1);
 
-	if( is_attv( actual) && 
-	    strcmp(expected, "variable") != 0 )
-	  {
-	    c2p_string( "instantiation_error", tmp);
-	    p2p_unify( tmp1, formal);
-	  }
-	else
-	  {
+	if (is_attv(actual) && strcmp(expected, "variable") != 0 ) {
+	    c2p_string("instantiation_error", tmp);
+	    p2p_unify(tmp1, formal);
+	} else {
 
-	    c2p_functor( "type_error", 2, tmp);
-	    c2p_string( (char*)expected, p2p_arg(tmp, 1));
-	    p2p_unify ( actual, p2p_arg(tmp, 2));
+	    c2p_functor("type_error", 2, tmp);
+	    c2p_string((char*)expected, p2p_arg(tmp, 1));
+	    p2p_unify (actual, p2p_arg(tmp, 2));
 	    
-	    p2p_unify( tmp1, formal);
+	    p2p_unify(tmp1, formal);
 	  }
 	break;
       }	
@@ -438,19 +432,19 @@ xpath_error(plerrorid id, ...)
 	prolog_term actual        = va_arg(args, prolog_term);
 
 	c2p_functor("xpath", 1, tmp1);
-	tmp = p2p_arg( tmp1, 1);
+	tmp = p2p_arg(tmp1, 1);
 	
-	if( is_attv( actual) && strcmp(expected, "variable") != 0 )
+	if (is_attv(actual) && strcmp(expected, "variable") != 0 )
 	  {
-	    c2p_string( "instantiation_error", tmp);
-	    p2p_unify( tmp1, formal);
+	    c2p_string("instantiation_error", tmp);
+	    p2p_unify(tmp1, formal);
 	  }
 	else
 	  {
-	    c2p_functor( "domain_error", 2, tmp);
-	    c2p_string( (char*)expected, p2p_arg(tmp, 1));
-	    p2p_unify( actual, p2p_arg(tmp, 2));
-	    p2p_unify( tmp1, formal);
+	    c2p_functor("domain_error", 2, tmp);
+	    c2p_string((char*)expected, p2p_arg(tmp, 1));
+	    p2p_unify(actual, p2p_arg(tmp, 2));
+	    p2p_unify(tmp1, formal);
 	  }	
 	break;
       }
@@ -461,14 +455,14 @@ xpath_error(plerrorid id, ...)
 	prolog_term obj  = va_arg(args, prolog_term);
 
 	c2p_functor("xpath", 1, tmp1);
-	tmp = p2p_arg( tmp1, 1);
+	tmp = p2p_arg(tmp1, 1);
 
-	c2p_functor( "existence_error", 2, tmp);
+	c2p_functor("existence_error", 2, tmp);
 	
-	c2p_string( (char*)type, p2p_arg(tmp, 1));
-	p2p_unify ( obj, p2p_arg(tmp, 2));
+	c2p_string((char*)type, p2p_arg(tmp, 1));
+	p2p_unify (obj, p2p_arg(tmp, 2));
 	
-	p2p_unify( tmp1, formal);
+	p2p_unify(tmp1, formal);
 	break;
       }
     case ERR_FAIL:
@@ -477,13 +471,13 @@ xpath_error(plerrorid id, ...)
 	prolog_term goal  = va_arg(args, prolog_term);
 
 	c2p_functor("xpath", 1, tmp1);
-	tmp = p2p_arg( tmp1, 1);
+	tmp = p2p_arg(tmp1, 1);
 
-	c2p_functor( "goal_failed", 1, tmp);
+	c2p_functor("goal_failed", 1, tmp);
 
-	p2p_unify( p2p_arg( tmp,1), goal);	
+	p2p_unify(p2p_arg(tmp,1), goal);	
       
-	p2p_unify( tmp1, formal);
+	p2p_unify(tmp1, formal);
 	break;
       }
     case ERR_LIMIT:
@@ -493,14 +487,14 @@ xpath_error(plerrorid id, ...)
 	long maxval  = va_arg(args, long);
 
 	c2p_functor("xpath", 1, tmp1);
-	tmp = p2p_arg( tmp1, 1);
+	tmp = p2p_arg(tmp1, 1);
 	
-	c2p_functor( "limit_exceeded", 2, tmp);
-	c2p_string( (char*)limit, p2p_arg( tmp,1));
-	c2p_int( maxval, p2p_arg( tmp, 2));
+	c2p_functor("limit_exceeded", 2, tmp);
+	c2p_string((char*)limit, p2p_arg(tmp,1));
+	c2p_int(maxval, p2p_arg(tmp, 2));
 
 	
-	p2p_unify( tmp1, formal);
+	p2p_unify(tmp1, formal);
 	break;
       }
     case ERR_MISC:
@@ -514,12 +508,12 @@ xpath_error(plerrorid id, ...)
 	msg = msgbuf;
 
 	c2p_functor("xpath", 1, tmp1);
-	tmp = p2p_arg( tmp1, 1);
+	tmp = p2p_arg(tmp1, 1);
 
 	
-	c2p_functor( "miscellaneous", 1, tmp);
-	c2p_string( (char*)id, p2p_arg( tmp, 1));
-	p2p_unify( tmp1, formal);
+	c2p_functor("miscellaneous", 1, tmp);
+	c2p_string((char*)id, p2p_arg(tmp, 1));
+	p2p_unify(tmp1, formal);
 	break; 
       }
     default:
@@ -528,29 +522,29 @@ xpath_error(plerrorid id, ...)
 
   va_end(args);
 
-  if ( msg )
+  if (msg)
     { 
       prolog_term msgterm  = p2p_new();
 
-      if ( msg )
+      if (msg)
 	{ 
-	  c2p_string( msg, msgterm);
+	  c2p_string(msg, msgterm);
 	}
 
       tmp = p2p_new();
 
-      c2p_functor( "xpath_context", 1, tmp);
-      p2p_unify( p2p_arg( tmp, 1), msgterm);	
-      p2p_unify( tmp, swi);
+      c2p_functor("xpath_context", 1, tmp);
+      p2p_unify(p2p_arg(tmp, 1), msgterm);	
+      p2p_unify(tmp, swi);
     }
   /*Unify the created term with the error term*/
   tmp = p2p_new();
-  c2p_functor( "xpath_error", 2, tmp);
-  p2p_unify( p2p_arg( tmp, 1), formal);
-  p2p_unify( p2p_arg( tmp, 2), swi);
-  p2p_unify( tmp, except);
+  c2p_functor("xpath_error", 2, tmp);
+  p2p_unify(p2p_arg(tmp, 1), formal);
+  p2p_unify(p2p_arg(tmp, 2), swi);
+  p2p_unify(tmp, except);
 
-  return  p2p_unify( xpath_error_term, except);
+  return  p2p_unify(xpath_error_term, except);
 }
 
 
