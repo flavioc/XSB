@@ -55,7 +55,6 @@
 #include "error_xsb.h"
 #include "tr_utils.h"
 #include "hash_xsb.h" 
-#include "cell_xsb.h"
 #include "call_xsb_i.h"
 #include "tst_aux.h"
 #include "tst_utils.h"
