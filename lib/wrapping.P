@@ -52,6 +52,7 @@ write_header :-
 	write('** XSB System'),nl,
 	write('*/'),nl,nl,
 	write('#include <stdio.h>'),nl,
+	write('#include <string.h>'),nl,
 	xsb_configuration(install_dir,InstallDir),
 	write('#include "'),
 	write(InstallDir),

@@ -191,7 +191,7 @@ compile_c(Modname, Base, Ext, Options, Dir, LdOption, CompComm, TempFile) :-
 	    ;	str_sub('cygwin', Configuration)
 	    ->  message(shell([CC_Name, ' -c ', Base, Ext, TempFile, ' ', CC_Opts])),
 		concat_atom([Base,'.o'], Obj),
-		shell([CC_Name, ' -c ', Base, Ext, TempFile, ' -o ',
+		shell([CC_Name, ' -c ', Base, Ext, /*TempFile,*/ ' -o ',
 		       Obj, ' ', CC_Opts]),
 		(  TempFile = ''
 		-> TempObj = ''
