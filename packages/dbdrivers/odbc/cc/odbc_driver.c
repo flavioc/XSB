@@ -183,6 +183,8 @@ struct xsb_data** driverODBC_query(struct xsb_queryHandle* handle)
     }
     handle->numResultCols = query->resultmeta->numCols;
     if (query->resultmeta->numCols == 0) {
+      query->resultmeta->types = NULL;
+      odbcQueries[numQueries++] = query;
       return NULL;
     }
 
@@ -414,7 +416,8 @@ int driverODBC_closeStatement(struct xsb_queryHandle* handle)
       query = odbcQueries[i];
       for (j = 0 ; j < query->resultmeta->numCols ; j++)
 	free(query->resultmeta->types[j]);
-      free(query->resultmeta->types);
+      if (query->resultmeta->types != NULL)
+	free(query->resultmeta->types);
       free(query->resultmeta);
       val = SQLFreeHandle(SQL_HANDLE_STMT, query->hstmt);
       if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
