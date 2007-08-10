@@ -10,8 +10,8 @@ xsb_minor_version="1"
 #xsb_codename="Okocim"      # from Poland! ;)
 #xsb_codename="Duff"        # Simpsons
 #xsb_codename="Kinryo"      # 2.7 Jonah's friend's uncle's sake'
-#xsb_codename="Sagres"      # version 3.0, Portugese Beer, Rui's favorite
-xsb_codename="Incognito"    # version 3.1 Portugese Syrah intro'd to Terry by Antonio Porto
+#xsb_codename="Sagres"      # version 3.0, Portuguese Beer, Rui's favorite
+xsb_codename="Incognito"    # version 3.1 Portuguese Syrah intro'd to Terry by Antonio Porto
 
 # Format: YYYY-MM-DD or YYYY.MM.DD or YYYY/MM/DD
 # With this, XSB should become Y2K compliant :-)
