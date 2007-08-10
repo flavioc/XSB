@@ -178,8 +178,8 @@ will be used for indexing (the ordering of the fields is via a
 depth-first traversal).  For instance, {\tt index(p/4,[*(4),3,2+1])}
 acts as above, but looks within 4th argument of {\tt p/4} before
 examining the outer functor of argument 3 (and finally examining the
-outer functors of arguments 2 and 1 together.  Using such indexing XSB
-routinely performs efficiently perform intensive analyses of in-memory
+outer functors of arguments 2 and 1 together.  Using such indexing, XSB
+routinely performs efficiently intensive analyses of in-memory
 knowledge bases with millions of highly structured facts.  Indexing
 techniques for asserted code are covered in Section \ref{sec:assert}.
 
@@ -190,9 +190,9 @@ programs; in Windows-based system XSB can be linked into C programs
 through a DLL interface.  On either class of operating system, C
 functions can be made callable from XSB either directly within a
 process, or using a socket library.  XSB can also inter-communicate
-with Java through the InterProlog interface, \footnote{InterProlog is
-  available at \url{www.declarativa.com/InterProlog/default.htm}.}, or
-YJXSB.  Within Interprolog, XSB and Java can be linked either through
+with Java through the InterProlog interface \footnote{InterProlog is 
+available at \url{www.declarativa.com/InterProlog/default.htm}.} or
+using YJXSB.  Within Interprolog, XSB and Java can be linked either through
 Java's jni interface, or through sockets.  XSB can access external
 data in a variety of ways: through an ODBC interface, through an
 Oracle interface, or through a variety of mechanisms to read data from
@@ -230,8 +230,8 @@ closure(R)(X,Y) :- R(X,Z), closure(R)(Z,Y).
 \end{center}
 where {\tt closure(R)/2} is (syntactically) a second-order predicate
 which, given any relation {\tt R}, returns its transitive closure
-relation {\tt closure(R)}.  With XSB, support is provided for reading and
-writing HiLog terms, converting them to or from internal format as
+relation {\tt closure(R)}.  XSB supports reading and writing of HiLog 
+terms, converting them to or from internal format as
 necessary (see Section~\ref{HiLog2Prolog}).  Special meta-logical
 standard predicates (see Section~\ref{MetaLogical}) are also provided
 for inspection and handling of HiLog terms.  Unlike earlier versions
