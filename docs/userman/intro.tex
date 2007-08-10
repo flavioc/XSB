@@ -43,7 +43,7 @@ all functionality of ISO-Prolog, XSB includes the following features:
 \item Backtrackable updates through XSB's {\tt storage} module that
   support the semantics of transaction logic \cite{BoKi94}.
 %
-\item Extensive pattern matching packages, and interfaces to libwww
+\item Extensive pattern matching packages, and interfaces to {\tt libwww}
   routines, all of which are especially useful for Web applications.
 %
 \item A novel transformation technique called {\em unification
@@ -193,7 +193,7 @@ process, or using a socket library.  XSB can also inter-communicate
 with Java through the InterProlog interface \footnote{InterProlog is 
 available at \url{www.declarativa.com/InterProlog/default.htm}.} or
 using YJXSB.  Within Interprolog, XSB and Java can be linked either through
-Java's jni interface, or through sockets.  XSB can access external
+Java's JNI interface, or through sockets.  XSB can access external
 data in a variety of ways: through an ODBC interface, through an
 Oracle interface, or through a variety of mechanisms to read data from
 flat files.  These interfaces are all described in Volume 2 of this
@@ -283,7 +283,7 @@ and reasoning over ontologies; xsbdoc supports literate programming in
 XSB, and XASP provides an interface to Smodels to support Answer Set
 programming.  XSB packages also support Perl-style pattern matching
 and POSIX-style pattern matching.  In addition, experimental
-preprocessing libararies currently supported are Extended logic
+preprocessing libraries currently supported are Extended logic
 programs (under the well-founded semantics), and Annotated Logic
 Programs.  These latter libraries are described in Volume 2 of this
 manual.
@@ -298,7 +298,7 @@ output (can be changed by the procedure).  See Section
 \ref{mode_declarations} for more details.  \index{notational
   conventions} Error cases for predicates designate the first argument
 of a 2 or 3 argument error term, to allow use by error
-handlers~\footnote{We are approaching compatability in the use of
+handlers~\footnote{We are approaching compatibility in the use of
   ISO-errors for ISO predicates, but in \version, we aren't quite
   there yet.}.  Also, the manual uses UNIX syntax for files and
 directories except when it specifically addresses other operating

@@ -14,7 +14,7 @@ from the host language, providing queries for XSB to evaluate, and
 retrieving back the answers.  An interface for calling XSB from C is
 provided for this purpose and is described in this chapter.  Based on
 this C interface, XSB can also be called from Java either through a
-{\tt jni} or a socket-based interface, as described in the
+JNI or a socket-based interface, as described in the
 documentation for Interprolog, available through {\tt
   xsb.sourceforge.net}.  To call XSB from Visual Basic, a DLL is
 created as described in this chapter, and additional declarations must
@@ -22,7 +22,7 @@ be made in visual basic as described in the web page ``How to use XSB
 DLL from Visual Basic'' \url{http://xsb.sourceforge.net/vbdll.html}.
 In addition, the interface described in this chapter has also been
 extended to allow XSB to be called from Delphi and Ruby.  However,
-since all of these interfaces -- Java, Ruby, Delph and Visual Basic --
+since all of these interfaces -- Java, Ruby, Delphi and Visual Basic --
 depend on XSB's C API, we refer in this chapter to C programs or
 threads calling XSB, although each of the examples suitably modified
 can be extended to other calling languages.
@@ -229,7 +229,7 @@ approach would also work as long as the XSB installation directory
 were passed.  Within the initialization string, other command line
 arguments can be passed to XSB if desired with the following
 exceptions: the arguments {\tt -B} (boot module), {\tt -D} (command
-loop driver), {\tt -i} (interpreter) and {\tt -d} (dissassembler)
+loop driver), {\tt -i} (interpreter) and {\tt -d} (disassembler)
 cannot be used when calling XSB from a foreign language~\footnote{In
   previous versions of XSB, initialization from the C level required a
   {\tt -n} option to be passed.  This is no longer required.}.  As a
@@ -1221,7 +1221,7 @@ portion of execution, messages are as in Volume 1 {\em Exception
 
 \begin{description}
 
-\ouritem{int xsb\_ccall\_thread\_create(th\_context *callingThread, th\_context **newThrea)}
+\ouritem{int xsb\_ccall\_thread\_create(th\_context *callingThread, th\_context **newThread)}
 \index{xsb\_ccall\_thread\_create}
 %
 Causes {\tt callingThread} to create a thread pointed to by {\tt
