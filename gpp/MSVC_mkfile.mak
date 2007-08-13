@@ -43,32 +43,32 @@ LINK32_OBJS= \
 <<
 
 
-.c{$(INTDIR)}.obj::
+.c{$(INTDIR)}.obj:
    $(CPP) @<<
    $(CPP_PROJ) $< 
 <<
 
-.cpp{$(INTDIR)}.obj::
+.cpp{$(INTDIR)}.obj:
    $(CPP) @<<
    $(CPP_PROJ) $< 
 <<
 
-.cxx{$(INTDIR)}.obj::
+.cxx{$(INTDIR)}.obj:
    $(CPP) @<<
    $(CPP_PROJ) $< 
 <<
 
-.c{$(INTDIR)}.sbr::
+.c{$(INTDIR)}.sbr:
    $(CPP) @<<
    $(CPP_PROJ) $< 
 <<
 
-.cpp{$(INTDIR)}.sbr::
+.cpp{$(INTDIR)}.sbr:
    $(CPP) @<<
    $(CPP_PROJ) $< 
 <<
 
-.cxx{$(INTDIR)}.sbr::
+.cxx{$(INTDIR)}.sbr:
    $(CPP) @<<
    $(CPP_PROJ) $< 
 <<
