@@ -687,7 +687,7 @@ static int xsb_spawn (char *progname, char *argv[], int callno,
          break;
       }
     }
-    pid = spawnvp(P_NOWAIT, progname, argvQuoted);
+    pid = _spawnvp(P_NOWAIT, progname, argvQuoted);
 #else
     pid = fork();
 #endif
