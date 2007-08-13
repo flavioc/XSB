@@ -947,15 +947,13 @@ void delete_branch(CTXTdeclc BTNptr lowest_node_in_branch, BTNptr *hook) {
 }
 
 /*------------------------------*/
-
 void safe_delete_branch(BTNptr lowest_node_in_branch) {
 
   byte instruction;
 
   MakeStatusDeleted(lowest_node_in_branch);
   instruction = BTN_Instr(lowest_node_in_branch);
-  if (instruction != trie_root) instruction = (instruction & 0x3) | trie_no_cp_fail;
-  else instruction = trie_no_cp_fail;
+  instruction = (instruction & 0x3) | trie_no_cp_fail;
   BTN_Instr(lowest_node_in_branch) = instruction;
 }
 
@@ -1410,6 +1408,9 @@ void trie_intern(CTXTdecl)
   dbg_printterm(LOG_INTERN,stddbg,term,25);
   xsb_dbgmsg((LOG_INTERN, "In trie with root %d", RootIndex));
 
+  if (itrie_array[RootIndex].root != NULL && BTN_Instr(itrie_array[RootIndex].root) == trie_no_cp_fail) {
+    printf("Inserting into trie with trie_no_cp_fail root\n");
+  }
   switch_to_trie_assert;
   //  SYS_MUTEX_LOCK(MUTEX_TRIE);
   //  Leaf = whole_term_chk_ins(CTXTc term,&(Set_ArrayPtr[RootIndex]),&flag,check_cps_flag,expand_flag);
@@ -1504,7 +1505,7 @@ void trie_dispose(CTXTdecl)
     }
     else {
       //      printf(" safely deleting branch %x\n",BTN_Instr(itrie_array[Rootidx].root));
-      safe_delete_branch(itrie_array[Rootidx].root);
+      safe_delete_branch(Leaf);
     }
   }
   switch_from_trie_assert;
