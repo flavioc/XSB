@@ -231,6 +231,12 @@ static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* quer
       val = SQLBindCol(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_C_CHAR, (SQLPOINTER *)result[i]->val->str_val, (SQLINTEGER)result[i]->length, pcbValues[i]);
       if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
 	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
+	if (pcbValues != NULL) {
+	  int j;
+	  for (j = 0; j <= i; j++)
+	    free(pcbValues[j]);
+	  free(pcbValues);
+	}
 	return NULL;
       }
     }
@@ -239,6 +245,12 @@ static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* quer
       val = SQLBindCol(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_C_SLONG, (SQLPOINTER *)&result[i]->val->i_val, 0, pcbValues[i]);
       if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
 	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
+	if (pcbValues != NULL){
+	  int j;
+	  for (j = 0; j <= i; j++)
+	    free(pcbValues[j]);
+	  free(pcbValues);
+	}
 	return NULL;
       }
     }
@@ -247,6 +259,12 @@ static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* quer
       val = SQLBindCol(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_C_DOUBLE, (SQLPOINTER *)&result[i]->val->f_val, 0, pcbValues[i]);
       if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
 	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
+	if (pcbValues != NULL){
+	  int j;
+	  for (j = 0; j <= i; j++)
+	    free(pcbValues[j]);
+	  free(pcbValues);
+	}
 	return NULL;
       }
     }
@@ -259,6 +277,14 @@ static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* quer
 	if (*(pcbValues[i]) == SQL_NULL_DATA)
 	  result[i]->val = NULL;
       }
+  }
+
+  if (pcbValues != NULL){
+    int j;
+    for (j = 0; j <query->resultmeta->numCols; j++)
+      free(pcbValues[j]);
+    free(pcbValues);
+    pcbValues = NULL;
   }
 
   if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
@@ -317,6 +343,10 @@ int driverODBC_prepareStatement(struct xsb_queryHandle* qHandle)
   val = SQLNumParams(query->hstmt, &(query->parammeta->numCols));
   if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
     driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
+    if (query->parammeta != NULL) {
+      free(query->parammeta);
+      query->parammeta = NULL;
+    }
     return FAILURE;
   }
 
@@ -326,6 +356,12 @@ int driverODBC_prepareStatement(struct xsb_queryHandle* qHandle)
     val = SQLDescribeParam(query->hstmt, (SQLUSMALLINT) (i + 1), &(query->parammeta->types[i]->type), &(query->parammeta->types[i]->length), NULL, NULL);
     if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
       driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
+      if (query->parammeta != NULL){
+        int j;
+        for (j=0; j<=i;j++)
+          free(query->parammeta->types[j]);
+        free(query->parammeta);
+      }
       return FAILURE;
     }
   }
@@ -366,7 +402,13 @@ struct xsb_data** driverODBC_execPrepareStatement(struct xsb_data** param, struc
       return NULL;
     }
   }
-	
+  if (query->parammeta!=NULL) {
+    int i;
+    for (i = 0; i<query->parammeta->numCols; i++)
+      free(query->parammeta->types[i]);
+    free(query->parammeta);
+    query->parammeta = NULL;
+  }
   val = SQLExecute(query->hstmt);
   if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
     driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
@@ -381,6 +423,7 @@ struct xsb_data** driverODBC_execPrepareStatement(struct xsb_data** param, struc
   }
   handle->numResultCols = query->resultmeta->numCols;
   if (query->resultmeta->numCols == 0) {
+    query->resultmeta->types = NULL;
     return NULL;
   }
 
@@ -419,6 +462,7 @@ int driverODBC_closeStatement(struct xsb_queryHandle* handle)
       if (query->resultmeta->types != NULL)
 	free(query->resultmeta->types);
       free(query->resultmeta);
+      
       val = SQLFreeHandle(SQL_HANDLE_STMT, query->hstmt);
       if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
 	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);

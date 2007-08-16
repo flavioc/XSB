@@ -256,10 +256,17 @@ DllExport int call_conv queryConnection(void)
   }
   
   val = bindReturnList(returnList, result, qHandle);
-  if (val == TOO_MANY_RETURN_COLS || val == TOO_FEW_RETURN_COLS || val == INVALID_RETURN_LIST)
-    return FALSE;
 
-
+  //By Senlin
+  //free result allocated in odbc_driver.c(in driverODBC_getNextRow)
+  if (result != NULL){
+    int i;
+    for (i=0; i<qHandle->numResultCols; i++) {
+      free(result[i]->val);
+      free(result[i]);
+    }
+    free(result);
+  }
   
   if ((cHandle = isConnectionHandle(chandle)) != NULL) {
     if (getDriverFunction(cHandle->driver, ERROR_MESG) != NULL)
@@ -403,6 +410,17 @@ DllExport int call_conv executePreparedStatement(void)
   
   result = executeStmtDriver(bindValues, qHandle);
 
+  //by Senlin Liang
+  //freeing bindValues
+  if (bindValues != NULL) {
+    int i;
+    for (i=0;i<qHandle->numParams;i++) {
+      free(bindValues[i]->val);
+      free(bindValues[i]);
+    }
+    free(bindValues);
+  }
+
   if (result == NULL && qHandle->state == QUERY_BEGIN) {
     if (getDriverFunction(qHandle->connHandle->driver, ERROR_MESG) != NULL)
       errorMesgDriver =
@@ -411,13 +429,22 @@ DllExport int call_conv executePreparedStatement(void)
       return FALSE;
     
     errorMesg = errorMesgDriver();
-    return FALSE;
+    if (errorMesg != NULL)
+      return FALSE;
   }
   
   val = bindReturnList(returnList, result, qHandle);
 
   if (result == NULL) {
     qHandle->state = QUERY_BEGIN;
+  }
+  else {
+    int i;
+    for (i=0; i<qHandle->numResultCols; i++) {
+      free(result[i]->val);
+      free(result[i]);
+    }
+    free(result);
   }
   
   if (val == TOO_MANY_RETURN_COLS || val == TOO_FEW_RETURN_COLS || val == INVALID_RETURN_LIST)
@@ -436,7 +463,8 @@ DllExport int call_conv executePreparedStatement(void)
     errorNumber = "XSB_DBI_000";
   }
 
-  if (errorMesg == NULL && val == RESULT_NONEMPTY_OR_NOT_REQUESTED)
+  if (errorMesg == NULL && (val == RESULT_NONEMPTY_OR_NOT_REQUESTED
+			    || val == RESULT_EMPTY_BUT_REQUESTED))
     return TRUE;
   else 
     return FALSE;
