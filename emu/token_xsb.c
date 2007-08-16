@@ -680,13 +680,21 @@ LAB_DECIMAL:                *s++ = '.';
 		token->nextch = c;
                 *s = 0;
 		for (rad_int = 0, s = strbuff; (c = *s++);) {
-		  d = rad_int;
+		  if (rad_int < MY_MAXINT/10 || 
+		      (rad_int == MY_MAXINT/10 && (c-'0') <= MY_MAXINT % 10)) 
+		    rad_int = rad_int*10-'0'+c;
+		  else {
+		    xsb_error("Overflow in integer, returning MAX_INT");
+		    rad_int = MY_MAXINT;
+		    break;
+		  }		    
+		  /*		  d = rad_int;
 		  rad_int = rad_int*10-'0'+c;
 		  if (rad_int < d || rad_int > MY_MAXINT) {
 		    xsb_error("Overflow in integer, returning MAX_INT");
 		    rad_int = MY_MAXINT;
 		    break;
-		  }
+		    }*/
 		}
 		  //		rad_int = atoi(strbuff);
 		token->value = (char *)(&rad_int);
