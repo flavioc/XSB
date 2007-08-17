@@ -141,7 +141,7 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
 #endif
     if (get_type(search_ptr->psc_ptr) == T_FORN) {
       if ((funcep = (int (*)) GetProcAddress(handle, name)) == NULL) {
-	xsb_warn("Cannot find foreign procedure %s", name);
+	xsb_warn("Cannot find foreign procedure %s (error #%d)", name,GetLastError());
 	set_forn(search_ptr->psc_ptr, (byte *)(dummy));
       } else { 
 	set_forn(search_ptr->psc_ptr, (byte *)(funcep));
