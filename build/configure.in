@@ -69,7 +69,11 @@ AC_ARG_WITH(os,
 AC_ARG_WITH(wind,
 [  --with-wind                  build XSB for Windows NT/95/98])
 AC_ARG_WITH(bits64,
-[  --with-bits64                build XSB for a 64 bit architecture])
+[  --with-bits64                force a 64-bit version of XSB],
+   bits64=yes,bits64=no)
+AC_ARG_WITH(bits32,
+[  --with-bits32                force a 32-bit version of XSB],
+   bits32=yes,bits32=no)
 AC_ARG_WITH(aout,
 [  --with-aout                  build XSB for a Unix system with .aout binary format])
 AC_ARG_WITH(optimization,
@@ -159,13 +163,6 @@ AC_ARG_ENABLE(optimization,
 AC_ARG_ENABLE(batched-scheduling,
 [  --enable-batched-scheduling  compile using the batched scheduling strategy;
                                 default is the local strategy])
-dnl AC_ARG_ENABLE(local-scheduling,
-dnl [  --enable-local-scheduling  compile using the local scheduling strategy;
-dnl			     default is the batched strategy])
-dnl AC_ARG_ENABLE(local-scheduling,
-dnl [  --with-local-scheduling	compile using the local scheduling strategy;
-dnl			    default is the batched strategy])
-dnl Allow some slack in how local scheduling is specified
 AC_ARG_ENABLE(gc-test,
 [  --enable-gc-test             stress-test the garbage collector (for developers)])
 AC_ARG_ENABLE(demand,
@@ -176,7 +173,7 @@ AC_ARG_ENABLE(jumptable,
 AC_ARG_ENABLE(mt,
 [  --enable-mt                  compile multithreaded engine])
 AC_ARG_ENABLE(fast-floats,
-[  --enable-fast-floats         compile with single precision floats],
+[  --enable-fast-floats         compile with one-word floats (including tag)],
                    fast_floats=yes)
 AC_ARG_ENABLE(ccmpl,
 [  --enable-ccmpl               compile mt engine with concurrent completion])
@@ -184,6 +181,67 @@ AC_ARG_ENABLE(profiling,
 [  --enable-profiling           force gcc to generate information for profiling])
 AC_ARG_ENABLE(electric-fence,
 [  --enable-electric-fence      link with the electric fence malloc debugger])
+
+
+# TLS As far as I know, autoconf version 2.59 or so does check various
+# command line values, but if the values are of type --enable-*,
+# --disable-*, or --with-* it does no further checking.  This can
+# cause problems when you misspell an option, so I'm including this
+# second-level error checking routine.  If someone knows how to make
+# autoconf check --enable- etc. automatically (I don't think it will)
+# or has a better way of error checking, please update this code, or
+# let me know and I'll try to do it.
+while test $# -gt 0
+do
+#    echo "$1"
+    case $1 in --enable-* ) 
+	    case $1 in
+		--enable-no-cygwin | --enable-general-tagging | --enable-debug | \
+		    --enable-debug-verbose | --enable-debug-vm | --enable-debug-assertions | \
+		    --enable-dwarf-debug | --enable-oracle-debug | --enable-profile | \
+		    --enable-batched-scheduling | --enable-batched | --enable-gc-test | --enable-demand | \
+		    --enable-mt | --enable-fast-floats | --enable-ccmpl | --enable-profiling | \
+		    --enable-electric-fenct | --enable-optimization | --enable-jumptable )
+                    ;;
+		*)
+                    echo "configure: error: uncecognized option: $1"
+                    echo "Try 'configure --help' for more information."
+                    rm -f  buildxsb.lock
+                    exit 1 ;;
+	    esac ;;
+	    --disable-* )
+	    case $1 in
+		--disable-no-cygwin | --disable-general-tagging | --disable-debug | \
+		    --disable-debug-verbose | --disable-debug-vm | --disable-debug-assertions | \
+		    --disable-dwarf-debug | --disable-oracle-debug | --disable-profile | \
+		    --disable-batched-scheduling | --disable-batched | --disable-gc-test | --disable-demand | \
+		    --disable-mt | --disable-fast-floats | --disable-ccmpl | --disable-profiling | \
+		    --disable-electric-fenct | --disable-optimization | --disable-jumptable )
+		    ;;
+		*)
+                    echo "configure: error: uncecognized option: $1"
+                    echo "Try 'configure --help' for more information."
+                    rm -f  buildxsb.lock
+                    exit 1 ;;
+	    esac ;;
+	    --with-* )
+	    case $1 in
+		--with-gcc | --with-cc | --with-acc | --with-os* | \
+		--with-wind | --with-bits64 | --with-bits32 | --with-aout | \
+		--with-optimization* | --with-config-tag* | --with-site-prefix* | --with-includes* | \
+		--with-static-libraries* | --with-dynamic-libraries* | --with-libwww* | --with-xpath* | \
+		--with-dbdrivers | --with-oracle | --with-odbc | --with-iodbc | --with-interprolog | \
+		--with-smodels* | --with-itkwish* )
+		    ;;
+	    *)
+p                    echo "configure: error: uncecognized option: $1"
+                    echo "Try 'configure --help' for more information."
+                    rm -f  buildxsb.lock
+                    exit 1 ;;
+	    esac ;;
+    esac
+    shift
+done
 
 
 if test "${fast_floats}" = "yes" ; then
@@ -218,6 +276,20 @@ if test "${enable_mt}" = "yes" -o "${enable_ccmpl}" = "yes" ; then
 else
    engine_mode="slg-wam"
 fi
+
+# ---------------------- start testing inconsistencies  ---------------------- 
+
+#echo "bits 32 $bits32 bits 64 $bits64"
+
+if test "$bits64" = "yes" &&  test "$bits32" = "yes"; then 
+    echo ""
+    echo "*** ABORTING!!! Cannot force both 32 and 64 bits!!!"
+    echo ""
+    rm -f  buildxsb.lock
+    exit 1
+fi
+
+# ---------------------- end testing inconsistencies  ---------------------- 
 
 # make sure new files are readable
 umask 022
@@ -391,8 +463,12 @@ dnl or -dbg are appropriate
 if test -z "${with_config_tag}" ; then
     config_tag=
     dnl add -bits64 to the config tag, if --with-bits64 is set on command line
-    if test -n "$with_bits64" ; then
+    if test "$bits64" = yes ; then
        config_tag="${config_tag}-bits64"
+    fi
+    dnl add -bits32 to the config tag, if --with-bits32 is set on command line
+    if test "$bits32" = yes ; then
+       config_tag="${config_tag}-bits32"
     fi
     dnl add -aout to the config tag, if --with-aout is set on command line
     if test -n "$with_aout" ; then
@@ -726,7 +802,6 @@ AC_COMPILE_IFELSE([
 ], __sunpro_c=yes, __sunpro_c=no)
 AC_MSG_RESULT($__sunpro_c)
 
-
 dnl set some basic flags
 # if --with-gcc, take it as a sign of trouble
 # with gcc and lower optimization levels
@@ -783,7 +858,6 @@ else
         ;;
     esac
 fi
-
 
 dnl In XSB, CC is the C compiler to be used with the C interface
 dnl Could be different from C compiler with which XSB was compiled,
@@ -859,14 +933,6 @@ dnl This warning is really a buglet in the AC_CHECK_SIZEOF macro:
 dnl it invokes AC_TRY_RUN without specifying an action for cross-compilation,
 dnl if the second arg to AC_CHECK_SIZEOF is not given.
 AC_CHECK_SIZEOF(long,4)
-if test "${ac_cv_sizeof_long}" = 8 -o "$with_bits64" = "yes" ; then
-    AC_DEFINE(BITS64)
-    machine64bit=yes
-    echo ""
-    echo "    Configuring XSB for a 64 bit machine"
-    echo ""
-fi
-
 if test "${ac_cv_sizeof_long}" = 0; then
     echo ""
     echo "*** PANIC!!! Configure tests are not working - compiler $CC is broken!"
@@ -875,6 +941,31 @@ if test "${ac_cv_sizeof_long}" = 0; then
     echo ""
     rm -f  buildxsb.lock
     exit 1
+fi
+
+if (test "${ac_cv_sizeof_long}" = 8 -o "$bits64" = "yes") && test "$bits32" = "no"; then
+    AC_DEFINE(BITS64)
+    machine64bit=yes
+    echo ""
+    echo "    Configuring XSB for a 64 bit machine"
+    echo ""
+fi
+
+# Force compiler to do your will if with-bits is set -- otherwise use
+# whatever default you get
+if test "$bits32" = "yes"; then 
+   CFLAGS="-m32 ""$CFLAGS"
+   LINKFLAGS="-m32 ""$LINKFLAGS"
+fi
+
+if test "$bits64" = "yes"; then 
+   CFLAGS="-m64 ""$CFLAGS"
+   LINKFLAGS="-m64 ""$LINKFLAGS"
+fi
+
+#TLS comment this out if you don't want fast floats automatically w. 64 bits.
+if test "$machine64bit" = "yes"; then
+ fast_floats=yes	
 fi
 
 # A series of checks for essential libraries.
