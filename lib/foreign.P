@@ -189,18 +189,18 @@ compile_c(Modname, Base, Ext, Options, Dir, LdOption, CompComm, TempFile) :-
 #endif
 
 	    ;	str_sub('cygwin', Configuration)
-	    ->  message(shell([CC_Name, ' -c ', Base, Ext, TempFile, ' ', CC_Opts])),
+	    ->  message(shell([CC_Name, ' -c ', Base, Ext, TempFile, ' ', CC_Opts,' ',XSB_CC_Opts])),
 		concat_atom([Base,'.o'], Obj),
 		shell([CC_Name, ' -c ', Base, Ext, /*TempFile,*/ ' -o ',
-		       Obj, ' ', CC_Opts]),
+		       Obj, ' ', CC_Opts,' ',XSB_CC_Opts]),
 		(  TempFile = ''
 		-> TempObj = ''
 		;   substring(TempFile,0,-3,TempRoot),
 		    concat_atom([TempRoot,'.o '],TempObj),
 		    message(shell([CC_Name,' -c ',TempFile,' -o ',
-				   TempObj, ' ', CC_Opts])),
+				   TempObj, ' ', CC_Opts,' ',XSB_CC_Opts])),
 		    shell([CC_Name,' -c ',TempFile,' -o ',
-			   TempObj, ' ', CC_Opts])
+			   TempObj, ' ', CC_Opts,' ',XSB_CC_Opts])
 
 		),
 		xsb_configuration(config_dir,ConfigDir),
