@@ -29,7 +29,7 @@
 ##
 
 
-CC=@CC@
+CC=@CC@@MEMFLAG@
 CPP=@CPP@
 CFLAGS=@CFLAGS@
 # Compilation flags for files requiring lower optimization level
@@ -173,7 +173,7 @@ xsbmod:: $(OBJS) ${ODBCOBJ} ${INTERPROLOGOBJ}
 	@echo ""; \
 	   echo "Making a C-callable XSB module $(arch_config_objlibdir)/xsb.o"; \
 	   echo ""
-	@@LD@ -o xsb.o $(LINKFLAGS) -r $(OBJS) ${ODBCOBJ} ${INTERPROLOGOBJ}
+	@@LD@ @MEMFLAG@ -o xsb.o $(LINKFLAGS) -r $(OBJS) ${ODBCOBJ} ${INTERPROLOGOBJ}
 	@cp xsb.o $(arch_config_objlibdir) 2> /dev/null || echo ""
 
 xsbdynmod::
