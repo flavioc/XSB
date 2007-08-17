@@ -235,8 +235,6 @@ thread_send_message(Queue,Message):-
 
 %------------------------------------------------------------
 
-%:- import writeln/1 from standard.
-
 thread_get_message(Message) :-
 	thread_request(XSB_THREAD_SELF, Tid, _, _, _, _, _, _ ,_),
 	thread_get_message_1(Tid, Message).
@@ -264,6 +262,37 @@ thread_get_message_1(Queue,Message):-
 %	    writeln(accepted(MaybeMessage1)),
 	    thread_request(THREAD_ACCEPT_MESSAGE,Queue,_,_,_,_,_,_,_)).
   
+%------------------------------------------------------------
+%:- import writeln/1 from standard.
+
+thread_peek_message(Queue,Message):-
+	(integer(Queue) -> 
+	   thread_peek_message_1(Queue,Message)
+        ;  (atom(Queue),get_alias(Queue,QUEUE_ALIAS,Qid) -> 
+	       thread_peek_message_1(Qid,Message)
+            ;  (var(Queue) -> 
+	          instantiation_error(thread_send_message/2,1,ground)
+	       ;  domain_error(queue_or_alias,Queue,thread_get_message/1,2,'') ) ) ).
+
+thread_peek_message_1(Queue,Message):-
+	thread_request(THREAD_PEEK_MESSAGE,Queue,MaybeMessage,Last,_,_,_,_,_),
+%	writeln(trying(MaybeMessage,Message)),
+	(Last == 1 ; MaybeMessage = Message ),
+	thread_request(THREAD_UNLOCK_QUEUE,Queue,_,_,_,_,_,_,_),
+	!,
+	Last = 0.
+thread_peek_message_1(Queue,Message):-
+	repeat,
+%	writeln(repeeking),
+	thread_request(THREAD_REPEEK_MESSAGE,Queue,MaybeMessage,Last,_,_,_,_,_),
+%	writeln(retrying(MaybeMessage,Message)),
+	(Last == 1 ; MaybeMessage = Message ),
+	thread_request(THREAD_UNLOCK_QUEUE,Queue,_,_,_,_,_,_,_),
+	!,
+	\+ (Last = 1).
+	     
+%---------------------------
+
 print_message_queue(Queue):- 
 	thread_request(PRINT_MESSAGE_QUEUE,Queue,_,_,_,_,_,_,_).
 
