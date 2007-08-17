@@ -100,9 +100,9 @@ typedef struct xsb_thread_s
 } xsb_thread_t ;
 
 typedef enum 
-{
-	MSG_SEND, MSG_RECV, MSG_PEEK, MSG_DESTROY
-} op_type;
+  {
+	MESG_SEND, MESG_RECV, MESG_PEEK, MESG_DESTROY
+  } op_type;
 
 #define VALID_THREAD(tid)	( tid >= 0 &&\
 				th_vec[THREAD_ENTRY(tid)].incarn == THREAD_INCARN(tid)\
@@ -762,15 +762,15 @@ void check_deleted( th_context *th, XSB_MQ_Ptr q, op_type op )
 	  if( q->deleted )
 	  {
 		pthread_mutex_unlock( &q->mq_mutex ) ;
-	  	if( op == MSG_SEND )
+	  	if( op == MESG_SEND )
 		{	arg = arity = 2 ;
 			pred = "thread_send_message" ;
 		}
-		else if( op == MSG_RECV )
+		else if( op == MESG_RECV )
 		{	arg = arity = 2 ;
 			pred = "thread_get_message" ;
 		}
-		else if( op == MSG_PEEK )
+		else if( op == MESG_PEEK )
 		{	arg = arity = 2 ;
 			pred = "thread_peek_message" ;
 		}
@@ -809,7 +809,7 @@ int wait_on_queue( th_context *th, XSB_MQ_Ptr q, op_type send )
 	char *pred ;
 	Integer iq ;
 
-	if( send == MSG_SEND )
+	if( send == MESG_SEND )
 	{
 		cond_var = &q->mq_has_free_cells ;
 		pred = "thread_send_message" ;
@@ -1260,9 +1260,9 @@ xsbBool xsb_thread_request( CTXTdecl )
 	    printf("asrtBuf (%d): %x\n",i,BuffPtr[i]);	  */
 
 	  pthread_mutex_lock(&message_queue->mq_mutex) ;
-	  check_deleted(th, message_queue, MSG_SEND) ;
+	  check_deleted(th, message_queue, MESG_SEND) ;
 	  while (message_queue->size >= message_queue->max_size) {
-	    if( wait_on_queue( th, message_queue, MSG_SEND ) )
+	    if( wait_on_queue( th, message_queue, MESG_SEND ) )
 		return success ;	    
 	  }
 	  
@@ -1298,9 +1298,9 @@ case THREAD_TRY_MESSAGE: {
 	  pthread_mutex_lock(&message_queue->mq_mutex);
           /* if all goes well this lock will only be released
              in THREAD_ACCEPT_MESSAGE */
-	  check_deleted(th, message_queue, MSG_RECV) ;
+	  check_deleted(th, message_queue, MESG_RECV) ;
 	  while (!message_queue->first_message) {
-	    if(  wait_on_queue( th, message_queue, MSG_RECV ) )
+	    if(  wait_on_queue( th, message_queue, MESG_RECV ) )
 		return success ;	    
 	  }
 	  current_mq_cell = message_queue->first_message;
@@ -1325,12 +1325,12 @@ case THREAD_RETRY_MESSAGE: {
 	     queue.  All you can do is start again from the beginning
 	     (checking, of course, that there is a beginning) */
 
-	  check_deleted(th, message_queue, MSG_RECV) ;
+	  check_deleted(th, message_queue, MESG_RECV) ;
 	  if (current_mq_cell == message_queue->last_message) {
-	    if(  wait_on_queue( th, message_queue, MSG_RECV ) )
+	    if(  wait_on_queue( th, message_queue, MESG_RECV ) )
 		return success ;	    
 	    while (!message_queue->first_message) {
-	      if(  wait_on_queue( th, message_queue, MSG_RECV ) )
+	      if(  wait_on_queue( th, message_queue, MESG_RECV ) )
 		  return success ;	    
 	    }
 	    current_mq_cell = message_queue->first_message;
@@ -1374,7 +1374,7 @@ case THREAD_ACCEPT_MESSAGE: {
 	  XSB_MQ_Ptr xsb_mq = (XSB_MQ_Ptr) ptoc_int(CTXTc 2);
 
 	  pthread_mutex_lock( &xsb_mq->mq_mutex ) ;
-	  check_deleted(th, xsb_mq, MSG_DESTROY) ;
+	  check_deleted(th, xsb_mq, MESG_DESTROY) ;
 	  xsb_mq->deleted = TRUE ;
 	  if( xsb_mq->n_threads == 0 )
 	  {	pthread_mutex_unlock( &xsb_mq->mq_mutex ) ;
@@ -1456,7 +1456,7 @@ case THREAD_ACCEPT_MESSAGE: {
 	  int islast = 0;
 
 	  pthread_mutex_lock(&message_queue->mq_mutex);
-	  check_deleted(th, message_queue, MSG_PEEK) ;
+	  check_deleted(th, message_queue, MESG_PEEK) ;
 	  if (!message_queue->first_message) {
 	    islast = 1;
 	    ctop_int(CTXTc 4,islast);
@@ -1474,7 +1474,7 @@ case THREAD_ACCEPT_MESSAGE: {
 	  XSB_MQ_Ptr message_queue = (XSB_MQ_Ptr) ptoc_int(CTXTc 2);
 	  int islast = 0;
 
-	  check_deleted(th, message_queue, MSG_PEEK) ;
+	  check_deleted(th, message_queue, MESG_PEEK) ;
 	  if (message_queue->last_message == current_mq_cell) {
 	    islast = 1;
 	    ctop_int(CTXTc 4,islast);
