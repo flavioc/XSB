@@ -135,7 +135,11 @@ static byte *load_obj_dyn(char *pofilename, Psc cur_mod, char *ld_option)
     strcpy(tempname+1,name);
     tempsize=strlen(tempname);
     tempname[tempsize++] = '@';
+#ifndef MULTI_THREAD
     tempname[tempsize++] = '0';
+#else
+    tempname[tempsize++] = '4';
+#endif
     tempname[tempsize++] = '\0';
     name = tempname;
 #endif
