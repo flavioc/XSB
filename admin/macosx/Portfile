@@ -1,0 +1,74 @@
+# $Id$
+
+PortSystem	1.0
+revision	0
+
+name		xsb
+version		3.1
+categories	lang
+maintainers	pmoura@logtalk.org
+
+description	XSB is a Logic Programming and Deductive Database system for Unix and Windows
+
+long_description	\
+		XSB is a Logic Programming and Deductive Database system for Unix and Windows. \
+		It is being developed at the Computer Science Department of the Stony Brook \
+		University, in collaboration with Katholieke Universiteit Leuven, Universidade \
+		Nova de Lisboa, Uppsala Universitet and XSB, Inc.
+
+homepage		http://xsb.sourceforge.net/	
+master_sites	sourceforge
+
+checksums		md5     7737809efc6d38263d658b926e485839
+
+distname xsb
+extract.suffix	src.tar.gz
+
+configure.args	--prefix=${prefix}/share/${name}
+
+worksrcdir		XSB
+			
+configure.dir	${workpath}/${worksrcdir}/build
+
+build.dir		${workpath}/${worksrcdir}/build
+
+build.cmd		./makexsb
+
+default_variants +st
+
+variant st {
+}
+
+variant mt {
+	configure.args-append --enable-mt
+	build.cmd-append --config-tag=mt
+}
+
+post-destroot {
+	cd ${destroot}${prefix}/bin
+	system "ln -sf ../share/${name}/${version}/bin/xsb xsb"
+}
+
+post-build {
+	file mkdir ${workpath}/macosx
+	file copy -force -- ${workpath}/${worksrcdir}/admin/macosx/License.html ${workpath}/macosx/
+	file copy -force -- ${workpath}/${worksrcdir}/admin/macosx/ReadMe.html ${workpath}/macosx/
+	file copy -force -- ${workpath}/${worksrcdir}/admin/macosx/Welcome.html ${workpath}/macosx/
+}
+
+post-pkg {
+	set resources ${workpath}/${name}-${version}.pkg/Contents/Resources/
+	file copy -force -- ${workpath}/macosx/License.html ${resources}
+	file copy -force -- ${workpath}/macosx/ReadMe.html ${resources}
+	file copy -force -- ${workpath}/macosx/Welcome.html ${resources}
+	file delete -force -- ${resources}/Welcome.rtf
+}
+
+post-mpkg {
+	set resources ${workpath}/${name}-${version}.mpkg/Contents/Resources/
+	file copy -force -- ${workpath}/macosx/License.html ${resources}
+	file copy -force -- ${workpath}/macosx/ReadMe.html ${resources}
+	file copy -force -- ${workpath}/macosx/Welcome.html ${resources}
+	file delete -force -- ${resources}/Welcome.rtf
+}
+
