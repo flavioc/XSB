@@ -16,21 +16,20 @@ use the following procedure.
 \begin{enumerate}
 \item	Decide in which directory in your file system you want to install
   XSB and copy or move XSB there.
-\item Make sure that after you have obtained XSB by anonymous ftp (using
-  the {\tt bin}ary option) or from the web, you have uncompressed it by
-  following the instructions found in the file {\tt README}.
+\item Make sure that after you have obtained XSB, you have
+  uncompressed it by following the instructions found in the file {\tt
+    README}.
   
 \item Note that after you uncompress and untar the XSB tar file, a
-  subdirectory {\tt XSB} will be tacked on to the current directory. All
-  XSB files will be located in that subdirectory.
-  
-  In the rest of this manual, let us use {\tt \$XSB\_DIR} to refer to this
-  subdirectory.  Note the original directory structure of XSB must be
-  maintained, namely, the directory {\tt \$XSB\_DIR} should contain all the
-  subdirectories and files that came with the distribution. In particular,
-  the following directories are required for XSB to work: \verb'emu',
-  \verb'syslib', \verb'cmplib', \verb'lib', \verb'packages', \verb'build',
-  and \verb'etc'.
+  subdirectory {\tt XSB} will be created in the current directory. All
+  XSB files will be located in that subdirectory.  In the rest of this
+  manual, we use {\tt \$XSB\_DIR} to refer to this subdirectory.  Note
+  the original directory structure of XSB must be maintained, namely,
+  the directory {\tt \$XSB\_DIR} should contain all the subdirectories
+  and files that came with the distribution. In particular, the
+  following directories are required for XSB to work: \verb'emu',
+  \verb'syslib', \verb'cmplib', \verb'lib', \verb'packages',
+  \verb'build', and \verb'etc'.
 
 \index{configuration}
 
@@ -107,13 +106,15 @@ specified.  A full listing can be obtained by typing {\tt
 \$XSB\_DIR/build/configure --help}.
 %%
 \begin{description}
-\item[Type of Machine.]  The configuration script automatically detects
-  your machine and OS type, and builds XSB accordingly. Moreover, you can
-  build XSB for different architectures while using the same tree and the
-  same installation directory provided, of course, that these machines are
-  sharing this directory, say using NFS or Samba. All you will have to do
-  is to login to a different machine with a different architecture or OS
-  type, and repeat the above sequence of commands.
+\item[Type of Machine.]  The configuration script automatically
+  detects your machine and OS type, and builds XSB accordingly. On
+  64-bit platforms, the default compilation of XSB will reflect the
+  default of gcc on that platform.  Moreover, you can build XSB for
+  different architectures while using the same tree and the same
+  installation directory provided, of course, that these machines are
+  sharing this directory, say using NFS or Samba. All you will have to
+  do is to login to a different machine with a different architecture
+  or OS type, and repeat the above sequence of commands.
   
   The configuration files for different architectures reside in different
   directories, and there is no danger of an architecture conflict.
@@ -159,16 +160,16 @@ specified.  A full listing can be obtained by typing {\tt
   for site-specific static and dynamic libraries, and for include
   files.
 
-\item[Multi-threading] \version{} of XSB is the first version that
-  supports multi-threading.  The multi-threaded engine is slightly
-  slower than the single-threaded engine, mostly due to its need for
-  concurrency control.  To obtain the benefits of multiple threads on
-  a platform that supports either POSIX or Windows threads (i.e.
-  nearly all platforms) users must configure XSB with the directive
-  {\tt enable-mt}.  The multi-threaded engine works with other
-  configuration options, multi-threading can be compiled with batched
-  or local scheduling, with the ODBC or Interprolog interfaces, and so
-  on.
+\item[Multi-threading] Version 3.0 of XSB is the first version that
+  supports multi-threading.  On some platforms, the multi-threaded
+  engine is slightly slower than the single-threaded engine, mostly
+  due to its need for concurrency control.  To obtain the benefits of
+  multiple threads on a platform that supports either POSIX or Windows
+  threads (i.e.  nearly all platforms) users must configure XSB with
+  the directive {\tt enable-mt}.  The multi-threaded engine works with
+  other configuration options, multi-threading can be compiled with
+  batched or local scheduling, with the ODBC or Interprolog
+  interfaces, and so on.
 
 %%$
 \index{InterProlog Interface}
@@ -261,6 +262,28 @@ XSB), because the XSB compiler uses most of the files in these
 two directories and hence will not function when some of them are
 missing.  For this reason, distributed versions normally include all
 the object files in {\tt syslib} and {\tt cmplib}.
+
+\paragraph*{XSB on 64-bit platforms}
+\index{64-bit architectures}
+%
+XSB has been tested on 64-bit Debian linux, and runs well there,
+overall.  However, there are a few minor details that have not been
+worked out at the time of release of \version{}~\footnote{64-bit XSB
+  was broken in a few recent releases, because the developers did not
+  have access to a 64-bit machine.  Access to a 64-bit machine is
+  recent at the time of release of \version{}.}.  When XSB is compiled
+in 64-bit mode, full floating point precesion is not yet available as
+XSB uses 3 of the 64 bits for a tag.  Also, the sockets library may
+have problems in \version{}.  Typically, if the 64-bit system
+generates 32-bit code by default, XSB will run just as in 32-bit mode.
+64-bit compilation can be forced for XSB by configuring with the
+option {\tt --with-bits64}, and in a similar manner 32-bit compilation
+can be forced with the option {\tt --with-bits32}.  XSB works well
+under these configurations {\em except} that the interfaces may not
+always work smoothly when C calls XSB or XSB calls C.  However, if the
+default compilation is used, both the XSB calling C and the C calling
+XSB interfaces to work properly.  If any of these limitations prove a
+problem, please contact {\tt xsb-development@lists.sourceforge.net}.
 
 \section{Installing XSB under Windows}
 \subsection{Using Cygnus Software's \mbox{CygWin32}}
