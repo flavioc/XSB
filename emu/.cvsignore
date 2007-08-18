@@ -7,3 +7,4 @@ msvc_makefile.mak
 orastuff.c
 private_builtin.*
 *.lnk
+extensions_xsb.h
