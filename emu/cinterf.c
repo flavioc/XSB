@@ -1337,6 +1337,11 @@ th_context * xsb_get_main_thread() {
 }
 #endif
 
+#ifdef MULTI_THREAD
+int xsb_get_thread_entry(int tid) {
+  return THREAD_ENTRY(tid);
+}
+#endif
 
 DllExport int call_conv xsb_init(int argc, char *argv[])
 {

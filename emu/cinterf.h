@@ -324,6 +324,7 @@ DllExport extern char * call_conv xsb_get_error_message(CTXTdecl);
 DllExport extern char * call_conv xsb_get_error_type(CTXTdecl);
 #ifdef MULTI_THREAD
 DllExport extern th_context * call_conv xsb_get_main_thread();
+DllExport extern int call_conv xsb_get_thread_entry(int);
 #endif
 
 #ifdef MULTI_THREAD

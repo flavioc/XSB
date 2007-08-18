@@ -1,4 +1,4 @@
-/*  /c/XSBSYS/XSBENV/XSB/emu/extensions_xsb.h.  Generated from extensions_xsb.in by configure. 
+/*  /Users/macuser/XSB/XSB/emu/extensions_xsb.h.  Generated from extensions_xsb.in by configure. 
 **
 **   This file defines all file extensions used in XSB
 **
