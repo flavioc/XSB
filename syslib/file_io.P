@@ -235,7 +235,7 @@ pipe_open(ReadPipe, WritePipe) :-
 %% This should be done on both ends: by the parent XSB process and by 
 %% the child XSB process
 fd2ioport(Pipe, IOport) :-
-	file_function(FD2IOPORT, Pipe, IOport,"u",_,_,_).
+	file_function(FD2IOPORT, Pipe, IOport,'u',_,_,_).
 fd2iostream(Pipe, Mode,IOstream) :-
 	file_function(FD2IOPORT, Pipe, IOstream,Mode,_,_,_).
 
