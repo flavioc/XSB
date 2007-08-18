@@ -75,6 +75,7 @@
 /* These are used only by the readmsg function */
 #define SOCK_READMSG_FAILED  -1      /* failed socket call     	      	    */
 #define SOCK_READMSG_EOF     -2	     /* when EOF is reached    	       	    */
+#define SOCK_HEADER_LEN_MISMATCH -3  /* when hdr length != message length   */
 
 #endif /* __SOCKET_XSB_H__ */
 
