@@ -34,14 +34,24 @@ build.dir		${workpath}/${worksrcdir}/build
 
 build.cmd		./makexsb
 
-default_variants +st
+default_variants +st +bits32
 
 variant st {
+	configure.args-delete --enable-mt
+	build.cmd-delete --config-tag=mt
 }
 
 variant mt {
 	configure.args-append --enable-mt
 	build.cmd-append --config-tag=mt
+}
+
+variant bits32 {
+	configure.args-delete --with-bits64
+}
+
+variant bits64 {
+	configure.args-append --with-bits64
 }
 
 post-destroot {
