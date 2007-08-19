@@ -1,134 +1,245 @@
-<font size="-2">
-<pre>
-The XSB system is now available by anonymous ftp from SUNY Stony Brook.
+<h1>About XSB</h1>
 
-The following is a list of instructions on how to ftp and install XSB.
+<p><strong>XSB</strong> is a Logic Programming and Deductive Database
+system for Unix and Windows. It is being developed at the <a
+href="http://www.cs.stonybrook.edu/" >Computer Science Department</a>
+of the <a href="http://www.stonybrook.edu/" >Stony Brook
+University</a>, in collaboration with <a
+href="http://www.kuleuven.ac.be/" >Katholieke Universiteit Leuven</a>,
+<a href="http://www.unl.pt" >Universidade Nova de Lisboa</a>, <a
+href="http://www.uu.se/" >Uppsala Universitet</a> and <a
+href="http://www.xsb.com/" >XSB, Inc</a>.</p>
 
-     1) Issue FTP command to connect to our ftp server
+<h2>XSB Technical Summary</h2>
 
-                ftp ftp.cs.sunysb.edu or ftp 130.245.1.40
+<h3>Tabled Resolution</h3>
+<p>
+Tabled resolution is useful for recursive query computation, allowing
+programs to terminate correctly in many cases where Prolog does
+not. Users interested in Parsing, Program Analysis, Model-checking,
+Data Mining, Diagnosis and Temporal Reasoning may benefit from XSB.
+</p>
+<p>XSB's Tabling implementation:</p>
+<ul>
+  <li>
+  Evaluates at the engine level programs with stratified and non-stratified
+  negation, and programs with stratified aggregation.
+  </li>
+  
+  <li>
+  Allows full Prolog functionality in tabled code including cuts, (subject
+  to weak semantic restrictions), in meta-logical predicates, in second-order
+  predicates, etc.
+  </li>
 
-        When asked for Name, respond with "anonymous".
-        When asked for Password, respond with your e-mail address.
+  <li>
+  Allows for declaration of tabled predicates either automatically by the
+  system or manually by the user. Furthermore, tabling can be automatically
+  performed for termination, for efficiency, or for both.
+  </li>
 
-     2) Issue the following change directory command to where the XSB system is
- 
-                cd pub/XSB
- 
-     3) Change transfer mode to binary
-         
-                binary
- 
-     4) Now retrieve the XSB system (using either of the following)
- 
-                get XSB.tar.gz    or	get XSB.tar.Z
- 
-     5) Exit the ftp program
- 
-                quit
- 
-     6) Now uncompress and untar the files (again using either of the following)
- 
-		gnutar zxvf XSB.tar.gz
+  <li>
+  Provides standard tabling predicates which can be used to program a number
+  of applications in Non-Monotonic reasoning and Knowledge
+  representation.
+  </li>
 
-                uncompress -c XSB.tar.Z | tar xvf -
+  <li>
+  Dynamically compiles tables into trie-based SLG-WAM code. which is indexed
+  dynamically and for which full memory management is provided.
+  </li>
 
-        Note that these commands uncompress the files into the current
-	working directory, and create a directory named XSB.
- 
-     7) Change directory to XSB
+  <li>
+  Has a default a tabling strategy called
+  <i>Local Evaluation</i> which is efficient for returning all answers
+  to a query, and is useful for applications such as program analysis
+  and non-monotonic reasoning.  As a configuration alternative, <i>
+  Batched Evaluation </i> is a Prolog-like tabling strategy that
+  efficiently returns the first answer to a query.
+  </li>
 
-		cd XSB
+  <li> Has a default stack management
+  configuration the SLG-WAM configuration, for which a choice of three
+  heap garbage collectors are available.
+  </li>
+</ul>
 
-	This directory should now contain some files (among which there should
-	be one named "makeall"), and the following 7 directories: 
+<h3>
+Support for Multi-Threading
+</h3>
+<p>
+Beginning with Version 3.0, XSB supports a configuration that allows
+multiple threads of computation within a single process under the
+Posix model.
 
-		build/
-		cmplib/
-		emu/
-		etc/
-		examples/
-		lib/
-		docs/
-		syslib/
-		packages/
+<ul>
+<li>
+All threads within the multi-threaded engine share the same static
+code and I/O streams.  
+</li>
 
-	For Windows it should also contain:
+<li>
+For dynamic code or tables, predicates may be declared
+thread-<i>private</i> or thread-<i>shared</i>.  Private predicates
+are visible only to a given thread, and the space for private
+predicates is reclaimed upon a thread's exit.  Thread-shared
+predicates are visible to all threads.  
+</li>
 
-		config/
+<li>
+Within default local evaluation, concurrency for shared tables is
+supported by an optimistic concurrency control called <i>shared
+completed tables</i> which adds little overhead to computation.
+Within batched evaluation, non-completed tables are visible to
+multiple threads as well (this is experimental in version 3.0).
+</li>
 
-	Note that after the installation of XSB the directory structure of XSB
-	should be maintained.  However, you can build XSB for installation
-	in a place other than the directory where you unpacked the system
-	(see the INSTALL file).
+<li>
+Posix-style operations are supported for XSB threads, including
+joining and detaching threads, thread cancellation, etc.
+</li>
 
-     8) Read carefully the License Agreement for XSB found in the file LICENSE.
+</ul>
 
-		more LICENSE
+<h3>Indexing and Dynamic Code</h3>
 
-	This should be done before executing step 9 below.  By installing the
-	XSB system you automatically agree to the conditions of the LICENSE
-	agreement.
+<p>
+XSB contains a variety of features to support in-memory data-oriented
+applications.  Using these features, knowledge bases with millions of clauses 
+can be quickly loaded and efficiently indexed.
+</p>
 
-     9) For detailed installation instructions, see the file INSTALL.
+<ul>
+  <li>
+  Indexes can be created on alternate or joint arguments of dynamic
+  code. Furthermore this indexing can be hash-based, or trie-based if
+  it is necessary to perform indexing deep within alternate arguments
+  of a term.
+  </li>
 
+  <li>
+  XSB provides a variety of read and assert mechanisms for quickly
+  loading dynamic predicates, especially if these predicates are unit
+  clauses.
+  </li>
 
-    10) The Prolog byte code files in cmplib, syslib and lib should NOT
-	have to be recompiled except under exceptional circumstances
-	(such as corruption during ftp transmission), as they are machine
-	and installation procedure independent.
+  <li>
+  XSB provides mechanisms for backtrackable asserts: asserts whose
+  effects become undone upon backtracking.
+  </li> 
 
-    11) (Optional) Remove the compressed XSB system
+  <li>
+  For static code XSB provides <i>unification factoring</i> which
+  extends clause indexing by factoring common unifications out of
+  clause heads, and can be used to optimize many Prolog programs.
+  </li>
+</ul>
 
-                rm ../XSB.tar.gz   or   rm ../XSB.tar.Z
+<h3>Interfaces</h3>
+<p>
+XSB supports a variety of interfaces.  All source code is available so
+that the interfaces can be tuned as needed or ported to other Prologs. (as some
+have been!)
+</p>
 
-    12) The XSB Programmer's Manual (in LateX, dvi and Postcript format)
-	resides in the directory docs.  In case the dvi or Postcript
-	files are corrupted, you can type "latex manual" twice in the
-	manual directory to obtain the manual.dvi file.
+<ul>
+  <li>
+  Interfaces under UNIX and Cygwin, to call C functions or to be called by them.
+  </li>
 
-    13) For those familiar with Prolog interpreters, the XSB interpreter
-	can be executing the script
+  <li>
+  An ODBC interface, to call data stored in a database accessable by an
+  ODBC driver.  This interface translates Datalog clauses into SQL
+  automatically.
+  </li>
+  
+  <li>
+    An alternate interface that supports access to multiple drivers,
+    including mySQL drivers.
+  </li>
+  
+  <li>
+  Java interfaces provided through <a
+  href="http://www.declarativa.com/interprolog">InterProlog</a> and 
+  <a href="http://www-db.stanford.edu/~stefan/rdf/yajxb/">
+  YAJXB</a>
+  </li>
 
-		bin/xsb -i
+  <li> An interface to Perl, and especially to its pattern-matching
+  facilities.
+  </li>
+  
+  <li>
+  Interfaces to libwww routines and various pattern-matching utilities,
+  all of which are useful for Web applications.
+  </li>
 
-        (it might also be bin/xsb-aout, if you have built XSB with the
-	--linuxaout option, or bin/xsb-bits64, if you have built with the
-	--force64 option.
-	All Prolog standard predicates are provided.  Those unfamiliar with
-	Prolog systems, should read chapters 2 and 3 of the XSB manual to
-	find out how to consult files and call predicates.
+  <li>
+  An interface to the stable model generator 
+  <a href="http://www.tcs.hut.fi/Software/smodels"> 
+  SModels</a> via the new <em>XASP</em> package.
+  </li>
 
-    14) Some sample programs and benchmarks are in the directory "examples".
+</ul>
 
-    15) Have fun with the XSB system...
+<h3>HiLog Compilation</h3>
+<p>
+HiLog supports a type of higher-order programming in which predicate
+symbols can be variable or structured. This allows unification to be
+performed on the predicate symbols themselves in addition to the
+arguments of the predicates.
+</p>
+<p>
+XSB's HiLog implementation:
+</p>
 
+<ul>
+  <li>
+  Includes compiled HiLog. Higher-order predicates execute at
+  essentially the same speed as compiled first-order predicates.
+  </li>
 
-Once you obtain XSB, please register as an XSB user.  You will be asked to
-auto-register once the build process is complete. The registration script
-will leave a file .xsb/registration in your home directory. While this file 
-is present, you will not be asked to register again.
+  <li>
+  Includes a fully integrated HiLog preprocessor. HiLog terms can be
+  used anywhere in XSB, including the interpreter level.
+  </li>
 
-In addition, each time you build XSB, you will be asked to send us the
-installation log (this is done automatically, if you respond positively to
-the prompt). This log will help us keep track of the XSB usage on the
-different systems and focus our development efforts.
+  <li>
+  Provides a number of meta-logical standard predicates for HiLog
+  terms.
+  </li>
+</ul>
 
-Our address:
- - high-tech:
-
-	e-mail: xsb-contact@cs.sunysb.edu
-
- - low-tech:
-
-	XSB-Group
-	Department of Computer Science
-	SUNY at Stony Brook
-	Stony Brook, NY 11794-4400
-	U.S.A.
-
-Please address all comments and bug reports to the addresses above.
-We will be happy to hear your comments or suggestions, or to assist
-you in any possible way.
-</pre>
-</font>
+<h3>Packages</h3>
+<p>
+In addition to those mentioned above, several important packages are maintained 
+on top of XSB, inlcuding
+<ul>
+  <li>Flora: a highly sophisticated and efficient implementation of
+             F-logic
+  </li>
+  <li>
+    XJ: a system that allows XSB programs to create graphical sser
+    interfaces based on Java's Swing package.
+  </li>
+  <li>XMC: a temporal-logic model checker for verifying properties of
+           concurrent programs. and containing a graphical user
+           interface.
+  </li>
+  <li>xsbdoc: a mechanism for generating manuals for XSB libraries and
+             applications using principles of literate programming.
+             Manuals can be generated in a variety of formats, including
+             html, pdf, ps, and even ASCII text.
+  </li>
+</ul>
+</p>
+<p>
+XSB has been tested on over a dozen hardware and operating system
+platforms under Microsoft Windows 95/98, Windows NT, Windows 2000 and
+various versions of 32-bit UNIX. XSB also has also been ported to 64-bit
+architectures and has been tested on 64-bit SGI machines. Various
+versions of XSB have been used to construct large-scale commercial
+systems for the U.S. Customs Service, the U.S. Defense Logistics
+Agency, the National Security Agency, Medicine Rules, Inc, MdLogix
+Inc., and many others.
+</p>
