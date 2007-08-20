@@ -256,12 +256,12 @@ DllExport int call_conv queryConnection(void)
   }
   
   val = bindReturnList(returnList, result, qHandle);
-
-  //By Senlin
-  //free result allocated in odbc_driver.c(in driverODBC_getNextRow)
+  
   if (result != NULL){
     int i;
     for (i=0; i<qHandle->numResultCols; i++) {
+      if(result[i]->type == STRING_TYPE)
+        free(result[i]->val->str_val);
       free(result[i]->val);
       free(result[i]);
     }
@@ -321,18 +321,21 @@ DllExport int call_conv prepareStatement(void)
   
   if (getDriverFunction(cHandle->driver, PREPARE) != NULL)
     prepareStmtDriver = getDriverFunction(cHandle->driver, PREPARE)->prepareStmtDriver;
-  else
+  else{
+    free(qHandle->query);
+    free(qHandle);
     return FALSE;
+  }
   if ((val = prepareStmtDriver(qHandle)) != FAILURE) {
     qHandle->numParams = val;
     QHandles[numQHandles++] = qHandle;
   }
   else {
-    if (getDriverFunction(cHandle->driver, ERROR_MESG) != NULL)
+    if (getDriverFunction(cHandle->driver, ERROR_MESG) != NULL) {
       errorMesgDriver = getDriverFunction(cHandle->driver, ERROR_MESG)->errorMesgDriver;
-    else
-      return FALSE;
-    errorMesg = errorMesgDriver();
+      errorMesg = errorMesgDriver();
+    } else
+      errorMesg = UNKNOWN_DB_ERROR;
     errorNumber = "XSB_DBI_000";
     free(qHandle->query);
     free(qHandle);
@@ -372,6 +375,13 @@ DllExport int call_conv executePreparedStatement(void)
       if (is_nil(bindList)) {
 	errorMesg = "XSB_DBI ERROR: Not all paremeters supplied";
 	errorNumber = "XSB_DBI_008";
+	int j = 0;
+	for (j=0;j<i;j++) {
+	  free(bindValues[j]);
+	  free(bindValues[j]->val);
+	}
+	free(bindValues[i]);
+	free(bindValues);
 	return FALSE;
       }
       element = p2p_car(bindList);
@@ -396,6 +406,13 @@ DllExport int call_conv executePreparedStatement(void)
       else if (is_var(element)) {
 	errorMesg = "XSB_DBI ERROR: Unbound variable in parameter list";
 	errorNumber = "XSB_DBI_009";
+	int j = 0;
+	for (j=0;j<i;j++) {
+	  free(bindValues[j]);
+	  free(bindValues[j]->val);
+	}
+	free(bindValues[i]);
+	free(bindValues);
 	return FALSE;
       }
       bindList = p2p_cdr(bindList);
@@ -405,13 +422,17 @@ DllExport int call_conv executePreparedStatement(void)
   if (getDriverFunction(qHandle->connHandle->driver, EXEC_PREPARE) != NULL)
     executeStmtDriver =
       getDriverFunction(qHandle->connHandle->driver, EXEC_PREPARE)->executeStmtDriver;
-  else
+  else{
+    for (i=0;i<qHandle->numParams;i++){
+      free(bindValues[i]->val);
+      free(bindValues[i]);
+    }
+    free(bindValues);
+    bindValues = NULL;
     return FALSE;
-  
+  }
   result = executeStmtDriver(bindValues, qHandle);
 
-  //by Senlin Liang
-  //freeing bindValues
   if (bindValues != NULL) {
     int i;
     for (i=0;i<qHandle->numParams;i++) {
@@ -419,6 +440,7 @@ DllExport int call_conv executePreparedStatement(void)
       free(bindValues[i]);
     }
     free(bindValues);
+    bindValues = NULL;
   }
 
   if (result == NULL && qHandle->state == QUERY_BEGIN) {
@@ -441,6 +463,8 @@ DllExport int call_conv executePreparedStatement(void)
   else {
     int i;
     for (i=0; i<qHandle->numResultCols; i++) {
+      if(result[i]->type == STRING_TYPE)
+	free(result[i]->val->str_val);
       free(result[i]->val);
       free(result[i]);
     }
@@ -652,15 +676,15 @@ static void freeConnectionHandle(struct xsb_connectionHandle* cHandle, int pos)
   int j;
   
   /*free(cHandle->handle);
-  free(cHandle->driver);
-  if (cHandle->server == NULL)
+    free(cHandle->driver);
+    if (cHandle->server == NULL)
     free(cHandle->dsn);
-  else {
+    else {
     free(cHandle->server);
     free(cHandle->database);
-  }
-  free(cHandle->user);
-  free(cHandle->password);*/
+    }
+    free(cHandle->user);
+    free(cHandle->password);*/
   free(cHandle);
   for (j = pos + 1 ; j < numCHandles ; j++)
     CHandles[j-1] = CHandles[j];

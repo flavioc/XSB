@@ -68,6 +68,8 @@
 #define INVALID_RETURN_LIST 3
 #define TOO_FEW_RETURN_COLS 4
 
+#define UNKNOWN_DB_ERROR "unknown error from the database"
+
 // **** the database value data structures ****
 
 union xsb_value
