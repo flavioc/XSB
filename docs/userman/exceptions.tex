@@ -133,7 +133,7 @@ from Prolog.  Such an error is known to the default system error
 handler which prints out a message along with a {\em backtrace} that
 indicates the calling context in which the error arose (see
 Section~\ref{sec:backtrace}).  Alternately, in the second case, when
-{\tt -1} is entered, the error term {\tt mydiv1(error2(-1))} is thown,
+{\tt -1} is entered, the error term {\tt mydiv1(error2(-1))} is thrown,
 which is caught within {\tt userdiv/2} and handled by {\tt
   handleUserdiv/2}.  Finally, when {\tt 0} is entered for the
 denominator, an error term of the form {\tt
@@ -523,7 +523,7 @@ In the single-threaded engine this predicate always succeeds.
 Displaying a backtrace in addition to an error message can greatly
 expedite debugging.  For XSB's default error handler, backtraces are
 printed out by default, a behavior that can be overridden for a given
-thread by the command: {\tt set\_xsb\_flag(backtrace\_on\_error,off)},
+thread by the command: {\tt set\_xsb\_flag(backtrace\_on\_error,off)}.
 For users who write their own error handlers, the following predicates
 can be used to manipulate backtraces.
 
