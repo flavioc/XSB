@@ -360,6 +360,7 @@ DllExport int call_conv executePreparedStatement(void)
   queryHandle = ptoc_string(1);
   bindList = reg_term(2);
   returnList = reg_term(3);
+  bindValues = NULL;
 
   if ((qHandle = isQueryHandle(queryHandle)) == NULL) {
     errorMesg = "XSB_DBI ERROR: Query handle does not exist";
