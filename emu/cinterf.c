@@ -1338,7 +1338,7 @@ th_context * xsb_get_main_thread() {
 #endif
 
 #ifdef MULTI_THREAD
-int xsb_get_thread_entry(int tid) {
+DllExport int call_conv xsb_get_thread_entry(int tid) {
   return THREAD_ENTRY(tid);
 }
 #endif
