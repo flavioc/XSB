@@ -58,6 +58,8 @@ predicate into the part to be done on the first call and the part to
 be redone on backtracking.  Backtracking can then take place at the
 Prolog level where it is more naturally expressed.
 
+\index{64-bit architectures}
+
 A foreign module can be compiled or consulted just like a normal
 Prolog module.  Currently, predicates {\tt consult/[1,2]} recompile
 both the {\tt *.c} and the {\tt *.H} files of a foreign module when at
@@ -67,23 +69,31 @@ object files have been created (see the section {\it Compiling and
   compiled by the single-threaded XSB engine is loaded by the
   multi-threaded engine, it will be recompiled, and vice-versa.}.  The
 C compiler used to compile the {\tt *.c} files can be set as a
-compilation option or defaults to that used for the configuration of
-XSB (refer to the section {\it Getting Started with XSB} in Volume 1).
-Alternately, the user can control the compiler options that can be
-passed to the C compiler.  To give an example, the following command
-will compile file {\tt file.c} using the Gnu C Compiler with
-optimization and by including {\tt /usr/local/X11/R6/include} to the
-directories that will be searched for header files.
+defaults to that used for the configuration of XSB (refer to the
+section {\it Getting Started with XSB} in Volume 1).  This default
+behavior includes the C compilation options used to compile XSB when
+it was configured, along with a default set of include files so that
+header files in XSB directories can be obtained.  Alternately, the
+user can add options to be passed to the C compiler.  To give an
+example, the following command will compile file {\tt file.c} using
+the default C Compiler with optimization and by including {\tt
+  /usr/local/X11/R6/include} to the directories that will be searched
+for header files.
 \begin{center}
-{\tt  :- consult(file,
-                 [cc(gcc), cc\_opts('-O2 -I/usr/local/X11/R6/include')]). }
+{\tt  :- consult(file, [cc\_opts('-O2 -I/usr/local/X11/R6/include')]). }
 \end{center}
-If no C compiler options are specified, the compilation of the C-file
-defaults to $\$CC$~{\tt -c~file.c} where $\$CC$ is the name of the C
-compiler used to install XSB.  In addition, if XSB was compiled with
-the `-g' debugging option, then `-g' option will be automatically
-added to the C compiler options list for the foreign module.  Any
-Prolog compiler options are ignored when compiling a foreign module.
+Note in particular, that if XSB were compiled with the {\tt -g}
+debugging option, then the C file will be also~\footnote{ In a 64-bit
+  platform, users may override the default compilation of XSB by the
+  configuration options {\tt -with-bits32} or {\tt -with-bits64}.  If
+  either of these options is used, the default compilation options
+  will pass along the appropriate memory options.  If XSB is compiled
+  with a memory option that is not the default of the platform, and if
+  an externally compiled C file is to be loaded into XSB, it must be
+  ensured that the C file has been compiled with the appropriate
+  memory options: {\tt -m32} or {\tt -m64} if {\tt gcc} is used.}.
+Any Prolog compiler options are ignored when compiling a foreign
+module.
 
 Prolog-specific directives such as {\tt index}, {\tt hilog}, {\tt
   table}, {\tt auto\_table} or even {\tt import} make no sense in the

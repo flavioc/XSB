@@ -145,11 +145,12 @@ specified.  A full listing can be obtained by typing {\tt
   the {\tt --with-optimization} option to change the default C
   compiler optimization level.  (or {\tt --disable-optimization} to
   disable all compiler optimizations).  {\tt --enable-debug}, and
-  there are many other options.  Finally, the {\tt --with-bits64} option
-  forces compilation to use 64 bit mode on 64-bit machines that
-  default to 32 bit compilation.  Type {\tt configure --help} to see
-  them all. Also see the file~\verb'$XSB_DIR/INSTALL' for more
-  details.
+  there are many other options.  Finally, the {\tt --with-bits64}
+  option forces compilation to use 64 bit mode on 64-bit machines that
+  default to 32 bit compilation; likewise, {\tt --with-bits32} forces
+  compilation to use 32 bit mode on 64-bit machines that default to
+  64-bit compilation.  Type {\tt configure --help} to see them
+  all. Also see the file~\verb'$XSB_DIR/INSTALL' for more details.
 
 \item[XSB and Site-specific Information] Using the option {\tt
   --prefix=PREFIX} installs architecture-independent files in the
@@ -274,16 +275,30 @@ worked out at the time of release of \version{}~\footnote{64-bit XSB
   recent at the time of release of \version{}.}.  When XSB is compiled
 in 64-bit mode, full floating point precesion is not yet available as
 XSB uses 3 of the 64 bits for a tag.  Also, the sockets library may
-have problems in \version{}.  Typically, if the 64-bit system
-generates 32-bit code by default, XSB will run just as in 32-bit mode.
-64-bit compilation can be forced for XSB by configuring with the
-option {\tt --with-bits64}, and in a similar manner 32-bit compilation
-can be forced with the option {\tt --with-bits32}.  XSB works well
-under these configurations {\em except} that the interfaces may not
-always work smoothly when C calls XSB or XSB calls C.  However, if the
-default compilation is used, both the XSB calling C and the C calling
-XSB interfaces to work properly.  If any of these limitations prove a
+have problems in \version{}.  If any of these limitations prove a
 problem, please contact {\tt xsb-development@lists.sourceforge.net}.
+
+Typically, if the 64-bit system generates 32-bit code by default, XSB
+will run just as in 32-bit mode (including 64-bit floats).  64-bit
+compilation can be forced for XSB by configuring with the option {\tt
+  --with-bits64}, and in a similar manner 32-bit compilation can be
+forced with the option {\tt --with-bits32}.  The latter option may be
+useful for linking XSB into an application that is not yet safe for 64
+bits.  Users who employ either option should be aware of issues that
+may arise when linking XSB to external C code.
+\bi
+\item When XSB calls C code the C file must have been compiled with
+  the same memory option as XSB.  This is done automatically if the C
+  file is compiled via a call from XSB's compiler, but must be handled
+  by the user otherwise.  For instance, if XSB were configured {\tt
+    --with-bits32} on a 64-bit machine defaulting to 64-bits, then C
+  files called by XSB require the {\tt -m32} option in {\tt gcc}.
+\item The appropriate memory option must be used when embedding XSB
+  into a C or Java process.  For instance, if a XSB is to be linked
+  into a 32-bit application on a 64-bit platform defaulting to
+  64-bits, XSB must be configured {\tt --with-bits32}, and the linking
+  of {\tt xsb.o/so} to the calling program must specify {\tt -m32}.
+  \ei
 
 \section{Installing XSB under Windows}
 \subsection{Using Cygnus Software's \mbox{CygWin32}}

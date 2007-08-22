@@ -106,8 +106,6 @@ application, and when multiple threads do not need to interact with
 XSB.
 
 
-
-
 \section{Examples of Calling XSB}
 
 We introduce a series of examples of how XSB would be called using the
@@ -1442,6 +1440,7 @@ makefile you can use to build your programs and link them with XSB.  It is
 generated automatically and contains all the right settings for your
 architecture, but you will have to fill in the name of your program, etc.
 
+\index{64-bit architectures}
 It is also possible to compile and link your program with XSB using XSB
 itself as follows:
 %%
@@ -1454,14 +1453,16 @@ itself as follows:
         str_cat(CONFDIR, '/saved.o/', ObjDir),
         write('Compiling myprog.c ... '),
         shell([Compiler, ' -I', EMUDIR, ' -c ', CFLAGS, ' myprog.c ']),
-        shell([Compiler, ' -o ', './myprog ',
+        shell([Compiler, CFLAGE, ' -o ', './myprog ',
                ObjDir, 'xsb.o ', ' myprog.o ', LDFLAGS]),
         writeln(done).  
 \end{verbatim}
 %%
-This works for every architecture and is often more convenient than using
-the make files.
-
+This works for every architecture and is often more convenient than
+using the make files~\footnote{The variable {\tt CFLAGS} is needed in
+  the linking stage in order to ensure that the appropriate memory
+  option is passed if XSB is configured {\tt --with-bits32} or {\tt
+    --with-bits64} to override the default on a 64-bit platform.}.
 There are simple examples of C programs calling XSB\ in the
 {\tt \$XSB\_DIR/examples/c\_calling\_XSB} directory, in files {\tt cmain.c},
 {\tt ctest.P}, {\tt cmain2.c}.
