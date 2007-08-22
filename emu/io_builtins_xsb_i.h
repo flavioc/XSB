@@ -45,7 +45,8 @@ extern int xsb_intern_fileptr(FILE *, char *, char *, char *);
 
 static FILE *stropen(CTXTdeclc char *str)
 {
-  int i, len;
+  long i;
+  int  len;
   STRFILE *tmp;
   char *stringbuff;
 

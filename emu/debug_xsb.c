@@ -480,7 +480,7 @@ static void print_term_of_subgoal(CTXTdeclc FILE *fp, int *i)
   term = cell_array[*i];
   switch (cell_tag(term)) {
   case XSB_TrieVar:
-    fprintf(fp, "_v%d", (int_val(term) & 0xffff));
+    fprintf(fp, "_v%d", ((int) int_val(term) & 0xffff));
     break;
   case XSB_STRUCT:
     args = get_arity((Psc)cs_val(term));

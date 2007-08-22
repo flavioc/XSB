@@ -512,7 +512,7 @@ DllExport void call_conv ctop_int(CTXTdeclc int regnum, prolog_int value)
   }
   else {
     if (isstring(addr)) printf("string %s\n",string_val(addr));
-    if (isinteger(addr)) printf("int %d\n",int_val(addr));
+    if (isinteger(addr)) printf("int %d\n",(int) int_val(addr));
     xsb_abort("[CTOP_INT] Wrong type of argument %lx (Reg = %d)", addr, regnum);
   }
 }
