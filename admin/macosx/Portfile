@@ -47,11 +47,13 @@ variant mt {
 }
 
 variant bits32 {
+	configure.args-append --with-bits32
 	configure.args-delete --with-bits64
 }
 
 variant bits64 {
 	configure.args-append --with-bits64
+	configure.args-delete --with-bits32
 }
 
 post-destroot {
