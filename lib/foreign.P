@@ -139,12 +139,12 @@ compile_c(Modname, Base, Ext, Options, Dir, LdOption, CompComm, TempFile) :-
 #endif
 	    ;	str_sub('linux', Configuration)
 	    ->	shell([CC_Name, SymbolTableFlag, ' -o ', Base, '.so',
-		       ' -shared ',
-		       Base, Ext, TempFile, ' ', CC_Opts, ' ', LdOption])
+		       ' -shared ',Base, Ext, TempFile, 
+		       ' ', CC_Opts, ' ', XSB_CC_Opts,' ',LdOption])
 #ifdef FOREIGN_DEBUG
 	    , message((CC_Name, SymbolTableFlag, ' -o ', Base, '.so',
-		       ' -shared ',
-		       Base, Ext, TempFile, ' ', CC_Opts, ' ', LdOption))
+		       ' -shared ',Base, Ext, TempFile, 
+		       ' ', CC_Opts, ' ', XSB_CC_Opts,' ',LdOption))
 #endif
 	    ; str_sub('freebsd', Configuration)
 	    ->	shell([CC_Name, SymbolTableFlag, ' -o ', Base, '.so',
