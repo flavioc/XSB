@@ -181,13 +181,11 @@ compile_c(Modname, Base, Ext, Options, Dir, LdOption, CompComm, TempFile) :-
 	    ->	shell([CC_Name, ' -c ', Base, Ext, TempFile, ' ',CC_Opts]),
 		shell(['ld -expect_unresolved \* -O1 -shared -o ',
 		       Base, '.so ', Base, '.o ', LdOption])
-%	    ; str_sub('powerpc-apple-darwin', Configuration)
 	    ; str_sub('apple-darwin', Configuration)
-	    ->	shell([CC_Name,' -dynamiclib -undefined dynamic_lookup -faltivec -fPIC -o ', Base, '.dylib ', Base, Ext, TempFile, ' ', CC_Opts, ' ', LdOption])
+	    ->	shell([CC_Name,' -dynamiclib -undefined dynamic_lookup -faltivec -fPIC -o ', Base, '.dylib ', Base, Ext, TempFile, ' ', CC_Opts, ' ', XSB_CC_Opts, ' ',LdOption])
 #ifdef FOREIGN_DEBUG
-	    , message((CC_Name,' -dynamiclib -undefined dynamic_lookup -faltivec -fPIC -o ', Base, '.dylib ', Base, Ext, TempFile, ' ', CC_Opts, ' ', LdOption))
+	    , message((CC_Name,' -dynamiclib -undefined dynamic_lookup -faltivec -fPIC -o ', Base, '.dylib ', Base, Ext, TempFile, ' ', CC_Opts, ' ', XSB_CC_Opts, ' ',LdOption))
 #endif
-
 	    ;	str_sub('cygwin', Configuration)
 	    ->  message(shell([CC_Name, ' -c ', Base, Ext, TempFile, ' ', CC_Opts,' ',XSB_CC_Opts])),
 		concat_atom([Base,'.o'], Obj),
