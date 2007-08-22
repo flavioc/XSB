@@ -362,6 +362,32 @@ DllExport prolog_float call_conv ptoc_float(CTXTdeclc int regnum)
   return 0.0;
 }
 
+/* TLS: unlike ptoc_string, this throws an error if given a boxed int. */
+DllExport char* call_conv iso_ptoc_string(CTXTdeclc int regnum,char * PredString)
+{
+  /* reg is global array in register.h in the single-threaded engine
+   * and is defined as a thread-specific macro in context.h in the
+   * multi-threaded engine
+   */  
+  register Cell addr = cell(reg+regnum);
+
+  /* XSB_Deref and then check the type */
+  XSB_Deref(addr);
+
+  switch (cell_tag(addr)) {
+  case XSB_FREE:
+  case XSB_REF1: 
+  case XSB_ATTV: xsb_instantiation_error(CTXTc PredString,regnum);
+  case XSB_STRUCT:
+  case XSB_LIST:
+  case XSB_INT: 
+  case XSB_FLOAT: xsb_type_error(CTXTc "atom",addr,PredString,regnum);
+  case XSB_STRING: return string_val(addr);
+  default: xsb_abort("[PTOC_INT] Argument of unknown type");
+  }
+  return FALSE;
+}
+
 DllExport char* call_conv ptoc_string(CTXTdeclc int regnum)
 {
   /* reg is global array in register.h in the single-threaded engine
@@ -373,7 +399,6 @@ DllExport char* call_conv ptoc_string(CTXTdeclc int regnum)
   
   /* XSB_Deref and then check the type */
   XSB_Deref(addr);
-  //printf("\nBUILTIN.C: dereferenced address: %lu\n", addr);
   switch (cell_tag(addr)) {
   case XSB_FREE:
   case XSB_REF1:
@@ -918,6 +943,7 @@ void init_builtin_table(void)
   set_builtin_table(SYS_SYSTEM, "sys_system");
   set_builtin_table(SYS_GETHOST, "sys_gethost");
   set_builtin_table(SYS_ERRNO, "sys_errno");
+  set_builtin_table(SETENV, "setenv");
   set_builtin_table(FILE_WRITEQUOTED, "file_writequoted");
   set_builtin_table(GROUND, "ground");
 
@@ -1832,6 +1858,15 @@ int builtin_call(CTXTdeclc byte number)
   case SYS_ERRNO:			/* R1: -Int (errno) */
     ctop_int(CTXTc 1, errno);
     break;
+
+  case SETENV: 
+    {
+      return !-setenv(iso_ptoc_string(CTXTc 1,"setenv/3"),
+		  iso_ptoc_string(CTXTc 2,"setenv/3"),
+		  iso_ptoc_int(CTXTc 3,"setenv/3"));
+
+      break;
+    }
 
     /* TLS: file_writequoted is intended for use within l_write.  Do
        not use it directly -- as it should have its streams locked. */

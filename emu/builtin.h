@@ -94,6 +94,7 @@
 #define SYS_SYSTEM		 56
 #define SYS_GETHOST		 57
 #define SYS_ERRNO		 58
+#define SETENV                   59
 
 #define FILE_WRITEQUOTED	 61
 #define GROUND  		 62
