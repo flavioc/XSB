@@ -64,7 +64,6 @@ ENTRY_FUNCTION=_win_xsbent@12
 
 
 
-# This one is used for SGI only
 LINKFLAGS=@LINKFLAGS@
 
 # Substitute an assignment for the MAKE variable, because

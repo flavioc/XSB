@@ -65,9 +65,9 @@ AC_ARG_WITH(cc,
 AC_ARG_WITH(acc,
 [  --with-acc                   use ACC to compile XSB])
 AC_ARG_WITH(os,
-[  --with-os=wind               build XSB for Windows NT/95/98])
+[  --with-os=wind               build XSB for Windows XP/NT/98])
 AC_ARG_WITH(wind,
-[  --with-wind                  build XSB for Windows NT/95/98])
+[  --with-wind                  build XSB for Windows XP/NT/98])
 AC_ARG_WITH(bits64,
 [  --with-bits64                force a 64-bit version of XSB],
    bits64=yes,bits64=no)
@@ -132,7 +132,7 @@ AC_ARG_WITH(smodels,
                                 path is the path where smodels has
                                 been installed and compiled])
 AC_ARG_WITH(itkwish,
-[  --with-itkwish=DIR			DIR where the itkwish shell is located])
+[  --with-itkwish=DIR		DIR where the itkwish shell is located])
 
 
 AC_ARG_ENABLE(no-cygwin,
@@ -180,7 +180,7 @@ AC_ARG_ENABLE(ccmpl,
 AC_ARG_ENABLE(profiling,
 [  --enable-profiling           force gcc to generate information for profiling])
 AC_ARG_ENABLE(electric-fence,
-[  --enable-electric-fence      link with the electric fence malloc debugger])
+[  --enable-electric-fence      link with the electric fence malloc debugger (currently unsupported)])
 
 
 # TLS As far as I know, autoconf version 2.59 or so does check various
