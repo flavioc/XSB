@@ -205,8 +205,8 @@ struct xsb_data** driverODBC_query(struct xsb_queryHandle* handle)
       query->resultmeta->types[i] = (struct driverODBC_columnmeta *)malloc(sizeof(struct driverODBC_columnmeta));
       val = SQLColAttribute(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_COLUMN_TYPE, NULL, 0, NULL, (SQLPOINTER) &(query->resultmeta->types[i]->type));
       if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
-	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
 	int j=0;
+	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
 	for (j=0; j<=i;j++)
 	  free(query->resultmeta->types[j]);
 	free(query->resultmeta);
@@ -217,8 +217,8 @@ struct xsb_data** driverODBC_query(struct xsb_queryHandle* handle)
       }
       val = SQLColAttribute(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_COLUMN_LENGTH, NULL, 0, NULL, (SQLPOINTER) &(query->resultmeta->types[i]->length));
       if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
-	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
 	int j=0;
+	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
 	for (j=0; j<=i;j++)
 	  free(query->resultmeta->types[j]);
 	free(query->resultmeta);
@@ -256,8 +256,8 @@ static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* quer
       result[i]->val->str_val = (char *)malloc(result[i]->length * sizeof(char));
       val = SQLBindCol(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_C_CHAR, (SQLPOINTER *)result[i]->val->str_val, (SQLINTEGER)result[i]->length, pcbValues[i]);
       if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
-	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
 	int j = 0;
+	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
 	for (j = 0; j <= i; j++) {
 	  free(pcbValues[j]);
 	  if (driverODBC_getXSBType(query->resultmeta->types[j]->type) == STRING_TYPE)
@@ -274,8 +274,8 @@ static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* quer
       result[i]->type = INT_TYPE;
       val = SQLBindCol(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_C_SLONG, (SQLPOINTER *)&result[i]->val->i_val, 0, pcbValues[i]);
       if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
-	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
 	int j = 0;
+	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
 	for (j = 0; j <= i; j++) {
 	  free(pcbValues[j]);
 	  if (driverODBC_getXSBType(query->resultmeta->types[j]->type) == STRING_TYPE)
@@ -292,8 +292,8 @@ static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* quer
       result[i]->type = FLOAT_TYPE;
       val = SQLBindCol(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_C_DOUBLE, (SQLPOINTER *)&result[i]->val->f_val, 0, pcbValues[i]);
       if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
-	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
 	int j = 0;
+	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
 	for (j = 0; j <= i; j++) {
 	  free(pcbValues[j]);
 	  if (driverODBC_getXSBType(query->resultmeta->types[j]->type) == STRING_TYPE)

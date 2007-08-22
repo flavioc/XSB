@@ -374,9 +374,9 @@ DllExport int call_conv executePreparedStatement(void)
     for (i = 0 ; i < qHandle->numParams ; i++) {
       bindValues[i] = (struct xsb_data *)malloc(sizeof(struct xsb_data));
       if (is_nil(bindList)) {
+	int j = 0;
 	errorMesg = "XSB_DBI ERROR: Not all paremeters supplied";
 	errorNumber = "XSB_DBI_008";
-	int j = 0;
 	for (j=0;j<i;j++) {
 	  free(bindValues[j]);
 	  free(bindValues[j]->val);
@@ -405,9 +405,9 @@ DllExport int call_conv executePreparedStatement(void)
       else if (is_functor(element)) {
       }
       else if (is_var(element)) {
+	int j = 0;
 	errorMesg = "XSB_DBI ERROR: Unbound variable in parameter list";
 	errorNumber = "XSB_DBI_009";
-	int j = 0;
 	for (j=0;j<i;j++) {
 	  free(bindValues[j]);
 	  free(bindValues[j]->val);
