@@ -1198,6 +1198,43 @@ Put XSB to sleep for a given number of seconds.
 \index{\texttt{pid/1}}
 Get Id of the current process.
 
+\ournewitem{getenv(+VarName,-VarVal}{machine} 
+\index{\texttt{getenv/2}}
+%
+Unifies {\tt VarVal} with the value of {\tt VarName} in the current
+shell.  If {\tt VarName} is not an environment varible, the predicate
+fails.
+
+{\em Example:}
+\begin{verbatim}
+:- import getenv/2 from machine.
+
+yes
+| ?- getenv('HOSTTYPE',F).
+
+F = intel-pc
+\end{verbatim}
+
+\ournewitem{setenv(+VarName,+VarVal,+Override}{machine} 
+\index{\texttt{setenv/3}}
+%
+Inserts or resets the environment variable {\tt VarName}.  If {\tt
+  VarName} does not exist, it is inserted with {\tt VarVal}.  If the
+{\tt VarName} does exist, {\tt Override} is tested; if {\tt Override}
+is zero, the {\tt VarName} is not reset, otherwise it is reset to {\tt
+  VarVal}.  If {\tt VarName} exists and cannot be reset, {\tt
+  setenv/3} fails, otherwise it succeeds.
+
+Exceptions:
+    \begin{description}
+    \item[{\tt instantiation\_error}] {\tt VarName}, {\tt VarVal}, or
+      {\tt Override} is not instantiated at the time of call.
+    \item[{\tt type\_error}]
+        {\tt VarName} or {\tt VarVal} is not an atom.
+    \item[{\tt type\_error}]
+        {\tt Override} is not an integer
+    \end{description}
+
 \end{description}
 
 %---------------------------------------------------------------------------------------
