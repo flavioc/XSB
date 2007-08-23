@@ -4,7 +4,7 @@ PortSystem	1.0
 revision	0
 
 name		xsb
-version		3.1
+version 3.1
 categories	lang
 maintainers	pmoura@logtalk.org
 
@@ -19,20 +19,18 @@ long_description	\
 homepage		http://xsb.sourceforge.net/	
 master_sites	sourceforge
 
-checksums		md5     7737809efc6d38263d658b926e485839
-
-distname xsb
-extract.suffix	src.tar.gz
+checksums md5 69a8ca03d78786ca83a32a4c2753971f
 
 configure.args	--prefix=${prefix}/share/${name}
 
-worksrcdir		XSB
+worksrcdir		xsb
 			
 configure.dir	${workpath}/${worksrcdir}/build
 
 build.dir		${workpath}/${worksrcdir}/build
 
 build.cmd		./makexsb
+build.target	
 
 default_variants +st +bits32
 
@@ -49,11 +47,13 @@ variant mt {
 variant bits32 {
 	configure.args-append --with-bits32
 	configure.args-delete --with-bits64
+	build.cmd-append --config-tag=bits32
 }
 
 variant bits64 {
 	configure.args-append --with-bits64
 	configure.args-delete --with-bits32
+	build.cmd-append --config-tag=bits64
 }
 
 post-destroot {
