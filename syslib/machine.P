@@ -161,7 +161,7 @@ load_obj(FileName, Mod, LdOption, InitAddr) :-
 	load_obj(FileName, Mod, LdOption, InitAddr).
 
 getenv(EnvVar, Value) :- getenv(EnvVar, Value).
-setenv(_EnvVar, _Value,_Override) :- '_$builtin'(SETENV).
+putenv(_PutEnvString) :- '_$builtin'(PUTENV).
 
 sys_syscall(_CallNo, _Res, _A1, _A2) :- '_$builtin'(SYS_SYSCALL).
 sys_system(CallNo, Command, _Arg1,_Arg2,_Arg3,_Arg4,_Arg5) :-

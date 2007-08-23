@@ -92,7 +92,7 @@
 	almost_search_module/5,
 	existing_file_extension/2,
 	getenv/2, 
-	setenv/3, 
+	putenv/1, 
 	sys_syscall/4,
 	sys_system/7, 
 	sys_gethost/2, 
