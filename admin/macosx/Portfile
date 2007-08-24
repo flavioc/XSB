@@ -19,21 +19,13 @@ long_description	\
 homepage		http://xsb.sourceforge.net/	
 master_sites	sourceforge
 
-checksums md5 71ba4af67d28c368fc42ae60f41ae43a
+checksums md5 a267ca931074d06b7349553eab0728e6
 
 configure.args	--prefix=${destroot}/${prefix}/share/${name}
 
 worksrcdir		xsb
-
-post-extract {
-		system "chmod a+x ${workpath}/${worksrcdir}/build/configure"
-}
 			
 configure.dir	${workpath}/${worksrcdir}/build
-
-post-configure {
-		system "chmod a+x ${workpath}/${worksrcdir}/build/config.guess ${workpath}/${worksrcdir}/build/config.sub ${workpath}/${worksrcdir}/build/*.sh"
-}
 
 build.dir		${workpath}/${worksrcdir}/build
 
@@ -64,9 +56,7 @@ variant mt {
 }
 
 variant bits32 {
-	configure.args-append --with-bits32
 	configure.args-delete --with-bits64
-	build.cmd-append --config-tag=bits32
 }
 
 variant bits64 {
