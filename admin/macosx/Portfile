@@ -21,7 +21,7 @@ master_sites	sourceforge
 
 checksums md5 69a8ca03d78786ca83a32a4c2753971f
 
-configure.args	--prefix=${prefix}/share/${name}
+configure.args	--prefix=${destroot}/${prefix}/share/${name}
 
 worksrcdir		xsb
 			
@@ -37,11 +37,19 @@ default_variants +st +bits32
 variant st {
 	configure.args-delete --enable-mt
 	build.cmd-delete --config-tag=mt
+	post-destroot {
+		cd ${destroot}${prefix}/bin
+		system "ln -sf ../share/${name}/${version}/bin/xsb xsb"
+	}
 }
 
 variant mt {
 	configure.args-append --enable-mt
 	build.cmd-append --config-tag=mt
+	post-destroot {
+		cd ${destroot}${prefix}/bin
+		system "ln -sf ../share/${name}/${version}/bin/xsb-mt xsb"
+	}
 }
 
 variant bits32 {

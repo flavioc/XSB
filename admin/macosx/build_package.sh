@@ -1,7 +1,7 @@
 #!/bin/sh
 
 ## ================================================================
-## This script build a MacOS X Installer package using MacPorts
+## This script builds a MacOS X Installer package using MacPorts
 ## ================================================================
 
 dir=`PWD`
