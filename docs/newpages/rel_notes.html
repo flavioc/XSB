@@ -18,6 +18,227 @@
 
 <h1>Release Notes</h1>
 
+<h2>Version 3.1 (Incognito) </h2>
+
+Version 3.1 is a major rewriting of XSB to new functionalities and
+improve XSB's stability, particularly for the multi-threaded engine
+
+<h3>Major Improvements</h3>
+
+<ul>
+  <li>
+  <i>64-bit compilation</i>  Both the single-threaded and multi-threaded
+  engines of XSB have been thoroughly tested on 64-bit Linux.  All XSB
+  functionality and packages now work when XSB is compiled on such
+  platforms using either 64-bit or 32-bit compilation.
+  </li>
+
+  <li> <i>Incremental tabling</i> Incremental tabling has been added
+  for programs that use tabling with call-variance on program
+  fragments that do not require tabled negation.  If a table depends
+  on dynamic code (perhaps indirectly) asserts or retracts to the code
+  will propagate incremental changes to the various depending tables.
+  Thus the tables are updated automatically and incrementally with
+  respect to changes in fluents, rather than having to be explicitly
+  recomputed.
+  </li>
+
+  <li> <i>Multi-threading improvements</i> The multi-threaded engine
+  is faster and far more robust than in previous versions.  Libraries
+  have been expanded for the multi-threaded engine as well.</li>
+
+<ul>
+    <li> A single query can now safely intermix private and shared
+    tables, even if can depend on each other in the same SCC or depend
+    through conditional answers in the well-founded semantics.</li>
+
+    <li>Heap garbage collection now can occur for any thread independently
+    of any other thread.</li>
+
+    <li>Improvements have been made for thread, mutex, and message queue
+    management, usually based on ISO working document ISO/IEC DTR
+    13211{5:2007} with which XSB is now mainly in compliance: </li>
+
+<ul> 
+     <li> Private and shared unification-based message queues are now
+          supported, user-level mutex are now supported, as are
+          thread, mutex, and queue aliases.</li>
+
+      <li>Thread creation allows a number of parameters to be passed
+          in via an option list, or alternately taken from settable
+          defaults.  In addition, thread cancellation now cancels
+          threads when they are waiting for messages or are blocked on
+          I/O.</li>
+</ul>
+
+    <li>Specific to XSB, examples have been added so that XSB can used as
+    a multi-threaded server with socket-based communication.  The
+    regexp, wildmatch, and libwww libraries have been ported to the
+    multi-threaded engine.</li>
+
+</ul>
+  <li><i>Improved C-calling XSB interface</i></li>
+<ul>
+        <li>XSB now behaves better when embedded in a C process.  When XSB
+        encounters an error, it uses a mechanism to pass the error
+        back to C.  Errors that cause XSB to exit when called as a
+        stand-alone server have the type "unrecoverable error".  </li>
+
+	<li>Query caching has been added to the C/XSB interface to make
+	repeated queries to XSB more efficient.</li>
+
+	<li>The C-calling XSB interface has also been updated for the
+        multi-threaded engine so that a given XSB thread can be safely
+        queried by multiple C (or Java) threads, a facility that works
+        for the varstring, fixed string, and register interfaces.
+        Within a multi-threaded system XSB threads can maintain the
+        state of queries if desired so that they function analogously
+        to cursors in a database.</li>
+
+</ul>
+
+ <li><i>Improved memory management for tables</li></i>
+<ul>
+	 <li>When a given tabled subgoal (predicate) T1 is abolished, any
+	 tabled subgoal (predicate) T2 that depends conditionally on
+	 T1 will also be abolished by default (this behavior can be
+	 altered by a flag, or by using an option list).</li>
+	 
+	 <li>All space for conditional answer information is now reclaimed
+	 when space for a tabled predicate or subgoal is reclaimed
+	 after an abolish or simplification operation.  In addition,
+	 all information for private tables, including conditional
+	 table information is thread-private, and is reclaimed upon a
+	 thread's exit.</li>
+
+	 <li>Added structure manager for private hash tables in tries. In
+	 addition, each shared structure manager now has its own mutex
+	 in the multi-threaded engine.  These changes should improve
+	 scalability of tables in the shared engine.</li>
+
+	 <li>Detailed statistical information is not available on all
+	 table structures, including those for conditional answers.
+	 In the multi-threaded engine, this information is available
+	 for both shared tables and tables private to the calling
+	 thread.</li>
+
+	 <li>Two new predicates are added for table management in the
+	 multi-threaded engine: abolish_all_shared_tables/0 and
+	 abolish_all_private_tables/0.</li>
+</ul>
+
+ <li><i>Improvements to dynamic clause garbage collection</i></li>
+<ul>
+	 <li>Dynamic clause garbage collection for private dynamic
+	 predicates now uses private structure managers to improve
+	 concurrency for retracting private clauses.</li>
+
+	 <li>Dynamic clause garbage collection has been tuned to be more
+	 efficient for routines that call retract(all) repeatedly.</li>
+</ul>
+
+<li><i>Improved ISO compatibility</i> for numerous cases of error handling.  With
+relatively minor exceptions, XSB now generally throws ISO-compliant
+errors for ISO predicates.</li>
+
+<li><i>Improvements in Interned Tries Library</i> XSB provides interned tries
+as an extremely efficient way of adding and deleting terms to a global
+store (private to each thread):</li>
+<ul>
+    <li>The API for interned tries was redesigned to make it simpler to
+    use, and in some cases more efficient.  Error checking has been
+    added to make the library more robust.</li>
+
+    <li>To check whether a trie may be backtracked over before deleting a
+    trie, or expanding its hash table.</li>
+</ul>
+<li><i> New syntax for tables</i> allows concise declarations of various attribute
+combinations, including whether the predicate is to use call
+subsumption or call variance, is dynamic or static, is private or
+shared, and is incremental.
+
+</ul>
+</ul>
+
+<h3>Other Improvements</h3>
+<ul>
+    <li>XSB's compiler now make XSB's compilation <i>much</i> faster for files
+    with large predicates, as well as when compiling strings.  In
+    addition, generated code now has fewer instructions in some cases.</li>
+
+    <li>XSB's canonical term reader significantly improves the time to
+    dynamically load a canonical file.</li>
+
+    <li>Register allocation works better when asserting large clauses.</li>
+
+    <li>Allocation of memory for sorting routines -- this improves times
+    and concurrency of programs that use sorting heavily, such as
+    set-based analysis.</li>
+
+    <li>Added a constraint library allowing variable ordering, when/2, and
+    unifiable/2.</li>
+
+    <li>Added exp/2 as an evaluable function.</li>
+
+    <li>Basic term coloring and other syntactic features are supported for
+    the editor BBEdit.</li>
+</ul>
+
+<h3>Bug fixes</h3>
+<ul>
+    <li>Heap overflows when copying large terms out of a table are now
+    uniformly caught, as well as pdl stack overflows when copying large
+    terms into or out of a table.</li>
+
+    <li>Heap overflows during compilation of large clauses are now
+    uniformly caught.</li>
+
+    <li>Cases are now handled properly where a mixture of table
+    abolish predicates are called on similar tabled predicates and
+    subgoals that are not ready to be reclaimed. Similarly, repeated
+    abolishes and re-generation of tables in computation states where
+    their space cannot be reclaimed is now handled properly.</li>
+
+    <li>Garbage collecting dynamic clauses on predicates with multiple or
+    combined indices is now handled properly</li>
+
+    <li>The number of string interns used on reads and other
+    actions has been reduced, a change useful for thread scalability.</li>
+
+    <li>Problems with error handling stemming from reloading the
+    system file standard.P are now avoided.</li>
+
+    <li>Buffer overflows in file_read_line_list/[1,2] are now avoided
+    under all conditions</li>
+
+    <li>Errors in loading large compiled Flora files are now avoided.</li>
+
+    <li>Problems with handling streams in the format library are now
+    fixed.</li>
+
+    <li>Performing simplification of shared tables in the
+    multi-threaded engine is now mutexed properly.</li>
+
+    <li>FreeBSD is now recognized in higher-level XSB calling C interface</li>
+
+    <li>Calls to the atom-table garbage collector are now avoided when
+    more than one thread is active.</li>
+
+    <li>Bugs in performing heap garbage collecting under certain
+    conditions when constraint interrupts have been scheduled but not
+    executed have now been fixed.</li>
+
+    <li>Numerous small memory problems have been fixed in the various
+    engines as exposed by Valgrind.  These fixes particularly improve
+    the stability of applications that may use conditional answers,
+    such as Flora.</li>
+
+    <li>Fixed debugger to work properly with CHR programs.</li>
+
+    <li>Fixed bug in handling lists in unify_with_occurs_check/2.</li>
+</ul>
+</ul>
+
 <h2>Version 3.0 (Sagres) </h2>
 
 <h3>General</h3>
@@ -80,7 +301,7 @@ multi-threading and to include many new and improved features.
   functions.
     </ul>
 
-  <li> The following predicates provide new functionity beyond that
+  <li> The following predicates provide new functionality beyond that
   discussed.
     <ul> 
       <li> <tt>term_to_atom/3</tt> allows an atom to be created from a term

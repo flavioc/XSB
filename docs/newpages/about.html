@@ -34,7 +34,7 @@ Data Mining, Diagnosis and Temporal Reasoning may benefit from XSB.
   <li>
   Allows full Prolog functionality in tabled code including cuts, (subject
   to weak semantic restrictions), in meta-logical predicates, in second-order
-  predicates, etc.
+  predicates, etc.  Dynamic code may also be tabled.
   </li>
 
   <li>
@@ -47,6 +47,13 @@ Data Mining, Diagnosis and Temporal Reasoning may benefit from XSB.
   Provides standard tabling predicates which can be used to program a number
   of applications in Non-Monotonic reasoning and Knowledge
   representation.
+  </li>
+
+  <li> <i>Incremental tabling</i> can be used for programs that use
+  tabling with call-variance on program fragments that do not require
+  tabled negation.  If a table depends on dynamic code (perhaps
+  indirectly) asserts or retracts to the code will automatically
+  propagate incremental changes to the various depending tables.  
   </li>
 
   <li>
@@ -63,9 +70,9 @@ Data Mining, Diagnosis and Temporal Reasoning may benefit from XSB.
   efficiently returns the first answer to a query.
   </li>
 
-  <li> Has a default stack management
-  configuration the SLG-WAM configuration, for which a choice of three
-  heap garbage collectors are available.
+  <li> Has a heap garbage collector that works for tabled (and Prolog)
+  evaluation.  After a table is abolished, a table garbage collector
+  ensures that its space is properly reclaimed.
   </li>
 </ul>
 
@@ -96,12 +103,21 @@ Within default local evaluation, concurrency for shared tables is
 supported by an optimistic concurrency control called <i>shared
 completed tables</i> which adds little overhead to computation.
 Within batched evaluation, non-completed tables are visible to
-multiple threads as well (this is experimental in version 3.0).
+multiple threads as well (this is experimental in version 3.1).
 </li>
 
 <li>
 Posix-style operations are supported for XSB threads, including
-joining and detaching threads, thread cancellation, etc.
+joining and detaching threads, thread cancellation, message queues,
+user-defined mutexes, and much else.
+</li>
+
+<li>
+  XSB can be called as a multi-threaded server using sockets, or
+  embedded in a process as a multi-threaded subprocesses.  When called
+  as a subprocess, threads can maintain the state of a query so that
+  the calling program may backtrack through the answers.  The result
+  is that XSB queries serve in a manner somewhat analogous to cursors.
 </li>
 
 </ul>
@@ -126,6 +142,12 @@ can be quickly loaded and efficiently indexed.
   XSB provides a variety of read and assert mechanisms for quickly
   loading dynamic predicates, especially if these predicates are unit
   clauses.
+  </li>
+
+  <li> In addition to regular assert, Prolog terms can
+  be <i>trie-asserted</i> or <i>trie-interned</i>.  The use of tries
+  can significantly improve the speed of asserting (which is
+  relatively fast in XSB).
   </li>
 
   <li>
@@ -153,8 +175,8 @@ have been!)
   </li>
 
   <li>
-  An ODBC interface, to call data stored in a database accessable by an
-  ODBC driver.  This interface translates Datalog clauses into SQL
+  An ODBC interface, to call data stored in a database accessible by
+  an ODBC driver.  This interface translates Datalog clauses into SQL
   automatically.
   </li>
   
@@ -181,8 +203,8 @@ have been!)
 
   <li>
   An interface to the stable model generator 
-  <a href="http://www.tcs.hut.fi/Software/smodels"> 
-  SModels</a> via the new <em>XASP</em> package.
+  <a href="http://www.tcs.hut.fi/Software/smodels"> SModels</a> via
+  the <em>XASP</em> package.
   </li>
 
 </ul>
@@ -224,7 +246,7 @@ on top of XSB, inlcuding
              F-logic
   </li>
   <li>
-    XJ: a system that allows XSB programs to create graphical sser
+    XJ: a system that allows XSB programs to create graphical user
     interfaces based on Java's Swing package.
   </li>
   <li>XMC: a temporal-logic model checker for verifying properties of
@@ -241,12 +263,12 @@ on top of XSB, inlcuding
 <p>
 XSB has been tested on over a dozen hardware and operating system
 platforms under Microsoft Windows 95/98, Windows NT, Windows 2000 and
-various versions of 32-bit UNIX. XSB also has also been ported to 64-bit
-architectures and has been tested on 64-bit SGI machines. Various
-versions of XSB have been used to construct large-scale commercial
-systems for the U.S. Customs Service, the U.S. Defense Logistics
-Agency, the National Security Agency, Medicine Rules, Inc, MdLogix
-Inc., and many others.
+various versions of 32-bit UNIX. XSB also has also been ported to
+64-bit architectures and has been tested on 64-bit SGI machines and
+linuxes. Various versions of XSB have been used to construct
+large-scale commercial systems for the U.S. Customs Service, the
+U.S. Defense Logistics Agency, the National Security Agency, Medicine
+Rules, Inc, MdLogix Inc., and many others.
 </p>
 
 <hr>
