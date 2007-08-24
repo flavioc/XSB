@@ -11,8 +11,11 @@ cvs -z3 -d :pserver:anonymous@xsb.cvs.sourceforge.net:/cvsroot/xsb export -Dnow 
 cd xsb
 find . -type f -print0 | xargs -0 chmod 644
 find . -type d -print0 | xargs -0 chmod 755
-chmod a+x build/configure
-cd ..
+cd build
+chmod a+x configure config.guess config.sub *.sh topMakefile.in
+cd ../syslib
+chmod a+x CompileChangedFiles.sh
+cd ../..
 tar -czf xsb-3.1.tar.gz xsb
 
 md5="`md5 -q xsb-3.1.tar.gz`"
