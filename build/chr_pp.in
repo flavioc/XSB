@@ -28,9 +28,9 @@ suffix=@config_tag@
 
 invocation_name=$0
 
-# If symbolic link: is there a more elegant way to extract the value of a link?
+# if we've a symbolic link, then extract the full path of the target
 if test -h $invocation_name ; then
-    invocation_name=`ls -l $invocation_name | sed 's,.*-> ,,'`
+    invocation_name=`dirname $invocation_name`"/"`stat -f %Y $invocation_name`
 fi
 
 case $invocation_name in
