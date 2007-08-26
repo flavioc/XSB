@@ -15,7 +15,9 @@ cd build
 chmod a+x configure config.guess config.sub *.sh topMakefile.in
 cd ../syslib
 chmod a+x CompileChangedFiles.sh
-cd ../..
+cd ../admin/macosx
+chmod a+x postflight
+cd ../../..
 tar -czf xsb-3.1.tar.gz xsb
 
 md5="`md5 -q xsb-3.1.tar.gz`"

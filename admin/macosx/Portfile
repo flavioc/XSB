@@ -75,6 +75,7 @@ post-build {
 	file copy -force -- ${workpath}/${worksrcdir}/admin/macosx/License.html ${workpath}/macosx/
 	file copy -force -- ${workpath}/${worksrcdir}/admin/macosx/ReadMe.html ${workpath}/macosx/
 	file copy -force -- ${workpath}/${worksrcdir}/admin/macosx/Welcome.html ${workpath}/macosx/
+	file copy -force -- ${workpath}/${worksrcdir}/admin/macosx/postflight ${workpath}/macosx/
 }
 
 post-pkg {
@@ -82,6 +83,7 @@ post-pkg {
 	file copy -force -- ${workpath}/macosx/License.html ${resources}
 	file copy -force -- ${workpath}/macosx/ReadMe.html ${resources}
 	file copy -force -- ${workpath}/macosx/Welcome.html ${resources}
+	file copy -force -- ${workpath}/macosx/postflight ${resources}
 	file delete -force -- ${resources}/Welcome.rtf
 }
 
@@ -90,6 +92,7 @@ post-mpkg {
 	file copy -force -- ${workpath}/macosx/License.html ${resources}
 	file copy -force -- ${workpath}/macosx/ReadMe.html ${resources}
 	file copy -force -- ${workpath}/macosx/Welcome.html ${resources}
+	file copy -force -- ${workpath}/macosx/postflight ${resources}
 	file delete -force -- ${resources}/Welcome.rtf
 }
 
