@@ -588,6 +588,7 @@ int gc_heap(CTXTdeclc int arity, int ifStringGC)
   int  rnum_in_reg_array = (reg_arrayptr-reg_array)+1;
   DECL_GC_PROFILE;
 
+  //  printf("start gc: hf:%p,h:%p\n",hfreg,hreg);
   INIT_GC_PROFILE;
   if (pflags[GARBAGE_COLLECT] != NO_GC) {
     num_gc++ ;
@@ -608,7 +609,7 @@ int gc_heap(CTXTdeclc int arity, int ifStringGC)
        that might not point into heap, does */
     if (hreg == cp_hreg(breg)) {
       *hreg = makeint(666) ;
-      hreg++ ;
+      hreg++;
     }
 #ifdef SLG_GC
     /* same for the freeze heap pointer */
@@ -627,23 +628,23 @@ int gc_heap(CTXTdeclc int arity, int ifStringGC)
 	reg[arity] = (Cell)delayreg;
       }
       for (i = 1; i <= arity; i++) {
+	//	printf("reg[%d] to heap: %lx\n",i,(unsigned long)reg[i]);
 	*hreg = reg[i];
 	hreg++;
       }
       arity += rnum_in_reg_array;
       for (i = 0; i < rnum_in_reg_array; i++) {
-	*(hreg++) = reg_array[i];
+	//	printf("reg_array[%d] to heap: %lx\n",i,(unsigned long)reg_array[i]);
+	*hreg = reg_array[i];
+	hreg++;
       }
       //      printf("extended heap: hreg=%p, arity=%d, rnum_in=%d\n",hreg,arity, rnum_in_reg_array);
-    }
-
 #ifdef SLG_GC
-    /* in SLGWAM, copy hfreg to the heap */
-    if (slide) {
-      *hreg = (unsigned long) hfreg;
-      hreg++;
-    }
+      /* in SLGWAM, copy hfreg to the heap */
+      //      printf("hfreg to heap is %p at %p, rnum_in_reg_array=%d,arity=%d,delay=%p\n",hfreg,hreg,rnum_in_reg_array,arity,delayreg);
+      *(hreg++) = (unsigned long) hfreg;
 #endif
+    }
 
     gc_strings = ifStringGC; /* default */
     gc_strings = should_gc_strings();
@@ -706,6 +707,7 @@ int gc_heap(CTXTdeclc int arity, int ifStringGC)
 
 	if (hreg != (heap_bot+marked))
 	  xsb_dbgmsg((LOG_GC, "heap sliding gc - inconsistent hreg"));
+
 #ifdef SLG_GC
 	/* copy hfreg back from the heap */
 	hreg--;
@@ -719,12 +721,15 @@ int gc_heap(CTXTdeclc int arity, int ifStringGC)
 	p = hreg;
 	
 	arity -= rnum_in_reg_array;
-	for (i = 1; i <= arity; i++)
-	  reg[i] = *p++ ;
+	for (i = 1; i <= arity; i++) {
+	  reg[i] = *p++;
+	  //	  printf("heap to reg[%d]: %lx\n",i,(unsigned long)reg[i]);
+	}
 	if (delayreg != NULL)
 	  delayreg = (CPtr)reg[arity--];
 	for (i = 0; i < rnum_in_reg_array; i++) {
 	  reg_array[i] = *p++;
+	  //	  printf("heap to reg_array[%d]: %lx\n",i,(unsigned long)reg_array[i]);
 	}
 
 	end_slidetime = cpu_time();
@@ -829,6 +834,7 @@ int gc_heap(CTXTdeclc int arity, int ifStringGC)
   GC_PROFILE_POST_REPORT;
   
 #endif /* GC */
+  //  printf("   end gc, hf:%p,h:%p, space=%d\n",hfreg,hreg,(pb)top_of_localstk - (pb)top_of_heap);
 
   return(TRUE);
 

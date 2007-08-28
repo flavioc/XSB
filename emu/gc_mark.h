@@ -818,7 +818,7 @@ static int mark_from_attv_array(CTXTdecl)
 
 int mark_heap(CTXTdeclc int arity, int *marked_dregs)
 {
-  int avail_dreg_marks = 0, marked = 0;
+  int avail_dreg_marks = 0, marked = 0, rnum_in_reg_array = (reg_arrayptr-reg_array)+1;
 
   /* the following seems unnecessary, but it is not !
      mark_heap() may be called directly and not only through gc_heap() */
@@ -865,12 +865,12 @@ int mark_heap(CTXTdeclc int arity, int *marked_dregs)
 		      needed for copying garbage collection see copy_block() */
   
   /* start marking phase */
-  marked = mark_region(CTXTc reg+1,reg+arity);
+  marked = mark_region(CTXTc reg+1,reg+(slide?(arity-rnum_in_reg_array):arity));
   if (delayreg != NULL) {
     marked += mark_root(CTXTc (Cell)delayreg);
   }
-  if (reg_array) {
-    //    printf("marking reg_array: %p to %p\n",reg_array,reg_arrayptr);
+  if (rnum_in_reg_array>0) {
+    //    printf("marking reg_array(%d): %p to %p\n",rnum_in_reg_array,reg_array,reg_arrayptr);
     marked += mark_region(CTXTc reg_array,reg_arrayptr);
   }
   /* Heap[0] is a global variable */
@@ -884,7 +884,8 @@ int mark_heap(CTXTdeclc int arity, int *marked_dregs)
       while (put_on_heap > 0) {
 #ifdef SLG_GC
 	TO_BUFFER((heap_top-put_on_heap-1));
-	h_mark((heap_top - 1 - put_on_heap--)-heap_bot);
+	h_mark((heap_top - 1 - put_on_heap)-heap_bot);
+	put_on_heap--;
 #else
 	TO_BUFFER((heap_top-put_on_heap));
 	h_mark((heap_top - put_on_heap--)-heap_bot);
