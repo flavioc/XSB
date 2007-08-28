@@ -331,6 +331,7 @@ inline void bld_boxedfloat(CTXTdeclc CPtr addr, Float value) {
 /*----------------------------------------------------------------------*/
 
 #define Fail1 lpcreg = cp_pcreg(breg)
+//#define Fail1 do {lpcreg = cp_pcreg(breg); printf("fail (h:%p,e:%p,pc:%p,b:%p,hb:%p)\n",hreg,ereg,lpcreg,breg,hbreg);}while(0)
 
 #define restore_trail_condition_registers(breg) \
       if (*breg != (Cell) &check_complete_inst) { \
@@ -1793,7 +1794,7 @@ argument positions.
     ADVANCE_PC(size_xxxX);
     cpreg = lpcreg;
     psc = (Psc)op1;
-    //    printf("call %s/%d %p,%p,%p\n",get_name(psc),get_arity(psc),hreg,ereg,lpcreg);
+    //    printf("call %s/%d (h:%p,e:%p,pc:%p,hb:%p)\n",get_name(psc),get_arity(psc),hreg,ereg,lpcreg,hbreg);
 #ifdef CP_DEBUG
     pscreg = psc;
 #endif
@@ -1941,6 +1942,7 @@ argument positions.
 
   XSB_Start_Instr(proceed,_proceed)  /* PPP */
      proceed_sub;
+  //     printf("proc (h:%p,e:%p,pc:%p)\n",hreg,ereg,lpcreg);
   XSB_End_Instr()
 
   XSB_Start_Instr(proceed_gc,_proceed_gc) /* PPP */
@@ -1960,6 +1962,7 @@ argument positions.
       }
     }
     proceed_sub;
+    //    printf("pr_g (h:%p,e:%p,pc:%p)\n",hreg,ereg,lpcreg);
   XSB_End_Instr()
 
     /* This is the WAM-execute.  Name was changed because of conflict
@@ -1978,7 +1981,7 @@ argument positions.
     pscreg = psc;
 #endif
     call_sub(psc);
-    //    printf("exec %s/%d (%p,%p,%p)\n",get_name(psc),get_arity(psc),hreg,ereg,lpcreg);
+    //    printf("exec %s/%d (h:%p,e:%p,pc:%p,hb:%p)\n",get_name(psc),get_arity(psc),hreg,ereg,lpcreg,hbreg);
   XSB_End_Instr()
 
   XSB_Start_Instr(jump,_jump)   /* PPP-L */
