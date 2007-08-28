@@ -3088,7 +3088,7 @@ int print_xsb_backtrace(CTXTdecl) {
   } else {
     fprintf(stdout,"Partial Forward Continuation...\n");
     if ((pb)top_of_localstk < (pb)top_of_heap+256*ZOOM_FACTOR) {
-      fprintf(stdout,"  Local Stack clobbered, no backtrace available\n");
+      fprintf(stdout,"  Local Stack clobbered, no backtrace available (h:%p,e:%p)\n",hreg,ereg);
       return TRUE;
     }
     tmp_ereg = ereg;
