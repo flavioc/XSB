@@ -35,6 +35,9 @@
 /* However, one fine day it might!  The following list tries to become	*/
 /* a first step towards the uniform treatment of errors by XSB.		*/
 /*----------------------------------------------------------------------*/
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define CALCULATION	 0
 #define DATABASE	 1
@@ -65,7 +68,6 @@
 #else 
 #define THROWPAD 12
 #endif 
-
 
 DllExport extern void call_conv xsb_exit(CTXTdeclc char *, ...);
 DllExport extern void call_conv xsb_initialization_exit(char *, ...);
@@ -135,3 +137,8 @@ extern void call_conv xsb_memory_error(char *, char *);
 DllExport void call_conv xsb_throw(CTXTdeclc prolog_term);
 
 extern prolog_term build_xsb_backtrace(CTXTdecl);
+
+#ifdef __cplusplus
+}
+#endif
+
