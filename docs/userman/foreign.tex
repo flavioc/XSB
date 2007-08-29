@@ -106,10 +106,12 @@ of the module.  The syntax of the {\tt ldoption} directive is simply:
 \end{center}
 where {\tt Option} should either be an atom or a list of atoms.
 Multiple {\tt ldoption} directives may appear in the same {\tt .H}
-file of a foreign module \footnote{Mac OSX users with Panther should
-  set the environment variable {\tt MACOSX\_DEPLOYMENT\_TARGET} to {\tt
-    10.3} so that the compiler generates code that can be dynamically
-  linked by XSB.}.
+file of a foreign module \footnote{Mac OSX users using 10.3 or above
+  should have the environment variable {\tt
+    MACOSX\_DEPLOYMENT\_TARGET} set to {\tt 10.3} so that the compiler
+  generates code that can be dynamically linked by XSB.  This should
+  be done automatically by XSB on initialization, but it is useful to
+  check if encountering problems.}.
 %(Explain more about the directive.....).
 In Unix-derived systems, the foreign language interface of XSB uses
 {\tt ld} command that combines object programs to create an executable

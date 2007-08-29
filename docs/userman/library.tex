@@ -1215,20 +1215,20 @@ yes
 F = intel-pc
 \end{verbatim}
 
-\ournewitem{putenv(+VarName,+VarVal)}{machine} 
+\ournewitem{putenv(+String)}{machine} 
 \index{\texttt{setenv/3}}
 %
-Inserts or resets the environment variable {\tt VarName}.  If {\tt
-  VarName} does not exist, it is inserted with {\tt VarVal}.  If the
-{\tt VarName} does exist, it is reset to {\tt VarVal}.  {\tt putenv/2}
-always succeeds.
+If {\tt String} is of the form {\tt VarName=Value}, inserts or resets
+the environment variable {\tt VarName}.  If {\tt VarName} does not
+exist, it is inserted with {\tt VarVal}.  If the {\tt VarName} does
+exist, it is reset to {\tt VarVal}.  {\tt putenv/2} always succeeds.
 
 Exceptions:
     \begin{description}
-    \item[{\tt instantiation\_error}] {\tt VarName} or {\tt VarVal} is
+    \item[{\tt instantiation\_error}] {\tt String} is
       not instantiated at the time of call.
     \item[{\tt type\_error}]
-        {\tt VarName} or {\tt VarVal} is not an atom.
+        {\tt VarName} or {\tt VarVal} is not an atom or a list of atoms.
     \end{description}
 
 \end{description}

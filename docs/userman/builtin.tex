@@ -1746,6 +1746,26 @@ control, along with interprocess communication.
     {\tt shell/1} this predicate always succeeds, even if the {\tt SystemCall} 
     cannot be successfully executed.
 
+\ouritem{shell\_to\_list(+SystemCall,-Output,-Result)}\index{\texttt{shell\_to\_list/3}}
+Calls the operating system with the atom {\tt SystemCall} as argument
+returns the result of the call in {\tt Result}, and the output of {\tt
+  SystemCall} tokenized to {\tt Output}.  {\tt Output} is a list of
+lists: each element of the outer list corresponds to a line of output
+from {\tt SystemCall}, while each element of an inner list corresponds
+to a token in that line.  {\tt shell\_to\_list/3} is thus a sort of
+Prolog analog of the shell command \verb|`SystemCall`|.
+
+In comparison with {\tt shell/1} this predicate always succeeds, even
+if the {\tt SystemCall} cannot be successfully executed.
+
+Example:
+\begin{verbatim}
+shell_to_list(sw_vers,F,G).
+
+F = [[ProductName:,Mac,OS,X],[ProductVersion:,10.4.9],[BuildVersion:,8P2137]]
+G = 0
+\end{verbatim}
+
 \ournewitem{datime(?Date)}{standard}
 \index{\texttt{datime/1}}
 
