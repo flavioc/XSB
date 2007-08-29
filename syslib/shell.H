@@ -27,7 +27,7 @@
 :- export cd/1, ls/0, rename/2, rm/1, rmdir/1, rmdir_rec/1, edit/1,
   expand_filename_no_prepend/2,
   cwd/1, create_lockfile/1, sys_cwd/2, sys_pid/1,
-  shell/5, shell/2, shell/1, sleep/1,copy/2,
+   shell/5, shell/2, shell/1, shell_to_list/3, sleep/1,copy/2,
 	is_plain_file/1, is_directory/1,
 	spawn_process/5, get_process_table/1, process_status/2, 
 	process_control/2,
@@ -36,6 +36,7 @@
 	sys_mkdir/2, sys_rmdir/2,
 	sys_unlink/2, sys_exit/1, sys_rename/3, sys_filecopy/3.
 
+:- import file_to_list/2 from scrptutl.
 :- import ground/1, append/3, member/2 from basics.
 :- import findall/3 from setof.
 :- import path_sysop/2 from file_io.

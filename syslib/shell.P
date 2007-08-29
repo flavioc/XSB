@@ -53,6 +53,10 @@ shell(Cmd,StreamToProc, StreamFromProc, StreamFromStderr, ErrCode) :-
 shell(Cmd, ErrCode) :- shell(Cmd, none, none, none, ErrCode).
 shell(Cmd) :- shell(Cmd, none, none, none, _).
 
+shell_to_list(Cmd, List,ErrCode) :- 
+	shell(Cmd, none, Output, none, ErrCode),
+ 	file_to_list(Output,List).
+
 exec(Cmd) :- sys_system(EXEC,Cmd,_,_,_,_,_).
 
 /* Process table is a list [process(Pid,To,From,Stderr,Cmdline), ...]

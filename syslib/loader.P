@@ -90,7 +90,21 @@ loader_init(_) :-
 	reconsult(ConfigFile),
 	%%
 	load_library_directories,
+	site_specific_init,
 	execute_command_module.
+
+site_specific_init:- 
+	xsb_configuration(os_type,OsType),
+	site_specific_init(OsType).
+
+site_specific_init(darwin):- 
+	shell_to_list(sw_vers,List,_Ret),
+	memberchk(['ProductVersion:',Atom],List),
+	('10.2' @< Atom ->
+	    putenv(['MACOSX_DEPLOYMENT_TARGET',=,'10.3'])
+	 ;  true),
+	!.
+site_specific_init(_catchall).
 
 
 /*

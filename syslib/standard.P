@@ -1373,13 +1373,19 @@ import(P/A, MName) :-
 set_timer(Seconds) :- stat_set_flag(SYS_TIMER, Seconds).
 
 /* ================ Garbage Collecting Shared Data/Code ===================*/
+/* gc_heap is in machine.P */
 
 gc_tables(Number):- 
 	check_var(Number,gc_tables/1,1),
 	gc_stuff(GC_GC_TABLED_PREDS,Number).
 
 gc_dynamic(Number):- 
+	check_var(Number,gc_dynamic/1,1),
 	gc_stuff(GC_GC_CLAUSES,Number).
+
+% Return not needed here -- will always be true
+gc_atoms:- 
+	gc_stuff(GC_GC_STRINGS,_Number).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%

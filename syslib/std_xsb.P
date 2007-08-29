@@ -154,8 +154,10 @@ standard_symbol(fmt_write_string, 4, file_io).
 standard_symbol(functor, 3, standard).
 
 standard_symbol(garbage_collection, 1, curr_sym).
-standard_symbol(gc_tables, 1, standard).
+standard_symbol(gc_atoms,0,standard).
 standard_symbol(gc_dynamic, 1, standard).
+standard_symbol(gc_heap,0,machine).
+standard_symbol(gc_tables, 1, standard).
 standard_symbol(get, 1, standard).
 standard_symbol(get0, 1, standard).
 standard_symbol(get_attr, 3, machine).		
