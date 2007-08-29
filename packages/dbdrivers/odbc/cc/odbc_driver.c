@@ -39,7 +39,10 @@
 static int driverODBC_getXSBType(SQLSMALLINT dataType);
 static void driverODBC_error(SQLSMALLINT handleType, SQLHANDLE handle);
 static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* query, int direct);
-
+void freeQueryInfo(struct driverODBC_queryInfo* query);
+void freeResult(struct xsb_data** result, int numOfElements);
+void freePcbValues(SQLINTEGER** pcbValues, int numOfElements);
+    
 struct driverODBC_connectionInfo* odbcHandles[MAX_HANDLES];
 struct driverODBC_queryInfo* odbcQueries[MAX_QUERIES];
 int numHandles, numQueries;
@@ -93,7 +96,6 @@ int driverODBC_connect(struct xsb_connectionHandle* handle)
     (char *)malloc((strlen(handle->handle) + 1) * sizeof(char));
   strcpy(odbcHandle->handle, handle->handle);
   odbcHandles[numHandles++] = odbcHandle;
-	
   return SUCCESS;
 }
 
@@ -127,7 +129,6 @@ int driverODBC_disconnect(struct xsb_connectionHandle* handle)
       break;
     }
   }
-	
   return SUCCESS;
 }
 
@@ -156,83 +157,65 @@ struct xsb_data** driverODBC_query(struct xsb_queryHandle* handle)
 	break;
       }
     }
-	
+	  
     query = (struct driverODBC_queryInfo *)malloc(sizeof(struct driverODBC_queryInfo));
     query->handle = (char *)malloc((strlen(handle->handle) + 1) * sizeof(char));
     strcpy(query->handle, handle->handle);
     query->query = (char *)malloc((strlen(handle->query) + 1) * sizeof(char));
     strcpy(query->query, handle->query);
+    query->resultmeta = NULL;
+    query->parammeta = NULL;
 
     val = SQLAllocStmt(hdbc, &(query->hstmt));
     if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
       driverODBC_error(SQL_HANDLE_DBC, hdbc);
-      free(query->handle);
-      free(query->query);
-      free(query);
+      freeQueryInfo(query);
       return NULL;
     }
-		
+		  
     val = SQLExecDirect(query->hstmt, (SQLCHAR *) handle->query, SQL_NTS);
     if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
       driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
-      free(query->handle);
-      free(query->query);
-      free(query);
+      freeQueryInfo(query); 
       return NULL;
     }
 
     query->resultmeta = (struct driverODBC_meta *)malloc(sizeof(struct driverODBC_meta));
+    query->resultmeta->types = NULL;
     val = SQLNumResultCols(query->hstmt, (SQLSMALLINT *)(&(query->resultmeta->numCols)));
     if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
       driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
-      free(query->handle);
-      free(query->query);
-      free(query->resultmeta);
-      free(query);
+      freeQueryInfo(query); 
       return NULL;
     }
     handle->numResultCols = query->resultmeta->numCols;
     if (query->resultmeta->numCols == 0) {
-      query->resultmeta->types = NULL;
-      odbcQueries[numQueries++] = query;
+      odbcQueries[numQueries++] = query; 
       return NULL;
     }
 
     query->resultmeta->types = (struct driverODBC_columnmeta **)malloc(query->resultmeta->numCols * sizeof(struct driverODBC_columnmeta *));
-    for (i = 0 ; i < query->resultmeta->numCols ; i++)
+    for (i = 0 ; i < query->resultmeta->numCols ; i++) 
       query->resultmeta->types[i] = NULL;
     for (i = 0 ; i < query->resultmeta->numCols ; i++) {
       query->resultmeta->types[i] = (struct driverODBC_columnmeta *)malloc(sizeof(struct driverODBC_columnmeta));
       val = SQLColAttribute(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_COLUMN_TYPE, NULL, 0, NULL, (SQLPOINTER) &(query->resultmeta->types[i]->type));
       if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
-	int j=0;
 	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
-	for (j=0; j<=i;j++)
-	  free(query->resultmeta->types[j]);
-	free(query->resultmeta);
-	free(query->handle);
-	free(query->query);
-	free(query);
+	freeQueryInfo(query); 
 	return NULL;
       }
       val = SQLColAttribute(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_COLUMN_LENGTH, NULL, 0, NULL, (SQLPOINTER) &(query->resultmeta->types[i]->length));
       if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
-	int j=0;
 	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
-	for (j=0; j<=i;j++)
-	  free(query->resultmeta->types[j]);
-	free(query->resultmeta);
-	free(query->handle);
-	free(query->query);
-	free(query);
+	freeQueryInfo(query); 
 	return NULL;
       }
     }
-	
+	  
     handle->state = QUERY_RETRIEVE;
     odbcQueries[numQueries++] = query;
   }
-	
   return driverODBC_getNextRow(query, 1);
 }
 
@@ -246,6 +229,10 @@ static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* quer
 
   result = (struct xsb_data **)malloc(query->resultmeta->numCols * sizeof(struct xsb_data *));
   pcbValues = (SQLINTEGER **)malloc(query->resultmeta->numCols * sizeof(SQLINTEGER *));
+  for (i = 0; i<query->resultmeta->numCols; i++){ 
+    result[i] = NULL;
+    pcbValues[i] = NULL;
+  }
   for (i = 0 ; i < query->resultmeta->numCols ; i++) {
     result[i] = (struct xsb_data *)malloc(sizeof(struct xsb_data));
     result[i]->val = (union xsb_value *)malloc(sizeof(union xsb_value));
@@ -256,17 +243,9 @@ static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* quer
       result[i]->val->str_val = (char *)malloc(result[i]->length * sizeof(char));
       val = SQLBindCol(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_C_CHAR, (SQLPOINTER *)result[i]->val->str_val, (SQLINTEGER)result[i]->length, pcbValues[i]);
       if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
-	int j = 0;
 	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
-	for (j = 0; j <= i; j++) {
-	  free(pcbValues[j]);
-	  if (driverODBC_getXSBType(query->resultmeta->types[j]->type) == STRING_TYPE)
-	    free(result[j]->val->str_val);
-	  free(result[j]->val);
-	  free(result[j]);
-	}
-	free(pcbValues);
-	free(result);
+        freeResult(result,query->resultmeta->numCols);
+        freePcbValues(pcbValues,query->resultmeta->numCols);
 	return NULL;
       }
     }
@@ -274,35 +253,19 @@ static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* quer
       result[i]->type = INT_TYPE;
       val = SQLBindCol(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_C_SLONG, (SQLPOINTER *)&result[i]->val->i_val, 0, pcbValues[i]);
       if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
-	int j = 0;
 	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
-	for (j = 0; j <= i; j++) {
-	  free(pcbValues[j]);
-	  if (driverODBC_getXSBType(query->resultmeta->types[j]->type) == STRING_TYPE)
-	    free(result[j]->val->str_val);
-	  free(result[j]->val);
-	  free(result[j]);
-	}
-	free(pcbValues);
-	free(result);
-	return NULL;
+        freeResult(result,query->resultmeta->numCols);
+        freePcbValues(pcbValues,query->resultmeta->numCols);
+        return NULL;
       }
     }
     else if (driverODBC_getXSBType(query->resultmeta->types[i]->type) == FLOAT_TYPE) {
       result[i]->type = FLOAT_TYPE;
       val = SQLBindCol(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_C_DOUBLE, (SQLPOINTER *)&result[i]->val->f_val, 0, pcbValues[i]);
       if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
-	int j = 0;
 	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
-	for (j = 0; j <= i; j++) {
-	  free(pcbValues[j]);
-	  if (driverODBC_getXSBType(query->resultmeta->types[j]->type) == STRING_TYPE)
-	    free(result[j]->val->str_val);
-	  free(result[j]->val);
-	  free(result[j]);
-	}
-	free(pcbValues);
-	free(result);
+        freeResult(result,query->resultmeta->numCols);
+        freePcbValues(pcbValues,query->resultmeta->numCols);
 	return NULL;
       }
     }
@@ -323,24 +286,12 @@ static struct xsb_data** driverODBC_getNextRow(struct driverODBC_queryInfo* quer
       if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO)
 	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
     }
-    for (i = 0; i <query->resultmeta->numCols; i++) {
-      free(pcbValues[i]);
-      if (driverODBC_getXSBType(query->resultmeta->types[i]->type) == STRING_TYPE)
-        free(result[i]->val->str_val);
-      free(result[i]->val);
-      free(result[i]);
-    }
-    free(pcbValues);
-    free(result);
+    freeResult(result,query->resultmeta->numCols);
+    freePcbValues(pcbValues,query->resultmeta->numCols);
     return NULL;
   }
 
-  if (pcbValues != NULL) {
-    for (i = 0; i <query->resultmeta->numCols; i++)
-      free(pcbValues[i]);
-    free(pcbValues);
-    pcbValues = NULL;
-  }
+  freePcbValues(pcbValues,query->resultmeta->numCols); 
   return result;
 }
 
@@ -359,6 +310,8 @@ int driverODBC_prepareStatement(struct xsb_queryHandle* qHandle)
   strcpy(query->handle, qHandle->handle);
   query->query = (char *)malloc((strlen(qHandle->query) + 1) * sizeof(char));
   strcpy(query->query, qHandle->query);
+  query->resultmeta = NULL; 
+  query->parammeta = NULL;
 
   for (i = 0 ; i < numHandles ; i++) {
     if (!strcmp(qHandle->connHandle->handle, odbcHandles[i]->handle)) {
@@ -370,18 +323,14 @@ int driverODBC_prepareStatement(struct xsb_queryHandle* qHandle)
   val = SQLAllocStmt(hdbc, &(query->hstmt));
   if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
     driverODBC_error(SQL_HANDLE_DBC, hdbc);
-    free(query->handle);
-    free(query->query);
-    free(query);
+    freeQueryInfo(query);
     return FAILURE;
   }
 
   val = SQLPrepare(query->hstmt, (SQLCHAR *) query->query, SQL_NTS);
   if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
     driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
-    free(query->handle);
-    free(query->query);
-    free(query);
+    freeQueryInfo(query);
     return FAILURE;
   }
 
@@ -389,35 +338,24 @@ int driverODBC_prepareStatement(struct xsb_queryHandle* qHandle)
   val = SQLNumParams(query->hstmt, &(query->parammeta->numCols));
   if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
     driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
-    free(query->handle);
-    free(query->query);
-    free(query->parammeta);
-    free(query);
+    freeQueryInfo(query);
     return FAILURE;
   }
 
   query->parammeta->types = (struct driverODBC_columnmeta **)malloc(query->parammeta->numCols * sizeof(struct driverODBC_columnmeta));
+  for (i = 0 ; i < query->parammeta->numCols ; i++) 
+    query->parammeta->types[i] = NULL;
   for (i = 0 ; i < query->parammeta->numCols ; i++) {
     query->parammeta->types[i] = (struct driverODBC_columnmeta *)malloc(sizeof(struct driverODBC_columnmeta));
     val = SQLDescribeParam(query->hstmt, (SQLUSMALLINT) (i + 1), &(query->parammeta->types[i]->type), &(query->parammeta->types[i]->length), NULL, NULL);
     if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
       driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
-      if (query->parammeta != NULL){
-        int j;
-        for (j=0; j<=i;j++)
-          free(query->parammeta->types[j]);
-        free(query->parammeta->types);
-        free(query->parammeta);
-      }
-      free(query->handle);
-      free(query->query);
-      free(query);
+      freeQueryInfo(query);
       return FAILURE;
     }
   }
 	
   odbcQueries[numQueries++] = query;
-	
   return query->parammeta->numCols;
 }
 
@@ -429,17 +367,16 @@ struct xsb_data** driverODBC_execPrepareStatement(struct xsb_data** param, struc
   int i;
 
   val = 0;
-  query = NULL;
+  query = NULL; 
   for (i = 0 ; i < numQueries ; i++) {
     if (!strcmp(odbcQueries[i]->handle, handle->handle)) {
       query = odbcQueries[i];
       break;
     }
   }
-  
   if (handle->state == QUERY_RETRIEVE)
     return driverODBC_getNextRow(query, 0);
-
+  
   for (i = 0 ; i < query->parammeta->numCols ; i++) {
     if (param[i]->type == STRING_TYPE) 
       val = SQLBindParameter(query->hstmt, (SQLUSMALLINT)(i + 1), SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, strlen(param[i]->val->str_val) + 1, 0, (SQLPOINTER)param[i]->val->str_val, 0, NULL);
@@ -449,26 +386,10 @@ struct xsb_data** driverODBC_execPrepareStatement(struct xsb_data** param, struc
       val = SQLBindParameter(query->hstmt, (SQLUSMALLINT) (i + 1), SQL_PARAM_INPUT, SQL_C_DEFAULT, SQL_DOUBLE, 0, 0, (SQLPOINTER)&param[i]->val->f_val, 0, NULL);
     if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
       driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
-      if (query->parammeta!=NULL) {
-        for (i = 0; i<query->parammeta->numCols;i++)
-          free(query->parammeta->types[i]);
-        if (query->parammeta->types != NULL)
-          free(query->parammeta->types);
-        free(query->parammeta);
-        query->parammeta=NULL;
-      }
-      return NULL;
+      return NULL; 
     }
   }
-  if (query->parammeta!=NULL) {
-    int i;
-    for (i = 0; i<query->parammeta->numCols; i++)
-      free(query->parammeta->types[i]);
-    if (query->parammeta->types != NULL)
-      free(query->parammeta->types);
-    free(query->parammeta);
-    query->parammeta = NULL;
-  }
+  
   val = SQLExecute(query->hstmt);
   if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
     driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
@@ -476,6 +397,7 @@ struct xsb_data** driverODBC_execPrepareStatement(struct xsb_data** param, struc
   }
 
   query->resultmeta = (struct driverODBC_meta *)malloc(sizeof(struct driverODBC_meta));
+  query->resultmeta->types = NULL; 
   val = SQLNumResultCols(query->hstmt, (SQLSMALLINT *)(&(query->resultmeta->numCols)));
   if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
     driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
@@ -483,12 +405,11 @@ struct xsb_data** driverODBC_execPrepareStatement(struct xsb_data** param, struc
   }
   handle->numResultCols = query->resultmeta->numCols;
   if (query->resultmeta->numCols == 0) {
-    query->resultmeta->types = NULL;
-    return NULL;
+    return NULL; 
   }
 
   query->resultmeta->types = (struct driverODBC_columnmeta **)malloc(query->resultmeta->numCols * sizeof(struct driverODBC_columnmeta *));
-  for (i = 0 ; i < query->resultmeta->numCols ; i++)
+  for (i = 0 ; i < query->resultmeta->numCols ; i++) 
     query->resultmeta->types[i] = NULL;
   for (i = 0 ; i < query->resultmeta->numCols ; i++) {
     query->resultmeta->types[i] = (struct driverODBC_columnmeta *)malloc(sizeof(struct driverODBC_columnmeta));
@@ -505,7 +426,6 @@ struct xsb_data** driverODBC_execPrepareStatement(struct xsb_data** param, struc
   }
 
   handle->state = QUERY_RETRIEVE;
-
   return driverODBC_getNextRow(query, 0);
 }
 
@@ -519,15 +439,7 @@ int driverODBC_closeStatement(struct xsb_queryHandle* handle)
   for (i = 0 ; i < numQueries ; i++) {
     if (!strcmp(odbcQueries[i]->handle, handle->handle)) {
       query = odbcQueries[i];
-      if (query->resultmeta != NULL) {
-        for (j = 0 ; j < query->resultmeta->numCols ; j++)
-          if (query->resultmeta->types[j] != NULL)
-            free(query->resultmeta->types[j]);
-        if (query->resultmeta->types != NULL)
-	  free(query->resultmeta->types);
-        free(query->resultmeta);
-      }
-      
+        
       val = SQLFreeHandle(SQL_HANDLE_STMT, query->hstmt);
       if (val != SQL_SUCCESS && val != SQL_SUCCESS_WITH_INFO) {
 	driverODBC_error(SQL_HANDLE_STMT, query->hstmt);
@@ -535,13 +447,10 @@ int driverODBC_closeStatement(struct xsb_queryHandle* handle)
       }
       for (j = i + 1 ; j < numQueries ; j++)
 	odbcQueries[j-1] = odbcQueries[j];
-      free(query->handle);
-      free(query->query);
-      free(query);
+      freeQueryInfo(query); 
       numQueries--;
     }
   }
-
   return SUCCESS;
 }
 
@@ -647,4 +556,70 @@ DllExport int call_conv driverODBC_register(void)
   registerXSBFunction("odbc", ERROR_MESG, funcErrorMesg);
 
   return TRUE;
+}
+
+
+void freeQueryInfo(struct driverODBC_queryInfo* query)
+{
+  int i;
+  if (query == NULL)
+    return;
+
+  if (query->query != NULL)
+    free(query->query);
+  if (query->handle != NULL)
+    free(query->handle);
+  if (query->resultmeta != NULL) {
+    for (i = 0 ; i < query->resultmeta->numCols; i++)
+      if (query->resultmeta->types[i] != NULL)
+        free(query->resultmeta->types[i]);
+    if (query->resultmeta->types != NULL)
+      free(query->resultmeta->types);
+    free(query->resultmeta);
+  }
+  if (query->parammeta != NULL) {
+    for (i = 0; i<query->parammeta->numCols; i++)
+      if (query->parammeta->types[i] != NULL)
+        free(query->parammeta->types[i]);
+    if (query->parammeta->types != NULL)
+      free(query->parammeta->types);
+    free(query->parammeta);
+  }
+  free(query);
+  query = NULL;
+  return;
+}
+
+
+void freeResult(struct xsb_data** result, int numOfElements)
+{
+  int i;
+  if (result == NULL)
+    return;
+  for (i =0;i<numOfElements;i++){
+    if (result[i] != NULL) {
+      if (result[i]->type == STRING_TYPE)
+        free(result[i]->val->str_val);
+      free(result[i]->val);
+      free(result[i]);
+    }
+  }
+  free(result);
+  result = NULL;
+  return;
+}
+
+
+void freePcbValues(SQLINTEGER** pcbValues, int numOfElements)
+{
+  int i;
+  if (pcbValues == NULL)
+    return;
+  for (i =0;i<numOfElements;i++){
+    if(pcbValues[i]!=NULL)
+      free(pcbValues[i]);
+  }
+  free(pcbValues);
+  pcbValues =NULL;
+  return;
 }
