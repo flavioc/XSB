@@ -702,8 +702,10 @@ that point XSB tries to find the maximal amount of space that will
 still fit in system memory.  When a thread is created within an XSB
 process, the size of the thread's execution stacks may be set by {\tt
   thread\_create/3}, otherwise the default values indicated in
-Section~\ref{sec:EmuOptions} are used.  In addition, whenever a thread
-exits, memory specific to that thread is reclaimed.
+Section~\ref{sec:EmuOptions} are used.  Once XSB is running, these
+default values may be modified using the appropriate XSB flags (see
+Section~\ref{State}).  In addition, whenever a thread exits, memory
+specific to that thread is reclaimed.
 
 Heap garbage collection is automatically included in XSB
 \cite{CaSC01,CATmem@ISMM-98}.  (To change the algorithm used for heap
@@ -711,10 +713,10 @@ garbage collection or to turn it off altogether, see the predicate
 {\tt garbage\_collection/1} or Section~\ref{sec:EmuOptions} for
 command-line options).  In \version{} the default behavior is indirect
 garbage collection.  Starting with \version{}, heap garbage collection
-may automatically invokes garbage collection of XSB's ``string''
-table, which stores Prolog's atomic constants.  Expansion and garbage
+may automatically invokes garbage collection of XSB's atom table,
+which stores Prolog's atomic constants.  Expansion and garbage
 collection of execution stacks can occur when multiple threads are
-active; however string garbage collection will not be invoked if there
+active; however atom garbage collection will not be invoked if there
 is more than one active XSB thread.
 
 The program area (the area into which XSB byte-code is loaded) is also
@@ -726,11 +728,11 @@ only one active thread, space is reclaimed for retracted clauses and
 abolished predicates as long as (1) there are no choice points that
 may backtrack into the retracted or abolished code, and (2) if the
 dynamic predicate is tabled, all of its tables are completed.
-Otherwise, the code is marked for later garbage collection by {\tt
-  gc\_dynamic/0}.  If more than one thread is active, private
-predicates behave as just described, however space reclamation for
-shared predicates will be delayed until there is a single active
-thread.
+Otherwise, the code is marked for later garbage collection.  If more
+than one thread is active, private predicates behave as just
+described, however space reclamation for shared predicates will be
+delayed until there is a single active thread.  See
+Section~\ref{sec:assert} for details.
 
 Space for tables is dynamically allocated as needed and reclaimed
 through use of the predicates {\tt abolish\_all\_tables/0}, {\tt

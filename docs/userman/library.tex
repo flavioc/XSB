@@ -1215,24 +1215,20 @@ yes
 F = intel-pc
 \end{verbatim}
 
-\ournewitem{setenv(+VarName,+VarVal,+Override}{machine} 
+\ournewitem{putenv(+VarName,+VarVal)}{machine} 
 \index{\texttt{setenv/3}}
 %
 Inserts or resets the environment variable {\tt VarName}.  If {\tt
   VarName} does not exist, it is inserted with {\tt VarVal}.  If the
-{\tt VarName} does exist, {\tt Override} is tested; if {\tt Override}
-is zero, the {\tt VarName} is not reset, otherwise it is reset to {\tt
-  VarVal}.  If {\tt VarName} exists and cannot be reset, {\tt
-  setenv/3} fails, otherwise it succeeds.
+{\tt VarName} does exist, it is reset to {\tt VarVal}.  {\tt putenv/2}
+always succeeds.
 
 Exceptions:
     \begin{description}
-    \item[{\tt instantiation\_error}] {\tt VarName}, {\tt VarVal}, or
-      {\tt Override} is not instantiated at the time of call.
+    \item[{\tt instantiation\_error}] {\tt VarName} or {\tt VarVal} is
+      not instantiated at the time of call.
     \item[{\tt type\_error}]
         {\tt VarName} or {\tt VarVal} is not an atom.
-    \item[{\tt type\_error}]
-        {\tt Override} is not an integer
     \end{description}
 
 \end{description}

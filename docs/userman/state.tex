@@ -619,7 +619,7 @@ module {\tt "usermod"} may be enumerated using:
     %% XSB query evaluation directive
     xsb_configuration(scheduling_strategy, '(batched)').
     %% Support for other languages
-    xsb_configuration(perl_support, 'yes').
+    xsb_configuration(perl_support, 'yes').v
     xsb_configuration(perl_archlib, '/usr/lib/perl5/i386-linux/5.00404').
     xsb_configuration(perl_cc_compiler, 'cc').
     xsb_configuration(perl_ccflags, '-Dbool=char -DHAS_BOOL -I/usr/local/include').
@@ -943,6 +943,17 @@ interpreter level for any thread created through
 {\ xsb\_ccall\_thread\_create()} (see Volume 2, Chapter 3 {\em
   Embedding XSB in a Process}).
 
+\ouritem{gc\_heap}\index{texttt{gc\_heap/0}}
+\index{garbage collection!heap}
+%
+Explicitly invokes the garbage collector for a thread's heap. By
+default, heap garbage collection is called automatically for each
+thread upon stack expansion, unless the {\tt xsb\_flag} {\tt
+  heap\_garbage\_collection} is set to {\tt none}.  Automatic heap
+garbage collection should rarely need to be turned off, and should
+rarely need to be invoked manually.
+
+\comment{
 \ouritem{garbage\_collection(+Option)}\index{texttt{garbage\_collection/1}}
 Sets the system so that subsequent heap garbage collecting will be
 done according to the specified {\tt Option}.  {\tt Option} may be the
@@ -952,6 +963,7 @@ collection will be done; the atom \verb|copying| indicating that the
 copying garbage collector will be used; or it may be the atom
 \verb|indirection| indicating that the indirect-sliding garbage
 collector will be used.
+}
  
 \ouritem{cputime(-CPU\_Time)}\index{\texttt{cputime/1}} 
 %

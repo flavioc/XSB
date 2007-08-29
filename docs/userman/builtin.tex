@@ -1903,7 +1903,7 @@ is an inline predicate, so calls to {\tt is/2} within compiled code
 will not be visible during a trace of program execution.
 \end{description}
 
-\subsection{Evaluable Functors for Arithmetic Expressions}
+\subsection{Evaluable Functors for Arithmetic Expressions} \label{sec:arith-eval}
 
 \begin{description}
 \ournewitem{+(+Expr1,+Expr2)}{Evaluable Functor}\index{\texttt{+/2}} 
@@ -3238,6 +3238,27 @@ This predicate converts a term to a list of ASCII codes.  It is
 defined using the default options for {\tt term\_to\_atom/3},
 e.g. {\tt ignore\_ops(canonical)}, {\tt quoted(false)}, and {\tt
 numbervars(false)}.
+
+\ouritem{gc\_atoms}\index{\texttt{gc\_atoms/0}} 
+\index{garbage collection!atoms}
+%
+Explicitly invokes the garbage collector for atoms that are created,
+but no longer needed.  By default, {\tt gc\_atoms/1} is called
+automatically, unless the {\tt xsb\_flag} {\tt
+  atom\_garbage\_collection} is set to {\tt false}, or if more than
+one thread is active.  However there are reasons why a user may need
+to invoke atom table garbage collection.  First, in \version{}, if
+atom table garbage collection is invoked automatically, and it occurs
+periodically on heap garbage collection, or if numerous asserts and
+retracts have taken place.  These heuristics overlook certain cases
+where numerous atoms may be created without invoking the garbage
+collector -- e.g. through repeated uses of {\tt
+  format\_write\_string/3}.  In addition if user-defined C code
+contains pointers to XSB's atom table, atom table garbage collection
+will be unsafe, as XSB has no way to detect such pointers in external
+code.  In such cases, atom table garbage collection should be turned
+off, and reinvoked at a point where the external pointers are no
+longer used.
 
 \end{description}
 
