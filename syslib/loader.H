@@ -52,3 +52,6 @@
 %%:- import call_xsb_hook/3, xsb_undefined_predicate_hook/1 from xsb_hook.
 :- import xsb_sys_mutex_unlock/1 from thread.
 :- import current_prolog_flag/2 from curr_sym.
+%:- import shell_to_list/3 from shell.
+%:- import memberchk/2 from
+%:- import putenv/1 from machine.
