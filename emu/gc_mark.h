@@ -581,7 +581,7 @@ inline static unsigned long mark_trail_section(CTXTdeclc CPtr begintr, CPtr endt
 	      }
 #else
 	      { ls_mark(i) ;
-	      marked += mark_region(CTXTc trailed_cell, trailed_cell);
+	        marked += mark_root(CTXTc *trailed_cell);
 	      }
 #endif
 	    }
@@ -675,7 +675,6 @@ restart:
       if ((d = cp_pdreg(b)) != NULL) {
 	total_marked += mark_root(CTXTc (Cell)d);
       }
-
       total_marked += mark_trail_section(CTXTc a,(CPtr) tr);
 
       /* mark the arguments in the choicepoint */

@@ -500,6 +500,7 @@ typedef struct compl_susp_choice_point {
 #define restore_some_wamregs(t_breg, t_ereg) \
     if (hbreg >= hfreg) hreg = hbreg; else hreg = hfreg; \
     cpreg = cp_cpreg(t_breg); \
-    t_ereg = cp_ereg(t_breg)
+    t_ereg = cp_ereg(t_breg); \
+    reg_arrayptr = reg_array - 1
 
 #endif

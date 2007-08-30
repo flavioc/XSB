@@ -219,8 +219,6 @@ int     delay_it;
 #define restore_trie_registers(temp) {			\
     int i;						\
     CPtr treg = temp;					\
-							\
-    reg_arrayptr = reg_array - 1;			\
     i = cell(treg);					\
     i = int_val(i);					\
     while (i > 0) {					\
