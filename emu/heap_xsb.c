@@ -535,6 +535,9 @@ xsbBool glstack_realloc(CTXTdeclc int new_size, int arity)
   }
 
   /* Update the attributed variables interrupt list --lfcastro */
+  /* There is a bug here, I think, since the count may be set 
+     back to 0, but there may heap ptrs in the pre-image trail 
+     still to attv_interrupts that need relocating. (dsw 8/07) */
   { 
     int size = int_val(cell(interrupt_reg));
     int i;
