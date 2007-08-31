@@ -7,7 +7,7 @@
 dir=`PWD`
 
 rm -rf xsb
-rm -rf xsb-3.1.pkg 
+rm -rf xsb-3.1-*.pkg 
 rm -f xsb-3.1.tar.gz
 
 cvs -z3 -d :pserver:anonymous@xsb.cvs.sourceforge.net:/cvsroot/xsb export -Dnow -d xsb XSB
@@ -15,6 +15,9 @@ cvs -z3 -d :pserver:anonymous@xsb.cvs.sourceforge.net:/cvsroot/xsb export -Dnow 
 cd xsb
 chmod a+x admin/cleandist.sh
 admin/cleandist.sh
+
+cd ..
+tar -czf xsb-3.1.tar.gz xsb
 
 md5="`md5 -q xsb-3.1.tar.gz`"
 sudo mkdir -p /opt/local/var/macports/distfiles/xsb
@@ -24,5 +27,5 @@ sudo sed -e 's/^version.*/version 3.1/' -i '' Portfile
 sudo sed -e "s/^checksums.*/checksums md5 $md5/" -i '' Portfile
 sudo port -k -d destroot
 sudo port -d pkg
-cp -R work/xsb-3.1.pkg $dir
+cp -R work/xsb-3.1.pkg $dir/xsb-3.1-`uname -p`.pkg
 sudo port clean
