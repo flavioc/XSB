@@ -19,7 +19,6 @@ find . -type d -print0 | xargs -0 chmod 755
 
 find . -type f -name "*.sh" -print0 | xargs -0 chmod a+x
 
-cd build
-chmod a+x configure config.guess config.sub topMakefile.in
-cd ../admin/macosx
-chmod a+x postflight
+chmod a+x admin/macosx/postflight
+chmod a+x build/configure build/config.guess build/config.sub
+chmod a+x build/topMakefile.in
