@@ -4,20 +4,20 @@ echo ""
 echo "Checking for the XSB_DIR environment variable definition..."
 echo ""
 
-if grep "XSB_DIR=/opt/local/share/xsb" /etc/profile >/dev/null 2>&1; then
+if grep "XSB_DIR=/opt/local/share/xsb/3.1" /etc/profile >/dev/null 2>&1; then
 	echo "XSB_DIR environment variable default value already set for bash!"
 else
 	/bin/cp -fp /etc/profile /etc/profile.xsbsaved
 	echo '' >> /etc/profile
-	echo 'export XSB_DIR=/opt/local/share/xsb' >> /etc/profile
+	echo 'export XSB_DIR=/opt/local/share/xsb/3.1' >> /etc/profile
 fi
 
-if grep "setenv XSB_DIR /opt/local/share/xsb" /etc/csh.cshrc >/dev/null 2>&1; then
+if grep "setenv XSB_DIR /opt/local/share/xsb/3.1" /etc/csh.cshrc >/dev/null 2>&1; then
 	echo "XSB_DIR environment variable default value already set for csh!"
 else
 	/bin/cp -fp /etc/csh.cshrc /etc/csh.cshrc.xsbsaved
 	echo '' >> /etc/csh.cshrc
-	echo "setenv XSB_DIR /opt/local/share/xsb" >> /etc/csh.cshrc
+	echo "setenv XSB_DIR /opt/local/share/xsb/3.1" >> /etc/csh.cshrc
 fi
 
 echo ""
