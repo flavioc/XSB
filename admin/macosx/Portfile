@@ -19,7 +19,7 @@ long_description	\
 homepage		http://xsb.sourceforge.net/	
 master_sites	sourceforge
 
-checksums md5 a267ca931074d06b7349553eab0728e6
+checksums md5 e69ac70cdca4f3ac237701756f70a5db
 
 configure.args	--prefix=${destroot}/${prefix}/share/${name}
 
@@ -49,6 +49,7 @@ variant st {
 variant mt {
 	configure.args-append --enable-mt
 	build.cmd-append --config-tag=mt
+	destroot.cmd-append --config-tag=mt
 	post-destroot {
 		cd ${destroot}${prefix}/bin
 		system "ln -sf ../share/${name}/${version}/bin/xsb-mt xsb"
