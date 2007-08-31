@@ -1,24 +1,20 @@
 #!/bin/sh
 
-## ================================================================
+## ====================================================================
 ## This script builds a MacOS X Installer package using MacPorts
-## ================================================================
+## ====================================================================
 
 dir=`PWD`
+
+rm -rf xsb
+rm -rf xsb-3.1.pkg 
+rm -f xsb-3.1.tar.gz
 
 cvs -z3 -d :pserver:anonymous@xsb.cvs.sourceforge.net:/cvsroot/xsb export -Dnow -d xsb XSB
 
 cd xsb
-find . -type f -print0 | xargs -0 chmod 644
-find . -type d -print0 | xargs -0 chmod 755
-cd build
-chmod a+x configure config.guess config.sub *.sh topMakefile.in
-cd ../syslib
-chmod a+x CompileChangedFiles.sh
-cd ../admin/macosx
-chmod a+x postflight
-cd ../../..
-tar -czf xsb-3.1.tar.gz xsb
+chmod a+x admin/cleandist.sh
+admin/cleandist.sh
 
 md5="`md5 -q xsb-3.1.tar.gz`"
 sudo mkdir -p /opt/local/var/macports/distfiles/xsb
