@@ -157,7 +157,9 @@ tbody(or(Goal,Goals),A,Pil,Pilr,Tin,[],Meet,Nested,HoldRegs,Tabled,Tabar,Sym,NC)
     ),
     ( more_branches(Goals) -> Pil3=Pil4 ; Pil3 = [trustmeorelsefail(A)|Pil4] ),
     tbody(Goals,A,Pil4,Pil5,Tin,_,ThisMeet,yes,HoldRegs,Tabled,Tabar,Sym,NC).
-
+tbody(if_then_else(inlinegoal(fail,0,[]),_,FGoal),A,Pil,Pilr,Tin,Tout,M,N,
+      HoldRegs,Tabled,Tabar,Sym,NC) :- !,  % to handle test of fail
+    tbody(FGoal,A,Pil,Pilr,Tin,Tout,M,N,HoldRegs,Tabled,Tabar,Sym,NC).
 tbody(if_then_else(Test,TGoal,FGoal),A,Pil,Pilr,Tin,Tout,M,_,
       HoldRegs0,Tabled,Tabar,Sym,NC) :-
     gennum(TLabId), TLabel = label(then,(disj,TLabId)),
