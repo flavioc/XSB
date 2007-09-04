@@ -25,6 +25,8 @@
 
 #include "debugs/debug_attv.h"
 
+#define attv_pending_interrupts (isnonvar(cell((CPtr)glstack.low)))
+
 #ifndef MULTI_THREAD
 /* Argument Registers
    ------------------ */
@@ -140,8 +142,7 @@ unsigned long dec[8] = {_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL
   else if (isnil(op)) {XSB_Next_Instr();} /* op == [] */		\
   else if (isattv(op)) {						\
     xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_nil, interrupt needed\n"));	\
-    /* add_interrupt(op, makenil);	*/				\
-    add_interrupt(CTXTc cell(((CPtr)dec_addr(op1) + 1)),makenil);   		\
+    add_interrupt(CTXTc cell(((CPtr)dec_addr(op1) + 1)),makenil);   	\
     bind_copy((CPtr)dec_addr(op1), makenil);                  		\
   }									\
   else Fail1;	/* op is LIST, INT, or FLOAT */
@@ -159,9 +160,8 @@ unsigned long dec[8] = {_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL
   }									\
   else if (isattv(OP1)) {						\
     xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_con, interrupt needed\n"));	\
-    /* add_interrupt(OP1, makestring((char *)OP2)); */			\
     add_interrupt(CTXTc cell(((CPtr)dec_addr(op1) + 1)),makestring((char *)OP2));   	\
-    bind_string((CPtr)dec_addr(op1),(char *)OP2);     	\
+    bind_string((CPtr)dec_addr(op1),(char *)OP2);		     	\
   }									\
   else Fail1;
 
@@ -173,16 +173,15 @@ unsigned long dec[8] = {_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL
   XSB_Deref(OP1);      							\
   if (isref(OP1)) {							\
     /* op1 is FREE */							\
-    bind_oint((CPtr)(OP1), (Integer)OP2);                 			\
+    bind_oint((CPtr)(OP1), (Integer)OP2);                 		\
   }									\
   else if (isinteger(OP1)) {						\
-    if (oint_val(OP1) == (Integer)OP2) {XSB_Next_Instr();} else Fail1;	        \
+    if (oint_val(OP1) == (Integer)OP2) {XSB_Next_Instr();} else Fail1;	\
   }									\
   else if (isattv(OP1)) {						\
     xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_num, interrupt needed\n"));	\
-    /* add_interrupt(OP1, OP2); */				        \
     add_interrupt(CTXTc cell(((CPtr)dec_addr(op1) + 1)),makeint(OP2));  \
-    bind_oint((CPtr)dec_addr(op1), (Integer)OP2);                 		\
+    bind_oint((CPtr)dec_addr(op1), (Integer)OP2);                 	\
   }									\
   else Fail1;	/* op1 is STRING, FLOAT, STRUCT, or LIST */
 
@@ -202,7 +201,6 @@ unsigned long dec[8] = {_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL
   }									\
   else if (isattv(OP1)) {						\
     xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_float, interrupt needed\n"));	\
-    /* add_interrupt(OP1, OP2); */				        \
     add_interrupt(CTXTc cell(((CPtr)dec_addr(op1) + 1)),makefloat(OP2)); \
     bind_float_tagged((CPtr)dec_addr(op1), makefloat(OP2));		\
   }									\
@@ -224,7 +222,6 @@ unsigned long dec[8] = {_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL
   }									\
   else if (isattv(OP1)) {						\
     xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_float, interrupt needed\n"));	\
-    /* add_interrupt(OP1, OP2); */				        \
     add_interrupt(CTXTc cell(((CPtr)dec_addr(op1) + 1)),makefloat(OP2)); \
     bind_boxedfloat((CPtr)dec_addr(op1), OP2);				\
   }									\
@@ -260,7 +257,7 @@ unsigned long dec[8] = {_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL
   } else if (isattv(OP1)) {						\
     xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_str, interrupt needed\n"));	\
     /* add_interrupt(OP1, makecs(hreg)); */				\
-    add_interrupt(CTXTc cell(((CPtr)dec_addr(op1) + 1)),makecs(hreg));	\
+    add_interrupt(CTXTc cell(((CPtr)dec_addr(op1) + 1)),makecs(hreg+INT_REC_SIZE));	\
     bind_copy((CPtr)dec_addr(op1), makecs(hreg));                       \
     new_heap_functor(hreg, (Psc)OP2);					\
     flag = WRITE;							\
@@ -282,8 +279,7 @@ unsigned long dec[8] = {_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL
   }									\
   else if (isattv(OP1)) {						\
     xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_list_sym, interrupt needed\n"));	\
-    /* add_interrupt(OP1, makelist(hreg)); */				\
-    add_interrupt(CTXTc cell(((CPtr)dec_addr(op1) + 1)),makelist(hreg));\
+    add_interrupt(CTXTc cell(((CPtr)dec_addr(op1) + 1)),makelist(hreg+INT_REC_SIZE));\
     bind_copy((CPtr)dec_addr(op1), makelist(hreg));                     \
     flag = WRITE;							\
   }									\
@@ -317,9 +313,8 @@ unsigned long dec[8] = {_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL
   }								\
   else {							\
     xsb_dbgmsg((LOG_ATTV,">>>> nunify_with_attv, interrupt needed\n"));	\
-    /* add_interrupt(makeattv(hreg), OP1); */			\
-    *hreg = OP1; hreg++;					\
-    add_interrupt(CTXTc (Integer)hreg, OP1);			\
+    add_interrupt(CTXTc (Integer)(hreg+(INT_REC_SIZE+1)), OP1); \
+    *hreg = OP1; hreg++;			 \
   }								\
   flag = WRITE;							\
 }
@@ -329,10 +324,10 @@ unsigned long dec[8] = {_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL
 /* TLS: refactored to support Thread Cancellation */
 
 #define call_sub(PSC) {							\
-  if ( !(asynint_val) & !int_val(cell(interrupt_reg)) ) {   	        \
+  if ( !(asynint_val) & !attv_pending_interrupts ) {   	        \
     lpcreg = (pb)get_ep(PSC);						\
   } else {								\
-    if (int_val(cell(interrupt_reg))) {					\
+    if (attv_pending_interrupts) {					\
       synint_proc(CTXTc PSC, MYSIG_ATTV);		                \
       lpcreg = pcreg;							\
     }									\
@@ -367,7 +362,7 @@ unsigned long dec[8] = {_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL
 }
 
 #define proceed_sub {							\
-  if ( !(asynint_val) & !int_val(cell(interrupt_reg)) ) {		\
+  if ( !(asynint_val) & !attv_pending_interrupts ) {		\
      lpcreg = cpreg;							\
   } else {								\
     if (asynint_val) {							\
@@ -393,7 +388,7 @@ unsigned long dec[8] = {_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL
         lpcreg = cpreg;							\
         asynint_code = 0;						\
      }									\
-    } else if (int_val(cell(interrupt_reg))) {				\
+    } else if (attv_pending_interrupts) {				\
         synint_proc(CTXTc true_psc, MYSIG_ATTV);			\
         lpcreg = pcreg;							\
     }									\

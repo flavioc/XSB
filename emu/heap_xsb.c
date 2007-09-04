@@ -158,7 +158,6 @@ unmarking marked strings.
 #include "flags_xsb.h"     /* for checking whether functionality is enabled */
 #include "heap_xsb.h"
 #include "io_builtins_xsb.h"
-#include "subp.h"          /* for attv_interrupts[][] */
 #include "binding.h"       /* for PRE_IMAGE_TRAIL */
 #include "thread_xsb.h"	   /* for mutex definitions */
 #include "debug_xsb.h"
@@ -534,19 +533,6 @@ xsbBool glstack_realloc(CTXTdeclc int new_size, int arity)
     i++;
   }
 
-  /* Update the attributed variables interrupt list --lfcastro */
-  /* There is a bug here, I think, since the count may be set 
-     back to 0, but there may heap ptrs in the pre-image trail 
-     still to attv_interrupts that need relocating. (dsw 8/07) */
-  { 
-    int size = int_val(cell(interrupt_reg));
-    int i;
-    for (i=0; i<size; i++) {
-      reallocate_heap_or_ls_pointer(((CPtr *)&(attv_interrupts[i][0])));
-      reallocate_heap_or_ls_pointer(((CPtr *)&(attv_interrupts[i][1])));
-    }
-  }
-
   /* Update the system variables */
   glstack.low = (byte *)new_heap_bot ;
   glstack.high = (byte *)(new_ls_bot + 1) ;
@@ -591,14 +577,6 @@ int gc_heap(CTXTdeclc int arity, int ifStringGC)
   int  rnum_in_reg_array = (reg_arrayptr-reg_array)+1;
   DECL_GC_PROFILE;
 
-  if (int_val(cell(interrupt_reg))) { 
-    /* until we gc attv_interrupts[] or change it: Also note this doesn't catch 
-       all problems, since this count might be reset to zero but there may still be
-       forward trail pointers into attv_interrupts and pointers there to the heap
-       won't get relocated (dsw)*/
-    fprintf(stderr,"Garbage Collection not done due to pending attv interrupts\n");
-    return(TRUE);  
-  }
   //  printf("start gc: hf:%p,h:%p\n",hfreg,hreg);
   INIT_GC_PROFILE;
   if (pflags[GARBAGE_COLLECT] != NO_GC) {

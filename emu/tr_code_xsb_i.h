@@ -274,7 +274,7 @@ int     delay_it;
   }								\
   else if (isattv(*reg_arrayptr)) {				\
     attv_dbgmsg(">>>> add_interrupt in unify_with_trie_str\n");	\
-    add_interrupt(CTXTc cell(((CPtr)dec_addr(*reg_arrayptr) + 1)), makecs(hreg));	\
+    add_interrupt(CTXTc cell(((CPtr)dec_addr(*reg_arrayptr) + 1)), makecs(hreg+INT_REC_SIZE));	\
     bind_copy((CPtr)dec_addr(*reg_array), makecs(hreg));        \
     reg_arrayptr--;						\
     *(hreg++) = (Cell) psc;					\
@@ -315,7 +315,7 @@ int     delay_it;
   }									\
   else if (isattv(*reg_arrayptr)) {					\
     attv_dbgmsg(">>>> add_interrupt in unify_with_trie_list\n");	\
-    add_interrupt(CTXTc cell(((CPtr)dec_addr(*reg_arrayptr) + 1)), makelist(hreg));	\
+    add_interrupt(CTXTc cell(((CPtr)dec_addr(*reg_arrayptr) + 1)), makelist(hreg+INT_REC_SIZE));	\
     bind_copy((CPtr)dec_addr(*reg_arrayptr), makelist(hreg));       \
     *reg_arrayptr = (Cell)(hreg+1);         /* tail of list */		\
     will_overflow_reg_array(reg_arrayptr + 1);				\
@@ -385,12 +385,12 @@ int     delay_it;
     bind_ref((CPtr) *reg_arrayptr, makeattv(hreg));			\
   }									\
   else if (isattv(*reg_arrayptr)) {					\
-    add_interrupt(CTXTc cell(((CPtr)dec_addr(*reg_arrayptr) + 1)),makeattv(hreg));   \
+    add_interrupt(CTXTc cell(((CPtr)dec_addr(*reg_arrayptr) + 1)),makeattv(hreg+INT_REC_SIZE));   \
     bind_ref((CPtr)dec_addr(*reg_arrayptr), makeattv(hreg));	\
   }									\
   else {								\
     attv_dbgmsg(">>>> add_interrupt in unify_with_trie_attv\n");	\
-    add_interrupt(CTXTc makeattv(hreg), *reg_arrayptr);			\
+    add_interrupt(CTXTc makeattv(hreg+INT_REC_SIZE), *reg_arrayptr);			\
   }									\
   var_regs[num_vars_in_var_regs] = (CPtr) makeattv(hreg);		\
   new_heap_free(hreg);							\

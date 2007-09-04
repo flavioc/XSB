@@ -106,74 +106,67 @@ static struct sigaction act, oact;
 void (*xsb_default_segfault_handler)(int); /* where the previous value of the
 					     SIGSEGV/SIGBUS handler is saved */
 
-#ifndef MULTI_THREAD
-Cell attv_interrupts[20480][2];
-#endif
-
 /*
  * Put an attv interrupt into the interrupt chain. op1 is the related
  * attv, and op2 is the value (see verify_attributes/2).
  */
 
 void add_interrupt(CTXTdeclc Cell op1, Cell op2) {
-  int num;
 
-#ifndef PRE_IMAGE_TRAIL
-#error "PRE_IMAGE_TRAIL has to be defined for add_interrupt() !"
-#else
+  Cell head, tail, temp;
+  CPtr addr_head, addr_tail;
 
-  /*  printf("add_interrupt(");  
-  dbg_printterm(0,stddbg,op1, 10);  
-  printf(","); dbg_printterm(0,stddbg,op2, 10); printf(")\n");*/
+  addr_head = (CPtr)glstack.low;
+  head = cell(addr_head); // addr of interrupt list
+  addr_tail = (CPtr)glstack.low+1;
+  tail = cell(addr_tail); // addr of last cons cell of interrupt list
 
-  num = int_val(cell(interrupt_reg));
-  /**printf("interrupt count = %d\n",num);**/
-  push_pre_image_trail(&(attv_interrupts[num][0]), op1);
-  attv_interrupts[num][0] = op1;
-  push_pre_image_trail(&(attv_interrupts[num][1]), op2);
-  attv_interrupts[num][1] = op2;
-  num++;
-  push_pre_image_trail(interrupt_reg, makeint(num));
-  bld_int(interrupt_reg, num);
+  // Build the new list cons pair and the new op-pair cons
+  // This record is 4 words long and so INT_REC_SIZE=4
+  bld_list(&temp,hreg);  // temp -> new cons pair 1
+  bld_list(hreg,hreg+2); // 1.car -> 2nd new cons pair 2
+  hreg++;
+  bld_free(hreg);        // 1.cdr is free var
+  hreg++;
+  bld_copy(hreg,op1);    // 2.car is op1
+  hreg++;
+  bld_copy(hreg,op2);    // 2.cdr is op2
+  hreg++;
 
-#endif
-}
-
-
-/* Builds a list of interrupts on the heap.  As of 11/05, Called by
-   the check_interrupt instruction; as well as synint_proc().  Both of
-   these calls usually set reg1 to the chain, and call the handler */
-Cell build_interrupt_chain(CTXTdecl) {
-  Cell head;
-  CPtr tmp = &head;
-  int num, i;
-
-  num = int_val(cell(interrupt_reg));
-  for (i = 0; i < num; i++) {
-    bld_list(tmp, hreg);
-    sreg = hreg + 2;
-    bld_list(hreg, sreg); hreg++;
-    if (i == (num - 1)) {
-      bind_nil(hreg);
-    }
-    else
-      tmp = hreg;
-    bld_copy(sreg, attv_interrupts[i][0]); sreg++;
-    bld_copy(sreg, attv_interrupts[i][1]); sreg++;
-    hreg = sreg;
+  if (isnonvar(head)) { // nonempty
+    CPtr addr_cdr;
+    addr_cdr = clref_val(tail)+1;
+    bind_copy(addr_cdr,temp);
+    push_pre_image_trail(addr_cdr,temp);
+    bld_list(addr_cdr,temp);
+  } else { // first
+    bind_copy(addr_head,temp);
+    bind_copy(addr_tail,temp);
   }
-
-#ifndef PRE_IMAGE_TRAIL
-#error "PRE_IMAGE_TRAIL has to be defined for synint_proc() !"
-#else
-  /* Reset the interrupt counter to 0 for further attv interrupts. */
-  push_pre_image_trail(interrupt_reg, makeint(0));
-#endif
-
-  bld_int(interrupt_reg, 0);
-
-  return head;
 }
+
+Cell build_interrupt_chain(CTXTdecl) {
+  Cell head, tail;
+  CPtr addr_head, addr_tail;
+
+  addr_tail = (CPtr)glstack.low+1;
+  tail = cell(addr_tail); // addr of last cons cell of interrupt list
+  bind_nil(clref_val(tail)+1);
+
+  addr_head = (CPtr)glstack.low;
+  head = cell(addr_head);  
+
+  // set intlist back to empty;
+  push_pre_image_trail(addr_head,addr_head);
+  bld_free(addr_head);
+  bind_copy(addr_head,(Cell)addr_head);
+  push_pre_image_trail(addr_tail,addr_tail);
+  bld_free(addr_tail);
+  bind_copy(addr_tail,(Cell)addr_head);
+
+  return(head); // addr of interrupt list
+}
+
 
 /*======================================================================*/
 /*  Unification routines.						*/
@@ -387,9 +380,8 @@ Psc synint_proc(CTXTdeclc Psc psc, int intcode)
 	bld_cs(reg+2, build_call(CTXTc psc));
       psc = (Psc)pflags[intcode+INT_HANDLERS_FLAGS_START];
       /*
-       * Pass the interrupt chain to reg 1.  The counter of attv
-       * interrupts (stored in *interrupt_reg) will be reset to 0 in
-       * build_interrupt_chain()).
+       * Pass the interrupt chain to reg 1.  The interrupt chain
+       * will be reset to 0 in build_interrupt_chain()).
        */
       bld_copy(reg + 1, build_interrupt_chain(CTXT));
       /* bld_int(reg + 3, intcode); */	/* Not really needed */

@@ -2479,7 +2479,7 @@ case WRITE_OUT_PROFILE:
     reclaim_uninterned_nr(CTXTc iso_ptoc_int(CTXTc 1,"reclaim_uninterned_nr/1"));
     break;
   case GLOBALVAR:
-    ctop_tag(CTXTc 1, ((Cell)glstack.low));
+    ctop_tag(CTXTc 1, cell((CPtr)glstack.low+2));
     break;
   case CCALL_STORE_ERROR: {
 #ifdef MULTI_THREAD

@@ -47,3 +47,5 @@ extern byte *exception_handler(CTXTdeclc char *);
 extern Psc synint_proc(CTXTdeclc Psc, int);
 extern void add_interrupt(CTXTdeclc Cell, Cell);
 extern Cell build_interrupt_chain(CTXTdecl);
+
+#define INT_REC_SIZE 4   /* number of words in heap interrupt record */

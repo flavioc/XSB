@@ -225,9 +225,7 @@ static CPtr copy_heap(CTXTdeclc int marked, CPtr begin_new_h, CPtr end_new_h, in
 	  continue;
 	tr_clear_mark(p-tr_bot);
 #endif
-	/* TLS: I'm guessing at the change here from hp_pointer to trail_hp_pointer.
-	   See the reasoning in the documentation of this function. */
-	q = trail_hp_pointer_from_cell(CTXTc contents,&tag) ;
+	q = hp_pointer_from_cell(CTXTc contents,&tag) ;
 	if (!q) continue ;
 	if (h_marked(q-heap_bot)) 
 	  find_and_copy_block(CTXTc q); 

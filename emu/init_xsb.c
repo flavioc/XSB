@@ -841,8 +841,6 @@ int pipe_input_stream() {
 void init_thread_structures(CTXTdecl)
 {
 
-  interrupt_reg = &interrupt_counter;
-
   asynint_code = 0;
   asynint_val = 0;
 
@@ -1214,15 +1212,11 @@ void init_machine(CTXTdeclc int glsize, int tcpsize,
 
   pdlreg = (CPtr)(pdl.high) - 1;
 
-/*   interrupt_reg = (CPtr)(glstack.low); */
-  bld_int(interrupt_reg, 0);
-
   hbreg = hreg = (CPtr)(glstack.low);
   
-  /* Use first word in the heap as the global variable, exported to
-     Prolog via the 'globalvar/1' builtin */
-  bld_free(hreg);
-  hreg++;
+  bld_free(hreg); hreg++;  // head of attv interrupt chain
+  bld_free(hreg); hreg++;  // last cons of attv interrupt chain
+  bld_free(hreg); hreg++;  // global variable, from Prolog via 'globalvar/1'
 
   ebreg = ereg = (CPtr)(glstack.high) - 1;
 

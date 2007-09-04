@@ -1777,7 +1777,7 @@ argument positions.
     
     Op1(get_xxxs);
     ADVANCE_PC(size_xxxX);
-    if (int_val(cell(interrupt_reg)) > 0) {
+    if (attv_pending_interrupts) {
       cpreg = lpcreg;
       bld_cs(reg + 2, hreg);	/* see subp.c: build_call() */
       new_heap_functor(hreg, true_psc);

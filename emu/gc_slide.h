@@ -290,7 +290,7 @@ static CPtr slide_heap(CTXTdeclc int num_marked)
 	  continue;
 	tr_clear_mark(p-tr_bot);
 #endif
-	  q = trail_hp_pointer_from_cell(CTXTc contents,&tag) ;
+	  q = hp_pointer_from_cell(CTXTc contents,&tag) ;
 	  if (!q) continue ;
 	  if (! h_marked(q-heap_bot)) {
 	    continue ;

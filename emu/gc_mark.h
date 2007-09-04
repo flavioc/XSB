@@ -107,46 +107,6 @@ actually in the heap.
 */
 
 #ifdef GC
-inline static CPtr trail_hp_pointer_from_cell(CTXTdeclc Cell cell, int *tag)
-{
-  int t;
-  CPtr retp;
-
-  t = cell_tag(cell) ;
-
-  /* the use of if-tests rather than a switch is for efficiency ! */
-  /* as this function is very heavily used - do not modify */
-  if (t == XSB_LIST)
-    {
-      *tag = XSB_LIST;
-      retp = clref_val(cell);
-      if (points_into_heap(retp)) return(retp);
-    }
-  if (t == XSB_STRUCT)
-    {
-      *tag = XSB_STRUCT;
-      retp = (CPtr)(cs_val(cell));
-      if (points_into_heap(retp)) return(retp);
-    }
-  if ((t == XSB_REF) || (t == XSB_REF1))
-    {
-
-      *tag = t;
-      retp = (CPtr)cell ;
-      if (points_into_heap(retp)) return(retp);
-    }
-  if (t == XSB_ATTV)
-    {
-      *tag = XSB_ATTV;
-      retp = clref_val(cell);
-      testreturnit(retp);
-    }
-
-  return NULL;
-} /* trail_hp_pointer_from_cell */
-
-/********/
-
 inline static CPtr hp_pointer_from_cell(CTXTdeclc Cell cell, int *tag)
 {
   int t;
@@ -791,29 +751,6 @@ static int mark_hreg_from_choicepoints(CTXTdecl)
 
 /*-------------------------------------------------------------------------*/
 
-/**
- * mark_from_attv_array: marks reachable cells from the attributed variables 
- *                       interrupt chain.
- * 
- * 
- * Return value: number of marked cells.
- **/
-static int mark_from_attv_array(CTXTdecl)
-{
-  int i,max;
-  int m=0;
-
-  max = int_val(cell(interrupt_reg));
-
-  for (i=0; i<max; i++) {
-    m += mark_cell(CTXTc (CPtr) attv_interrupts[i][0]);
-    m += mark_cell(CTXTc (CPtr) attv_interrupts[i][1]);
-  }
-  return m;
-}
-
-/*-------------------------------------------------------------------------*/
-
 
 int mark_heap(CTXTdeclc int arity, int *marked_dregs)
 {
@@ -873,7 +810,7 @@ int mark_heap(CTXTdeclc int arity, int *marked_dregs)
     marked += mark_region(CTXTc reg_array,reg_arrayptr);
   }
   /* Heap[0] is a global variable */
-  marked += mark_root(CTXTc (Cell)glstack.low);
+  marked += mark_region(CTXTc (CPtr)glstack.low, (CPtr)glstack.low+2);
   
   if (slide)
     { 
@@ -910,8 +847,6 @@ int mark_heap(CTXTdeclc int arity, int *marked_dregs)
 #endif
 
   marked += mark_query(CTXT);
-
-  marked += mark_from_attv_array(CTXT);
 
   if (slide)
     marked += mark_hreg_from_choicepoints(CTXT);
