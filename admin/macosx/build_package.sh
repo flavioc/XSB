@@ -2,6 +2,17 @@
 
 ## ====================================================================
 ## This script builds a MacOS X Installer package using MacPorts
+##
+## The installer is built from the latest CVS sources; you may modify 
+## the cvs command below to use instead a tag or a date.
+##
+## The script must be run from a MacOS X computer with the MacPorts
+## installed. Run the script by typing "./build_package.sh" and enter
+## your admin password when asked. The package will be copied to the
+## to the same directory containing the script. Use the MacOS X Finder
+## "Create archive of..." command to zip the installer package before
+## uploading.
+##
 ## ====================================================================
 
 dir=`PWD`
