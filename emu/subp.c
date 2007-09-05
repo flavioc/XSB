@@ -137,8 +137,8 @@ void add_interrupt(CTXTdeclc Cell op1, Cell op2) {
     CPtr addr_cdr;
     addr_cdr = clref_val(tail)+1;
     bind_copy(addr_cdr,temp);
-    push_pre_image_trail(addr_cdr,temp);
-    bld_list(addr_cdr,temp);
+    push_pre_image_trail(addr_tail,temp);
+    bld_copy(addr_tail,temp);
   } else { // first
     bind_copy(addr_head,temp);
     bind_copy(addr_tail,temp);
@@ -151,7 +151,7 @@ Cell build_interrupt_chain(CTXTdecl) {
 
   addr_tail = (CPtr)glstack.low+1;
   tail = cell(addr_tail); // addr of last cons cell of interrupt list
-  bind_nil(clref_val(tail)+1);
+  bind_nil(clref_val(tail)+1);  // close the tail
 
   addr_head = (CPtr)glstack.low;
   head = cell(addr_head);  
@@ -159,10 +159,8 @@ Cell build_interrupt_chain(CTXTdecl) {
   // set intlist back to empty;
   push_pre_image_trail(addr_head,addr_head);
   bld_free(addr_head);
-  bind_copy(addr_head,(Cell)addr_head);
   push_pre_image_trail(addr_tail,addr_tail);
   bld_free(addr_tail);
-  bind_copy(addr_tail,(Cell)addr_head);
 
   return(head); // addr of interrupt list
 }
