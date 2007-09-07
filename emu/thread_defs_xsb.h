@@ -92,17 +92,16 @@
 #define THREAD_PEEK_MESSAGE             49
 #define THREAD_REPEEK_MESSAGE           50
 #define THREAD_UNLOCK_QUEUE             51
+#define XSB_FIRST_THREAD_PROPERTY       52
+#define XSB_NEXT_THREAD_PROPERTY        53
 
 #define MAX_THREADS		1024
-
 
 /* MUTEX KINDS (under LINUX) */
 
 #define XSB_FAST_MUTEX		1
 #define XSB_RECURSIVE_MUTEX	2
 #define XSB_ERRORCHECK_MUTEX	3
-
-
 
 /* Mutexes to protect execution of critical system stuff */
 

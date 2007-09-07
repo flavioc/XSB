@@ -955,11 +955,11 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  if (rc != 0) {
 	    if (rc == EINVAL) { /* pthread found, but not joinable */
 	      xsb_permission_error(CTXTc "thread_join","non-joinable thread",
-				   reg[2],"xsb_thread_join",1); 
+				   reg[2],"thread_join",1); 
 	    } else {
 	      if (rc == ESRCH)  { /* no such pthread found */
 		xsb_existence_error(CTXTc "thread",reg[2],
-				    "xsb_thread_join",1,1); 
+				    "thread_join",1,1); 
 	      }
 	    }
 	  }
@@ -1140,12 +1140,14 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  rc = 0;
 	  break;
 
-	  /* TLS: may generalize -- right now, just detached/joinable */
+	  /* TLS: XSB_FIRST_THREAD_PROPERTY, XSB_NEXT_THREAD_PROPERTY
+	     are used when backtracking through threads. */
 	case XSB_THREAD_PROPERTY: 
 	  i = iso_ptoc_int(CTXTc 2,"thread_property/2");
 	  if( !VALID_THREAD(i) )
-		xsb_abort( "[THREAD] Invalid Thread Id" ) ;
+	    xsb_existence_error(th, "thread", reg[2], "thread_property", 1,1);
 	  ctop_int(CTXTc 3, th_vec[ THREAD_ENTRY(i) ].detached);
+	  ctop_int(CTXTc 4, th_vec[ THREAD_ENTRY(i) ].status);
 	  break;
 
 	  /* for now, one interrupt, but possibly we should allow
@@ -1491,6 +1493,43 @@ case THREAD_ACCEPT_MESSAGE: {
 	case THREAD_UNLOCK_QUEUE: {
 	  XSB_MQ_Ptr message_queue = (XSB_MQ_Ptr) ptoc_int(CTXTc 2);
 	  pthread_mutex_unlock(&message_queue->mq_mutex);
+	  break;
+	}
+
+	case XSB_FIRST_THREAD_PROPERTY: {
+	  int tid;
+	  int id;
+	  if (th_first_thread != NULL) {
+	    tid = (int) (th_first_thread - &th_vec[0]);
+	    SET_THREAD_INCARN(tid,th_first_thread->incarn);
+	    ctop_int(CTXTc 2, tid);
+	    ctop_int(CTXTc 3, th_first_thread -> detached);
+	    ctop_int(CTXTc 4, th_first_thread -> status);
+	    if (th_first_thread -> next_entry) {
+	      id = (th_first_thread-> next_entry) - (&th_vec[0]);
+	      SET_THREAD_INCARN(id,th_vec[id].incarn);
+	      ctop_int(CTXTc 5, id);
+	    }
+	    else ctop_int(CTXTc 5, 0);
+	  }
+	  else return FALSE;
+	  break;
+	}
+
+	  /* On input, 2 is a tid w. incarn.  Need to return incarned tid,
+	     property, as well as a pointer to the next.*/
+	case XSB_NEXT_THREAD_PROPERTY: {
+	  int tid = ptoc_int(CTXTc 2);
+	  int index = THREAD_ENTRY(tid);
+	  int next_index;
+	  ctop_int(CTXTc 3, th_vec[index].detached);
+	  ctop_int(CTXTc 4, th_vec[index].status);
+	  if (th_vec[index].next_entry) {
+	    next_index = (th_vec[index].next_entry - (&th_vec[0]));
+	    SET_THREAD_INCARN(next_index,th_vec[next_index].incarn);
+	    ctop_int(CTXTc 5, next_index);
+	  }
+	  else ctop_int(CTXTc 5, 0);
 	  break;
 	}
 	  
