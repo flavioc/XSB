@@ -104,7 +104,7 @@ thread_create( Goal ) :-
 	thread_create( Goal, _, [detached(true)] ).
 
 /*---------------*/
-:- import writeln/1 from standard.
+%:- import writeln/1 from standard.
 
 /* Upon user-called exit, If thread is detached and aliased, remove
    aliases.  if thread is joinable, assert an exit term; if thread is
@@ -158,6 +158,7 @@ thread_join_1(Input,Return):-
 
 thread_join( ThreadId )	    :- thread_join( ThreadId, _).
 
+
 /*---------------*/
 
 thread_self( ThreadId )	    :- 
@@ -191,9 +192,47 @@ thread_detach_1(ThreadId):-
 
 /*---------------*/
 
-thread_property(Id,Property) :- 
-	thread_request( XSB_THREAD_PROPERTY, Id,Prop1, _, _, _, _, _,_ ),
-	(Prop1 == 1 -> Property = detached ; Property = joinable).
+thread_property(Input,Property) :- 
+	(var(Input) -> 
+	    var_thread_property(Input,Property)
+	  ; (integer(Input) ->
+                Tid = Input
+	      ; 
+                (atom(Input) ->
+                    get_alias(Input,THREAD_ALIAS,Tid)
+	         ;  domain_error(listof(thread_or_alias),Input,thread_property/2,1,'') ) ),
+             thread_property_1(Tid, Property) ).
+
+var_thread_property(ThrOrAl,Property):- 
+	    thread_request( XSB_FIRST_THREAD_PROPERTY, Old,Detchd, Status, Next, _, _, _, _ ),
+	    var_thread_property_1(Old,Detchd,Status,Next,ThrOrAl,Property).
+
+var_thread_property_1(Tid,Detached,_Status,_Next,Tid,detached(Boolean)):- 
+        (Detached == 1 -> Boolean = true ; Boolean = false).
+var_thread_property_1(Tid,_Detached,StatusNum,_Next,Tid,status(Status)):- 
+	convert_status(StatusNum,Tid,Status).
+var_thread_property_1(Tid, _Detached,_Status,_Next,Tid,alias(Alias)) :-
+        get_alias(Tid, THREAD_ALIAS, Alias).
+var_thread_property_1(_Old,_OldDet,_OldStat,Next,ThrOrAl,Property):- 
+	    Next > 0,
+	    thread_request( XSB_NEXT_THREAD_PROPERTY, Next,Detached,Status, NextNew, _, _, _, _),
+	    var_thread_property_1(Next,Detached,Status,NextNew,ThrOrAl,Property).
+	    
+convert_status(THREAD_RUNNING,_,running).
+convert_status(THREAD_EXITED,Tid,exited(Term)):- 
+	'_$thread_exit_ball'(Tid,exited(Term)).
+convert_status(THREAD_EXCEPTION,Tid,exception(E)):-
+	'_$thread_exit_ball'(Tid,exception(E)).
+convert_status(THREAD_CANCELLED,_,cancelled).
+convert_status(THREAD_SUCCEEDED,_,true).
+convert_status(THREAD_FAILED,_,false).
+
+thread_property_1(Tid, Prop) :-
+        thread_request(XSB_THREAD_PROPERTY, Tid, Detached,StatusNum, _, _, _, _,_),
+        ( (Detached == 1 ->  Prop = detached(true) ; Prop = detached(false))
+         ; convert_status(StatusNum, Tid, Status),Prop = status(Status) ).
+thread_property_1(Tid, alias(Alias)) :-
+        get_alias(Tid, THREAD_ALIAS, Alias).
 
 /*---------------*/
 

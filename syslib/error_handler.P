@@ -34,6 +34,7 @@
 
 :- import default_user_error_handler/1 from usermod.
 :- dynamic default_user_error_handler/1.
+:- thread_shared(default_user_error_handler(_)).
 
 /* Types of errors are based on Section 7.12 of the ISO Standard, but
 /* I've added tabling_error.  (see manual for types and explanation).*/
@@ -59,7 +60,7 @@ ccall_error_handler(Error) :-
  * Also, as a stab at error handling in the MT engine, we only print
  * out backtrace for the console thread; we keep the error message
  * around for non-console joinable threads. For detached threads,
- * there's not much that can be done.  */
+ * there''s not much that can be done.  */
 
 :- import  '_$thread_exit_ball'/2 from usermod.
 :- dynamic '_$thread_exit_ball'/2.
@@ -117,9 +118,10 @@ transform_error_message_1(A,NewA):-
 	(integer(A) ; atom(A)) -> A = NewA ; term_to_atom(A,NewA).
 	
 %-----
+%:- import writeln/1 from standard.
 % Cancellation.
 default_sys_error_handler_nonmain(thread_cancel,Thread,Backtrace,Msg):- !,
-	(xsb_thread_property(Thread,joinable) -> 
+	(thread_property(Thread,detached(false)) -> 
 	       get_backtrace(Backtrace,ReadBT),
 	       asserta('_$thread_exit_ball'(Thread,
 	                                    cancelled(error(thread_cancel,Msg,ReadBT))))
@@ -127,10 +129,10 @@ default_sys_error_handler_nonmain(thread_cancel,Thread,Backtrace,Msg):- !,
 	internal_thread_exit(THREAD_CANCELLED).
 % Error: non-cancellation.
 default_sys_error_handler_nonmain(Error,Thread,Backtrace,Msg):- 
-	(xsb_thread_property(Thread,joinable) -> 
-	       get_backtrace(Backtrace,ReadBT),
-	       asserta('_$thread_exit_ball'(Thread,exception(error(Error,Msg,ReadBT))))
-	     ; true),
+	(thread_property(Thread,detached(false)) -> 
+	    get_backtrace(Backtrace,ReadBT),
+	    asserta('_$thread_exit_ball'(Thread,exception(error(Error,Msg,ReadBT))))
+	;   true),
 	internal_thread_exit(THREAD_EXCEPTION).
 
 % get_sys_error_description/3
