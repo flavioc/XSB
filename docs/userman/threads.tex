@@ -245,7 +245,7 @@ depend on thread-private or thread-shared dynamic code.  In addition,
 a predicate may be {\em both} dynamic and tabled, and its clauses and
 tables may be either thread-private or thread-shared.
 
-\section{Thread Statuses: Joinable and Detached Threads}
+\section{Thread Statuses: Joinable and Detached Threads} \label{sec:thread-status}
 
 So far we have assumed that the goal called in {\tt
   thread\_create/2} terminates normally --- by success or
@@ -416,6 +416,126 @@ contend for I/O.  Thus, in multi-threaded applications, it may be more
 efficient to open and close streams and access these streams
 explicitly, than to redirect standard input or standard output through
 {\tt see/1} and {\tt tell/1}.
+
+\section{Examples of Multi-Threaded Programs in
+  XSB}~\footnote{Material in this section is based on
+  \cite{Marques07}.}. 
+Figure~\ref{fig:ex-server} shows an example of a multi-threaded goal
+server in XSB, which makes extensive use of XSB's socket library. The
+server listens for requests from clients and spawns a thread to handle
+each request. Being the case of XSB, the goals executed by the server
+could be tabled and take advantage of the shared tables
+implementation. Halting of the server is done by the thread
+cancellation mechanism, and a shared dynamic predicate is used to make
+the server's thread identifier known to the other threads. Note that
+we create a specific thread for the main server loop, because the main
+thread cannot be canceled.
+
+\begin{figure}
+\begin{center}
+\begin{tt}
+\begin{tabbing}
+fooo\=foo\=foo\=foo\=fooooooooooooooooooooooooooooooo\=ooooooooooooo\=\kill
+\> :- thread\_shared server\_id/1. \\
+\\
+\> server :-\\
+\> \> socket($SockFD$),\\
+\> \> socket\_set\_option( $SockFD$, linger, SOCK\_NOLINGER ),\\
+\> \> xsb\_port($XSBport$),\\
+\> \> socket\_bind($SockFD$, $XSBport$),\\
+\> \> socket\_listen($SockFD$,Q\_LENGTH),\\
+\> \> thread\_create( server\_loop($SockFD$), Id, [] ),\\
+\> \> assert( server\_id($Id$) ),\\
+\> \> thread\_join( $Id$ ).\\
+\\
+\> server\_loop($SockFD$) :-\\
+\> \> socket\_accept($SockFD$, $SockClient$),\\
+\> \> thread\_create( attend\_client($SockClient$) ),\\
+\> \> server\_loop($SockFD$).\\
+\\
+\> attend\_client($SockClient$) :-\\
+\> \> socket\_recv\_term($SockClient$, $Goal$),\\
+\> \> ( \> Goal == stop \verb|->| \\
+\> \> \> retract(server\_id( $Server$ )),\\
+\> \> \> thread\_cancel( $Server$ ),\\
+\> \> \> socket\_close( $SockClient$ ),\\
+\> \> \> thread\_exit\\
+\> \> ; \> true\\
+\> \> ),\\
+\> \> ( \> is\_valid($Goal$) \verb|->|\\
+\> \> \> call($Goal$), \\
+\> \> \> socket\_send\_term($SockClient$, $Goal$),\\
+\> \> \> fail,\\
+\> \> ;	\> socket\_send\_term($SockClient$, invalid\_goal($Goal$))\\
+\> \> ),\\
+\> \> socket\_send\_term($SockClient$, end),\\
+\> \> socket\_close($SockClient$).
+\end{tabbing}
+\end{tt}
+\end{center}
+\caption{A multi-threaded goal server in XSB}
+\label{fig:ex-server}
+\end{figure}
+
+The following example\footnote{This example was inspired by a similar
+  example for multi-threaded computation of primes in from
+  LogTalk~\cite{log-man}}, Figure~\ref{fig:ex-primes}, uses a
+multi-threaded execution model to compute a series of prime numbers in
+parallel.  The master thread partitions the work and creates two
+worker threads.  The worker threads each compute its portion of the
+interval and return their results to the master through a message
+queue.
+
+Notice how the \texttt{primes/2} predicate uses difference lists to
+avoid the use of the append predicate\footnote{For a description on
+  how to program with difference lists see a Prolog programming text,
+  such as\cite{StSh86}).}, and while threads don't share variables,
+the bindings of the terms in the messages are correctly handled,
+allowing Prolog's unification to assume its full power.  Although only
+two threads are used, the program could easily be extended to use an
+arbitrary number of threads
+
+\begin{figure}
+\begin{center}
+\begin{tt}
+\begin{tabbing}
+fooo\=foo\=foo\=foo\=fooooooooooooooooooooooooooooooo\=ooooooooooooo\=\kill
+prime($P$, $I$) :- $I$ < sqrt($P$),!.\\
+prime($P$, $I$) :- $Rem$ is $P$ mod $I$, $Rem = 0$, !, fail.\\
+prime($P$, $I$) :- $I_1$ is $I - 1$, prime($P$, $I_1$).\\
+\\
+prime($P$) :- $I$ is $P - 1$, prime($P$, $I$ ).\\
+\\
+list\_of\_primes($I$, $F$, $Tail$, $Tail$) :- $I > F$, !.\\
+list\_of\_primes($I$, $F$, [$I$|$List$], $Tail$) :-\\
+\>        prime($I$), !,\\
+\>        $I_1$ is $I + 1$, list\_of\_primes($I_1$, $F$, $List$, $Tail$).\\
+list\_of\_primes($I$, $F$, $List$, $Tail$) :-\\
+\>        $I_1$ is $I + 1$, list\_of\_primes($I_1$, $F$, $List$, $Tail$).\\
+\\
+partition\_space($N$, $H$, $H_1$) :-\\
+\>        $H$ is $N//2$, $H_1$ is $H + 1$.\\
+\\
+worker( $Q$, $Id$, $I$, $F$, $List$, $Tail$) :-\\
+\>        list\_of\_primes( $I$, $F$, $List$, $Tail$),\\
+\>        thread\_send\_message( $Q$, primes($Id$,$List$,$Tail$) ).\\
+\\
+master( $N$, $L$ )  :-\\
+\>        partition\_space( $N$, $H$, $H_1$),\\
+\\
+\>       message\_queue\_create($Q$),\\
+\>        thread\_create( worker($Q$, p1, 1,  $H$, $L$,  $L_1$) ),\\
+\>        thread\_create( worker($Q$, p2, $H_1$, $N$, $L_1$, []) ),\\
+\\
+\>        thread\_get\_message( $Q$, primes(p1,$L$,$L_1$) ),\\
+\>        thread\_get\_message( $Q$, primes(p2,$L_1$,[]) ).
+\end{tabbing}
+\end{tt}
+\end{center}
+\caption{A multi-threaded program to calculate prime numbers in XSB}
+\label{fig:ex-primes}
+\end{figure}
+
 
 \section{Configuring the Multi-threaded Engine under Windows} \label{sec:mt-windows}
 
@@ -741,6 +861,56 @@ platforms.
 \item 	{\tt misc\_error}
 \ei
 \ei
+
+\ournewitem{thread\_property(?ThreadOrAlias,?Property)}{thread}
+\index{\texttt{thread\_property/2}} 
+%
+Unifies {\tt Thread} with a valid XSB thread id, and {\tt Property}
+with an applicable property for {\tt Thread}.  If {\tt Thread} is
+uninstantiated, the predicate will backtrack through all threads that
+are active to the system.  Note that if {\tt Thread} is a variable,
+there is no guarantee that that the information returned will be
+valid, due to concurrency issues.
+
+Currently {\tt Property} can have the form 
+\bi
+\item {\tt detached(Bool)}: if {\tt Bool} is true the thread is
+  detached, otherwise it is joinable.
+%
+\item {\tt alias(Alias)}: if the thread has an alias {\tt Alias}
+%
+\item {\tt status(Status)}: see Section~\ref{sec:thread-status} for
+  thread statuses that are currently supported.
+\ei
+
+{\bf Example:} The following predicate may be used to clear resources
+from the thread table, although due to concurreny reasons, non-running
+threads may remain in the thread table after this predicate
+terminates.
+\begin{verbatim}
+clear_thread_table:- 
+    thread_property(Tid,status(S)),
+    \+ (S = running),
+    thread_join(Tid),
+    fail.
+clear_thread_table.
+\end{verbatim}
+
+{\bf Error Cases}
+%
+\bi
+\item {\tt ThreadOrAlias} is neither a variable nor an XSB thread id
+  nor an alias
+\bi
+\item {\tt domain\_error(thread\_or\_alias, ThreadOrAlias)}
+\ei
+\item {\tt ThreadOrAlias} is not associated with a valid thread
+\bi
+\item {\tt existence\_error(thread, ThreadOrAlias)}
+\ei
+\ei
+
+%----------
 
 \ournewitem{usleep(+Microseconds)}{thread}
 \index{\texttt{usleep/1}} 
