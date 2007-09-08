@@ -313,6 +313,7 @@ define_ccall(chars,'+',Var,Var).
 define_ccall(chars(_),'+',Var,Var).
 define_ccall(string,'+',Var,Var).
 define_ccall(string(_),'+',Var,Var).
+define_ccall(term,'+',Var,Var).
 define_ccall(intptr,'+',Var,CVar) :-
 	atom_codes(Var,LVar),
 	atom_codes(CVar,[38|LVar]). % 38 = '&'
