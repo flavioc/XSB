@@ -388,7 +388,7 @@ out_variables(Var,'+',floatptr) :-
 out_variables(Var,'+',charsptr) :-
 	fmt_write('   prolog_term %sIn;',args(Var)),nl,
         fmt_write('   int %ssize;',args(Var)),nl,
-        fmt_write('   char *%s,*%sTemp',args(Var,Var)),nl.
+        fmt_write('   char *%s,*%sTemp;',args(Var,Var)),nl.
 out_variables(Var,'+',stringptr) :-
 	fmt_write('   prolog_term %sIn;',args(Var)),nl,
         fmt_write('   char *%s;',args(Var)),nl.
@@ -420,7 +420,7 @@ out_variables(Var,'-',string(Size)) :-
         fmt_write('   char %s[%d+1];',args(Var,Size)),nl.
 out_variables(Var,'-',stringptr) :-
 	fmt_write('   prolog_term %sOut;',args(Var)),nl,
-        fmt_write('   char *%s',args(Var)),nl.
+        fmt_write('   char *%s;',args(Var)),nl.
 out_variables(Var,'-',termptr) :-
 	fmt_write('   prolog_term %s;',args(Var)),nl.
 out_variables(Var,'-',atomptr) :-
@@ -446,7 +446,7 @@ out_variables(Var,'+-',charsptr) :-
         fmt_write('   int %ssize;',args(Var)),nl.
 out_variables(Var,'+-',stringptr) :-
 	fmt_write('   prolog_term %sIn,%sOut;',args(Var,Var)),nl,
-        fmt_write('   char *%s',args(Var)),nl.
+        fmt_write('   char *%s;',args(Var)),nl.
 out_variables(Var,'+-',termptr) :-
 	fmt_write('   prolog_term %s;',args(Var)),nl.
 out_variables(Var,'+-',atomptr) :-
