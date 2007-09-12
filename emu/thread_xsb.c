@@ -424,6 +424,7 @@ static Integer xsb_thread_setup(th_context *th, int is_detached, int is_aliased)
   return pos;
 }
 
+/* cancelling is disabled at first, but re-enabled via thread_run */
 static int xsb_thread_create_1(th_context *th, Cell goal, int glsize, int tcsize,
 			       int complsize, int pdlsize, int is_detached, int pos){
   int rc;
@@ -1151,7 +1152,10 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  break;
 
 	  /* for now, one interrupt, but possibly we should allow
-	     users to define others  */
+	     users to define others.  If all goes well, the cancelled
+	     thread will execute '_$thread_int/2, by checking
+	     THREADINT_MARK */
+
 	case XSB_THREAD_INTERRUPT: {
 	  th_context *	ctxt_ptr ;
 
@@ -1163,7 +1167,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 	    if( ctxt_ptr )
 	    {   if( ctxt_ptr->enable_cancel )
 	    	{	ctxt_ptr->_asynint_val |= THREADINT_MARK;
-	    		pthread_kill( th_vec[THREAD_ENTRY(i)].tid, SIGINT );
+	    		pthread_kill( th_vec[THREAD_ENTRY(i)].tid, SIGABRT );
 	    	}
 		else
 			ctxt_ptr->to_be_cancelled = TRUE ;
@@ -1252,6 +1256,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  break;
 	}
 
+	  /* Adding convention that max size of 0 is an unbounded queue */
 	case THREAD_SEND_MESSAGE: {
 	  XSB_MQ_Ptr message_queue = (XSB_MQ_Ptr) ptoc_int(CTXTc 2);
 	  MQ_Cell_Ptr this_cell;
@@ -1263,7 +1268,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 
 	  pthread_mutex_lock(&message_queue->mq_mutex) ;
 	  check_deleted(th, message_queue, MESG_SEND) ;
-	  while (message_queue->size >= message_queue->max_size) {
+	  while (message_queue->max_size && message_queue->size >= message_queue->max_size) {
 	    if( wait_on_queue( th, message_queue, MESG_SEND ) )
 		return success ;	    
 	  }

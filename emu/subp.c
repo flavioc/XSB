@@ -415,6 +415,21 @@ void keyint_proc(int sig)
   }
 }
 
+void cancel_proc(int sig)
+{
+#ifdef MULTI_THREAD
+  th_context *th = find_context(xsb_thread_self());
+
+  if (th->cond_var_ptr != NULL)
+	pthread_cond_broadcast( th->cond_var_ptr ) ;
+#endif
+#ifndef LINUX
+  init_interrupt();  /* reset interrupt, if using signal */
+#endif
+    asynint_val |= THREADINT_MARK;
+    asynint_code = 0;
+}
+
 /* Called during XSB initialization -- could be in init_xsb.c, apart
    from funky use in keyint_proc() */
 
@@ -427,6 +442,7 @@ void init_interrupt(void)
   sigaction(SIGINT, &act, &oact);
 #else
   signal(SIGINT, keyint_proc); 
+  signal(SIGABRT, cancel_proc); 
 #endif
 
 #if (defined(DEBUG_VERBOSE) || defined(DEBUG_VM) || defined(DEBUG_ASSERTIONS) || defined(DEBUG))
