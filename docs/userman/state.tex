@@ -759,7 +759,8 @@ threads in the process.
 
 \item {\tt max\_queue\_size} In the multi-threaded engine, the default
   maximum number of terms a message queue contains before writes to
-  the message queue block.  By default this is 100.
+  the message queue block.  By default this is 1000.  If set to 0,
+  queues by default will be unbounded.
 
 \end{itemize}
     
