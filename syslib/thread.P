@@ -243,9 +243,10 @@ thread_cancel(Input) :-
 	       thread_cancel_1(Input)
     	   ;  (atom(Input),get_alias(Input,THREAD_ALIAS,Tid) -> 
 	          thread_cancel_1(Tid)
-	      ; domain_error(listof(thread_or_alias),Input,thread_cancel/1,2,'')
+	      ; domain_error(thread_or_alias,Input,thread_cancel/1,2,'')
 	      ) ) ).
 
+% The convention is that the main thread is always 0
 thread_cancel_1(Id):- 
 	(Id == 0 -> 
 	    permission_error(cancel,main_thread,0,thread_cancel/1)
