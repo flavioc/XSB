@@ -938,6 +938,24 @@ clear_thread_table.
 \ei
 \ei
 
+\ournewitem{thread\_sleep(+Seconds)}{thread}
+\index{\texttt{thread\_sleep/1}} 
+%
+Causes the calling thread to sleep approximately {\tt Seconds}
+before resuming.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Seconds} is a variable
+\bi
+\item 	{\tt instantiation\_error}.
+\ei
+\item 	{\tt Seconds} is not an integer
+\bi
+\item 	{\tt type\_error(integer, Seconds)}.
+\ei
+\ei
+
 %----------
 
 \ournewitem{usleep(+Microseconds)}{thread}
