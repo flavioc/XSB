@@ -23,9 +23,13 @@
 :- export mutex_create/1, mutex_create/2, mutex_lock/1, mutex_unlock/1,
           mutex_trylock/1, mutex_destroy/1, with_mutex/2.
 :- export mutex_unlock_all, mutex_property/2.
-:- export message_queue_create/1, message_queue_create/2, message_queue_destroy/1,
-   thread_get_message/1,
-   thread_get_message/2, thread_send_message/2,print_message_queue/1, thread_peek_message/2.
+
+:- export
+	message_queue_create/1, message_queue_create/2, message_queue_destroy/1,
+	thread_get_message/1, thread_get_message/2,
+	thread_send_message/2,
+	thread_peek_message/1, thread_peek_message/2,
+	print_message_queue/1.
 
 :- import (dynamic)/1, code_to_buff/2 from assert.
 :- import check_atom/3,

@@ -265,6 +265,10 @@ thread_get_message_1(Queue,Message):-
 %------------------------------------------------------------
 %:- import writeln/1 from standard.
 
+thread_peek_message(Message) :-
+	thread_request(XSB_THREAD_SELF, Tid, _, _, _, _, _, _ ,_),
+	thread_peek_message(Tid, Message).
+
 thread_peek_message(Queue,Message):-
 	(integer(Queue) -> 
 	   thread_peek_message_1(Queue,Message)
