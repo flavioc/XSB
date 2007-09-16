@@ -699,6 +699,11 @@ remains unaltered.
 %
 Acts as {\tt thread\_create(Goal,ThreadId,[])}.
 
+\ournewitem{thread\_create(+Goal)}{thread}
+\index{\texttt{thread\_create/1}}
+%
+Acts as {\tt thread\_create(Goal,\_,[detached(true)])}.
+
 \ournewitem{thread\_join(+Threads\_or\_aliases,-ExitDesignators)}{thread}
 \index{\texttt{thread\_join/2}} 
 % 
@@ -1444,8 +1449,4 @@ unifier of {\tt Message} and $T$.  If there are no terms on {\tt
 %
 
 
-
 \end{description}
-
-
-
