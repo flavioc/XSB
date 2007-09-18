@@ -289,6 +289,29 @@ thread_sleep(Seconds) :-
 	Microseconds is Seconds * 1000000,
 	thread_request( XSB_USLEEP, Microseconds,_,_, _, _, _, _,_).
 
+
+/* ==================================================================  */
+/* A handy predicate for cheking out which threads are running.        */
+
+:- import write/1, nl/0 from standard.
+:- import fmt_write/2 from file_io.
+
+threads :-
+	write('------------------------------------------------------------------------'), nl,
+	fmt_write("\t%S\t\t\t%S\t\t%S\n", args('Thread', 'Detached', 'Status')),
+	write('------------------------------------------------------------------------'), nl,
+	var_thread_property(Thread, detached(Detached)),
+	thread_property(Thread, status(Status)),
+	(	thread_property(Thread, alias(Alias)) ->
+		true
+	;	Alias = Thread
+	),
+	fmt_write("\t%S\t\t\t%S\t\t\t%S\n", args(Alias, Detached, Status)),
+	fail.
+threads :-
+	write('------------------------------------------------------------------------'), nl.
+
+
 /* ==================================================================  */
 /* Routines used internally. */
 

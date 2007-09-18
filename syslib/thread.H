@@ -22,16 +22,17 @@
 ** 
 */
 
-:- export thread_cancel/1,
-          thread_create/1, thread_create/2,thread_create/3,
-          thread_detach/1,
-          thread_exit/1, internal_thread_exit/1,
-          thread_exit/0,
-	  thread_join/2, 
-          thread_join/1,
-          thread_property/2,
-   thread_self/1,set_xsb_ready/0,
-   thread_yield/0, usleep/1, thread_sleep/1.
+:- export
+	thread_cancel/1,
+	thread_create/1, thread_create/2,thread_create/3,
+	thread_detach/1,
+	thread_exit/1, internal_thread_exit/1,
+	thread_exit/0,
+	thread_join/2, thread_join/1,
+	thread_property/2,
+	thread_self/1,set_xsb_ready/0,
+	thread_yield/0, usleep/1, thread_sleep/1,
+	threads/0.
 
 :- export abolish_private_tables/0,abolish_shared_tables/0.
 :- export abolish_all_private_tables/0,abolish_all_shared_tables/0.
