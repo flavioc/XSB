@@ -212,7 +212,7 @@ var_thread_property_1(Tid,Detached,_Status,_Next,Tid,detached(Boolean)):-
 var_thread_property_1(Tid,_Detached,StatusNum,_Next,Tid,status(Status)):- 
 	convert_status(StatusNum,Tid,Status).
 var_thread_property_1(Tid, _Detached,_Status,_Next,Tid,alias(Alias)) :-
-        get_alias(Tid, THREAD_ALIAS, Alias).
+        get_alias(Alias, THREAD_ALIAS, Tid).
 var_thread_property_1(_Old,_OldDet,_OldStat,Next,ThrOrAl,Property):- 
 	    Next > 0,
 	    thread_request( XSB_NEXT_THREAD_PROPERTY, Next,Detached,Status, NextNew, _, _, _, _),
@@ -232,7 +232,7 @@ thread_property_1(Tid, Prop) :-
         ( (Detached == 1 ->  Prop = detached(true) ; Prop = detached(false))
          ; convert_status(StatusNum, Tid, Status),Prop = status(Status) ).
 thread_property_1(Tid, alias(Alias)) :-
-        get_alias(Tid, THREAD_ALIAS, Alias).
+        get_alias(Alias, THREAD_ALIAS, Tid).
 
 /*---------------*/
 
