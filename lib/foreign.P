@@ -333,9 +333,9 @@ read_clauses(ModName, ExList, LdOptionIn, LdOptionOut, CompComm, TempFile) :-
 		;   LdOptionMid = LdOptionIn)
 	    ;	Clause = (':-'(compile_command(CompComm)))
 	    ->	LdOptionMid = LdOptionIn
-	    ;	Clause = (':-'(foreign_pred(PredDecl)))
+	    ;	proper_declaration(Clause,PredDecl,NeedsCTXT)
 	    ->	checkfile(ModName, TempFile), % creates tempfile if necessary
-	        process_from(PredDecl,Exports),
+	        process_from(PredDecl,Exports,NeedsCTXT),
 		add_to_exlist(Exports,ExList),
 		LdOptionMid = LdOptionIn
 	    ;	LdOptionMid = LdOptionIn % all other clauses are ignored
@@ -344,6 +344,8 @@ read_clauses(ModName, ExList, LdOptionIn, LdOptionOut, CompComm, TempFile) :-
 			 CompComm, TempFile)
         ).
 
+proper_declaration((':-'(foreign_pred(PredDecl))),PredDecl,nocontext).
+proper_declaration((':-'(private_foreign_pred(PredDecl))),PredDecl,context).
 
 form_ld_option([], In, In) :- !.
 form_ld_option([Opt|Opts], In , Out) :- !,

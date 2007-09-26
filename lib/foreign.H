@@ -51,6 +51,6 @@
      from standard.
 :- import str_sub/2 from string.
 :- import concat_atom/2 from string.
-:- import write_header/0, process_from/2 from wrapping.
+:- import write_header/0, process_from/3 from wrapping.
 :- import write_int/2 from xsb_writ.
 :- import xsb_configuration/2 from xsb_configuration.

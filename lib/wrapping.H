@@ -23,7 +23,7 @@
 ** 
 */
 
-:- export wrap/2, write_header/0, process_from/2.
+:- export wrap/2, write_header/0, process_from/3.
 
 :- import append/3, member/2, select/3, length/2 from basics.
 :- import write/1, nl/0, atom_codes/2 from standard.
@@ -31,4 +31,7 @@
 :- import repeat/0, tell/1, see/1 from standard.
 :- import fmt_write/2 from file_io.
 :- import xsb_configuration/2 from xsb_configuration.
-:- import throw/1 from standard.
+:- import throw/1, (index)/2 from standard.
+:- import syntax_error/1 from error_handler.
+:- import (:-)/1 from usermod.
+
