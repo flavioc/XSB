@@ -1055,10 +1055,18 @@ example of using the higher level interface, see {\tt
 
 \subsection{Declaration of high level foreign predicates}
 
-The basic format of a foreign predicate declaration is:
+The basic formats of a foreign predicate declaration are:
 %%
 \begin{center}
 {\tt :- foreign\_pred \emph{predname}(\emph{[+-]parg1,
+  [+-]parg2,...})\\
+~~~~~~~~~~~~~~~~~~~from \emph{funcname}(\emph{carg1:type1, carg2:type2,
+  ...}):\emph{functype}.
+}
+\end{center}
+and
+\begin{center}
+{\tt :- private\_foreign\_pred \emph{predname}(\emph{[+-]parg1,
   [+-]parg2,...})\\
 ~~~~~~~~~~~~~~~~~~~from \emph{funcname}(\emph{carg1:type1, carg2:type2,
   ...}):\emph{functype}.
@@ -1068,6 +1076,18 @@ The basic format of a foreign predicate declaration is:
 where:
 
 \begin{description}
+
+\ouritem{foreign\_pred, private\_foreign\_pred} declares a new
+foreign predicate.  For most cases, the declaration {\tt
+  foreign\_pred} can be used in both the multi-threaded and the
+sequential engine.  The declaration {\tt private\_foreign\_pred} needs
+to be used only in the multi-threaded engine when the external foreign
+function, {\tt funcname} contains a context parameter as its first
+argument because {\tt funcname} needs to access thread-private data or
+other information from the context of the XSB thread (see
+Section~\ref{sec:context-parameter}).  This case is uncommen, and
+mostly occurs for users who are creating XSB packages (e.g. the XASP
+interface to Smodels).
 
 \ouritem{predname} is the name of the foreign Prolog predicate. 
 
@@ -1097,6 +1117,13 @@ descriptive types, as defined in Table~\ref{table:hltypes}.
 \ouritem{functype} is the return type of the C function.
 
 \end{description}
+
+Using the higher-level interface, the same C code can be used for both
+the sequential and the multi-threaded engines, and no context
+parameters are required in a user's C code unless thread context
+information is explicitly needed.  However, a foreign module compiled
+for the single-threaded engine will need to be recompiled for the
+multi-threaded engine and vice-versa.
 
 Table~\ref{table:hltypes} provides the correspondence between the types
 allowed on the C side of a foreign module declaration and the types allowed
