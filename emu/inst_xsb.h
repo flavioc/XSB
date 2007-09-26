@@ -315,6 +315,8 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 #define dyntrustmeelsefail	0xba	/* Dynamic trust instruction */
 #define dynretrymeelse      	0xbb	/* Dynamic retry inst (for gc) */
 
+#define restore_dealloc_proceed 0xbc    /* for special interrupt handling */
+
 /* Tabling instructions --- they should really be changed to be as shown */
 
 #define tabletrysingle		0xc0

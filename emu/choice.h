@@ -495,7 +495,7 @@ typedef struct compl_susp_choice_point {
  */
 #define save_find_locx(t_ereg) \
     if (efreg_on_top(t_ereg)) ebreg = efreg;\
-    else if (ereg_on_top(t_ereg)) ebreg = t_ereg - *(cpreg-2*sizeof(Cell)+3)+1;
+    else if (ereg_on_top(t_ereg)) ebreg = t_ereg - *(cpreg-(2*sizeof(Cell)-3))+1;
 
 #define restore_some_wamregs(t_breg, t_ereg) \
     if (hbreg >= hfreg) hreg = hbreg; else hreg = hfreg; \

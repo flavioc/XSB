@@ -949,6 +949,7 @@ contcase:     /* the main loop */
     Def2ops
     Op1(get_xxa);
     Op2(get_xxxl);
+    if (attv_pending_interrupts) printf("Failed Assertion trymeelse\n");
 #if 0
     { 
       Psc mypsc = *(CPtr)(cpreg-4);
@@ -967,6 +968,7 @@ contcase:     /* the main loop */
     Def2ops
     Op1(get_xxa);
     Op2(get_xxxl);
+    if (attv_pending_interrupts) printf("Failed assertion dyntrymeelse\n");
     ADVANCE_PC(size_xxxX);
     SUBTRYME
 #ifdef MULTI_THREAD
@@ -1020,6 +1022,7 @@ contcase:     /* the main loop */
     Def2ops
     Op1(get_xxa);
     op2 = (Cell)((Cell)lpcreg + sizeof(Cell)*2);
+    if (attv_pending_interrupts) printf("Failed assertion try\n");
 #if 0
     { 
       Psc mypsc = *(CPtr)(cpreg-4);
@@ -1078,6 +1081,7 @@ contcase:     /* the main loop */
   XSB_Start_Instr(putpbreg,_putpbreg) /* PPV */
     Def1op
     Op1(Variable(get_xxv));
+    if (attv_pending_interrupts) printf("Failed assertion putpbreg\n");
     ADVANCE_PC(size_xxx);
     cut_code(op1);
   XSB_End_Instr()
@@ -1341,8 +1345,13 @@ argument positions.
 
   XSB_Start_Instr(trymeorelse,_trymeorelse) /* PPA-L */
     Def2ops
-    Op1(0);
-    Op2(get_xxxl);
+    if (attv_pending_interrupts) {
+      printf("allocating_env_and_calling_check_ints\n");
+      Op1(get_xxa);
+      allocate_env_and_call_check_ints(0,op1);
+    } else {
+      Op1(0);
+      Op2(get_xxxl);
 #if 0
     { 
       Psc mypsc = *(CPtr)(cpreg-4);
@@ -1353,9 +1362,10 @@ argument positions.
 	}
     }
 #endif
-    ADVANCE_PC(size_xxxX);
-    cpreg = lpcreg; /* Another use of cpreg for inline try's for disjunctions */
-    SUBTRYME
+      ADVANCE_PC(size_xxxX);
+      cpreg = lpcreg; /* Another use of cpreg for inline try's for disjunctions */
+      SUBTRYME
+    }
   XSB_End_Instr()
 
   XSB_Start_Instr(retrymeorelse,_retrymeorelse) /* PPA-L */
@@ -1868,7 +1878,7 @@ argument positions.
     if (efreg_on_top(ereg))
       op1 = (Cell)(efreg-1);
     else {
-      if (ereg_on_top(ereg)) op1 = (Cell)(ereg - *(cpreg-2*sizeof(Cell)+3));
+      if (ereg_on_top(ereg)) op1 = (Cell)(ereg - *(cpreg-(2*sizeof(Cell)-3)));
       else op1 = (Cell)(ebreg-1);
     }
     //    printf("allo %p,%p,%p,%p,",hreg,ereg,ebreg,cp_ebreg(breg));
@@ -1893,7 +1903,7 @@ argument positions.
     if (efreg_on_top(ereg))
       op1 = (Cell)(efreg-1);
     else {
-      if (ereg_on_top(ereg)) op1 = (Cell)(ereg - *(cpreg-2*sizeof(Cell)+3));
+      if (ereg_on_top(ereg)) op1 = (Cell)(ereg - *(cpreg-(2*sizeof(Cell)-3)));
       else op1 = (Cell)(ebreg-1);
     }
     *(CPtr *)((CPtr) op1) = ereg;
@@ -1963,6 +1973,24 @@ argument positions.
     }
     proceed_sub;
     //    printf("pr_g (h:%p,e:%p,pc:%p)\n",hreg,ereg,lpcreg);
+  XSB_End_Instr()
+
+  XSB_Start_Instr(restore_dealloc_proceed,_restore_dealloc_proceed) /* PPP */
+    Cell term = cell(ereg-2);
+    XSB_Deref(term);
+    if (isconstr(term)) {
+      int  disp;
+      char *addr;
+      Psc psc = get_str_psc(term);
+      addr = (char *)(clref_val(term));
+      for (disp = 1; disp <= (int)get_arity(psc); ++disp) {
+	bld_copy(reg+disp, cell((CPtr)(addr)+disp));
+      }
+    }
+    lpcreg = cpreg;
+    cpreg = *((byte **)ereg-1);
+    ereg = *(CPtr *)ereg;
+    printf("returning: to=%p, its-ret=%p, ereg=%p\n",lpcreg,cpreg,ereg);
   XSB_End_Instr()
 
     /* This is the WAM-execute.  Name was changed because of conflict

@@ -124,6 +124,16 @@ int xsb_profiling_enabled = 0;
 /* from pathname_xsb.c */
 DllExport extern char * call_conv strip_names_from_path(char*, int);
 
+#ifdef BITS64
+#define pad64bits(Loc)	{ *(Loc) += 4; }
+#else
+#define pad64bits(Loc)	{}
+#endif
+
+#define write_word(Buff,Loc,w) { *(CPtr)((pb)Buff + *(Loc)) = (Cell)(w); *(Loc) += 4; \
+				pad64bits(Loc); }
+#define write_byte(Buff,Loc,w) { *(pb)((pb)Buff + *(Loc)) = (byte)(w); *(Loc) += 1; }
+
 Cell answer_return_inst;
 Cell resume_compl_suspension_inst;
 Cell resume_compl_suspension_inst2;
@@ -134,6 +144,7 @@ Cell dynfail_inst;
 Cell trie_fail_unlock_inst;
 Cell halt_inst;
 Cell proceed_inst;
+byte *check_interrupts_restore_insts_addr;
 
 extern void reset_stat_total(void); 
 extern void perproc_reset_stat(void); 
@@ -1105,6 +1116,7 @@ void cleanup_thread_structures(CTXTdecl)
 void init_machine(CTXTdeclc int glsize, int tcpsize, 
 		  int complstacksize, int pdlsize)
 {
+  int Loc = 0;
   void tstInitDataStructs(CTXTdecl);
   /* set special SLG_WAM instruction addresses */
   /* these need only be done on process initialization, but there's a core-dump
@@ -1120,6 +1132,15 @@ void init_machine(CTXTdeclc int glsize, int tcpsize,
   cell_opcode(&trie_fail_unlock_inst) = trie_fail_unlock;
   cell_opcode(&halt_inst) = halt;
   cell_opcode(&proceed_inst) = proceed;         /* returned by load_obj */
+  /* length check_interrupt + length restore_dealloc_proceed */
+
+  check_interrupts_restore_insts_addr = calloc((3+1),sizeof(Integer));
+  write_byte(check_interrupts_restore_insts_addr,&Loc,check_interrupt);
+  Loc += 2; 
+  write_byte(check_interrupts_restore_insts_addr,&Loc,3); /* AR size */
+  pad64bits(&Loc);
+  write_word(check_interrupts_restore_insts_addr,&Loc,0); /* unused psc addr */
+  write_byte(check_interrupts_restore_insts_addr,&Loc,restore_dealloc_proceed);
 
   init_newtrie(CTXT);
 
