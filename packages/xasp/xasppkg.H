@@ -25,36 +25,36 @@
 
 %:- compile_command 'make module'.
 	
-:- foreign_pred smodelsInit from init(void):void.
-:- foreign_pred smodelsNumAtoms(+a) from numberAtoms(a:int):void.
-:- foreign_pred smodelsAtomName(+a) from atomName(a:string):void.
+:- private_foreign_pred smodelsInit from init(void):void.
+:- private_foreign_pred smodelsNumAtoms(+a) from numberAtoms(a:int):void.
+:- private_foreign_pred smodelsAtomName(+a) from atomName(a:string):void.
 
-:- foreign_pred smodelsBeginBasicRule from beginBasicRule(void):void.
-:- foreign_pred smodelsBeginChoiceRule from beginChoiceRule(void):void.
-:- foreign_pred smodelsBeginConstraintRule from beginConstraintRule(void):void.
-:- foreign_pred smodelsBeginWeightRule from beginWeightRule(void):void.
+:- private_foreign_pred smodelsBeginBasicRule from beginBasicRule(void):void.
+:- private_foreign_pred smodelsBeginChoiceRule from beginChoiceRule(void):void.
+:- private_foreign_pred smodelsBeginConstraintRule from beginConstraintRule(void):void.
+:- private_foreign_pred smodelsBeginWeightRule from beginWeightRule(void):void.
 
-:- foreign_pred smodelsAddHead(+a) from addHead(a:int):void.
-:- foreign_pred smodelsAddPosBody(+a) from addPosBody(a:int):void.
-:- foreign_pred smodelsAddNegBody(+a) from addNegBody(a:int):void.
-:- foreign_pred smodelsAddWPosBody(+a,+w) from addWPosBody(a:int,w:int):void.
-:- foreign_pred smodelsAddWNegBody(+a,+w) from addWNegBody(a:int,w:int):void.
-:- foreign_pred smodelsEndRule from endRule(void):void.
-:- foreign_pred smodelsCommitRules from commitRules(void):void.
-:- foreign_pred smodelsPrintProgram from printProgram(void):void.
-:- foreign_pred smodelsExistsModel(-retval) from existsModel(void):int.
-:- foreign_pred smodelsPrintAnswer from printAnswer(void):void.
-:- foreign_pred smodelsClose from close(void):void.
-:- foreign_pred smodelsCheckAtom(+a,-retval) from checkAtom(a:int):int.
-:- foreign_pred smodelsSetPosCompute(+a) from setPosCompute(a:int):void.
-:- foreign_pred smodelsSetNegCompute(+a) from setNegCompute(a:int):void.
-:- foreign_pred smodelsResetPosCompute(+a) from resetPosCompute(a:int):void.
-:- foreign_pred smodelsResetNegCompute(+a) from resetNegCompute(a:int):void.
-:- foreign_pred smodelsRemember from remember(void):void.
-:- foreign_pred smodelsForget from forget(void):void.
-:- foreign_pred smodelsSetBody(+a) from setBody(a:int):void.
-:- foreign_pred smodelsSetWeight(+a) from setWeight(a:int):void.
-:- foreign_pred smodelsSetHead(+a) from setHead(a:int):void.
-:- foreign_pred smodelsWellFounded from wellfounded(void):void.
-:- foreign_pred smodelsTestPos(+a,-retval) from testPos(a:int):int.
-:- foreign_pred smodelsTestNeg(+a,-retval) from testNeg(a:int):int.
+:- private_foreign_pred smodelsAddHead(+a) from addHead(a:int):void.
+:- private_foreign_pred smodelsAddPosBody(+a) from addPosBody(a:int):void.
+:- private_foreign_pred smodelsAddNegBody(+a) from addNegBody(a:int):void.
+:- private_foreign_pred smodelsAddWPosBody(+a,+w) from addWPosBody(a:int,w:int):void.
+:- private_foreign_pred smodelsAddWNegBody(+a,+w) from addWNegBody(a:int,w:int):void.
+:- private_foreign_pred smodelsEndRule from endRule(void):void.
+:- private_foreign_pred smodelsCommitRules from commitRules(void):void.
+:- private_foreign_pred smodelsPrintProgram from printProgram(void):void.
+:- private_foreign_pred smodelsExistsModel(-retval) from existsModel(void):int.
+:- private_foreign_pred smodelsPrintAnswer from printAnswer(void):void.
+:- private_foreign_pred smodelsClose from close(void):void.
+:- private_foreign_pred smodelsCheckAtom(+a,-retval) from checkAtom(a:int):int.
+:- private_foreign_pred smodelsSetPosCompute(+a) from setPosCompute(a:int):void.
+:- private_foreign_pred smodelsSetNegCompute(+a) from setNegCompute(a:int):void.
+:- private_foreign_pred smodelsResetPosCompute(+a) from resetPosCompute(a:int):void.
+:- private_foreign_pred smodelsResetNegCompute(+a) from resetNegCompute(a:int):void.
+:- private_foreign_pred smodelsRemember from remember(void):void.
+:- private_foreign_pred smodelsForget from forget(void):void.
+:- private_foreign_pred smodelsSetBody(+a) from setBody(a:int):void.
+:- private_foreign_pred smodelsSetWeight(+a) from setWeight(a:int):void.
+:- private_foreign_pred smodelsSetHead(+a) from setHead(a:int):void.
+:- private_foreign_pred smodelsWellFounded from wellfounded(void):void.
+:- private_foreign_pred smodelsTestPos(+a,-retval) from testPos(a:int):int.
+:- private_foreign_pred smodelsTestNeg(+a,-retval) from testNeg(a:int):int.

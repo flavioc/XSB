@@ -3,6 +3,13 @@
 :- import smcInit/0, smcAddRule/2, smcCommitProgram/0 from sm_int.
 :- import smcSetCompute/1, smComputeModel/0, smcExamineModel/1, smEnd/0 
 					from sm_int.
+:- import thread_create/2 from thread.
+:- import print_cache/0 from sm_int.
+
+test(0):-!.
+test(N):- thread_create(test,_),N1 is N - 1,test(N1).
+
+test:- cookex_all.
 
 cookex_all :-
 	smcInit,
@@ -10,6 +17,7 @@ cookex_all :-
 	smcAddRule(b,[]),
 	smcAddRule(d,[a,not(c)]),
 	smcAddRule(c,[b,not(d)]),
+%	print_cache,
 	smcCommitProgram,
 	write('All Solutions: '),nl,
 	(   smComputeModel,

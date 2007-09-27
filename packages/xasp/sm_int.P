@@ -146,8 +146,8 @@ require at most @tt{Num} atoms.").
 smcInit:- 
 	smodelsInit,
 	retract_clause_store,
-	conset('$sm_atomctr', 0),  	
-	conset(sm_gennum_val, 0), 
+	private_conset('$sm_atomctr', 0),  	
+	private_conset(sm_gennum_val, 0),       
 	smcAddRule(true,[]),
 	translate_atom(false,_Num),
 	smcSetCompute([not(false)]).
@@ -181,7 +181,7 @@ translated to unique integers.  The corresponding raw predicates,
 used to add raw predicates immediately into the SModels API. ").
 
 smcAddRule(Head,Body):- 
-%	writeln(smcAddRule(Head,Body)),
+	writeln(smcAddRule(Head,Body)),
 	(member(weightConst(_,_,_),[Head|Body]) -> 
 	    smcAddGeneralRule(Head,Body)
 	  ; smcAddBasicRule(Head,Body) ).
@@ -262,9 +262,9 @@ sm_gensym(Root, Sym) :-
 	).
 
 sm_gennum(N) :- 
-	conget(sm_gennum_val, O), 
+	private_conget(sm_gennum_val, O), 
 	N is O + 1, 
-	conset(sm_gennum_val, N).
+	private_conset(sm_gennum_val, N).
 
 %----------------
 smcAddChoiceRule(Head,Body):- 
@@ -450,12 +450,12 @@ smcSetCompute([L|T]):-
 	smcSetCompute_1(L),
 	smcSetCompute(T).
 
-smcSetCompute_1(not(A)):- !,
+smcSetCompute_1(not(A)):- 
 	'$sm_atomnum'(A,N),
-	assert('$sm_neg_compute'(N)).
+	assert('$sm_neg_compute'(N)),!.
 smcSetCompute_1(A):- 
 	'$sm_atomnum'(A,N),
-	assert('$sm_pos_compute'(N)).
+	assert('$sm_pos_compute'(N)),!.
 
 :- comment(hide,smrSetPosCompute/1).
 
@@ -479,7 +479,8 @@ predicate, @pred{smrCommitProgram}, performs only the last two of
 these features.").
 
 smcCommitProgram :-
-	conget('$sm_atomctr', N), 
+	private_conget('$sm_atomctr', N),  
+%        '$sm_atomctr'(N),
 	smodelsNumAtoms(N),
 	translate_rules_to_smodels,
 	translate_compute_statements,
@@ -552,7 +553,8 @@ model.  To examine the truth values of particular literals, use
 @pred{smcExamineModel/2}.").
 
 smcExamineModel(Pos):- 
-	conget('$sm_atomctr', N), 
+	private_conget('$sm_atomctr', N), 
+%        '$sm_atomctr'(N),
 	raw_literals_in_model(N,PosNums),
 	translate_atomlist(PosNums,Pos).	
 
@@ -607,19 +609,25 @@ raw interfaces.").
 
 smEnd :-
 	retract_clause_store,
-	conset('$sm_atomctr', 1),
+	private_conset('$sm_atomctr', 1),
 	smodelsClose.
 
 %-----------------------------------------------------------
 
 smNewAtomNum(N1) :- 
-	conget('$sm_atomctr', N), 
+	private_conget('$sm_atomctr', N), 
 	N1 is N + 1,
-	conset('$sm_atomctr', N1).
+	private_conset('$sm_atomctr', N1).
 
 :- comment(print_cache/0,"This predicate can be used to examine the
 XSB clause store, and may be useful for debugging.").
 
+:- import thread_self/1 from thread.
+
+print_cache:- 
+	writeln('-----------------------------'),
+	thread_self(N),writeln(thread(N)),
+	fail.
 print_cache:- 
 	'$sm_fact'(N),
 	'$sm_atomnum'(A,N),
@@ -653,7 +661,8 @@ print_cache:-
 	translate_neglitlist(Neg,Negatom),
 	writeln(weightrule(A,weightConst(Bound,[Posatom,Negatom]),undef)),
 	fail.
-print_cache.
+print_cache:- 	writeln('-----------------------------').
+
 	
 translate_neglitlist([],[]).
 translate_neglitlist([weight(N,W)|NR],[not(A)=W|AR]):- !,
@@ -678,8 +687,12 @@ translate_poslitlist([N|NR],[A|AR]):-
 reset_tries:- 
 	(atomnum_trie(F) -> delete_trie(F),
 		            retractall(atomnum_trie(_)) ; true),
+	(conset_trie(F) -> delete_trie(F),
+		            retractall(conset_trie(_)) ; true),
 	new_trie(A),
-	assert(atomnum_trie(A)).
+	assert(atomnum_trie(A)),
+	new_trie(C),
+	assert(conset_trie(C)).
 
 assert_atomnum(One,Two):- 
 	atomnum_trie(F),
@@ -733,5 +746,23 @@ assert_atomnum(One,Two):-
 '$sm_weightrule'(A,B,C,D):- 
 	atomnum_trie(F),
 	trie_interned(sm_weightrule(A,B,C,D),F,_,_).
+
+:- dynamic conset_trie/1.
+
+/*
+private_conget(Tag,Value):- conget(Tag,Value).
+private_conset(Tag,Value):- conset(Tag,Value).
+*/
+
+private_conget(Tag,Value):-
+	conset_trie(Root),
+	trie_interned(tagged(Tag,Value),Root).
+
+private_conset(Tag,Value):-
+	conset_trie(Root),
+	(trie_interned(tagged(Tag,V),Root) -> 
+	  deterministic_trie_unintern(tagged(Tag,V),Root) ; true),
+	deterministic_trie_intern(tagged(Tag,Value),Root),!.
+
 
 end_of_file.
