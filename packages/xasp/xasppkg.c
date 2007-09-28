@@ -25,13 +25,13 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "smodels.h"
+#include "smodels/smodels.h"
 #ifndef SMODELS_H
 #error "You need the .h and .o files from SModels in your directory"
 #endif
-#include "api.h"
-#include "atomrule.h"
-#include "xsb_config.h"b
+#include "smodels/api.h"
+#include "smodels/atomrule.h"
+#include "xsb_config.h"
 
 // These variables should not be global in the MT-engine.
 // They will soon be moved to the th_context structure so that

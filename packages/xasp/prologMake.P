@@ -1,0 +1,34 @@
+
+
+:- import wrap/2 from wrapping. 
+
+clean:- 
+	shell('rm -f *dylib xasppkg.xwam *.o xsb_wrap_xasppkg.c').
+
+remake_all:- 
+	shell('rm -f *dylib *.o xsb_wrap_xasppkg.c'),
+	% 1) make wrapper
+	wrap('xasppkg.H','xsb_wrap_xasppkg.c'),
+	% 2) compile xasppkg
+	shell(['g++ -I/Users/macuser/XSB/XSB/config/i386-apple-darwin8.9.1-mt -I/Users/macuser/XSB/XSB/emu -I/Users/macuser/XSB/XSB/packages/xasp/smodels -c -o xasppkg.o xasppkg.c']),
+	% 3) compile xsb_wrap_xasppkg
+	shell(['gcc -I/Users/macuser/XSB/XSB/config/i386-apple-darwin8.9.1-mt -I/Users/macuser/XSB/XSB/emu -I/Users/macuser/XSB/XSB/packages/xasp/smodels -c xsb_wrap_xasppkg.c']),
+	% 4) make dylib
+	shell(['g++ -I/Users/macuser/XSB/XSB/config/i386-apple-darwin8.9.1-mt -I/Users/macuser/XSB/XSB/emu -I/Users/macuser/XSB/XSB/packages/xasp/smodels -lm ',
+	'-dynamiclib -undefined dynamic_lookup -single_module -nostartfiles ',
+	'-o xasppkg.dylib xasppkg.o xsb_wrap_xasppkg.o ',
+	'/Users/macuser/XSB/XSB/packages/xasp/smodels/.libs/libsmodels.a']).
+
+make:- 
+	shell('rm -f *dylib *.o'),
+	% 1) compile xasppkg
+	shell(['g++ -I/Users/macuser/XSB/XSB/config/i386-apple-darwin8.9.1-mt -I/Users/macuser/XSB/XSB/emu -I/Users/macuser/XSB/XSB/packages/xasp/smodels -c -o xasppkg.o xasppkg.c']),
+	% 1) compile xsb_wrap_xasppkg
+	shell(['gcc -I/Users/macuser/XSB/XSB/config/i386-apple-darwin8.9.1-mt -I/Users/macuser/XSB/XSB/emu -I/Users/macuser/XSB/XSB/packages/xasp/smodels -c xsb_wrap_xasppkg.c']),
+	% 3) make dylib
+	shell(['g++ -I/Users/macuser/XSB/XSB/config/i386-apple-darwin8.9.1-mt -I/Users/macuser/XSB/XSB/emu -I/Users/macuser/XSB/XSB/packages/xasp/smodels -lm ',
+	'-dynamiclib -undefined dynamic_lookup -single_module -nostartfiles ',
+	'-o xasppkg.dylib xasppkg.o xsb_wrap_xasppkg.o ',
+	'/Users/macuser/XSB/XSB/packages/xasp/smodels/.libs/libsmodels.a']).
+
+
