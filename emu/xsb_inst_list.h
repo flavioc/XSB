@@ -188,8 +188,8 @@ XSB_INST(0xa9, puttbreg, _puttbreg, PP, R, X,X);
 XSB_INST(0xaa, jumptbreg, _jumptbreg, PP, R, L,X);
 XSB_INST(0xab, getVn, _getVn,  PP, V, X,X);
 XSB_INST(0xac, test_heap, _test_heap, PP, A, N,X);
-XSB_INST(0xad, no_inst, _no_inst, PPP,X,X,X);
-XSB_INST(0xae, no_inst, _no_inst, PPP,X,X,X);
+XSB_INST(0xad, putpbreg_ci, _putpbreg_ci, V,A,A,X);
+XSB_INST(0xae, puttbreg_ci, _puttbreg_ci, R,A,A,X);
 XSB_INST(0xaf, no_inst, _no_inst, PPP,X,X,X);
 
 XSB_INST(0xb0, switchonterm, _switchonterm, PPR, L, L,X);

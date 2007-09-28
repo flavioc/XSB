@@ -169,10 +169,10 @@ db_clause_match(Head,Body,Entry) :-
 	globalvar(GlobVar),
 	log_ith(0,GlobVar,BodyStore),
 	BodyStore = '_$body'(true), % init first time, and match subsequent
-	(db_do_call(Entry,Head)
-	 ->  	stat_set_flag(CLAUSE_INT,0),
-		BodyStore = '_$body'(Body0), % get body as set in interrupt
-		(Body0 == true
+	%% must do all three in following condition because cut may handle
+	%% interrupts, and handling interrupts trashes BodyStore --dsw
+	(db_do_call(Entry,Head),stat_set_flag(CLAUSE_INT,0),BodyStore = '_$body'(Body0)
+	 ->	(Body0 == true
 		 ->	Body = true
 		 ;	term_set_arg(BodyStore,1,true,1), % reset for next alt
 			goal_cut_trans_a(Body0, Body1, _),

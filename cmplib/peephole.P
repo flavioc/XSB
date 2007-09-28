@@ -43,6 +43,8 @@ compile_peephole_opt(Pil, OptPil) :-
 compile_popt1([], []).
 compile_popt1([Inst|Rest], Pil1) :- compile_popt11(Inst, Rest, Pil1).
 
+compile_popt11(call(S,I),[putpbreg_ci(A,_,_)|PilRest],[call(S,I)|OptPilRest]) :-
+	compile_popt1a([putpbreg(A)|PilRest], OptPilRest).
 compile_popt11(trustmeorelsefail(R), [trymeorelse(R,L)|PilRest], [retrymeorelse(R,L)|OptPilRest]) :-
 	compile_popt1a(PilRest, OptPilRest).
 compile_popt11(puttvar(T,R), [getstr(R,S)|PilRest], [putstr(T,S)|OptPilRest]) :-
@@ -52,6 +54,8 @@ compile_popt11(puttvar(T,T), [movreg(T,R)|PilRest], [puttvar(T,R)|OptPilRest]) :
 compile_popt11(puttval(T,T), [movreg(T,R)|PilRest], [puttval(T,R)|OptPilRest]) :-
 	compile_popt1a(PilRest, OptPilRest).
 compile_popt11(movreg(T,R), [puttbreg(R)|PilRest], [puttbreg(T)|OptPilRest]) :-
+	compile_popt1(PilRest, OptPilRest).
+compile_popt11(movreg(T,R), [puttbreg_ci(R,I,J)|PilRest], [puttbreg_ci(T,I,J)|OptPilRest]) :-
 	compile_popt1(PilRest, OptPilRest).
 compile_popt11(movreg(T,R), [addreg(R,S)|PilRest], [addreg(T,S)|OptPilRest]) :-
 	compile_popt1(PilRest, OptPilRest).

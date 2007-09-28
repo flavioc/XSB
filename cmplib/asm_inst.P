@@ -84,6 +84,8 @@ asm_inst(jumpsavebreg(A,L),	8,	170,	[pp, a(A), l(L)]).
 
 asm_inst(getVn(V),              4,      171,    [pp, v(V)]      ).
 asm_inst(test_heap(A,N),        8,      172,    [pp, a(A), n(N)]).
+asm_inst(putpbreg_ci(V,N,A),	4,	173,	[v(V), a(N), a(A)]).
+asm_inst(puttbreg_ci(R,N,A),	4,	174,	[r(R), a(N), a(A)]).
 
 asm_inst(switchonterm(R,L,L1),	12,	176,	[pp, r(R), l(L), l(L1)]	).
 

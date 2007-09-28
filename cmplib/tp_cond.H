@@ -29,7 +29,7 @@
 :- import gennum/1 from gensym.
 :- import vprag_type/2 from varproc.
 :- import eval_relop/11, arithrelop/1 from tp_eval.
-:- import geninl_load_lhs/7, geninline/9 from tpinline.
+:- import geninl_load_lhs/7, geninline/10 from tpinline.
 :- import term_comp_op/1, term_comp_tab/4 from tp_comp.
 :- import release_if_done0/5, getreg/2 from tp_var.
 :- import inline_jumpcof_cond/3 from builtin.

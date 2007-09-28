@@ -26,7 +26,7 @@
 
 
 :- export force_tp_geninline_loaded/0. 
-:- export geninline/9, geninl_load_lhs/7.
+:- export geninline/10, geninl_load_lhs/7.
 
 :- import sym_name/3 from symtab.
 :- import error/1, message/1 from auxlry.

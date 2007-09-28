@@ -207,7 +207,7 @@ tbody(goal(Sym,Args),A,Pil,Pilr,Tin,Tout,Meet,_,_HoldRegs,Tabled,Tabar,_,_) :-
 
 tbody(inlinegoal(Pred,_Ar,Args),A,Pil,Pilr,Tin,Tout,Meet,_,HoldRegs,
 							Tabled,Tabar,Sym,NC) :-
-    geninline(Pred,Args,HoldRegs,Pil,Pil1,Tin,Tout,Sym,NC),
+    geninline(Pred,Args,HoldRegs,A,Pil,Pil1,Tin,Tout,Sym,NC),
     ( Meet == lastgoal ->
 	( Tabled =:= 1 ->      /* if tabled = 1, A>0 */
 		A1 is A-1,

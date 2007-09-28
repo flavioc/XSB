@@ -298,6 +298,8 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 
 #define getVn	        0xab      /* for tabled predicates */
 #define test_heap       0xac      /* for heap overflow testing */
+#define putpbreg_ci	0xad
+#define puttbreg_ci	0xae
 
 /* Indexing instructions */
 

@@ -1086,11 +1086,41 @@ contcase:     /* the main loop */
     cut_code(op1);
   XSB_End_Instr()
 
+  XSB_Start_Instr(putpbreg_ci,_putpbreg_ci) /* VAA variable,reserved_regs,arsize */
+    Def1op
+    //    printf("putpbreg_ci at %p(%lx,%d)\n",lpcreg,isnonvar(cell((CPtr)glstack.low)),get_axx);
+    if (attv_pending_interrupts) {
+      int reserved_regs,arsize;
+      reserved_regs = get_xax;
+      arsize = get_xxa;
+      allocate_env_and_call_check_ints(reserved_regs,arsize);
+    } else {
+      Op1(Variable(get_vxx));
+      ADVANCE_PC(size_xxx);
+      cut_code(op1);
+    }
+  XSB_End_Instr()
+
   XSB_Start_Instr(puttbreg,_puttbreg) /* PPR */
     Def1op
     Op1(Register(get_xxr));
+    if (attv_pending_interrupts) printf("Failed assertion puttbreg\n");
     ADVANCE_PC(size_xxx);
     cut_code(op1);
+  XSB_End_Instr()
+
+  XSB_Start_Instr(puttbreg_ci,_puttbreg_ci) /* RAA register,reserved_regs,arsize */
+    Def1op
+    if (attv_pending_interrupts) {
+      int reserved_regs,arsize;
+      reserved_regs = get_xax;
+      arsize = get_xxa;
+      allocate_env_and_call_check_ints(reserved_regs,arsize);
+    } else {
+      Op1(Register(get_rxx));
+      ADVANCE_PC(size_xxx);
+      cut_code(op1);
+    }
   XSB_End_Instr()
 
   XSB_Start_Instr(jumptbreg,_jumptbreg) /* PPR-L */	/* ??? */
@@ -1346,7 +1376,6 @@ argument positions.
   XSB_Start_Instr(trymeorelse,_trymeorelse) /* PPA-L */
     Def2ops
     if (attv_pending_interrupts) {
-      printf("allocating_env_and_calling_check_ints\n");
       Op1(get_xxa);
       allocate_env_and_call_check_ints(0,op1);
     } else {
@@ -1976,7 +2005,7 @@ argument positions.
   XSB_End_Instr()
 
   XSB_Start_Instr(restore_dealloc_proceed,_restore_dealloc_proceed) /* PPP */
-    Cell term = cell(ereg-2);
+    Cell term = cell(ereg-3);
     XSB_Deref(term);
     if (isconstr(term)) {
       int  disp;
@@ -1987,10 +2016,9 @@ argument positions.
 	bld_copy(reg+disp, cell((CPtr)(addr)+disp));
       }
     }
-    lpcreg = cpreg;
     cpreg = *((byte **)ereg-1);
+    lpcreg = *((byte **)ereg-2);
     ereg = *(CPtr *)ereg;
-    printf("returning: to=%p, its-ret=%p, ereg=%p\n",lpcreg,cpreg,ereg);
   XSB_End_Instr()
 
     /* This is the WAM-execute.  Name was changed because of conflict

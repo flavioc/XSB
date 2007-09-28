@@ -80,9 +80,9 @@ tcond(inlinegoal(Op,_,Args),SuccLab,FailLab,
 	; term_comp_op(Op) ->
 	     tcond_compop(Op,Arg1,Arg2,SuccLab,FailLab,Pil,Pilr,Tin,Tout,Hold)
 	; Op == '=' ->	% these inlines are introduced by flattening
-	     geninline(Op, Args, Hold, Pil, Pilr, Tin, Tout, PredSym, NC)
+	     geninline(Op, Args, Hold, 0, Pil, Pilr, Tin, Tout, PredSym, NC)
 	; Op == 'is' ->	% these inlines are introduced by flattening
-	     geninline(Op, Args, Hold, Pil, Pilr, Tin, Tout, PredSym, NC)
+	     geninline(Op, Args, Hold, 0, Pil, Pilr, Tin, Tout, PredSym, NC)
 	; Op == '@=' ->
 	     tcond_componfun(Op,Arg1,Arg2,SuccLab,FailLab,Pil,Pilr,Tin,Tout,Hold)
 	)
