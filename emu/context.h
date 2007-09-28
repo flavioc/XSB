@@ -145,7 +145,6 @@ typedef struct Message_Queue_Cell {
 #define MAX_REGS 257
 
 /************************************************************************/
-
 struct th_context
 {
 /* System & user Flags */
@@ -193,6 +192,12 @@ struct th_context
 
   int _asynint_code;
   int _asynint_val;
+
+  CPtr _smodels;
+  CPtr _api;
+  CPtr _atoms;    
+  int _curatom;
+  int _totatoms;
 
   /*********** Global Variables for various tries --- some of this may
   be able to be changed to local variables.  Regarray size is the size
