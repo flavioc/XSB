@@ -2441,7 +2441,7 @@ return(0);	/* not "goto contcase"! */
   _no_inst:
     {
       char message[80];
-      sprintf(message, "Illegal opcode hex %x (& %x)", *lpcreg,(int) lpcreg);
+      sprintf(message, "Illegal opcode hex %x (& %p)", *lpcreg,lpcreg);
       xsb_exit(CTXTc message);
     }
 #endif

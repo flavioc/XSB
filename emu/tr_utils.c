@@ -3783,7 +3783,7 @@ int table_component_check(CTXTdeclc NODEptr from_answer) {
 
   //  if (is_conditional_answer(from_answer)) {
     push_comp_node(from_answer,from_answer_idx);
-    printf("starting: %d %d ; ",VISITED_ANSWER(from_answer),STACK_INDEX(from_answer)); 
+    //    printf("starting: %d %d ; ",VISITED_ANSWER(from_answer),STACK_INDEX(from_answer)); 
        print_subgoal(CTXTc stddbg, asi_subgoal((ASI) Child(from_answer)));printf("\n");
        
     //    print_comp_stack(CTXT);

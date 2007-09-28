@@ -516,7 +516,7 @@ static void print_term_of_subgoal(CTXTdeclc FILE *fp, int *i)
   /*    fprintf(fp, "%s", string_val(term));*/
     break;
   case XSB_INT:
-    fprintf(fp, "%d", int_val(term));
+    fprintf(fp, "%d", (int) int_val(term));
     break;
   case XSB_FLOAT:
     fprintf(fp, "%.5g", float_val(term));
