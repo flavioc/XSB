@@ -1176,9 +1176,11 @@ void ODBCColumns(CTXTdecl)
   str2 = str3 = NULL;
   if (str1) str2 = strtok(NULL,".");
   if (str2) str3 = strtok(NULL,".");
-  if (!str3 && !str2) {str3 = str1; str1 = NULL;}
-  else if (!str3) {str3 = str2; str2 = NULL;}
-  /*  printf("str1 %s, str2 %s, str3 %s\n",str1,str2,str3);*/
+  if (!str3) {
+    if (!str2) {str3 = str1; str1 = NULL;}
+    else {str3 = str2; str2 = str1; str1 = NULL;}
+  }
+  /*printf("str1 %s, str2 %s, str3 %s\n",str1,str2,str3);*/
   if (((rc=SQLColumns(cur->hstmt,
 		      str1, SQL_NTS,
 		      str2, SQL_NTS,
