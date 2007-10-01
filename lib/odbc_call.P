@@ -1580,6 +1580,8 @@ fetch(Columns,Cursor,Row) :-
 		 ;
 		 fetch(Columns,Cursor,Row)
 		)
+	 ; RetVal == 1  %% no more rows, OK
+	 ->	fail
 	 ; 	odbc_error(RetVal),
 		fail
 	).
