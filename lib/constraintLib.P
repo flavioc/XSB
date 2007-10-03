@@ -178,6 +178,7 @@ suspend(V,Goal) :-
 :- install_verify_attribute_handler(when,Attr,Other,attr_unify_hook(Attr,Other)).
 
 attr_unify_hook(List,Other) :-
+%	writeln('in auh'(List,Other)),
 	is_list(List),
 	!,
 	attr_unify_hook1(Other,List2),
@@ -205,8 +206,8 @@ call_list([G|Gs]) :-
 %	Can't let a previous failed goal prevent the execution of a later one
 %	The goals on the list can be completely independent.
 %
-call_list([_G|Gs]) :-
-	call_list(Gs).
+%call_list([_G|Gs]) :-
+%	call_list(Gs).
 
 
 /*****************************************************/
