@@ -843,9 +843,10 @@ set_xsb_flag_1(thread_complsize, Size) :-!,
 set_xsb_flag_1(thread_detached, Bool) :- !,
 	(Bool == true -> B = 1 ; B = 0),
 	stat_set_flag(THREAD_DETACHED, B).
-set_xsb_flag_1(max_queue_terms, Bool) :- !,
-	(Bool == true -> B = 1 ; B = 0),
-	stat_set_flag(MAX_QUEUE_TERMS, B).
+set_xsb_flag_1(max_queue_terms, Num) :- !,
+	(integer(Num) -> 
+	    stat_set_flag(MAX_QUEUE_TERMS, Num)
+	;   type_error(integer,Num,set_xsb_flag/2,2) ).
 set_xsb_flag_1(Type, _) :-  
 	domain_error(xsb_flag,Type,set_xsb_flag/2,2).
 
