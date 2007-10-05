@@ -237,8 +237,25 @@ readl_brklp1 :-
 	is_xwammode(Flag),
 	( Flag =:= 1 -> abort ; break, call_c(Call) ).
 
-'_$thread_int'(_Call,_Code) :- 
-	abort_on_thread_cancel.
+:- import thread_get_signal/1 from mutex_xsb.
+:- import thread_peek_signal/1 from mutex_xsb.
+:- import repeat/0 from standard.
+
+%:- import writeln/1 from standard.
+% Continuation is in first arg as opposed to second in attv_int 
+'_$thread_int'(One,_Two) :- 
+	execute_messages_on_signale_queue,
+%	writeln(One),
+	call_c(One).
+
+execute_messages_on_signale_queue:- 
+	repeat,
+	(thread_peek_signal(Message) -> 
+	    thread_get_signal(Message),
+	    call(Message),
+	    fail
+	 ;  true),!.
+
 
 '_$attv_int'(Intlist, Call) :-
 % 	file_write(1, '.... in _$attv_int/2'), file_nl(1),

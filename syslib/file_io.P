@@ -405,6 +405,7 @@ add_alias(Alias,Type,Stream,Predicate):-
   	   permission_error(create,alias,Alias,Predicate)
 	 ; asserta('_$alias_dynamic'(Alias,Type,Stream)).
 
+get_alias(main,THREAD_ALIAS,0):- !.
 get_alias(Alias,Type,Stream):- 
 	'_$alias_dynamic'(Alias,Type,Stream).
 

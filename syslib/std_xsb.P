@@ -30,6 +30,7 @@
 % TLS: just did first pass at metapredicates.  In addition, need to do
 % bagofs, setofs and phrases.
 
+standard_symbol(abort_on_thread_cancel,0,error_handler).
 standard_symbol(abolish, 1, assert).                               % ISO
 standard_metapredicate(abolish,1,1).
 

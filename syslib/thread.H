@@ -31,6 +31,7 @@
 	thread_join/2, thread_join/1,
 	thread_property/2,
 	thread_self/1,set_xsb_ready/0,
+   thread_signal/2,
 	thread_yield/0, usleep/1, thread_sleep/1,
 	threads/0.
 

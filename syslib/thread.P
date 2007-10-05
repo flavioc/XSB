@@ -118,11 +118,14 @@ thread_exit(ExitTerm):-
 	      ; true) ),
 	thread_request( XSB_THREAD_EXIT,THREAD_EXITED,_, _, _,_,_,_,_).
 
+:- import writeln/1 from standard.
+
 internal_thread_exit(ExitCode):- 
 	thread_request( XSB_CHECK_ALIASES_ON_EXIT,AliasedDetached,_,_,_,_,_,_,_),
         (AliasedDetached == 1 -> 
 	    thread_self(Id),remove_alias(_Alias,THREAD_ALIAS,Id) 
 	  ; true),
+%	  writeln(thread_exit),
 	thread_request( XSB_THREAD_EXIT, ExitCode,_, _, _,_,_,_,_).
 
 thread_exit 		    :- thread_exit( [] ).
@@ -236,21 +239,40 @@ thread_property_1(Tid, alias(Alias)) :-
 
 /*---------------*/
 
+%------------------------------------------------------------
+
+:- import abort_on_thread_cancel/0 from error_handler.
+
+% The convention is that the main thread is always 0
 thread_cancel(Input) :-
 	(var(Input) -> 
 	    instantiation_error(thread_cancel/1,1,ground)
 	;  (integer(Input) -> 
-	       thread_cancel_1(Input)
+	      (Input == 0 -> permission_error(cancel,main_thread,0,thread_cancel/1) ; true),
+	       thread_signal_1(Input,abort_on_thread_cancel)
     	   ;  (atom(Input),get_alias(Input,THREAD_ALIAS,Tid) -> 
-	          thread_cancel_1(Tid)
-	      ; domain_error(thread_or_alias,Input,thread_cancel/1,2,'')
+  	          (Tid == 0 -> permission_error(cancel,main_thread,0,thread_cancel/1) ; true),
+  	          thread_signal_1(Tid,abort_on_thread_cancel)
+	      ; domain_error(thread_or_alias,Input,thread_cancel/1,1,'')
 	      ) ) ).
 
-% The convention is that the main thread is always 0
-thread_cancel_1(Id):- 
-	(Id == 0 -> 
-	    permission_error(cancel,main_thread,0,thread_cancel/1)
-	  ; true),
+thread_signal(Input,Message) :-
+	(var(Input) -> 
+	    instantiation_error(thread_signal/2,1,ground)
+	;  (integer(Input) -> 
+	       thread_signal_1(Input,Message)
+    	   ;  (atom(Input),get_alias(Input,THREAD_ALIAS,Tid) -> 
+	          thread_signal_1(Tid,Message)
+	      ; domain_error(thread_or_alias,Input,thread_signal/2,1,'')
+	      ) ) ).
+
+% Sending signals (and cancel) in signal queue, rather than private message queue.
+:- import thread_send_message/2 from mutex_xsb.
+:- import xsb_flag/2 from curr_sym.
+thread_signal_1(Id,Message):- 
+	xsb_flag(max_threads,Max),
+	NewId is Id + Max,
+	thread_send_message(NewId,Message),
 	thread_request( XSB_THREAD_INTERRUPT, Id,_, _, _, _, _, _ ,_).
 
 thread_enable_cancel :-
@@ -320,7 +342,6 @@ thread_run0(Goal) :-
 	call(Goal),
 	internal_thread_exit(THREAD_SUCCEEDED).
 
-		
 
 '_$thread_run'( Goal ) :-
 	(catch( thread_run0(Goal), Ball, (default_error_handler(Ball)))
