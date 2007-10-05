@@ -30,7 +30,9 @@
 	thread_send_message/2,
 	thread_peek_message/1, thread_peek_message/2,
 	print_message_queue/1.
+:- export thread_peek_signal/1, thread_get_signal/1.
 
+:- import xsb_flag/2 from curr_sym.
 :- import (dynamic)/1, code_to_buff/2 from assert.
 :- import check_atom/3,
 % existence_error/4, 

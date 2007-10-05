@@ -239,6 +239,12 @@ thread_get_message(Message) :-
 	thread_request(XSB_THREAD_SELF, Tid, _, _, _, _, _, _ ,_),
 	thread_get_message_1(Tid, Message).
 
+thread_get_signal(Message) :-
+	thread_request(XSB_THREAD_SELF, Tid, _, _, _, _, _, _ ,_),
+	xsb_flag(max_threads,Max),
+	NewId is Tid + Max,
+	thread_get_message_1(NewId, Message).
+
 thread_get_message(Queue,Message):-
 	(integer(Queue) -> 
 	   thread_get_message_1(Queue,Message)
@@ -267,7 +273,13 @@ thread_get_message_1(Queue,Message):-
 
 thread_peek_message(Message) :-
 	thread_request(XSB_THREAD_SELF, Tid, _, _, _, _, _, _ ,_),
-	thread_peek_message(Tid, Message).
+	thread_peek_message_1(Tid, Message).
+
+thread_peek_signal(Message) :-
+	thread_request(XSB_THREAD_SELF, Tid, _, _, _, _, _, _ ,_),
+	xsb_flag(max_threads,Max),
+	NewId is Tid + Max,
+	thread_peek_message_1(NewId, Message).
 
 thread_peek_message(Queue,Message):-
 	(integer(Queue) -> 
