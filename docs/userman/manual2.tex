@@ -4,6 +4,8 @@
 \usepackage{alltt}
 \usepackage{graphicx,makeidx}
 \usepackage{longtable}
+\usepackage{epic}
+\usepackage{ecltree}
 %\usepackage{hyperref}
 
 \usepackage[colorlinks]{hyperref}
@@ -40,6 +42,14 @@
 \def\cut{\mbox{\tt '!'/0}}
 \def\not{\mbox{${\tt '\backslash+'/1}$}}
 
+\newenvironment{definition_nobox}[1]
+               {\begin{DefinitioN}[#1]~\rm}{\hspace{1cm} \end{DefinitioN}}
+
+\newenvironment{definition}
+               {\begin{DefinitioN}~\rm}{\hspace{1cm} \hfill $\Box$\end{DefinitioN}}
+
+\newtheorem{dummylemma}{Dummy}[section]
+\newtheorem{DefinitioN}[dummylemma]{\bf Definition}%[section]
 
 \newtheorem{example}{Example}[section]
 
@@ -51,10 +61,18 @@
 \newcommand{\mtsection}[1]{#1}
 
 \newcommand{\comment}[1]{}
-\newcommand{\ourprolog}{XSB}
 \newcommand{\smallourprolog}{xsb}
 \newcommand{\version}{Version 3.1}
 \newcommand{\LRD}{LRD-stratified}
+
+\newcommand{\ourpredmodrptitem}[2]{
+	\index{CDF predicates!#1}
+	\item[{\mbox{\tt #1}}]\hspace*{\fill}{\mbox{\sf #2}}\ \\
+	\vspace*{-.30in}  }
+
+\newcommand{\ourpredmoditem}[2]{
+	\index{CDF predicates!#1}
+	\item[{\mbox{\tt #1}}]\hspace*{\fill}{\mbox{\sf #2}}\ \\}
 
 \newcommand{\demo}[1]{\hspace*{1.5cm}{\tt #1}}
 \newcommand{\desc}[1]{\item[{\tt #1}]\hspace*{1mm}\newline}
@@ -63,6 +81,60 @@
 \newcommand{\ouritem}[1]{\item[{\mbox{\tt #1}}]\ \\}
 \newcommand{\ournewitem}[2]{\item[{\mbox{\tt #1}}]\hspace*{\fill}{\mbox{\sf #2}}\ \\}
 \newcommand{\ourrepeatnewitem}[2]{\item[{\mbox{\tt #1}}]\hspace*{\fill}{\mbox{\sf #2}}\ \\ \vspace*{-.30in}}
+
+\newcommand{\cA}{{\cal A}}
+\newcommand{\cB}{{\cal B}}
+\newcommand{\cC}{{\cal C}}
+\newcommand{\cD}{{\cal D}}
+\newcommand{\cE}{{\cal E}}
+\newcommand{\cF}{{\cal F}}
+\newcommand{\cG}{{\cal G}}
+\newcommand{\cH}{{\cal H}}
+\newcommand{\cI}{{\cal I}}
+\newcommand{\cJ}{{\cal J}}
+\newcommand{\cK}{{\cal K}}
+\newcommand{\cL}{{\cal L}}
+\newcommand{\cM}{{\cal M}}
+\newcommand{\cN}{{\cal N}}
+\newcommand{\cO}{{\cal O}}
+\newcommand{\cP}{{\cal P}}
+\newcommand{\cQ}{{\cal Q}}
+\newcommand{\cR}{{\cal R}}
+\newcommand{\cS}{{\cal S}}
+\newcommand{\cT}{{\cal T}}
+\newcommand{\cU}{{\cal U}}
+\newcommand{\cV}{{\cal V}}
+\newcommand{\cW}{{\cal W}}
+\newcommand{\cX}{{\cal X}}
+
+\newtheorem{axiom}{Axiom}
+\newtheorem{instance}{Translation Rule}
+\newtheorem{proposition}{Proposition}[section]
+\newcommand{\cid}[1]{cid(#1)}
+\newcommand{\oid}[1]{oid(#1)}
+\newcommand{\crid}[1]{crid(#1)}
+\newcommand{\rid}[1]{rid(#1)}
+
+\newcommand{\class}[1]{{\tt #1\/}\index{CDF identifiers! #1}}
+\newcommand{\component}[1]{{\tt #1\/}\index{components! #1}}
+\newcommand{\context}[1]{{\tt #1\/}\index{contexts! #1}}
+\newcommand{\file}[1]{{\tt #1\/}\index{files!{\tt #1}}}
+\newcommand{\pred}[1]{{\tt #1\/}\index{predicates!#1}}
+\newcommand{\domain}[1]{{\tt #1\/}\index{domains!#1}}
+
+\newcommand{\refchap}[1]{Chapter~\ref{#1}}
+\newcommand{\refsec}[1]{Section~\ref{#1}}
+\newcommand{\refdef}[1]{Definition~\ref{#1}}
+\newcommand{\secref}[1]{Section~\ref{#1}}
+\newcommand{\refexam}[1]{Example~\ref{#1}}
+\newcommand{\refexer}[1]{Exercise~\ref{#1}}	
+\newcommand{\ctxtexc}[1]{{\bf Exceptions:} based on the context {\tt #1}}
+
+\newcommand{\inhdash}{\vdash_{\mbox{\sc inh}}}
+\newcommand{\ttindex}[1]{{\tt #1\/}\index{#1}}
+\newcommand{\emindex}[1]{{\em #1\/}\index{#1}}
+\newcommand{\lra}{\leftrightarrow}
+\newcommand{\Ra}{\Rightarrow}
 
 \newcommand{\stuff}[1]{
         \begin{minipage}{4in}
@@ -125,6 +197,7 @@ Interfaces and Packages}
 %\input{clpr}
 \input{chr}
 \input{xasp}
+\input{cdf}
 \input{otherpackages}
 
 \bibliographystyle{abbrv}

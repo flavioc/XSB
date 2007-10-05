@@ -1,4 +1,5 @@
 @string{CAV = "Proceedings on the Conference on Automated Verification"}
+@string{CAMBRIDGE = "Cambridge University Press"}
 
 @string{ECAI = "European Conference on Artificial Intelligence"}
 @string{ECAI = "ECAI"}
@@ -42,6 +43,7 @@
              on the Management of Data"},
 
 @string{TAPSOFT = "Theory and Practice of Software Development"}
+@string{TPLP = "Theory and Practice of Logic Programming"}
 @string{TCS = "Theoretical Computer Science"}
 @string{TODS = "ACM Transactions on Database Systems"}
 @string{TOPLAS = "ACM TOPLAS"}
@@ -54,7 +56,7 @@
 @string{MIT = "MIT Press"}
 @string{SPRINGER = "Springer-Verlag"}
 
-
+%%% A %%% 
 @phdthesis{Aart95,
 Author ="E. Aarts",
 Title = "Investigations in Logic Language and Computation",
@@ -82,18 +84,21 @@ TITLE = "The {M}use or-parallel {P}rolog model and its performance",
 BOOKTITLE = "NAACLP '90",
 YEAR = 1990 }
 
+@article{AlPS03,
+AUTHOR = "J. Alferes and L. M. Pereira and T. Swift",
+TITLE = "Well-founded Abduction and Generalized Stable Models via
+                  Tabled Dual Programs",  
+JOURNAL = TPLP,
+Volume = 4,
+Number = 4,
+Pages = "383-428",
+YEAR = 2004}
+
 @book{ALL87,
 AUTHOR = "J. Allen",
 TITLE = "Natural Language Understanding",
 PUBLISHER = "Benjamin Cummings",
 YEAR = 1987}
-
-@article{JFLP-Scheduling, 
-AUTHOR = {J. Freire and T. Swift and D. Warren},
-Title = {Beyond Depth-First: Improving Tabled Logic Programs through
-   Alternative Scheduling Strategies},
-Journal = {Journal of Functional and Logic Programming}, 
-Year = 1998 }
 
 @inproceedings{ NiSi96,
 AUTHOR = "I. Niemela and P. Simons",
@@ -183,6 +188,17 @@ AUTHOR = "J. Alferes and L. Pereira and T. Przymusinski",
 TITLE = "Belief Revision in Non-Monotonic Reasoning", 
 BOOKTITLE = "Proceedings of the 7th Portugese AI Conference",
 YEAR = 1995}
+
+%%% B %%% 
+
+@article{BaaH95,
+        author     = {F. Baader and B. Hollunder},
+        title      = {Embedding Defaults into Terminological
+                      Representation Systems},
+        journal    = {J. Automated Reasoning},
+        volume     = {14},
+        pages      = {149--180},
+        year       = {1995}}
 
 @inproceedings{BCR93,
 author = "L. Bachmair and T. Chen and I. V. Ramakrishnan",
@@ -437,6 +453,7 @@ YEAR = 1993}
      note={Available from http://www.clip.dia.fi.upm.es/}
 }
 
+%%% C %%% 
 @inproceedings{Cale01,
 AUTHOR = "M. Calejo",
 TITLE = "Interprolog: A Declarative Java-Prolog Interface",
@@ -533,6 +550,17 @@ AUTHOR = "W. Chen",
 TITLE =  "Query Evaluation of Alternating Fixpoint Logic",
 Journal = "ACM TODS",
 YEAR = 1996 }
+
+@article{hilog-jlp,
+author = "W. Chen and M. Kifer and D.S. Warren",
+title = "{HiLog}: {A} Foundation for Higher-Order Logic Programming",
+journal = JLP,
+year = 1993,
+month = "February",
+volume = 15,
+number = 3,
+pages = {187--230}
+}
 
 @article{ ChKW93,
 AUTHOR = "W. Chen and M. Kifer and D. S. Warren",
@@ -685,6 +713,18 @@ TITLE = "From Tabling to Transformation: Implementing Non-Ground
 Booktitle = "International Workshop on Implementations of Declarative
                   Languages",
 YEAR = 1999 }
+
+@article{ CuSw02,
+AUTHOR = {B. Cui and T. Swift},
+TITLE = "Preference Logic Grammars: Fixed-Point Semantics 
+         and Application to Data Standardization",
+Journal = "Artificial Intelligence",
+Volume = 138,
+Numbers = "1-2",
+Pages = "117-147",
+YEAR = 2002 }
+
+%%% D %%%
 
 @inproceedings{DaNP94,
 Author="C. Damasio and W. Nejdl and L. Pereira",
@@ -1033,6 +1073,13 @@ BOOKTITLE = "8th International PLILP Symposium",
 PUBLISHER = "Springer-Verlag",
 YEAR = 1996}
 
+@article{JFLP-Scheduling, 
+AUTHOR = {J. Freire and T. Swift and D. Warren},
+Title = {Beyond Depth-First: Improving Tabled Logic Programs through
+   Alternative Scheduling Strategies},
+Journal = {Journal of Functional and Logic Programming}, 
+Year = 1998 }
+
 @inproceedings{FrSW97,
 AUTHOR = "J. Freire and T. Swift and D. S. Warren",
 TITLE = "Treating {I/O} Seriously: Resolution Reconsidered for Disk",
@@ -1292,6 +1339,8 @@ BOOKTITLE = "International Logic Programming Symposium",
 PAGES = "420-435",
 YEAR = 1991 }
 
+%%% K %%% 
+
 @article{KaKa93,
 AUTHOR = "T. Kanamori and T. Kawamura",
 TITLE = "Abstract Interpretation based on OLDT Resolution",
@@ -1345,19 +1394,6 @@ volume = 42,
 pages = {741--843}
 }
 
- 
-@article{ ludaescher-himmeroeder-IS-98,
-author = {B. Lud\"ascher and R. Himmer\"oder and G. Lausen and W. May and
-                  C. Schlepphorst},
-title = "Managing Semistructured Data with {FLORID}: {A} Deductive Object-Oriented
-  Perspective",
-journal = "Information Systems",
-number = 8,
-volume = 23,
-year = 1998
-}
-
-
 @article{ KiLo92,
 AUTHOR = "M. Kifer and E.L. Lozinskii",
 TITLE = "A Logic for reasoning with inconsistency",
@@ -1398,6 +1434,20 @@ JOURNAL = "JLP",
 VOLUME = 7,
 PAGES = "231-246",
 YEAR = 1987 }
+
+%%% L %%% 
+
+@article{ ludaescher-himmeroeder-IS-98,
+author = {B. Lud\"ascher and R. Himmer\"oder and G. Lausen and W. May and
+                  C. Schlepphorst},
+title = "Managing Semistructured Data with {FLORID}: {A} Deductive Object-Oriented
+  Perspective",
+journal = "Information Systems",
+number = 8,
+volume = 23,
+year = 1998
+}
+
 
 @book{syntactica-semantica,
 	Title={Syntactica, Symantica},
@@ -1500,6 +1550,8 @@ VOLUME = 11,
 PAGES = "217-242",
 YEAR = 1991 }
 
+%%% M %%% 
+
 @inproceedings{ Mahe88,
 AUTHOR = "M. Maher",
 TITLE = "Complete Axiomatization of the Algebra of Finite, Infinite
@@ -1545,6 +1597,14 @@ AUTHOR = "J. McCarthy",
 TITLE = "Mathematical Logic in Artificial Intelligence",
 INSTITUTION = "Stanford University",
 YEAR = 1987 }
+
+@inproceedings{MGPS03,
+AUTHOR = "D. McGuiness and P. Patel-Schneider",
+TITLE = "From Description Logic Provers to Knowledge Representation Systems",
+BOOKTITLE = "The Description Logi Handbook",
+Publisher = CAMBRIDGE,
+PAGES = "265-281",
+YEAR = 2003}
 
 @inproceedings{ MEI91,
 AUTHOR = "M. Meier",
@@ -1596,18 +1656,13 @@ pages = {1--10},
 year = 1989} 
  
 
-@article{gelder-ross-schlipf-91,
-author = "A. {Van Gelder} and K.A. Ross and J.S. Schlipf",
-title =  "The Well-Founded Semantics for General Logic Programs",
-journal = JACM,
-publisher = "ACM",
-address = "New York",
-volume = 38 ,
-number = 3,
-pages = {620--650}, 
-year = 1991
-}
-
+@inproceedings{MolH03,
+AUTHOR = "R. Moller and V. Haarslev",
+TITLE = "Description Logic Systems",
+BOOKTITLE = "The Description Logi Handbook",
+PAGES = "282-305",
+Publisher = CAMBRIDGE,
+YEAR = 2003}
 
 @article{Moor85,
 AUTHOR = "R. Moore",
@@ -2130,6 +2185,7 @@ BOOKTITLE = "JACM",
 PAGES = "1216-1266",
 YEAR =  1994}
 
+%%% S %%% 
 @article{SaZa89,
 AUTHOR = "D. Sacca and C. Zaniolo.",
 TITLE = "The Generalized Counting Method for Recursive Logic Queries",
@@ -2321,6 +2377,12 @@ Volume = 12,
 Pages = "89-119",
 YEAR = 1992 }
 
+@manual{SMVW02,
+Author = "M. Smith and D. McGuiness and R Volz and C Welty",
+Title = "Web Ontology Language (OWL) Guide Version 1.0",
+Institution = "World-wide web consortium",
+Year = 2002}
+
 @inproceedings{ SpFr94,
 AUTHOR = "G. Specht and B. Freitag",
 TITLE = "Amos: A natural language parser implemented as a deductive
@@ -2472,6 +2534,12 @@ Year = 1999,
 Publisher = SPRINGER,
  }
 
+@unpublished{SwiW03b,
+AUTHOR = "T. Swift and D. S. Warren",
+Title = "The Meaning of Cold Dead Fish",
+Note = {Available via {\tt http://www.cs.sunysb.edu/\~{}tswift}},
+YEAR = 2003 }
+
 @inproceedings{Swif04,
    AUTHOR = "T. Swift",
    TITLE = {Deduction in Ontologies via Answer Set Programming},
@@ -2480,6 +2548,8 @@ Publisher = SPRINGER,
    Number = 2923,
    Pages = "275-289",
    Year = 2004}
+
+%%% T %%%
 
 @inproceedings{ TAKI1,
 AUTHOR = "Kazuo Taki and K. Nakajima and H. Nakashima and Morohito Ikeda",
@@ -2556,6 +2626,8 @@ YEAR = 1993 }
   PAGES = "284--299"
 }
 
+%%% U %%%
+
 @inproceedings{ UEDA87,
 AUTHOR = "K. Ueda",
 TITLE = "Guarded Horn Clauses",
@@ -2591,6 +2663,27 @@ AUTHOR = "J. Ullman",
 TITLE = "Principles of Data and Knowledge-base Systems Vol {II}",
 PUBLISHER = "Computer Science Press",
 YEAR = 1989}
+
+@unpublished{UNSPSC,
+Key = {UNSPSC},
+TITLE = "Universal Standard Products and Services Classification",
+ORGANIZATION = "Electronic Commerce Code Management Association",
+Note = "\url{http://www.unspsc.org}",
+Year = 2002}
+
+%%% V %%% 
+
+@article{gelder-ross-schlipf-91,
+author = "A. {Van Gelder} and K.A. Ross and J.S. Schlipf",
+title =  "The Well-Founded Semantics for General Logic Programs",
+journal = JACM,
+publisher = "ACM",
+address = "New York",
+volume = 38 ,
+number = 3,
+pages = {620--650}, 
+year = 1991
+}
 
 @inproceedings{vanGelder88,
 AUTHOR = "A.~{van Gelder}",
@@ -2907,16 +3000,11 @@ month = "July"
 }
 
 
-@article{hilog-jlp,
-author = "W. Chen and M. Kifer and D.S. Warren",
-title = "{HiLog}: {A} Foundation for Higher-Order Logic Programming",
-journal = JLP,
-year = 1993,
-month = "February",
-volume = 15,
-number = 3,
-pages = {187--230}
-}
+@manual{YaKZ05,
+author = "G. Yang and  M. Kifer and C. Zhao",
+Title = "FLORA-2: User's Manual Version 0.94",
+Note = "Avaliable via flora.sourceforge.net",
+Year = 2005}
 
 @inproceedings{ hilog-icdt-95 ,
 author = " W. Chen and M. Kifer ",
@@ -3084,13 +3172,13 @@ Publisher = "Prentice-Hall",
 Year = 1997
 }
 
-@manuscript{SaSR06a,
+@unpublished{SaSR06a,
 Author = "B. Sanna-Starosta",
 Title = "CHRd: A Set-based Solver for Constraint Hanlding Rules",
 Note = "available at www.cs.msu.edu/\~{}bss/chr-d",
 Year = 2006}
 
-@manuscript{SaSR06b,
+@unpublished{SaSR06b,
 Author = "B. Sanna-Starosta and C.R.~Ramakrishnan",
 Title = "Compiling Constraint Handling Rules for Efficient Tabled Evaluation",
 Note = "available at www.cs.msu.edu/\~{}bss/chr-d",
