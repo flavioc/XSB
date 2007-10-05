@@ -427,7 +427,7 @@ void cancel_proc(int sig)
 #ifndef LINUX
   init_interrupt();  /* reset interrupt, if using signal */
 #endif
-    asynint_val |= THREADINT_MARK;
+  //    asynint_val |= THREADINT_MARK;
     asynint_code = 0;
 }
 

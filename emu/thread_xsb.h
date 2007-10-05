@@ -161,11 +161,13 @@ typedef struct XSB_Message_Queue {
   int                  size;		/* number of messages in the queue */
   int                  max_size;
   int		       n_threads;	/* number of threads waiting */
+  int                  initted;         /* maybe replace w. bit field */
   int		       deleted;		/* true if is to be deleted */
+  struct XSB_Message_Queue	*next_entry,	/* either next free slot or next thread */
+				*prev_entry ;	/* only valid for slots used for threads */
 } XSB_MQ;
 typedef XSB_MQ *XSB_MQ_Ptr;
 #endif
-
 
 #define ENSURE_ONE_THREAD()						\
   { if( flags[NUM_THREADS] > 1 )					\

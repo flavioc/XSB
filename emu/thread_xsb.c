@@ -110,6 +110,8 @@ typedef enum
 
 static xsb_thread_t *th_vec;
 static xsb_thread_t *th_first_free, *th_last_free, *th_first_thread;
+static XSB_MQ_Ptr mq_table;
+static XSB_MQ_Ptr  mq_first_free, mq_last_free, mq_first_queue;
 
 extern void findall_clean_all(CTXTdecl);
 extern void release_private_dynamic_resources(CTXTdecl);
@@ -214,6 +216,90 @@ static void init_thread_table(void)
 	threads_initialized = TRUE;
 }
 
+/* 
+   Array elements 0..max_threads-1 -- private message queues
+                  max_threads..2*max_threads-1 -- private signal queues
+		  2*max_threads..3*max_threads-1 -- public signal queues
+*/
+static void init_mq_table(void)
+{
+	int i ;
+
+	mq_table = mem_calloc(3*max_threads_glc, sizeof(XSB_MQ), OTHER_SPACE);
+
+	for( i = max_threads_glc; i < 3*max_threads_glc; i++ )
+	{
+	  //	  mq_table[i].valid = FALSE;
+	  mq_table[i].next_entry = &mq_table[i+1];
+	}
+	mq_first_free = &mq_table[max_threads_glc];
+	mq_last_free = &mq_table[3*max_threads_glc-1];
+	mq_last_free->next_entry = NULL;
+	mq_first_queue = NULL;
+
+	//	threads_initialized = TRUE;
+}
+
+void init_message_queue(XSB_MQ_Ptr xsb_mq, int declared_size) {
+
+  xsb_mq->first_message = 0;
+  xsb_mq->last_message = 0;
+  xsb_mq->size = 0;
+  xsb_mq->n_threads = 0;
+  xsb_mq->deleted = FALSE;
+  if (declared_size == 0)
+    xsb_mq->max_size = flags[MAX_QUEUE_TERMS];
+  else xsb_mq->max_size = declared_size;
+
+  if (xsb_mq-> initted == FALSE ) {
+    pthread_mutex_init(&xsb_mq->mq_mutex, NULL ) ;
+    pthread_cond_init( &xsb_mq->mq_has_free_cells, NULL );
+    pthread_cond_init( &xsb_mq->mq_has_messages, NULL );
+    xsb_mq->initted = TRUE;
+  }
+}
+
+void check_deleted( th_context* , XSB_MQ_Ptr , op_type );
+
+/* releasing the space for messages from a message queue (as opposed
+   to the queue structure itself)  */
+void queue_dealloc( XSB_MQ_Ptr q )
+{
+	MQ_Cell_Ptr p, p1 ;
+
+	p = q->first_message ; 
+	while( p != NULL )
+	{
+		p1 = p->next ;
+		mem_dealloc( p, p->size, THREAD_SPACE ) ;
+		p = p1 ;
+	}
+/* can't deallocate the memory of the term queue, as there may be
+   references to it from other threads 
+	mem_dealloc( q, sizeof(XSB_MQ), THREAD_SPACE ) ;
+ */
+}
+
+void destroy_private_message_queue(CTXTdeclc int mq_index) {
+  XSB_MQ_Ptr xsb_mq = &(mq_table[mq_index]);
+
+  pthread_mutex_lock( &xsb_mq->mq_mutex ) ;
+  check_deleted(CTXTc xsb_mq, MESG_DESTROY) ;
+  xsb_mq->deleted = TRUE ;
+  if( xsb_mq->n_threads == 0 ) {	
+    pthread_mutex_unlock( &xsb_mq->mq_mutex ) ;
+    queue_dealloc( xsb_mq ) ;
+  }
+  else  {
+    /* if there are threads waiting in the queue, mark it
+       as deleted, wake up the thread, and let the last
+       one really delete it */
+    pthread_mutex_unlock( &xsb_mq->mq_mutex ) ;
+    pthread_cond_broadcast( &xsb_mq->mq_has_messages ) ;
+    pthread_cond_broadcast( &xsb_mq->mq_has_free_cells ) ;
+  }
+}
+
 /*-------------------------------------------------------------------------*/
 /* Thread Creation, Destruction, etc. */
 
@@ -242,6 +328,7 @@ static int th_find( pthread_t_p tid )
 static int th_new( th_context *ctxt, int is_detached, int is_aliased )
 {
 	xsb_thread_t *pos ;
+	int index;
 
 	/* get entry from free list */
 	if( !th_first_free )
@@ -282,7 +369,11 @@ static int th_new( th_context *ctxt, int is_detached, int is_aliased )
 	pos->valid = FALSE;
 	pos->aliased = is_aliased;
 	pos->status = THREAD_RUNNING;
-	return pos - th_vec ;
+	index = pos - th_vec;
+	/* initialize the thread's private message queue */
+	init_message_queue(&mq_table[index], 0);
+
+	return index ;
 }
 
 static pthread_t_p th_get( int i )
@@ -554,6 +645,7 @@ void init_system_threads( th_context *ctxt )
   pthread_t tid = pthread_self();
   int id, pos;
 
+  init_mq_table();
   /* this should build an invalid thread id */
   init_thread_table();
   id = pos = th_new(ctxt, 0, 0) ;
@@ -564,6 +656,7 @@ void init_system_threads( th_context *ctxt )
   ctxt->tid = id ;
   if( id != 0 )
 	xsb_abort( "[THREAD] Error initializing thread table" );
+
 
   max_threads_sofar = 1 ;
 }
@@ -783,24 +876,6 @@ void check_deleted( th_context *th, XSB_MQ_Ptr q, op_type op )
 		xsb_existence_error(th, "message queue", iq, pred, arity, arg);
 	  }
 }
-/* releasing the memory from a message queue */
-void queue_dealloc( XSB_MQ_Ptr q )
-{
-	MQ_Cell_Ptr p, p1 ;
-
-	p = q->first_message ; 
-	while( p != NULL )
-	{
-		p1 = p->next ;
-		mem_dealloc( p, p->size, THREAD_SPACE ) ;
-		p = p1 ;
-	}
-/* can't deallocate the memory of the term queue, as there may be
-   references to it from other threads */
-/*
-	mem_dealloc( q, sizeof(XSB_MQ), THREAD_SPACE ) ;
- */
-}
 
 /* waiting on message queues */
 /* returns TRUE if thread was signaled */
@@ -870,7 +945,6 @@ xsbBool xsb_thread_request( CTXTdecl )
 	int i;
 	Integer rc ;
 	xsbBool success = TRUE ;
-
 	switch( request_num )
 	{
 	    /* Flags use default values, params have explicit
@@ -880,31 +954,6 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  rc = xsb_thread_create(th,flags[THREAD_GLSIZE],flags[THREAD_TCPSIZE],flags[THREAD_COMPLSIZE],
 				   flags[THREAD_PDLSIZE],flags[THREAD_DETACHED],0) ;
 	  break ;
-
-	case XSB_THREAD_CREATE_PARAMS:
-	  iso_check_var(th, 3,"thread_create/[2,3]"); // should check here, rather than at end
-	  id = xsb_thread_create(th,ptoc_int(CTXTc 4),ptoc_int(CTXTc 5),
-				 ptoc_int(CTXTc 6),ptoc_int(CTXTc 7), ptoc_int(CTXTc 8), 0);
-	  break ;
-
-	case XSB_THREAD_SETUP:
-	  iso_check_var(th, 3,"thread_create/[2,3]"); // should check here, rather than at end
-	  id = xsb_thread_setup(th, ptoc_int(CTXTc 8), 1);
-	  ctop_int( CTXTc 9, id) ;
-	  break;
-
-	case XSB_THREAD_CREATE_ALIAS:
-	  // 1: Request_num, 2: Goal, 3: _, 4: Glsize, 5: Tcpsize, 6: Complsize, 7: pdlsize, 8: detached, 9: Pos
-	    rc = xsb_thread_create_1(th, iso_ptoc_callable(CTXTc 2,"thread_create/3"),ptoc_int(CTXTc 4),
-				   ptoc_int(CTXTc 5),ptoc_int(CTXTc 6),ptoc_int(CTXTc 7), ptoc_int(CTXTc 8), 
-				   ptoc_int(CTXTc 9));
-	  break;
-
-	  /* TLS: replaced thread_free_tab_blks() by
-	     thread_free_private_tabling_resources, which sets
-	     appropriate tifs to 0, but doesn't use
-	     delete_predicate_table -- rather it deallocates the
-	     structure managers directly.  */
 
 	case XSB_THREAD_EXIT: {
 	  int retract_aliases = 0;
@@ -921,6 +970,7 @@ xsbBool xsb_thread_request( CTXTdecl )
           SYS_MUTEX_INCR( MUTEX_THREADS ) ;
           i = THREAD_ENTRY( th->tid ) ;
 	  th_vec[i].ctxt = NULL;
+	  destroy_private_message_queue(CTXTc i);
 	  if( i >= 0 ) {
 	    if ( th_vec[i].detached ) {
 	      if (th_vec[i].aliased) 
@@ -937,11 +987,18 @@ xsbBool xsb_thread_request( CTXTdecl )
 		xsb_abort("[THREAD] Couldn't find thread in thread table!") ;
 	  mem_dealloc(th,sizeof(th_context),THREAD_SPACE) ;
 	  flags[NUM_THREADS]-- ;
+	  //	  printf("thread is exiting\n");
 	  pthread_exit((void *) rval ) ;
 	  ctop_int(CTXTc 3,retract_aliases);
 	  rc = 0 ; /* keep compiler happy */
 	  break ;
 	}
+
+	  /* TLS: replaced thread_free_tab_blks() by
+	     thread_free_private_tabling_resources, which sets
+	     appropriate tifs to 0, but doesn't use
+	     delete_predicate_table -- rather it deallocates the
+	     structure managers directly.  */
 
 	case XSB_THREAD_JOIN: {
 	  id = iso_ptoc_int( CTXTc 2 ,"thread_join/[1,2]") ;
@@ -1151,10 +1208,8 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  ctop_int(CTXTc 4, th_vec[ THREAD_ENTRY(i) ].status);
 	  break;
 
-	  /* for now, one interrupt, but possibly we should allow
-	     users to define others.  If all goes well, the cancelled
-	     thread will execute '_$thread_int/2, by checking
-	     THREADINT_MARK */
+	  /* If all goes well, the cancelled thread will execute
+	     '_$thread_int/2, by checking THREADINT_MARK */
 
 	case XSB_THREAD_INTERRUPT: {
 	  th_context *	ctxt_ptr ;
@@ -1175,7 +1230,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 	    pthread_mutex_unlock( &th_mutex ) ;
 	  } else {
 	    bld_int(reg+2,i);
-	    xsb_permission_error(CTXTc "thread_interrupt","invalid_thread",
+	    xsb_permission_error(CTXTc "thread_interruptt","invalid_thread",
 				   reg[2],"xsb_thread_interrupt",1); 
 	  }
 	  break;
@@ -1236,29 +1291,33 @@ xsbBool xsb_thread_request( CTXTdecl )
 
 	case MESSAGE_QUEUE_CREATE: {
 	  XSB_MQ_Ptr xsb_mq;
-	  int declared_size;
 
-	  xsb_mq = (XSB_MQ_Ptr) mem_alloc(sizeof(XSB_MQ),THREAD_SPACE);
-	  xsb_mq->first_message = 0;
-	  xsb_mq->last_message = 0;
-	  xsb_mq->size = 0;
-	  xsb_mq->n_threads = 0;
-	  xsb_mq->deleted = FALSE;
-	  if ((declared_size = ptoc_int(CTXTc 3)) == 0)
-	    xsb_mq->max_size = flags[MAX_QUEUE_TERMS];
-	  else xsb_mq->max_size = declared_size;
+	/* get entry from free list */
+	if( !mq_first_free ) 	
+	  xsb_resource_error(CTXTc "message queues","message_queue_create",2);
 
-	  pthread_mutex_init(&xsb_mq->mq_mutex, NULL ) ;
-	  pthread_cond_init( &xsb_mq->mq_has_free_cells, NULL );
-	  pthread_cond_init( &xsb_mq->mq_has_messages, NULL );
+	xsb_mq = mq_first_free;
+	mq_first_free = mq_first_free->next_entry;
 
-	  ctop_int(CTXTc 2,(int) xsb_mq);
-	  break;
+	/* I'm not keeping the public queues ordered, just inserting at head */
+	if (mq_first_queue != NULL)
+	  mq_first_queue->prev_entry = xsb_mq;
+	xsb_mq->next_entry = mq_first_queue;
+	mq_first_queue = xsb_mq;
+	xsb_mq->prev_entry = NULL;
+
+	init_message_queue(xsb_mq,ptoc_int(CTXTc 3));
+
+	ctop_int(CTXTc 2,((int) (xsb_mq- mq_table)));
+	break;
 	}
 
 	  /* Adding convention that max size of 0 is an unbounded queue */
 	case THREAD_SEND_MESSAGE: {
-	  XSB_MQ_Ptr message_queue = (XSB_MQ_Ptr) ptoc_int(CTXTc 2);
+	  int index = ptoc_int(CTXTc 2);
+	  XSB_MQ_Ptr message_queue;
+	  
+	  message_queue = &mq_table[index];
 	  MQ_Cell_Ptr this_cell;
 
 	  /*   int i; CPtr BuffPtr;
@@ -1300,7 +1359,11 @@ xsbBool xsb_thread_request( CTXTdecl )
 	}
 
 case THREAD_TRY_MESSAGE: {	 
-	  XSB_MQ_Ptr message_queue = (XSB_MQ_Ptr) ptoc_int(CTXTc 2);
+  //`printf("in thread try message\n");
+	  int index = ptoc_int(CTXTc 2);
+	  XSB_MQ_Ptr message_queue;
+	  
+	  message_queue = &mq_table[index];
 
 	  pthread_mutex_lock(&message_queue->mq_mutex);
           /* if all goes well this lock will only be released
@@ -1320,7 +1383,10 @@ case THREAD_TRY_MESSAGE: {
      either by THREAD_ACCEPT_MESSAGE or by suspending in
      pthread_cond_wait() */
 case THREAD_RETRY_MESSAGE: {	 
-	  XSB_MQ_Ptr message_queue = (XSB_MQ_Ptr) ptoc_int(CTXTc 2);
+	  int index = ptoc_int(CTXTc 2);
+	  XSB_MQ_Ptr message_queue;
+	  
+	  message_queue = &mq_table[index];
 
 	  /* If current_mq_cell is last message, the thread has made a
 	     traversal through the queue without finding a term that
@@ -1350,7 +1416,10 @@ case THREAD_RETRY_MESSAGE: {
   /* Broadcasts whenever it goes from "full" to "not_full" so that
      writers will be awakened. */	
 case THREAD_ACCEPT_MESSAGE: {	 
-  XSB_MQ_Ptr message_queue = (XSB_MQ_Ptr) ptoc_int(CTXTc 2);
+	  int index = ptoc_int(CTXTc 2);
+	  XSB_MQ_Ptr message_queue;
+	  
+	  message_queue = &mq_table[index];
 
   /* Take MQ_Cell out of chain, and clear its contents */
   if (message_queue->first_message == current_mq_cell) 
@@ -1378,7 +1447,28 @@ case THREAD_ACCEPT_MESSAGE: {
 
 	case XSB_MESSAGE_QUEUE_DESTROY:
         {
-	  XSB_MQ_Ptr xsb_mq = (XSB_MQ_Ptr) ptoc_int(CTXTc 2);
+	  XSB_MQ_Ptr xsb_mq;
+	  int mq_index;
+	  mq_index = ptoc_int(CTXTc 2);
+	  /* delete from queue list */
+	  if( mq_table[mq_index].prev_entry != NULL )
+	    mq_table[mq_index].prev_entry->next_entry = mq_table[mq_index].next_entry ;
+	  if( mq_table[mq_index].next_entry != NULL )
+	    mq_table[mq_index].next_entry->prev_entry = mq_table[mq_index].prev_entry ;
+	  if( mq_first_queue == &mq_table[mq_index] )
+                mq_first_queue = mq_table[mq_index].next_entry ;
+
+
+	  /* add to free queue list */
+	  if (mq_first_free == NULL )
+	    mq_first_free = mq_last_free = &mq_table[mq_index];
+	  else {   /* add new hole at tail to minimise re-use of slots */
+	    mq_last_free->next_entry = &mq_table[mq_index];
+	    mq_last_free = &mq_table[mq_index];
+	    mq_last_free->next_entry = NULL;
+	  }
+
+	  xsb_mq = &(mq_table[mq_index]);
 
 	  pthread_mutex_lock( &xsb_mq->mq_mutex ) ;
 	  check_deleted(th, xsb_mq, MESG_DESTROY) ;
@@ -1400,6 +1490,34 @@ case THREAD_ACCEPT_MESSAGE: {
 	  break;
         }
 
+	case XSB_THREAD_CREATE_PARAMS:
+	  iso_check_var(th, 3,"thread_create/[2,3]"); // should check here, rather than at end
+	  id = xsb_thread_create(th,ptoc_int(CTXTc 4),ptoc_int(CTXTc 5),
+				 ptoc_int(CTXTc 6),ptoc_int(CTXTc 7), ptoc_int(CTXTc 8), 0);
+	  break ;
+
+	case XSB_USLEEP: {
+#ifdef WIN_NT
+	  Sleep(floor(iso_ptoc_int_arg(CTXTc 2,"usleep/1",1) / 1000));
+#else
+	  usleep(iso_ptoc_int_arg(CTXTc 2,"usleep/1",1));
+#endif
+	  break;
+	}
+
+	case XSB_THREAD_SETUP:
+	  iso_check_var(th, 3,"thread_create/[2,3]"); // should check here, rather than at end
+	  id = xsb_thread_setup(th, ptoc_int(CTXTc 8), 1);
+	  ctop_int( CTXTc 9, id) ;
+	  break;
+
+	case XSB_THREAD_CREATE_ALIAS:
+	  // 1: Request_num, 2: Goal, 3: _, 4: Glsize, 5: Tcpsize, 6: Complsize, 7: pdlsize, 8: detached, 9: Pos
+	    rc = xsb_thread_create_1(th, iso_ptoc_callable(CTXTc 2,"thread_create/3"),ptoc_int(CTXTc 4),
+				   ptoc_int(CTXTc 5),ptoc_int(CTXTc 6),ptoc_int(CTXTc 7), ptoc_int(CTXTc 8), 
+				   ptoc_int(CTXTc 9));
+	  break;
+
 	case PRINT_MESSAGE_QUEUE: {
 	  XSB_MQ_Ptr xsb_mq = (XSB_MQ_Ptr) ptoc_int(CTXTc 2);
   	  MQ_Cell_Ptr cur_cell;
@@ -1412,15 +1530,6 @@ case THREAD_ACCEPT_MESSAGE: {
 		   cur_cell,cur_cell->next,cur_cell->prev,cur_cell->size);
 	    cur_cell = cur_cell->next;
 	  }
-	  break;
-	}
-
-	case XSB_USLEEP: {
-#ifdef WIN_NT
-	  Sleep(floor(iso_ptoc_int_arg(CTXTc 2,"usleep/1",1) / 1000));
-#else
-	  usleep(iso_ptoc_int_arg(CTXTc 2,"usleep/1",1));
-#endif
 	  break;
 	}
 
@@ -1459,7 +1568,11 @@ case THREAD_ACCEPT_MESSAGE: {
 	    break ;
 
 	case THREAD_PEEK_MESSAGE: {	 
-	  XSB_MQ_Ptr message_queue = (XSB_MQ_Ptr) ptoc_int(CTXTc 2);
+	  int index = ptoc_int(CTXTc 2);
+	  XSB_MQ_Ptr message_queue;
+	  
+	  message_queue = &mq_table[index];
+
 	  int islast = 0;
 
 	  pthread_mutex_lock(&message_queue->mq_mutex);
@@ -1478,7 +1591,11 @@ case THREAD_ACCEPT_MESSAGE: {
 	}
 
 	case THREAD_REPEEK_MESSAGE: {	 
-	  XSB_MQ_Ptr message_queue = (XSB_MQ_Ptr) ptoc_int(CTXTc 2);
+	  int index = ptoc_int(CTXTc 2);
+	  XSB_MQ_Ptr message_queue;
+	  
+	  message_queue = &mq_table[index];
+
 	  int islast = 0;
 
 	  check_deleted(th, message_queue, MESG_PEEK) ;
@@ -1496,7 +1613,10 @@ case THREAD_ACCEPT_MESSAGE: {
 	} 
 
 	case THREAD_UNLOCK_QUEUE: {
-	  XSB_MQ_Ptr message_queue = (XSB_MQ_Ptr) ptoc_int(CTXTc 2);
+	  int index = ptoc_int(CTXTc 2);
+	  XSB_MQ_Ptr message_queue;
+	  
+	  message_queue = &mq_table[index];
 	  pthread_mutex_unlock(&message_queue->mq_mutex);
 	  break;
 	}
