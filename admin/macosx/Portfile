@@ -19,7 +19,7 @@ long_description	\
 homepage		http://xsb.sourceforge.net/	
 master_sites	sourceforge
 
-checksums md5 e69ac70cdca4f3ac237701756f70a5db
+checksums md5 3e56e787127b1559c488b8cfcadbac83
 
 configure.args	--prefix=${destroot}/${prefix}/share/${name}
 
@@ -35,9 +35,10 @@ build.target
 destroot.cmd	./makexsb install
 destroot.target	
 
-default_variants +st +bits32
+default_variants +bits32st
 
-variant st {
+variant bits32st {
+	configure.args-delete --with-bits64
 	configure.args-delete --enable-mt
 	build.cmd-delete --config-tag=mt
 	post-destroot {
@@ -46,7 +47,8 @@ variant st {
 	}
 }
 
-variant mt {
+variant bits32mt {
+	configure.args-delete --with-bits64
 	configure.args-append --enable-mt
 	build.cmd-append --config-tag=mt
 	destroot.cmd-append --config-tag=mt
@@ -56,14 +58,24 @@ variant mt {
 	}
 }
 
-variant bits32 {
-	configure.args-delete --with-bits64
-}
-
-variant bits64 {
+variant bits64st {
 	configure.args-append --with-bits64
 	configure.args-delete --with-bits32
 	build.cmd-append --config-tag=bits64
+	post-destroot {
+		cd ${destroot}${prefix}/bin
+		system "ln -sf ../share/${name}/${version}/bin/xsb xsb"
+	}
+}
+
+variant bits64mt {
+	configure.args-append --with-bits64 --enable-mt
+	configure.args-delete --with-bits32
+	build.cmd-append --config-tag=bits64-mt
+	post-destroot {
+		cd ${destroot}${prefix}/bin
+		system "ln -sf ../share/${name}/${version}/bin/xsb-mt xsb"
+	}
 }
 
 post-destroot {
