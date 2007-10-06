@@ -1,0 +1,8 @@
+This directory contains files used when building Windows 2000/XP GUI 
+installers for XSB using Inno Setup 5.2 (or a later version):
+
+	http://www.jrsoftware.org/isinfo.php
+
+In order to build the installer, perform a manual installation of the 
+XSB files that you want to include on C:\XSB and then open the "xsb.iss" 
+file using the Inno Setup Compiler and run the menu command Build > Compile.
