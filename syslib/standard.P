@@ -1402,11 +1402,16 @@ gc_atoms:-
 :- index '$$exception_ball'/2-0.
 
 catch(Goal,_Catcher,_Handler) :-
-        '$$set_scope_marker',  % should not be called in any other place
-                               % because it remembers the pcreg
+	get_breg(BregBefore),
+        '$$set_scope_marker',  % should not be called in any other place but immediately
+                               % before call because it remembers the pcreg
 	call(Goal),
-        '$$clean_up_block'.    % if no choicepoints in call(Goal) cleans up one
+%	get_breg(B1),write(before_cob(B1)),
+        '$$clean_up_block'(BregBefore). % if no choicepoints in call(Goal) cleans up one
+%        '$$clean_up_block'. % if no choicepoints in call(Goal) cleans up one
+%	get_breg(B2),write(after_cob(B2)).
 catch(_Goal,Catcher,Handler) :-
+%	writeln(second_clause),
 	xsb_thread_self(T),
         '$$exception_ball'(T,Ball),  %% only ever one fact here so no CP
         (
@@ -1462,5 +1467,37 @@ read_until_right_brace([H|T],Tout,Return):-
 	    Tout = [], T = Return
   	 ;  Tout = [H|Tout1],
 	    read_until_right_brace(T,Tout1,Return) ).
+
+/*************/
+
+/* Call cleanup 
+-- after success whenever there are no choice points left (first clause) 
+-- when failing out of Goal (second clause) 
+-- upon exiting out of the catch 
+-- when original choice point is cut over.  Need to find the condition
+   in cut_check and then execute cleanup_catcher(Cleanup,Breg) 
+
+   For tabling, cleanup will occur after the last Program clause resolution for Goal 
+
+   Need to replace asserts with trie_interns*/
+
+:- export call_cleanup/2.
+:- import get_breg/1 from machine.
+
+call_cleanup(Goal,Cleanup):-
+	get_breg(BregBefore),
+	catch(Goal,E,cleanup_catcher(Cleanup,E)),
+	get_breg(BregAfter),
+	(BregBefore == BregAfter -> 
+	    '$$clean_up_block'(BregBefore), % if no choicepoints left in call(Goal) cleans up one
+	    call(Cleanup)
+	  ; true).
+call_cleanup(_Goal,Cleanup):-
+	call(Cleanup),
+	fail.
+
+cleanup_catcher(Cleanup,Error):- 
+	call(Cleanup),
+	throw(Error).
 
 /* --------------------- end of file standard.P ----------------------- */
