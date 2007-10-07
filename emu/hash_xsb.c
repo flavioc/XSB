@@ -87,7 +87,7 @@ unsigned long next_prime(unsigned long some_int) {
  *  Return a bucket number in the range [0 .. (hash_table_size - 1)].
  */
 
-unsigned long hash(char *obj_name, byte arity, unsigned long hash_table_size) {
+unsigned long hash(const char *obj_name, byte arity, unsigned long hash_table_size) {
 
   unsigned long hashval, temp;
   int i, j, k;

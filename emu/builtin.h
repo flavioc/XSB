@@ -201,6 +201,7 @@
 #define PRIVATE_BUILTIN	        180
 
 #define SEGFAULT_HANDLER	182
+#define GET_BREG                183
 
 #define FLOAT_OP        188
 #define IS_ATTV			189 /* similar to IS_LIST */

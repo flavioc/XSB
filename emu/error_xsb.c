@@ -236,7 +236,7 @@ DllExport void call_conv xsb_throw(CTXTdeclc prolog_term Ball)
 
 /*****************/
 void call_conv xsb_domain_error(CTXTdeclc char *valid_domain,Cell culprit, 
-					char *predicate,int arg) 
+					const char *predicate,int arg) 
 {
   prolog_term ball_to_throw;
   int isnew;
@@ -272,7 +272,7 @@ void call_conv xsb_domain_error(CTXTdeclc char *valid_domain,Cell culprit,
 /*****************/
 
 void call_conv xsb_existence_error(CTXTdeclc char *object,Cell culprit, 
-					char *predicate,int arity, int arg) 
+					const char *predicate,int arity, int arg) 
 {
   prolog_term ball_to_throw;
   int isnew;
@@ -308,7 +308,7 @@ void call_conv xsb_existence_error(CTXTdeclc char *object,Cell culprit,
 
 /*****************/
 
-void call_conv xsb_instantiation_error(CTXTdeclc char *predicate,int arg) {
+void call_conv xsb_instantiation_error(CTXTdeclc const char *predicate,int arg) {
   prolog_term ball_to_throw;
   int isnew;
   Cell *tptr; char message[255];
@@ -332,7 +332,7 @@ void call_conv xsb_instantiation_error(CTXTdeclc char *predicate,int arg) {
 }
 
 /*****************/
-void call_conv xsb_misc_error(CTXTdeclc char *inmsg,char *predicate,int arity)
+void call_conv xsb_misc_error(CTXTdeclc char *inmsg,const char *predicate,int arity)
 {
   prolog_term ball_to_throw;
   int isnew;
@@ -361,7 +361,7 @@ void call_conv xsb_misc_error(CTXTdeclc char *inmsg,char *predicate,int arity)
 /* Operation/Object_type/Culprit */
 void call_conv xsb_permission_error(CTXTdeclc
 				    char *operation,char *object,Cell culprit, 
-				    char *predicate,int arity) 
+				    const char *predicate,int arity) 
 {
   prolog_term ball_to_throw;
   int isnew;
@@ -410,7 +410,7 @@ void call_conv xsb_permission_error(CTXTdeclc
    problems in allocating memory for ball.*/
 
 void call_conv xsb_resource_error(CTXTdeclc char *resource,
-					char *predicate,int arity) 
+					const char *predicate,int arity) 
 {
   prolog_term ball_to_throw;
   int isnew;
@@ -584,7 +584,7 @@ void call_conv xsb_table_error(CTXTdeclc char *message)
 /**************/
 
 void call_conv xsb_type_error(CTXTdeclc char *valid_type,Cell culprit, 
-					char *predicate,int arg) 
+					const char *predicate,int arg) 
 {
   prolog_term ball_to_throw;
   int isnew;
@@ -994,16 +994,43 @@ int unwind_stack(CTXTdecl)
 
 } /* unwind_stack */
 
-
+/* Bart's original  
 int clean_up_block(CTXTdecl)
 {
-   if (cp_ereg(breg) > ereg) {
-     /*     printf("%x %x\n",cp_ereg(breg),ereg); */
-     breg = (CPtr)cp_prevbreg(breg);
-   }
+  if (cp_ereg(breg) > ereg) {
+     //          printf("%x %x\n",cp_ereg(breg),ereg); 
+    breg = (CPtr)cp_prevbreg(breg);
+  }
    return(TRUE);
+} 
+*/
 
-} /* clean_up_block */
+int clean_up_block(CTXTdeclc int bregBefore)
+{
+  if (bregBefore == (int) ((pb)tcpstack.high - (pb)breg)) {
+    breg = (CPtr)cp_prevbreg(breg);
+  }
+  return(TRUE);
+} 
+
+/*
+ * You should probably get rid of clean_up_block and reimplement the
+ * first clause of catch/3 as:
+ * 
+ * catch(Goal,_Catcher,_Handler) :-
+ *         '$$set_scope_marker',  % should not be called in any other place
+ *                                % because it remembers the pcreg
+ *         '_$savecp'(Before),
+ *         call(Goal),
+ *         '_$savecp'(After),
+ *         (Before == After ->
+ *             !
+ *        ;
+ *           true
+ *       ).
+ *
+ * This will do the cleanup correctly (I think :-)
+ */
 
 /*---------------------------- end of error_xsb.c --------------------------*/
 

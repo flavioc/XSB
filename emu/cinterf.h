@@ -207,19 +207,19 @@ extern "C" {
 #define extern_reg_term(regnum) reg_term(CTXTc regnum)
 
 /*======================================================================*/
-extern void iso_check_var(CTXTdeclc int reg_num,char *PredString);
+DllExport extern void iso_check_var(CTXTdeclc int reg_num,const char *PredString);
 						/* defined in builtin.c */
 
 DllExport extern char* call_conv ptoc_abs(reg_num);
-extern Cell iso_ptoc_callable(CTXTdeclc int reg_num,char *PredString);
+DllExport extern Cell iso_ptoc_callable(CTXTdeclc int reg_num,const char *PredString);
 						/* defined in builtin.c */
 DllExport extern prolog_float call_conv ptoc_float(CTXTdeclc reg_num);
 						/* defined in builtin.c */
 DllExport extern prolog_int call_conv ptoc_int(CTXTdeclc reg_num);	
 						/* defined in builtin.c */
-DllExport extern prolog_int call_conv iso_ptoc_int(CTXTdeclc int reg_num,char *PredString);
+DllExport extern prolog_int call_conv iso_ptoc_int(CTXTdeclc int reg_num,const char *PredString);
 						/* defined in builtin.c */
-DllExport extern prolog_int call_conv iso_ptoc_int_arg(CTXTdeclc int reg_num,char *PredString,int arg);
+DllExport extern prolog_int call_conv iso_ptoc_int_arg(CTXTdeclc int reg_num,const char *PredString,int arg);
 						/* defined in builtin.c */
 DllExport extern char* call_conv ptoc_string(CTXTdeclc reg_num);
 						/* defined in builtin.c */
@@ -230,14 +230,14 @@ DllExport extern void  call_conv ctop_int(CTXTdeclc reg_num, prolog_int);
 						/* defined in builtin.c */
 DllExport extern void  call_conv ctop_float(CTXTdeclc reg_num, double);
 						/* def in builtin.c */
-DllExport extern void  call_conv ctop_string(CTXTdeclc reg_num, char*);
+DllExport extern void  call_conv ctop_string(CTXTdeclc reg_num, const char*);
 						/* def in builtin.c */
-DllExport extern void  call_conv extern_ctop_string(CTXTdeclc reg_num, char*);
+DllExport extern void  call_conv extern_ctop_string(CTXTdeclc reg_num, const char*);
 						/* def in builtin.c */
-DllExport extern int   call_conv ctop_abs(reg_num, char*);
+  //DllExport extern int   call_conv ctop_abs(reg_num, char*);
 
 // These are not in the manual, if they are included make them DllExport, etc
-extern char* string_find(char*, int);		/* defined in psc.c	*/
+extern char* string_find(const char*, int);		/* defined in psc.c	*/
 extern int   ctop_term(CTXTdeclc char*, char*, reg_num);
 extern int   ptoc_term(CTXTdeclc char*, char*, reg_num);
 

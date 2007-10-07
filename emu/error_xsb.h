@@ -121,16 +121,16 @@ extern void xsb_segfault_quitter(int);
 
 int unwind_stack(CTXTdecl);
 
-extern void call_conv xsb_domain_error(CTXTdeclc char *, Cell, char *, int) ;
-extern void call_conv xsb_existence_error(CTXTdeclc char *,Cell, char *,int, int) ;
-extern void call_conv xsb_instantiation_error(CTXTdeclc char *, int) ;
-extern void call_conv xsb_misc_error(CTXTdeclc char*,char*,int) ; 
-extern void call_conv xsb_permission_error(CTXTdeclc char *,char *,Cell,char *,int) ;
-extern void call_conv xsb_resource_error(CTXTdeclc char *,char *, int) ;
+extern void call_conv xsb_domain_error(CTXTdeclc char *, Cell, const char *, int) ;
+extern void call_conv xsb_existence_error(CTXTdeclc char *,Cell, const char *,int, int) ;
+extern void call_conv xsb_instantiation_error(CTXTdeclc const char *, int) ;
+extern void call_conv xsb_misc_error(CTXTdeclc char*,const char*,int) ; 
+extern void call_conv xsb_permission_error(CTXTdeclc char *,char *,Cell,const char *,int) ;
+extern void call_conv xsb_resource_error(CTXTdeclc char *,const char *, int) ;
 extern void call_conv xsb_resource_error_nopred(CTXTdeclc char *,char *) ;
 extern void call_conv xsb_syntax_error(CTXTdeclc char *) ;
 extern void call_conv xsb_table_error(CTXTdeclc char *) ;
-extern void call_conv xsb_type_error(CTXTdeclc char *,Cell , char *,int) ;
+extern void call_conv xsb_type_error(CTXTdeclc char *,Cell , const char *,int) ;
 
 extern void call_conv xsb_memory_error(char *, char *);
 

@@ -202,7 +202,7 @@ extern void force_answer_false(BTNptr);
 // catch/throw.
 extern int set_scope_marker(CTXTdecl);
 extern int unwind_stack(CTXTdecl);
-extern int clean_up_block(CTXTdecl);
+extern int clean_up_block(CTXTdeclc int);
 
 extern double realtime_count_gl; /* from subp.c */
 
@@ -249,7 +249,7 @@ DllExport prolog_int call_conv ptoc_int(CTXTdeclc int regnum)
 }
 
 /* TLS: unlike ptoc_int, this does NOT cast strings to integers */
-DllExport prolog_int call_conv iso_ptoc_int(CTXTdeclc int regnum,char * PredString)
+DllExport prolog_int call_conv iso_ptoc_int(CTXTdeclc int regnum,const char * PredString)
 {
   /* reg is global array in register.h in the single-threaded engine
    * and is defined as a thread-specific macro in context.h in the
@@ -280,7 +280,7 @@ DllExport prolog_int call_conv iso_ptoc_int(CTXTdeclc int regnum,char * PredStri
    iso_ptoc_int, but passes explicit argument for error message -- for
    use by thread_request and other non-builtin builtins.
 */
-DllExport prolog_int call_conv iso_ptoc_int_arg(CTXTdeclc int regnum,char * PredString, int arg)
+DllExport prolog_int call_conv iso_ptoc_int_arg(CTXTdeclc int regnum,const char * PredString, int arg)
 {
   /* reg is global array in register.h in the single-threaded engine
    * and is defined as a thread-specific macro in context.h in the
@@ -307,7 +307,7 @@ DllExport prolog_int call_conv iso_ptoc_int_arg(CTXTdeclc int regnum,char * Pred
   return FALSE;
 }
 
-inline Cell iso_ptoc_callable(CTXTdeclc int regnum,char * PredString)
+inline Cell iso_ptoc_callable(CTXTdeclc int regnum,const char * PredString)
 {
   /* reg is global array in register.h in the single-threaded engine
    * and is defined as a thread-specific macro in context.h in the
@@ -325,7 +325,7 @@ inline Cell iso_ptoc_callable(CTXTdeclc int regnum,char * PredString)
   return FALSE;
 }
 
-inline void iso_check_var(CTXTdeclc int regnum,char * PredString) {
+inline void iso_check_var(CTXTdeclc int regnum,const char * PredString) {
   register Cell addr = cell(reg+regnum);
 
   XSB_Deref(addr);
@@ -559,7 +559,7 @@ DllExport void call_conv ctop_float(CTXTdeclc int regnum, prolog_float value)
 }
 
 /* take a C string, form a string node */
-DllExport void call_conv ctop_string(CTXTdeclc int regnum, char *value)
+DllExport void call_conv ctop_string(CTXTdeclc int regnum, const char *value)
 {
   /* reg is global array in register.h in the single-threaded engine
    * and is defined as a thread-specific macro in context.h in the
@@ -576,7 +576,7 @@ DllExport void call_conv ctop_string(CTXTdeclc int regnum, char *value)
 }
 
 /* TLS: do not need to intern here, as ctop_string is now interning */
-DllExport void call_conv extern_ctop_string(CTXTdeclc int regnum, char *value)
+DllExport void call_conv extern_ctop_string(CTXTdeclc int regnum, const char *value)
 {
   ctop_string(CTXTc regnum,value) ;
 }
@@ -1045,6 +1045,7 @@ void init_builtin_table(void)
   set_builtin_table(ATTV_UNIFY, "attv_unify");
   set_builtin_table(PRIVATE_BUILTIN, "private_builtin");
   set_builtin_table(SEGFAULT_HANDLER, "segfault_handler");
+  set_builtin_table(GET_BREG, "get_breg");
 
   set_builtin_table(FLOAT_OP, "float_op");
   set_builtin_table(IS_ATTV, "is_attv");
@@ -2727,6 +2728,11 @@ case WRITE_OUT_PROFILE:
     return TRUE;
   }
 
+    /* For call_cleanup -- need offset to avoid problems w. stack reallocation */
+    case GET_BREG: {
+      ctop_addr(1,((pb)tcpstack.high - (pb)breg));
+      break;
+    }
   case IS_CHARLIST: {
     prolog_term size_var;
     int size;
@@ -2856,7 +2862,10 @@ case WRITE_OUT_PROFILE:
     break;
   }
   case CLEAN_UP_BLOCK: {
-    if (clean_up_block(CTXT)) return TRUE; else return FALSE;
+    //    if (clean_up_block(CTXT)) return TRUE; else return FALSE;
+    clean_up_block(CTXTc ptoc_int(CTXTc 1));
+    //    clean_up_block(CTXT);
+    return TRUE;
     break;
   }
 

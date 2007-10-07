@@ -67,7 +67,7 @@ extern Psc synint_proc(Psc, int);
 
 #define CHAR_PTR_SIZE  sizeof(char *)
 
-char *string_find(char *str, int insert) {
+char *string_find(const char *str, int insert) {
 
   char **ptr, *str0;
 

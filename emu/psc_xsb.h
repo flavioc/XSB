@@ -151,7 +151,7 @@ extern Pair link_sym(Psc, Psc);
 extern Pair insert_module(int, char *);
 extern Pair insert(char *, byte, Psc, int *);
 
-extern char* string_find(char*, int);
+extern char* string_find(const char*, int);
 
 /*======================================================================*/
 /*  Special instance (0-arity interface functions)			*/

@@ -95,7 +95,7 @@ extern Hash_Table string_table;
  */
 
 unsigned long  next_prime(unsigned long  some_integer);
-unsigned long  hash(char *atom_name, byte arity, word hash_table_size);
+unsigned long  hash(const char *atom_name, byte arity, word hash_table_size);
 void  expand_symbol_table();
 void  expand_string_table();
 void  symbol_table_stats();
