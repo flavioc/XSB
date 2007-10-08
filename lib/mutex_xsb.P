@@ -226,7 +226,8 @@ thread_send_message(Queue,Message):-
 	(integer(Queue) -> 
            code_to_buff(call(_,_,Message),0),
   	   thread_request(THREAD_SEND_MESSAGE,Queue,_,_,_,_,_,_,_)
-        ;  (atom(Queue),get_alias(Queue,QUEUE_ALIAS,Qid) -> 
+        ;  (atom(Queue),
+	      (get_alias(Queue,QUEUE_ALIAS,Qid) ; get_alias(Queue,THREAD_ALIAS,Qid)) -> 
 	      code_to_buff(call(_,_,Message),0),
 	      thread_request(THREAD_SEND_MESSAGE,Qid,_,_,_,_,_,_,_)
            ;  (var(Queue) -> 
