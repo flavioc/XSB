@@ -28,22 +28,6 @@
 #include "sig_xsb.h"
 #include "flag_defs_xsb.h"
 
-#define MAX_NUMBER_CACHED_QUERIES  500
-
-:- import conget/2, conset/2 from gensym.
-
-:- local
-	c_call_xsb_goal_cache/2,
-	cache_index/2,
-	last_cached_query_index/1.
-
-:- dynamic
-	c_call_xsb_goal_cache/2,
-	cache_index/2,
-	last_cached_query_index/1.
-:- index(c_call_xsb_goal_cache/2,trie).
-:- index(cache_index/2,trie).
-
 :- c_callloop.
 
 c_callloop :-
@@ -59,72 +43,6 @@ c_callloop :-
 
 c_callloop_cmd_goal(_) :-
 	eval_cmdline_goal.
-
-c_callloop_query_loop(_) :-
-%	writeln(foo),
-%	set_xsb_ready,
-	repeat,
-	get_from_caller(Par,VarTerm,Command),
-	(\+integer(Command)
-	 ->	file_write(STDERR,'C command error; must be an integer; is '),
-		file_write(STDERR,Command),
-		file_nl(STDERR),
-		!,
-		fail
-	 ; Command =:= 0		/* call */
-	 ->	excess_vars(Par, [], [], VarList),
-		VarTerm =.. [ret|VarList],
-		do_pcall(Par,VarTerm)
-	 ; Command =:= 2	/* string_call */
-	 ->	
-	    string_to_term(Par,Goal),
-	    excess_vars(Goal,[],[],VarList),
-	    VarTerm =.. [ret|VarList],
-	    do_pcall(Goal,VarTerm)
-	 ; Command =:= 1	/* quit */
-	 ->	!,fail
-	 ; fail
-	).
-
-get_from_caller(_,_,_) :- halt.		% halt returns to caller
-
-do_pcall(Call,VarTerm) :-
-	'_$call'(Call),
-	get_from_caller(Call,VarTerm,Command),
-	(Command =:= 0		/* next */
-	 ->	fail
-	 ; Command =:= 1	/* close query */
-	 ->	close_open_tables,
-		!,fail
-	).
-
-% hidden version of call
-'_$call'(Y) :- 
-	'_$savecp'(C), 
-	goal_cut_trans(Y,X,C),
-	call_expose(X).
-
-%% MK: added this clause. Reduces time to call XSB by x3.
-%%     Not sure, but the same can be useful in eval_cmdline_goal
-string_to_term(Atom,Goal) :-
-	c_call_xsb_goal_cache(Atom,Goal),
-	!.
-string_to_term(Atom,Goal) :-
-	stat_flag(STDERR_BUFFERED,StderrBuffered),
-	%% If stdio is redirected and buffered we want to capture error messages
-	1 =:= StderrBuffered,
-	!,
-	file_open(Atom,sr,Fp),
-	file_read(Fp,Goal,_),
-	file_close(Fp),
-	save_query_in_cache(Atom,Goal).
-
-
-string_to_term(Atom,Goal) :-
-	file_open(Atom,sr,Fp),
-	file_read(Fp,Goal,_),
-	file_close(Fp),
-	save_query_in_cache(Atom,Goal).
 
 
 eval_cmdline_goal :-
@@ -143,20 +61,3 @@ eval_cmdline_goal(FileDes) :-
 '_$keyboard_int'(_Call) :- 
         abort.
 
-
-save_query_in_cache(Atom,Goal) :-
-	(\+ last_cached_query_index(_) -> assert(last_cached_query_index(0))
-	; true
-	),
-	last_cached_query_index(Idx),
-	NextIdx is (Idx+1) mod MAX_NUMBER_CACHED_QUERIES,
-	assert(c_call_xsb_goal_cache(Atom,Goal)),
-	assert(cache_index(Idx,Atom)),
-	(cache_index(NextIdx,NextAtm)
-	->
-	    retractall(c_call_xsb_goal_cache(NextAtm,_)),
-	    retract(cache_index(NextIdx,NextAtm))
-	; true
-	),
-	retract(last_cached_query_index(Idx)),
-	assert(last_cached_query_index(NextIdx)).

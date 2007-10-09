@@ -1,0 +1,130 @@
+/* File:      ccallxsb.P
+** Author(s): David Warren, Ernie Johnson
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1997-1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+
+:- compiler_options([sysmod,xpp_on]).
+#include "standard.h"
+#include "sig_xsb.h"
+#include "flag_defs_xsb.h"
+
+#define MAX_NUMBER_CACHED_QUERIES  500
+
+:- local
+	c_call_xsb_goal_cache/2,
+	cache_index/2,
+	last_cached_query_index/1.
+
+:- dynamic
+	c_call_xsb_goal_cache/2,
+	cache_index/2,
+	last_cached_query_index/1.
+:- index(c_call_xsb_goal_cache/2,trie).
+:- index(cache_index/2,trie).
+
+c_callloop_query_loop(Regs) :-
+%	writeln(foo),
+%	set_xsb_ready,
+	repeat,
+	get_from_caller(Par,VarTerm,Command),
+	(\+integer(Command)
+	 ->	file_write(STDERR,'C command error; must be an integer; is '),
+		file_write(STDERR,Command),
+		file_nl(STDERR),
+		!,
+		fail
+	 ; Command =:= 0		/* call */
+	 ->	excess_vars(Par, [], [], VarList),
+		VarTerm =.. [ret|VarList],
+		do_pcall(Par,VarTerm)
+	 ; Command =:= 3	/* query_finish: succeed and return from XSB*/
+	 ->	!,
+		get_from_caller(Regs,_,_)
+	 ; Command =:= 2	/* string_call */
+	 ->	
+	    string_to_term(Par,Goal),
+	    excess_vars(Goal,[],[],VarList),
+	    VarTerm =.. [ret|VarList],
+	    do_pcall(Goal,VarTerm)
+	 ; Command =:= 1	/* quit */
+	 ->	!,fail
+	 ; fail
+	).
+
+get_from_caller(_,_,_) :- halt.		% halt returns to caller
+
+do_pcall(Call,VarTerm) :-
+	'_$call'(Call),
+	get_from_caller(Call,VarTerm,Command),
+	(Command =:= 0		/* next */
+	 ->	fail
+	 ; Command =:= 1	/* close query */
+	 ->	close_open_tables,
+		!,fail
+	).
+
+% hidden version of call
+'_$call'(Y) :- 
+	'_$savecp'(C), 
+	goal_cut_trans(Y,X,C),
+	call_expose(X).
+
+%% MK: added this clause. Reduces time to call XSB by x3.
+%%     Not sure, but the same can be useful in eval_cmdline_goal
+string_to_term(Atom,Goal) :-
+	c_call_xsb_goal_cache(Atom,Goal),
+	!.
+string_to_term(Atom,Goal) :-
+	stat_flag(STDERR_BUFFERED,StderrBuffered),
+	%% If stdio is redirected and buffered we want to capture error messages
+	1 =:= StderrBuffered,
+	!,
+	file_open(Atom,sr,Fp),
+	file_read(Fp,Goal,_),
+	file_close(Fp),
+	save_query_in_cache(Atom,Goal).
+
+
+string_to_term(Atom,Goal) :-
+	file_open(Atom,sr,Fp),
+	file_read(Fp,Goal,_),
+	file_close(Fp),
+	save_query_in_cache(Atom,Goal).
+
+
+save_query_in_cache(Atom,Goal) :-
+	(\+ last_cached_query_index(_) -> assert(last_cached_query_index(0))
+	; true
+	),
+	last_cached_query_index(Idx),
+	NextIdx is (Idx+1) mod MAX_NUMBER_CACHED_QUERIES,
+	assert(c_call_xsb_goal_cache(Atom,Goal)),
+	assert(cache_index(Idx,Atom)),
+	(cache_index(NextIdx,NextAtm)
+	->
+	    retractall(c_call_xsb_goal_cache(NextAtm,_)),
+	    retract(cache_index(NextIdx,NextAtm))
+	; true
+	),
+	retract(last_cached_query_index(Idx)),
+	assert(last_cached_query_index(NextIdx)).

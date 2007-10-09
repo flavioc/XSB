@@ -1,5 +1,5 @@
-/* File:      xcallxsb.H
-** Author(s): Ernie Johnson
+/* File:      ccallxsb.H
+** Author(s): David S. Warren, Ernie Johnson
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1997-1998
@@ -22,18 +22,20 @@
 ** 
 */
 
-:- export c_callloop/0.  % to force it to be a module!
+:- export c_callloop_query_loop/1.
 
-:- import c_callloop_query_loop/1 from ccallxsb.
-
-:- import set_inthandler/2 from loader.
-
-:- import catch/3, repeat/0, call/1, (\=)/2, abort/0 from standard.
+:- import
+   integer/1, close_open_tables/0, stat_flag/2
+   from machine.
 
 :- import file_open/3, file_close/1
      from file_io.
 
-:- import file_read/2 from xsb_read.
-
-:- import xsb_flag/2 from curr_sym.
-
+%%:- import set_xsb_ready/0 from thread.
+:- import call_expose/1, (index)/2, 
+ 	  goal_cut_trans/3, repeat/0, (=..)/2  from standard.
+   :- import (dynamic)/1, assert/1, retract/1, retractall/1 from assert.
+:- import file_write/2, file_nl/1 from xsb_writ.
+:- import file_read/3 from xsb_read.
+:- import excess_vars/4 from setof.
+:- import [] / 0 from usermod.	       % just to make usermod typed "module"
