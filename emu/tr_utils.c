@@ -244,16 +244,16 @@ BTNptr get_trie_root(BTNptr node) {
 
 Cell build_ret_term(CTXTdeclc int arity, Cell termVector[]) {
 
-  Pair sym;
+  Psc sym_psc;
   CPtr ret_term;
-  int  i, is_new;
+  int  i;
 
   if ( arity == 0 )
     return makestring(get_ret_string());  /* return as a term */
   else {
     ret_term = hreg;  /* pointer to where ret(..) will be built */
-    sym = insert("ret", (byte)arity, (Psc)flags[CURRENT_MODULE], &is_new);
-    new_heap_functor(hreg, pair_psc(sym));
+    sym_psc = get_ret_psc((byte)arity);
+    new_heap_functor(hreg, sym_psc);
     for ( i = 0; i < arity; i++ )
       nbldval(termVector[i]);
     return makecs(ret_term);  /* return as a term */
@@ -1264,11 +1264,11 @@ void  reclaim_del_ret_list(CTXTdeclc VariantSF sg_frame) {
 
 void breg_retskel(CTXTdecl)
 {
-    Pair    sym;
+    Psc    psc;
     Cell    term;
     VariantSF sg_frame;
     CPtr    tcp, cptr, where;
-    int     is_new, i;
+    int     i;
     Integer breg_offset, Nvars;
 
     breg_offset = ptoc_int(CTXTc 1);
@@ -1281,8 +1281,8 @@ void breg_retskel(CTXTdecl)
       ctop_string(CTXTc 3, get_ret_string());
     } else {
       bind_cs((CPtr)ptoc_tag(CTXTc 3), hreg);
-      sym = insert("ret", (byte)Nvars, (Psc)flags[CURRENT_MODULE], &is_new);
-      new_heap_functor(hreg, sym->psc_ptr);
+      psc = get_ret_psc((byte)Nvars);
+      new_heap_functor(hreg, psc);
       for (i = Nvars; i > 0; i--) {
 	term = (Cell)(*(CPtr)(cptr+i));
         nbldval(term);

@@ -1846,7 +1846,7 @@ argument positions.
     /* If using the multi-threaded engine, call the function with the
        single argument, CTXT; otherwise call a parameterless
        funcion.  */
-    XSB_Start_Instr(call_forn,_call_forn) {
+  XSB_Start_Instr(call_forn,_call_forn) {
     Def1op
     Op1(get_xxxl);
     ADVANCE_PC(size_xxxX);
@@ -2036,8 +2036,8 @@ argument positions.
 #ifdef CP_DEBUG
     pscreg = psc;
 #endif
-    call_sub(psc);
     //    printf("exec %s/%d (h:%p,e:%p,pc:%p,hb:%p)\n",get_name(psc),get_arity(psc),hreg,ereg,lpcreg,hbreg);
+    call_sub(psc);
   XSB_End_Instr()
 
   XSB_Start_Instr(jump,_jump)   /* PPP-L */
@@ -2190,7 +2190,7 @@ argument positions.
       pthread_cond_wait( &xsb_started_cond, &xsb_synch_mut );
     } else  
 #endif
-return(0);	/* not "goto contcase"! */
+    return(0);	/* not "goto contcase"! */
   XSB_End_Instr()
 
   XSB_Start_Instr(builtin,_builtin)
@@ -2548,6 +2548,23 @@ DllExport int call_conv xsb(CTXTdeclc int flag, int argc, char *argv[])
    } else if (flag == XSB_EXECUTE) {  /* continue execution */
 
      return(emuloop(CTXTc current_inst));
+
+   } else if (flag == XSB_SETUP_X) {  /* initialize for call to XSB, saving argc regs */
+     int new;
+     Psc ccall_mod, c_callloop_psc, term_psc;
+     CPtr term_ptr;
+     ccall_mod = pair_psc(insert_module(0,"ccallxsb"));
+     c_callloop_psc = pair_psc(insert("c_callloop_query_loop",1,ccall_mod,&new));
+     if (new) {
+       set_data(c_callloop_psc,ccall_mod);
+       env_type_set(c_callloop_psc, T_IMPORTED, T_ORDI, (xsbBool)new);
+       link_sym(c_callloop_psc, (Psc)flags[CURRENT_MODULE]);
+     }
+     term_psc = get_ret_psc((byte)argc);
+     term_ptr = (CPtr)build_call(CTXTc term_psc);
+     bld_cs((reg+1),((Cell)term_ptr));
+
+     return(emuloop(CTXTc (pb)get_ep(c_callloop_psc)));
 
    } else if (flag == XSB_SHUTDOWN) {  /* shutdown xsb */
 

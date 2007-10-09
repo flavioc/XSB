@@ -305,6 +305,8 @@ DllExport extern int call_conv xsb_init(int, char **);
 DllExport extern int call_conv xsb_init_string(char *);
 DllExport extern int call_conv pipe_xsb_stdin(); 
 DllExport extern int call_conv writeln_to_xsb_stdin(char * input);
+DllExport int call_conv xsb_query_save(CTXTdeclc int NumRegs);
+DllExport int call_conv xsb_query_restore(CTXTdecl);
 DllExport extern int call_conv xsb_command(CTXTdecl);
 DllExport extern int call_conv xsb_command_string(CTXTdeclc char *);
 DllExport extern int call_conv xsb_query(CTXTdecl);

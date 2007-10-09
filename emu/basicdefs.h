@@ -84,6 +84,7 @@
 #define XSB_EXECUTE 1
 #define XSB_SHUTDOWN 2
 #define XSB_C_INIT 3
+#define XSB_SETUP_X 4
 
 #define XSBINITERRLEN 2048
 
