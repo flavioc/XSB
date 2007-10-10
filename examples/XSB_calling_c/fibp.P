@@ -13,6 +13,8 @@ compiled (in most cases) with:
 :- import fibr/2 from fibr.  %% foreign code to handle recursive case
 :- import for/3 from basics.
 
+:- [fibr].  %% be sure foreign code is compiled and loaded.
+
 test :-
 	for(N,0,20),
 	fibp(N,F),
