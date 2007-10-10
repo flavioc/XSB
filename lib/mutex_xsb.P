@@ -196,7 +196,7 @@ check_options_list_1([],Size,[]):- !,
 	(var(Size) -> Size = 0 ; true).
 check_options_list_1([Option|Rest],MaxTerms,Alias):- !,
 %	check_nonvar(Option,message_queue_create/2,2),
-	(Option @= max_terms(_) ->  Option = max_terms(N),set_queue_create_arg(N,MaxTerms,max_terms), Alias = R
+	(Option @= max_size(_) ->  Option = max_size(N),set_queue_create_arg(N,MaxTerms,max_size), Alias = R
         ; (Option @= alias(_) -> 
 	        Option = alias(A),check_atom(A,message_queue_create/2,2),Alias = [A|R]
 	     ; 	domain_error(thread_option,Option,message_queue_create/2,2,'') ) ),
