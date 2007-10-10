@@ -35,10 +35,16 @@ UninstallFilesDir="{userdocs}\XSB uninstaller"
 MinVersion=0,5.0
 
 [Types]
-Name: "base"; Description: "XSB installation"
+Name: "full"; Description: "Full XSB installation (recommended)"
+Name: "base"; Description: "Base XSB installation"
+Name: "custom"; Description: "Custom XSB installation"; Flags: iscustom
 
 [Components]
-Name: "base"; Description: "Base system"; Types: base; Flags: disablenouninstallwarning
+Name: "base"; Description: "Base system"; Types: full base custom; Flags: disablenouninstallwarning
+Name: "base\sources"; Description: "Base system plus Prolog source files"; Types: full base custom; Flags: disablenouninstallwarning
+Name: "documentation"; Description: "Documentation"; Types: full custom; Flags: disablenouninstallwarning
+Name: "examples"; Description: "Examples"; Types: full custom; Flags: disablenouninstallwarning
+Name: "packages"; Description: "Packages"; Types: full custom; Flags: disablenouninstallwarning
 
 [Tasks]
 Name: website; Description: "&Visit {#MyAppName} web site"; Components: base
@@ -55,6 +61,21 @@ Name: "{userdocs}\XSB uninstaller"
 
 [Files]
 Source: "C:\XSB\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base; Flags: ignoreversion recursesubdirs createallsubdirs
+
+Source: "C:\XSB\bin\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\XSB\config\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base; Flags: ignoreversion recursesubdirs createallsubdirs
+
+Source: "C:\XSB\syslib\*.xwam"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\XSB\cmplib\*.xwam"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\XSB\lib\*.xwam"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base; Flags: ignoreversion recursesubdirs createallsubdirs
+
+Source: "C:\XSB\syslib\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base\sources; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\XSB\cmplib\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base\sources; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\XSB\lib\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base\sources; Flags: ignoreversion recursesubdirs createallsubdirs
+
+Source: "C:\XSB\docs\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: documentation; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\XSB\examples\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: examples; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\XSB\packages\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: packages; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [INI]
 Filename: "{app}\{#MyAppUrlName}"; Section: "InternetShortcut"; Key: "URL"; String: "{#MyAppURL}"; Components: base
