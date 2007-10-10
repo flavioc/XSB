@@ -729,13 +729,19 @@ because the term passed back, {\tt abc(\_h123)}, does not unify with
 {\tt f(1)} or {\tt f(Z,V)}. This effect is achieved by the use of {\tt
   p2p\_unify} above.
 
-We conclude with two real examples of functions that pass complex data
+We conclude this section with two real examples of functions that pass complex data
 in and out of the Prolog side of XSB. These functions are part of the
 POSIX regular expression matching package of XSB. The first function
 uses argument 2 to accept a list of complex Prolog terms from the
 Prolog side and does the processing on the C side. The second function
 does the opposite: it constructs a list of complex Prolog terms on the
-C side and passes it over to the Prolog side in argument 5.
+C side and passes it over to the Prolog side in argument 5.  
+
+(We should note that this second function could cause a heap overflow
+in XSB were it to build a large list of values.  Instead of building a
+large list of values on the XSB heap, one would better design the
+functions to return smaller values, in which case XSB will be able to
+automatically expand the heap as necessary.)
 
 %%
 {\small 
@@ -968,6 +974,61 @@ int do_bulkmatch__(CTXTdecl)
 }
 \end{verbatim}
 }
+
+%======================================================================
+\section{Foreign Modules That Call XSB Predicates}
+
+A C function that has been called from XSB through the lower-level
+foreign language interface may want to call back into XSB to have XSB
+evaluate a predicate.  This can be done by using the interface
+described in Chapter 3 (Volume 2) on calling XSB from another
+language.  The interface described there allows a caller to initialize
+XSB and pass queries to it.  However, since XSB has already called a
+foreign module, XSB does not need to be initialized.  However it does
+need to manage the registers that are in use to support interaction
+with the foreign module currently executing.  So there are some minor
+differences with the interface described in Chapter 3.
+
+First, XSB should not be initialized.  I.e., a foreign module should
+{\bf not} call {\tt xsb\_init} or {\tt xsb\_init\_string}.  Second, the
+foreign module must protect the XSB registers it is currently using
+when it calls XSB.  To do this, after it has retrieved its arguments
+into local variables and before it calls any XSB predicate, it must
+call {\tt xsb\_query\_save(NumRegs)}, which saves the current XSB
+registers and initializes them to be able to accept a new query.  {\tt
+NumRegs} is the number of registers used to interact with the
+currently executing foreign routine (i.e., the arity of the predicate
+that called this foreign code.)  When the foreign routine has
+completed its work, it will set the appropriate registers with the
+appropriate return values and return to the caller.  Before it does
+this, it must call {\tt xsb\_query\_restore()} to restore the saved
+registers and prepare XSB for the return.  Note that it must be called
+before any of the output registers are accessed to set return values.
+(It must also be called even if no values are returned.)
+
+In summary the extra functions needed to call XSB from a foreign
+module are:
+
+\begin{description}
+
+\ouritem{int xsb\_query\_save(CTXTc (byte) NumRegs)}
+\index{\texttt{xsb\_query\_save}} This function is used in a foreign
+routine that is called from XSB.  It is used to save the current
+contents of the XSB registers and to initialize them to be prepared to
+accept a query.  It must be called after a foreign routine collects its
+input arguments from the XSB registers and before it invokes any XSB
+predicate.
+
+\ouritem{int xsb\_query\_restore(CTXT)}
+\index{\texttt{xsb\_query\_restore}} This function is used in a foreign
+routine that is called from XSB and in turn calls an XSB predicate.
+It is used to restore the previously saved contents of the XSB
+registers.  It must be called after all XSB predicates have been
+called and returned, and before the current foreign routine sets its
+output parameters and returns to XSB.
+
+\end{description}
+
 
 \section{Foreign Modules That Link Dynamically with Other Libraries}
 
