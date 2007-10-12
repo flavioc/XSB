@@ -49,16 +49,19 @@ int curatom,totatoms; /* current atom, used during creation */
 
 extern "C" void init(CTXTdecl)
 {
-  smodels = (new Smodels);
 
-  api = new Api(&(((Smodels *) (th->_smodels))->program));
+  th->_smodels = (CPtr) (new Smodels);
+  //  smodels = (new Smodels);
+  
+  th->_api = (CPtr) (new Api(&(((Smodels *) (th->_smodels))->program)));
 }
 
 extern "C" void numberAtoms(CTXTdeclc int nAtoms)
 {
   int i;
 
-  atoms = (Atom **) malloc(sizeof(Atom*)*nAtoms);
+  //  atoms = (Atom **) malloc(sizeof(Atom*)*nAtoms);
+  th->_atoms = (CPtr) malloc(sizeof(Atom*)*nAtoms);
   for (i=0; i<nAtoms; i++) 
     atoms[i] = api->new_atom();
 
