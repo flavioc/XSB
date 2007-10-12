@@ -194,20 +194,33 @@ standard_symbol(is_charlist, 2, machine).
 standard_symbol(is_charlist, 1, machine).
 standard_symbol(is_absolute_filename, 1, machine).
 standard_symbol(keysort, 2, setof).
+
 standard_symbol(library_directory, 1, usermod).
 standard_dynamic_symbol(library_directory,1).
-
+standard_symbol(listing, 0, standard).
+standard_symbol(listing, 1, standard).
 standard_symbol(load_dyn, 1, consult).			% Not ISO
 standard_symbol(load_dync, 1, consult).			% Not ISO
 standard_symbol(read_canonical, 1, consult).
 standard_symbol(read_canonical, 2, consult).
-
-standard_symbol(listing, 0, standard).
-standard_symbol(listing, 1, standard).
 standard_symbol(ls, 0, shell).
+
 standard_symbol((mc), 2, compile).
+standard_symbol(message_queue_create,1,  mutex_xsb).
+standard_symbol(message_queue_create,2,  mutex_xsb).
+standard_symbol(message_queue_destroy,1, mutex_xsb).
 standard_symbol(module_property, 2, curr_sym).
+standard_symbol(mutex_create,1,  mutex_xsb).
+standard_symbol(mutex_create,2,  mutex_xsb).
+standard_symbol(mutex_lock,1,  mutex_xsb).
+standard_symbol(mutex_unlock,1, mutex_xsb).
+standard_symbol(mutex_trylock,1,  mutex_xsb).
+standard_symbol(mutex_destroy,1,  mutex_xsb).
+standard_symbol(with_mutex,2, mutex_xsb).
+standard_symbol(mutex_unlock_all,0,  mutex_xsb).
+standard_symbol(mutex_property,2, mutex_xsb).
 standard_symbol((multifile), 1, standard).
+
 standard_symbol(name, 2, standard).
 standard_symbol(nl, 0, standard).
 standard_symbol(nl, 1, standard).
@@ -313,6 +326,29 @@ standard_symbol(tfindall, 3, tables).
 standard_metapredicate(tfindall,3,2).
 standard_symbol((thread_shared), 1, consult).
 standard_symbol((thread_private), 1, consult).
+standard_symbol(thread_cancel,1,thread).
+standard_symbol(thread_create,1,thread).
+standard_symbol(thread_create,2,thread).
+standard_symbol(thread_create,3,thread).
+standard_symbol(thread_detach,1,thread).
+standard_symbol(thread_exit,1,thread).
+standard_symbol(thread_exit,0,thread).
+standard_symbol(thread_join,2,thread).
+standard_symbol(thread_join,1,thread).
+standard_symbol(thread_property,2,thread).
+standard_symbol(thread_self,1,thread).
+standard_symbol(thread_signal,2,thread).
+standard_symbol(thread_sleep,1,thread).
+standard_symbol(thread_yield,0,thread).
+
+standard_symbol(thread_get_message,1, mutex_xsb).
+standard_symbol(thread_get_message,2, mutex_xsb).
+standard_symbol(thread_get_signal,1, mutex_xsb).
+standard_symbol(thread_peek_message,1,  mutex_xsb).
+standard_symbol(thread_peek_message,2, mutex_xsb).
+standard_symbol(thread_peek_signal,1,  mutex_xsb).
+standard_symbol(thread_send_message,2, mutex_xsb).
+
 standard_symbol(tmpfile_open, 1, file_io).
 standard_symbol(tnot, 1, tables).
 standard_metapredicate(tnot,1,1).
