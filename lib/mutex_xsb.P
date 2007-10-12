@@ -222,6 +222,10 @@ message_queue_create(Queue):-
 
 %------------------------------------------------------------
 
+thread_send_message(Message):- 
+	thread_request(XSB_THREAD_SELF, Tid, _, _, _, _, _, _ ,_),
+	thread_send_message(Tid, Message).
+
 thread_send_message(Queue,Message):- 
 	(integer(Queue) -> 
            code_to_buff(call(_,_,Message),0),
@@ -232,7 +236,7 @@ thread_send_message(Queue,Message):-
 	      thread_request(THREAD_SEND_MESSAGE,Qid,_,_,_,_,_,_,_)
            ;  (var(Queue) -> 
 	          instantiation_error(thread_send_message/2,1,ground)
-	      ;   domain_error(queue_or_alias,Queue,thread_send_message/1,2,'') ) ) ).
+	      ;   domain_error(queue_or_alias,Queue,thread_send_message/2,1,'') ) ) ).
 
 %------------------------------------------------------------
 
@@ -252,8 +256,8 @@ thread_get_message(Queue,Message):-
         ;  (atom(Queue),get_alias(Queue,QUEUE_ALIAS,Qid) -> 
 	       thread_get_message_1(Qid,Message)
             ;  (var(Queue) -> 
-	          instantiation_error(thread_send_message/2,1,ground)
-	       ;  domain_error(queue_or_alias,Queue,thread_get_message/1,2,'') ) ) ).
+	          instantiation_error(thread_get_message/2,1,ground)
+	       ;  domain_error(queue_or_alias,Queue,thread_get_message/2,1,'') ) ) ).
 
 thread_get_message_1(Queue,Message):-
 	thread_request(THREAD_TRY_MESSAGE,Queue,MaybeMessage,_,_,_,_,_,_),

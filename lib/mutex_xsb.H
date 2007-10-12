@@ -27,7 +27,7 @@
 :- export
 	message_queue_create/1, message_queue_create/2, message_queue_destroy/1,
 	thread_get_message/1, thread_get_message/2,
-	thread_send_message/2,
+	thread_send_message/1, thread_send_message/2,
 	thread_peek_message/1, thread_peek_message/2,
 	print_message_queue/1.
 :- export thread_peek_signal/1, thread_get_signal/1.
