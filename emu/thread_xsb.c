@@ -1669,21 +1669,19 @@ case THREAD_ACCEPT_MESSAGE: {
         switch( request_num )
         {
                 
-		case XSB_THREAD_SELF:
-			ctop_int( CTXTc 2, 0 ) ;
-			break;
-                case XSB_SYS_MUTEX_LOCK:
-                case XSB_SYS_MUTEX_UNLOCK:
-			break ;
-		case XSB_ENSURE_ONE_THREAD:
-			break ;
-		case XSB_THREAD_YIELD:
-	       		break ;
+	case XSB_THREAD_SELF:
+	  ctop_int( CTXTc 2, 0 ) ;
+	  break;
+	case XSB_SYS_MUTEX_LOCK:
+	case XSB_SYS_MUTEX_UNLOCK:
+	case XSB_ENSURE_ONE_THREAD:
+	case XSB_THREAD_YIELD:
 	case SET_XSB_READY:
 	  break;
-		default:
-			xsb_abort( "[THREAD] Thread primitives not compiled" ) ;
-			break ;
+
+	default:
+	  xsb_abort( "[THREAD] Thread primitives not compiled in single-threaded engine" ) ;
+	  break ;
 	}
 	
 	ctop_int( CTXTc 5, 0 ) ;
