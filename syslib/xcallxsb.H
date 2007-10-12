@@ -37,3 +37,4 @@
 
 :- import xsb_flag/2 from curr_sym.
 
+ :- import ccall_error_handler/1 from error_handler.
