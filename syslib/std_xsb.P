@@ -340,6 +340,7 @@ standard_symbol(thread_self,1,thread).
 standard_symbol(thread_signal,2,thread).
 standard_symbol(thread_sleep,1,thread).
 standard_symbol(thread_yield,0,thread).
+standard_symbol(threads,0,thread).
 
 standard_symbol(thread_get_message,1, mutex_xsb).
 standard_symbol(thread_get_message,2, mutex_xsb).
@@ -347,6 +348,7 @@ standard_symbol(thread_get_signal,1, mutex_xsb).
 standard_symbol(thread_peek_message,1,  mutex_xsb).
 standard_symbol(thread_peek_message,2, mutex_xsb).
 standard_symbol(thread_peek_signal,1,  mutex_xsb).
+standard_symbol(thread_send_message,1, mutex_xsb).
 standard_symbol(thread_send_message,2, mutex_xsb).
 
 standard_symbol(tmpfile_open, 1, file_io).
