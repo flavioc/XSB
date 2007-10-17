@@ -35,11 +35,13 @@ DllExport int call_conv fibr(CTXTdecl) {
   if (xsb_query(CTXT)) {  // call XSB
     printf("Error calling fibp 1.\n");
     fflush(stdout);
-  }
+    return FALSE;
+ }
   f1 = p2c_int(p2p_arg(reg_term(CTXTc 1),2));  // get answer
   if (xsb_close_query(CTXT)) {  // throw away other (nonexistent) answers
     printf("Error closing fibp 1.\n");
     fflush(stdout);
+    return FALSE;
   }
 
   c2p_functor(CTXTc "fibp",2,reg_term(CTXTc 1)); // prepare for 2nd call to XSB
@@ -47,16 +49,19 @@ DllExport int call_conv fibr(CTXTdecl) {
   if (xsb_query(CTXT)) { // and call query
     printf("Error calling fibp 2.\n");
     fflush(stdout);
+    return FALSE;
   }
   f2 = p2c_int(p2p_arg(reg_term(CTXTc 1),2)); // and get its answer
   if (xsb_next(CTXT) != XSB_FAILURE) { // get next answer, which must NOT exist
     printf("Error getting next fibp 2.\n");
     fflush(stdout);
+    return FALSE;
   }
 
   if (xsb_query_restore(CTXT)) {  // restore regs to prepare for exit
     printf("Error finishing.\n");
     fflush(stdout);
+    return FALSE;
   }
   c2p_int(CTXTc f1+f2,reg_term(CTXTc 2));  // set our answer
   return TRUE;  // and return successfully
