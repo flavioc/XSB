@@ -283,9 +283,25 @@ general_verify_attributes(Atts,Value) :-
 
 call_attribute_handlers([],_).
 call_attribute_handlers([Mod,Attr|Rest],Value) :-
-	verify_attribute_handler(Mod,Attr,Value,Handler),
-	call(Handler),
+	(Mod = call_cleanup_mod -> 
+	    call(Attr)
+	 ; 
+  	    verify_attribute_handler(Mod,Attr,Value,Handler),
+  	    call(Handler)),
 	call_attribute_handlers(Rest,Value).	
+/*
+:- import existence_error/4 from error_handler.
+
+call_attribute_handlers([Mod,Attr|Rest],Value) :-
+	(Mod = call_cleanup_mod -> 
+	    call(Attr)
+	 ; 
+   	    (verify_attribute_handler(Mod,Attr,Value,Handler) -> 
+		call(Handler)
+	    ; existence_error(attribute_handler,attribute([Mod,Attr|Rest],Value),
+	                       call_attribute_handlers/2,1) ) ),
+	call_attribute_handlers(Rest,Value).	
+*/	
 
 
 /* === version message ================================================= */
@@ -335,4 +351,5 @@ print_debug_state :-
 	  ->	file_write(STDDBG,[debug]), file_nl(STDDBG)
 	; true
 	).
+
 

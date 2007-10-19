@@ -34,7 +34,7 @@
 	atom_concat/3,   atomic/1,	atom_length/2,
 	goal_arg/3,	atom_chars/2,   atom_codes/2,
 	call/1,		call_expose/1,	callable/1,
-        check_arity_integer/3,  
+   check_arity_integer/3,  call_cleanup/2, cleanup_handler/2,
 	close/1,             close/2,	compare/3,	
         compound/1,	cputime/1,	
         display/1, displayln/1, now/1, datime/1,
@@ -94,6 +94,7 @@
         warning/1,      abort/1,	abort/0,
 	set_timer/1,
 	(import)/1,	(multifile)/1.
+	  :- export cleanup_handler/2.
 
 
 :- import (dynamic)/1, asserta/1 from assert.

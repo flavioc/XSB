@@ -1418,6 +1418,7 @@ catch(_Goal,Catcher,Handler) :-
             Ball = Catcher ->
             retractall('$$exception_ball'(T,_)),
 %%	    close_open_tables,  %% leave to catcher... 
+%%            writeln(calling(Handler)),
             call(Handler)
         ;
             '$$unwind_stack'  % unwind_stack xsb_exits if no catcher was found
@@ -1481,13 +1482,13 @@ read_until_right_brace([H|T],Tout,Return):-
 
    Need to replace asserts with trie_interns*/
 
-:- export call_cleanup/2.
 :- import get_breg/1 from machine.
 
 call_cleanup(Goal,Cleanup):-
 	get_breg(BregBefore),
 	catch(Goal,E,cleanup_catcher(Cleanup,E)),
 	get_breg(BregAfter),
+%	writeln((BregBefore,BregAfter)),
 	(BregBefore == BregAfter -> 
 	    '$$clean_up_block'(BregBefore), % if no choicepoints left in call(Goal) cleans up one
 	    call(Cleanup)
@@ -1499,5 +1500,12 @@ call_cleanup(_Goal,Cleanup):-
 cleanup_catcher(Cleanup,Error):- 
 	call(Cleanup),
 	throw(Error).
+
+cleanup_handler(Attr,_Target):-
+	call(Attr).
+%	writeln(attr(Attr)),
+%	writeln(target(Target)).
+
+?- dynamic_code_function(INIT_CALL_CLEANUP_BLOCKS,_,_,_,_).
 
 /* --------------------- end of file standard.P ----------------------- */

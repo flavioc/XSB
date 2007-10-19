@@ -78,6 +78,43 @@
 		    get_name(call_psc), get_arity(call_psc));          \
       }
 
+extern CPtr call_cleanup_gl;
+extern void add_interrupt(CTXTdeclc Cell, Cell);
+#include "deref.h"
+
+/* depends on finding the second arg of call_cleanup via the choice
+   point -- would need to be change if choice point creation is
+   somehow changed. */
+static inline void  CHECK_CALL_CLEANUP(CTXTdeclc CPtr CurBreg) {	
+  CPtr handler;
+  Cell temp;
+
+  if ((CPtr) *CurBreg == call_cleanup_gl) {				      
+    handler = CurBreg + CP_SIZE;
+    //    printf("found a call cleanup cp %x -- need to set interrupt array %x %d\n",
+    //                 CurBreg,handler,CP_SIZE); 
+    XSB_CptrDeref(handler);
+    //    printterm(stdout,handler,7);
+    // bld_ref(reg+1, handler);
+    //    printterm(stdout,reg+1,7);
+    bld_list(&temp,hreg);
+    bld_string(hreg++,string_find("call_cleanup_mod",1));     
+    bld_list(hreg,hreg+1);
+    hreg++;
+    bld_ref(hreg++,handler);
+    bld_nil(hreg++);
+    //    printterm(stdout,temp,7);
+    add_interrupt(CTXTc temp,makenil);
+    //    pcreg = get_ep(call_list_psc);
+  }
+}
+
+
+/*
+  allocate_env_and_call_check_ints(reserved_regs,arsize);
+  void add_interrupt(CTXTdeclc Cell op1, Cell op2) {
+ */
+
 #define cut_code(OP1)	                                        \
    { CPtr cut_breg;					        \
      byte inst_cut_over;                                        \
@@ -88,14 +125,21 @@
      cut_restore_trail_condition_registers(cut_breg);		\
      if (breg != cut_breg) { /* not cutting back to the current CP */\
 	while (cp_prevbreg(breg) != cut_breg) {			\
+	  CHECK_CALL_CLEANUP(CTXTc breg);				\
            inst_cut_over = *cp_pcreg(breg);                     \
            CHECK_TABLE_CUT(inst_cut_over) ;                     \
 	   breg = cp_prevbreg(breg);				\
 	}							\
         inst_cut_over = *cp_pcreg(breg);                        \
         CHECK_TABLE_CUT(inst_cut_over) ;                        \
+	CHECK_CALL_CLEANUP(CTXTc breg);				\
         unwind_trail(breg,xtemp1,xtemp2);			\
 	breg = cut_breg;					\
+	if (attv_pending_interrupts) {				\
+	  int reserved_regs = *(lpcreg-2);				\
+	  int arsize = *(lpcreg-1);					\
+	  allocate_env_and_call_check_ints(reserved_regs,arsize);	\
+	}								\
      }								\
      /*     check_table_cut = TRUE;	*/			\
    }

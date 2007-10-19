@@ -39,11 +39,12 @@
 #include "psc_xsb.h"
 #include "deref.h"
 #include "binding.h"
-#include "cut_xsb.h"	   /* trail frame field access macros */
 #include "sw_envs.h"
 #include "subp.h"          /* xsbBool unify(CTXTc Cell, Cell) */
 #include "table_stats.h"
 #include "trie_internals.h"
+#include "choice.h"
+#include "cut_xsb.h"	   /* trail frame field access macros */
 #include "macro_xsb.h"
 #include "tst_aux.h"
 #include "tst_utils.h"

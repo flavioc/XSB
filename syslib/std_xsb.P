@@ -72,18 +72,23 @@ standard_symbol(bootstrap_sitepackage, 2, packaging).
 standard_symbol(bootstrap_userpackage, 3, packaging).
 standard_symbol(break, 0, x_interp).
 standard_symbol('C', 3, dcg).
+
 standard_symbol(call, 1, standard).                                % ISO
 standard_metapredicate(call,1,1).
-
+standard_symbol(call_cleanup, 2, standard).                                % ISO (new)
+standard_metapredicate(call_cleanup,2,1).
+standard_metapredicate(call_cleanup,2,2).
 standard_symbol(callable, 1, standard).
 standard_metapredicate(callable,1,1).
-
+standard_symbol(current_input_port, 1, curr_sym).
+standard_symbol(current_output_port, 1, curr_sym).
 standard_symbol(catch, 3, standard).
+standard_metapredicate(catch,3,1).
+standard_metapredicate(catch,3,3).
 standard_symbol(cd, 1, shell).
 standard_symbol(cwd, 1, shell).
 standard_symbol(clause, 2, assert).                               % ISO
 standard_metapredicate(clause,2,1).
-
 standard_symbol(close, 1, standard).                             % ISO 
 standard_symbol(compare, 3, standard).
 standard_symbol(compound, 1, standard).                      % ISO
@@ -98,6 +103,8 @@ standard_symbol(current_functor, 1, curr_sym).
 standard_symbol(current_functor, 2, curr_sym).
 standard_symbol(current_index, 2, curr_sym).
 standard_symbol(current_input, 1, curr_sym).                   % ISO
+standard_symbol(current_input_port, 1, curr_sym).
+standard_symbol(current_output_port, 1, curr_sym).
 standard_symbol(current_module, 1, curr_sym).
 standard_symbol(current_module, 2, curr_sym).
 standard_symbol(current_op, 3, curr_sym).                      % ISO 
@@ -106,9 +113,6 @@ standard_symbol(current_predicate, 1, curr_sym).
 standard_symbol(current_predicate, 2, curr_sym).
 standard_symbol(current_prolog_flag, 2, curr_sym).	% ISO
 standard_symbol(set_prolog_flag, 2, curr_sym).	% ISO
-
-standard_symbol(current_input_port, 1, curr_sym).
-standard_symbol(current_output_port, 1, curr_sym).
 
 standard_symbol(debug, 0, debugger).
 standard_symbol(debug_ctl, 2, debugger).

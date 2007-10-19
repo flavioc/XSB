@@ -138,7 +138,7 @@ extern xsbBool formatted_io(CTXTdecl), read_canonical(CTXTdecl);
 extern xsbBool private_builtin(void);
 
 extern void xsb_segfault_quitter(int err);
-
+extern void alt_print_cp(CTXTdeclc int);
 extern int xsb_profiling_enabled;
 
 #ifdef WIN_NT
@@ -2622,7 +2622,7 @@ case WRITE_OUT_PROFILE:
   case PRINT_LS: print_ls(CTXTc 1) ; return TRUE ;
   case PRINT_TR: print_tr(CTXTc 1) ; return TRUE ;
   case PRINT_HEAP: print_heap(CTXTc 0,2000,1) ; return TRUE ;
-  case PRINT_CP: print_cp(CTXTc 1) ; return TRUE ;
+  case PRINT_CP: alt_print_cp(CTXTc 1) ; return TRUE ;
   case PRINT_REGS: print_regs(CTXTc 10,1) ; return TRUE ;
   case PRINT_ALL_STACKS: print_all_stacks(CTXTc 10) ; return TRUE ;
   case EXP_HEAP: glstack_realloc(CTXTc glstack.size + 1,0) ; return TRUE ;
@@ -2730,6 +2730,7 @@ case WRITE_OUT_PROFILE:
 
     /* For call_cleanup -- need offset to avoid problems w. stack reallocation */
     case GET_BREG: {
+      //      printf("get_breg %x %x\n",breg,*breg);
       ctop_addr(1,((pb)tcpstack.high - (pb)breg));
       break;
     }

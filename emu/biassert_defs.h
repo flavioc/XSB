@@ -27,6 +27,7 @@
 #define INIT_DBCLAUSE_CGC_BLOCKS                3
 #define INIT_STANDARD_CGC_BLOCKS                4
 #define INTERNED_TRIE_CPS_CHECK                 5
+#define INIT_CALL_CLEANUP_BLOCKS                6
 
 #define DONT_EXPAND_HASHES                      1
 #define EXPAND_HASHES                           0

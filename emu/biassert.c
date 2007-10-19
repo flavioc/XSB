@@ -70,6 +70,7 @@ PrRef clref_to_prref(ClRef clref);
 CPtr dbclause_cgc_block_gl = NULL;
 CPtr standard_cgc_block_begin_gl = NULL;
 CPtr standard_cgc_block_end_gl = NULL;
+CPtr call_cleanup_gl = NULL;
 
 /*======================================================================*/
 /* dbgen_inst: Generate an instruction in the buffer.			*/
@@ -3762,9 +3763,18 @@ void db_retractall0( CTXTdecl /* (Switch) ClRef, retract_nr */ )
  DB_GET_LAST_CLAUSE  DB_RETRACT0   DB_GET_CLAUSE    DB_BUILD_PRREF	
  DB_ABOLISH0	 DB_RECLAIM0	 DB_GET_PRREF */
 
-void init_dbclause_cgc_blocks(void) {
-  Psc psc;
-  int new;
+/* TLS: The following functions provide information about interesting
+choice points.  init_dbclause_cgc_blocks() is used to tell the clause
+garbage collector about dbclause backtrack points -- set up by
+retract/1, while init_standard_cgc_blocks() handles ';'/2, used for
+internal disjunctions in dynamic code.
+
+init_call_cleanup_blocks is used by call cleanup to check whether we
+are cutting over a call cleanup choice point and have to invoke the
+handler.
+*/
+
+void init_dbclause_cgc_blocks(void) { Psc psc; int new;
 
   psc = ((Pair)insert("db_get_clauses1", 11, 
 		      pair_psc(insert_module(0, "dbclause")), &new)) -> psc_ptr;
@@ -3779,6 +3789,22 @@ void init_standard_cgc_blocks(void) {
 		      pair_psc(insert_module(0, "standard")), &new))-> psc_ptr;
   standard_cgc_block_begin_gl = (CPtr) (get_ep(psc));
   standard_cgc_block_end_gl = (CPtr) (get_ep(psc) +  ZOOM_FACTOR * 0x94);
+}
+
+/* call cleanup:
+     inst(0x30e690, test_heap, 2, 2000), 
+     inst(0x30e698, try, 2, 0x30e6a8), 
+     inst(0x30e6a0, trust, 2, 0x30e724), 
+*/
+void init_call_cleanup(void) {
+  Psc psc;
+  int new;
+
+  psc = ((Pair)insert("call_cleanup", 2, 
+		      pair_psc(insert_module(0, "standard")), &new))-> psc_ptr;
+  //  printf("ep %x trust %x @trust %x addr %x\n",get_ep(psc),(CPtr) (get_ep(psc) + 0x10),
+  //	  * (pb) (get_ep(psc) + 0x10),* (CPtr) (get_ep(psc) + 0x14));
+  call_cleanup_gl = (CPtr) (get_ep(psc) +  ZOOM_FACTOR * 0x10);
 }
 
 xsbBool dynamic_code_function( CTXTdecl ) 
@@ -3807,6 +3833,10 @@ xsbBool dynamic_code_function( CTXTdecl )
 
   case INTERNED_TRIE_CPS_CHECK:
     ctop_int(CTXTc 3 ,interned_trie_cps_check(CTXTc itrie_array[ptoc_int(CTXTc 2)].root));
+    break;
+
+  case INIT_CALL_CLEANUP_BLOCKS:
+    init_call_cleanup();
     break;
 
   }
