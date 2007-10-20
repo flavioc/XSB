@@ -142,37 +142,40 @@ mutex_unlock_all:-
 
 mutex_property(Mutex,Property):-
 	(atom(Mutex) -> 
-	    mutex_property_atom(Mutex,Property)
-	 ;  (var(Mutex) ->
+	    get_alias(Mutex,MUTEX_ALIAS,M),
+	    bound_mutex_property(M,Property)
+	 ; (integer(Mutex) -> 
+	       bound_mutex_property(Mutex,Property)
+   	    ;  (var(Mutex) ->
    	        mutex_property_list(Mutex,Property)
-	     ;  type_error(mutex_or_alias,Mutex,mutex_property/2,1) ) ).
-
+	        ;  type_error(mutex_or_alias,Mutex,mutex_property/2,1) ) ) ).
 
 /* Could optimize away a CP, but I dont think this pred will be used much...
    (famous last words) */
-mutex_property_list(Mutex,Property):- 
+mutex_property_list(Mutex,Property):-
 	get_first_mutex_property(This,Locks,Owner,Next),
 	This \== 0,
-	(   form_property(Owner,Locks,Property),
-            '_$user_mutex'(Mutex,This)
+	(   This = Mutex,
+	    form_mutex_property(Mutex,Owner,Locks,Property)
           ; 
 	    Next \== 0,
 	    mutex_property_list_1(Next,Mutex,Property) ).
 
-form_property(Owner,Locks,Prop):- 
+form_mutex_property(Mutex,_Owner,_Locks,alias(Alias)):- 
+	get_alias(Alias, MUTEX_ALIAS, Mutex).
+form_mutex_property(_Mutex,Owner,Locks,Prop):- 
 	(Owner == -1 -> 
 	    Prop = unlocked(Locks)
 	 ;  Prop = locked(Owner,Locks) ).
 
-mutex_property_atom(Mutex,Property):-
-	'_$user_mutex'(Mutex,Ptr),
-	get_next_mutex_property(Ptr,Locks,Owner,_Next),
-	form_property(Owner,Locks,Property).
+bound_mutex_property(Mutex,Property):-
+	get_next_mutex_property(Mutex,Locks,Owner,_Next),
+	form_mutex_property(Mutex,Owner,Locks,Property).
 
 mutex_property_list_1(This,Mutex,Property):- 
 	get_next_mutex_property(This,Locks,Owner,Next),
-	(   form_property(Owner,Locks,Property),
-            '_$user_mutex'(Mutex,This)
+	(   This = Mutex,
+	    form_mutex_property(Mutex,Owner,Locks,Property)
           ; 
 	    Next \== 0,
 	    mutex_property_list_1(Next,Mutex,Property) ).
