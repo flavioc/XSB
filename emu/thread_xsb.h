@@ -160,9 +160,9 @@ typedef struct XSB_Message_Queue {
   MQ_Cell_Ptr          last_message;
   int                  size;		/* number of messages in the queue */
   int                  max_size;
-  int		       n_threads;	/* number of threads waiting */
-  int                  initted;         /* maybe replace w. bit field */
-  int		       deleted;		/* true if is to be deleted */
+  unsigned int		       n_threads: 16;   /* number of threads waiting */
+  unsigned int                 initted: 1;      /* check to see if mutexes/condvars must be set */
+  unsigned int		       deleted: 1;	/* true if is to be deleted */
   struct XSB_Message_Queue	*next_entry,	/* either next free slot or next thread */
 				*prev_entry ;	/* only valid for slots used for threads */
 } XSB_MQ;

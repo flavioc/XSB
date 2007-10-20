@@ -219,20 +219,27 @@ static void init_thread_table(void)
 /* 
    Array elements 0..max_threads-1 -- private message queues
                   max_threads..2*max_threads-1 -- private signal queues
-		  2*max_threads..3*max_threads-1 -- public signal queues
+		  2*max_threads..3*max_threads-1 -- public message queues
+
+   The use of calloc means that this routine needs only to do basic
+   initialization of the free list for public message queues: the
+   mutexes, conditional variables, etc are taken care of in
+   init_message_queue() called by message_queue_create/[1,2].  Note
+   that neither the private message queues not the private signal
+   queues needa free list initialization.
 */
+
 static void init_mq_table(void)
 {
 	int i ;
 
 	mq_table = mem_calloc(3*max_threads_glc, sizeof(XSB_MQ), OTHER_SPACE);
 
-	for( i = max_threads_glc; i < 3*max_threads_glc; i++ )
+	for( i = 2*max_threads_glc; i < 3*max_threads_glc; i++ )
 	{
-	  //	  mq_table[i].valid = FALSE;
 	  mq_table[i].next_entry = &mq_table[i+1];
 	}
-	mq_first_free = &mq_table[max_threads_glc];
+	mq_first_free = &mq_table[2*max_threads_glc];
 	mq_last_free = &mq_table[3*max_threads_glc-1];
 	mq_last_free->next_entry = NULL;
 	mq_first_queue = NULL;
@@ -247,7 +254,7 @@ void init_message_queue(XSB_MQ_Ptr xsb_mq, int declared_size) {
   xsb_mq->size = 0;
   xsb_mq->n_threads = 0;
   xsb_mq->deleted = FALSE;
-  if (declared_size == 0)
+  if (declared_size == MQ_CHECK_FLAGS)
     xsb_mq->max_size = flags[MAX_QUEUE_TERMS];
   else xsb_mq->max_size = declared_size;
 
@@ -321,7 +328,8 @@ static int th_find( pthread_t_p tid )
 }
 
 /* On normal termination, returns xsb_thread_id for a (usu. newly
-   created) thread.
+   created) thread.  This is called whether creating a thread from
+   Prolog or from C.
 
    Need to ensure this is called with thread mutex locked (except for
    initialization)*/
@@ -371,7 +379,8 @@ static int th_new( th_context *ctxt, int is_detached, int is_aliased )
 	pos->status = THREAD_RUNNING;
 	index = pos - th_vec;
 	/* initialize the thread's private message queue */
-	init_message_queue(&mq_table[index], 0);
+	init_message_queue(&mq_table[index], MQ_CHECK_FLAGS);
+	init_message_queue(&mq_table[index+max_threads_glc], MQ_CHECK_FLAGS);
 
 	return index ;
 }
@@ -1327,7 +1336,8 @@ xsbBool xsb_thread_request( CTXTdecl )
 
 	  pthread_mutex_lock(&message_queue->mq_mutex) ;
 	  check_deleted(th, message_queue, MESG_SEND) ;
-	  while (message_queue->max_size && message_queue->size >= message_queue->max_size) {
+	  while (message_queue->max_size != MQ_UNBOUNDED 
+		 && message_queue->size >= message_queue->max_size) {
 	    if( wait_on_queue( th, message_queue, MESG_SEND ) )
 		return success ;	    
 	  }
@@ -1409,6 +1419,7 @@ case THREAD_RETRY_MESSAGE: {
 	    current_mq_cell = message_queue->first_message;
 	  } 
 	  else current_mq_cell = current_mq_cell->next;
+
 	  pcreg = (byte *) (current_mq_cell+1); // offset for compiled code.
 	  break;
 	}

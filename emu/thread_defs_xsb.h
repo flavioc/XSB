@@ -179,6 +179,7 @@
 #define THREAD_EXCEPTION        4
 #define THREAD_CANCELLED        5
 
-
+#define MQ_UNBOUNDED            0
+#define MQ_CHECK_FLAGS          -1
 
 #endif /* __THREAD_DEFS_XSB_H__ */

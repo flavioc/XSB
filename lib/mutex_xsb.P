@@ -218,7 +218,7 @@ check_aliases([H|T],Pred):-
 
 message_queue_create(Queue):-
 	check_var(Queue,message_queue_create,1),
-	thread_request(MESSAGE_QUEUE_CREATE,Queue,0,_,_,_,_,_,_).
+	thread_request(MESSAGE_QUEUE_CREATE,Queue,MQ_CHECK_FLAGS,_,_,_,_,_,_).
 
 %------------------------------------------------------------
 

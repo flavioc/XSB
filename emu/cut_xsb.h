@@ -63,9 +63,6 @@
     instruc == tabletrust ||			\
     instruc == tableretry )	       
 
-
-//  if (check_table_cut && IS_TABLE_INSTRUC(instruc) && 
-
 #define CHECK_TABLE_CUT(instruc)       \
   if (IS_TABLE_INSTRUC(instruc) && !is_completed(tcp_subgoal_ptr(breg)))  {\
           Psc psc = TIF_PSC(subg_tif_ptr(tcp_subgoal_ptr(breg)));\
@@ -82,9 +79,21 @@ extern CPtr call_cleanup_gl;
 extern void add_interrupt(CTXTdeclc Cell, Cell);
 #include "deref.h"
 
-/* depends on finding the second arg of call_cleanup via the choice
-   point -- would need to be change if choice point creation is
-   somehow changed. */
+/* call_cleanup_gl -- the address of the retry for call_cleanup, is
+   set up when standard.P is loaded -- this would need to be checked
+   if we mess around with choice points.  handler is a pointer to the
+   cleanup obtained via an argument register of the choice point.  The
+   handler is put into a list [call_cleanup_mod,<handler>] and added
+   to the interrupt chain. 
+
+   Once the choice point segment has been traversed and any handlers
+   are added to the interrupt chain, cut_code() will call
+   allocate_env_and_call_check_ints().  Thus this routine could be
+   called twice in a cut.  The first time to check attv interrupts,
+   before the choice point segment is traversed; and the second, here,
+   to execute a series of cleanup handlers.
+*/   
+
 static inline void  CHECK_CALL_CLEANUP(CTXTdeclc CPtr CurBreg) {	
   CPtr handler;
   Cell temp;
@@ -108,12 +117,6 @@ static inline void  CHECK_CALL_CLEANUP(CTXTdeclc CPtr CurBreg) {
     //    pcreg = get_ep(call_list_psc);
   }
 }
-
-
-/*
-  allocate_env_and_call_check_ints(reserved_regs,arsize);
-  void add_interrupt(CTXTdeclc Cell op1, Cell op2) {
- */
 
 #define cut_code(OP1)	                                        \
    { CPtr cut_breg;					        \
