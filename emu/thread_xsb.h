@@ -150,23 +150,6 @@ int valid_tid( int tid );
 int get_waiting_for_tid( int t );
 #endif
 
-#define DEFAULT_MQ_SIZE 100
-
-typedef struct XSB_Message_Queue {
-  pthread_mutex_t      mq_mutex;
-  pthread_cond_t       mq_has_free_cells;
-  pthread_cond_t       mq_has_messages;
-  MQ_Cell_Ptr          first_message;
-  MQ_Cell_Ptr          last_message;
-  int                  size;		/* number of messages in the queue */
-  int                  max_size;
-  unsigned int		       n_threads: 16;   /* number of threads waiting */
-  unsigned int                 initted: 1;      /* check to see if mutexes/condvars must be set */
-  unsigned int		       deleted: 1;	/* true if is to be deleted */
-  struct XSB_Message_Queue	*next_entry,	/* either next free slot or next thread */
-				*prev_entry ;	/* only valid for slots used for threads */
-} XSB_MQ;
-typedef XSB_MQ *XSB_MQ_Ptr;
 #endif
 
 #define ENSURE_ONE_THREAD()						\
