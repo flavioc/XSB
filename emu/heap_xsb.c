@@ -240,7 +240,8 @@ static int print_anyway = 0 ;
 /* Whether to garbage collect strings on this heap gc or not. */
 int gc_strings = FALSE;
 
-static long last_string_space_size = 10000;
+int force_string_gc = FALSE; /* flag set when string space has expanded a lot */
+long last_string_space_size = 100000;
 static long last_assert_space_size = 10000;
 #define AUTO_STRING_GC_NTH 10
 
@@ -577,7 +578,7 @@ int gc_heap(CTXTdeclc int arity, int ifStringGC)
   int  rnum_in_reg_array = (reg_arrayptr-reg_array)+1;
   DECL_GC_PROFILE;
 
-  //  printf("start gc: hf:%p,h:%p\n",hfreg,hreg);
+  //  printf("start gc: e:%p,h:%p,hf:%p\n",ereg,hreg,hfreg);
   INIT_GC_PROFILE;
   if (pflags[GARBAGE_COLLECT] != NO_GC) {
     num_gc++ ;
@@ -636,7 +637,7 @@ int gc_heap(CTXTdeclc int arity, int ifStringGC)
     }
 
     gc_strings = ifStringGC; /* default */
-    gc_strings = should_gc_strings();
+    if (!gc_strings) gc_strings = should_gc_strings();
     marked = mark_heap(CTXTc arity, &marked_dregs);
     
     end_marktime = cpu_time();
@@ -691,7 +692,6 @@ int gc_heap(CTXTdeclc int arity, int ifStringGC)
     if (slide)
       {
 	GC_PROFILE_SLIDE_START_TIME;
-
 	hreg = slide_heap(CTXTc marked) ;
 
 	if (hreg != (heap_bot+marked))
@@ -809,12 +809,14 @@ int gc_heap(CTXTdeclc int arity, int ifStringGC)
       mark_nonheap_strings(CTXT);
       free_unused_strings();
       //      printf("String GC reclaimed: %d bytes\n",beg_string_space_size - pspacesize[STRING_SPACE]);
-      last_string_space_size = pspacesize[STRING_SPACE];
-      last_assert_space_size = pspacesize[ASSERT_SPACE];
       gc_strings = FALSE;
       end_stringtime = cpu_time();
       total_time_gc += end_stringtime - begin_stringtime;
     }
+    /* update these even if no GC, to avoid too many calls just to gc strings */
+    last_string_space_size = pspacesize[STRING_SPACE];
+    last_assert_space_size = pspacesize[ASSERT_SPACE];
+    force_string_gc = FALSE;
 #ifdef MULTI_THREAD
   }
 #endif

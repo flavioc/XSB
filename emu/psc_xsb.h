@@ -172,6 +172,8 @@ extern char *true_string;
 extern Pair list_pscPair;
 extern char *list_dot_string;
 
+extern int force_string_gc;
+
 extern Psc ret_psc[];
 extern Psc get_ret_psc(int);
 inline static char *get_ret_string()	{ return (char *)ret_psc[0]; }

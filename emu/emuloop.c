@@ -340,7 +340,8 @@ inline void bld_boxedfloat(CTXTdeclc CPtr addr, Float value) {
       } 
 
 #define heap_local_overflow(Margin)					\
-  ((ereg<ebreg)?((ereg-hreg)<(Margin)):((ebreg-hreg)<(Margin)))
+  (((top_of_localstk)-hreg)<(Margin))
+  //  ((ereg<ebreg)?((ereg-hreg)<(Margin)):((ebreg-hreg)<(Margin)))
 
 /*----------------------------------------------------------------------*/
 
@@ -1161,9 +1162,10 @@ contcase:     /* the main loop */
               xsb_basic_abort(local_global_exception);
 	    }
 	  }
+	}	/* are there any localy cached quantities that must be reinstalled ? */
+      } else if (force_string_gc) {
+	  gc_heap(CTXTc op1,TRUE);
 	}
-	/* are there any localy cached quantities that must be reinstalled ? */
-      }
   XSB_End_Instr()
 
   XSB_Start_Instr(switchonterm,_switchonterm) /* PPR-L-L */
@@ -1833,7 +1835,7 @@ argument positions.
     ADVANCE_PC(size_xxxX);
     cpreg = lpcreg;
     psc = (Psc)op1;
-    //    printf("call %s/%d (h:%p,e:%p,pc:%p,hb:%p)\n",get_name(psc),get_arity(psc),hreg,ereg,lpcreg,hbreg);
+    //    printf("call %s/%d (h:%p,e:%p,pc:%p,b:%p,hs:%lx)\n",get_name(psc),get_arity(psc),hreg,ereg,lpcreg,breg,top_of_localstk-hreg);
 #ifdef CP_DEBUG
     pscreg = psc;
 #endif
@@ -1981,7 +1983,10 @@ argument positions.
 
   XSB_Start_Instr(proceed,_proceed)  /* PPP */
      proceed_sub;
-  //     printf("proc (h:%p,e:%p,pc:%p)\n",hreg,ereg,lpcreg);
+  /*  {Psc psc = *(((Psc *)lpcreg)-1); byte call_inst = *((byte *)lpcreg-8);
+    if (call_inst == call) printf("proc %s/%d (h:%p,e:%p,pc:%p)\n",get_name(psc),get_arity(psc),hreg,ereg,lpcreg);
+    else if (call_inst == calld) printf("proc to calld (h:%p,e:%p,pc:%p,addr:%p)\n",hreg,ereg,lpcreg,psc);
+    else printf("proc illegal?\n"); } */
   XSB_End_Instr()
 
   XSB_Start_Instr(proceed_gc,_proceed_gc) /* PPP */
@@ -2001,7 +2006,10 @@ argument positions.
       }
     }
     proceed_sub;
-    //    printf("pr_g (h:%p,e:%p,pc:%p)\n",hreg,ereg,lpcreg);
+    /*  {Psc psc = *(((Psc *)lpcreg)-1); byte call_inst = *((byte *)lpcreg-8);
+    if (call_inst == call) printf("prgc %s/%d (h:%p,e:%p,pc:%p)\n",get_name(psc),get_arity(psc),hreg,ereg,lpcreg);
+    else if (call_inst == calld) printf("prgc to calld (h:%p,e:%p,pc:%p,addr:%p)\n",hreg,ereg,lpcreg,psc);
+    else printf("prgc illegal? (h:%p,e:%p,pc:%p,addr:%p)\n",hreg,ereg,lpcreg,psc); } */
   XSB_End_Instr()
 
   XSB_Start_Instr(restore_dealloc_proceed,_restore_dealloc_proceed) /* PPP */
@@ -2036,7 +2044,7 @@ argument positions.
 #ifdef CP_DEBUG
     pscreg = psc;
 #endif
-    //    printf("exec %s/%d (h:%p,e:%p,pc:%p,hb:%p)\n",get_name(psc),get_arity(psc),hreg,ereg,lpcreg,hbreg);
+    //    printf("exec %s/%d (h:%p,e:%p,pc:%p,b:%p,hs:%lx)\n",get_name(psc),get_arity(psc),hreg,ereg,lpcreg,breg,top_of_localstk-hreg);
     call_sub(psc);
   XSB_End_Instr()
 

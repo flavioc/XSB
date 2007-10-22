@@ -65,6 +65,7 @@ extern Psc synint_proc(Psc, int);
    checking in mem_xxxoc() functions, we'll need to adjust these
    mutexes. */
 
+extern long last_string_space_size;
 #define CHAR_PTR_SIZE  sizeof(char *)
 
 char *string_find(const char *str, int insert) {
@@ -88,6 +89,7 @@ char *string_find(const char *str, int insert) {
     str0 = str0 + CHAR_PTR_SIZE;
     strcpy(str0, str);
     string_table_increment_and_check_for_overflow;
+    force_string_gc = (pspacesize[STRING_SPACE] > 4*last_string_space_size);
   }
   else
     str0 = NULL ;
