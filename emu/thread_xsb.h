@@ -54,6 +54,7 @@ typedef pthread_t pthread_t_p;
 #define INC_MASK			(INC_MASK_RIGHT<<INC_SHIFT)
 #define ENTRY_MASK			0x000fffff
 
+#define DEFAULT_MQ_SIZE 100
 
 #define THREAD_ENTRY(TID)		((TID)&ENTRY_MASK)
 #define THREAD_INCARN(TID)		(((TID)&INC_MASK)>>INC_SHIFT)

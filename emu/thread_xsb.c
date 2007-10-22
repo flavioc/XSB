@@ -99,8 +99,6 @@ typedef struct xsb_thread_s
 	th_context *		ctxt ;
 } xsb_thread_t ;
 
-#define DEFAULT_MQ_SIZE 100
-
 typedef struct XSB_Message_Queue {
   pthread_mutex_t      mq_mutex;
   pthread_cond_t       mq_has_free_cells;
