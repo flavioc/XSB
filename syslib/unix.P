@@ -30,6 +30,7 @@
 
 :- compiler_options([xpp_on,sysmod]).
 #include "extensions_xsb.h"
+#include "builtin.h"
 
 
 :- export unix/2, cd/1, unix/1, ls/0, rename/2, rm/1, edit/1.
@@ -112,13 +113,13 @@ sys_rename(Old, New, Res)   :-
 
 
 /*
-sys_syscall(_CallNo, _Res)				 :- '_$builtin'(55).
+sys_syscall(_CallNo, _Res)				 :- '_$builtin'(SYS_SYSCALL).
  */
-sys_syscall(_CallNo, _Res, _A1)				 :- '_$builtin'(55).
-sys_syscall(_CallNo, _Res, _A1, _A2)			 :- '_$builtin'(55).
+sys_syscall(_CallNo, _Res, _A1)				 :- '_$builtin'(SYS_SYSCALL).
+sys_syscall(_CallNo, _Res, _A1, _A2)			 :- '_$builtin'(SYS_SYSCALL).
 /*
-sys_syscall(_CallNo, _Res, _A1, _A2, _A3)		 :- '_$builtin'(55).
-sys_syscall(_CallNo, _Res, _A1, _A2, _A3, _A4)		 :- '_$builtin'(55).
-sys_syscall(_CallNo, _Res, _A1, _A2, _A3, _A4, _A5)	 :- '_$builtin'(55).
-sys_syscall(_CallNo, _Res, _A1, _A2, _A3, _A4, _A5, _A6) :- '_$builtin'(55).
+sys_syscall(_CallNo, _Res, _A1, _A2, _A3)		 :- '_$builtin'(SYS_SYSCALL).
+sys_syscall(_CallNo, _Res, _A1, _A2, _A3, _A4)		 :- '_$builtin'(SYS_SYSCALL).
+sys_syscall(_CallNo, _Res, _A1, _A2, _A3, _A4, _A5)	 :- '_$builtin'(SYS_SYSCALL).
+sys_syscall(_CallNo, _Res, _A1, _A2, _A3, _A4, _A5, _A6) :- '_$builtin'(SYS_SYSCALL).
  */
