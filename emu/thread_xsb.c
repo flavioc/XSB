@@ -85,6 +85,9 @@ static int threads_initialized = FALSE;
 
 th_context * main_thread_gl = NULL;
 
+int max_mqueues_glc ;
+int max_threads_glc ;
+
 typedef struct xsb_thread_s
 {	
 	pthread_t		tid;
@@ -254,15 +257,16 @@ static void init_mq_table(void)
 {
 	int i ;
 
-	mq_table = mem_calloc(3*max_threads_glc, sizeof(XSB_MQ), OTHER_SPACE);
+	mq_table = mem_calloc(2*max_threads_glc+max_mqueues_glc, 
+				sizeof(XSB_MQ), OTHER_SPACE);
 
-	for( i = 2*max_threads_glc; i < 3*max_threads_glc; i++ )
+	for( i=2*max_threads_glc; i<2*max_threads_glc+max_mqueues_glc; i++ )
 	{
 	  mq_table[i].next_entry = &mq_table[i+1];
 	  mq_table[i].incarn = INC_MASK_RIGHT ; /* -1 */
 	}
 	mq_first_free = &mq_table[2*max_threads_glc];
-	mq_last_free = &mq_table[3*max_threads_glc-1];
+	mq_last_free = &mq_table[2*max_threads_glc+max_mqueues_glc-1];
 	mq_last_free->next_entry = NULL;
 	mq_first_queue = NULL;
 

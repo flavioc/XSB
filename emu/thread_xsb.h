@@ -101,6 +101,9 @@ extern "C" {
 
 extern int call_conv xsb_ccall_thread_create(th_context *th,th_context **thread_return);
 
+extern int max_mqueues_glc ;
+extern int max_threads_glc ;
+
 #ifdef __cplusplus
 }
 #endif

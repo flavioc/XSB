@@ -96,6 +96,7 @@
 #define XSB_NEXT_THREAD_PROPERTY        53
 
 #define MAX_THREADS		1024
+#define MAX_MQUEUES		1024
 
 /* MUTEX KINDS (under LINUX) */
 

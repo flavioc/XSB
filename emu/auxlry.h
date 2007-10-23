@@ -57,7 +57,7 @@ typedef enum XSB_Execution_Mode {
 } Exec_Mode;
 
 extern Exec_Mode xsb_mode;
-extern int max_threads_glc;
+//extern int max_threads_glc;
 
 #define fileptr(xsb_filedes)  open_files[xsb_filedes].file_ptr
 
