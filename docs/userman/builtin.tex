@@ -1327,6 +1327,9 @@ nor a write option.
 \ei
 \ei
 
+\compatability In \version{}, {\tt write\_term/[2,3]} do not properly
+handle operators.
+
 \ournewitem{write\_term(+Stream\_or\_alias,?Term,+Options)}{ISO}
 \index{\texttt{write\_term/3}}
 % 
@@ -3819,6 +3822,128 @@ bagAvg(Call,Avg) :-
     over'' the subcomputation started by the subgoal {\tt Pred},
     thereby ensuring the correct evaluation of tabled subgoals.
 
+\ouritem{call\_cleanup(\#Goal,\#Handler)}
+\index{\texttt{call\_cleanup/2}}
+%
+{\tt call\_cleanup(Goal, Cleanup)} calls {\tt Goal} just as if it were
+called via {\tt call/1}, but it is ensures that {\tt Handler} will be
+called after {\tt Goal} finishes execution.  {\tt call\_cleanup/2} is
+thus useful when {\tt Goal} uses a resource, (such as a stream, mutex,
+database cursor, etc.) that should be released when {\tt Goal}
+finishes execution.
+
+More precisely, {\tt Goal} finishes execution either 1) by failure, 2)
+by determining that the success of {\tt Goal} is deterministic, 3)
+when an error is thrown and not handled by {\tt Goal} or one of its
+subgoals; or 4) when {\tt Goal} is cut over.  In all of these cases,
+{\tt Handler} will be called and will succeed non-deterministically.
+We illustrate these cases through examples.
+\begin{itemize}
+\item Failure of {\tt Goal}:
+\begin{verbatim}
+   ?- call_cleanup(fail,writeln(failed(Goal))).
+\end{verbatim}
+In this case, {\tt Goal} has no solutions, and the handler is invoked
+when the engine backtracks out of {\tt Goal}.
+%
+\item Deterministic success of {\tt Goal}.  Assume that {\tt p(1)} and
+  {\tt p(2)} have been asserted.  Then
+\begin{verbatim}
+   ?- call_cleanup((p(X),writeln(got(p(X)))),writeln(handled(p(X)))).
+   got(p(1))
+
+   X = 1;
+   got(p(2))
+   handled(p(2))
+
+   X = 2;
+
+  no
+\end{verbatim}
+Note that {\tt Handler} is called only after the last solution of the
+goal {\tt p(X)} has been obtained.  XSB decides to call {\tt Handler}
+only when it can be determined that the success of {\tt Goal} has left
+no choice points.  In such a case, the final solution has been
+obtained for {\tt Goal}.  Of course, it may be that a solution $S$ to
+{\tt Goal} leaves a choice point but the choice point will produce no
+further solutions for {\tt Goal}.  XSB will not call {\tt Handler} in
+this case, rather it will wait until there are no choice points left
+for {\tt Goal}.
+
+\item An uncaught error $E$ is thrown out of {\tt Goal}.  In this
+  case, {\tt Handler} will be called, and then, if $E$ is uncaught,
+  $E$ will be rethrown.  This is illustrated in the following example
+  (Error handling is discussed further in Section~\ref{sec:catch}):
+\begin{verbatim}
+   ?- catch(call_cleanup(throw(my_error),writeln(invoking_handler)),Ball,write(Ball)).
+   invoking_handler
+   my_error
+   yes
+\end{verbatim}
+Of course, {\tt Handler} itself can be wrapped in a {\tt catch/3} so
+that any errors will be caught by {\tt call\_cleanup/2}.
+
+\item Choice points for {\tt Goal} are removed via a cut.  Consider an
+  example in which {\tt p/1} has the same extension as above ({\tt p(1),p(2)}:
+\begin{verbatim}
+   call_cleanup(p(X),writeln(handled_1)),!.
+   handled_1
+
+X = 1
+
+yes	
+\end{verbatim}
+The handler is invoked immediately when the choice point laid down by
+{\tt p(X)} is cut over -- before returning to the command line.  If a
+cut cuts over more than goal to be cleaned, more than one handler will be executed:
+\begin{verbatim}
+   ?-call_cleanup(p(X),writeln(handled_4_1)),
+       call_cleanup(p(Y),writeln(handled_4_2)),
+       call_cleanup(p(Z),writeln(handled_4_3)),
+       !.
+   handled_4_3
+   handled_4_2
+   handled_4_1
+ 
+   X = 1
+   Y = 1
+   Z = 1
+\end{verbatim}
+\end{itemize}
+
+{\tt call\_cleanup/2} is thus an extremely powerful and flexible
+mechanism when used in a simple manner.  While {\tt Handler} is
+``guarenteed'' to be invoked whenever {\tt Goal} finishes
+execution~\footnote{In fact we don't guarentee anything, see XSB's
+  license.}, it may be difficult to predict when {\tt Handler} will be
+invoked, as {\tt Handler} may be invoked because of deeply non-local
+cuts over {\tt Goal}, and even when such cuts are not present, the
+invocation depends on XSB determining when the last solution for {\tt
+  Goal} has been obtained.  Baroque usages, such as invoking {\tt
+  call\_cleanup/2} and cuts in the handler are supported, but may lead
+to code that is difficult to debug, since handlers may be invoked
+based on the state of XSB's choice point stack.  
+
+{\bf Error Cases}
+\begin{description}
+\item  {\tt Goal} is a variable
+\bi
+\item {\tt instantiation error}
+\ei
+\item  {\tt Goal} is neither a variable nor a callable term
+\bi
+\item  {\tt type error(callable, Goal)}
+\ei
+\item  {\tt Handler} is a variable
+\bi
+\item  {\tt instantiation error}
+\ei
+\item  {\tt Handler} is neither a variable nor a callable term
+\bi
+\item {\tt type error(callable, Handler)}
+\ei
+\end{description}
+
 \end{description}
 
 
@@ -3826,3 +3951,4 @@ bagAvg(Call,Avg) :-
 %%% mode: latex
 %%% TeX-master: "manual1"
 %%% End: 
+
