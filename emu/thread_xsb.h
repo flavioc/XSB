@@ -71,6 +71,7 @@ typedef struct Dynamic_Mutex_Frame *DynMutPtr;
 typedef struct Dynamic_Mutex_Frame {
   pthread_mutex_t th_mutex; 
   int             num_locks;
+  int             tot_locks;
   int             owner;
   DynMutPtr       next_dynmut;
   DynMutPtr       prev_dynmut;

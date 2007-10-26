@@ -2176,8 +2176,8 @@ byte *trie_get_returns(CTXTdeclc VariantSF sf, Cell retTerm) {
   delay_it = 0;  /* Don't delay the answer. */
 #ifdef MULTI_THREAD_RWL
 /* save choice point for trie_unlock instruction */
-       save_find_locx(ereg);
-       tbreg = top_of_cpstack;
+//       save_find_locx(ereg);
+//       tbreg = top_of_cpstack;
 #ifdef SLG_GC
        old_cptop = tbreg;
 #endif
@@ -2232,8 +2232,8 @@ byte * trie_get_calls(CTXTdecl)
        }
 #ifdef MULTI_THREAD_RWL
 /* save choice point for trie_unlock instruction */
-       save_find_locx(ereg);
-       tbreg = top_of_cpstack;
+//       save_find_locx(ereg);
+//       tbreg = top_of_cpstack;
 #ifdef SLG_GC
        old_cptop = tbreg;
 #endif

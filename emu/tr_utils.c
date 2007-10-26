@@ -1449,8 +1449,8 @@ int trie_interned(CTXTdecl) {
       num_vars_in_var_regs = -1;
       pushreg(trie_term);
 #ifdef MULTI_THREAD_RWL /* save choice point for trie_unlock instruction */
-       save_find_locx(ereg);
-       tbreg = top_of_cpstack;
+      //       save_find_locx(ereg);
+      //       tbreg = top_of_cpstack;
 #ifdef SLG_GC
        old_cptop = tbreg;
 #endif

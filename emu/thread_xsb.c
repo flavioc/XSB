@@ -815,6 +815,7 @@ DynMutPtr create_new_dynMutFrame() {
   DynMutPtr new_dynmut = mem_alloc(sizeof(DynMutexFrame),THREAD_SPACE) ;
   pthread_mutex_init( &(new_dynmut->th_mutex), &attr_rec_gl ) ;
   new_dynmut->num_locks = 0;
+  new_dynmut->tot_locks = 0;
   new_dynmut->owner = -1;
   new_dynmut->next_dynmut = dynmut_chain_begin;
   if (dynmut_chain_begin != NULL) 
@@ -860,7 +861,7 @@ void mutex_unlock_all(CTXTdecl) {
   DynMutPtr dmp = dynmut_chain_begin;
   while (dmp != NULL) {
     if (dmp-> owner == xsb_thread_id) {
-      printf("unlocking %p\n",dmp);
+      //      printf("unlocking all %p\n",dmp);
       unlock_mutex(CTXTc dmp);
     }
     dmp = dmp->next_dynmut;
@@ -1207,6 +1208,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 	  DynMutPtr id = (DynMutPtr) ptoc_int(CTXTc 2) ;
 	  rc = pthread_mutex_lock( &(id->th_mutex) ) ;
 	  id->num_locks++;
+	  id->tot_locks++;
 	  id->owner = xsb_thread_id;
 	  if (rc == EINVAL) {
 	    xsb_existence_error(CTXTc "invalid mutex",
@@ -1230,6 +1232,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 
 	case XSB_MUTEX_UNLOCK: {
 	  DynMutPtr id = (DynMutPtr) ptoc_int(CTXTc 2) ;
+	  id->num_locks--;
 	  unlock_mutex(CTXTc id);
 	  break ;
 	}
