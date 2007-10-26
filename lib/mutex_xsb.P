@@ -165,8 +165,8 @@ form_mutex_property(Mutex,_Owner,_Locks,alias(Alias)):-
 	get_alias(Alias, MUTEX_ALIAS, Mutex).
 form_mutex_property(_Mutex,Owner,Locks,Prop):- 
 	(Owner == -1 -> 
-	    Prop = unlocked(Locks)
-	 ;  Prop = locked(Owner,Locks) ).
+	    Prop = status(unlocked)
+	 ;  Prop = status(locked(Owner,Locks)) ).
 
 bound_mutex_property(Mutex,Property):-
 	get_next_mutex_property(Mutex,Locks,Owner,_Next),
