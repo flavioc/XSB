@@ -203,7 +203,7 @@ file_read_line_list(Lst) :-
 %% This is checked in C, by the builtin.
 
 file_write_line(S_or_A, Str, Offset) :-
-	check_open_stream_or_alias(S_or_A,file_write_line/3,1,input,Stream),
+	check_open_stream_or_alias(S_or_A,file_write_line/3,1,output,Stream),
 	file_function(FILE_WRITE_LINE, Stream, Str, Offset, _,_,_).
 
 %% Same as file_write_line/3, but write to current output
