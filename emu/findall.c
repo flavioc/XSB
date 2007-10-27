@@ -786,11 +786,7 @@ static long term_size(CTXTdeclc Cell term)
 /* recursively copies a term to a area of memory */
 /* used by copy_term to build a variant in the heap */
 
-#ifndef MULTI_THREAD
 static void do_copy_term(CTXTdeclc Cell from, CPtr to, CPtr *h)
-#else
-static void do_copy_term(CTXTdeclc Cell from, CPtr to, CPtr *h, int InterThread)
-#endif
 {
 copy_again : /* for tail recursion optimisation */
 
@@ -807,9 +803,7 @@ copy_again : /* for tail recursion optimisation */
 #ifndef MULTI_THREAD
       if ((CPtr)from < hreg)  /* meaning: a not yet copied undef */
 #else
-      if ( ( !InterThread && (CPtr)from < hreg ) ||
-           ( InterThread && 
-           ( (byte *)from < glstack.low || (byte *)from > glstack.high ) ) )
+      if ( ((CPtr)from < hreg) || ((CPtr)from >= (CPtr)glstack.high) )
 #endif
 	{
 	  findall_trail(CTXTc (CPtr)from,from) ;
@@ -860,7 +854,11 @@ copy_again : /* for tail recursion optimisation */
 	   of a previously copied first list element
 	*/
 	pfirstel = clref_val(from) ;
+#ifndef MULTI_THREAD
 	if (pfirstel >= hreg)
+#else
+        if ( ((CPtr)pfirstel >= hreg) && ((CPtr)pfirstel < (CPtr)glstack.high) )
+#endif
 	  {
 	    /* pick up the old value and copy it */
 	    *to = *pfirstel;
@@ -873,7 +871,11 @@ copy_again : /* for tail recursion optimisation */
 	    CPtr p;
 
 	    p = clref_val(q);
+#ifndef MULTI_THREAD
 	    if (p >= hreg)  /* meaning it is a shared list */
+#else
+            if ( (p >= hreg) && (p < (CPtr)glstack.high) )
+#endif
 	      {
 		*to = q;
 		return;
@@ -905,11 +907,7 @@ copy_again : /* for tail recursion optimisation */
 	      findall_trail(CTXTc pfirstel,q);
 	      *pfirstel = makelist((CPtr)to);
 	      XSB_Deref(q);
-#ifndef MULTI_THREAD
 	      do_copy_term(CTXTc q,to,h);
-#else
-	      do_copy_term(CTXTc q,to,h, InterThread);
-#endif
 	    }
 
 	  from = *(pfirstel+1) ; XSB_Deref(from) ; to++ ;
@@ -980,11 +978,7 @@ copy_again : /* for tail recursion optimisation */
 	  while ( --ar )
 	    {
 	      from = *(++pfirstel) ; XSB_Deref(from) ; to++ ;
-#ifndef MULTI_THREAD
 	      do_copy_term(CTXTc from,to,h) ;
-#else
-	      do_copy_term(CTXTc from,to,h, InterThread) ;
-#endif
 	    }
 	  from = *(++pfirstel) ; XSB_Deref(from) ; to++ ;
 	  goto copy_again ;
@@ -1081,11 +1075,7 @@ int copy_term(CTXTdecl)
   
   gl_bot = (CPtr)glstack.low ; gl_top = (CPtr)glstack.high ;
   init_findall_trail(CTXT) ;
-#ifndef MULTI_THREAD
   do_copy_term( CTXTc arg1, &to, &hptr ) ;
-#else
-  do_copy_term( CTXTc arg1, &to, &hptr, FALSE ) ;
-#endif
   findall_untrail(CTXT) ;
   
   {
@@ -1131,13 +1121,13 @@ Cell copy_term_from_thread( th_context *th, th_context *from, Cell arg1 )
   CPtr hptr ;
   Cell to ;
 
-  hptr = hreg ;
-  hreg = from->_hreg ;
-  init_findall_trail(th) ;
-  do_copy_term( th, arg1, &to, &hptr, TRUE ) ;
-  findall_untrail(th) ;
+  hptr = from->_hreg ;
 
-  hreg = hptr ;
+  init_findall_trail(from) ;
+  do_copy_term( from, arg1, &to, &hptr ) ;
+  findall_untrail(from) ;
+
+  from->_hreg = hptr ;
 
   return to ;
 }
