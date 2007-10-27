@@ -1121,13 +1121,13 @@ Cell copy_term_from_thread( th_context *th, th_context *from, Cell arg1 )
   CPtr hptr ;
   Cell to ;
 
-  hptr = from->_hreg ;
+  hptr = hreg ;
 
-  init_findall_trail(from) ;
-  do_copy_term( from, arg1, &to, &hptr ) ;
-  findall_untrail(from) ;
+  init_findall_trail(th) ;
+  do_copy_term( th, arg1, &to, &hptr ) ;
+  findall_untrail(th) ;
 
-  from->_hreg = hptr ;
+  hreg = hptr ;
 
   return to ;
 }
