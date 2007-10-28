@@ -1900,22 +1900,25 @@ word-sized references to double precision values, regardless of the
 target machine. Direct (non-referenced, tagged) single precision
 floats can be activated for speed purposes by passing the option
 --enable-fast-floats to the configure script at configuration time.
-This option is not described when any sort of precision is desired, as
-there may be as little as 28 bits available to represent a given
+This option is not recommended when any sort of precision is desired,
+as there may be as little as 28 bits available to represent a given
 number value under a tagged architecture.  In addition, evaluation of
 arithmetic expressions through {\tt is/2} does not check for overflow
 or underflow.  As a result, XSB's floating point operations do not
 conform to IEEE floating point standards, and deviates in this regard
-from the ISO Prolog standard (see \cite{ISO-Prolog} Section 9).  We
+from the ISO Prolog standard (see \cite{ISO-Prolog} Section 9)~ We
 hope to fix these problems in a future release \footnote{We also note
-  that the ISO Prolog evaluable functors {\tt sign/1}, {\tt
-    float\_round/1}, {\tt float\_truncate/1}, {\tt
-    float\_integer\_part/1} and {\tt float\_fractional\_part/1} are
-  not implemented in \version .}.
+  that the ISO Prolog evaluable functors{\tt float\_integer\_part/1}
+  (which can be obtained via {\tt truncate/1}), {\tt
+    float\_fractional\_part/1} (which can be obtained via {\tt X -
+    truncate(X)}), and bitwise complement (which is implementation
+  dependent in the ISO standard) are not implemented in \version .}.
 
-All of the evaluable functors describe below throw a type error if
-their evaluated input is not numeric.  We describe below only their
-behavior on correctly typed input.
+All of the evaluable functors described below throw an instantiation
+error if one of their evaluated inputs is a variable, and an {\tt
+  evaluation(undefined)} error if one of their evaluated inputs is
+instantiated but non-numeric.  With this in mind, we describe below
+only their behavior on correctly typed input.
 
 \begin{description}
 \ouritem{is(?Result,+Expression)}\index{\texttt{is/2}} 
@@ -1999,6 +2002,11 @@ evaluates to {\tt Number2}, returns the logical shift right of
 evaluates to {\tt Number2}, returns the logical shift left of 
 {\tt Number1}, {\tt Number2} places.
 
+\ournewitem{'><'(+Expr1,+Expr2)}{Evaluable Functor}
+\index{\texttt{'><'/2}} If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2}
+evaluates to {\tt Number2}, returns the bitwise exclusive or of 
+{\tt Number1} and {\tt Number2}.
+
 \ournewitem{min(+Expr1,+Expr2)}{Evaluable Functor}
 \index{\texttt{min/2}} If {\tt +Expr1} evaluates to {\tt Number1}, and
 {\tt Expr2} evaluates to {\tt Number2}, returns the minimum of the
@@ -2070,12 +2078,12 @@ rem(Number1,Number2)} returns
 nearest integer to {\tt Number} if {\tt Number} is a float, and {\tt
 Number} itself if {\tt Number} is an integer.
 
-\ournewitem{exp(+Expr1,+Expr2)}{Evaluable Functor} \index{\texttt{exp/2}} 
+\ournewitem{'**'(+Expr1,+Expr2)}{Evaluable Functor} \index{\texttt{**/2}} 
 %
-If {\tt Expr1} and {\tt Expr2} both evaluate to numbers, raises {\tt
-  Expr1} to the {\tt Expr2} power.  If {\tt Expr1} and {\tt Expr2} both
-evaluate to integers, an integer is returned; otherwise a float is
-returned.
+If {\tt Expr1} and {\tt Expr2} both evaluate to numbers, the infix
+function {\tt **/2} raises {\tt Expr1} to the {\tt Expr2} power.  If
+{\tt Expr1} and {\tt Expr2} both evaluate to integers, an integer is
+returned; otherwise a float is returned.
 
 \ournewitem{sqrt(+Expr)}{Evaluable Functor}\index{\texttt{sqrt/1}}
 If {\tt +Expr} evaluates to {\tt Number}, {\tt sqrt(Number)}
@@ -2085,6 +2093,13 @@ returns the square root of {\tt Number}.
 \index{\texttt{truncate/1}} If {\tt +Expr} evaluates to {\tt Number}, {\tt
 truncate(Number)} truncates {\tt Number} if {\tt Number} is a float,
 and returns {\tt Number} itself if {\tt Number} is an integer.
+
+\ournewitem{sign(+Expr)}{Evaluable Functor}\index{\texttt{sign/1}} 
+%
+If {\tt +Expr} evaluates to {\tt Number}, {\tt sign(Number)} returns
+{\tt 1} if {\tt Number} is greater than 0, {\tt 0} if {\tt Number} is
+equal to 0, and {\tt -1} if {\tt Number} is less than 0.
+
 \end{description}
 
 \subsubsection{Mathematical Functions from {\tt math.h}}
