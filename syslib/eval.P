@@ -111,6 +111,8 @@ eval0(exp(X,Y), Res,Expr) :- eval(X, Res1,Expr),eval(Y, Res2,Expr),
 			     pow(Res1,Res2,Res).
 eval0('**'(X,Y), Res,Expr) :- eval(X, Res1,Expr),eval(Y, Res2,Expr),
 			     pow(Res1,Res2,Res).
+eval0('><'(X,Y), Res,Expr) :- eval(X, Res1,Expr),eval(Y, Res2,Expr),
+			     Res is Res1 >< Res2.
 
 eval0('-'(X), Res,Expr) :- eval(X, Res1,Expr), Res is -(Res1).
 eval0('\'(X), Res,Expr) :- eval(X, Res1,Expr), Res is '\'(Res1).  
@@ -130,6 +132,7 @@ eval0(exp(X), Res,Expr) :- eval(X, Res1,Expr), Res is exp(Res1).
 eval0(log(X), Res,Expr) :- eval(X, Res1,Expr), Res is log(Res1).
 eval0(log10(X), Res,Expr) :- eval(X, Res1,Expr), Res is log10(Res1).
 eval0(sqrt(X), Res,Expr) :- eval(X, Res1,Expr), Res is sqrt(Res1).
+eval0(sign(X), Res,Expr) :- eval(X, Res1,Expr), Res is sign(Res1).
 
 eval0(pi,Pi,_Expr):- pi(Pi).
 eval0(e,E,_Expr):- e(E).
