@@ -138,6 +138,8 @@ eval_binoptab('<<',R1,R2,logshiftl(R2,R1)).
 eval_binoptab('>>',R1,R2,logshiftr(R2,R1)).
 eval_binoptab(min,R1,R2,minreg(R2,R1)).
 eval_binoptab(max,R1,R2,maxreg(R2,R1)).
+eval_binoptab('**',R1,R2,powreg(R2,R1)).
+eval_binoptab('><',R1,R2,xorreg(R2,R1)).
 
 eval_binop('+').
 eval_binop('-').
@@ -150,6 +152,8 @@ eval_binop('<<').
 eval_binop('>>').
 eval_binop(min).
 eval_binop(max).
+eval_binop('**').
+eval_binop('><').
 
 arithrelop('=:=').
 arithrelop('=\=').

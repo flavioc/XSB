@@ -116,6 +116,7 @@ typedef struct psc_pair *Pair;
 #define  get_opaque(psc)        (((psc)->incr & 3) == 2)  /* incremental */
 
 // get_xxx_tabled will also succeed if tabling type is not yet known
+// set_shared is also used to set_private
 #define  get_subsumptive_tabled(psc)	((psc)->env & T_TABLED_SUB & ~T_TABLED_VAR)
 #define  get_variant_tabled(psc)	((psc)->env & T_TABLED_VAR & ~T_TABLED_SUB)
 #define  get_arity(psc)		((psc)->arity)

@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <string.h>
+#include <math.h>
 
 #ifdef FOREIGN
 #ifndef SOLARIS
@@ -548,6 +549,40 @@ contcase:     /* the main loop */
     Op1(Register(get_xxr));
     ADVANCE_PC(size_xxx);
     nunify_with_list_sym(op1);
+  XSB_End_Instr()
+
+     /* TLS: so much work for such a little function! */
+  XSB_Start_Instr(xorreg,_xorreg) /* PRR */
+    Def3ops
+    Op1(Register(get_xrx));
+    Op3(get_xxr);
+    ADVANCE_PC(size_xxx);
+    op2 = *(op3);
+    XSB_Deref(op1); 
+    XSB_Deref(op2);
+    if (isinteger(op1)) {
+      if (isinteger(op2)) {
+        Integer temp = (int_val(op2)) ^ (int_val(op1));
+        bld_oint(op3, temp); 
+      }
+      else if (isboxedinteger(op2)) {
+        Integer temp = (boxedint_val(op2)) ^ (int_val(op1));
+        bld_oint(op3, temp);
+      }
+      else {arithmetic_abort(CTXTc op2, "'><'", op1);}
+    }
+    else if (isboxedinteger(op1)) {
+      if (isinteger(op2)) {
+        Integer temp = (int_val(op2)) ^ (boxedint_val(op1));
+        bld_oint(op3, temp); 
+      }
+      else if (isboxedinteger(op2)) {
+        Integer temp = (boxedint_val(op2)) ^ (boxedint_val(op1));
+        bld_oint(op3, temp); 
+      }
+      else {arithmetic_abort(CTXTc op2, "'><'", op1);}
+    }
+    else {arithmetic_abort(CTXTc op2, "'><'", op1);}
   XSB_End_Instr()
 
   XSB_Start_Instr(getattv,_getattv) /* PPR */
@@ -1690,6 +1725,40 @@ argument positions.
       }
       else ADVANCE_PC(size_xxxX);
     }
+  XSB_End_Instr()
+
+     /* TLS: so much work for such a little function! */
+  XSB_Start_Instr(powreg,_powreg) /* PRR */
+    Def3ops
+    Op1(Register(get_xrx));
+    Op3(get_xxr);
+    ADVANCE_PC(size_xxx);
+    op2 = *(op3);
+    XSB_Deref(op1); 
+    XSB_Deref(op2);
+    if (isinteger(op1)) {
+      if (isinteger(op2)) {
+        Integer temp = pow(int_val(op2),int_val(op1));
+        bld_oint(op3, temp); 
+      }
+      else if (isboxedinteger(op2)) {
+        Integer temp = pow(boxedint_val(op2),int_val(op1));
+        bld_oint(op3, temp);
+      }
+      else {arithmetic_abort(CTXTc op2, "'**'", op1);}
+    }
+    else if (isboxedinteger(op1)) {
+      if (isinteger(op2)) {
+        Integer temp = pow(int_val(op2),boxedint_val(op1));
+        bld_oint(op3, temp); 
+      }
+      else if (isboxedinteger(op2)) {
+        Integer temp = pow(boxedint_val(op2),boxedint_val(op1));
+        bld_oint(op3, temp); 
+      }
+      else {arithmetic_abort(CTXTc op2, "'**'", op1);}
+    }
+    else {arithmetic_abort(CTXTc op2, "'**'", op1);}
   XSB_End_Instr()
 
      /* TLS: so much work for such a little function! */

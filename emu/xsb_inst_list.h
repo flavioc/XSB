@@ -54,7 +54,7 @@ XSB_INST(0x2b, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0x2c, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0x2d, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0x2e, no_inst, _no_inst, PPP,X,X,X);
-XSB_INST(0x2f, no_inst, _no_inst, PPP,X,X,X);
+XSB_INST(0x2f, xorreg, _xorreg, P,R,R,X);
 
 XSB_INST(0x30, getattv, _getattv, PP, R, X,X);
 XSB_INST(0x31, putattv, _putattv, PP, R, X,X);
@@ -245,7 +245,7 @@ XSB_INST(0xdb, idivreg, _idivreg, P, R, R,X);
 XSB_INST(0xdc, int_test_z, _int_test_z, PP, R, B, L);
 XSB_INST(0xdd, int_test_nz, _int_test_nz, PP, R, B, L);
 XSB_INST(0xde, fun_test_ne, _fun_test_ne, PRR, L,X,X);
-XSB_INST(0xdf, no_inst, _no_inst, PPP,X,X,X);
+XSB_INST(0xdf, powreg, _powreg, P,R,R,X);
 
 XSB_INST(0xe0, putdval, _putdval, P, V, R,X);
 XSB_INST(0xe1, putuval, _putuval, P, V, R,X);

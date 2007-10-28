@@ -215,6 +215,7 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 #define unitvar_getlist_uninumcon 0x23  /* combined, same reg, 16-bit int */
 #define bldtval_putlist_bldnumcon 0x24  /* combined, same reg, 16-bit int */
 #define bldtvar_list_numcon 0x25  /* combined, same reg, 16-bit int */
+#define xorreg          0x2f
 
 #define getattv		0x30
 #define putattv		0x31
@@ -352,7 +353,7 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 #define int_test_z	0xdc
 #define int_test_nz	0xdd
 #define fun_test_ne	0xde
-
+#define powreg          0xdf
 /* Unsafe term instructions */
 
 #define putdval         0xe0

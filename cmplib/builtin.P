@@ -275,3 +275,4 @@ builtin_function(abs, 1, 22).
 builtin_function(truncate, 1, 23).
 builtin_function(round, 1, 24).
 builtin_function(ceiling, 1, 25).
+builtin_function(sign, 1, 26).

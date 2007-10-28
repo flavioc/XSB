@@ -63,6 +63,9 @@ asm_inst(bldavar,		4,	34,	[ppp]		).
 asm_inst(unitvar_getlist_uninumcon(R,A1,A2),4,35,[r(R),a(A1),a(A2)]).
 asm_inst(bldtval_putlist_bldnumcon(R,A1,A2),4,36,[r(R),a(A1),a(A2)]).
 asm_inst(bldtvar_list_numcon(R,A1,A2),4,37,[r(R),a(A1),a(A2)]).
+
+asm_inst(xorreg(R,R1),	        4,       47,	[p, r(R), r(R1)]).
+
 asm_inst(getlist_tvar_tvar(R0,R1,R2), 4,72,	[r(R0), r(R1), r(R2)]	).
 
 asm_inst(getfloat(R,Float),	8,	128,	[pp, r(R), n(Float)]	).
@@ -121,6 +124,7 @@ asm_inst(int_test_z(R,I,L),     12,	220,	[pp, r(R), n(I), l(L)]).
 asm_inst(int_test_nz(R,I,L),    12,	221,	[pp, r(R), n(I), l(L)]).
 asm_inst(fun_test_ne(R1,R2,L),  8,	222,	[p, r(R1), r(R2), l(L)]).
 
+asm_inst(powreg(R,R1),	        4,	223,	[p, r(R), r(R1)]).
 asm_inst(putdval(V,R),		4,	224,	[p, v(V), r(R)]	).
 asm_inst(putuval(V,R),		4,	225,	[p, v(V), r(R)]	).
 asm_inst(minreg(R,R1),	        4,	226,	[p, r(R), r(R1)]).

@@ -270,6 +270,76 @@ void call_conv xsb_domain_error(CTXTdeclc char *valid_domain,Cell culprit,
 }
 
 /*****************/
+/* Not using overflow or underflow yet */
+
+#define EVALUATION_DOMAIN_ERROR 0
+#define EVALUATION_INSTANTIATION_ERROR 1
+#define EVALUATION_UNDERFLOW_ERROR 2
+#define EVALUATION_OVERFLOW_ERROR 2
+
+void call_conv xsb_basic_evaluation_error(char *message,int type)
+{
+  prolog_term ball_to_throw;
+  int isnew;
+  Cell *tptr;
+  unsigned long ball_len = 10*sizeof(Cell);
+#ifdef MULTI_THREAD
+  char mtmessage[MAXBUFSIZE];
+  int tid = xsb_thread_self();
+  th_context *th;
+  th = find_context(tid);
+#endif
+
+  tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
+  ball_to_throw = makecs(tptr);
+  bld_functor(tptr, pair_psc(insert("error",3,(Psc)flags[CURRENT_MODULE],&isnew)));
+  tptr++;
+
+  if (type == EVALUATION_INSTANTIATION_ERROR) {
+    bld_string(tptr,string_find("instantiation_error",1));
+    tptr++;
+#ifdef MULTI_THREAD
+    sprintf(mtmessage,"[th %d] %s",tid,message);
+    bld_string(tptr,string_find(mtmessage,1));
+#else  
+    bld_string(tptr,string_find(message,1));
+#endif
+    tptr++;
+    bld_copy(tptr,build_xsb_backtrace(CTXT));
+  }
+  else if (type == EVALUATION_DOMAIN_ERROR) {
+    bld_cs(tptr,(Cell) (tptr+3));
+    tptr++;
+#ifdef MULTI_THREAD
+    sprintf(mtmessage,"[th %d] %s",tid,message);
+    bld_string(tptr,string_find(mtmessage,1));
+#else  
+    bld_string(tptr,string_find(message,1));
+#endif
+    tptr++;
+    bld_copy(tptr,build_xsb_backtrace(CTXT));
+    tptr++;
+    bld_functor(tptr, pair_psc(insert("evaluation_error",1,(Psc)flags[CURRENT_MODULE],&isnew)));
+    tptr++;
+    bld_string(tptr,string_find("undefined",1));
+  }
+  xsb_throw_internal(CTXTc ball_to_throw,ball_len);
+}
+
+DllExport void call_conv xsb_evaluation_error(int type,char *description, ...)
+{
+  char message[MAXBUFSIZE];
+  va_list args;
+
+  va_start(args, description);
+  strcpy(message, "++Error[XSB]: [Runtime/C] ");
+  vsprintf(message+strlen(message), description, args);
+  if (message[strlen(message)-1] == '\n') message[strlen(message)-1] = 0;
+  va_end(args);
+  xsb_basic_evaluation_error(message,type);
+}
+
+/*****************/
 
 void call_conv xsb_existence_error(CTXTdeclc char *object,Cell culprit, 
 					const char *predicate,int arity, int arg) 
@@ -742,6 +812,12 @@ DllExport void call_conv bug_xsb(char *description)
 
 /*----------------------------------------------------------------------*/
 
+/* TLS: changed this to be close to the standard by reporting
+   instantiation errors and evaluation errors (both reported by
+   xsb_evaluation_error()).  Underflow and overflow errors are still
+   not caught.
+*/
+
 #define str_op1 (*tsgSBuff1)
 #define str_op2 (*tsgSBuff2)
 void arithmetic_abort(CTXTdeclc Cell op1, char *OP, Cell op2)
@@ -751,17 +827,22 @@ void arithmetic_abort(CTXTdeclc Cell op1, char *OP, Cell op2)
   print_pterm(CTXTc op1, TRUE, &str_op1);
   print_pterm(CTXTc op2, TRUE, &str_op2);
   if (isref(op1) || isref(op2)) {
-    xsb_abort("Uninstantiated argument of evaluable function %s/2\n%s %s %s %s%s",
-	      OP, "   Goal:",
-	      (isref(op1)? "_Var": str_op1.string),
-	      OP,
-	      (isref(op2)? "_Var": str_op2.string),
-	      ", probably as 2nd arg of is/2");
+    xsb_evaluation_error(EVALUATION_INSTANTIATION_ERROR,
+			 "Uninstantiated argument of evaluable function %s/2\n%s %s %s %s%s",
+			 OP, "   Goal:",
+			 (isref(op1)? "_Var": str_op1.string),
+			 OP,
+			 (isref(op2)? "_Var": str_op2.string),
+			 ", probably as 2nd arg of is/2");
   }
   else {
-    xsb_abort("Wrong domain in evaluable function %s/2\n%s %s %s %s found",
-	      OP, "         Arithmetic expression expected, but",
-	      str_op1.string, OP, str_op2.string);
+    //    xsb_abort("Wrong domain in evaluable function %s/2\n%s %s %s %s found",
+    //	      OP, "         Arithmetic expression expected, but",
+    //	      str_op1.string, OP, str_op2.string);
+    xsb_evaluation_error(EVALUATION_DOMAIN_ERROR,
+			 "Wrong domain in evaluable function %s/2\n%s %s %s %s found",
+			 OP, "         Arithmetic expression expected, but",
+			 str_op1.string, OP, str_op2.string);
   }
 }
 #undef str_op1
@@ -1008,6 +1089,7 @@ int clean_up_block(CTXTdecl)
 int clean_up_block(CTXTdeclc int bregBefore)
 {
   if (bregBefore == (int) ((pb)tcpstack.high - (pb)breg)) {
+    //    printf("setting breg %x to prevbreg %x\n",breg,cp_prevbreg(breg));
     breg = (CPtr)cp_prevbreg(breg);
   }
   return(TRUE);

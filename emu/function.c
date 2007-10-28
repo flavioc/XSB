@@ -22,10 +22,10 @@
 ** 
 */
 
-
 #include "xsb_config.h"
 #include "xsb_debug.h"
 
+#include <stdio.h>
 #include <math.h>
 
 #include "auxlry.h"
@@ -60,7 +60,7 @@
 #define FUN_truncate  23
 #define FUN_round  24
 #define FUN_ceiling  25
-#define FUN_max  26
+#define FUN_sign 26
 #define FUN_min  27
 
 /* --- returns 1 when succeeds, and returns 0 when there is an error --	*/
@@ -227,6 +227,18 @@ int  unifunc_call(CTXTdeclc int funcnum, CPtr regaddr)
       bld_oint(regaddr,ivalue);
     } else return 0;
     break;
+  case FUN_sign:
+    set_fvalue_from_value;
+    //    printf("value %d fvalue %f\n",value,fvalue);
+    if (fvalue > 0) 
+      bld_int(regaddr,1);
+    else if (fvalue == 0) 
+      bld_int(regaddr,0);
+    else if (fvalue < 0) {
+      bld_int(regaddr,-1);
+    }
+    break;
+
   default:  return 0;
   }
   return 1;
