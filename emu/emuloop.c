@@ -1730,36 +1730,84 @@ argument positions.
      /* TLS: so much work for such a little function! */
   XSB_Start_Instr(powreg,_powreg) /* PRR */
     Def3ops
-    Op1(Register(get_xrx));
-    Op3(get_xxr);
-    ADVANCE_PC(size_xxx);
-    op2 = *(op3);
-    XSB_Deref(op1); 
-    XSB_Deref(op2);
-    if (isinteger(op1)) {
-      if (isinteger(op2)) {
-        Integer temp = pow(int_val(op2),int_val(op1));
-        bld_oint(op3, temp); 
-      }
-      else if (isboxedinteger(op2)) {
-        Integer temp = pow(boxedint_val(op2),int_val(op1));
-        bld_oint(op3, temp);
-      }
-      else {arithmetic_abort(CTXTc op2, "'**'", op1);}
-    }
-    else if (isboxedinteger(op1)) {
-      if (isinteger(op2)) {
-        Integer temp = pow(int_val(op2),boxedint_val(op1));
-        bld_oint(op3, temp); 
-      }
-      else if (isboxedinteger(op2)) {
-        Integer temp = pow(boxedint_val(op2),boxedint_val(op1));
-        bld_oint(op3, temp); 
-      }
-      else {arithmetic_abort(CTXTc op2, "'**'", op1);}
-    }
-    else {arithmetic_abort(CTXTc op2, "'**'", op1);}
-  XSB_End_Instr()
+    Op1(Register(get_xrx));                                              
+    Op3(get_xxr);                                                        
+    ADVANCE_PC(size_xxx);                                                
+    op2 = *(op3);                                                        
+    XSB_Deref(op1);	                                                 
+    XSB_Deref(op2);                                                      
+    if (isinteger(op1)) {                                                
+        if (isinteger(op2)) {                                            
+	  Integer temp = pow(int_val(op2),int_val(op1));		
+	  bld_oint(op3, temp); }                                       
+        else if (isboxedfloat(op2)) {					 
+	  Float temp = pow(boxedfloat_val(op2),(Float)int_val(op1)); 
+	  bld_boxedfloat(CTXTc op3, temp); }                           
+        else if (isfloat(op2)) {					 
+	  Float temp = pow(float_val(op2),(Float)int_val(op1));          
+	  bld_boxedfloat(CTXTc op3, temp); }                           
+        else if (isboxedinteger(op2)) {                                  
+	  Integer temp = pow(boxedint_val(op2),int_val(op1));            
+	  bld_oint(op3, temp); }                                       
+        else { arithmetic_abort(CTXTc op2, "**", op1); }               
+    }                                                                    
+    else if (isfloat(op1)) {						 
+        if (isboxedfloat(op2)) {					 
+	  Float temp = pow(boxedfloat_val(op2),float_val(op1));          
+	  bld_boxedfloat(CTXTc op3, temp); }		                 
+        else if (isfloat(op2)) {					 
+	  Float temp = pow(float_val(op2),float_val(op1));               
+	  bld_boxedfloat(CTXTc op3, temp); }		                 
+        else if (isinteger(op2)) {					 
+	  Float temp = pow((Float)int_val(op2),float_val(op1));          
+	  bld_boxedfloat(CTXTc op3, temp); }	                         
+        else if (isboxedinteger(op2)) {                                  
+	  Float temp = pow((Float)boxedint_val(op2),float_val(op1));     
+	  bld_boxedfloat(CTXTc op3, temp); }                           
+        else { arithmetic_abort(CTXTc op2, "**", op1); } 	         
+    }                                                                    
+    else if (isboxedfloat(op1)) {					 
+        if (isboxedfloat(op2)) {
+	  if (boxedfloat_val(op2) < 0) {
+	    pow_domain_error(op1,op2);
+	  } else {
+	    Float temp = pow((prolog_float)boxedfloat_val(op2),((prolog_float)boxedfloat_val(op1)));
+	    bld_boxedfloat(CTXTc op3, temp); 
+	  }
+	}		                 
+        else if (isfloat(op2)) {					 
+	  Float temp = pow(float_val(op2),boxedfloat_val(op1));         
+	  bld_boxedfloat(CTXTc op3, temp); }                           
+        else if (isinteger(op2)) {					 
+	  if (int_val(op2) < 0) {
+	    pow_domain_error(op1,op2);
+	  } else {
+	    Float temp = pow((Float)int_val(op2),(prolog_float)boxedfloat_val(op1));    
+	    bld_boxedfloat(CTXTc op3, temp);
+	  } 
+	}	                         
+        else if (isboxedinteger(op2)) {                                  
+	  Float temp = pow((Float)boxedint_val(op2),boxedfloat_val(op1));
+	  bld_boxedfloat(CTXTc op3, temp); }                           
+        else { arithmetic_abort(CTXTc op2, "**", op1); } 	         
+    }                                                                    
+    else if (isboxedinteger(op1)) {                                      
+        if (isinteger(op2)) {						 
+	  Integer temp = pow(int_val(op2),boxedint_val(op1));           
+	  bld_oint(op3, temp); }                                       
+        else if (isboxedinteger(op2)) {                                  
+	  Integer temp = pow(boxedint_val(op2),boxedint_val(op1));      
+	  bld_oint(op3, temp); }                                       
+        else if (isboxedfloat(op2)) {					 
+	  Float temp = pow(boxedfloat_val(op2),(Float)boxedint_val(op1));
+	  bld_boxedfloat(CTXTc op3, temp); }                           
+        else if (isfloat(op2)) {					 
+	  Float temp = pow(float_val(op2),(Float)boxedint_val(op1));    
+	  bld_boxedfloat(CTXTc op3, temp); }                           
+        else { arithmetic_abort(CTXTc op2, "**", op1); }                
+    }                                                                    
+    else { arithmetic_abort(CTXTc op2, "**", op1); }
+  XSB_End_Instr() 
 
      /* TLS: so much work for such a little function! */
   XSB_Start_Instr(minreg,_minreg) /* PRR */

@@ -1088,8 +1088,6 @@ void init_builtin_table(void)
   set_builtin_table(THREAD_REQUEST, "thread_request");
   set_builtin_table(MT_RANDOM_REQUEST, "mt_random_request");
 
-  set_builtin_table(XSB_POW, "xsb_pow");
-
   set_builtin_table(PRINT_LS, "print_ls");
   set_builtin_table(PRINT_TR, "print_tr");
   set_builtin_table(PRINT_HEAP, "print_heap");
@@ -2603,22 +2601,6 @@ case WRITE_OUT_PROFILE:
     }
     break;
 
-  /* TLS: useful for power function -- see eval.P */
-    case XSB_POW: {
-      if (isofloat(ptoc_tag(CTXTc 1))) {
-	if (isofloat(ptoc_tag(CTXTc 2)))
-	  ctop_float(CTXTc 3,pow(ptoc_float(CTXTc 1),ptoc_float(CTXTc 2))); 
-	else 
-	  ctop_float(CTXTc 3,pow(ptoc_float(CTXTc 1),ptoc_int(CTXTc 2))); 
-      }
-      else {
-	if (isofloat(ptoc_tag(CTXTc 2)))
-	  ctop_float(CTXTc 3,pow((prolog_float)ptoc_int(CTXTc 1),ptoc_float(CTXTc 2))); 
-	else 
-	  ctop_int(CTXTc 3,(Integer)pow((prolog_float)ptoc_int(CTXTc 1),(prolog_float)ptoc_int(CTXTc 2))); 
-      }
-      return TRUE ;
-    }
   case PRINT_LS: print_ls(CTXTc 1) ; return TRUE ;
   case PRINT_TR: print_tr(CTXTc 1) ; return TRUE ;
   case PRINT_HEAP: print_heap(CTXTc 0,2000,1) ; return TRUE ;

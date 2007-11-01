@@ -272,11 +272,6 @@ void call_conv xsb_domain_error(CTXTdeclc char *valid_domain,Cell culprit,
 /*****************/
 /* Not using overflow or underflow yet */
 
-#define EVALUATION_DOMAIN_ERROR 0
-#define EVALUATION_INSTANTIATION_ERROR 1
-#define EVALUATION_UNDERFLOW_ERROR 2
-#define EVALUATION_OVERFLOW_ERROR 2
-
 void call_conv xsb_basic_evaluation_error(char *message,int type)
 {
   prolog_term ball_to_throw;
