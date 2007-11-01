@@ -738,7 +738,9 @@ xsb_flag(max_threads, Max) :-
 	stat_flag(MAX_THREAD_FLAG, Max).
 xsb_flag(max_queue_terms, Max) :-
 	stat_flag(MAX_QUEUE_TERMS, Max).
-	
+xsb_flag(shared_predicates,Bool):- 
+	stat_flag(PRIVSHAR_DEFAULT,B),
+	(B == 0 -> Bool = false ; Bool = true).
 
 set_xsb_flag(Type,Val):- 
 	check_nonvar(Type,set_xsb_flag/2,1),
