@@ -110,7 +110,7 @@ eval0(max(X,Y), Res,Expr) :- eval(X, Res1,Expr),eval(Y, Res2,Expr),
 eval0(exp(X,Y), Res,Expr) :- eval(X, Res1,Expr),eval(Y, Res2,Expr),
 			     pow(Res1,Res2,Res).
 eval0('**'(X,Y), Res,Expr) :- eval(X, Res1,Expr),eval(Y, Res2,Expr),
-			     pow(Res1,Res2,Res).
+			     Res is Res1 ** Res2.
 eval0('><'(X,Y), Res,Expr) :- eval(X, Res1,Expr),eval(Y, Res2,Expr),
 			     Res is Res1 >< Res2.
 
