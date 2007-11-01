@@ -687,7 +687,11 @@ static xsbBool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
       if (!(get_ep(temp_pair->psc_ptr)) && (*(pb)get_ep(temp_pair->psc_ptr) == switchonthread))
 	xsb_warn("Shared declaration ignored for %s/%d\n",
 		get_name(temp_pair->psc_ptr),get_arity(temp_pair->psc_ptr));
-      else set_shared(temp_pair->psc_ptr, (t_env&T_SHARED));
+      else { 
+	if (!flags[PRIVSHAR_DEFAULT]) 
+	  set_shared(temp_pair->psc_ptr, (t_env&T_SHARED));
+	else set_shared(temp_pair->psc_ptr, (T_SHARED));
+      }
     }
 
     if (t_env&T_TABLED_SUB_LOADFILE) 

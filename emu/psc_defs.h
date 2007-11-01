@@ -1,4 +1,3 @@
-
 /* File:      psc_defs.h
 ** Author(s): Jiyang Xu, Terry Swift, Kostis Sagonas
 ** Contact:   xsb-contact@cs.sunysb.edu

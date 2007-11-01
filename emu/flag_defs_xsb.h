@@ -125,7 +125,8 @@ interrupt flag
 #define THREAD_DETACHED           76   /* Initial Detached flag for created thread */
 #define MAX_THREAD_FLAG           77   /* Maximum number of threads (not changeable after startup) */
 #define MAX_QUEUE_TERMS           78   /* Default Maximum number of terms in a message queue*/
-#define RECOMPILE_OVERRIDE        79
+#define RECOMPILE_OVERRIDE        79   /* Allows compilation when more than 1 thread */
+#define PRIVSHAR_DEFAULT          80   /* Default for shared or private predicates */
 
 #define MAX_FLAGS		85
 
@@ -139,3 +140,6 @@ interrupt flag
 #define QUIETLOAD    	  3   /* don't display "module loaded" msgs */
 #define NOPROMPT    	  5   /* display no prompt--useful in spawned
 				 subprocesses */
+
+#define DEFAULT_PRIVATE   0
+#define DEFAULT_SHARING   1

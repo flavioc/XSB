@@ -340,7 +340,8 @@ static int init_open_files(void)
 /*==========================================================================*/
 
 /* if command line option is long --optionname, then the arg here is
-   'optionname'. Process it and return.
+   'optionname'. Process it and return.  (Dont worry -- init_flags has
+   already been done)
 */
 static int process_long_option(char *option,int *ctr,char *argv[],int argc)
 {
@@ -350,6 +351,8 @@ static int process_long_option(char *option,int *ctr,char *argv[],int argc)
     flags[BANNER_CTL] *= QUIETLOAD;
   } else if (0==strcmp(option, "noprompt")) {
     flags[BANNER_CTL] *= NOPROMPT;
+  } else if (0==strcmp(option, "shared_predicates")) {
+    flags[PRIVSHAR_DEFAULT] = DEFAULT_SHARING;
   } else if (0==strcmp(option, "help")) {
     help_message();
   } else if (0==strcmp(option, "version")) {
@@ -374,6 +377,7 @@ static int process_long_option(char *option,int *ctr,char *argv[],int argc)
 
   return(0);
 }
+
 
 /*==========================================================================*/
 /* Currently done on process startup before init_para(). Do not use elsewhere, 
