@@ -320,7 +320,7 @@ thread_sleep(Seconds) :-
 
 threads :-
 	write('------------------------------------------------------------------------'), nl,
-	fmt_write("\t%S\t\t\t%S\t\t%S\n", args('Thread', 'Detached', 'Status')),
+	fmt_write("  %S\t%S\t%S\t\t%S\n", args('Thread', 'Detached', 'Status', 'Alias')),
 	write('------------------------------------------------------------------------'), nl,
 	var_thread_property(Thread, detached(Detached)),
 	thread_property(Thread, status(Status)),
@@ -328,7 +328,7 @@ threads :-
 		true
 	;	Alias = Thread
 	),
-	fmt_write("\t%S\t\t\t%S\t\t\t%S\n", args(Alias, Detached, Status)),
+	fmt_write("  %S\t\t%S\t\t%S\t\t%S\n", args(Thread, Detached, Status, Alias)),
 	fail.
 threads :-
 	write('------------------------------------------------------------------------'), nl.
