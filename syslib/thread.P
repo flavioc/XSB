@@ -46,9 +46,10 @@
 thread_create( Goal, ThreadId , Options) :- 
 %	check_callable(Goal,thread_create/2,1),
 %	check_var(ThreadId,thread_create/2,2),
-	check_options_list(Options,GLSize,TCSize,ComplSize,PDLSize,Detached,Alias),
+	check_options_list(Options,GLSize,TCSize,ComplSize,PDLSize,Detached,Alias,ExitHandler),
+	transform_goal(ExitHandler,Goal,NewGoal),
 	(Alias == [] -> 
-	    thread_request( XSB_THREAD_CREATE_PARAMS, Goal, ThreadId, 
+	    thread_request( XSB_THREAD_CREATE_PARAMS, NewGoal, ThreadId, 
 	                GLSize,TCSize,ComplSize,PDLSize,Detached,0)
 	 ;  thread_request( XSB_THREAD_SETUP, _Goal, ThreadId, 
 	                GLSize,TCSize,ComplSize,PDLSize,Detached,Pos),
@@ -57,20 +58,21 @@ thread_create( Goal, ThreadId , Options) :-
 		thread_request( XSB_RECLAIM_THREAD_SETUP, ThreadId,_,_,_,_,_,_,_),
 		permission_error(create,alias,Alias,thread_create/3)
 	     ; 
-		thread_request( XSB_THREAD_CREATE_ALIAS, Goal, _ThreadId,
+		thread_request( XSB_THREAD_CREATE_ALIAS, NewGoal, _ThreadId,
 	                GLSize,TCSize,ComplSize,PDLSize,Detached,Pos) ) ).
 
-check_options_list(Options,GLSize,TCSize,ComplSize,PDLSize,Detached,Alias):- 
+check_options_list(Options,GLSize,TCSize,ComplSize,PDLSize,Detached,Alias,ExitHandler):- 
 	check_nonvar(Options,thread_create/3,3),
-	check_options_list_1(Options,GLSize,TCSize,ComplSize,PDLSize,Detached,Alias).
+	check_options_list_1(Options,GLSize,TCSize,ComplSize,PDLSize,Detached,Alias,ExitHandler).
 
-check_options_list_1([],GLSize,TCSize,ComplSize,PDLSize,Detached,[]):- !,
+check_options_list_1([],GLSize,TCSize,ComplSize,PDLSize,Detached,[],Handler):- !,
 	(var(GLSize) -> GLSize = 0 ; true),
 	(var(TCSize) -> TCSize = 0 ; true),
 	(var(ComplSize) -> ComplSize = 0 ; true),
 	(var(PDLSize) -> PDLSize = 0 ; true),
-	(var(Detached) -> Detached = 0 ; true).
-check_options_list_1([Option|Rest],GLSize,TCSize,ComplSize,PDLSize,Detached,Alias):- !,
+	(var(Detached) -> Detached = 0 ; true),
+	(var(Handler) -> Handler = '_$no_handler' ; true).
+check_options_list_1([Option|Rest],GLSize,TCSize,ComplSize,PDLSize,Detached,Alias,Handler):- !,
 	check_nonvar(Option,thread_create/3,3),
 	(Option @= glsize(_) ->  Option = glsize(N),set_thread_create_arg(N,GLSize,glsize), Alias = R
           ; (Option @= tcsize(_) -> Option = tcpsize(N),set_thread_create_arg(N,TCSize,tcsize), Alias = R
@@ -78,12 +80,16 @@ check_options_list_1([Option|Rest],GLSize,TCSize,ComplSize,PDLSize,Detached,Alia
               ; (Option @= pdlsize(_) -> Option = pdlsize(N),set_thread_create_arg(N,PDLSize,pdlsize), Alias = R
                 ; (Option @= detached(_) -> 
 		    (Option = detached(Boolean),Boolean == true -> Detached = 1 ; Detached = 0),Alias = R
+                ; (Option @= on_exit(_) -> Option = on_exit(Handler) 
 		  ; (Option @= alias(_) -> 
 		        Option = alias(A),check_atom(A,thread_create/3,3),Alias = [A|R]
-	            ; 	domain_error(thread_option,Option,thread_create/3,3,'') ) ) ) ) ) ),
-       check_options_list_1(Rest,GLSize,TCSize,ComplSize,PDLSize,Detached,R).
-check_options_list_1(Culprit,_GLSize,_TCSize,_ComplSize,_PDLSize,_Detached,_Alias):- 
+	            ; 	domain_error(thread_option,Option,thread_create/3,3,'') ) ) ) ) ) ) ),
+       check_options_list_1(Rest,GLSize,TCSize,ComplSize,PDLSize,Detached,R,Handler).
+check_options_list_1(Culprit,_GLSize,_TCSize,_ComplSize,_PDLSize,_Detached,_Alias,_Handler):- 
 	type_error(list,Culprit,thread_create/3,3).
+
+transform_goal('_$no_handler',Goal,Goal):-!.
+transform_goal(Handler,Goal,thread_call(Goal,Handler)):-!.
 
 set_thread_create_arg(Option,Arg,OptionName):- 
 	(\+ (Option = Arg) -> 
@@ -106,10 +112,13 @@ thread_create( Goal ) :-
 /*---------------*/
 %:- import writeln/1 from standard.
 
+thread_exit(Term):- 
+	throw(thread_exit(Term)).
+
 /* Upon user-called exit, If thread is detached and aliased, remove
    aliases.  if thread is joinable, assert an exit term; if thread is
    detached and non-aliased, no special action is necessary */
-thread_exit(ExitTerm):- 
+thread_exit_handler(ExitTerm):- 
 	thread_request( XSB_CHECK_ALIASES_ON_EXIT,AliasedDetached,Detached,_,_,_,_,_,_),
         (AliasedDetached == 1 -> 
 	    remove_alias(_Alias,THREAD_ALIAS,Id) 
@@ -342,12 +351,31 @@ thread_run0(Goal) :-
 	call(Goal),
 	internal_thread_exit(THREAD_SUCCEEDED).
 
-
 '_$thread_run'( Goal ) :-
-	(catch( thread_run0(Goal), Ball, (default_error_handler(Ball)))
+	(catch( thread_run0(Goal), Ball, handle_thread_error(Ball))
 	 ;
 	 internal_thread_exit(THREAD_FAILED)
 	).
+
+handle_thread_error(thread_exit(Term)):- 
+	thread_exit_handler(Term),   
+	!.                % cut should be unnecessary, as thread should have exited by here 
+handle_thread_error(Ball):- 
+	default_error_handler(Ball).
+
+/* This routine is called when a thread is created with the
+   on_exit(Handler) option.  Use this, rather than call_cleanup/2
+   because you want the thread to execute the handler before it exits
+   even when choicepoints have been left around.  
+*/
+
+thread_call(Goal,Handler):-
+   catch(Goal,Ball,thread_call_handler(Ball,Handler)),call(Handler).
+thread_call(_Goal,Handler):- call(Handler),fail.
+
+thread_call_handler(Ball,Handler):- 
+	call(Handler),
+	throw(Ball).
 
 /* store thread flag predicate in THREAD_RUN flag */
 
