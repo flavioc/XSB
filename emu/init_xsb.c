@@ -375,6 +375,8 @@ static int process_long_option(char *option,int *ctr,char *argv[],int argc)
     else xsb_warn("Missing size value for --max_mqueues");
   }
 
+  else xsb_warn("Unknown option --%s",option);
+
   return(0);
 }
 
@@ -628,14 +630,15 @@ int pipe_input_stream() {
 	  xsb_warn("Missing size value for -o");
       }
       break;
-#ifndef MULTI_THREAD
     case 's':
+#ifndef MULTI_THREAD
       flags[TRACE_STA] = 1;
       asynint_val |= MSGINT_MARK;
       break;
 #else
       sprintf(warning, "-s option not available with multi-threaded engine.");
       xsb_warn(warning);
+      break;
 #endif
     case 'S':
       pflags[TABLING_METHOD] = SUBSUMPTIVE_EVAL_METHOD;
