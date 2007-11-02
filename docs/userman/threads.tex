@@ -1,12 +1,11 @@
 \chapter{Multi-Threaded Programming in XSB} \label{chap:threads}
-
-Starting with Version 3.0, XSB supports the use of POSIX threads to
+id with Version 3.0, XSB supports the use of POSIX threads to
 perform separable computations, and in certain cases to parallelize
 them.  POSIX threads have a simple and clear API, and are available on
 all Unixes and by using open-source libraries, on Windows as well (see
 Section~\ref{sec:mt-windows} to configure under Windows).  This
 chapter introduces how to program with threads in XSB through a series
-of examples.  Later sections discuss performance aspects of our
+of examplesi sections discuss performance aspects of our
 implementation as well as describing relevant predicates.  A general
 knowledge of multi-threaded programming is assumed, such as can be
 found in \cite{LewB98,Bute97}.
@@ -139,6 +138,17 @@ with the following declaration.
 \begin{verbatim}
 :- thread_shared(p(_)).
 \end{verbatim}
+%
+Alternately, dynamic and tabled predicates can be made thread-shared
+by default by invoking XSB with the command-line argument {\tt
+  --shared\_predicates}, in which case a predicate may be declared
+thread-private through the declaration
+%
+\begin{verbatim}
+:- thread_private(p(_)).
+\end{verbatim}
+%
+\index{shared\_predicates}
 
 The ability to share dynamic code between predicates provides an
 extremely powerful mechanism for threads to communicate.  So why does
@@ -742,12 +752,13 @@ correct calls to these predicates will give a miscellaneous error.
 %
 When called from thread $T$, this predicate creates a new XSB thread
 $T_{new}$ to execute {\tt Goal}.  When goal either succeeds, throws an
-unhandled error, or fails, $T_{new}$ exits, but {\tt thread\_create/2}
-will succeed immediately, binding {\tt ThreadId} to the XSB thread id
-of $T_{new}$.  {\tt Goal} must be callable, but need not be fully
-instantiated.  No bindings from {\tt Goal} are passed back from $T$ to
-$T_{new}$, so communication between $T_{new}$ and $T$ must be through
-tables, asserted code, message queues or other side effects.
+unhandled error, exits, or fails, $T_{new}$ exits, but {\tt
+  thread\_create/2} will succeed immediately, binding {\tt ThreadId}
+to the XSB thread id of $T_{new}$.  {\tt Goal} must be callable, but
+need not be fully instantiated.  No bindings from {\tt Goal} are
+passed back from $T$ to $T_{new}$, so communication between $T_{new}$
+and $T$ must be through tables, asserted code, message queues or other
+side effects.
 
 {\tt OptionList} allows optional parameters in the configuration for
 the initial size of XSB stacks, for aliases, and to indicate whether
@@ -794,6 +805,11 @@ remains unaltered.
   default can be altered at run time by the XSB flag {\tt
     thread\_default} (cf. Section~\ref{State}).
 %
+\item {\tt on\_exit(Handler)}: Ensures that {\tt Handler} is called
+  whenever the thread exits: whether that exit arises from success of
+  {\tt Goal}, failure, throwing an error that is unhandled in the
+  user's program, or an explicit call to {\tt thread\_exit/1}.
+%
 \item {\tt alias(Alias)}: Allow thread {\tt ThreadId} to be referred
   to via {\tt Alias} in all standard thread predicates.  {\tt Alias}
   remains active for {\tt ThreadId} until it is joined.  Note that the
@@ -839,6 +855,10 @@ Their size is obtained through the settable XSB flag {\tt
 \item An element of {\tt OptionsList} is alias(A) and A is not an atom
 \bi
 \item {\tt type\_error(atom,A)}
+\ei
+\item 	{\tt Handler} is not callable
+\bi
+\item 	{\tt type\_error(callable,Handler)}.
 \ei
 \item   No more system threads are available (EAGAIN)
 \bi
@@ -907,10 +927,11 @@ a) Thread is a variable  instantiation_error
 %
 Exits a thread $T$ with {\tt ExitTerm} after releasing any mutexes
 held by $T$, freeing any thread-specific memory allocated for $T$ (we
-hope).  {\tt ExitTerm} will be used if the caller of $T$ joins to $T$,
-but will be ignored in other cases.  There is no need to call this
-routine on normal termination of a thread as it is called implicitly
-on success or (final) failure of a thread's goal.
+hope), as well as calling any exit handlers for $T$.  {\tt ExitTerm}
+will be used if the caller of $T$ joins to $T$, but will be ignored in
+other cases.  There is no need to call this routine on normal
+termination of a thread as it is called implicitly on success or
+(final) failure of a thread's goal.
 
 {\bf Error Cases}
 \bi

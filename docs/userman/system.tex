@@ -542,32 +542,33 @@ cmd_loop_driver:
     The top-level command loop driver to be used instead of the
     standard one.  Usually needed when XSB is run as a server.
  
-             -i : bring up the XSB interpreter
-        -e goal : evaluate goal when XSB starts up
-             -l : the interpreter prints unbound variables using letters
-             -n : used when calling XSB from C
-             -B : specify the boot module to use in lieu of the standard loader
-             -D : Sets top-level command loop driver to replace the default
-             -t : trace execution at the SLG-WAM instruction level
-                   (for this to work, build XSB with the --debug option)
-             -d : disassemble the loader and exit
-           -c N : allocate N KB for the trail/choice-point stack
-           -m N : allocate N KB for the local/global stack
-           -o N : allocate N KB for the SLG completion stack
-           -u N : allocate N KB for the SLG unification stack
-             -r : turn off automatic stack expansion
-     -g gc_type : choose heap garbage collection ("none", "sliding", 
-                                                  "indirection", or "copying") 
-             -p : enable Prolog profiling thru use of profile_call/1
-             -s : maintain detailed statistical information
-             -S : set default tabling method to subsumption-based
-             -T : print a trace of each called predicate
---max_threads N : maintain information for up to N threads
-  -v, --version : print the version and configuration information about XSB
-     -h, --help : print this help message
-     --nobanner : don't show the XSB banner on startup
-    --quietload : don't show the `module loaded' messages
-     --noprompt : don't show prompt (for non-interactive use)
+                 -i : bring up the XSB interpreter
+            -e goal : evaluate goal when XSB starts up
+                 -l : the interpreter prints unbound variables using letters
+                 -n : used when calling XSB from C
+                 -B : specify the boot module to use in lieu of the standard loader
+                 -D : Sets top-level command loop driver to replace the default
+                 -t : trace execution at the SLG-WAM instruction level
+                       (for this to work, build XSB with the --debug option)
+                 -d : disassemble the loader and exit
+               -c N : allocate N KB for the trail/choice-point stack
+               -m N : allocate N KB for the local/global stack
+               -o N : allocate N KB for the SLG completion stack
+               -u N : allocate N KB for the SLG unification stack
+                 -r : turn off automatic stack expansion
+         -g gc_type : choose heap garbage collection ("none", "sliding", 
+                                                      "indirection", or "copying") 
+                 -p : enable Prolog profiling thru use of profile_call/1
+                 -s : maintain detailed statistical information
+                 -S : set default tabling method to subsumption-based
+                 -T : print a trace of each called predicate
+    --max_threads N : maintain information for up to N threads
+      -v, --version : print the version and configuration information about XSB
+         -h, --help : print this help message
+         --nobanner : don't show the XSB banner on startup
+        --quietload : don't show the `module loaded' messages
+         --noprompt : don't show prompt (for non-interactive use)
+--shared_predicates : make predicates thread-shared by default
 
 \end{verbatim}
 }
@@ -678,6 +679,11 @@ The order in which these options appear makes no difference.
   \item[{\tt --noprompt}] Do not show the XSB prompt. This is useful only in batch
     mode and in interprocess communication when you do not want the prompt
     to clutter the picture.
+%
+\index{shared\_predicates}
+  \item[{\tt --shared\_predicates}] In the multi-threaded engine, makes
+    all predicates thread-shared by default; has no effect in the
+    single-threaded engine.
 \end{description}
 
 As an example, if you would like to use XSB as part of a script, where
@@ -1867,18 +1873,18 @@ Interface} in Volume 2 for its explanation.
 \index{Compiler!inlines}\index{inlines!Compiler}
 %======================================================
 
-{\em Inline predicates} represent ``primitive'' operations in the WAM.
-Calls to inline predicates are compiled into a sequence of WAM
-instructions in-line, i.e. without actually making a call to the
-predicate.  Thus, for example, relational predicates (like {\tt >/2},
-{\tt >=/2}, etc.) compile to, essentially, a subtraction followed by a
-conditional branch.  As a result, calls to inline predicates will not
-be trapped by the debugger, and their evaluation will not be visible
-during a trace of program execution.  Inline predicates are expanded
-specially by the compiler and thus {\em cannot be redefined by the
-user without changing the compiler}.  The user does not need to import
-these predicates from anywhere.  There are available no matter what
-options are specified during compiling.
+{\em Inline predicates} represent ``primitive'' operations in the
+(extended) WAM.  Calls to inline predicates are compiled into a
+sequence of WAM instructions in-line, i.e. without actually making a
+call to the predicate.  Thus, for example, relational predicates (like
+{\tt >/2}, {\tt >=/2}, etc.) compile to, essentially, a subtraction
+followed by a conditional branch.  As a result, calls to inline
+predicates will not be trapped by the debugger, and their evaluation
+will not be visible during a trace of program execution.  Inline
+predicates are expanded specially by the compiler and thus {\em cannot
+  be redefined by the user without changing the compiler}.  The user
+does not need to import these predicates from anywhere.  There are
+available no matter what options are specified during compiling.
 
 Table~\ref{inlinepredicatetable} lists the inline predicates of
 XSB \version.  Those predicates that start with \verb|_$|
@@ -1890,7 +1896,8 @@ compilation.
 \verb|'='/2|    &\verb|'<'/2|	&\verb|'=<'/2|  &\verb|'>='/2| &\verb|'>'/2| \\
 \verb|'=:='/2|  &\verb|'=\='/2|	&is/2           &\verb|'@<'/2| &\verb|'@=<'/2|\\
 \verb|'@>'/2|	&\verb|'@>='/2|	&\verb|'=='/2|	&\verb|'\=='/2|&fail/0  \\
-true/0		&var/1		&nonvar/1	&halt/0	       &'!'/0   \\
+true/0		&var/1		&nonvar/1	&halt/0	       &'!'/0 \\
+min/2           &max/2          &\verb|'><'|/2  &\verb|**|/2   &sign/1 \\
 '\_\$cutto'/1	&'\_\$savecp'/1	&'\_\$builtin'/1
 \end{tabular}}
 \caption{The Inline Predicates of XSB}\label{inlinepredicatetable}
@@ -1903,45 +1910,58 @@ be particularly severe for predicates like {\tt '\_\$builtin'/1} that
 are treated specially by the XSB compiler.
 
 \section{A Note on ISO Compatibility} \label{sec:iso}
+\index{ISO Compatability}
 
 In \version, an effort has been made to ensure compatibility with the
-Prolog ISO standard.  In this section, we mention the differences with
-the ISO standard.  XSB implements almost all ISO built-ins, although
-there are certain semantic differences between XSB's implementation
-and that of the ISO standard in certain cases.
+core Prolog ISO standard~\cite{ISO-Prolog}.  In this section, we
+summarize the differences with the ISO standard.  XSB implements
+almost all ISO built-ins and evaluable functions, although there are
+certain semantic differences between XSB's implementation and that of
+the ISO standard in certain cases.
 
 The main difference of XSB with the ISO standard is in terms of
-parsing.  \version{} of XSB does not support full ISO syntax, nor does
-it support multiple character sets.  Rectifying these limitations is a
-priority for future releases.
+parsing.  \version{} of XSB does not support full ISO
+syntax~\footnote{XSB also does not support multiple character sets or
+  Unicode, which is perhaps a bigger limitation than the lack of full
+  ISO syntax.}.  
 
-A second difference involves XSB's implementation of ISO streams.  XSB
-can create streams from several first class objects, including pipes,
-atoms, and consoles in addition to files.  However by default, XSB
-opens streams in binary mode, rather than text mode in opposition to
-the ISO standard, which opens streams in text mode.  This makes no
-difference in UNIX or LINUX, for which text and binary streams are
-identical, but does make a difference in Windows, where text files are
-processed more than binary files.
+A third difference is that XSB does not support the logical update
+semantics for assert and retract, but instead supports an immediate
+semantics.  Despite the patholical examples that can be devised using
+the immediate semantics, the logical semantics for assert is not often
+critical for single-threaded applications.  It is however, critical
+for multi-threaded applications, and XSB will support this in the
+future.
+
+A somewhat more minor difference involves XSB's implementation of ISO
+streams.  XSB can create streams from several first class objects,
+including pipes, atoms, and consoles in addition to files.  However by
+default, XSB opens streams in binary mode, rather than text mode in
+opposition to the ISO standard, which opens streams in text mode.
+This makes no difference in UNIX or LINUX, for which text and binary
+streams are identical, but does make a difference in Windows, where
+text files are processed more than binary files.
 
 % TLS: how about floats?
 % public/private
 
-The final difference involves error handling in XSB.  XSB implements a
-catch and throw mechanism that is similar to the ISO standard.  In
-addition, XSB usually throws errors for ISO-predicates under the same
-conditions as specified in the standard.  The only differences in
-error handling are: (1) the type of error thrown may differ in XSB due
-to an effort to minimize the amount of checking performed; and (2) ISO
-may specify domain errors in some cases in which XSB throws type
-errors.  The reasons for this have to do with XSB's nascent type
-system, as described in Section~\ref{sec:types}.  The difference in
-error terms should cause minimal portability problems, as it only
-affects the type terms thrown at error, and these terms are
-implementation-dependent as defined in the standard.
+Most other differences with the core standard are mentioned under
+portability notes for the various predicates.  However, we do not
+always note when there are deviations in the types of errors reported
+by predicates.  While XSB throws errors whenever the standard throws
+errors, and vice-versa sometimes XSB may throw a different error than
+specified by the standard.  This is often due to an effort in XSB to
+minimize the amount of error checking performed, and should rarely if
+ever cause a problem for applciations.
 
-
-
+XSB supports most new features mentioned in the revisions to the core
+standard~\cite{ISO-Revision}, including {\tt call\_cleanup/2} and
+various library predicates such as {\tt subsumes/2}, {\tt
+  numbervars/3} and so on.  XSB also has strong support for the
+working multi-threading Prolog standard~\cite{Prolog-MT-ISO}, and XSB
+has been one of the first Prologs to support this standard.  However,
+because XSB has an atom-based module system it does {\em not} support
+the ISO standard for Prolog modules.
 
 %%% Local Variables: 
 %%% mode: latex

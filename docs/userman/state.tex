@@ -755,12 +755,24 @@ threads in the process.
 \item {\tt max\_threads} In the multi-threaded engine, the maximum
   number of valid threads.  By default this is 1024 and this value may
   not be reset at runtime, but it may be set by the command-line
-  option {\tt --max\_threads}.
+  option {\tt --max\_threads}.  This option is settable only by a
+  command-line argument, and has no effect in the single-threaded
+  engine.
 
 \item {\tt max\_queue\_size} In the multi-threaded engine, the default
   maximum number of terms a message queue contains before writes to
   the message queue block.  By default this is 1000.  If set to 0,
-  queues by default will be unbounded.
+  queues by default will be unbounded.  This option has no effect in
+  the single-threaded engine.
+
+\index{shared\_predicates}
+\item {\tt shared\_predicates} In the multi-threaded engine, indicates
+  whether predicates are considered thread-shared by default -- that
+  is, whether tables or dynamic predicates are shared among threads.
+  By default this is false, and predicates are considered
+  thread-private by default.  This option is settable only by a
+  command-line argument, and has no effect in the
+  single-threaded engine.
 
 \end{itemize}
     

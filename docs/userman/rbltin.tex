@@ -526,19 +526,36 @@ Trie-based indexing is available only for dynamic predicates.
 \end{itemize}
 
 \ouritem{dynamic(+PredSpec)}\index{\texttt{dynamic/1}}\label{dynamic/1}
-is an executable predicate which converts a predicate specified as
-(Predicate/Arity) to a dynamic predicate. If {\tt Predicate} is not
-previously defined, it will be initialized to empty (so that calls to
-it quietly fail, instead of issuing {\sf ``Undefined predicate''}
-error messages.) If the predicate is previously defined and dynamic,
-{\tt dynamic/1} is a noop. If previously defined as compiled, {\tt
-Predicate} will be converted to dynamic, which means that clauses can
-be added, although the compiled portion cannot be manipulated.  Note
-that {\tt dynamic/1} can be used like a compiler directive, since it
-will be passed through to be executed when the module is loaded. Note,
-however, that the semantics is different from that of the standard
-\cite{ISO-Prolog} when the file contains clauses defining the
-so-specified predicate.
+%
+As a compiler directive, {\tt dynamic/1} is necessary to specify that
+code in a compiled file is to be treated as dynamic: without this
+declaration compiled clauses will be treated as static.  As an
+executable directive, if {\tt Predicate} is not previously defined, it
+will be initialized to a dynamic predicate without any clauses.  If
+{\tt Predicate} is previously defined and dynamic, {\tt dynamic/1} has
+no effect.  If {\tt Predicate} is previously defined as static, a
+permission error will be thrown.  If {\tt Predicate} is previously
+defined as static, a permission error will be thrown.
+
+{\bf Error Cases}
+\bi
+\item 	{\tt Predicate} has been previously defined to be static
+\bi
+\item 	{\tt permission\_error(modify,static\_predicate)}
+\ei
+\ei
+
+\comment{
+% 07/11 changed this behavior
+
+If previously defined as compiled, {\tt Predicate} will be converted
+to dynamic, which means that clauses can be added, although the
+compiled portion cannot be manipulated.  Note that {\tt dynamic/1} can
+be used like a compiler directive, since it will be passed through to
+be executed when the module is loaded. Note, however, that the
+semantics is different from that of the standard \cite{ISO-Prolog}
+when the file contains clauses defining the so-specified predicate.
+}
 
 \ouritem{table(+PredSpec)}\index{\texttt{table/1}}
 is an executable predicate, where PredSpec is a predicate
