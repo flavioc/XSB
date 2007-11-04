@@ -1129,8 +1129,8 @@ void cleanup_thread_structures(CTXTdecl)
 #endif /* MULTI_THREAD */
 
 /*==========================================================================*/
-/* Initialize Memory Regions and Related Variables.  Done whenever
-   threads are initialized.
+/* Initialize Memory Regions and Related Variables at startup and for
+   each thread.
 
    If non-null, use input parameters for initial sizes (for greater
    freedom in thread allocation) ; otherwise use process-level
@@ -1140,33 +1140,9 @@ void cleanup_thread_structures(CTXTdecl)
 void init_machine(CTXTdeclc int glsize, int tcpsize, 
 		  int complstacksize, int pdlsize)
 {
-  int Loc = 0;
   void tstInitDataStructs(CTXTdecl);
-  /* set special SLG_WAM instruction addresses */
-  /* these need only be done on process initialization, but there's a core-dump
-     if you move them to init_machine() */
 
-  cell_opcode(&answer_return_inst) = answer_return;
-  cell_opcode(&resume_compl_suspension_inst) = resume_compl_suspension;
-  cell_opcode(&resume_compl_suspension_inst2) = resume_compl_suspension;
-  cell_opcode(&check_complete_inst) = check_complete;
-  cell_opcode(&hash_handle_inst) = hash_handle;
-  cell_opcode(&fail_inst) = fail;
-  cell_opcode(&dynfail_inst) = dynfail;
-  cell_opcode(&trie_fail_unlock_inst) = trie_fail_unlock;
-  cell_opcode(&halt_inst) = halt;
-  cell_opcode(&proceed_inst) = proceed;         /* returned by load_obj */
-  /* length check_interrupt + length restore_dealloc_proceed */
-
-  check_interrupts_restore_insts_addr = calloc((3+1),sizeof(Integer));
-  write_byte(check_interrupts_restore_insts_addr,&Loc,check_interrupt);
-  Loc += 2; 
-  write_byte(check_interrupts_restore_insts_addr,&Loc,4); /* AR size */
-  pad64bits(&Loc);
-  write_word(check_interrupts_restore_insts_addr,&Loc,0); /* unused psc addr */
-  write_byte(check_interrupts_restore_insts_addr,&Loc,restore_dealloc_proceed);
-
-  init_newtrie(CTXT);
+  init_trie_table(CTXT);
 
 #ifdef MULTI_THREAD
   init_thread_structures(CTXT);
@@ -1353,6 +1329,29 @@ void init_symbols(CTXTdecl)
   size_t stack_size;
 #endif
 #endif
+  int Loc = 0;
+
+  /* set special SLG_WAM instruction addresses */
+
+  cell_opcode(&halt_inst) = halt;
+  cell_opcode(&proceed_inst) = proceed;         /* returned by load_obj */
+  cell_opcode(&fail_inst) = fail;
+  cell_opcode(&dynfail_inst) = dynfail;
+  cell_opcode(&trie_fail_unlock_inst) = trie_fail_unlock;
+  cell_opcode(&answer_return_inst) = answer_return;
+  cell_opcode(&resume_compl_suspension_inst) = resume_compl_suspension;
+  cell_opcode(&resume_compl_suspension_inst2) = resume_compl_suspension;
+  cell_opcode(&check_complete_inst) = check_complete;
+  cell_opcode(&hash_handle_inst) = hash_handle;
+
+  check_interrupts_restore_insts_addr = calloc((3+1),sizeof(Integer));
+  write_byte(check_interrupts_restore_insts_addr,&Loc,check_interrupt);
+  Loc += 2; 
+  write_byte(check_interrupts_restore_insts_addr,&Loc,4); /* AR size */
+  pad64bits(&Loc);
+  write_word(check_interrupts_restore_insts_addr,&Loc,0); /* unused psc addr */
+  write_byte(check_interrupts_restore_insts_addr,&Loc,restore_dealloc_proceed);
+  /* length check_interrupt + length restore_dealloc_proceed */
 
   inst_begin_gl = 0;
   current_inst = 0;

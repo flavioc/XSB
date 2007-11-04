@@ -49,7 +49,7 @@ extern void breg_retskel(CTXTdecl);
 extern void delete_predicate_table(CTXTdeclc TIFptr,xsbBool);
 extern void reclaim_del_ret_list(CTXTdeclc VariantSF);
 extern void delete_return(CTXTdeclc BTNptr, VariantSF);
-extern void init_newtrie(CTXTdecl);
+extern void init_trie_table(CTXTdecl);
 extern void delete_branch(CTXTdeclc BTNptr, BTNptr *);
 extern void safe_delete_branch(BTNptr);
 extern void undelete_branch(BTNptr);

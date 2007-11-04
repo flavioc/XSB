@@ -1311,7 +1311,7 @@ struct interned_trie_t* itrie_array;
 
 #define MAX_INTERNED_TRIES 2003
 
-void init_newtrie(CTXTdecl) {
+void init_trie_table(CTXTdecl) {
   int i ;
   
   itrie_array = 
