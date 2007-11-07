@@ -75,7 +75,7 @@ DllExport int call_conv openConnection(void)
   int (*connectDriver)(struct xsb_connectionHandle*);
   char* (*errorMesgDriver)();
   struct xsb_connectionHandle* cHandle;
-  char *handle, *driver, *server, *database=NULL, *user, *password, *dsn;
+  char *handle, *driver, *server, *database=NULL, *user, *password, *dsn=NULL;
   int val;
   
   cHandle = NULL; 
