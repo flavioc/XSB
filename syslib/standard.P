@@ -1398,6 +1398,7 @@ gc_atoms:-
 %%     Do not call any of the $$ predicates below at other places.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+:- thread_private '$$exception_ball'/2.
 :- dynamic '$$exception_ball'/2.
 :- index '$$exception_ball'/2-0.
 
