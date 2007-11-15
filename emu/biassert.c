@@ -3283,7 +3283,7 @@ PrRef build_prref( CTXTdeclc Psc psc )
   //  printf("prref disp tab for %s/%d? shared=%d\n",
   //         get_name(psc),get_arity(psc),get_shared(psc));
 
-  if (flags[PRIVSHAR_DEFAULT]) set_shared(psc, (T_SHARED));
+  //  if (flags[PRIVSHAR_DEFAULT]) set_shared(psc, (T_SHARED));
 
   if ((*(pb)get_ep(psc) == switchonthread) || !get_shared(psc)) {
     struct DispBlk_t *dispblk;

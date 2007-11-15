@@ -688,9 +688,27 @@ static xsbBool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
 	xsb_warn("Shared declaration ignored for %s/%d\n",
 		get_name(temp_pair->psc_ptr),get_arity(temp_pair->psc_ptr));
       else { 
-	if (!flags[PRIVSHAR_DEFAULT]) 
-	  set_shared(temp_pair->psc_ptr, (t_env&T_SHARED));
-	else set_shared(temp_pair->psc_ptr, (T_SHARED));
+	if (flags[PRIVSHAR_DEFAULT] == DEFAULT_PRIVATE) {
+	  if (t_env&T_SHARED_DET) 
+	    set_shared(temp_pair->psc_ptr, (t_env&T_SHARED));
+	}
+	else { 
+	  /* Default shared: if the compiled code has a thead_xxx
+	     declaration (as found in t_env) set the shared bit to
+	     whatever they should be; otherwise set it shared by
+	     default only if the psc record does not exist w. its det
+	     flag set.  This last condition would not be necessary if
+	     the || get_shared were not part of the condition above --
+	     so perhaps this code should be refactored. */
+	  if (t_env&T_SHARED_DET) {
+	    set_shared(temp_pair->psc_ptr, (t_env&(T_SHARED|T_SHARED_DET)));
+	    //	    printf("%s %x \n",get_name(temp_pair->psc_ptr),(temp_pair->psc_ptr)->env);
+	  }
+	  else if (!(((temp_pair->psc_ptr)->env)&T_SHARED_DET)) {
+	    set_shared(temp_pair->psc_ptr, (T_SHARED));
+	    //	    printf("setting shared %s %x \n",get_name(temp_pair->psc_ptr),(temp_pair->psc_ptr)->env);
+	  }
+	}
       }
     }
 
