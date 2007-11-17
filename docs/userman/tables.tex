@@ -952,7 +952,7 @@ has a solution, Prolog executes a cut over the subtree created by
 ${\tt '\backslash+'(S)}$, and fails.  {\tt tnot/1} on the other hand,
 does not execute a cut, so that all subgoals in the computation path
 begun by the negative call will be completely evaluated.  The major
-reason for not executing the cut is to insure that XSB evaluates
+reason for not executing the cut is to ensure that XSB evaluates
 ground queries to Datalog programs with negation with polynomial data
 complexity.  As seen \cite{ChWa96}, this property cannot be preserved
 if negation ``cuts'' over tables.
