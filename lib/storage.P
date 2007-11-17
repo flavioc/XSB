@@ -36,16 +36,24 @@ storage_builtin(_BuiltinNumber,_StorageName,_Handle,_Snapshot,_Changed) :-
 
 %% Inserts facts. On backtracking, the fact is deleted.
 storage_insert_fact_bt(StorageName,Fact,Inserted) :-	
+	storage_insert_fact_bt(StorageName,Fact,Inserted,true,true).
+
+%% ForwAction - hook to call on forward execution
+%% BackAction - hook to call on backward execution
+storage_insert_fact_bt(StorageName,Fact,Inserted,ForwAction,BackAction) :-
 	triehandle_for_storage(StorageName,H,Snapshot),
 	trie_intern(Fact, H, Leaf, New, _),
 	(New == 0
 	->  Inserted=1,  % new fact inserted
 	    mark_storage_changed_bt(StorageName),
-	    (  true
+	    (  call(ForwAction)
 	    ; %% On backtracking
 		triehandle_for_storage(StorageName,_,NewSnapshot),
 		(NewSnapshot =< Snapshot
-		-> trie_unintern_nr(H, Leaf), fail 
+		->
+		    trie_unintern_nr(H, Leaf),
+		    call(BackAction),
+		    fail 
 		)
 	    )
 	; Inserted=0	 % fact was already there: no action
@@ -56,6 +64,7 @@ storage_insert_fact_bt(StorageName,Fact,Inserted) :-
 storage_insert_fact(StorageName,Fact,Inserted) :-	
 	triehandle_for_storage(StorageName,H,_),
 	trie_intern(Fact, H, _Leaf, New, _),
+	!,
 	(New == 0
 	->  Inserted=1   % new fact inserted
 	; Inserted=0	 % fact was already there: no action
@@ -65,17 +74,25 @@ storage_insert_fact(StorageName,Fact,Inserted) :-
 %% Backtrackable delete.
 %% Doesn't remove anything, but instead "marks" for deletion.
 %% On backtracking: unmarks facts that are marked for deletion
-
 storage_delete_fact_bt(StorageName,Fact,Deleted) :-
+	storage_delete_fact_bt(StorageName,Fact,Deleted,true,true).
+
+%% ForwAction - hook to call on forward execution
+%% BackAction - hook to call on backward execution
+storage_delete_fact_bt(StorageName,Fact,Deleted,ForwAction,BackAction) :-
 	triehandle_for_storage(StorageName,H,Snapshot),
 	(trie_interned(Fact, H, Leaf, _)
 	->  Deleted=1,   % existing fact deleted
 	    mark_storage_changed_bt(StorageName),
-	    ( trie_unintern_nr(H, Leaf)
+	    ( trie_unintern_nr(H, Leaf),
+		call(ForwAction)
 	    ; %% On backtracking
 		triehandle_for_storage(StorageName,_,NewSnapshot),
 		(NewSnapshot =< Snapshot
-		-> unmark_uninterned_nr(H, Leaf), fail
+		->
+		    unmark_uninterned_nr(H, Leaf),
+		    call(BackAction),
+		    fail
 		)
 	    )
 	;   Deleted=0    % non-existing fact: no action
@@ -84,6 +101,7 @@ storage_delete_fact_bt(StorageName,Fact,Deleted) :-
 %% Nonbacktrackable delete
 storage_delete_fact(StorageName,Fact,Deleted) :-
 	triehandle_for_storage(StorageName,H,_),
+	!,
 	(trie_interned(Fact, H, Leaf, _)
 	->  Deleted=1,   % existing fact deleted
 	    trie_unintern_nr(H, Leaf)
@@ -93,6 +111,7 @@ storage_delete_fact(StorageName,Fact,Deleted) :-
 %% deletes the whole trie
 storage_delete_all(StorageName) :- 
 	triehandle_for_storage(StorageName,H,_),
+	!,
 	storage_builtin(DESTROY_STORAGE_HANDLE,StorageName,_,_,_),
 	delete_trie(H).
 
@@ -100,6 +119,7 @@ storage_delete_all(StorageName) :-
 %% Find fact in storage
 storage_find_fact(StorageName,Fact) :-
 	triehandle_for_storage(StorageName,H,_),
+	!,
 	trie_interned(Fact, H, _, _).
 
 
@@ -109,7 +129,12 @@ storage_find_fact(StorageName,Fact) :-
 %% If inserting a non-existing keypair with an existing key, then return -1.
 %% In both cases don't insert anything.
 %% If keypair is new, return 1 and insert pair(Key,Val)
-storage_insert_keypair_bt(StorageName,Key, Value, Inserted):-
+storage_insert_keypair_bt(StorageName,Key,Value,Inserted):-
+	storage_insert_keypair_bt(StorageName,Key,Value,Inserted,true,true).
+
+%% ForwAction - hook to call on forward execution
+%% BackAction - hook to call on backward execution
+storage_insert_keypair_bt(StorageName,Key,Value,Inserted,ForwAction,BackAction) :-
 	triehandle_for_storage(StorageName,H,Snapshot),
 	%% If this key already exists, then don't insert and return -1
 	(trie_interned(pair(Key,Val), H, _Leaf, _)
@@ -119,11 +144,14 @@ storage_insert_keypair_bt(StorageName,Key, Value, Inserted):-
 	    trie_intern(pair(Key,Value), H, Leaf_Pair, _New, _ ),
 	    Inserted = 1,	% new fact: insert it
 	    mark_storage_changed_bt(StorageName),
-	    ( true
+	    ( call(ForwAction)
 	    ; %% On backtracking
 		triehandle_for_storage(StorageName,_,NewSnapshot),
 		(NewSnapshot =< Snapshot
-		->  trie_unintern_nr(H, Leaf_Pair), fail
+		-> 
+		    trie_unintern_nr(H, Leaf_Pair),
+		    call(BackAction),
+		    fail
 		)
 	    )
 	).
@@ -131,16 +159,25 @@ storage_insert_keypair_bt(StorageName,Key, Value, Inserted):-
 
 
 %% If key exists, then delete the pair and return 1; otherwise, return 0
-storage_delete_keypair_bt(StorageName,Key, Deleted):-
+storage_delete_keypair_bt(StorageName,Key,Deleted) :-
+	storage_delete_keypair_bt(StorageName,Key,Deleted,true,true).
+
+%% ForwAction - hook to call on forward execution
+%% BackAction - hook to call on backward execution
+storage_delete_keypair_bt(StorageName,Key,Deleted,ForwAction,BackAction) :-
 	triehandle_for_storage(StorageName,H,Snapshot),
 	(trie_interned(pair(Key,_Value), H, Leaf, _)
 	->  Deleted = 1,  % this is an existing fact: delete it
 	    mark_storage_changed_bt(StorageName),
-	    ( trie_unintern_nr(H, Leaf) 
+	    ( trie_unintern_nr(H, Leaf),
+		call(ForwAction)
 	    ; %% On backtracking
 		triehandle_for_storage(StorageName,_,NewSnapshot),
 		(NewSnapshot =< Snapshot
-		-> unmark_uninterned_nr(H, Leaf), fail 
+		->
+		    unmark_uninterned_nr(H, Leaf),
+		    call(BackAction),
+		    fail 
 		)
 	    )
 	;   Deleted = 0   % no such fact -- no action
@@ -191,6 +228,7 @@ storage_commit(StorageName) :-
 %% level of a query.
 storage_reclaim_space(StorageName) :-
 	triehandle_for_storage(StorageName,H,_),
+	!,
 	trie_reclaim_uninterned_nr(H).
 
 

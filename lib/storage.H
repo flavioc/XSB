@@ -23,13 +23,16 @@
 */
 
 
-:- export storage_insert_fact_bt/3, storage_delete_fact_bt/3, 
+:- export
+	storage_insert_fact_bt/3, storage_delete_fact_bt/3, 
+	storage_insert_fact_bt/5, storage_delete_fact_bt/5, 
 	storage_insert_fact/3, storage_delete_fact/3,
 	storage_delete_all/1,
 	storage_find_fact/2,
 	storage_reclaim_space/1,
 	storage_commit/1,
 	storage_insert_keypair_bt/4, storage_delete_keypair_bt/3,
+	storage_insert_keypair_bt/6, storage_delete_keypair_bt/5,
 	storage_insert_keypair/4, storage_delete_keypair/3,
 	storage_find_keypair/3,
 	%% this is for debugging/profiling
@@ -42,4 +45,8 @@
    from intern.
 
 
-:- import throw/1, atom/1 from standard.
+:- import
+	call/1,
+	throw/1,
+	atom/1
+   from standard.
