@@ -303,7 +303,7 @@ void print_detailed_tablespace_stats(CTXTdecl) {
     NodeStats_SizeUsedNodes(abtn) + HashStats_SizeUsedTotal(abtht);
 
   printf("\n"
-	 "Table Space Usage\n");
+	 "Table Space Usage (excluding asserted and interned tries) \n");
   printf("  Current Total Allocation:   %12lu bytes\n"
   	 "  Current Total Usage:        %12lu bytes\n",
 	 pspacesize[TABLE_SPACE]-trieassert_alloc,  
@@ -364,6 +364,15 @@ void print_detailed_tablespace_stats(CTXTdecl) {
       print_NodeStats(asi,"Answer Substitution Frames");
   }
 
+  // Private trie assert space
+  if ( NodeStats_NumBlocks(abtn) > 0 || HashStats_NumBlocks(abtht) > 0) {
+  printf("\n ------------------ Asserted and Interned Tries  ----------------\n");
+    if ( NodeStats_NumBlocks(abtn) > 0) 
+      print_NodeStats(abtn,"Basic Trie Nodes (Assert)");
+    if (HashStats_NumBlocks(abtht) > 0)
+      print_HashStats(abtht,"Basic Trie Hash Tables (Assert)");
+  }
+
   if (flags[TRACE_STA]) {
     /* Report Maximum Usages
        --------------------- */
@@ -403,13 +412,15 @@ void print_detailed_tablespace_stats(CTXTdecl) {
     pri_tsi,		/* Private Time Stamp Indices (Index Entries/Nodes) */
     pri_prodsf,		/* Private Subsumptive Producer Subgoal Frames */
     pri_conssf,		/* Private Subsumptive Consumer Subgoal Frames */
-    pri_btn,		/* Private Basic Trie Nodes */
+    pri_btn,		/* Private Basic Trie Nodes (Tables) */
+    pri_assert_btn,	/* Private Basic Trie Nodes (Asserts) */
     pri_aln,		/* Private Answer List Nodes */
     pri_varsf,		/* Private Variant Subgoal Frames */
     pri_asi;		/* Private Answer Subgoal Information */
   
   HashStats
-    pri_btht,		/* Private Basic Trie Hash Tables */
+    pri_btht,		/* Private Basic Trie Hash Tables (Tables) */
+    pri_assert_btht,	/* Private Basic Trie Hash Tables (Asserts) */
     pri_tstht;		/* Private Time Stamp Trie Hash Tables */
 
   unsigned long
@@ -454,6 +465,8 @@ void print_detailed_tablespace_stats(CTXTdecl) {
 
   pri_btn = node_statistics(private_smTableBTN);
   pri_btht = hash_statistics(private_smTableBTHT);
+  pri_assert_btn = node_statistics(private_smAssertBTN);
+  pri_assert_btht = hash_statistics(private_smAssertBTHT);
   pri_aln = node_statistics(private_smALN);
   pri_asi = node_statistics(private_smASI);
   pri_varsf = subgoal_statistics(CTXTc private_smVarSF);
@@ -471,12 +484,12 @@ void print_detailed_tablespace_stats(CTXTdecl) {
   pri_pnde_space_alloc = allocated_pnde_space(private_current_pnde_block,&pri_num_pnde_blocks);
   pri_pnde_space_used = pri_pnde_space_alloc - unused_pnde_space_private(CTXT);
 
-  pri_tablespace_alloc = CurrentPrivateTableSpaceAlloc(pri_btn,pri_btht,pri_varsf,
-							   pri_prodsf,
-				  pri_conssf,pri_aln,pri_tstn,pri_tstht,pri_tsi,pri_asi);
-  pri_tablespace_used = CurrentPrivateTableSpaceUsed(pri_btn,pri_btht,pri_varsf,
-							 pri_prodsf,
-				 pri_conssf,pri_aln,pri_tstn,pri_tstht,pri_tsi,pri_asi);
+  pri_tablespace_alloc = CurrentPrivateTableSpaceAlloc(pri_btn,pri_btht,pri_varsf,pri_prodsf,
+						       pri_conssf,pri_aln,pri_tstn,pri_tstht,pri_tsi,
+						       pri_asi);
+  pri_tablespace_used = CurrentPrivateTableSpaceUsed(pri_btn,pri_btht,pri_varsf,pri_prodsf,
+						     pri_conssf,pri_aln,pri_tstn,pri_tstht,pri_tsi,
+						     pri_asi);
 
   pri_tablespace_alloc = pri_tablespace_alloc + pri_de_space_alloc + 
     pri_dl_space_alloc + pri_pnde_space_alloc;
@@ -504,7 +517,7 @@ void print_detailed_tablespace_stats(CTXTdecl) {
   //   printf("\n --------------------- Shared tables ---------------------\n");
 
   printf("\n"
-	 "Shared Table Space Usage\n");
+	 "Shared Table Space Usage (excluding asserted and interned tries) \n");
   printf("  Current Total Allocation:   %12lu bytes\n"
   	 "  Current Total Usage:        %12lu bytes\n",
 	 shared_tablespace_alloc,shared_tablespace_used);
@@ -547,9 +560,18 @@ void print_detailed_tablespace_stats(CTXTdecl) {
       print_NodeStats(asi,"Answer Substitution Frames");
   }
 
+  // Private trie assert space
+  if ( NodeStats_NumBlocks(abtn) > 0 || HashStats_NumBlocks(abtht) > 0) {
+  printf("\n ---------------- Shared Asserted and Interned Tries  ----------------\n");
+    if ( NodeStats_NumBlocks(abtn) > 0) 
+      print_NodeStats(abtn,"Basic Trie Nodes (Assert)");
+    if (HashStats_NumBlocks(abtht) > 0)
+      print_HashStats(abtht,"Basic Trie Hash Tables (Assert)");
+  }
+
   printf("\n --------------------- Private tables ---------------------\n");
   printf("\n"
-	 "Private Table Space Usage for Thread %d\n"
+	 "Private Table Space Usage for Thread %d (excluding asserted and interned tries) \n"
 	 "  Current Total Allocation:   %12lu bytes\n"
   	 "  Current Total Usage:        %12lu bytes\n",
 	 xsb_thread_id,pri_tablespace_alloc,pri_tablespace_used);
@@ -610,6 +632,16 @@ void print_detailed_tablespace_stats(CTXTdecl) {
     if ( NodeStats_NumBlocks(pri_asi) > 0)
       print_NodeStats(pri_asi,"Answer Substitution Frames");
   }
+
+  // Private trie assert space
+  if ( NodeStats_NumBlocks(pri_assert_btn) > 0 || HashStats_NumBlocks(pri_assert_btht) > 0) {
+  printf("\n ---------------- Private Asserted and Interned Tries  ----------------\n");
+    if ( NodeStats_NumBlocks(pri_assert_btn) > 0) 
+      print_NodeStats(pri_assert_btn,"Basic Trie Nodes (Assert)");
+    if (HashStats_NumBlocks(pri_assert_btht) > 0)
+      print_HashStats(pri_assert_btht,"Basic Trie Hash Tables (Assert)");
+  }
+
   printf("\n");
 }
 #endif

@@ -2634,7 +2634,7 @@ DllExport int call_conv xsb(CTXTdeclc int flag, int argc, char *argv[])
 
 	init_machine(CTXTc 0, 0, 0, 0);	/* init space, regs, stacks */
 	init_inst_table();		/* init table of instruction types */
-	init_symbols(CTXT);		/* preset a few symbols in PSC table */
+	init_symbols(CTXT);		/* preset symbols in PSC table; initialize Proc-level globals */
 	init_interrupt();		/* catch ^C interrupt signal */
 
 	/* "b" does nothing in UNIX, denotes binary file in Windows -- 

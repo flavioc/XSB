@@ -353,6 +353,8 @@ struct random_seeds_t *_random_seeds;	/* struct containing seeds for random num 
   /* for tables */
   Structure_Manager *_private_smTableBTN;
   Structure_Manager *_private_smTableBTHT;
+  Structure_Manager *_private_smAssertBTN;
+  Structure_Manager *_private_smAssertBTHT;
   Structure_Manager *_private_smTableBTHTArray;
   Structure_Manager *_private_smTSTN; 
   Structure_Manager *_private_smTSTHT;
@@ -643,6 +645,8 @@ typedef struct th_context th_context ;
 
 #define private_smTableBTN        (th->_private_smTableBTN)
 #define private_smTableBTHT       (th->_private_smTableBTHT)
+#define private_smAssertBTN        (th->_private_smAssertBTN)
+#define private_smAssertBTHT       (th->_private_smAssertBTHT)
 #define private_smTableBTHTArray       (th->_private_smTableBTHTArray)
 #define private_smTSTN          (th-> _private_smTSTN)
 #define private_smTSTHT         (th-> _private_smTSTHT)

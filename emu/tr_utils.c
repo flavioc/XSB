@@ -54,7 +54,6 @@
 #include "inst_xsb.h"
 #include "error_xsb.h"
 #include "io_builtins_xsb.h"
-#include "trassert.h"
 #include "tr_utils.h"
 #include "tst_utils.h"
 #include "subp.h"
@@ -65,6 +64,8 @@
 #include "hash_xsb.h"
 #include "tables.h"
 #include "builtin.h"
+#include "trie_defs.h"
+#include "trassert.h"
 
 #include "call_graph_xsb.h" /* incremental evaluation */
 #include "table_inspection_defs.h"
@@ -1255,7 +1256,7 @@ void  reclaim_del_ret_list(CTXTdeclc VariantSF sg_frame) {
 /*----------------------------------------------------------------------*/
 
 /*
-**   Used in aggregs.P to implement aggregates.
+**   Used in aggregs.P to implement aggregates.v
 **   Takes:   breg (the place where choice point is saved) and arity.  
 **   Returns: subgoal skeleton (i.e., ret(X,Y,Z), where X,Y,Z are all the 
 **    	      	                distinct variables in the subgoal);
@@ -1300,41 +1301,73 @@ void breg_retskel(CTXTdecl)
  */
 
 /* Allocate an array of handles to interned tries, and initialize
-   global variables. */
+   global variables. 
+
+   In MT-engine default is private tries -- thus make private trie
+   code and single-threaded trie code identical, and require shared
+   tries only for MT engine.*/
 
 #ifndef MULTI_THREAD
 int itrie_array_first_free;
 struct interned_trie_t* itrie_array;
+#else
+int shared_itrie_array_first_free;
+struct interned_trie_t* shared_itrie_array;
 #endif
 
 /* Need to expand trie array on demand -- this is high up on list -- TLS.*/
 
 #define MAX_INTERNED_TRIES 2003
 
-void init_trie_table(CTXTdecl) {
+void init_private_trie_table(CTXTdecl) {
   int i ;
   
   itrie_array = 
     mem_calloc(MAX_INTERNED_TRIES+1, sizeof(struct interned_trie_t), TABLE_SPACE);
 
   for( i = 0; i < MAX_INTERNED_TRIES; i++ ) {
-    itrie_array[i].valid = FALSE;
+    //    itrie_array[i].valid = FALSE;
     itrie_array[i].next_entry = i+1;
     itrie_array[i].root = NULL;
   }
-  itrie_array[MAX_INTERNED_TRIES].valid = FALSE;
+  //  itrie_array[MAX_INTERNED_TRIES].valid = FALSE;
   itrie_array[MAX_INTERNED_TRIES].next_entry = -1;
-  itrie_array[MAX_INTERNED_TRIES].root = NULL;
+  //  itrie_array[MAX_INTERNED_TRIES].root = NULL;
 
   /* Set to 1 to avoid problems with storage_xsb.c which ues this (it
      returns a new trie with a 0 value) */
   itrie_array_first_free = 1;
 }
 
+#ifdef MULTI_THREAD
+void init_shared_trie_table() {
+  int i ;
+  
+  shared_itrie_array = 
+    mem_calloc(MAX_INTERNED_TRIES+1, sizeof(struct interned_trie_t), TABLE_SPACE);
+
+  for( i = 0; i < MAX_INTERNED_TRIES; i++ ) {
+      shared_itrie_array[i].next_entry = i+1;
+  }
+    shared_itrie_array[MAX_INTERNED_TRIES].next_entry = -1;
+
+    // Set to 1 to avoid problems with storage_xsb.c which ues this (it
+    //  returns a new trie with a 0 value) 
+  shared_itrie_array_first_free = 1;
+}
+#endif
+
 /*----------------------------------------------------------------------*/
+#define TRIE_ID_TYPE_MASK               0xfff00000
+#define TRIE_ID_ID_MASK                 0x000fffff
+#define TRIE_ID_SHIFT                   20
+#define SET_TRIE_ID(IND,TYPE,TID)       ((TID) = (((TYPE) << TRIE_ID_SHIFT)| IND))
+#define SPLIT_TRIE_ID(TID,IND,TYPE)     {				\
+    ((TYPE) = ((TID) & TRIE_ID_TYPE_MASK));				\
+    ((IND) = ((TID) &TRIE_ID_ID_MASK)); }
 
 Integer new_private_trie(CTXTdecl) {
-  Integer result;
+  Integer result = 0;
 
   if (itrie_array_first_free < 0) {
     xsb_resource_error(CTXTc "interned tries","newtrie",1);
@@ -1343,36 +1376,38 @@ Integer new_private_trie(CTXTdecl) {
   else {
     itrie_array[itrie_array_first_free].valid = TRUE;
     itrie_array[itrie_array_first_free].root = NULL;
-    result = itrie_array_first_free;
+    SET_TRIE_ID(itrie_array_first_free,PRIVATE_TRIE,result);
+    //    result = itrie_array_first_free;
     itrie_array_first_free = itrie_array[itrie_array_first_free].next_entry;
     return result;
   }
 }
+
+#ifdef MULTI_THREAD
+Integer new_shared_trie(CTXTdecl) {
+  Integer result;
+
+  if (shared_itrie_array_first_free < 0) {
+    xsb_resource_error(CTXTc "shared interned tries","newtrie",1);
+    return 0;
+  }
+  else {
+    shared_itrie_array[itrie_array_first_free].valid = TRUE;
+    shared_itrie_array[itrie_array_first_free].root = NULL;
+    SET_TRIE_ID(shared_itrie_array_first_free,SHARED_TRIE,result);
+    shared_itrie_array_first_free = shared_itrie_array[shared_itrie_array_first_free].next_entry;
+    return result;
+  }
+}
+#endif
 
 /*----------------------------------------------------------------------*/
 
 /* TLS: Shared tries still need more testing, but I hope to have them
    implemented soon */
 
-#ifdef UNDEFINED
-ITHptr shared_itrie_chain_begin = (ITHptr) NULL;
-
-ITHptr new_shared_trie(CTXTdecl)
-{
-  ITHptr pITH;
-  
-  pITH = (ITHptr)mem_alloc(sizeof(ITrie_Header),TABLE_SPACE);	
-  if ( IsNULL(pITH) )	
-     xsb_abort("Ran out of memory in allocation of Interned Trie Header");  
-  pITH->root = NULL;
-  pITH->prev = NULL;
-  pITH->next = shared_itrie_chain_begin;
-  if (shared_itrie_chain_begin)
-    shared_itrie_chain_begin->prev = pITH;
-  shared_itrie_chain_begin = pITH;
-  return pITH;
-}
-
+//  Legacy API
+#ifdef MULTI_THREAD
 Integer newtrie(CTXTdeclc int sharedflag) {
   if (sharedflag) 
     return (int) new_shared_trie(CTXT);
@@ -1396,72 +1431,72 @@ Integer newtrie(CTXTdeclc int sharedflag) {
 void trie_intern(CTXTdecl)
 {
   prolog_term term;
-  int RootIndex;
+  int Trie_id,index,type;
   int flag, check_cps_flag, expand_flag;
   BTNptr Leaf;
+  BTNptr *trie_root_addr;
 
   term = ptoc_tag(CTXTc 1);
-  RootIndex = iso_ptoc_int(CTXTc 2,"trie_intern/2");
+  Trie_id = iso_ptoc_int(CTXTc 2,"trie_intern/2");
   check_cps_flag = ptoc_int(CTXTc 5);
   expand_flag = ptoc_int(CTXTc 6);
-  xsb_dbgmsg((LOG_INTERN, "Interning "));
-  dbg_printterm(LOG_INTERN,stddbg,term,25);
-  xsb_dbgmsg((LOG_INTERN, "In trie with root %d", RootIndex));
+  SPLIT_TRIE_ID(Trie_id,index,type);
+  #ifdef MULTI_THREAD  
+  if (type == PRIVATE_TRIE) {
+  trie_root_addr = &(itrie_array[index].root);
+  switch_to_trie_assert;
+  } else {
+  trie_root_addr = &(shared_itrie_array[index].root);
+  switch_to_shared_trie_assert;
+    }
+  #else
+  trie_root_addr = &(itrie_array[index].root);
+  switch_to_trie_assert;
+#endif
 
-  if (itrie_array[RootIndex].root != NULL && BTN_Instr(itrie_array[RootIndex].root) == trie_no_cp_fail) {
+  if (*trie_root_addr != NULL && BTN_Instr(*trie_root_addr) == trie_no_cp_fail) {
     printf("Inserting into trie with trie_no_cp_fail root\n");
   }
-  switch_to_trie_assert;
-  //  SYS_MUTEX_LOCK(MUTEX_TRIE);
-  //  Leaf = whole_term_chk_ins(CTXTc term,&(Set_ArrayPtr[RootIndex]),&flag,check_cps_flag,expand_flag);
-  Leaf = whole_term_chk_ins(CTXTc term,&(itrie_array[RootIndex].root),
+
+  Leaf = whole_term_chk_ins(CTXTc term,trie_root_addr,
 			    &flag,check_cps_flag,expand_flag);
-  //  SYS_MUTEX_UNLOCK(MUTEX_TRIE);
   switch_from_trie_assert;
   
   ctop_int(CTXTc 3,(Integer)Leaf);
   ctop_int(CTXTc 4,flag);
-  xsb_dbgmsg((LOG_INTERN, "Exit flag %d",flag));
 }
 
 /*----------------------------------------------------------------------*/
 int trie_interned(CTXTdecl) {
-  int RootIndex;
   int ret_val = FALSE;
   Cell Leafterm, trie_term;
-#ifdef MULTI_THREAD_RWL
-   CPtr tbreg;
-#ifdef SLG_GC
-   CPtr old_cptop;
-#endif
-#endif
+  int Trie_id,index,type;
+  BTNptr *trie_root_addr;
 
   trie_term =  ptoc_tag(CTXTc 1);
-  RootIndex = iso_ptoc_int(CTXTc 2,"trie_interned/[2,4]");
+  Trie_id = iso_ptoc_int(CTXTc 2,"trie_interned/[2,4]");
   Leafterm = ptoc_tag(CTXTc 3);
-  
-  if ((itrie_array[RootIndex].root != NULL) &&
-      (!((long) itrie_array[RootIndex].root & 0x3))) {
+
+  SPLIT_TRIE_ID(Trie_id,index,type);
+  #ifdef MULTI_THREAD  
+  if (type == PRIVATE_TRIE) {
+  trie_root_addr = &(itrie_array[index].root);
+  //  trie_array_ptr = &itrie_array[Trie_id];
+  } else {
+  trie_root_addr = &(shared_itrie_array[index].root);
+    }
+  #else
+  trie_root_addr = &(itrie_array[index].root);
+#endif
+
+  if ((*trie_root_addr != NULL) && (!((long) *trie_root_addr & 0x3))) {
     XSB_Deref(trie_term);
     XSB_Deref(Leafterm);
     if ( isref(Leafterm) ) {  
       reg_arrayptr = reg_array -1;
       num_vars_in_var_regs = -1;
-      pushreg(trie_term);
-#ifdef MULTI_THREAD_RWL /* save choice point for trie_unlock instruction */
-      //       save_find_locx(ereg);
-      //       tbreg = top_of_cpstack;
-#ifdef SLG_GC
-       old_cptop = tbreg;
-#endif
-       save_choicepoint(tbreg,ereg,(byte *)&trie_fail_unlock_inst,breg);
-#ifdef SLG_GC
-       cp_prevtop(tbreg) = old_cptop;
-#endif
-       breg = tbreg;
-       hbreg = hreg;
-#endif
-      pcreg = (byte *)itrie_array[RootIndex].root;
+      pushreg(trie_term); 
+      pcreg = (byte *)*trie_root_addr;
       ret_val =  TRUE;
     }
     else{
@@ -1487,21 +1522,35 @@ int trie_interned(CTXTdecl) {
 void trie_dispose(CTXTdecl)
 {
   BTNptr Leaf;
-  long Rootidx;
   int disposalType;
+  int Trie_id,index,type;
+  BTNptr *trie_root_addr;
 
-  Rootidx = iso_ptoc_int(CTXTc 1,"trie_unintern/2");
+  Trie_id = iso_ptoc_int(CTXTc 1,"trie_unintern/2");
   Leaf = (BTNptr)iso_ptoc_int(CTXTc 2,"trie_unintern/2");
   disposalType = ptoc_int(CTXTc 3);
-  //  SYS_MUTEX_LOCK(MUTEX_TRIE);
+ 
+  SPLIT_TRIE_ID(Trie_id,index,type);
+#ifdef MULTI_THREAD  
+  if (type == PRIVATE_TRIE) {
+  trie_root_addr = &(itrie_array[index].root);
   switch_to_trie_assert;
-  //  SYS_MUTEX_UNLOCK(MUTEX_TRIE);
+  //  trie_array_ptr = &itrie_array[Trie_id];
+  } else {
+  trie_root_addr = &(shared_itrie_array[index].root);
+  switch_to_shared_trie_assert;
+    }
+#else
+  trie_root_addr = &(itrie_array[index].root);
+  switch_to_trie_assert;
+#endif
+
   if (disposalType == NO_CPS_CHECK)     
-    delete_branch(CTXTc Leaf, &(itrie_array[Rootidx].root));
+    delete_branch(CTXTc Leaf, trie_root_addr);
   else {
-    if (!interned_trie_cps_check(CTXTc itrie_array[Rootidx].root)) {
+    if (!interned_trie_cps_check(CTXTc *trie_root_addr)) {
       //          printf(" really deleting branch \n");
-      delete_branch(CTXTc Leaf, &(itrie_array[Rootidx].root));
+      delete_branch(CTXTc Leaf, trie_root_addr);
     }
     else {
       //      printf(" safely deleting branch %x\n",BTN_Instr(itrie_array[Rootidx].root));
@@ -1567,24 +1616,43 @@ int interned_trie_cps_check(CTXTdeclc BTNptr root)
    Actually, if the trie is not valid we just succeed -- arguably an
    error might be thrown.
  */
-void delete_interned_trie(CTXTdeclc Integer tmpval) {
-  if ((itrie_array[tmpval].root != NULL) &&
-      (!((Integer) itrie_array[tmpval].root & 0x3))) {
-    if (!interned_trie_cps_check(CTXTc itrie_array[tmpval].root)) {
-      switch_to_trie_assert;
-      delete_trie(CTXTc itrie_array[tmpval].root);
+
+void delete_interned_trie(CTXTdeclc Integer Trie_id) {
+  int index,type;
+  struct interned_trie_t* trie_root_addr;
+  int *first_free_ptr;
+
+  SPLIT_TRIE_ID(Trie_id,index,type);
+#ifdef MULTI_THREAD  
+  if (type == PRIVATE_TRIE) {
+  trie_root_addr = &(itrie_array[index]);
+  first_free_ptr = &itrie_array_first_free;
+  //  trie_array_ptr = &itrie_array[Trie_id];
+  } else {
+  trie_root_addr = &(shared_itrie_array[index]);
+  first_free_ptr = &shared_itrie_array_first_free;
+    }
+#else
+  trie_root_addr = &(itrie_array[index]);
+  first_free_ptr = &itrie_array_first_free;
+#endif
+
+  if ((trie_root_addr->root != NULL) &&
+      (!((Integer) trie_root_addr->root & 0x3))) {
+    if (!interned_trie_cps_check(CTXTc trie_root_addr->root)) {
+      switch_to_privshar_trie_assert(type);
+      delete_trie(CTXTc trie_root_addr->root);
       switch_from_trie_assert;
     }
     else xsb_abort("[DELETE_TRIE] Backtracking through trie to be abolished.");
-    itrie_array[tmpval].root = NULL;
+    trie_root_addr->root = NULL;
   }
-  //    SYS_MUTEX_LOCK(MUTEX_TRIE);
-  if (itrie_array[tmpval].valid == TRUE) {
-    itrie_array[tmpval].valid = FALSE;
-    itrie_array[tmpval].next_entry = itrie_array_first_free;
-    itrie_array_first_free = tmpval;
+
+  if (trie_root_addr->valid == TRUE) {
+    trie_root_addr->valid = FALSE;
+    trie_root_addr->next_entry = *first_free_ptr;
+    *first_free_ptr = index;
   }
-  //    SYS_MUTEX_UNLOCK(MUTEX_TRIE);
 }
 
 /*----------------------------------------------------------------------*/
@@ -1726,6 +1794,9 @@ static void insertLeaf(IGRptr r, BTNptr leafn)
   r -> leaves = p;
 }
 
+/*
+  This feature does not yet support shared tries.
+ */
 void reclaim_uninterned_nr(CTXTdeclc long rootidx)
 {
   IGRptr r = getAndRemoveIGRnode(CTXTc rootidx);
@@ -1771,6 +1842,7 @@ void reclaim_uninterned_nr(CTXTdeclc long rootidx)
  * This is builtin : TRIE_DISPOSE_NR(+ROOT, +LEAF), to
  * mark for disposal (safe delete) a branch
  * of the trie rooted at Set_ArrayPtr[ROOT].
+ * This function does not yet support shared tries.
  */
 void trie_dispose_nr(CTXTdecl)
 {
@@ -1791,6 +1863,7 @@ void trie_dispose_nr(CTXTdecl)
 /*
  * This is builtin : TRIE_UNDISPOSE_NR(+ROOT, +LEAF), to
  * unmark a safely deleted branch.
+ * This function does not yet support shared tries.
  */
 
 void trie_undispose(CTXTdeclc long rootIdx, BTNptr leafn)

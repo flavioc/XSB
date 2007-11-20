@@ -1018,6 +1018,18 @@ void init_thread_structures(CTXTdecl)
   SM_InitDeclDyna(private_smDelCF, DeletedClauseFrame, DELCFs_PER_BLOCK,
 		  "Deleted Clause Frames (Private)");
 
+  private_smAssertBTN  = 
+    (struct Structure_Manager*) mem_alloc(sizeof(struct Structure_Manager),
+					  MT_PRIVATE_SPACE);
+  SM_InitDeclDyna(private_smAssertBTN,BasicTrieNode, BTNs_PER_BLOCK,
+		  "Basic Trie Node (Asserted, Private)");
+
+  private_smAssertBTHT  = 
+    (struct Structure_Manager*) mem_alloc(sizeof(struct Structure_Manager),
+					  MT_PRIVATE_SPACE);
+  SM_InitDeclDyna(private_smAssertBTHT,BasicTrieHT, BTHTs_PER_BLOCK,
+		     "Basic Trie Hash Table (Asserted Private)");
+
   private_current_de_block = NULL;
   private_current_dl_block = NULL;
   private_current_pnde_block = NULL;
@@ -1098,6 +1110,12 @@ void cleanup_thread_structures(CTXTdecl)
 
   free_trie_aux_areas(CTXT) ;
 
+  pthread_mutex_destroy(&private_smAssertBTN->sm_lock);
+  mem_dealloc(private_smAssertBTN,sizeof(struct Structure_Manager),
+	      MT_PRIVATE_SPACE);
+  pthread_mutex_destroy(&private_smAssertBTHT->sm_lock);
+  mem_dealloc(private_smAssertBTHT,sizeof(struct Structure_Manager),
+	      MT_PRIVATE_SPACE);
   pthread_mutex_destroy(&private_smTableBTN->sm_lock);
   mem_dealloc(private_smTableBTN,sizeof(struct Structure_Manager),
 	      MT_PRIVATE_SPACE);
@@ -1142,7 +1160,8 @@ void init_machine(CTXTdeclc int glsize, int tcpsize,
 {
   void tstInitDataStructs(CTXTdecl);
 
-  init_trie_table(CTXT);
+  // single-threaded engine uses this for tries.
+  init_private_trie_table(CTXT);
 
 #ifdef MULTI_THREAD
   init_thread_structures(CTXT);
@@ -1441,6 +1460,9 @@ void init_symbols(CTXTdecl)
   }
 #endif
   pthread_attr_setscope(&normal_attr_gl,PTHREAD_SCOPE_SYSTEM);
+#ifdef MULTI_THREAD
+  init_shared_trie_table();
+#endif
 #endif
 
 }

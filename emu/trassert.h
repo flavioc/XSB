@@ -30,10 +30,15 @@ extern int trie_retract_safe(CTXTdecl);
 
 
 #ifdef MULTI_THREAD
-#define switch_to_trie_assert {			\
+#define switch_to_shared_trie_assert {			\
     threads_current_sm = SHARED_SM;		\
     smBTN = &smAssertBTN;			\
     smBTHT = &smAssertBTHT;			\
+}
+#define switch_to_trie_assert {			\
+    threads_current_sm = PRIVATE_SM;		\
+    smBTN = private_smAssertBTN;			\
+    smBTHT = private_smAssertBTHT;			\
 }
 #else
 #define switch_to_trie_assert {			\
@@ -46,3 +51,11 @@ extern int trie_retract_safe(CTXTdecl);
     smBTN = &smTableBTN;		    \
     smBTHT = &smTableBTHT;		    \
 }
+
+#ifdef MULTI_THREAD
+#define switch_to_privshar_trie_assert(type) 				\
+    if (type == PRIVATE_TRIE) switch_to_trie_assert else switch_to_shared_trie_assert; 
+#else
+#define switch_to_privshar_trie_assert(type) switch_to_trie_assert(type);
+#endif
+

@@ -919,6 +919,7 @@ void mark_trie_strings(CTXTdecl) {
 #ifdef MULTI_THREAD
   //  printf("marking private trie strings\n");
   mark_trie_strings_for(*private_smTableBTN,BTNptr,pBTNStruct,apBTNStruct);
+  mark_trie_strings_for(*private_smAssertBTN,BTNptr,pBTNStruct,apBTNStruct);
   //  printf("marked private trie strings\n");
 #endif  
   mark_trie_strings_for(smTableBTN,BTNptr,pBTNStruct,apBTNStruct);

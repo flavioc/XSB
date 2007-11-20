@@ -52,7 +52,7 @@ extern "C" {
 			       OVERFLOW clashes with some C compilers */
 #define RANGE		10
 #define SYNTAX		11
-#define TYPE		12
+  //#define TYPE		12
 #define UNDEFINED_PRED	13
 #define UNDEFINED_VAL	14
 #define XSBUNDERFLOW	15  /* renamed from UNDERFLOW. This def isn't used, but

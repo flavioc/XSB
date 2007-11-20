@@ -37,7 +37,10 @@ typedef struct interned_trie_t *ITrieptr;
 /* Also includes trie stuff */
 #ifndef MULTI_THREAD
 extern ITrieptr itrie_array;
+#else
+extern void init_shared_trie_table();
 #endif
+
 
 extern VariantSF get_variant_sf(CTXTdeclc Cell, TIFptr, Cell *);
 extern SubProdSF get_subsumer_sf(CTXTdeclc Cell, TIFptr, Cell *);
@@ -49,7 +52,7 @@ extern void breg_retskel(CTXTdecl);
 extern void delete_predicate_table(CTXTdeclc TIFptr,xsbBool);
 extern void reclaim_del_ret_list(CTXTdeclc VariantSF);
 extern void delete_return(CTXTdeclc BTNptr, VariantSF);
-extern void init_trie_table(CTXTdecl);
+extern void init_private_trie_table(CTXTdecl);
 extern void delete_branch(CTXTdeclc BTNptr, BTNptr *);
 extern void safe_delete_branch(BTNptr);
 extern void undelete_branch(BTNptr);

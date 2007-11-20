@@ -1405,7 +1405,8 @@ static void bottomupunify(CTXTdeclc Cell term, BTNptr Root, BTNptr Leaf)
 /*----------------------------------------------------------------------*/
 
 /*
- *  Used with tries created via the builtin trie_intern.
+ *  Used with tries created via the builtin trie_intern, to access a
+ *  trie from a leaf.  Not yet extended to shared tries.
  */
 
 xsbBool bottom_up_unify(CTXTdecl)
