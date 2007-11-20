@@ -71,11 +71,9 @@ mean the following:
 \index{\texttt{current\_prolog\_flag/2}}
 %
 {\tt current\_prolog\_flag/2} allows the user to examine both dynamic
-aspects of XSB along with certain non-changeable ISO
-flags~\footnote{The ISO flags {\tt
-char\_conversion} and {\tt double\_quotes} are not yet
-implemented.}.  This predicate is based upon the predicate {\tt
-xsb\_flag/2}.
+aspects of XSB along with certain non-changeable ISO flags.  Calls to
+{\tt current\_prolog\_flag/2} will unify against not only standard
+Prolog flags, but also values of {\tt xsb\_flag/2}.
 
 {\bf Error Cases}
 \bi
@@ -84,6 +82,12 @@ xsb\_flag/2}.
 \item 	{\tt domain\_error(atom\_or\_variable,Flag\_Name)}
 \ei
 \ei
+
+\compatability The ISO flags {\tt char\_conversion} is not available
+-- XSB does not use character conversion.  XSB reads double quoted
+strings as lists of character codes, so that the value of the flag
+{\tt double\_quotes} is always {\tt codes}, and this flag is not
+settable.
 
 \ournewitem{set\_prolog\_flag(?Flag\_Name, ?Value)}{ISO}
 \index{\texttt{set\_prolog\_flag/2}}

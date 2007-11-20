@@ -9,54 +9,58 @@
 
 \begin{quote}
 Day-to-day care and feeding of XSB including bug fixes, ports, and
-configuration management has been done by Kostis Sagonas, David
-Warren, Terrance Swift, Prasad Rao, Steve Dawson, Juliana Freire,
-Ernie Johnson, Baoqiu Cui, Michael Kifer, Bart Demoen and Luis F.
-Castro.
+configuration management has been done by David Warren, Terrance
+Swift, Kostis Sagonas, Prasad Rao, Steve Dawson, Juliana Freire, Ernie
+Johnson, Baoqiu Cui, Michael Kifer, Bart Demoen and Luis F.  Castro.
 
 In \version, the core engine development of the SLG-WAM has been
 mainly implemented by Terrance Swift, Kostis Sagonas, Prasad Rao,
 Juliana Freire, Ernie Johnson, Luis Castro and Rui Marques.  The
 breakdown, very roughly, was that Terrance Swift wrote the initial
-tabling engine, the SLG-WAM, and built-ins.  Prasad Rao reimplemented
-the engine's tabling subsystem to use tries for variant-based table
-access and Ernie Johnson extended and refactored these routines in a
-number of ways, including adding call subsumption.  Kostis Sagonas
-implemented most of tabled negation.  Juliana Freire revised the table
-scheduling mechanism starting from Version~1.5.0 to create the batched
-and local scheduling that is currently used.  Baoqiu Cui revised the
-data structures used to maintain delay lists, and added attributed
-variables to the engine.  Finally, Luis Castro rewrote the emulator to
-use jump tables and wrote a heap-garbage collector for the SLG-WAM.
-Rui Marques was mainly responsible for making XSB multi-threaded, as
-well as for the concurrency control algorithms used for shared tables.
+tabling engine, the SLG-WAM, and its built-ins.  Prasad Rao
+reimplemented the engine's tabling subsystem to use tries for
+variant-based table access and Ernie Johnson extended and refactored
+these routines in a number of ways, including adding call subsumption.
+Kostis Sagonas implemented most of tabled negation.  Juliana Freire
+revised the table scheduling mechanism starting from Version~1.5.0 to
+create the batched and local scheduling that is currently used.
+Baoqiu Cui revised the data structures used to maintain delay lists,
+and added attributed variables to the engine.  Finally, Luis Castro
+rewrote the emulator to use jump tables and wrote a heap-garbage
+collector for the SLG-WAM.  Rui Marques was responsible for the
+concurrency control algorithms used for shared tables, and mainly
+responsible for making the XSB engine multi-threaded,
 
 Other engine work includes the following.  Memory expansion code for
-WAM stacks was written by Ernie Johnson and Bart Demoen.  Heap garbage
-collection was written by Luis de Castro, Kostis Sagonis and Bart
-Demoen.  Rui Marques improved the trailing of the SLG-WAM and rewrote
-much of the engine to make it compliant with 64-bit architectures.
-Assert and retract code was based on code written by Jiyang Xu and
-significantly revised by David S. Warren, who added alternative,
-multiple, and star indexing.  Trie assert/retract code, and trie
-interning code was written by Prasad Rao, as was most code for
-reclaiming table space. The current version of {\tt findall/3} was
-re-written from scratch by Bart Demoen, as was XSB's throw and catch
-mechanism.  64-bit floats were added by Charles Rojo.
+WAM stacks was written by Ernie Johnson, Bart Demoen and David
+S. Warren.  Heap garbage collection was written by Luis de Castro,
+Kostis Sagonis and Bart Demoen.  Atom space garbage collection was
+written by David Warren; table garbage collection was written by
+Terrance Swift based in part on space reclamation code written by
+Prasad Rao.  Rui Marques rewrote much of the engine to make it
+compliant with 64-bit architectures.  Assert and retract code was
+based on code written by Jiyang Xu; it significantly revised by David
+S. Warren, who added alternative, multiple, and star indexing and by
+Terrance Swift who implemented dynamic clause garbage collection. Trie
+assert/retract code, and trie interning code was written by Prasad
+Rao, as was most code for reclaiming table space. The current version
+of {\tt findall/3} was re-written from scratch by Bart Demoen, as was
+XSB's throw and catch mechanism.  64-bit floats were added by Charles
+Rojo.  The incremental table maintenance subsystem was designed and
+implemented by Diptikalyan Saha.
 
-In terms of Prolog code, Kostis Sagonas was responsible for HiLog
-compilation and associated built-ins as well as coding or revising many
-standard predicates.  Steve Dawson implemented Unification Factoring.
-The revision of XSB's I/O into ISO-compatable streams was done by
-Michael Kifer and Terrance Swift.  The {\tt auto\_table} and {\tt
-suppl\_table} directives were written by Kostis Sagonas.  The DCG
-expansion module was written by Kostis Sagonas for non-tabled code and
-by Baoqiu Cui, Terrance Swift and David Warren for tabled code.  The
-handling of the {\tt multifile} directive was written by Baoqiu
-Cui. C.R. Ramakrishnan wrote the mode analyzer for XSB.  Michael Kifer
-implemented the {\tt storage} module.  The incremental table
-maintenance subsystem was designed and implemented by Diptikalyan
-Saha.
+In terms of core system Prolog code, Kostis Sagonas was responsible
+for HiLog compilation and associated built-ins as well as coding or
+revising many standard predicates.  Steve Dawson implemented
+Unification Factoring.  The revision of XSB's I/O into ISO-compatable
+streams was done by Michael Kifer and Terrance Swift.  The {\tt
+  auto\_table} and {\tt suppl\_table} directives were written by
+Kostis Sagonas.  The DCG expansion module was written by Kostis
+Sagonas for non-tabled code and by Baoqiu Cui, Terrance Swift and
+David Warren for tabled code.  The handling of the {\tt multifile}
+directive was written by Baoqiu Cui. C.R. Ramakrishnan wrote the mode
+analyzer for XSB.  Michael Kifer implemented the {\tt storage} module.
+The multi-threaded API was written by Terrance Swift and Rui Marques.
 
 For configuration management, Michael Kifer rewrote parts of the XSB
 code to make XSB configurable with GNU's Autoconf, implemented XSB's

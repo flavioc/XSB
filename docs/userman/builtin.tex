@@ -2275,6 +2275,20 @@ regardless of whether {\tt +P} is ground or not.
     \end{minipage}
     \end{center}
 
+\ournewitem{between(+L,+U,B)}{basics}\index{\texttt{between/3}} 
+%
+For {\tt L} and {\tt U} integers, with {\tt L} less than or equal to
+{\tt U}, successive calls to {\tt between/3} unify {\tt B} with all
+integers between {\tt L} and {\tt U} inclusively.  If {\tt L} is less
+than {\tt U} the predicate fails.
+
+{\bf Error Cases:}
+\bi
+\item 	{\tt L} (or {\tt U}) is a not a character
+\bi
+\item 	{\tt type\_error(integer,L)}
+\ei
+\ei
 \end{description}
 
 %-------------------------------------------------------------------------
