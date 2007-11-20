@@ -25,7 +25,7 @@
 
 :- export append/3, copy_term/2, flatten/2, ground/1, ith/3, length/2, 
 	  member/2, memberchk/2, subset/2, subseq/3, reverse/2, select/3, 
-   	  for/3.
+   for/3, between/3.
 :- export log_ith/3, log_ith_bound/3.
 :- export logk_ith/4.
 :- export comma_memberchk/2, abscomma_memberchk/2, comma_to_list/2,
@@ -34,3 +34,4 @@
 :- import term_type/2 from machine.
 :- import integer/1, is_list/1 from standard.
 :- import arg/3, functor/3 from standard.
+:- import check_integer/3 from error_handler.
