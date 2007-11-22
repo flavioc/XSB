@@ -81,6 +81,8 @@ Source: "C:\XSB\packages\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: p
 Filename: "{app}\{#MyAppUrlName}"; Section: "InternetShortcut"; Key: "URL"; String: "{#MyAppURL}"; Components: base
 
 [Icons]
+Name: "{group}\XSB"; Filename: "{app}\config\x86-pc-windows\bin\xsb.exe"; Parameters: ""; Comment: "Runs XSB within a command shell"; WorkingDir: "{userdocs}"; Components: base; Flags: createonlyiffileexists
+
 Name: "{group}\License"; Filename: "{app}\LICENSE"; Components: base
 Name: "{group}\Read Me"; Filename: "{app}\README"; Components: base
 
