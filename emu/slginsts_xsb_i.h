@@ -255,11 +255,7 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
 	waiting_for_thread = find_context(table_tid) ;
 	if( would_deadlock( table_tid, xsb_thread_id ) )
         {       /* code for leader */
-     		pthread_mutex_unlock(&completing_mut);
                 reset_other_threads( th, waiting_for_thread, producer_sf );
-     		pthread_mutex_lock(&completing_mut);
-        	SYS_MUTEX_INCR( MUTEX_COMPL );
-                reset_thread_deps( th, waiting_for_thread, producer_sf );
                 th->deadlock_brk_leader = TRUE ;
                 continue ;
         }
