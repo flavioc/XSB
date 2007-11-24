@@ -136,11 +136,14 @@ case IS_INCOMPLETE: {
         waiting_for_thread = find_context(table_tid) ;
         if( would_deadlock( table_tid, xsb_thread_id ) )
 	{	/* code for leader */
+     		pthread_mutex_unlock(&completing_mut);
                 reset_other_threads( th, waiting_for_thread, producerSF );
+     		pthread_mutex_lock(&completing_mut);
+                reset_thread_deps( th, waiting_for_thread, producerSF );
                 th->deadlock_brk_leader = TRUE ;
                 pthread_cond_broadcast(&completing_cond) ;
-		reset_leader( th ) ;
                 pthread_mutex_unlock(&completing_mut) ;
+		reset_leader( th ) ;
 		return TRUE ;
 	}
 	th->waiting_for_subgoal = producerSF ;

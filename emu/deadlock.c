@@ -69,6 +69,7 @@ static void reset_thread( th_context *th, th_context *ctxt, VariantSF sgf,
 	   thread should not be reset */
 	if( subg_grabbed(sgf) )
 	{	subg_tid(sgf) = xsb_thread_id ;
+        	*resetsgf = sgf ;
 		return ;
 	}
 	ctxt->reset_thread = TRUE ;
@@ -112,12 +113,26 @@ void reset_other_threads( th_context *th, th_context *ctxt, VariantSF sgf )
 	reset_thread( th, ctxt, sgf, &resetsgf );
         while( ctxt != th )
 	{	next = find_context(ctxt->waiting_for_tid);
-                ctxt->deadlock_brk_leader = FALSE ;
-                ctxt->waiting_for_subgoal = resetsgf ;
-                ctxt->waiting_for_tid = xsb_thread_id ;
                 if( next != th )
                         reset_thread( th, next, ctxt->waiting_for_subgoal,
 					&resetsgf );
+                ctxt = next ;
+	}
+}
+
+void reset_thread_deps( th_context *th, th_context *ctxt, VariantSF sgf )
+{
+	th_context *next ;
+	VariantSF resetsgf ;
+
+	resetsgf = bottom_leader(ctxt, sgf);
+        while( ctxt != th )
+	{	next = find_context(ctxt->waiting_for_tid);
+                ctxt->deadlock_brk_leader = FALSE ;
+                ctxt->waiting_for_subgoal = resetsgf ;
+                ctxt->waiting_for_tid = xsb_thread_id ;
+		if( next != th )
+			resetsgf = bottom_leader(next, ctxt->waiting_for_subgoal);
                 ctxt = next ;
 	}
 }
