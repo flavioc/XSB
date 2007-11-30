@@ -27,7 +27,7 @@ SolidCompression=yes
 PrivilegesRequired=none
 
 VersionInfoVersion=3.1
-VersionInfoCopyright=© Paulo Moura, 2007
+VersionInfoCopyright=© The Research Foundation of SUNY, 1986, 1993-2002
 
 AllowRootDirectory=yes
 UninstallFilesDir="{userdocs}\XSB uninstaller"
