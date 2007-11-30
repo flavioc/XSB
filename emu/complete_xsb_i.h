@@ -171,7 +171,9 @@ XSB_Start_Instr(check_complete,_check_complete)
       
       CompleteSimplifyAndReclaim(CTXTc cs_ptr);
 #ifdef SHARED_COMPL_TABLES
+    pthread_mutex_lock(&completing_mut);
     pthread_cond_broadcast(&completing_cond);
+    pthread_mutex_unlock(&completing_mut);
 #endif
 
     /* TLS: not sure about condition: how could subg_answers be true
