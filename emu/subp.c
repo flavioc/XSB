@@ -83,11 +83,6 @@ extern xsbBool quotes_are_needed(char *string);
 
 /*======================================================================*/
 
-#undef IFTHEN_FAILED
-#define IFTHEN_FAILED	return 0
-#undef IFTHEN_SUCCEED
-#define IFTHEN_SUCCEED	return 1
-
 double realtime_count_gl;
 
 #ifndef MULTI_THREAD
@@ -170,6 +165,11 @@ Cell build_interrupt_chain(CTXTdecl) {
 /*======================================================================*/
 /*  Unification routines.						*/
 /*======================================================================*/
+/* the follow redefinitions change how the unify_xsb() macro below works! */
+#undef IFTHEN_FAILED
+#define IFTHEN_FAILED	return 0
+#undef IFTHEN_SUCCEED
+#define IFTHEN_SUCCEED	return 1
 
 xsbBool unify(CTXTdeclc Cell rop1, Cell rop2)
 { /* begin unify */
