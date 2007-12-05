@@ -440,7 +440,6 @@ restore_shown.
 %% Stop showing trace; save the old shown
 %% If showing nothing, then noop.
 show_nothing :- setof(X, shown(X,_), L),
-	    	L \= [],
 		!,
 	        retractall('_$_deb_old_show'(_)),
 	        assert('_$_deb_old_show'(L)),

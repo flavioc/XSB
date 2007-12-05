@@ -33,7 +33,7 @@
 
 :- import for/3 from basics.
 
-:- import  abort/1, atom_codes/2, '\='/2, repeat/0, integer/1,
+:- import  abort/1, atom_codes/2, repeat/0, integer/1,
                file_exists/1, atom/1
       from standard.
 

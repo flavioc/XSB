@@ -1046,7 +1046,7 @@ halt :- halt.
 %---------------%
 
 X = X.
-X \= Y :- ( X = Y, !, fail) ; true.
+X \= Y :- \+ ( X = Y ).
 
 %-------------------%
 %  Term comparison  %

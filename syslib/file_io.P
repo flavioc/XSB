@@ -307,7 +307,7 @@ path_sysop(readable, Path) :- !, sys_access(Path, 'r', Res), Res =:= 0.
 path_sysop(writable, Path) :- !, sys_access(Path, 'w', Res), Res =:= 0.
 path_sysop(executable, Path) :- !, sys_access(Path, 'x', Res), Res =:= 0.
 path_sysop(modtime,Path,Time) :- !,
-	file_time(Path,time(Time1,Time2)), Time = [Time1,Time2], Time \= [0,0].
+	file_time(Path,time(Time1,Time2)), Time = [Time1,Time2], Time \== [0,0].
 path_sysop(newerthan,Path1,Path2) :- !,
 	file_time(Path1,time(Time11,Time12)),
 	file_time(Path2,time(Time21,Time22)),
