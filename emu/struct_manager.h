@@ -365,18 +365,8 @@ extern xsbBool smIsAllocatedStructRef(Structure_Manager, void *);
  *  Allocate a structure from the Structure Manager.
  */
 
-#define SM_AllocateSharedStruct(SM,pStruct) {		\
-  SM_Lock(SM);						\
-  if ( IsNonNULL(SM_FreeList(SM)) ) {			\
-    SM_AllocateFree(SM,pStruct);			\
-  }							\
-  else {						\
-    if ( SM_CurBlockIsDepleted(SM) ) {			\
-      smAllocateBlock(&SM);				\
-    }							\
-    SM_AllocateFromBlock(SM,pStruct);			\
-  }							\
-  SM_Unlock(SM);					\
+#define SM_AllocateSharedStruct(SM,pStruct) {				\
+  pStruct = mem_alloc(SM_StructSize(SM),TABLE_SPACE);            	\
  }
 
 #define SM_AllocateStruct(SM,pStruct) {		\
@@ -419,14 +409,11 @@ extern xsbBool smIsAllocatedStructRef(Structure_Manager, void *);
 #define SM_DeallocateSharedStructList(SM,pHead,pTail) {	\
    void *pStruct = pHead;				\
    while (pStruct != pTail) {				\
-     *(((prolog_int *)pStruct)+1) = FREE_TRIE_NODE_MARK;	\
+     void *pStmp = pStruct ;				\
      pStruct = *(void **)pStruct;			\
+     /*mem_dealloc(pStmp,SM_StructSize(SM),TABLE_SPACE);*/	\
    }							\
-   *(((prolog_int *)pStruct)+1) = FREE_TRIE_NODE_MARK;		\
-   SM_Lock(SM);						\
-   SMFL_NextFreeStruct(pTail) = SM_FreeList(SM);	\
-   SM_FreeList(SM) = pHead;				\
-   SM_Unlock(SM);					\
+   /*mem_dealloc(pStruct,SM_StructSize(SM),TABLE_SPACE);*/	\
  }
 #else
 #define SM_DeallocateSharedStructList(SM,pHead,pTail)  \

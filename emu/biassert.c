@@ -2324,10 +2324,7 @@ Structure_Manager smDelCF      = SM_InitDecl(DeletedClauseFrame, DELCFs_PER_BLOC
    if lastdcf is not null, just stick it on the end; otherwise adjust
    Prref's delcf pointer. */
 DelCFptr new_DelCF_pred(CTXTdeclc PrRef pPrRef,Psc pPSC,
-			DelCFptr *chain_begin,Structure_Manager *SM) {
-  DelCFptr pDCF; 
-
-  SM_AllocateStruct(*SM,( pDCF));	     
+			DelCFptr *chain_begin, DelCFptr pDCF ) {
   //  pDCF = (DelCFptr)mem_alloc(sizeof(DeletedClauseFrame),ASSERT_SPACE); 
   //if ( IsNULL(pDCF) )							
   //  xsb_abort("Ran out of memory in allocation of DeletedClauseFrame"); 
@@ -2353,11 +2350,7 @@ DelCFptr new_DelCF_pred(CTXTdeclc PrRef pPrRef,Psc pPSC,
    that they will be abolished before any pred-level retractalls for
    the same predicate. */
 DelCFptr new_DelCF_clause(PrRef pPrRef,Psc pPSC,ClRef pClRef,
-				 DelCFptr *chain_begin,Structure_Manager *SM) {
-  DelCFptr pDCF; 
-
-  SM_AllocateStruct(*SM,( pDCF));	     
-
+				 DelCFptr *chain_begin, DelCFptr pDCF) {
   //  pDCF = (DelCFptr)mem_alloc(sizeof(DeletedClauseFrame),ASSERT_SPACE); 
   //    if ( IsNULL(pDCF) )							
   //      xsb_abort("Ran out of memory in allocation of DeletedClauseFrame"); 
@@ -2402,7 +2395,7 @@ DelCFptr new_DelCF_clause(PrRef pPrRef,Psc pPSC,ClRef pClRef,
   if (DCF_NextPredDCF(pDCF) != 0) {					\
     DCF_PrevPredDCF(DCF_NextPredDCF(pDCF)) = DCF_PrevPredDCF(pDCF);	\
   }									\
-  SM_DeallocateSharedStruct(SM,pDCF);					\
+  SM_DeallocatePossSharedStruct(SM,pDCF);				\
 }
 
 /* * * * * * * * * */
@@ -2430,7 +2423,8 @@ void check_insert_global_delcf_pred(CTXTdeclc PrRef prref,Psc psc) {
     }
     dcf = DCF_NextPredDCF(dcf);
   }
-  dcf = new_DelCF_pred(CTXTc prref,psc,&delcf_chain_begin,&smDelCF);
+  SM_AllocateSharedStruct( smDelCF, dcf ) ;
+  dcf = new_DelCF_pred(CTXTc prref,psc,&delcf_chain_begin,dcf);
   SYS_MUTEX_UNLOCK(MUTEX_DYNAMIC);
 }
 
@@ -2446,7 +2440,8 @@ void check_insert_private_delcf_pred(CTXTdeclc PrRef prref,Psc psc) {
     }
     dcf = DCF_NextPredDCF(dcf);
   }
-  dcf = new_DelCF_pred(CTXTc prref,psc,&private_delcf_chain_begin,private_smDelCF);
+  SM_AllocateStruct( *private_smDelCF, dcf ) ;
+  new_DelCF_pred(CTXTc prref,psc,&private_delcf_chain_begin,dcf);
 }
 #endif
 
@@ -2468,7 +2463,8 @@ void check_insert_global_delcf_clause(CTXTdeclc PrRef prref,
   //    dcf = DCF_NextPredDCF(dcf);
   //  }
   if (!found) {
-    dcf = new_DelCF_clause(prref,psc,clref,&delcf_chain_begin,&smDelCF);
+    SM_AllocateSharedStruct( smDelCF, dcf ) ;
+    new_DelCF_clause(prref,psc,clref,&delcf_chain_begin,dcf);
   }
   SYS_MUTEX_UNLOCK(MUTEX_DYNAMIC);
 }
@@ -2488,6 +2484,7 @@ void check_insert_private_delcf_clause(CTXTdeclc PrRef prref,
   //    dcf = DCF_NextPredDCF(dcf);
   //  }
   if (!found) {
+    SM_AllocateStruct( *private_smDelCF, dcf ) ;
     dcf = new_DelCF_clause(prref,psc,clref,&private_delcf_chain_begin,private_smDelCF);
   }
 }
@@ -2678,6 +2675,7 @@ int gc_dynamic(CTXTdecl)
   if (flags[NUM_THREADS] == 1 ) {
     if (!delcf_chain_begin && !private_delcf_chain_begin) return 0;
     if (!mark_dynamic(CTXT)) {
+      SET_TRIE_ALLOCATION_TYPE_PRIVATE() ;
       ctr = sweep_dynamic(CTXTc &delcf_chain_begin,private_smDelCF) + 
 	sweep_dynamic(CTXTc &private_delcf_chain_begin,private_smDelCF);
     }
@@ -2685,6 +2683,7 @@ int gc_dynamic(CTXTdecl)
   } else {
     if (!private_delcf_chain_begin) return 0;
     if (!mark_dynamic(CTXT)) {
+      SET_TRIE_ALLOCATION_TYPE_PRIVATE() ;
       ctr = sweep_dynamic(CTXTc &private_delcf_chain_begin,private_smDelCF);
     }
     unmark_cpstack_retract(CTXT);
@@ -2692,6 +2691,7 @@ int gc_dynamic(CTXTdecl)
 #else 
     if (!delcf_chain_begin) return 0;
     if (!mark_dynamic(CTXT)) {
+      SET_TRIE_ALLOCATION_TYPE_SHARED() ;
       ctr = sweep_dynamic(CTXTc &delcf_chain_begin,&smDelCF);
     }
     unmark_cpstack_retract(CTXT);

@@ -717,10 +717,12 @@ void table_complete_entry(CTXTdeclc VariantSF producerSF) {
       /* Can't deallocate answer return list for CONC_COMPL shared tables */
       SM_DeallocateSharedStructList(smALN,pRealAnsList,
 			      subg_ans_list_tail(producerSF));
+      subg_ans_list_tail(producerSF) = NULL;
 #endif
     } else {
       SM_DeallocateStructList(*private_smALN,pRealAnsList,
 			      subg_ans_list_tail(producerSF));
+      subg_ans_list_tail(producerSF) = NULL;
     }
 #else
       SM_DeallocateStructList(smALN,pRealAnsList,

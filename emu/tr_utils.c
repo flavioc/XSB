@@ -425,11 +425,11 @@ static void free_trie_ht(CTXTdeclc BTHTptr ht) {
 	SM_Lock(*smBTHT);
 #endif
   TrieHT_RemoveFromAllocList(*smBTHT,ht);
-  SM_DeallocateStruct(*smBTHT,ht); 
 #ifdef MULTI_THREAD
   if( threads_current_sm == SHARED_SM )
 	SM_Unlock(*smBTHT);
 #endif
+  SM_DeallocatePossSharedStruct(*smBTHT,ht); 
 }
 
 /* -------------------------------------------------------------- 
@@ -438,7 +438,7 @@ static void free_trie_ht(CTXTdeclc BTHTptr ht) {
  * ------------------------------------------------------------ */
 
 #ifdef MULTI_THREAD
-#define GLOBAL_TABLE    (threads_current_sm == PRIVATE_SM)		
+#define GLOBAL_TABLE    (threads_current_sm == SHARED_SM)		
 #endif
 
 void release_any_pndes(CTXTdeclc PNDE firstPNDE) {
@@ -786,6 +786,7 @@ void reclaim_deleted_subsumptive_table(CTXTdeclc DelTFptr);
 void reclaim_deleted_predicate_table(CTXTdeclc DelTFptr deltf_ptr) {
   TIFptr tif = subg_tif_ptr(DTF_Subgoals(deltf_ptr));
 
+  SET_TRIE_ALLOCATION_TYPE_TIP(tif);
   if ( IsVariantPredicate(tif) ) {
     delete_variant_table(CTXTc DTF_CallTrie(deltf_ptr), get_incr(TIF_PSC(tif)),DTF_Warn(deltf_ptr));
   } else reclaim_deleted_subsumptive_table(CTXTc deltf_ptr);
@@ -1068,7 +1069,7 @@ void delete_trie(CTXTdeclc BTNptr iroot) {
     switch (delete_trie_op[trie_op_top--]) {
     case DT_DS:
       root = delete_trie_node[trie_node_top--];
-      SM_DeallocateSharedStruct(*smBTN,root);
+      SM_DeallocatePossSharedStruct(*smBTN,root);
       break;
     case DT_HT:
       free_trie_ht(CTXTc delete_trie_hh[trie_hh_top--]);

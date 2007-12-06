@@ -311,8 +311,8 @@ BTHTptr  New_BTHT(CTXTdeclc Structure_Manager * SM,int TrieType) {
 
    if (threads_current_sm == SHARED_SM) {
      /* Lock shared BTHT structure manager and malloc BTHT array */
+     SM_AllocateSharedStruct(*SM,btht);
      SM_Lock(*SM);
-     SM_AllocateStruct(*SM,btht);
      SM_AddToAllocList_DL(*SM,((BTHTptr)btht),BTHT_PrevBTHT,BTHT_NextBTHT);
      SM_Unlock(*SM);
      BTHT_BucketArray(((BTHTptr)btht)) =				\
