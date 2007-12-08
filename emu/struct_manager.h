@@ -411,9 +411,9 @@ extern xsbBool smIsAllocatedStructRef(Structure_Manager, void *);
    while (pStruct != pTail) {				\
      void *pStmp = pStruct ;				\
      pStruct = *(void **)pStruct;			\
-     /*mem_dealloc(pStmp,SM_StructSize(SM),TABLE_SPACE);*/	\
+     mem_dealloc(pStmp,SM_StructSize(SM),TABLE_SPACE);	\
    }							\
-   /*mem_dealloc(pStruct,SM_StructSize(SM),TABLE_SPACE);*/	\
+   mem_dealloc(pStruct,SM_StructSize(SM),TABLE_SPACE);	\
  }
 #else
 #define SM_DeallocateSharedStructList(SM,pHead,pTail)  \

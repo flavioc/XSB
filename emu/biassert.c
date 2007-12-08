@@ -2424,7 +2424,7 @@ void check_insert_global_delcf_pred(CTXTdeclc PrRef prref,Psc psc) {
     dcf = DCF_NextPredDCF(dcf);
   }
   SM_AllocateSharedStruct( smDelCF, dcf ) ;
-  dcf = new_DelCF_pred(CTXTc prref,psc,&delcf_chain_begin,dcf);
+  new_DelCF_pred(CTXTc prref,psc,&delcf_chain_begin,dcf);
   SYS_MUTEX_UNLOCK(MUTEX_DYNAMIC);
 }
 
@@ -2485,7 +2485,7 @@ void check_insert_private_delcf_clause(CTXTdeclc PrRef prref,
   //  }
   if (!found) {
     SM_AllocateStruct( *private_smDelCF, dcf ) ;
-    dcf = new_DelCF_clause(prref,psc,clref,&private_delcf_chain_begin,private_smDelCF);
+    new_DelCF_clause(prref,psc,clref,&private_delcf_chain_begin,dcf);
   }
 }
 
