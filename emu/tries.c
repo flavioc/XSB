@@ -912,7 +912,13 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
   byte choicepttype;  /* for incremental evaluation */ 
   byte typeofinstr;   /* for incremental evaluation */ 
 
+#ifndef MULTI_THREAD
   ans_chk_ins++; /* Counter (answers checked & inserted) */
+#else
+#ifdef NON_OPT_COMPILE
+  ans_chk_ins++; /* Counter (answers checked & inserted) */
+#endif
+#endif
 
   VarEnumerator_trail_top = (CPtr *)(& VarEnumerator_trail[0]) - 1;
   AnsVarCtr = 0;
@@ -1136,7 +1142,13 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
       if ( flag == 0 ) {
 	MakeLeafNode(Paren);
 	TN_UpgradeInstrTypeToSUCCESS(Paren,tag);
+#ifndef MULTI_THREAD
 	ans_inserts++;
+#else
+#ifdef NON_OPT_COMPILE
+	ans_inserts++;
+#endif
+#endif
 	
 	New_ALN(subgoal_ptr,answer_node,Paren,NULL);
 	SF_AppendNewAnswer(subgoal_ptr,answer_node);
@@ -1614,7 +1626,13 @@ void variant_call_search(CTXTdeclc TabledCallInfo *call_info,
   int ctr, attv_ctr;
   BTNptr Paren, *GNodePtrPtr;
 
+#ifndef MULTI_THREAD
   subg_chk_ins++;
+#else
+#ifdef NON_OPT_COMPILE
+  subg_chk_ins++;
+#endif
+#endif
   Paren = TIF_CallTrie(CallInfo_TableInfo(*call_info));
   GNodePtrPtr = &BTN_Child(Paren);
   arity = CallInfo_CallArity(*call_info);
@@ -1720,7 +1738,13 @@ void variant_call_search(CTXTdeclc TabledCallInfo *call_info,
    *  If an insertion was performed, do some maintenance on the new leaf.
    */
   if ( flag == 0 ) {
+#ifndef MULTI_THREAD
     subg_inserts++;
+#else
+#ifdef NON_OPT_COMPILE
+    subg_inserts++;
+#endif
+#endif
     MakeLeafNode(Paren);
     TN_UpgradeInstrTypeToSUCCESS(Paren,tag);
   }

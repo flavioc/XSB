@@ -188,9 +188,9 @@ void *mem_calloc(unsigned long size, unsigned long occs, int category)
 #ifdef NON_OPT_COMPILE
     //    printf("Callocing size %d occs %d category %d\n",size,occs,category);
     memcount_gl.num_mem_allocs++;
-   SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
-#endif
+    SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
     pspacesize[category] += length;
+#endif
     ptr = (byte *) calloc(size,occs);
 #if defined(GENERAL_TAGGING)
     //    printf("mem_calloc %x %x\n",ptr,ptr+length);
@@ -215,8 +215,8 @@ void *mem_realloc(void *addr, unsigned long oldsize, unsigned long newsize, int 
 #ifdef NON_OPT_COMPILE
     memcount_gl.num_mem_reallocs++;
     SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
-#endif
     pspacesize[category] = pspacesize[category] - oldsize + newsize;
+#endif
     addr = (byte *) realloc(addr,newsize);
 #if defined(GENERAL_TAGGING)
     extend_enc_dec_as_nec(addr,addr+newsize);
@@ -237,8 +237,8 @@ void *mem_realloc_nocheck(void *addr, unsigned long oldsize, unsigned long newsi
 #ifdef NON_OPT_COMPILE
     memcount_gl.num_mem_reallocs++;
     SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
-#endif
     pspacesize[category] = pspacesize[category] - oldsize + newsize;
+#endif
     addr = (byte *) realloc(addr,newsize);
 #if defined(GENERAL_TAGGING)
     extend_enc_dec_as_nec(addr,addr+newsize);
@@ -259,9 +259,9 @@ void mem_dealloc(void *addr, unsigned long size, int category)
 #ifdef NON_OPT_COMPILE
     memcount_gl.num_mem_deallocs++;
     SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
-#endif
     //    if (size > 0) for (i=0; i<size/4-1; i++) *((CPtr *)addr + i) = (CPtr)0xefefefef;
     pspacesize[category] -= size;
+#endif
     free(addr);
 #ifdef NON_OPT_COMPILE
     SYS_MUTEX_UNLOCK_NOERROR(MUTEX_MEM);
