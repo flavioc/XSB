@@ -134,8 +134,12 @@ void *mem_alloc(unsigned long size, int category)
 #ifdef NON_OPT_COMPILE
     memcount_gl.num_mem_allocs++;
     SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
-#endif
     pspacesize[category] += size;
+#else
+#ifndef MULTI_THREAD
+    pspacesize[category] += size;
+#endif
+#endif
 
     ptr = (byte *) malloc(size);
 
@@ -164,8 +168,14 @@ void *mem_alloc_nocheck(unsigned long size, int category)
 #ifdef NON_OPT_COMPILE
     memcount_gl.num_mem_allocs++;
     SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
-#endif
     pspacesize[category] += size;
+#else
+#ifndef MULTI_THREAD
+    pspacesize[category] += size;
+#endif
+#endif
+
+
     ptr = (byte *) malloc(size);
 #if defined(GENERAL_TAGGING)
     //    printf("mem_alloc %x %x\n",ptr,ptr+size);
@@ -190,7 +200,12 @@ void *mem_calloc(unsigned long size, unsigned long occs, int category)
     memcount_gl.num_mem_allocs++;
     SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
     pspacesize[category] += length;
+#else
+#ifndef MULTI_THREAD
+    pspacesize[category] += length;
 #endif
+#endif
+
     ptr = (byte *) calloc(size,occs);
 #if defined(GENERAL_TAGGING)
     //    printf("mem_calloc %x %x\n",ptr,ptr+length);
@@ -216,7 +231,12 @@ void *mem_realloc(void *addr, unsigned long oldsize, unsigned long newsize, int 
     memcount_gl.num_mem_reallocs++;
     SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
     pspacesize[category] = pspacesize[category] - oldsize + newsize;
+#else
+#ifndef MULTI_THREAD
+    pspacesize[category] = pspacesize[category] - oldsize + newsize;
 #endif
+#endif
+
     addr = (byte *) realloc(addr,newsize);
 #if defined(GENERAL_TAGGING)
     extend_enc_dec_as_nec(addr,addr+newsize);
@@ -238,7 +258,12 @@ void *mem_realloc_nocheck(void *addr, unsigned long oldsize, unsigned long newsi
     memcount_gl.num_mem_reallocs++;
     SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
     pspacesize[category] = pspacesize[category] - oldsize + newsize;
+#else
+#ifndef MULTI_THREAD
+    pspacesize[category] = pspacesize[category] - oldsize + newsize;
 #endif
+#endif
+
     addr = (byte *) realloc(addr,newsize);
 #if defined(GENERAL_TAGGING)
     extend_enc_dec_as_nec(addr,addr+newsize);
@@ -261,7 +286,12 @@ void mem_dealloc(void *addr, unsigned long size, int category)
     SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
     //    if (size > 0) for (i=0; i<size/4-1; i++) *((CPtr *)addr + i) = (CPtr)0xefefefef;
     pspacesize[category] -= size;
+#else
+#ifndef MULTI_THREAD
+    pspacesize[category] -= size;
 #endif
+#endif
+
     free(addr);
 #ifdef NON_OPT_COMPILE
     SYS_MUTEX_UNLOCK_NOERROR(MUTEX_MEM);
