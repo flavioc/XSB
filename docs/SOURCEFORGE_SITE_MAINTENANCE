@@ -26,4 +26,6 @@ manual1 -- subdirectory for manual vol. 1
 manual2 -- subdirectory for manual vol. 2
 packages -- subdirecotry for packages manuals
 
-
+-- Finally, update the news.  Login to sourceforge, under the admin
+menu, click news, then submit.  this will bring you to a form where
+you can submit the news story.
