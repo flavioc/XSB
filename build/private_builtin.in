@@ -45,6 +45,7 @@
 
 #include "setjmp_xsb.h"
 #include "auxlry.h"
+#include "context.h" // required for bld_boxedfloat prototype in cell_xsb.h
 #include "cell_xsb.h"
 #include "error_xsb.h"
 #include "cinterf.h"
