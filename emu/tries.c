@@ -1154,7 +1154,13 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
   if ( flag == 0 ) {
     MakeLeafNode(Paren);
     TN_UpgradeInstrTypeToSUCCESS(Paren,tag);
+#ifndef MULTI_THREAD
     ans_inserts++;
+#else
+#ifdef NON_OPT_COMPILE
+    ans_inserts++;
+#endif
+#endif
 
     New_ALN(subgoal_ptr,answer_node,Paren,NULL);
     SF_AppendNewAnswer(subgoal_ptr,answer_node);
