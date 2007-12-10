@@ -274,15 +274,7 @@ BTNptr new_btn(CTXTdeclc int trie_t, int node_t, Cell symbol, BTNptr parent,
 
   void *btn;
 
-#ifdef MULTI_THREAD  
-  if (threads_current_sm == PRIVATE_SM) {
-    SM_AllocateStruct(*smBTN,btn);
-  } else {
-    SM_AllocateSharedStruct(*smBTN,btn);
-    }
-#else
-  SM_AllocateStruct(*smBTN,btn);
-#endif
+  SM_AllocatePossSharedStruct( *smBTN, btn );
   TN_Init(((BTNptr)btn),trie_t,node_t,symbol,parent,sibling);
   return (BTNptr)btn;
 }
