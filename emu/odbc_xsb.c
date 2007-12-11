@@ -29,6 +29,7 @@
 
 #ifdef CYGWIN
 #define FAR
+#include "windows.h" // main win32api include for Cygwin
 #include "sql.h"
 #include "sqlext.h"
 #include "odbc_string.h"
