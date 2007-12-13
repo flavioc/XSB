@@ -411,7 +411,14 @@ void consume_subsumptive_answer(CTXTdeclc BTNptr pAnsLeaf, int sizeTmplt,
     consumption_error(CTXTc "Bad answer handle");
     return;
   }
+#ifndef MULTI_THREAD
   NumSubOps_AnswerConsumption++;
+#else
+#ifdef NON_OPT_COMPILE
+  NumSubOps_AnswerConsumption++;
+#else
+#endif
+#endif
 
   /* Initialize Data Structs
      ----------------------- */
