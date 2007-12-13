@@ -79,15 +79,29 @@
 /* Sizes of the Data Regions in K-byte blocks
    ------------------------------------------ */
 #ifdef BITS64
+#ifdef SHARED_COMPL_TABLES
+#define PDL_DEFAULT_SIZE         (8*2)
+#define GLSTACK_DEFAULT_SIZE    (96*2)
+#define TCPSTACK_DEFAULT_SIZE   (96*2)
+#define COMPLSTACK_DEFAULT_SIZE  (8*2)
+#else /* SEQUENTIAL OR CONC_COMPL */
 #define PDL_DEFAULT_SIZE         (64*2)
 #define GLSTACK_DEFAULT_SIZE    (768*2)
 #define TCPSTACK_DEFAULT_SIZE   (768*2)
 #define COMPLSTACK_DEFAULT_SIZE  (64*2)
-#else
+#endif /* SHARED_COMPL_TABLES */
+#else /* 32 BIT */
+#ifdef SHARED_COMPL_TABLES
+#define PDL_DEFAULT_SIZE         8
+#define GLSTACK_DEFAULT_SIZE    96
+#define TCPSTACK_DEFAULT_SIZE   96
+#define COMPLSTACK_DEFAULT_SIZE  8
+#else /* SEQUENTIAL OR CONC_COMPL*/
 #define PDL_DEFAULT_SIZE         64
 #define GLSTACK_DEFAULT_SIZE    768
 #define TCPSTACK_DEFAULT_SIZE   768
 #define COMPLSTACK_DEFAULT_SIZE  64
+#endif
 #endif
 
 #ifndef fileno				/* fileno may be a  macro */
