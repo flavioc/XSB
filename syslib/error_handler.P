@@ -264,7 +264,7 @@ domain_error(Valid_type,Culprit,Predicate,Arg):-
 domain_error(Valid_type,Culprit,Predicate,Arg,Msg):- 
 	xsb_backtrace(Bt),
 	throw(error(domain_error(Valid_type,Culprit),
-                           (' in arg ',Arg,' of predicate ',Predicate, '(',Msg,')'),Bt)).
+                           (' in arg ',Arg,' of predicate ',Predicate, ' (',Msg,')'),Bt)).
 %------
 evaluation_error(Flag,Predicate,Arg):- 
 	xsb_backtrace(Bt),
