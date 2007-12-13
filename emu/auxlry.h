@@ -72,5 +72,9 @@ extern Exec_Mode xsb_mode;
 
 extern void gdb_dummy(void);
 
+/* round N to the next multiple of P2, P2 must be a power of 2 */
+
+#define ROUND(N,P2)	((N + (P2-1)) & ~(P2-1))
+
 #endif /* __AUXLRY_H__ */
 
