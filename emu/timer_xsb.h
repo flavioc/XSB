@@ -63,7 +63,7 @@ struct xsb_timeout_info {
   pthread_t_p     timedThread;
   pthread_cond_t  condition;
   pthread_mutex_t mutex;
-  CTXTdecl;
+  th_context *th;
 #else /* not multithreaded */
 #ifdef WIN_NT
   long parent_thread;
