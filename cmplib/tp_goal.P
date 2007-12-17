@@ -36,22 +36,6 @@
 /*	W: is get or put						*/
 /*======================================================================*/
 
-/* 3/94 When I'm sure there are no problems here, I'll take this out */
-tgoalargs([],_,Pil,Pil,T,T).
-tgoalargs([Arg|Args],N,Pil,Pilr,Tin,Tout) :-
-	((\+ reg_unchanged(Arg,N),rval_needed(Arg,Args,N)) % (reg is not released)
-	 ->	getreg(Tin,Nreg), T1 = [Nreg|Tin],
-		Pil = [movreg(N,Nreg)|Pil1],
-		load_from_nreg_struct(Arg,Narg,N,Nreg),
-		load_from_nreg(Args,Nargs,N,Nreg)
-	 ;	Narg = Arg, Nargs = Args, T1 = Tin, Pil1 = Pil
-	),
-				%	Nargs=Args,Pil=Pil1,Tin=T1,
-	tputpar(Arg,N,Pil1,Pil2,T1,T2),
-	N1 is N + 1,
-	tgoalargs(Nargs,N1,Pil2,Pilr,T2,Tout).
-
-
 tgoalargs([],_,Pil,Pil,T,T,_Tabled).
 tgoalargs([Arg|Args],N,Pil,Pilr,Tin,Tout,Tabled) :-
 	((\+ reg_unchanged(Arg,N),rval_needed(Arg,Args,N)) % (reg is not released)
@@ -108,19 +92,6 @@ load_from_nreg([structure(Sym,Sargs)|Args],[structure(Sym,Nsargs)|Nargs],
 	load_from_nreg(Args,Nargs,N,Nreg).
 load_from_nreg([Arg|Args],[Arg|Nargs],N,Reg) :-
 	load_from_nreg(Args,Nargs,N,Reg).
-
-
-tputpar(integer(V),N,[putnumcon(N,V)|Pil],Pil,Tin,Tin).
-tputpar(real(V),N,[putfloat(N,V)|Pil],Pil,Tin,Tin).
-tputpar(constant(Sym),N,[putcon(N,Sym)|Pil],Pil,Tin,Tin).
-tputpar(string(String),N,Pil0,Pil,Tin,Tin) :-
-	tputstring(String,N,Pil0,Pil).
-tputpar(varocc(_Vid,Prag),N,Pil0,Pil,Tin,Tout) :-
-	vprag_type(Prag, Type),
-	( Type == t -> alloc_reg1(Prag,N,Tin,Tout) ; Tin = Tout ),
-	putvarinst(Prag,N,Pil0,Pil,0).
-tputpar(structure(Sym,Args),N,[putstr(N,Sym)|Pil],Pilr,Tin,Tout) :-
-    tbldpars(Args,Pil,Pilr,Tin,Tout).
 
 tputpar(integer(V),N,[putnumcon(N,V)|Pil],Pil,Tin,Tin,_Tab).
 tputpar(real(V),N,[putfloat(N,V)|Pil],Pil,Tin,Tin,_Tab).

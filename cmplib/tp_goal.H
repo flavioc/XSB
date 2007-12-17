@@ -26,7 +26,7 @@
 
 
 :- export force_tp_goal_loaded/0.
-:- export tgoalargs/7, tgoalargs/6, tgetpar/6, tputpar/6, tputpar/7.
+:- export tgoalargs/7, tgetpar/6, tputpar/7.
 
 :- import alloc_reg1/4, release_if_done/6, getreg/2,
 	getvarinst/5, putvarinst/5, univarinst/5, bldvarinst/5
