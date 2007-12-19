@@ -2423,62 +2423,6 @@ and that are interned into the trie represented by the handle {\tt
 \end{itemize}
 %%
 
-\ournewitem{trie\_retractall(?Term,+Root)}{intern}
-\index{\texttt{trie\_retractall/2}}
-% 
-Uninterns from {\tt Root} all terms that unify with {\tt Term}.  If
-there are no failure continuations pointing to nodes in {\tt Root},
-space is reclaimed for the uninterned nodes; otherwise they are marked
-as deleted but space is not reclaimed.
-
-{\bf Error Cases}
-\begin{itemize}
-\item 	{\tt Root} is uninstantiated
-\bi
-\item 	 {\tt instantiation\_error}
-\ei
-\item 	{\tt Root} is instantiated, but not an integer (trie handle)
-\bi
-\item 	 {\tt type\_error(integer,Root)}
-\ei
-\end{itemize}
-
-\ournewitem{bulk\_trie\_insert(+Generator,+Root)}{intern}
-\index{\texttt{bulk\_trie\_insert/2}}
-% 
-Used to insert multiple terms into {\tt Root}.  {\tt Generator} is a
-callable term.  Upon backtracking through {\tt Generator} its first
-argument should successively be instantiated to the terms to be
-interned in {\tt Root}.  When inserting many terms, {\tt
-  bulk\_trie\_insert/2} is faster than {\tt trie\_insert} as it does
-not need to make multiple checks that the choice point stack is free
-of failure continuations that point to nodes in the trie pointed to by
-{\tt Root}.
-
-\begin{example} \rm
-Given the predicate 
-\begin{verbatim}
-bulk_create(p(One,Two,Three),N):- 
-     for(One,1,N),
-     for(Two,1,N),
-     for(Three,1,N).
-\end{verbatim}
-The goal {\tt bulk\_trie\_intern(bulk\_create(\_Term,N),Trie)} will
-add $N^3$ terms to the trie with root {\tt Root}.
-\end{example}
-
-{\bf Error Cases}
-\begin{itemize}
-\item 	{\tt Root} is uninstantiated
-\bi
-\item 	 {\tt instantiation\_error}
-\ei
-\item 	{\tt Root} is instantiated, but not an integer (trie handle)
-\bi
-\item 	 {\tt type\_error(integer,Root)}
-\ei
-\end{itemize}
-
 \ournewitem{delete\_trie(+Root)}{intern} \index{\texttt{delete\_trie/1}}
 %%
 Deletes all the terms in the trie pointed to by {\tt Root}.
