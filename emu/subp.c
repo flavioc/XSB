@@ -442,7 +442,7 @@ void init_interrupt(void)
   int_act.sa_flags = 0;
   sigaction(SIGINT, &int_act, &int_oact);
 
-  abrt_act.sa_handler = keyint_proc;
+  abrt_act.sa_handler = cancel_proc;
   sigemptyset(&abrt_act.sa_mask); 
   abrt_act.sa_flags = 0;
   sigaction(SIGABRT, &abrt_act, &abrt_oact);
