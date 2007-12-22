@@ -2721,14 +2721,14 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
                T = apply(a+b,_595820,_595824,_595828)
      \end{verbatim}}
 
-\ouritem{arg(+Index, +Term, ?Argument)}\index{\texttt{arg/3}}
-    Unifies {\tt Argument} with the ${\tt Index}^{th}$ argument of 
-    {\tt Term}\@, where the index is taken to start at $1$.
-    Initially, {\tt Index} must be instantiated to any integer and {\tt Term} 
-    to any non-variable Prolog or HiLog term.
-    The arguments of the {\tt Term} are numbered from~1 upwards. An atomic term
-    has $0$ arguments. If the initial conditions are not satisfied or~$I$ is 
-    out of range, the call quietly fails.
+\ouritem{arg(+Index, +Term, ?Argument)}\index{\texttt{arg/3}} Unifies
+        {\tt Argument} with the ${\tt Index}^{th}$ argument of {\tt
+          Term}\@, where the index is taken to start at $1$.  In
+        accordance with ISO semantics, {\tt Index} must be
+        instantiated to a non-negative integer, and {\tt Term} to a
+        compound term, otherwise an error is thrown as described
+        below.  If {\tt Index} is {\tt 0} or a number greater than the
+        arity of {\tt Term}, the predicate quietly fails.    
 
     Examples:
     {\footnotesize
@@ -2764,6 +2764,30 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
                    | ?- arg(1, (a+b)(foo,bar), A).
                    A = a+b
      \end{verbatim}}
+
+{\bf Error Cases} 
+\bi
+\item 	{\tt Index} is a variable
+\bi
+\item    {\tt instantiation\_error}
+\ei
+\item 	{\tt Index} neither a variable nor an integer
+\bi
+\item    {\tt type\_error(integer,Index)}
+\ei
+\item 	{\tt Index} is less than 0
+\bi
+\item    {\tt domain\_error(not\_less\_than\_zero,Index)}
+\ei
+\item 	{\tt Term} is a variable
+\bi
+\item    {\tt instantiation\_error}
+\ei
+\item 	{\tt Term} neither a variable nor a compound term
+\bi
+\item    {\tt type\_error(integer,Index)}
+\ei
+\ei
 
 \ouritem{arg0(+Index, +Term, ?Argument)}\index{\texttt{arg0/3}}
     Unifies {\tt Argument} with the ${\tt Index}^{th}$ argument of {\tt Term}
