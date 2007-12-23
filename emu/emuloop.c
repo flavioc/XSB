@@ -457,7 +457,8 @@ int emuloop(CTXTdeclc byte *startaddr)
 
 #endif
 
-  if ((lpcreg = (byte *) setjmp(xsb_abort_fallback_environment))) {
+  if(setjmp(xsb_abort_fallback_environment)) {
+    lpcreg = pcreg ;
     /*
     * Short circuit untrailing to avoid possible seg faults in
     * switch_envs.

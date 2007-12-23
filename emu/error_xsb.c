@@ -187,7 +187,8 @@ DllExport void call_conv xsb_throw_internal(CTXTdeclc prolog_term Ball, unsigned
   /* reset WAM emulator state to Prolog catcher */
   if (unwind_stack(CTXT)) xsb_exit(CTXTc "Unwind_stack failed in xsb_throw_internal!");
   /* Resume main emulator instruction loop */
-  longjmp(xsb_abort_fallback_environment, (Integer) &fail_inst);
+  pcreg = &fail_inst;
+  longjmp(xsb_abort_fallback_environment, XSB_ERROR);
 }
 
 DllExport void call_conv xsb_throw(CTXTdeclc prolog_term Ball)
@@ -224,6 +225,7 @@ DllExport void call_conv xsb_throw(CTXTdeclc prolog_term Ball)
   if (unwind_stack(CTXT)) xsb_exit(CTXTc "Unwind_stack failed in xsb_throw!");
 
   /* Resume main emulator instruction loop */
+  pcreg = &fail_inst ;
   longjmp(xsb_abort_fallback_environment, (Integer) &fail_inst);
 }
 
