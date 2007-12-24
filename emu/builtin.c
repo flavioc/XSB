@@ -2510,12 +2510,7 @@ case WRITE_OUT_PROFILE:
 
   case TRIE_TRUNCATE:
     // TLS: dont know why arg 2 is checked
-    if (ptoc_int(CTXTc 2) == 0) {  
-      trie_truncate(CTXTc  iso_ptoc_int(CTXTc 1,"trie_truncate/1"));
-    }
-    else {
-      xsb_abort("[TRIE_TRUNCATE] Invalid use of this operation");
-    }
+    trie_truncate(CTXTc  iso_ptoc_int(CTXTc 1,"trie_truncate/1"));
     break;
 
     case SET_TABLED_EVAL: { /* reg 1=psc, reg 2=eval method to use */
