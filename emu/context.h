@@ -291,6 +291,8 @@ DynamicStack  _tstTrail;
 
   /********* Variables for array of interned tries *********/
   int _itrie_array_first_free;
+  int _itrie_array_last_free;
+  int _itrie_array_first_trie;
   struct interned_trie_t* _itrie_array;
 
   /* for backtrackable updates & assoc arrays (storage_xsb) */
@@ -715,8 +717,10 @@ typedef struct th_context th_context ;
 #define  done_tif_stack               (th->_done_tif_stack)
 #define  done_tif_stack_size          (th->_done_tif_stack_size)
 
-#define  itrie_array_first_free      (th->_itrie_array_first_free)
-#define  itrie_array                 (th->_itrie_array)
+#define  itrie_array_first_free       (th->_itrie_array_first_free)
+#define  itrie_array_last_free        (th->_itrie_array_last_free)
+#define  itrie_array_first_trie       (th->_itrie_array_first_trie)
+#define  itrie_array                  (th->_itrie_array)
 
 #define  bt_storage_hash_table             (th-> _bt_storage_hash_table)
 

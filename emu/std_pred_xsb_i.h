@@ -118,7 +118,9 @@ inline static xsbBool functor_builtin(CTXTdecl)
 }
 
 /* TLS 12/08 replaced what had been a fail if arg 2 was not a compound
-   term with a type error, as specified in ISO */
+   term with a type error, and what had been a fail if arg 1 was less
+   than 0 with a domain error.  Both of these behaviors are specified
+   in ISO */
 inline static xsbBool arg_builtin(CTXTdecl)
 {
   /* r1: +index (int); r2: +term; r3: ?arg (term) */

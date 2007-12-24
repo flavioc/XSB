@@ -2727,6 +2727,8 @@ void free_private_prref(CTXTdeclc CPtr *p) {
     if ( *(pb)p == tabletrysingle )
       {
 	TIFptr mtTIF = (TIFptr) *(p+2);
+	// Necessary?
+	//	handle_dispatch_block(mtTIF);
 	Free_Private_TIF(mtTIF);
 	/* free prref, from calld instr set in db_build_prref */
 	mem_dealloc((pb)(*(p+6)), sizeof(PrRefData),ASSERT_SPACE);
@@ -3810,8 +3812,14 @@ void init_call_cleanup(void) {
   call_cleanup_gl = (CPtr) (get_ep(psc) +  ZOOM_FACTOR * 0x10);
 }
 
+#ifdef MULTI_THREAD
+extern struct shared_interned_trie_t* shared_itrie_array;
+#endif
+
 xsbBool dynamic_code_function( CTXTdecl ) 
 {
+  xsbBool retval = TRUE;
+
   switch (ptoc_int(CTXTc 1)) {
 
   case MARK_CPSTACK_RETRACTALL: 
@@ -3842,9 +3850,68 @@ xsbBool dynamic_code_function( CTXTdecl )
     init_call_cleanup();
     break;
 
+  case GET_TRIE_INFO: {
+    int index, type, tid;
+
+    tid = iso_ptoc_int(CTXTc 2, "get_trie_info/3");
+    SPLIT_TRIE_ID(tid,index,type);
+    //    printf("type %d %x\n",type,type);
+    ctop_int(CTXTc 3,type);
+    ctop_int(CTXTc 4,index);
+    break;
+  }
+#ifdef MULTI_THREAD
+  case SHAS_TRIE_INTERN:
+    shas_trie_intern(CTXT);
+    break;
+  
+  case SHAS_TRIE_INTERNED: {
+    retval = shas_trie_interned(CTXT);
+    break;
   }
 
-  return TRUE;
+  case LOCK_TRIE_MUTEX: {
+    int index, type, tid;
+
+    tid = iso_ptoc_int(CTXTc 2, "lock_trie_mutex/1");
+    SPLIT_TRIE_ID(tid,index,type);
+    pthread_mutex_lock(&(shared_itrie_array[index].trie_mutex));
+    break;
+  }
+
+  case UNLOCK_TRIE_MUTEX: {
+    int index, type, tid;
+
+    tid = iso_ptoc_int(CTXTc 2, "unlock_trie_mutex/1");
+    SPLIT_TRIE_ID(tid,index,type);
+    pthread_mutex_unlock(&(shared_itrie_array[index].trie_mutex));
+    break;
+  }
+
+  case SHAS_TRIE_UNINTERN: {
+    shas_trie_unintern(CTXT);
+    break;
+  }
+
+#endif
+    
+  case FIRST_TRIE_PROPERTY:
+    first_trie_property(CTXT);
+    break;
+
+  case NEXT_TRIE_PROPERTY:
+    next_trie_property(CTXT);
+    break;
+
+  case TRIE_DROP:
+    trie_drop(CTXT);
+    break;
+
+  default: 
+    break;
+
+  }
+  return retval;
 }
 
 /*===============================================================*/

@@ -21,5 +21,7 @@
 ** 
 */
 
-#define PRIVATE_TRIE                 0
-#define SHARED_TRIE                  1
+#define PRIVATE_TRIE(TYPE)         (TYPE < 2)
+#define PRGE_TRIE                  0
+#define PRAS_TRIE                  1
+#define SHAS_TRIE                  2

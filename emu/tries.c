@@ -298,27 +298,21 @@ BTHTptr  New_BTHT(CTXTdeclc Structure_Manager * SM,int TrieType) {
    void * btht;								
 
 #ifdef MULTI_THREAD  
-   void * arrayPtr;							
-   BTNptr * BTNarrayPtr;						
-
+     /* Lock shared BTHT structure manager and malloc BTHT array */
    if (threads_current_sm == SHARED_SM) {
      /* Lock shared BTHT structure manager and malloc BTHT array */
      SM_AllocateSharedStruct(*SM,btht);
      SM_Lock(*SM);
      SM_AddToAllocList_DL(*SM,((BTHTptr)btht),BTHT_PrevBTHT,BTHT_NextBTHT);
      SM_Unlock(*SM);
-     BTHT_BucketArray(((BTHTptr)btht)) =				\
-       (BTNptr *)mem_calloc(TrieHT_INIT_SIZE, sizeof(void *),TABLE_SPACE); \
-   } else { 
-     /* Dont lock BTHT structure manager and use BTHT array structure manager  -- also 
-      need to 0 out alloced array to emulate calloc */
+     BTHT_BucketArray(((BTHTptr)btht)) =				
+       (BTNptr *)mem_calloc(TrieHT_INIT_SIZE, sizeof(void *),TABLE_SPACE); 
+   }
+   else {
      SM_AllocateStruct(*SM,btht);
      SM_AddToAllocList_DL(*SM,((BTHTptr)btht),BTHT_PrevBTHT,BTHT_NextBTHT);
-     SM_AllocateStruct(*private_smTableBTHTArray,arrayPtr);		
-     BTHT_BucketArray(((BTHTptr)btht)) = (BTNptr *) arrayPtr;		
-     for (BTNarrayPtr = BTHT_BucketArray((BTHTptr)btht) ;			
-	  BTNarrayPtr < (BTHT_BucketArray((BTHTptr)btht)+TrieHT_INIT_SIZE) ; 
-	  BTNarrayPtr++) *BTNarrayPtr = NULL;				
+     BTHT_BucketArray(((BTHTptr)btht)) =				
+       (BTNptr *)mem_calloc(TrieHT_INIT_SIZE, sizeof(void *),TABLE_SPACE); 
    }
 #else
    /* Dont lock BTHT structure manager and malloc BTHT array */
@@ -547,21 +541,7 @@ void hashify_children(CTXTdeclc BTNptr parent, int trieType) {
 BTNptr *resize_hash_array(CTXTdeclc BTHTptr pHT, int new_size) {
   BTNptr *bucket_array;     /* base address of resized hash table */
 
-#ifdef MULTI_THREAD  
-  Structure_Manager * sm_BTHTArray;
-  /* we were only using private sm if MT, table is private and it was the initial malloc */
-  if (threads_current_sm == PRIVATE_SM) {
-    if (BTHT_NumBuckets(pHT) == 64) {
-      sm_BTHTArray = private_smTableBTHTArray;
-      bucket_array = (BTNptr *) mem_alloc(new_size * sizeof(BTNptr),TABLE_SPACE );
-      if ( IsNULL(bucket_array) )     return NULL;
-      memmove(bucket_array,BTHT_BucketArray(pHT),BTHT_NumBuckets(pHT)*sizeof(void*));
-      SM_DeallocateStruct(*sm_BTHTArray,BTHT_BucketArray(pHT));
-      return bucket_array;
-    } 
-  }
-#endif
-  /* do this for ST engine, or MT engine and shared tables, or already realloced. */
+  //  printf("resizing hash to %d\n",new_size);
   bucket_array = (BTNptr *)mem_realloc( BTHT_BucketArray(pHT), BTHT_NumBuckets(pHT)*sizeof(void*),
 					new_size * sizeof(BTNptr),TABLE_SPACE );
   return bucket_array;

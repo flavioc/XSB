@@ -28,6 +28,15 @@
 #define INIT_STANDARD_CGC_BLOCKS                4
 #define INTERNED_TRIE_CPS_CHECK                 5
 #define INIT_CALL_CLEANUP_BLOCKS                6
+#define GET_TRIE_INFO                           7
+#define SHAS_TRIE_INTERN                        8
+#define SHAS_TRIE_INTERNED                      9
+#define LOCK_TRIE_MUTEX                        10
+#define UNLOCK_TRIE_MUTEX                      11
+#define SHAS_TRIE_UNINTERN                     12
+#define FIRST_TRIE_PROPERTY                    14
+#define NEXT_TRIE_PROPERTY                     15
+#define TRIE_DROP                              16
 
 #define DONT_EXPAND_HASHES                      1
 #define EXPAND_HASHES                           0

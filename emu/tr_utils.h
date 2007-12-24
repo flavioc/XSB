@@ -30,17 +30,40 @@
 struct interned_trie_t {
   BTNptr  root;
   byte    valid;
+  byte    type;
+  int     prev_entry;
   int     next_entry;
 } ;
-typedef struct interned_trie_t *ITrieptr;
+typedef struct interned_trie_t *TrieTabPtr;
 
 /* Also includes trie stuff */
 #ifndef MULTI_THREAD
-extern ITrieptr itrie_array;
-#else
-extern void init_shared_trie_table();
+extern TrieTabPtr itrie_array;
 #endif
 
+/* Shared interned tries are only used in the MT engine, but define
+   the types in the MT engine */
+extern void init_shared_trie_table();
+struct shared_interned_trie_t {
+  BTNptr  root;
+  byte    valid;
+  byte    type;
+  int     prev_entry;
+  int     next_entry;
+#ifdef MULTI_THREAD
+  pthread_mutex_t      trie_mutex;
+#endif
+} ;
+
+typedef struct shared_interned_trie_t *ShrTrieTabPtr;
+
+#define TRIE_ID_TYPE_MASK               0xfff00000
+#define TRIE_ID_ID_MASK                 0x000fffff
+#define TRIE_ID_SHIFT                   20
+#define SET_TRIE_ID(IND,TYPE,TID)       ((TID) = (((TYPE) << TRIE_ID_SHIFT)| IND))
+#define SPLIT_TRIE_ID(TID,IND,TYPE)     {				\
+    ((TYPE) = ((TID) & TRIE_ID_TYPE_MASK) >> 20);				\
+    ((IND) = ((TID) &TRIE_ID_ID_MASK)); }
 
 extern VariantSF get_variant_sf(CTXTdeclc Cell, TIFptr, Cell *);
 extern SubProdSF get_subsumer_sf(CTXTdeclc Cell, TIFptr, Cell *);
@@ -61,13 +84,18 @@ extern void delete_trie(CTXTdeclc BTNptr);
 extern xsbBool is_completed_table(TIFptr);
 
 extern xsbBool has_unconditional_answers(VariantSF);
+extern void    first_trie_property(CTXTdecl);
+extern void    next_trie_property(CTXTdecl);
 
 extern Integer newtrie(CTXTdeclc int);
-extern void trie_intern(CTXTdecl);
-extern int  trie_interned(CTXTdecl);
-extern void trie_dispose(CTXTdecl);
+extern void private_trie_intern(CTXTdecl);
+extern void shas_trie_intern(CTXTdecl);
+extern int  private_trie_interned(CTXTdecl);
+extern int  shas_trie_interned(CTXTdecl);
+extern void private_trie_unintern(CTXTdecl);
+extern void shas_trie_unintern(CTXTdecl);
 extern void trie_dispose_nr(CTXTdecl);
-extern void delete_interned_trie(CTXTdeclc Integer);
+extern void trie_truncate(CTXTdeclc Integer);
 extern void trie_undispose(CTXTdeclc long, BTNptr);
 extern int interned_trie_cps_check(CTXTdeclc BTNptr);
 

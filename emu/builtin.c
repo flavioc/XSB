@@ -1027,9 +1027,9 @@ void init_builtin_table(void)
   set_builtin_table(NEWTRIE, "newtrie");
   set_builtin_table(TRIE_INTERN, "trie_intern");
   set_builtin_table(TRIE_INTERNED, "trie_interned");
-  set_builtin_table(TRIE_DISPOSE, "trie_dispose");
+  set_builtin_table(TRIE_UNINTERN, "trie_unintern");
   set_builtin_table(BOTTOM_UP_UNIFY, "bottom_up_unify");
-  set_builtin_table(DELETE_TRIE, "delete_trie");
+  set_builtin_table(TRIE_TRUNCATE, "trie_truncate");
   set_builtin_table(TRIE_DISPOSE_NR, "trie_dispose_nr");
   set_builtin_table(TRIE_UNDISPOSE, "trie_undispose");
   set_builtin_table(RECLAIM_UNINTERNED_NR, "reclaim_uninterned_nr");
@@ -2460,12 +2460,12 @@ case WRITE_OUT_PROFILE:
     ctop_int(CTXTc 1,newtrie(CTXTc ptoc_int(CTXTc 2)));
     break;
   case TRIE_INTERN:
-    trie_intern(CTXT);
+    private_trie_intern(CTXT);
     break;
   case TRIE_INTERNED:
-    return(trie_interned(CTXT));
-  case TRIE_DISPOSE:
-    trie_dispose(CTXT);
+    return(private_trie_interned(CTXT));
+  case TRIE_UNINTERN:
+    private_trie_unintern(CTXT);
     break;
   case TRIE_DISPOSE_NR:
     trie_dispose_nr(CTXT);
@@ -2508,12 +2508,13 @@ case WRITE_OUT_PROFILE:
   case BOTTOM_UP_UNIFY:
     return ( bottom_up_unify(CTXT) );
 
-  case DELETE_TRIE:
-    if (ptoc_int(CTXTc 2) == 0) {
-      delete_interned_trie(CTXTc  iso_ptoc_int(CTXTc 1,"delete_trie/1"));
+  case TRIE_TRUNCATE:
+    // TLS: dont know why arg 2 is checked
+    if (ptoc_int(CTXTc 2) == 0) {  
+      trie_truncate(CTXTc  iso_ptoc_int(CTXTc 1,"trie_truncate/1"));
     }
     else {
-      xsb_abort("[DELETE_TRIE] Invalid use of this operation");
+      xsb_abort("[TRIE_TRUNCATE] Invalid use of this operation");
     }
     break;
 
@@ -2730,8 +2731,7 @@ case WRITE_OUT_PROFILE:
   }
 
     case DYNAMIC_CODE_FUNCTION: {
-      dynamic_code_function(CTXT);
-      break;
+      return dynamic_code_function(CTXT);
     }
 
     case TABLE_INSPECTION_FUNCTION: {
