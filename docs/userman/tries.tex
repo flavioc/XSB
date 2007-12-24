@@ -245,7 +245,7 @@ present version of
 \bi
 \item {\tt permission\_error(create,alias, A)}
 \ei
-\item An element of {\tt OptionsList} is alias(A) and A is not an atom
+\item An element of {\tt OptionsList} is alias(A) and A its not an atom
 \bi
 \item {\tt type\_error(atom,A)}
 \ei
@@ -256,9 +256,12 @@ present version of
 %
 Inserts {\tt Term} into the trie denoted by {\tt TrieIdOrAlias}.  If
 {\tt TrieIdOrAlias} denotes an associative trie, {\tt Term} must be of
-the form {\tt pair(Key,Value)} where {\tt Key} is ground.  Also, if
-{\tt TrieIdOrAlias} already contains a value for {\tt Key} the value
-for {\tt Key} is updated.
+the form {\tt pair(Key,Value)} where {\tt Key} is ground.  If {\tt
+  TrieIdOrAlias} is a general trie and already contains {\tt Term},
+the predicate fails (as the same term cannot be inserted multiple
+times in the same trie).  Similarly, if {\tt TrieIdOrAlias} is an
+associative trie and already contains a value for {\tt Key} the
+predicate fails.
 
 {\bf Error Cases}
 \bi
@@ -276,7 +279,7 @@ for {\tt Key} is updated.
 \item 	{\tt domain\_error(pair/2,Term)}
 \ei
 \item 	{\tt TrieIdOrAlias} denotes an associative array, 
-  {\tt Term = pair(Key,Value)} and {\tt Key} is not ground 
+  {\tt Term = pair(Key,Value)} but {\tt Key} is not ground 
 \bi
 \item 	{\tt misc\_error}
 \ei
@@ -284,10 +287,13 @@ for {\tt Key} is updated.
 %
 
 \ouritem{trie\_unify(+TrieIdOrAlias,Term)}
-\index{\texttt{trie\_unify/2}}
-Unifies {\tt Term} with terms in the trie denoted by {\tt TrieIdOrAlias}.  If
-{\tt TrieIdOrAlias} denotes an associative trie, {\tt Term} must be of
-the form {\tt pair(Key,Value)} where {\tt Key} is ground.  
+\index{\texttt{trie\_unify/2}} 
+%
+Unifies {\tt Term} with a term in the trie denoted by {\tt
+  TrieIdOrAlias}.  If {\tt TrieIdOrAlias} denotes a general trie,
+successive unifications will succeed upon backtracking.  If {\tt
+  TrieIdOrAlias} denotes an associative trie, {\tt Term} must be of
+the form {\tt pair(Key,Value)} where {\tt Key} is ground.
 
 {\bf Error Cases}
 \bi
@@ -299,8 +305,13 @@ the form {\tt pair(Key,Value)} where {\tt Key} is ground.
 \bi
 \item 	{\tt domain\_error(trie\_id\_or\_alias,TrieIdOrAlias)}
 \ei
+\item 	{\tt TrieIdOrAlias} denotes an associative array, and {\tt Term} 
+  does not unify with {\tt pair(\_,\_)} 
+\bi
+\item 	{\tt domain\_error(pair/2,Term)}
+\ei
 \item {\tt TrieIdOrAlias} denotes an associative array, 
-  {\tt Term = pair(Key,Value)} and {\tt Key} is not ground 
+  {\tt Term = pair(Key,Value)} but {\tt Key} is not ground 
 \bi
 \item 	{\tt misc\_error}
 \ei
@@ -310,12 +321,13 @@ the form {\tt pair(Key,Value)} where {\tt Key} is ground.
 \index{\texttt{trie\_delete/2}}
 %
 Deletes a term unifying with {\tt Term} from the trie denoted by {\tt
-  TrieIdOrAlias} -- upon backtracking all such terms can be deleted.
-If {\tt TrieIdOrAlias} does not contain a term unifying with {\tt
-  Term} the preicate fails. If {\tt TrieIdOrAlias} denotes an
-associative trie, {\tt Term} must be of the form {\tt pair(Key,Value)}
-where {\tt Key} is ground.
-%
+  TrieIdOrAlias}.  {\tt TrieIdOrAlias} denotes a general trie, all
+such terms can be deleted upon backtracking.  If {\tt TrieIdOrAlias}
+denotes an associative trie, {\tt Term} must be of the form {\tt
+  pair(Key,Value)} where {\tt Key} is ground.  In either case, if {\tt
+  TrieIdOrAlias} does not contain a term unifying with {\tt Term} the
+preicate fails.
+
 {\bf Error Cases}
 \bi
 \item 	{\tt TrieIdOrAlias} is a variable
@@ -325,6 +337,16 @@ where {\tt Key} is ground.
 \item 	{\tt TrieIdOrAlias} is not a trie id or alias
 \bi
 \item 	{\tt domain\_error(trie\_id\_or\_alias,TrieIdOrAlias)}
+\ei
+\item 	{\tt TrieIdOrAlias} denotes an associative array, and {\tt Term} 
+  does not unify with {\tt pair(\_,\_)} 
+\bi
+\item 	{\tt domain\_error(pair/2,Term)}
+\ei
+\item {\tt TrieIdOrAlias} denotes an associative array, 
+  {\tt Term = pair(Key,Value)} but {\tt Key} is not ground 
+\bi
+\item 	{\tt misc\_error}
 \ei
 \ei
 %
@@ -365,19 +387,20 @@ type and any aliases the trie may have.
 \ei
 \ei
 
-\ournewitem{bulk\_trie\_insert(+TrieIdOrAlias,+Generator)}{intern}
-\index{\texttt{bulk\_trie\_insert/2}}
+\ournewitem{trie\_bulk\_insert(+TrieIdOrAlias,+Generator)}{intern}
+\index{\texttt{trie\_bulk\_insert/2}}
 % 
-Used to insert multiple terms into the {\tt TrieIdOrAlias}.  {\tt
-  Generator} is a callable term.  Upon backtracking through {\tt
-  Generator} its first argument should successively be instantiated to
-the terms to be interned in {\tt Root}.  When inserting many terms
-into a general trie, {\tt bulk\_trie\_insert/2} is faster than {\tt
+Used to insert multiple terms into the trie denoted by {\tt
+  TrieIdOrAlias}.  {\tt Generator} must be a callable term.  Upon
+backtracking through {\tt Generator} its first argument should
+successively be instantiated to the terms to be interned in {\tt
+  TrieIdOrAlias}.  When inserting many terms into a general trie, {\tt
+  trie\_bulk\_insert/2} is faster than repeated calls to {\tt
   trie\_insert/2} as it does not need to make multiple checks that the
-choice point stack is free of failure continuations that point to
-nodes in the trie pointed to by {\tt Root}.  For associative tries,
-{\tt bulk\_trie\_insert/2} can also be faster as it needs to perform
-fewer error checks on the arguments of the call.
+choice point stack is free of failure continuations that point into
+the {\tt TrieIdOrAlias} trie.  For associative tries, {\tt
+  trie\_bulk\_insert/2} can also be faster as it needs to perform
+fewer error checks on the arguments of the insert.
 
 \begin{example} \rm
 Given the predicate 
@@ -387,8 +410,11 @@ bulk_create(p(One,Two,Three),N):-
      for(Two,1,N),
      for(Three,1,N).
 \end{verbatim}
-The goal {\tt bulk\_trie\_insert(Trie,bulk\_create(\_Term,N))} will
-add $N^3$ terms to {\tt Trie}.
+and a general trie {\tt Trie}, the goal 
+\begin{center}
+   {\tt ?- trie\_bulk\_insert(Trie,bulk\_create(\_Term,N))} 
+\end{center}
+will add $N^3$ terms to {\tt Trie}.
 \end{example}
 
 {\bf Error Cases}
@@ -401,29 +427,36 @@ add $N^3$ terms to {\tt Trie}.
 \bi
 \item 	{\tt domain\_error(trie\_id\_or\_alias,TrieIdOrAlias)}
 \ei
-\item 	{\tt TrieIdOrAlias} denotes an associative array, and {\tt Term} 
+\item   {\tt Generator} is not a compound term
+\bi
+\item   {\tt type\_error(compound,Generator)}
+\ei
+\item 	{\tt TrieIdOrAlias} denotes an associative array, and {\tt Generator} 
   does not unify with {\tt pair(\_,\_)} 
 \bi
 \item 	{\tt domain\_error(pair/2,Term)}
 \ei
-\item 	{\tt TrieIdOrAlias} denotes an associative array, 
-  {\tt Term = pair(Key,Value)} and {\tt Key} is not ground 
+\item {\tt TrieIdOrAlias} denotes an associative array, and {\tt
+  Generator} succeeds with a term that unifies with {\tt
+  pair(Key,Value)} and {\tt Key} is not ground 
 \bi
 \item 	{\tt misc\_error}
 \ei
 \ei
 
-\ournewitem{bulk\_trie\_delete(+TrieIdOrAlias,Term)}{intern}
-\index{\texttt{bulk\_trie\_delete/2}}
+\ournewitem{trie\_bulk\_delete(+TrieIdOrAlias,Term)}{intern}
+\index{\texttt{trie\_bulk\_delete/2}}
 % 
-Deletes from {\tt TrieIdOrAlias} all terms that unify with {\tt Term}.
+Deletes all terms that unify with {\tt Term} from {\tt TrieIdOrAlias}.
 If {\tt TrieIdOrAlias} denotes an associative trie, the key of the key
 value pair need {\em not} be ground.
 
-\begin{example} \rm
-For the trie in the previous example, the goal {\tt ?-
-  bulk\_trie\_delete(Trie,p(1,\_,\_)} will delete the $N^2$ terms that
-unify with {\tt p(1,\_,\_)} from {\tt TrieIdOrAlias}.
+\begin{example}\label{ex:bulk-delete} \rm
+For the trie in the previous example, the goal 
+\begin{center}
+{\tt ?-  trie\_bulk\_delete(Trie,p(1,\_,\_))} 
+\end{center}
+will delete the $N^2$ terms that unify with {\tt p(1,\_,\_)} from {\tt TrieIdOrAlias}.
 \end{example}
 
 {\bf Error Cases}
@@ -435,6 +468,78 @@ unify with {\tt p(1,\_,\_)} from {\tt TrieIdOrAlias}.
 \item 	{\tt TrieIdOrAlias} is not a trie id or alias
 \bi
 \item 	{\tt domain\_error(trie\_id\_or\_alias,TrieIdOrAlias)}
+\ei
+\ei
+
+\ournewitem{trie\_bulk\_unify(+TrieIdOrAlias,\#Term,-List)}{intern}
+\index{\texttt{trie\_bulk\_unify/3}}
+% 
+Returns in {\tt List} all terms in {\tt TrieIdOrAlias} that unify with
+{\tt Term}.  If {\tt TrieIdOrAlias} denotes an associative trie, the
+key of the key value pair need {\em not} be ground.
+
+This predicate is useful for two reasons.  First, it provides a safe
+way to backtrack through an associative trie while maintaining the
+memory management and concurrency properties of associative tries.
+Second, it enforces read consistency for {\tt TrieIdOrAlias},
+regardless of whether the trie is private or shared, general or
+associative.
+
+\begin{example} \rm
+Continuing from Example~\ref{ex:bulk-delete} the goal
+\begin{center}
+{\tt ?-  trie\_bulk\_unify(Trie,X),List} 
+\end{center}
+will return the the $N^3 - N^2$ terms still in {\tt TrieIdOrAlias}.
+\end{example}
+
+{\bf Error Cases}
+\bi
+\item 	{\tt TrieIdOrAlias} is a variable
+\bi
+\item 	{\tt instantiation\_error}.
+\ei
+\item 	{\tt TrieIdOrAlias} is not a trie id or alias
+\bi
+\item 	{\tt domain\_error(trie\_id\_or\_alias,TrieIdOrAlias)}
+\ei
+\item 	{\tt List} is not a variable
+\bi
+\item 	{\tt type\_error(variable,List)}.
+\ei
+\ei
+
+\ouritem{trie\_property(?TrieOrAlias,?Property)}
+\index{\texttt{trie\_property/2}} 
+%
+If {\tt TrieOrAlias} is instantiated, unifies {\tt Property} with
+current properties of the trie; if {\tt TrieOrAlias} is a variable,
+backtracks through all the current tries whose properties unify with
+{\tt Property}.  In the MT engine, {\tt thread\_property/2} accesses
+only tries private to the calling thread and shared tries; however
+note that there is no guarantee that that the information returned
+about shared tries will be valid, due to concurrency
+issues~\footnote{{\tt trie\_property/2} is not yet implemented for
+  shared tries.}.
+
+Currently {\tt Property} can have the form 
+\bi
+\item {\tt type(Type)}: where {\tt Type} is the type of the trie.
+%
+\item {\tt alias(Alias)}: if the trie has an alias {\tt Alias}
+\ei
+
+{\bf Error Cases}
+%
+\bi
+\item {\tt TrieOrAlias} is neither a variable nor an XSB trie id
+  nor an alias
+\bi
+\item {\tt domain\_error(trie, TrieOrAlias)}
+\ei
+\item {\tt TrieOrAlias} is not associated with a valid trie
+\bi
+\item {\tt existence\_error(trie, TrieOrAlias)}
 \ei
 \ei
 
