@@ -310,6 +310,15 @@ install_verify_attribute_handler(Mod,Attr,Value,Handler) :-
       ),
       assert(verify_attribute_handler(Mod,Attr,Value,Handler)).
 
+:- dynamic attribute_portray_hook(_,_,_).
+install_attribute_portray_hook(Mod,Attr,Handler) :-
+      ( retract(attribute_portray_hook(Mod,_,_)) ->
+              write('Warning: replacing previous attribute_portray_hook for module '),write(Mod),writeln('.')
+      ;
+              true
+      ),
+      assert(attribute_portray_hook(Mod,Attr,Handler)).
+
 /* This is the builtin where people should put their private, experimental
    builtin code. SEE THE EXAMPLE IN emu/private_builtin.c to UNDERSTAND HOW 
    TO DO IT. Note: even though this is a single builtin, YOU CAN SIMULATE 

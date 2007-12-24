@@ -1419,7 +1419,7 @@ catch(_Goal,Catcher,Handler) :-
             Ball = Catcher ->
             retractall('$$exception_ball'(T,_)),
 %%	    close_open_tables,  %% leave to catcher... 
-%%            writeln(calling(Handler)),
+%            writeln(calling(Handler)),
             call(Handler)
         ;
             '$$unwind_stack'  % unwind_stack xsb_exits if no catcher was found

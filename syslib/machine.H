@@ -161,6 +161,7 @@
         get_attr/3,
         del_attr/2,
         install_verify_attribute_handler/4,
+        install_attribute_portray_hook/3,
         verify_attribute_handler/4,
 	globalvar/1,
         ccall_store_error/2,

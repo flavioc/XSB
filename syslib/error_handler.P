@@ -38,7 +38,6 @@
 
 /* Types of errors are based on Section 7.12 of the ISO Standard, but
 /* I've added tabling_error.  (see manual for types and explanation).*/
-
 default_error_handler(Error) :- 
 	default_user_error_handler(Error),
 	close_open_tables,

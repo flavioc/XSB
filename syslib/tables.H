@@ -61,6 +61,8 @@
    :- export find_components/1, find_forward_dependencies/1, find_backward_dependencies/1,
    find_answers/1.
 
+:- export '_$$get_returns'/3.
+
 :- import findall/3
      from setof.
 :- import add_trie_index/1

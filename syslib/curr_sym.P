@@ -608,6 +608,7 @@ iso_flag(max_arity,255).
 iso_flag(integer_rounding_function,toward_zero).
 iso_flag(debug, Debug) :- xsb_flag(debugging, Debug).
 iso_flag(unknown, State) :- settable_prolog_flag(unknown, State).
+iso_flag(double_quotes,codes).
 
 % TLS: need to understand ISO char conversion
 %iso_flag(char_conversion,{on,off})
