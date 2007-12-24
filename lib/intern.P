@@ -13,7 +13,7 @@
 ** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 ** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
 ** more details.
-** 
+** `
 ** You should have received a copy of the GNU Library General Public License
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
@@ -27,25 +27,469 @@
 
 #include "builtin.h"
 #include "biassert_defs.h"
+#include "trie_defs.h"
+#include "io_defs_xsb.h"
 
+% All i_ predicates are internal!
+%------------------------------------------------------------------
+% Unified Interface: This is kind of high-level so there is a specialized lower
+% level for each kind of trie
+%------------------------------------------------------------------
 
-% the i_ predicates are internal!
+:- import ground/1 from basics.
+:- import misc_error/1 from error_handler.
+
+/* Flag error to support alias-concurrency for shared tries: i.e. an
+   alias is always valid for a trie */
+trie_create( TrieId , Options) :- 
+	check_options_list(Options,Type,Aliases),
+	i_trie_create(TrieId,Type),
+	(Aliases = [] -> 
+	    true
+	  ; 
+	    add_aliases_flag_error(Aliases,TRIE_ALIAS,TrieId,Flag),
+	    (Flag == 0 -> 
+		true
+	      ; 
+	        i_trie_drop(TrieId),
+		permission_error(create,alias,Aliases,trie_create/2) ) ).
+
+check_options_list(Options,Type,Alias):- 
+	check_nonvar(Options,trie_create/2,2),
+	check_options_list_1(Options,Type,Alias).
+
+check_options_list_1([],Type,[]):- !,
+	(var(Type) -> Type = PRGE_TRIE ; true).
+check_options_list_1([Option|Rest],Type,Alias):- !,
+	check_nonvar(Option,trie_create/2,2),
+	(Option @= type(_) ->  Option = type(T),transform_type(T,T1),
+	                       set_trie_create_arg(T1,Type,type), Alias = R
+          ; (Option @= alias(_) -> 
+	        Option = alias(A),check_atom(A,trie_create/3,3),Alias = [A|R]
+             ; 	domain_error(trie_option,Option,trie_create/3,3,'') ) ),
+       check_options_list_1(Rest,Type,R).
+check_options_list_1(Culprit,_Type,_Alias):- 
+	type_error(list,Culprit,trie_create/2,2).
+
+set_trie_create_arg(Option,Arg,OptionName):- 
+	(\+ (Option = Arg) -> 
+	    misc_error(('Conflicting options in trie_create/2: ',
+	                 OptionName,' set to ',Arg,' and ',Option))
+         ; Arg = Option).
+
+transform_type(shas,SHAS_TRIE):-!.
+transform_type(prge,PRGE_TRIE):-!.
+transform_type(pras,PRAS_TRIE):-!.
+transform_type(Type,_):-
+	domain_error(trie_option,Type,trie_create/2,2,'').
+
+%----- 
+
+trie_insert(Tid,Term):- 
+	(integer(Tid) -> 
+	    trie_insert_1(Tid,Term)
+        ;  (atom(Tid) -> 
+	       get_trie_alias_error(Tid,Tid_1,trie_insert/2,1),
+	       trie_insert_1(Tid_1,Term)
+           ;  (var(Tid) -> 
+	         instantiation_error(trie_insert/2,1,ground)
+	      ;  domain_error(trie_or_alias,Tid,trie_insert/2,1,'') ) ) ).
+
+trie_insert_1(Tid,Term):- 
+	get_trie_info(Tid,Type,_Index),
+	(Type == PRGE_TRIE -> 
+	    trie_prge_insert(Tid,Term)
+	 ; (Type == SHAS_TRIE -> 
+	       trie_shas_insert(Tid,Term)
+ 	    ; (Type == PRAS_TRIE -> 
+	         trie_pras_insert(Tid,Term)
+	       ; domain_error(trie_id,Tid,trie_insert/2,1,['Type given is ',
+	                                                  Type]) ) ) ).
+%----- 
+
+trie_delete(Tid,Term):- 
+	(integer(Tid) -> 
+	    trie_delete_1(Tid,Term)
+        ;  (atom(Tid) -> 
+	       get_trie_alias_error(Tid,Tid_1,trie_delete/2,1),
+	       trie_delete_1(Tid_1,Term)
+           ;  (var(Tid) -> 
+	         instantiation_error(trie_delete/2,1,ground)
+	      ;  domain_error(trie_or_alias,Tid,trie_delete/2,1,'') ) ) ).
+
+trie_delete_1(Tid,Term):- 
+	get_trie_info(Tid,Type,_Index),
+	(Type == PRGE_TRIE -> 
+	    trie_prge_delete(Tid,Term)
+	 ; (Type == SHAS_TRIE -> 
+	     (Term = pair(Key,Val) -> 
+		(ground(Key) -> 
+		    trie_shas_delete(Tid,Term) 	   
+		 ;  misc_error(['Key value of an assocative pair must be bound in ',
+	                  'argument 2 of a trie_insert']) )
+	      ; domain_error(pair/2,Term,trie_insert/2,2,
+	               ['Inserted term must be key-value pair in trie',Tid]) )
+	    ; (Type == PRAS_TRIE -> 
+   	       (Term = pair(Key,Val) -> 
+		   (ground(Key) -> 
+		       trie_pras_delete(Tid,Term)
+		   ;   misc_error(['Key value of an assocative pair must be bound in ',
+	                  'argument 2 of a trie_insert']) )
+	      ; domain_error(pair/2,Term,trie_insert/2,2,
+	               ['Inserted term must be key-value pair in trie
+		   ',Tid]) ) 
+	       ; domain_error(trie_id,Tid,trie_delete/2,1,['Type given is ',
+	                                                  Type]) ) ) ).
+
+%----- 
+
+trie_unify(Tid,Term):- 
+	(integer(Tid) -> 
+	    trie_unify_1(Tid,Term)
+        ;  (atom(Tid) -> 
+	       get_trie_alias_error(Tid,Tid_1,trie_unify/2,1),
+	       trie_unify_1(Tid_1,Term)
+           ;  (var(Tid) -> 
+	         instantiation_error(trie_unify/2,1,ground)
+	      ;  domain_error(trie_or_alias,Tid,trie_unify/2,1,'') ) ) ).
+
+trie_unify_1(Tid,Term):- 
+	get_trie_info(Tid,Type,_Index),
+	(Type == PRGE_TRIE -> 
+	    trie_prge_unify(Tid,Term)
+	 ; (Type == SHAS_TRIE -> 
+	      (Term = pair(Key,Val) -> 
+		  trie_shas_unify(Tid,pair(Key,Val))
+	        ; domain_error(pair/2,Term,trie_unify/2,1,[]) )
+ 	    ; (Type == PRAS_TRIE -> 
+	          (Term = pair(Key,Val) -> 
+		      trie_pras_unify(Tid,Term)
+		   ; domain_error(pair/2,Term,trie_unify/2,1,[]) )
+ 	        ; domain_error(trie_id,Tid,trie_unify/2,1,['Type given is ',
+	                                                  Type]) ) ) ).
+
+%----- 
+% i_trie_truncate / drop works for all trie types.
+
+trie_truncate(Tid):- 
+	(integer(Tid) -> 
+
+	    i_trie_truncate(Tid)
+        ;  (atom(Tid) -> 
+	       get_trie_alias_error(Tid,Tid_1,trie_truncate/2,1),
+	       i_trie_truncate(Tid_1)
+	    ;   (var(Tid) -> 
+	           instantiation_error(trie_truncate/2,1,ground)
+	        ;  domain_error(trie_or_alias,Tid,trie_truncate/2,1,'') ) ) ).
+
+trie_drop(Tid):- 
+	(integer(Tid) -> 
+	    i_trie_drop(Tid)
+        ;  (atom(Tid) -> 
+	       get_trie_alias_error(Tid,Tid_1,trie_drop/2,1),
+	       i_trie_drop(Tid_1)
+	    ;   (var(Tid) -> 
+	           instantiation_error(trie_drop/2,1,ground)
+	        ;  domain_error(trie_or_alias,Tid,trie_drop/2,1,'') ) ) ).
+
+%----
+
+trie_bulk_insert(Tid,CallableTerm):- 
+	(integer(Tid) -> 
+	    trie_bulk_insert_1(Tid,CallableTerm)
+        ;  (atom(Tid) -> 
+	       get_trie_alias_error(Tid,Tid_1,trie_bulk_insert/2,1),
+	       trie_bulk_insert_1(Tid_1,CallableTerm)
+           ;  (var(Tid) -> 
+	         instantiation_error(trie_bulk_insert/2,1,ground)
+	      ;  domain_error(trie_or_alias,Tid,trie_bulk_insert/2,1,'') ) ) ).
+
+trie_bulk_insert_1(Tid,Term):- 
+	get_trie_info(Tid,Type,_Index),
+	(Type == PRGE_TRIE -> 
+	    trie_prge_bulk_insert(Tid,Term)
+	 ; (Type == SHAS_TRIE -> 
+	      trie_shas_bulk_insert(Tid,Term) 	   
+	    ; (Type == PRAS_TRIE -> 
+	         trie_pras_bulk_insert(Tid,Term)
+	       ; domain_error(trie_id,Tid,trie_bulk_insert/2,1,['Type given is ',
+	                                                  Type]) ) ) ).
+
+%----
+
+trie_bulk_delete(Tid,CallableTerm):- 
+	(integer(Tid) -> 
+	    trie_bulk_delete_1(Tid,CallableTerm)
+        ;  (atom(Tid) -> 
+	       get_trie_alias_error(Tid,Tid_1,trie_bulk_delete/3,1),
+	       trie_bulk_delete_1(Tid_1,CallableTerm)
+           ;  (var(Tid) -> 
+	         instantiation_error(trie_bulk_delete/2,1,ground)
+	      ;  domain_error(trie_or_alias,Tid,trie_bulk_delete/2,1,'') ) ) ).
+
+trie_bulk_delete_1(Tid,Term):- 
+	get_trie_info(Tid,Type,_Index),
+	(Type == PRGE_TRIE -> 
+	   trie_prge_bulk_delete(Tid,Term)
+	 ; (Type == SHAS_TRIE -> 
+	      trie_shas_bulk_delete(Tid,Term) 	   
+	    ; (Type == PRAS_TRIE -> 
+	         trie_pras_bulk_delete(Tid,Term)
+	       ; domain_error(trie_id,Tid,trie_bulk_delete/2,1,['Type given is ',
+	                                                  Type]) ) ) ).
+%----
+
+trie_bulk_unify(Tid,Term,List):- 
+	check_var(List,trie_bulk_unify/3,3),
+	(integer(Tid) -> 
+	    trie_bulk_unify_1(Tid,Term,List)
+        ;
+	(atom(Tid),get_trie_alias_error(Tid,Tid_1,trie_bulk_unify/3,1) ->
+	       trie_bulk_unify_1(Tid_1,Term,List)
+           ;  (var(Tid) -> 
+	         instantiation_error(trie_bulk_unify/3,1,ground)
+	      ;  domain_error(trie_or_alias,Tid,trie_bulk_unify/3,1,'') ) ) ).
+
+% Last domain error should not occur.
+trie_bulk_unify_1(Tid,Term,List):- 
+	get_trie_info(Tid,Type,_Index),
+	(Type == PRGE_TRIE -> 
+	    trie_prge_bulk_unify(Tid,Term,List)
+	 ; (Type == SHAS_TRIE -> 
+	      trie_shas_bulk_unify(Tid,Term,List) 	   
+	    ; (Type == PRAS_TRIE -> 
+	         trie_pras_bulk_unify(Tid,Term,List)
+	       ; domain_error(trie_id,Tid,trie_bulk_unify/3,1,['Type given is ',
+	                                                  Type]) ) ) ).
 
 /*--------------------------------------------------
-	new_trie(-Root)
-   	Root is a handle for a new trie 
+trie_property(?Input,?Property)
 --------------------------------------------------*/
-/*
-new_trie(_Root) :-
-	 '_$builtin'(NEWTRIE).
-*/
 
-/* First arg is placeholder for shared/private */
-new_trie(_Root) :-
-	new_trie(_Root,0).
+trie_property(Input,Property) :- 
+	(var(Input) -> 
+	    var_trie_property(Input,Property)
+	  ; (integer(Input) ->
+                Tid = Input
+	      ; 
+                (atom(Input) ->
+                    get_trie_alias_error(Input,Tid,trie_property/2,1)
+	         ;  domain_error(trie,Input,trie_property/2,1,'') ) ),
+             trie_property_1(Tid, Property) ).
 
-new_trie(_Root,_Type):- 
-	 '_$builtin'(NEWTRIE).
+:- import writeln/1 from standard.
+var_trie_property(TrOrAl,Property):- 
+	    dynamic_code_function(FIRST_TRIE_PROPERTY, Old,Type,Next,_),
+%	    writeln(dynamic_code_function(FIRST_TRIE_PROPERTY, Old,Type,Next,_)),
+	    Old \== -1, %TRIENULL
+	    var_trie_property_1(Old,Type,Next,TrOrAl,Property).
+
+var_trie_property_1(Tid,TypeNum,_Next,Tid,type(Type)):- 
+	convert_type(TypeNum,Type).
+var_trie_property_1(Tid,_Type,_Next,Tid,alias(Alias)) :-
+        get_alias(Alias,TRIE_ALIAS, Tid).
+var_trie_property_1(_Old,_Type,Next,TrOrAl,Property):- 
+	    Next \== -1, %TRIENULL
+	    dynamic_code_function(NEXT_TRIE_PROPERTY,Next,Type,NextNew, _),
+%	    writeln(dynamic_code_function(NEXT_TRIE_PROPERTY,Next,Type,NextNew, _)),
+	    var_trie_property_1(Next,Type,NextNew,TrOrAl,Property).
+	    
+convert_type(PRGE_TRIE,prge).
+convert_type(PRAS_TRIE,pras).
+convert_type(SHAS_TRIE,shas).
+
+trie_property_1(Tid, type(Type)) :-
+	get_trie_info(Tid,TypeNum,_Index),
+	convert_type(TypeNum, Type).
+trie_property_1(Tid, alias(Alias)) :-
+        get_alias(Alias, TRIE_ALIAS, Tid).
+
+get_trie_alias_error(Alias,Tid,Pred,Arg):- 
+	(get_alias(Alias,TRIE_ALIAS,Tid) ->
+	    true
+          ; existence_error(trie,Alias,Pred,Arg) ).
+
+%------------------------------------------------------------------
+% Private Tries
+%------------------------------------------------------------------
+
+% Check CPS, and expand hashes if safe.
+% Fail if term is already in trie.
+trie_prge_insert(Root,Term) :-
+	    new_i_trie_intern(Root,Term,_Leaf,Flag,CPS_CHECK,EXPAND_HASHES),
+	    Flag == 0.
+
+% dont need to check cps
+trie_pras_insert(Root,Term) :-
+	(Term = pair(Key,Val) -> 
+  	  (ground(Key) -> 
+	      (new_i_trie_interned(Root,pair(Key,_),_Leaf) ->
+		  fail
+		; new_i_trie_intern(Root,pair(Key,Val),_L,_F,NO_CPS_CHECK,EXPAND_HASHES) )
+	     ; misc_error(['Key value of an assocative pair must be bound in ',
+	                  'argument 2 of a trie_insert']) )
+        ; domain_error(pair/2,Term,trie_insert/2,2,
+	               ['Inserted term must be key-value pair in trie ',Root]) ).
+
+%----- 
+
+%:- import writeln/1 from standard.
+trie_prge_delete(Root,Term) :-
+%	writeln(d1(Term)),
+	trie_interned(Term,Root,Leaf,_Skel),
+%	writeln(d2(Term)),
+	private_trie_unintern(Root,Leaf,CPS_CHECK).
+
+trie_pras_delete(Root,Term) :-
+	trie_interned(Term,Root,Leaf,_Skel),
+	private_trie_unintern(Root,Leaf,NO_CPS_CHECK).
+
+%----- 
+
+trie_prge_unify(Root,Term) :-
+	new_i_trie_interned(Root,Term,_Leaf).
+
+trie_pras_unify(Root,pair(Key,Value)) :-
+	(ground(Key) -> 
+	    new_i_trie_interned(Root,pair(Key,Value),_Leaf)
+	   ; misc_error(['Key value of an assocative pair must be bound in ',
+	                  'argument 2 of trie_unify']) ).
+
+%----- 
+
+% does not need to check flag as it will fail anyway.
+trie_prge_bulk_insert(Tid,Callable_Term):-
+	arg(1,Callable_Term,TrieTerm),
+	dynamic_code_function(INTERNED_TRIE_CPS_CHECK,Tid,CantExpand,_,_),
+	(CantExpand == 1 -> 
+	    call(Callable_Term),
+	    new_i_trie_intern(Tid,TrieTerm,_Leaf,_Flag,NO_CPS_CHECK,DONT_EXPAND_HASHES)
+	; 
+	    call(Callable_Term),
+	    new_i_trie_intern(Tid,TrieTerm,_Leaf,_Flag,NO_CPS_CHECK,DONT_EXPAND_HASHES) ),
+	fail.    
+trie_prge_bulk_insert(_Trie,_Callable_Term).
+
+trie_pras_bulk_insert(Tid,Callable_Term):-
+	arg(1,Callable_Term,TrieTerm),
+	call(Callable_Term),
+	(TrieTerm = pair(Key,Val) -> 
+  	  (ground(Key) -> 
+	      (new_i_trie_interned(Tid,pair(Key,_),_Leaf) ->
+		  fail
+		; new_i_trie_intern(Tid,pair(Key,Val),_L,_F,NO_CPS_CHECK,EXPAND_HASHES) )
+	     ; misc_error(['Key value of an assocative pair must be bound in ',
+	                  'argument 2 of a trie_insert']) )
+        ; domain_error(pair/2,TrieTerm,trie_insert/2,2,
+	               ['Inserted term must be key-value pair in trie ',Tid]) ),
+	fail.
+trie_pras_bulk_insert(_Trie,_Callable_Term).
+
+
+%----- 
+
+trie_prge_bulk_unify(Tid,Term,Leaves):-
+	findall(Term,new_i_trie_interned(Tid,Term,_Leaf),Leaves).
+
+trie_pras_bulk_unify(Tid,Term,Leaves):-
+	findall(Term,new_i_trie_interned(Tid,Term,_Leaf),Leaves).
+
+%----- 
+
+trie_prge_bulk_delete(Trie,Term):- 	
+	findall(Leaf,trie_interned(Term,Trie,Leaf,_),Leaves),
+	dynamic_code_function(INTERNED_TRIE_CPS_CHECK,Trie,CantReclaim,_,_),
+	(CantReclaim == 1 -> 
+	    member(Leaf,Leaves),
+	    trie_dispose_nr(Trie,Leaf)
+	    ;
+	    member(Leaf,Leaves),
+	    trie_dispose(Trie,Leaf,NO_CPS_CHECK)),
+	fail.
+trie_prge_bulk_delete(_Trie,_Term).
+
+trie_pras_bulk_delete(Trie,Term):- 	
+	findall(Leaf,trie_interned(Term,Trie,Leaf,_),Leaves),
+	member(Leaf,Leaves),
+	trie_dispose(Trie,Leaf,NO_CPS_CHECK),
+	fail.
+trie_pras_bulk_delete(_Trie,_Term).
+
+%------------------------------------------------------------------
+% Shared Associative Tries
+%------------------------------------------------------------------
+
+trie_shas_insert(Root,Term) :-
+	(Term = pair(Key,Value) -> 
+  	  (ground(Key) -> 
+	      (trie_shas_interned(Root,pair(Key,_V),_Leaf) -> 
+		  fail
+  	       ;  true),
+	       trie_shas_intern(Root,pair(Key,Value),_Leaf,_Flag)
+	     ; misc_error(['Key value of an assocative pair must be bound in ',
+	                  'argument 2 of a trie_insert']) )
+        ; domain_error(pair/2,Term,trie_insert/2,2,
+	                 ['Inserted term must be key-value pair in trie ',Root]) ).
+
+%----- 
+
+trie_shas_delete(Root,Term) :-
+	trie_shas_interned(Root,Term,Leaf),
+%	writeln(leaf(Leaf)),
+	trie_shas_unintern(Root,Leaf).
+
+%----- 
+
+trie_shas_unify(Root,pair(Key,Value)) :-
+	(ground(Key) -> 
+	    trie_shas_interned(Root,pair(Key,Value))
+	   ; misc_error(['Key value of an assocative pair must be bound in ',
+	                  'argument 2 of trie_unify']) ).
+
+trie_shas_bulk_unify(Tid,Term,Leaves):-
+	lock_trie_mutex(Tid),
+	findall(Term,new_i_trie_interned(Tid,Term,_Leaf),Leaves),
+	unlock_trie_mutex(Tid).
+
+%----- 
+
+%probably less messy to call catch.
+trie_shas_bulk_insert(Tid,Callable_Term):-
+	arg(1,Callable_Term,TrieTerm),
+	lock_trie_mutex(Tid),
+	call(Callable_Term),
+	new_i_trie_intern(Tid,TrieTerm,_Leaf,_Flag,NO_CPS_CHECK,EXPAND_HASHES),
+	(TrieTerm = pair(Key,Val) -> 
+  	  (ground(Key) -> 
+	      (new_i_trie_interned(Tid,pair(Key,_),_Leaf) -> 
+		  fail
+		; new_i_trie_intern(Tid,pair(Key,Val),_L,_F,NO_CPS_CHECK,EXPAND_HASHES) )
+	    ; 	unlock_trie_mutex(Tid),
+	        misc_error(['Key value of an assocative pair must be bound in ',
+	                  'argument 2 of a trie_insert']) )
+        ;  unlock_trie_mutex(Tid),
+	   domain_error(pair/2,TrieTerm,trie_insert/2,2,
+	               ['Inserted term must be key-value pair in trie ',Tid]) ),
+	fail.
+trie_shas_bulk_insert(Tid,_Term):- 
+	unlock_trie_mutex(Tid).
+
+%----- 
+
+trie_shas_bulk_delete(Tid,Term):- 	
+	lock_trie_mutex(Tid),
+	findall(Leaf,trie_interned(Term,Trie,Leaf,_),Leaves),
+	member(Leaf,Leaves),
+	trie_dispose(Trie,Leaf,NO_CPS_CHECK),
+	fail.
+trie_shas_bulk_delete(Tid,_Term):-
+	unlock_trie_mutex(Tid).
+
+%------------------------------------------------------------------
+% Lower-level Predicates.  These are not used by the new API, but
+% provide functionality not provided by the new API (e.g. leaf, flag,
+% and skel manipulation). 
+%------------------------------------------------------------------
 
 /*--------------------------------------------------
 trie_intern(+Term,+Root,-Leaf,-Flag,-Skel)
@@ -57,24 +501,8 @@ trie_intern(+Term,+Root,-Leaf,-Flag,-Skel)
 --------------------------------------------------*/
 
 trie_intern(Term,Root,Leaf,Flag,Skel) :-
-	i_trie_intern(Term,Root,Leaf,Flag,CPS_CHECK,EXPAND_HASHES),
+	new_i_trie_intern(Root,Term,Leaf,Flag,CPS_CHECK,EXPAND_HASHES),
 	get_lastnode_cs_retskel(_,_,_,Skel1), Skel = Skel1.
-
-trie_intern(Term,Root) :-
-	i_trie_intern(Term,Root,_Leaf,_Flag,CPS_CHECK,EXPAND_HASHES).
-
-/*--------------------------------------------------
- version where flag is ignored 
---------------------------------------------------*/
-
-trie_intern(Term,Root,Leaf,Skel) :- 
-	trie_intern(Term,Root,Leaf,_Flag,Skel). 
-
-/* --------------------------------------------------
-version which interns into a fixed trie 
---------------------------------------------------*/
-
-trie_intern(Term,Leaf,Skel) :- 	trie_intern(Term,0,Leaf,Skel).
 
 /*--------------------------------------------------
 trie_interned(?Term,+Root,?Leaf,-Skel)
@@ -102,17 +530,6 @@ trie_interned(Term,Root,Leaf,Skel) :-
 	),
 	Skel1 = Skel.
 
-
-trie_interned(Term,Root) :-
-	i_trie_interned(Term,Root,_Leaf).
-
-/* --------------------------------------------------
-version which interns into a fixed trie 
---------------------------------------------------*/
-
-trie_interned(Term,Leaf,Skel) :- 
-	trie_interned(Term,0,Leaf,Skel).
-
 /*--------------------------------------------------
 trie_set_last_int(+Leaf,+IntVal)
 Leaf must be a pointer to a Leaf node obtained from
@@ -132,6 +549,125 @@ trie_set_last_int(_Leaf,_Val) :-
 	buff_set_word(Leaf,16,NTagVal). ****/
 
 /*--------------------------------------------------
+trie_unintern_nr(+Root, +Leaf)
+(Checking is done in C.)
+--------------------------------------------------*/
+trie_unintern_nr(Root,Leaf) :- 
+	trie_dispose_nr(Root,Leaf).
+
+/*--------------------------------------------------
+unmark_uninterned_nr(+Root, +Leaf)
+(Checking is done in C.)
+--------------------------------------------------*/
+unmark_uninterned_nr(Root,Leaf) :- 
+	trie_undispose(Root,Leaf).
+
+/* reclaims nodes previously uninterned (but not deleted)
+   with trie_unintern_nr */
+trie_reclaim_uninterned_nr(_Root) :- '_$builtin'(RECLAIM_UNINTERNED_NR).
+
+%------------------------------------------------------------------
+% Internal Predicates.  These predicates support the new API (and
+% perhaps the old as well).  Note that calls to
+% dynamic_code_function() and (I think) builtin calls *must* be called
+% as the last literal in a body -- so its safest always to call them from
+% binary preicates as below.
+%------------------------------------------------------------------
+
+i_trie_create( _TrieId , _Options) :-  '_$builtin'(NEWTRIE).
+
+get_trie_info(Tid,Type,Index):- 
+	dynamic_code_function(GET_TRIE_INFO,Tid,Type,Index,_).
+
+%-----------
+% Intern
+%-----------
+/* Intern: i_trie_intern is private */
+new_i_trie_intern(_Root,_Term,_Leaf,_Flag,_Check,_Expand) :- '_$builtin'(TRIE_INTERN).
+
+trie_shas_intern(Root,Term,Leaf,Flag) :- 
+	dynamic_code_function(SHAS_TRIE_INTERN,Root,Term,Leaf,Flag).
+
+%-----------
+% Interned
+%-----------
+/* Private */
+
+new_i_trie_interned(_Root,_Term,_Leaf):- 
+	'_$builtin'(TRIE_INTERNED).
+
+trie_shas_interned(Root,Term) :- 
+	lock_trie_mutex(Root),
+	( trie_shas_interned_1(Root,Term,_Leaf),
+	   unlock_trie_mutex(Root)
+        ;  unlock_trie_mutex(Root),fail),!.
+
+trie_shas_interned_1(Root,Term,Leaf) :- 
+	dynamic_code_function(SHAS_TRIE_INTERNED,Root,Term,Leaf,_).
+
+trie_shas_interned(Root,Term,Leaf) :- 
+	lock_trie_mutex(Root),
+	( trie_shas_interned_1(Root,Term,Leaf),
+   	  get_lastnode_cs_retskel(_,Leaf,_,_Skel),
+	   unlock_trie_mutex(Root)
+        ;  unlock_trie_mutex(Root),fail),!.
+
+lock_trie_mutex(Root):- 
+	dynamic_code_function(LOCK_TRIE_MUTEX,Root,_Leaf,_,_).
+unlock_trie_mutex(Root):- 
+	dynamic_code_function(UNLOCK_TRIE_MUTEX,Root,_Leaf,_,_).
+
+%---------
+
+private_trie_unintern(_Root,_Leaf,_DisposalType) :- '_$builtin'(TRIE_UNINTERN).
+
+trie_shas_unintern(Root,Leaf) :- 
+	dynamic_code_function(SHAS_TRIE_UNINTERN,Root,Leaf,_,_).
+
+%---------
+% These work for both private and sat tries
+
+i_trie_truncate(_Root) :- '_$builtin'(TRIE_TRUNCATE).
+
+i_trie_drop(Tid) :- dynamic_code_function(TRIE_DROP,Tid,_,_,_).
+
+bottom_up_unify(_Term,_Root,_Leaf) :- '_$builtin'(BOTTOM_UP_UNIFY).
+
+%---------
+% Not yet implemented for shared tries
+
+trie_dispose_nr(_Root, _Leaf) :- '_$builtin'(TRIE_DISPOSE_NR).
+trie_undispose(_Root,_Leaf) :- '_$builtin'(TRIE_UNDISPOSE).
+
+%------------------------------------------------------------------
+% TLS: Obsolescent (as far as I'm concerned)
+%------------------------------------------------------------------
+
+new_trie(TrieId) :- i_trie_create(TrieId , PRGE_TRIE).
+
+%---------
+% no flag
+trie_intern(Term,Root,Leaf,Skel) :- 
+	trie_intern(Term,Root,Leaf,_Flag,Skel). 
+
+% fixed trie
+trie_intern(Term,Leaf,Skel) :- 	trie_intern(Term,0,Leaf,Skel).
+
+% no leaf, no flag
+trie_intern(Term,Root) :-
+	new_i_trie_intern(Root,Term,_Leaf,_Flag,CPS_CHECK,EXPAND_HASHES).
+
+%---------
+% fixed trie
+trie_interned(Term,Leaf,Skel) :- 
+	trie_interned(Term,0,Leaf,Skel).
+
+% no leaf, no flag
+trie_interned(Term,Root) :-
+	i_trie_interned(Term,Root,_Leaf).
+
+%---------
+/*--------------------------------------------------
 trie_unintern(+Root,+Leaf)
 this predicate has to be called with care. Uninterning
 can be done only when the trie from which the term is
@@ -140,34 +676,24 @@ being uninterned is not being actively accessed.
 Checking is done in C.
 --------------------------------------------------*/
 
+trie_dispose(_Root,_Leaf,_DisposalType) :- '_$builtin'(TRIE_UNINTERN).
+
 trie_unintern(Root,Leaf) :- 
-	trie_dispose(Root,Leaf,USE_CPS_CHECK).
+	private_trie_unintern(Root,Leaf,CPS_CHECK).
 
-/*--------------------------------------------------
-trie_unintern_nr(+Root, +Leaf)
-
-Checking is done in C.
---------------------------------------------------*/
-trie_unintern_nr(Root,Leaf) :- 
-	trie_dispose_nr(Root,Leaf).
-
-/*--------------------------------------------------
-unmark_uninterned_nr(+Root, +Leaf)
-
-Checking is done in C.
---------------------------------------------------*/
-unmark_uninterned_nr(Root,Leaf) :- 
-	trie_undispose(Root,Leaf).
-
-/*--------------------------------------------------
-delete_trie(+Root)
---------------------------------------------------*/
-/* Second argument is a placeholder -- not currently used */
+%---------
 delete_trie(Root) :- delete_trie(Root,0).
+delete_trie(_Root,_Usage) :- '_$builtin'(TRIE_TRUNCATE).
 
-/*--------------------------------------------------
-trie_retractall(#Term,+Trie)
---------------------------------------------------*/
+%---------
+
+bulk_trie_intern(Callable_Term,Tid):- 	
+	trie_prge_bulk_insert(Tid,Callable_Term).
+
+/*
+trie_retractall(Callable_Term,Tid):- 	
+	trie_prge_bulk_delete(Tid,Callable_Term).
+*/
 
 trie_retractall(Term,Trie):- 	
 	findall(Leaf,trie_interned(Term,Trie,Leaf,_),Leaves),
@@ -181,36 +707,14 @@ trie_retractall(Term,Trie):-
 	fail.
 trie_retractall(_Trie,_Term).
 
-/*--------------------------------------------------
-bulk_trie_intern(#Term,+Trie)
---------------------------------------------------*/
-:- import call/1, arg/3 from standard.
+/* Obsolete because want error messages (done in C) to apply to
+   the expected arguments */
+i_trie_interned(Term,Root,Leaf):- 
+	new_i_trie_interned(Root,Term,Leaf).
 
-bulk_trie_intern(Callable_Term,Trie):- 	
-	arg(1,Callable_Term,TrieTerm),
-	dynamic_code_function(INTERNED_TRIE_CPS_CHECK,Trie,CantExpand,_,_),
-	(CantExpand == 1 -> 
-	    call(Callable_Term),
-	    i_trie_intern(TrieTerm,Trie,_Root,_Leaf,NO_CPS_CHECK,DONT_EXPAND_HASHES)
-	; 
-	    call(Callable_Term),
-	    i_trie_intern(TrieTerm,Trie,_Root,_Leaf,NO_CPS_CHECK,EXPAND_HASHES)),
-	fail.
-bulk_trie_intern(_Callable_Term,_Trie).
-
-/* reclaims nodes previously uninterned (but not deleted)
-   with trie_unintern_nr */
-trie_reclaim_uninterned_nr(_Root) :- '_$builtin'(RECLAIM_UNINTERNED_NR).
-
-/* builtin calls */
-i_trie_intern(_Term,_Root,_Leaf,_Flag,_Check,_Expand) :- '_$builtin'(TRIE_INTERN).
-i_trie_interned(_Term,_Root,_Leaf) :- '_$builtin'(TRIE_INTERNED).
-trie_dispose(_Root,_Leaf,_DisposalType) :- '_$builtin'(TRIE_DISPOSE).
-bottom_up_unify(_Term,_Root,_Leaf) :- '_$builtin'(BOTTOM_UP_UNIFY).
-delete_trie(_Root,_Usage) :- '_$builtin'(DELETE_TRIE).
-trie_dispose_nr(_Root, _Leaf) :- '_$builtin'(TRIE_DISPOSE_NR).
-trie_undispose(_Root,_Leaf) :- '_$builtin'(TRIE_UNDISPOSE).
-
-
-
+/*
+i_trie_intern(Term,Root,Leaf,Flag,Check,Expand) :-
+	new_i_trie_intern(Root,Term,Leaf,Flag,Check,Expand).
+*/
+end_of_file.
 
