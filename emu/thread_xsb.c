@@ -1316,6 +1316,12 @@ xsbBool xsb_thread_request( CTXTdecl )
 	    {   if( ctxt_ptr->enable_cancel )
 	    	{	ctxt_ptr->_asynint_val |= THREADINT_MARK;
 	    		pthread_kill( th_vec[THREAD_ENTRY(i)].tid, SIGABRT );
+#ifdef WIN_NT
+			{	pthread_cond_t *pcond = ctxt_ptr->cond_var_ptr;
+				if( pcond != NULL )
+					pthread_cond_broadcast( pcond ) ;
+			}
+#endif
 	    	}
 		else
 			ctxt_ptr->to_be_cancelled = TRUE ;
