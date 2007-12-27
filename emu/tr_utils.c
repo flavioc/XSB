@@ -1356,7 +1356,7 @@ void init_shared_trie_table() {
 
   for( i = 0; i < MAX_INTERNED_TRIES; i++ ) {
       shared_itrie_array[i].next_entry = i+1;
-      pthread_mutex_init(&shared_itrie_array[i].trie_mutex, NULL ) ;
+      pthread_mutex_init(&shared_itrie_array[i].trie_mutex, &attr_rec_gl ) ;
   }
     shared_itrie_array[MAX_INTERNED_TRIES].next_entry = -1;
 
@@ -1535,7 +1535,7 @@ int shas_trie_interned(CTXTdecl) {
   int Trie_id,index,type;
   BTNptr *trie_root_addr;
 
-  Trie_id = iso_ptoc_int(CTXTc 2,"trie_interned/[2,4]");
+  Trie_id = iso_ptoc_int(CTXTc 2,"shas_trie_interned/[3]");
   trie_term =  ptoc_tag(CTXTc 3);
   Leafterm = ptoc_tag(CTXTc 4);
 

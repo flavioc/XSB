@@ -86,6 +86,7 @@ extern MutexFrame sys_mut[MAX_SYS_MUTEXES];
 extern void print_mutex_use(void);
 extern void release_held_mutexes(CTXTdecl);
 
+extern pthread_mutexattr_t attr_rec_gl ;
 extern pthread_mutex_t completing_mut;
 extern pthread_cond_t completing_cond;
 
