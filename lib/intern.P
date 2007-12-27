@@ -173,7 +173,6 @@ trie_unify_1(Tid,Term):-
 
 trie_truncate(Tid):- 
 	(integer(Tid) -> 
-
 	    i_trie_truncate(Tid)
         ;  (atom(Tid) -> 
 	       get_trie_alias_error(Tid,Tid_1,trie_truncate/2,1),
@@ -410,6 +409,7 @@ trie_prge_bulk_delete(_Trie,_Term).
 
 trie_pras_bulk_delete(Trie,Term):- 	
 	findall(Leaf,trie_interned(Term,Trie,Leaf,_),Leaves),
+%	writeln(Leaves),
 	member(Leaf,Leaves),
 	trie_dispose(Trie,Leaf,NO_CPS_CHECK),
 	fail.
@@ -435,7 +435,6 @@ trie_shas_insert(Root,Term) :-
 
 trie_shas_delete(Root,Term) :-
 	trie_shas_interned(Root,Term,Leaf),
-%	writeln(leaf(Leaf)),
 	trie_shas_unintern(Root,Leaf).
 
 %----- 
@@ -448,7 +447,8 @@ trie_shas_unify(Root,pair(Key,Value)) :-
 
 trie_shas_bulk_unify(Tid,Term,Leaves):-
 	lock_trie_mutex(Tid),
-	findall(Term,new_i_trie_interned(Tid,Term,_Leaf),Leaves),
+	findall(Term,trie_shas_interned_nolock_noleaf(Tid,Term),Leaves),
+%	findall(Term,new_i_trie_interned(Tid,Term,_Leaf),Leaves),
 	unlock_trie_mutex(Tid).
 
 %----- 
@@ -458,12 +458,12 @@ trie_shas_bulk_insert(Tid,Callable_Term):-
 	arg(1,Callable_Term,TrieTerm),
 	lock_trie_mutex(Tid),
 	call(Callable_Term),
-	new_i_trie_intern(Tid,TrieTerm,_Leaf,_Flag,NO_CPS_CHECK,EXPAND_HASHES),
+%	new_i_trie_intern(Tid,TrieTerm,_Leaf,_Flag,NO_CPS_CHECK,EXPAND_HASHES),
 	(TrieTerm = pair(Key,Val) -> 
   	  (ground(Key) -> 
-	      (new_i_trie_interned(Tid,pair(Key,_),_Leaf) -> 
+	     (trie_shas_interned_nolock_noleaf(Tid,pair(Key,_)) ->
 		  fail
-		; new_i_trie_intern(Tid,pair(Key,Val),_L,_F,NO_CPS_CHECK,EXPAND_HASHES) )
+		; trie_shas_intern(Tid,pair(Key,Val),_Leaf1,_Flag) )
 	    ; 	unlock_trie_mutex(Tid),
 	        misc_error(['Key value of an assocative pair must be bound in ',
 	                  'argument 2 of a trie_insert']) )
@@ -478,9 +478,10 @@ trie_shas_bulk_insert(Tid,_Term):-
 
 trie_shas_bulk_delete(Tid,Term):- 	
 	lock_trie_mutex(Tid),
-	findall(Leaf,trie_interned(Term,Trie,Leaf,_),Leaves),
+	findall(Leaf,trie_shas_interned_nolock(Tid,Term,Leaf),Leaves),
+%	writeln(leaves(Leaves)),
 	member(Leaf,Leaves),
-	trie_dispose(Trie,Leaf,NO_CPS_CHECK),
+	trie_shas_unintern(Tid,Leaf),
 	fail.
 trie_shas_bulk_delete(Tid,_Term):-
 	unlock_trie_mutex(Tid).
@@ -591,26 +592,31 @@ trie_shas_intern(Root,Term,Leaf,Flag) :-
 %-----------
 % Interned
 %-----------
-/* Private */
 
+/* Private */
 new_i_trie_interned(_Root,_Term,_Leaf):- 
 	'_$builtin'(TRIE_INTERNED).
 
+trie_shas_interned_nolock_noleaf(Root,Term) :- 
+	dynamic_code_function(SHAS_TRIE_INTERNED,Root,Term,_Leaf,_).
+
 trie_shas_interned(Root,Term) :- 
 	lock_trie_mutex(Root),
-	( trie_shas_interned_1(Root,Term,_Leaf),
+	( trie_shas_interned_nolock_noleaf(Root,Term),
 	   unlock_trie_mutex(Root)
         ;  unlock_trie_mutex(Root),fail),!.
-
-trie_shas_interned_1(Root,Term,Leaf) :- 
-	dynamic_code_function(SHAS_TRIE_INTERNED,Root,Term,Leaf,_).
 
 trie_shas_interned(Root,Term,Leaf) :- 
 	lock_trie_mutex(Root),
-	( trie_shas_interned_1(Root,Term,Leaf),
+	( trie_shas_interned_nolock_noleaf(Root,Term),
    	  get_lastnode_cs_retskel(_,Leaf,_,_Skel),
-	   unlock_trie_mutex(Root)
+          unlock_trie_mutex(Root)
         ;  unlock_trie_mutex(Root),fail),!.
+
+% for use in bulks.
+trie_shas_interned_nolock(Root,Term,Leaf) :- 
+	trie_shas_interned_nolock_noleaf(Root,Term),
+	get_lastnode_cs_retskel(_,Leaf,_,_Skel1).
 
 lock_trie_mutex(Root):- 
 	dynamic_code_function(LOCK_TRIE_MUTEX,Root,_Leaf,_,_).
