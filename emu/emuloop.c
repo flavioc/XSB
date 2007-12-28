@@ -1005,7 +1005,11 @@ contcase:     /* the main loop */
     Def2ops
     Op1(get_xxa);
     Op2(get_xxxl);
+/* In the multi-threaded system a signal can be issued be another thread
+   with thread signal anytime */
+#ifndef MULTI_THREAD
     if (attv_pending_interrupts) printf("Failed assertion dyntrymeelse\n");
+#endif
     ADVANCE_PC(size_xxxX);
     SUBTRYME
 #ifdef MULTI_THREAD
@@ -1059,7 +1063,11 @@ contcase:     /* the main loop */
     Def2ops
     Op1(get_xxa);
     op2 = (Cell)((Cell)lpcreg + sizeof(Cell)*2);
+/* In the multi-threaded system a signal can be issued be another thread
+   with thread signal anytime */
+#ifndef MULTI_THREAD
     if (attv_pending_interrupts) printf("Failed assertion try\n");
+#endif
 #if 0
     { 
       Psc mypsc = *(CPtr)(cpreg-4);
@@ -1118,7 +1126,11 @@ contcase:     /* the main loop */
   XSB_Start_Instr(putpbreg,_putpbreg) /* PPV */
     Def1op
     Op1(Variable(get_xxv));
+/* In the multi-threaded system a signal can be issued be another thread
+   with thread signal anytime */
+#ifndef MULTI_THREAD
     if (attv_pending_interrupts) printf("Failed assertion putpbreg\n");
+#endif
     ADVANCE_PC(size_xxx);
     cut_code(op1);
   XSB_End_Instr()
@@ -1141,7 +1153,11 @@ contcase:     /* the main loop */
   XSB_Start_Instr(puttbreg,_puttbreg) /* PPR */
     Def1op
     Op1(Register(get_xxr));
+/* In the multi-threaded system a signal can be issued be another thread
+   with thread signal anytime */
+#ifndef MULTI_THREAD
     if (attv_pending_interrupts) printf("Failed assertion puttbreg\n");
+#endif
     ADVANCE_PC(size_xxx);
     cut_code(op1);
   XSB_End_Instr()
