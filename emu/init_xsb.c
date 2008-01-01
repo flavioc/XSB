@@ -463,7 +463,7 @@ static long get_memarea_size( char *s )
 
 	size = strtol( s, &endptr, 0 );
 
-	if( size < 0 )
+	if( size <= 0 )
 		xsb_abort( "invalid size for memory area" );
 
         /* note : the sizes of the memory areas of XSB are kept in KiloBytes */
