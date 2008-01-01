@@ -456,6 +456,36 @@ int pipe_input_stream() {
     return 1;
 }
 
+static long get_memarea_size( char *s )
+{
+	long size ;
+	char *endptr ;
+
+	size = strtol( s, &endptr, 0 );
+
+	if( size < 0 )
+		xsb_abort( "invalid size for memory area" );
+
+        /* note : the sizes of the memory areas of XSB are kept in KiloBytes */
+
+	switch( *endptr )
+	{
+		case 0:
+		case 'k':
+		case 'K':
+			return size ;
+		case 'm':
+		case 'M':
+			return size * K ;
+		case 'g':
+		case 'G':
+			return size * K * K ;
+		default:
+			xsb_abort("invalid unit in memory size parameter");
+	}
+	return 0; /* keep compiler happy */
+}
+
 /*==========================================================================*/
 /* Initialize System Parameters: This is done only on process start
  * up, not on thread startup.   */
@@ -570,17 +600,17 @@ int pipe_input_stream() {
     case 'u':
       if (argv[i][2] != '\0')
 #ifndef MULTI_THREAD
-	sscanf(argv[i]+2, "%ld", &pdl.init_size);
+	pdl.init_size = get_memarea_size( argv[i]+2 ) ;
 #else
-	sscanf(argv[i]+2, "%ld", &flags[THREAD_PDLSIZE]);
+	flags[THREAD_PDLSIZE] = get_memarea_size( argv[i]+2 ) ;
 #endif
       else {
 	i++;
 	if (i < argc)
 #ifndef MULTI_THREAD
-	  sscanf(argv[i], "%ld", &pdl.init_size);
+	  pdl.init_size = get_memarea_size( argv[i] ) ;
 #else
-	sscanf(argv[i], "%ld", &flags[THREAD_PDLSIZE]);
+	  flags[THREAD_PDLSIZE] = get_memarea_size( argv[i] ) ;
 #endif
 	else
 	  xsb_warn("Missing size value for -u");
@@ -589,18 +619,17 @@ int pipe_input_stream() {
     case 'm':
       if (argv[i][2] != '\0')
 #ifndef MULTI_THREAD
-	sscanf(argv[i]+2, "%ld", &glstack.init_size);
+	glstack.init_size = get_memarea_size( argv[i]+2 ) ;
 #else
-	sscanf(argv[i]+2, "%ld", &flags[THREAD_GLSIZE]);
+	flags[THREAD_GLSIZE] = get_memarea_size( argv[i]+2 ) ;
 #endif
       else {
 	i++;
 	if (i < argc)
 #ifndef MULTI_THREAD
-	  sscanf(argv[i], "%ld", &glstack.init_size);
+	  glstack.init_size = get_memarea_size( argv[i] ) ;
 #else
-	  sscanf(argv[i], "%ld", &flags[THREAD_GLSIZE]);
-	  
+	  flags[THREAD_GLSIZE] = get_memarea_size( argv[i] ) ;
 #endif
 	else
 	  xsb_warn("Missing size value for -m");
@@ -609,17 +638,17 @@ int pipe_input_stream() {
     case 'c':
       if (argv[i][2] != '\0')
 #ifndef MULTI_THREAD
-	sscanf(argv[i]+2, "%ld", &tcpstack.init_size);
+	tcpstack.init_size = get_memarea_size( argv[i]+2 ) ;
 #else
-	sscanf(argv[i]+2, "%ld", &flags[THREAD_TCPSIZE]);
+	flags[THREAD_TCPSIZE] = get_memarea_size( argv[i]+2 ) ;
 #endif
       else {
 	i++;
 	if (i < argc)
 #ifndef MULTI_THREAD
-	  sscanf(argv[i], "%ld", &tcpstack.init_size);
+	  tcpstack.init_size = get_memarea_size( argv[i] ) ;
 #else
-	  sscanf(argv[i], "%ld", &flags[THREAD_TCPSIZE]);
+	  flags[THREAD_TCPSIZE] = get_memarea_size( argv[i] ) ;
 #endif
 	else
 	  xsb_warn("Missing size value for -c");
@@ -628,17 +657,17 @@ int pipe_input_stream() {
     case 'o':
       if (argv[i][2] != '\0')
 #ifndef MULTI_THREAD
-	sscanf(argv[i]+2, "%ld", &complstack.init_size);
+	complstack.init_size = get_memarea_size( argv[i]+2 ) ;
 #else
-	sscanf(argv[i]+2, "%ld", &flags[THREAD_COMPLSIZE]);
+	flags[THREAD_COMPLSIZE] = get_memarea_size( argv[i]+2 ) ;
 #endif
       else {
 	i++;
 	if (i < argc)
 #ifndef MULTI_THREAD
-	  sscanf(argv[i], "%ld", &complstack.init_size);
+	  complstack.init_size = get_memarea_size( argv[i] ) ;
 #else
-	  sscanf(argv[i], "%ld", &flags[THREAD_COMPLSIZE]);
+	  flags[THREAD_COMPLSIZE] = get_memarea_size( argv[i] ) ;
 #endif
 	else
 	  xsb_warn("Missing size value for -o");
