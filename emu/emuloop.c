@@ -643,14 +643,17 @@ contcase:     /* the main loop */
     num = ((get_xax) << 8)+(get_xxa);
     ADVANCE_PC(size_xxx);
     if (!flag) {	/* if (flag == READ) */
+      byte *next_instr = lpcreg;
       bld_copy((CPtr)op1, *(sreg++));
       op1 = Register((CPtr)op1);
       nunify_with_list_sym(op1);
-      if (flag) { /* write */
-	new_heap_num(hreg, makeint(num));
-      } else {
-	op1 = *(sreg++);
-	nunify_with_num(op1,num);
+      if (lpcreg == next_instr) { /* not failed */
+	if (flag) { /* write */
+	  new_heap_num(hreg, makeint(num));
+	} else {
+	  op1 = *(sreg++);
+	  nunify_with_num(op1,num);
+	}
       }
     }
     else {
