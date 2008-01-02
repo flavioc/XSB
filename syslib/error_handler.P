@@ -52,7 +52,8 @@ ccall_error_handler(Error) :-
 	close_open_tables,
 	!,fail.
 ccall_error_handler(Error) :-
-	default_ccall_error_handler(Error).
+	default_ccall_error_handler(Error),
+	fail.
 
 /* Below, representation errors (usually mallocs returning null ptrs)
  * are handled seperately, by writing out message in C.  
@@ -95,7 +96,8 @@ default_sys_error_handler_main(BT,Backtrace):-
          Note that for ISO errors we get a comma-list that may have
          terms in it.  Im handling that specially, to make it look
          pretty.*/
- default_ccall_error_handler(error(Error,MsgIn,_Backtrace)) :-
+
+default_ccall_error_handler(error(Error,MsgIn,_Backtrace)) :-
 	% here is where we may do something abt backtraces.
 	% xsb_flag(backtrace_on_error,BT),
 	% xsb_thread_self(Thread),

@@ -35,15 +35,16 @@
 	cache_index/2,
 	last_cached_query_index/1.
 
-:- dynamic
-	c_call_xsb_goal_cache/2,
-	cache_index/2,
-	last_cached_query_index/1.
+:- dynamic c_call_xsb_goal_cache/2.
+:- dynamic cache_index/2.
+:- dynamic last_cached_query_index/1.
 :- index(c_call_xsb_goal_cache/2,trie).
 :- index(cache_index/2,trie).
 
-c_callloop_query_loop(Regs) :-
-%	writeln(foo),
+c_callloop_query_loop(Regs) :- 
+	catch(c_callloop_query_loop0(Regs),Ball,ccall_error_handler(Ball)).
+
+c_callloop_query_loop0(Regs) :-
 %	set_xsb_ready,
 	repeat,
 	get_from_caller(Par,VarTerm,Command),
@@ -74,14 +75,18 @@ c_callloop_query_loop(Regs) :-
 get_from_caller(_,_,_) :- halt.		% halt returns to caller
 
 do_pcall(Call,VarTerm) :-
-	'_$call'(Call),
-	get_from_caller(Call,VarTerm,Command),
+	%% ccall_error_handler fails
+	catch(call_and_get(Call,VarTerm,Command),Ball,ccall_error_handler(Ball)),
 	(Command =:= 0		/* next */
 	 ->	fail
 	 ; Command =:= 1	/* close query */
 	 ->	close_open_tables,
 		!,fail
 	).
+
+call_and_get(Call,VarTerm,Command) :-
+	'_$call'(Call),
+	get_from_caller(Call,VarTerm,Command).
 
 % hidden version of call
 '_$call'(Y) :- 

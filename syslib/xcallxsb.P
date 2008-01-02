@@ -38,7 +38,7 @@ c_callloop :-
 	fail.
 c_callloop :-
 	repeat,
-	catch(c_callloop_query_loop([]),Ball,ccall_error_handler(Ball)),
+	c_callloop_query_loop([]),
 	fail.
 
 c_callloop_cmd_goal(_) :-

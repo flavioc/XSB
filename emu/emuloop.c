@@ -2611,6 +2611,7 @@ DllExport int call_conv xsb(CTXTdeclc int flag, int argc, char *argv[])
    of windows linkage problems for the variable main_thread_gl
  */
    main_thread_gl = th ;
+extern pthread_mutexattr_t attr_rec_gl ;
 #endif
 
    if (flag == XSB_INIT || flag == XSB_C_INIT) {  /* initialize xsb */
@@ -2639,6 +2640,14 @@ DllExport int call_conv xsb(CTXTdeclc int flag, int argc, char *argv[])
 	realtime = real_time();
 	setbuf(stdout, NULL);
 	startup_file = init_para(CTXTc flag, argc, argv);	/* init parameters */
+
+#ifdef MULTI_THREAD
+	/* init c-calling-xsb mutexes, after init_para() */
+	pthread_mutex_init( &(th->_xsb_ready_mut), &attr_rec_gl ) ;
+	pthread_mutex_init( &(th->_xsb_synch_mut), &attr_rec_gl ) ;
+	pthread_mutex_init( &(th->_xsb_query_mut), &attr_rec_gl ) ;
+	xsb_ready = 0;
+#endif
 
 	init_machine(CTXTc 0, 0, 0, 0);	/* init space, regs, stacks */
 	init_inst_table();		/* init table of instruction types */
@@ -2683,16 +2692,8 @@ DllExport int call_conv xsb(CTXTdeclc int flag, int argc, char *argv[])
      return(emuloop(CTXTc current_inst));
 
    } else if (flag == XSB_SETUP_X) {  /* initialize for call to XSB, saving argc regs */
-     int new;
-     Psc ccall_mod, c_callloop_psc, term_psc;
+     Psc term_psc;
      CPtr term_ptr;
-     ccall_mod = pair_psc(insert_module(0,"ccallxsb"));
-     c_callloop_psc = pair_psc(insert("c_callloop_query_loop",1,ccall_mod,&new));
-     if (new) {
-       set_data(c_callloop_psc,ccall_mod);
-       env_type_set(c_callloop_psc, T_IMPORTED, T_ORDI, (xsbBool)new);
-       link_sym(c_callloop_psc, (Psc)flags[CURRENT_MODULE]);
-     }
      term_psc = get_ret_psc((byte)argc);
      term_ptr = (CPtr)build_call(CTXTc term_psc);
      bld_cs((reg+1),((Cell)term_ptr));

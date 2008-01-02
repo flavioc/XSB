@@ -2782,6 +2782,11 @@ case WRITE_OUT_PROFILE:
 	bld_free(hreg); hreg++;
       }
       else {			/* update the atts (another copy) */
+	/*** Doesn't work for attv into and out of tables
+	     CPtr attv_attr = ((CPtr)dec_addr(attv))+1;
+	     push_pre_image_trail(attv_attr,atts);
+	     bld_copy(attv_attr,atts);
+	***/
 	bind_attv((CPtr)dec_addr(attv), hreg);
 	bld_free(hreg); hreg++;
 	bld_copy(hreg, atts); hreg++;

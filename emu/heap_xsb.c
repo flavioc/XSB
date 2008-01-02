@@ -304,7 +304,11 @@ static unsigned long heap_marks_size;
 #define stack_boundaries \
   heap_top = hreg; \
   ls_top = top_of_localstk - 256;  /* extra space for environment above top */ \
-  if (ls_top < heap_top) xsb_exit(CTXTc "Heap and local stack are clobbered"); \
+  if (ls_top < heap_top) {						\
+    if ((ls_top + 256) < heap_top)				    \
+      xsb_exit(CTXTc "Heap and local stack are clobbered"); \
+    else xsb_exit(CTXTc "Not enough extra space to expand heap/local stacks"); \
+  } \
   heap_bot = (CPtr)glstack.low ; \
   ls_bot = (CPtr)glstack.high - 1 ; \
   tr_top = (CPtr)(top_of_trail) /*- 1*/ ; \

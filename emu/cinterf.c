@@ -1244,7 +1244,7 @@ caller has set it a task.  Possibly this could be done by a mutex
 alone, but I don't understand how to do that right now.  
 
 The calling thread and XSB communicate through xsb_synch_mut, and the
-condition variables xsb_started_cond and xsb_done_con -- all of which
+condition variables xsb_started_cond and xsb_done_cond -- all of which
 are in an XSB thread's context.  If you look at emuloop.c, you'll see
 that the halt instruction, which is a function return in the
 sequential system, manipulates these condition variables in the MT
@@ -1361,10 +1361,6 @@ DllExport int call_conv xsb_init(int argc, char *argv[])
     printf("xsb_started_cond not initialized \n");
   if (pthread_cond_init( &(th->_xsb_done_cond), NULL ))
     printf("xsb_done_cond not initialized \n");
-  pthread_mutex_init( &(th->_xsb_ready_mut), NULL ) ;
-  pthread_mutex_init( &(th->_xsb_synch_mut), NULL ) ;
-  pthread_mutex_init( &(th->_xsb_query_mut), NULL ) ;
-  xsb_ready = 0;
   th->_xsb_inquery = 0;
 #endif
 
@@ -1486,6 +1482,7 @@ DllExport int call_conv writeln_to_xsb_stdin(char * input){
 
 #ifndef MULTI_THREAD
 #define EXECUTE_XSB   xsb(CTXTc XSB_EXECUTE,0,0);
+#define EXECUTE_XSB_SETUP_X(NR) xsb(CTXTc XSB_SETUP_X,NR,0)
 #else
 #define EXECUTE_XSB {						\
     if (th != main_thread_gl) {					\
@@ -1493,6 +1490,13 @@ DllExport int call_conv writeln_to_xsb_stdin(char * input){
       pthread_cond_wait( &xsb_done_cond, &xsb_synch_mut );	\
     }								\
     else xsb(CTXTc XSB_EXECUTE,0,0);				\
+  }
+#define EXECUTE_XSB_SETUP_X(NR) {				\
+    if (th != main_thread_gl) {					\
+      pthread_cond_signal(&xsb_started_cond);			\
+      pthread_cond_wait( &xsb_done_cond, &xsb_synch_mut );	\
+    }								\
+    else xsb(CTXTc XSB_SETUP_X,NR,0);				\
   }
 #endif
 
@@ -1505,11 +1509,10 @@ DllExport int call_conv writeln_to_xsb_stdin(char * input){
 
 DllExport int call_conv xsb_query_save(CTXTdeclc int NumRegs) {
 
-  LOCK_XSB_SYNCH;  // ?? is this right?
-  xsb(CTXTc XSB_SETUP_X,NumRegs,0);
+  LOCK_XSB_SYNCH;
+  EXECUTE_XSB_SETUP_X(NumRegs);
   UNLOCK_XSB_SYNCH; 
   return(XSB_SUCCESS);
-
 }
 
 DllExport int call_conv xsb_query_restore(CTXTdecl) {

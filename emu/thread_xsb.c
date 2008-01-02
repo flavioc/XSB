@@ -537,6 +537,7 @@ static void *xsb_thread_run( void *arg )
 static void *ccall_xsb_thread_run( void *arg )
 {
         pthread_t tid;
+	CPtr term_ptr;
 	th_context *ctxt = (th_context *)arg ;
         int pos = THREAD_ENTRY(ctxt->tid) ;
 
@@ -551,8 +552,12 @@ static void *ccall_xsb_thread_run( void *arg )
 
 	pthread_mutex_lock( &ctxt->_xsb_synch_mut ) ;
 
-	emuloop( ctxt, get_ep(ccall_psc)) ;
-	printf("exiting emuloop\n");
+	term_ptr = ctxt->_hreg;
+	bld_functor((ctxt->_hreg)++,get_ret_psc(0));
+	bld_cs(((ctxt->_reg)+1), ((Cell)term_ptr));
+
+	emuloop( ctxt, get_ep(c_callloop_psc)) ;
+	fprintf(stderr,"exiting emuloop\n");
 
 	printf("exiting thread\n");
 

@@ -1391,7 +1391,7 @@ void init_symbols(CTXTdecl)
   size_t stack_size;
 #endif
 #endif
-  int Loc = 0;
+  int Loc = 0, new;
 
   /* set special SLG_WAM instruction addresses */
 
@@ -1448,7 +1448,14 @@ void init_symbols(CTXTdecl)
 
   colon_psc = make_code_psc_rec(":", 2, standard_psc);
 
-  ccall_psc = make_code_psc_rec("c_callloop", 0, standard_psc);
+  ccall_mod_psc = pair_psc(insert_module(0,"ccallxsb"));
+  c_callloop_psc = pair_psc(insert("c_callloop_query_loop",1,ccall_mod_psc,&new));
+  if (new) {
+    set_data(c_callloop_psc,ccall_mod_psc);
+    env_type_set(c_callloop_psc, T_IMPORTED, T_ORDI, (xsbBool)new);
+    link_sym(c_callloop_psc, (Psc)flags[CURRENT_MODULE]);
+  }
+
 
   /* insert symbol tnot/1 into module tables */
   tables_psc = pair_psc(insert_module(0, "tables"));		/* unloaded */
