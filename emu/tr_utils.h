@@ -88,6 +88,7 @@ extern void    first_trie_property(CTXTdecl);
 extern void    next_trie_property(CTXTdecl);
 
 extern Integer newtrie(CTXTdeclc int);
+extern void trie_drop(CTXTdecl);
 extern void private_trie_intern(CTXTdecl);
 extern void shas_trie_intern(CTXTdecl);
 extern int  private_trie_interned(CTXTdecl);
