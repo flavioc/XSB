@@ -34,9 +34,9 @@
 /*  "peephole_opt" is the top-level optimizer, it calls various others.	*/
 
 compile_peephole_opt(Pil, OptPil) :-
-	compile_popt1(Pil, Pil1),
-	compile_popt2(Pil1, Pil2),
-	compile_popt3(Pil2, Pil3),
+	compile_popt1(Pil, Pil1), !,
+	compile_popt2(Pil1, Pil2), !,
+	compile_popt3(Pil2, Pil3), !,
 	compile_popt4(Pil3,_,OptPil),
 	!.
 
@@ -66,9 +66,12 @@ compile_popt11(movreg(T,R), [mulreg(R,S)|PilRest], [mulreg(T,S)|OptPilRest]) :-
 	compile_popt1(PilRest, OptPilRest).
 compile_popt11(movreg(T,R), [divreg(R,S)|PilRest], [divreg(T,S)|OptPilRest]) :-
 	compile_popt1(PilRest, OptPilRest).
-compile_popt11(getpvar(V,R), [putpval(V,R)|PilRest],
-			     [getpvar(V,R)|OptPilRest]) :-
-	compile_popt1(PilRest, OptPilRest).
+compile_popt11(getpvar(V,R), [getpvar(V1,R1)|PilRest], [getkpvars(Cnt,V,R)|OptPilRest]) :-
+	V1 is V+1, R1 is R+1,
+	trim_count_getpvars(PilRest,V1,R1,2,Cnt,PilRest1),
+	compile_popt1(PilRest1,OptPilRest).
+compile_popt11(getpvar(V,R), [putpval(V,R)|PilRest], OptPilRest) :-
+	compile_popt1([getpvar(V,R)|PilRest], OptPilRest).
 compile_popt11(putpvar(V,R), [getpval(V,R)|PilRest],
 			     [putpvar(V,R)|OptPilRest]) :-
 	compile_popt1(PilRest, OptPilRest).
@@ -312,6 +315,17 @@ compile_popt4([execute(Sym),label(T,(Sym,K))|Rest],Seen,OList) :-
 	compile_popt4(Rest,Seen,ORest).
 compile_popt4([Inst|Rest],Seen,[Inst|ORest]) :-
 	compile_popt4(Rest,Seen,ORest).
+
+trim_count_getpvars(PilInsts,V,R,Cnt0,Cnt,OutPilRest) :-
+	(PilInsts == []
+	 ->	Cnt = Cnt0, OutPilRest = []
+	 ;	(PilInsts = [getpvar(V1,R1)|PilRest], V1 is V+1, R1 is R+1
+		 ->	Cnt1 is Cnt0+1,
+			trim_count_getpvars(PilRest,V1,R1,Cnt1,Cnt,OutPilRest)
+		 ;	Cnt = Cnt0,
+			OutPilRest = PilInsts
+		)
+	).
 
 popt_chkmember(P,L,Flag) :-
 	( var(L) -> L = [P|_], Flag = 0

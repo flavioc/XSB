@@ -63,6 +63,7 @@ asm_inst(bldavar,		4,	34,	[ppp]		).
 asm_inst(unitvar_getlist_uninumcon(R,A1,A2),4,35,[r(R),a(A1),a(A2)]).
 asm_inst(bldtval_putlist_bldnumcon(R,A1,A2),4,36,[r(R),a(A1),a(A2)]).
 asm_inst(bldtvar_list_numcon(R,A1,A2),4,37,[r(R),a(A1),a(A2)]).
+asm_inst(getkpvars(K,V,R),	4,	38,	[a(K), v(V), r(R)]).
 
 asm_inst(xorreg(R,R1),	        4,       47,	[p, r(R), r(R1)]).
 

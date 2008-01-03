@@ -498,6 +498,34 @@ contcase:     /* the main loop */
     bind_copy((CPtr)op1, op2);      /* In WAM bld_copy() */
   XSB_End_Instr()
 
+  XSB_Start_Instr(getkpvars,_getkpvars)  /* AVR */
+    CPtr vaddr, vval, raddr;
+    Cell rval;
+    int k;
+    k = get_axx;
+    vaddr = get_xvx;
+    raddr = get_xxr;
+    ADVANCE_PC(size_xxx);
+    /* check for trailing only once */
+    vval = cell((CPtr *)vaddr);
+    if (conditional(vval)) {
+      while (k-- > 0) {
+	vval = cell((CPtr *)vaddr--);
+	rval = cell(raddr++);
+	// bind_copy(vval,rval);
+	pushtrail0(vval,rval);
+	*vval = rval;
+      }
+    } else {
+      while (k-- > 0) {
+	vval = cell((CPtr *)vaddr--);
+	rval = cell(raddr++);
+	// bld_copy(vval,rval);
+	*vval = rval;
+      }
+    }
+  XSB_End_Instr()
+
   XSB_Start_Instr(getpval,_getpval) /* PVR */
     Def2ops
     Op1(Variable(get_xvx));
