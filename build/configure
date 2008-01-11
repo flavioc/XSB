@@ -7361,7 +7361,8 @@ _ACEOF
 _ACEOF
 
 
-                if test "`uname -r | cut -d "." -f "1 2"`" = "2.6"; then
+                if test "`uname -r | cut -d "." -f "1 2"`" = "2.6" \
+			-a "$machine64bit" != yes ; then
                     echo "Guessing the tagging for this version of Linux"
                     cat >>confdefs.h <<\_ACEOF
 #define GENERAL_TAGGING 1
