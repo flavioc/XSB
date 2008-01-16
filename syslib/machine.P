@@ -383,12 +383,13 @@ conname(Con, Name) :-
 	; Type =:= XSB_STRUCT -> term_psc(Con, Psc), psc_name(Psc, Name)
 	).
 
-conpsc(Con, Psc) :-
+conpsc(_Con, _Psc) :- '_$builtin'(CONPSC).
+/**conpsc(Con, Psc) :-
 %%	term_psc(Con, Psc), Psc \== 0.
 	term_type(Con, Type),
 	( Type =:= XSB_STRUCT -> term_psc(Con, Psc)
 	; Type =:= XSB_STRING -> psc_insert(Con, 0, Psc, 0)
-	).
+	).***/
 
 machine_file_exists(File) :- 
 	sys_syscall(SYS_access, Res, File, 'r'), Res =:= 0.
