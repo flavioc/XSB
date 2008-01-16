@@ -78,6 +78,7 @@
 #define PSC_INSERT	42
 #define PSC_IMPORT	43
 #define PSC_DATA	44
+#define CONPSC		45
 
 #define PSC_INSERTMOD	46
 

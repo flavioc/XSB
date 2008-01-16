@@ -1273,6 +1273,17 @@ int builtin_call(CTXTdeclc byte number)
     /*    ctop_addr(2, get_str_psc(ptoc_tag(CTXTc 1))); */
     ctop_addr(2, term_psc((Cell)(ptoc_tag(CTXTc 1))));
     break;
+  case CONPSC:
+    {int new;
+      Cell term = ptoc_tag(CTXTc 1);
+      if (isstring(term)) {
+	ctop_addr(2, pair_psc(insert(string_val(term), 0, (Psc)flags[CURRENT_MODULE], &new)));
+      }
+      else if (isconstr(term)) 
+	ctop_addr(2, term_psc(term));
+      else return FALSE;
+      return TRUE;
+    }
   case TERM_TYPE: {	/* R1: +term; R2: tag (-int)			  */
 			/* <0 - var, 1 - cs, 2 - int, 3 - list, 7 - ATTV> */
     Cell term = ptoc_tag(CTXTc 1);
@@ -2451,7 +2462,8 @@ case WRITE_OUT_PROFILE:
       if ( (unsigned int)((glstack.high - (byte *)top_of_localstk) +
 			  ((byte *)hreg - glstack.low))
 	   < glstack.init_size * K - OVERFLOW_MARGIN )
-	glstack_realloc(CTXTc glstack.init_size,0);
+	// this is a noop since glstack_realloc won't shrink space.
+	glstack_realloc(CTXTc glstack.init_size,0);  
 
     tstShrinkDynStacks(CTXT);
     break;
