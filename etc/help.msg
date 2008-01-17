@@ -7,7 +7,9 @@ Usage:	xsb [flags] [-l] [-i]
 	xsb --help | --version | --nobanner | --quietload | --noprompt
 
       	memory management flags:
-	    -c tcpsize | -m glsize | -o complsize | -u pdlsize | -r | -g gc_type
+	     -c tcpsize [unit] | -m glsize [unit] | -o complsize [unit] 
+             | -u pdlsize [unit] | -r | -g gc_type
+          unit: k/K memory in kilobytes; m/M in megabytes; g/G in gigabytes
 	miscellaneous flags:
 	     -s | -S | -T
 
@@ -28,30 +30,30 @@ Usage:	xsb [flags] [-l] [-i]
 	     The top-level command loop driver to be used instead of the
 	     standard one.  Usually needed when XSB is run as a server.
 
-                 -i : bring up the XSB interpreter
-            -e goal : evaluate goal when XSB starts up
-                 -l : the interpreter prints unbound variables using letters
-                 -n : used when calling XSB from C
-                 -B : specify the boot module to use in lieu of the standard loader
-                 -D : Sets top-level command loop driver to replace the default
-                 -t : trace execution at the SLG-WAM instruction level
-                      (for this to work, build XSB with the --debug option)
-                 -d : disassemble the module and exit
-               -c N : allocate N KB for the trail/choice-point stack
-               -m N : allocate N KB for the local/global stack
-               -o N : allocate N KB for the SLG completion stack
-               -u N : allocate N KB for the SLG unification stack
-                 -r : turn off automatic stack expansion
-         -g gc_type : choose heap garbage collection ("none", "sliding",
-	                                              "indirection" or "copying")
-                 -p : enable Prolog profiling thru use of profile_call/1
-                 -s : maintain detailed statistical information
-	         -S : set default tabling method to subsumption-based
-                 -T : print a trace of each called predicate
-    --max_threads N : maintain information for up to N threads
-      -v, --version : print the version and configuration information about XSB
-         -h, --help : print this help message
-         --nobanner : don't show the XSB banner on startup
-        --quietload : don't show the `module loaded' messages
-         --noprompt : don't show prompt (for non-interactive use)
+               -i : bring up the XSB interpreter
+          -e goal : evaluate goal when XSB starts up
+               -l : the interpreter prints unbound variables using letters
+               -n : used when calling XSB from C
+               -B : specify the boot module to use in lieu of the standard loader
+               -D : Sets top-level command loop driver to replace the default
+               -t : trace execution at the SLG-WAM instruction level
+                    (for this to work, build XSB with the --debug option)
+               -d : disassemble the module and exit
+       -c N [unit]: allocate N units (def. KB) for the trail/choice-point stack
+       -m N [unit]: allocate N units (def. KB) for the local/global stack
+       -o N [unit]: allocate N units (def. KB) for the SLG completion stack
+       -u N [unit]: allocate N units (def. KB) for the SLG unification stack
+               -r : turn off automatic stack expansion
+       -g gc_type : choose heap garbage collection ("none", "sliding",
+                                                    "indirection" or "copying")
+               -p : enable Prolog profiling thru use of profile_call/1
+               -s : maintain detailed statistical information
+               -S : set default tabling method to subsumption-based
+               -T : print a trace of each called predicate
+  --max_threads N : maintain information for up to N threads
+    -v, --version : print the version and configuration information about XSB
+       -h, --help : print this help message
+       --nobanner : don't show the XSB banner on startup
+      --quietload : don't show the `module loaded' messages
+       --noprompt : don't show prompt (for non-interactive use)
 --shared_predicates : make predicates thread-shared by default
