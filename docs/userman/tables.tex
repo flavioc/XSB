@@ -348,7 +348,7 @@ in Section~{\ref{sec:table-aggregation}}
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 \paragraph{Determining Call Similarity via Subsumption}
-\index{tabling!subsumption-based}
+\index{tabling!call subsumption-based}
 
 Call similarity can also be based on subsumption.  A term $T_1$
 \emph{subsumes} a term $T_2$ if $T_2$ is more specific than
@@ -375,7 +375,7 @@ with certain Prolog constructs with which variant-tabled predicates
 can (see Example~\ref{example:sub-fail} below).  Further, in the
 current implementation of subsumption-based tabling, subsumptive
 predicates may not take part in negative computations which result in
-the \emph{delay} \index{tabling!subsumption-based!interaction with
+the \emph{delay} \index{tabling!call subsumption-based!interaction with
   negation} of a literal containing a subsumptive subgoal (see
 \refsec{sec:CurrentRestrictions}).  This requires subcomputations in
 which subsumptive predicates take part to be LRD-stratified (see
@@ -700,7 +700,7 @@ complete tables will not be removed.  They can be abolished by using
 one of XSB's predicates for abolishing tables.
 
 \paragraph{Subsumption-Based Tabling and Meta-Logical Predicates}
-\index{tabling!subsumption-based!interaction with meta-logical predicates}
+\index{tabling!call subsumption-based!interaction with meta-logical predicates}
 
 Meta-logical predicates like {\tt var/1} can be used to alter the
 choices made during an evaluation.  However, this is dangerous when
@@ -1355,7 +1355,8 @@ manual, \cite{CaSW02a} in XSB's packages directory) a consistency
 checker for description logics has also been created \cite{Swif04}.
 
 \section{Tabled Aggregation} \label{sec:table-aggregation}
-\index{tabled aggregation}
+\index{tabling!aggregation}
+\index{tabling!answer subsumption}
 \index{\texttt{filterReduce/4}}
 \index{\texttt{filterPO/4}}
 
