@@ -62,6 +62,14 @@ concerned.
 eval(Expr, Res) :- 
 	eval(Expr,Res,Expr).
 
+/* TLS Refactored code so that it fails if expression is evalable but
+   equality is wrong -- e.g.
+   0 is 5 mod 2  
+   now fails, rather than incorrectly throwing a type error.
+
+   Thus, each clause of eval0/3 now needs a shallow cut.
+*/
+
 eval(Arg, Res,Expr) :- 
 	(number(Arg)
 	 ->	Res=Arg
@@ -74,68 +82,69 @@ eval(Arg, Res,Expr) :-
 	 ->	throw(error(type_error(arithmetic_expression,Expr),
 			    ('Non evaluable arithmetic expression:',Expr)))
 	 ; eval0(Arg, Res,Expr)
-	 ->	true	/* system defined function */
-         ;	throw(error(type_error(arithmetic_expression,Expr),
-			    ('Non evaluable arithmetic expression:',Expr)) )).
+     ).
 
 /* TLS: we are now more ISO-compatable for fp-to-integer rounding
 functions, 9.1.5.1.  To be completely compatable, we'd have to check for
 overflow.  */
-eval0('+'(X,Y), Res,Expr) :- eval(X, Res1,Expr), 
+eval0('+'(X,Y), Res,Expr) :- !,eval(X, Res1,Expr), 
 		eval(Y,Res2,Expr), Res is Res1 + Res2.  
-eval0('-'(X,Y), Res,Expr) :- eval(X, Res1,Expr), 
+eval0('-'(X,Y), Res,Expr) :- !,eval(X, Res1,Expr), 
 		eval(Y, Res2,Expr), Res is Res1 - Res2.  
-eval0('*'(X,Y), Res,Expr) :- eval(X,Res1,Expr), 
+eval0('*'(X,Y), Res,Expr) :- !,eval(X,Res1,Expr), 
 		eval(Y, Res2,Expr), Res is Res1 * Res2.  
-eval0('/'(X,Y), Res,Expr) :- eval(X, Res1,Expr), 
+eval0('/'(X,Y), Res,Expr) :- !,eval(X, Res1,Expr), 
  		eval(Y, Res2,Expr), Res is Res1 / Res2.  
-eval0('//'(X,Y),Res,Expr) :- eval(X, Res1,Expr), 
+eval0('//'(X,Y),Res,Expr) :- !,eval(X, Res1,Expr), 
 		eval(Y, Res2,Expr), Res is Res1 // Res2.
-eval0(rem(X,Y), Res,Expr) :- eval(X, Res1,Expr), 
+eval0(rem(X,Y), Res,Expr) :- !,eval(X, Res1,Expr), 
 		eval(Y, Res2,Expr), Res is Res1 rem Res2.  
-eval0(mod(X,Y), Res,Expr) :- eval(X, Res1,Expr), 
+eval0(mod(X,Y), Res,Expr) :- !,eval(X, Res1,Expr), 
 		eval(Y, Res2,Expr), Res is Res1 mod Res2.  
-eval0('/\'(X,Y), Res,Expr) :- eval(X, Res1,Expr), 
+eval0('/\'(X,Y), Res,Expr) :- !,eval(X, Res1,Expr), 
 		eval(Y, Res2,Expr), Res is Res1 /\ Res2.  
-eval0('\/'(X,Y), Res,Expr) :- eval(X, Res1,Expr), 
+eval0('\/'(X,Y), Res,Expr) :- !,eval(X, Res1,Expr), 
 		eval(Y, Res2,Expr), Res is Res1 \/ Res2.  
-eval0('<<'(X,Y), Res,Expr) :- eval(X, Res1,Expr), 
+eval0('<<'(X,Y), Res,Expr) :- !,eval(X, Res1,Expr), 
 		eval(Y, Res2,Expr), Res is Res1 << Res2.  
-eval0('>>'(X,Y), Res,Expr) :- eval(X, Res1,Expr), 
+eval0('>>'(X,Y), Res,Expr) :- !,eval(X, Res1,Expr), 
 		eval(Y, Res2,Expr), Res is Res1 >> Res2.  
-eval0(min(X,Y), Res,Expr) :- eval(X, Res1,Expr),eval(Y, Res2,Expr),
+eval0(min(X,Y), Res,Expr) :- !,eval(X, Res1,Expr),eval(Y, Res2,Expr),
 			     (Res1 =< Res2 -> Res = Res1 ; Res = Res2).
-eval0(max(X,Y), Res,Expr) :- eval(X, Res1,Expr),eval(Y, Res2,Expr),
+eval0(max(X,Y), Res,Expr) :- !,eval(X, Res1,Expr),eval(Y, Res2,Expr),
 			     (Res1 >= Res2 -> Res = Res1 ; Res = Res2).
-eval0(exp(X,Y), Res,Expr) :- eval(X, Res1,Expr),eval(Y, Res2,Expr),
+eval0(exp(X,Y), Res,Expr) :- !,eval(X, Res1,Expr),eval(Y, Res2,Expr),
 			     pow(Res1,Res2,Res).
-eval0('**'(X,Y), Res,Expr) :- eval(X, Res1,Expr),eval(Y, Res2,Expr),
+eval0('**'(X,Y), Res,Expr) :- !,eval(X, Res1,Expr),eval(Y, Res2,Expr),
 			     Res is Res1 ** Res2.
-eval0('><'(X,Y), Res,Expr) :- eval(X, Res1,Expr),eval(Y, Res2,Expr),
+eval0('><'(X,Y), Res,Expr) :- !,eval(X, Res1,Expr),eval(Y, Res2,Expr),
 			     Res is Res1 >< Res2.
 
-eval0('-'(X), Res,Expr) :- eval(X, Res1,Expr), Res is -(Res1).
-eval0('\'(X), Res,Expr) :- eval(X, Res1,Expr), Res is '\'(Res1).  
-eval0(float(X), Res,Expr) :- eval(X, Res1,Expr), Res is float(Res1).  
-eval0(floor(X), Res,Expr) :- eval(X, Res1,Expr), Res is floor(Res1).  
-eval0(abs(X),Res,Expr) :- eval(X, Res1,Expr), Res is abs(Res1).  
-eval0(truncate(X),Res,Expr) :- eval(X, Res1,Expr), Res is truncate(Res1).  
-eval0(round(X),Res,Expr) :- eval(X, Res1,Expr), Res is round(Res1).  
-eval0(ceiling(X),Res,Expr) :- eval(X, Res1,Expr), Res is ceiling(Res1).  
-eval0(sin(X), Res,Expr) :- eval(X, Res1,Expr), Res is sin(Res1).
-eval0(cos(X), Res,Expr) :- eval(X, Res1,Expr), Res is cos(Res1).
-eval0(tan(X), Res,Expr) :- eval(X, Res1,Expr), Res is tan(Res1).
-eval0(asin(X), Res,Expr) :- eval(X, Res1,Expr), Res is asin(Res1).
-eval0(acos(X), Res,Expr) :- eval(X, Res1,Expr), Res is acos(Res1).
-eval0(atan(X), Res,Expr) :- eval(X, Res1,Expr), Res is atan(Res1).
-eval0(exp(X), Res,Expr) :- eval(X, Res1,Expr), Res is exp(Res1).
-eval0(log(X), Res,Expr) :- eval(X, Res1,Expr), Res is log(Res1).
-eval0(log10(X), Res,Expr) :- eval(X, Res1,Expr), Res is log10(Res1).
-eval0(sqrt(X), Res,Expr) :- eval(X, Res1,Expr), Res is sqrt(Res1).
-eval0(sign(X), Res,Expr) :- eval(X, Res1,Expr), Res is sign(Res1).
+eval0('-'(X), Res,Expr) :- !,eval(X, Res1,Expr), Res is -(Res1).
+eval0('\'(X), Res,Expr) :- !,eval(X, Res1,Expr), Res is '\'(Res1).  
+eval0(float(X), Res,Expr) :- !,eval(X, Res1,Expr), Res is float(Res1).  
+eval0(floor(X), Res,Expr) :- !,eval(X, Res1,Expr), Res is floor(Res1).  
+eval0(abs(X),Res,Expr) :- !,eval(X, Res1,Expr), Res is abs(Res1).  
+eval0(truncate(X),Res,Expr) :- !,eval(X, Res1,Expr), Res is truncate(Res1).  
+eval0(round(X),Res,Expr) :- !,eval(X, Res1,Expr), Res is round(Res1).  
+eval0(ceiling(X),Res,Expr) :- !,eval(X, Res1,Expr), Res is ceiling(Res1).  
+eval0(sin(X), Res,Expr) :- !,eval(X, Res1,Expr), Res is sin(Res1).
+eval0(cos(X), Res,Expr) :- !,eval(X, Res1,Expr), Res is cos(Res1).
+eval0(tan(X), Res,Expr) :- !,eval(X, Res1,Expr), Res is tan(Res1).
+eval0(asin(X), Res,Expr) :- !,eval(X, Res1,Expr), Res is asin(Res1).
+eval0(acos(X), Res,Expr) :- !,eval(X, Res1,Expr), Res is acos(Res1).
+eval0(atan(X), Res,Expr) :- !,eval(X, Res1,Expr), Res is atan(Res1).
+eval0(exp(X), Res,Expr) :- !,eval(X, Res1,Expr), Res is exp(Res1).
+eval0(log(X), Res,Expr) :- !,eval(X, Res1,Expr), Res is log(Res1).
+eval0(log10(X), Res,Expr) :- !,eval(X, Res1,Expr), Res is log10(Res1).
+eval0(sqrt(X), Res,Expr) :- !,eval(X, Res1,Expr), Res is sqrt(Res1).
+eval0(sign(X), Res,Expr) :- !,eval(X, Res1,Expr), Res is sign(Res1).
 
-eval0(pi,Pi,_Expr):- pi(Pi).
-eval0(e,E,_Expr):- e(E).
+eval0(pi,Pi,_Expr):- !,pi(Pi).
+eval0(e,E,_Expr):- !,e(E).
+eval0(Expr,_E,_Expr):- !,
+	throw(error(type_error(arithmetic_expression,Expr),
+			    ('Non evaluable arithmetic expression:',Expr))).
 
 pi(3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679).
 e(2.7182818284590452354).
