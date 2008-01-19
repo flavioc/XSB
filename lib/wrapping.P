@@ -1,38 +1,40 @@
 /* File:      wrapping.P
 ** Author(s): Luis Castro
 ** Contact:   xsb-contact@cs.sunysb.edu
-** 
+**
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
 ** Copyright (C) ECRC, Germany, 1990
-** 
+**
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
 ** Software Foundation; either version 2 of the License, or (at your option)
 ** any later version.
-** 
+**
 ** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
 ** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 ** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
 ** more details.
-** 
+**
 ** You should have received a copy of the GNU Library General Public License
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
 ** $Id$
-** 
+**
 */
 
 /* TLS: In Version 3.1, I'm making it so that the generated wrapper
 file is exactly the same for both the sequential engine and the MT
 engine -- both generate context parameters and declarations.  By
-including context.h in the wrapper file, both should compile fine. 
+including context.h in the wrapper file, both should compile fine.
 
 On the other hand, I introduced private_foreign_pred to inducate
 whether the actual C function that is called accesses a context
 declaration or not. */
 
 /* wrap/2 is just used for testing -- process_from is called by foreign*/
+:- import length/2 from basics.
+
 wrap(InFile,OutFile) :-
 	see(InFile),
 	tell(OutFile),
@@ -60,7 +62,7 @@ process_directive(':-'(private_foreign_pred(PredDecl))) :- !,
 	process_from(PredDecl,_Predarity,context).
 process_directive(':-'(foreign_pred(PredDecl))) :- !,
 	process_from(PredDecl,_Predarity,nocontext).
-process_directive(Directive) :- 
+process_directive(Directive) :-
 	seen,told,
 	throw(error(cinterf_wrapper(undefined_directive(Directive)))).
 
@@ -97,26 +99,45 @@ process_from(Directive,_,_) :-
 /* 'Arguselist has Prolog info, Argtypelist has C info.  Note that we
    generate a context for the wrapper function regardless, but we check
    for a context before making a call to the external function. */
-   process_from1(PredName,FuncName,ArgTypeList,NArgUseList,ArgUseList,RetType,NeedsCTXT) :-
+process_from1(PredName,FuncName,ArgTypeList,NArgUseList,ArgUseList,RetType,NeedsCTXT) :-
 	% function definition using return value
 	out_funchead(PredName),
 	out_all_variables([argtype(retval,RetType)|ArgTypeList],ArgUseList),
-	out_all_precall([argtype(retval,RetType)|ArgTypeList],
-	                                ArgUseList,NArgUseList),
+	out_all_precall([argtype(retval,RetType)|ArgTypeList],ArgUseList,NArgUseList),
+	out_setup_recursion([argtype(retval,RetType)|ArgTypeList],ArgumentCount),
 	write('   retval ='),
 	out_ccall(FuncName,ArgTypeList,ArgUseList,NeedsCTXT),
 	out_all_postcall([argtype(retval,RetType)|ArgTypeList],ArgUseList),
-	out_functail,nl.
+	out_cleanup_recursion(ArgumentCount),
+	out_functail(RetType),nl.
 
 process_from2(PredName,FuncName,ArgTypeList,NArgUseList,ArgUseList,_,NeedsCTXT) :-
-	% function definition 
+	% function definition
 	out_funchead(PredName),
 	out_all_variables(ArgTypeList,ArgUseList),
 	out_all_precall(ArgTypeList,ArgUseList,NArgUseList),
+	out_setup_recursion(ArgTypeList,ArgumentCount),
 	out_ccall(FuncName,ArgTypeList,ArgUseList,NeedsCTXT),
 	out_all_postcall(ArgTypeList,ArgUseList),
+	out_cleanup_recursion(ArgumentCount),
 	out_functail,nl.
-	
+
+
+out_setup_recursion(ArgTypeList,ArgumentCount) :-
+	length(ArgTypeList,ArgumentCount),
+	out_setup_recursion1(ArgumentCount).
+
+out_setup_recursion1(0) :- !.
+
+out_setup_recursion1(ArgumentCount) :-
+	write('   xsb_query_save(CTXTc '),
+	write(ArgumentCount),
+	write(');\n').
+
+out_cleanup_recursion(0) :- !.
+
+out_cleanup_recursion(_NonZeroArgumentCount) :-
+	write('   xsb_query_restore(CTXT);\n').
 
 %check_for_retval(ArgUseList,RVUse) :-
 %	select(arguse(retval,RVUse),ArgUseList,_), !.
@@ -185,7 +206,7 @@ write_cargs0([carg(Var,Type)|Rest]) :-
 	write(' '),
 	write(Var),
 	write(', ').
-	
+
 create_ctypelist([],_,[]) :- !.
 create_ctypelist([argtype(Var,Type)|Rest],ArgUse,[carg(Var,CType)|CRest]) :-
 	select(arguse(Var,Use),ArgUse,NArgUse),
@@ -205,7 +226,7 @@ process_cfunc(CFunc,Functor,LArgType,NeedsContext) :-
 %	write('/'),
 %	write(Arity),
 	write('('),
-	(NeedsContext == context -> 
+	(NeedsContext == context ->
 	    (arg(1,CFunc,void) -> write('CTXTdecl') ; write('CTXTdeclc '))
 	  ; true),
 	cargs_list(CFunc,Arity,LArgType),
@@ -319,7 +340,7 @@ define_ccall(stringptr,'+',Var,CVar) :-
 define_ccall(termptr,'+',Var,CVar) :-
 	atom_codes(Var,LVar),
 	atom_codes(CVar,[38|LVar]). % 38 = '&'
-	
+
 define_ccall(intptr,'-',Var,CVar) :-
 	atom_codes(Var,LVar),
 	atom_codes(CVar,[38|LVar]). % 38 = '&'
@@ -353,7 +374,7 @@ out_variables(Var,'+',int) :-
         fmt_write('   prolog_int  %s;',args(Var)),nl.
 out_variables(Var,'+',float) :-
 	fmt_write('   prolog_term %sIn;',args(Var)),nl,
-        fmt_write('   double %s;',args(Var)),nl.    
+        fmt_write('   double %s;',args(Var)),nl. 
 out_variables(Var,'+',chars) :-
 	fmt_write('   prolog_term %sIn;',args(Var)),nl,
         fmt_write('   char *%s;',args(Var)),nl,
@@ -412,7 +433,9 @@ out_variables(Var,'-',stringptr) :-
 	fmt_write('   prolog_term %sOut;',args(Var)),nl,
         fmt_write('   char *%s;',args(Var)),nl.
 out_variables(Var,'-',termptr) :-
-	fmt_write('   prolog_term %s;',args(Var)),nl.
+	fmt_write('   prolog_term %sOut;',args(Var)),nl,
+		fmt_write('   prolog_term %s;',args(Var)),nl,
+		write('   int unificationResult;\n').
 out_variables(Var,'-',atomptr) :-
 	fmt_write('   prolog_term %sOut;',args(Var)),nl,
         fmt_write('   unsigned long %s;',args(Var)),nl.
@@ -467,7 +490,7 @@ out_precall(Var,'+',chars,InPos,_) :-
                                                      args(Var,Var)),nl,
 	fmt_write('   extern_p2c_chars(%sIn,%s,%ssize);',args(Var,Var,Var)),nl,
 	write('   printf("After call to extern_p2c_chars\n");'),nl.
-out_precall(Var,'+',string,InPos,_) :- 
+out_precall(Var,'+',string,InPos,_) :-
 	fmt_write('   %sIn = extern_reg_term(%d);',args(Var,InPos)),nl,
         fmt_write('   if (!is_string(%sIn)) return FALSE;',args(Var)),nl,
 	fmt_write('   %s = extern_p2c_string(%sIn);',args(Var,Var)),nl.
@@ -505,14 +528,14 @@ out_precall(Var,'+',charsptr,InPos,_) :-
 	fmt_write('   %s=%sTemp=(char *)malloc((%ssize+1)*sizeof(char));',
                                                    args(Var,Var,Var)),nl,
 	fmt_write('   extern_p2c_chars(%sIn,%s,%ssize);',args(Var,Var,Var)),nl.
-out_precall(Var,'+',stringptr,InPos,_) :- 
+out_precall(Var,'+',stringptr,InPos,_) :-
 	fmt_write('   %sIn = extern_reg_term(%d);',args(Var,InPos)),nl,
         fmt_write('   if (!is_string(%sIn)) return FALSE;',args(Var)),nl,
 	fmt_write('   %s = extern_p2c_string(%sIn);',args(Var,Var)),nl.
 out_precall(Var,'+',termptr,InPos,_) :-
 	fmt_write('   %s = extern_reg_term(%d);',args(Var,InPos)),nl.
 
-	
+
 out_precall(Var,'-',intptr,_,OutPos) :-
 	fmt_write('   %sOut = extern_reg_term(%d);',args(Var,OutPos)),nl,
         fmt_write('   if(!is_var(%sOut)) return FALSE;',args(Var)),nl.
@@ -529,7 +552,7 @@ out_precall(Var,'-',atomptr,_,OutPos) :-
 	fmt_write('   %sOut = extern_reg_term(%d);',args(Var,OutPos)),nl,
         fmt_write('   if(!is_var(%sOut)) return FALSE;',args(Var)),nl.
 out_precall(Var,'-',termptr,_,OutPos) :-
-	fmt_write('   %s = extern_reg_term(%d);',args(Var,OutPos)),nl.
+	fmt_write('   %sOut = extern_reg_term(%d);',args(Var,OutPos)),nl.
 
 
 out_precall(Var,'+-',chars(Size),InPos,OutPos) :-
@@ -576,7 +599,7 @@ out_precall(Var,'+-',charsptr,InPos,OutPos) :-
 	fmt_write('   extern_p2c_chars(%sIn,%s,%ssize);',args(Var,Var,Var)),nl,
 	fmt_write('   %sOut = extern_reg_term(%d);',args(Var,OutPos)),nl,
         fmt_write('   if(!is_var(%sOut)) return FALSE;',args(Var)),nl.
-out_precall(Var,'+-',stringptr,InPos,OutPos) :- 
+out_precall(Var,'+-',stringptr,InPos,OutPos) :-
 	fmt_write('   %sIn = extern_reg_term(%d);',args(Var,InPos)),nl,
         fmt_write('   if (!is_string(%sIn)) return FALSE;',args(Var)),nl,
 	fmt_write('   %s = extern_p2c_string(%sIn);',args(Var,Var)),nl,
@@ -589,7 +612,7 @@ out_precall(Var,'+-',termptr,InPos,_) :-
 %out_postcall(Var,Mode,Type).
 out_postcall(_,'+',int).
 out_postcall(_,'+',float).
-out_postcall(Var,'+',chars) :- 
+out_postcall(Var,'+',chars) :-
 	fmt_write('   free(%s);',args(Var)),nl.
 out_postcall(_,'+',string).
 out_postcall(_,'+',chars(_)).
@@ -616,8 +639,9 @@ out_postcall(Var,'-',charsptr) :-
 	fmt_write('   extern_c2p_chars(%s,3,%sOut);',args(Var,Var)),nl.
 out_postcall(Var,'-',stringptr) :-
 	fmt_write('   extern_c2p_string(%s,%sOut);',args(Var,Var)),nl.
-out_postcall(_,'-',termptr).
-out_postcall(_,'-',atomptr) :-
+out_postcall(Var,'-',termptr):-
+	fmt_write('   unificationResult = extern_p2p_unify(%s,%sOut);',args(Var,Var)),nl.
+out_postcall(Var,'-',atomptr) :-
 	fmt_write('   extern_c2p_string((char *)%s,%sOut);',args(Var,Var)),nl.
 
 out_postcall(Var,'+-',intptr) :-
@@ -634,14 +658,25 @@ out_postcall(Var,'+-',charsptr) :-
 out_postcall(Var,'+-',stringptr) :-
 	fmt_write('   extern_c2p_string(%s,%sOut);',args(Var,Var)),nl.
 out_postcall(_,'+-',termptr).
-out_postcall(_,'+-',atomptr) :-
+out_postcall(Var,'+-',atomptr) :-
 	fmt_write('   extern_c2p_string((char *)%s,%sOut);',args(Var,Var)),nl.
 
 out_funchead(FuncName) :-
 	fmt_write('DllExport int call_conv %s(CTXTdecl)',args(FuncName)),nl,
         write('{'),nl.
 
-out_functail :- 
+out_functail :-
+	write('   return TRUE;'),nl,
+	write('}'),
+	nl.
+
+out_functail(term) :-
+	!,
+	write('   return(unificationResult);'),nl,
+	write('}'),
+	nl.
+
+out_functail(_RetType) :-
 	write('   return TRUE;'),nl,
 	write('}'),
 	nl.
@@ -649,7 +684,7 @@ out_functail :-
 out_ccall(FuncName,ArgType,ArgUse,NeedsContext) :-
 	write('   '),write(FuncName),
 	write('('),
-	(NeedsContext == context -> 
+	(NeedsContext == context ->
 	    (ArgType == [] -> write('CTXT') ; write('CTXTc '))
 	 ;  true),
 	out_ccall0(ArgType,ArgUse),
@@ -673,13 +708,13 @@ out_ccall1([argtype(Var,Type)|ArgType],ArgUse) :-
 end_of_file.
 get_arguse(Var,Use,ArgUse,NArgUse,NumberOfArg,Function):-
 	select(arguse(Var,U1),ArgUse,NArgUse),
-	(U1 == th_context -> 
-	    (NumberOfArg == 1 -> 
+	(U1 == th_context ->
+	    (NumberOfArg == 1 ->
 		 true
 	      ;  concat_atom(['Thread context must be in first position in function declaration ',
 	                      Function],Error),
 	         syntax_error(Error) ),
-	    (NArgUse == [] -> 
+	    (NArgUse == [] ->
 		Use = th_context_singleVar
 	      ; Use = th_context_multipleVar)
 	  ; Use = U1).
