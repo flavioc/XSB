@@ -307,7 +307,7 @@ static unsigned long heap_marks_size;
   if (ls_top < heap_top) {						\
     if ((ls_top + 256) < heap_top)				    \
       xsb_exit(CTXTc "Heap and local stack are clobbered"); \
-    else xsb_exit(CTXTc "Not enough extra space to expand heap/local stacks"); \
+    else xsb_exit(CTXTc "Not enough extra space to expand heap/local stacks (lst=%p,ht=%p)",ls_top,heap_top); \
   } \
   heap_bot = (CPtr)glstack.low ; \
   ls_bot = (CPtr)glstack.high - 1 ; \
@@ -425,7 +425,15 @@ xsbBool glstack_realloc(CTXTdeclc int new_size, int arity)
   size_t new_size_in_bytes, new_size_in_cells ; /* what a mess ! */
   double   expandtime ;
 
-  if (new_size <= glstack.size) return 0;
+  if (new_size <= glstack.size) { // asked to shrink
+    // new_size is space needed + half of init_size, rounded to K
+    new_size = (((glstack.high - (byte *)top_of_localstk) +
+		 ((byte *)hreg - glstack.low)) + glstack.init_size*K/2 + (K-1)) / K;
+    // but not smaller than init_size
+    if (new_size < glstack.init_size) new_size = glstack.init_size;
+    if (new_size >= glstack.size) return 0;  // computed new_size won't shrink
+    //    printf("shrinking glstack from %dK to %dK\n",glstack.size,new_size);
+  }
 
   //  fprintf(stddbg,"Reallocating the Heap and Local Stack data area");
 #ifdef DEBUG_VERBOSE
@@ -447,46 +455,60 @@ xsbBool glstack_realloc(CTXTdeclc int new_size, int arity)
 
   /* Expand the data area and push the Local Stack to the high end. */
 
-  new_heap_bot = (CPtr)realloc(heap_bot, new_size_in_bytes);
-  if (new_heap_bot == NULL) {
-    if (2*glstack.size == new_size) { /* if trying to double, try backing off, may not help */
-      int increment = new_size;
-      while (new_heap_bot == NULL && increment > 40) {
-	increment = increment/2;
-	new_size = glstack.size + increment;
-	new_size_in_bytes = new_size*K ;
-	new_size_in_cells = new_size_in_bytes/sizeof(Cell) ;
-	new_heap_bot = (CPtr)realloc(heap_bot, new_size_in_bytes);
-      }
-      if (new_heap_bot == NULL) {
+  if (new_size < glstack.size) { //shrinking
+    // move local stack down
+    memmove(glstack.low + new_size_in_bytes-(glstack.high-(byte *)ls_top),  // to
+	    ls_top,  // from
+	    glstack.high - (byte *)ls_top  // size
+	    );
+    new_heap_bot = (CPtr)realloc(heap_bot, new_size_in_bytes);
+    heap_offset = new_heap_bot - heap_bot ;
+    new_ls_bot = new_heap_bot + new_size_in_cells - 1 ;
+    local_offset = new_ls_bot - ls_bot ;
+  } else { // expanding
+    new_heap_bot = (CPtr)realloc(heap_bot, new_size_in_bytes);
+    if (new_heap_bot == NULL) {
+      if (2*glstack.size == new_size) { /* if trying to double, try backing off, may not help */
+	int increment = new_size;
+	while (new_heap_bot == NULL && increment > 40) {
+	  increment = increment/2;
+	  new_size = glstack.size + increment;
+	  new_size_in_bytes = new_size*K ;
+	  new_size_in_cells = new_size_in_bytes/sizeof(Cell) ;
+	  new_heap_bot = (CPtr)realloc(heap_bot, new_size_in_bytes);
+	}
+	if (new_heap_bot == NULL) {
+	  xsb_mesg("Not enough core to resize the Heap and Local Stack!");
+	  return 1; /* return an error output -- will be picked up later */
+	}
+      } else {
 	xsb_mesg("Not enough core to resize the Heap and Local Stack!");
 	return 1; /* return an error output -- will be picked up later */
       }
-    } else {
-      xsb_mesg("Not enough core to resize the Heap and Local Stack!");
-      return 1; /* return an error output -- will be picked up later */
     }
-  }
-  heap_offset = new_heap_bot - heap_bot ;
-  new_ls_bot = new_heap_bot + new_size_in_cells - 1 ;
-  local_offset = new_ls_bot - ls_bot ;
+    heap_offset = new_heap_bot - heap_bot ;
+    new_ls_bot = new_heap_bot + new_size_in_cells - 1 ;
+    local_offset = new_ls_bot - ls_bot ;
 
 #if defined(GENERAL_TAGGING)
-  //  printf("glstack expand %p %p\n",(void *)new_heap_bot,(void *)new_ls_bot+1);
-  extend_enc_dec_as_nec(new_heap_bot,new_ls_bot+1);
+    //  printf("glstack expand %p %p\n",(void *)new_heap_bot,(void *)new_ls_bot+1);
+    extend_enc_dec_as_nec(new_heap_bot,new_ls_bot+1);
 #endif
 
-  memmove(ls_top + local_offset,             /* move to */
-	  ls_top + heap_offset,              /* move from */
-	  (ls_bot - ls_top + 1)*sizeof(Cell) );      /* number of bytes */
+    memmove(ls_top + local_offset,             /* move to */
+	    ls_top + heap_offset,              /* move from */
+	    (ls_bot - ls_top + 1)*sizeof(Cell) );      /* number of bytes */
+  }
 
   initialize_glstack(heap_top + heap_offset,ls_top+local_offset);
 
   /* Update the Heap links */
-  for (cell_ptr = (CPtr *)(heap_top + heap_offset);
-       cell_ptr-- > (CPtr *)new_heap_bot;
-      )
-  { reallocate_heap_or_ls_pointer(cell_ptr) ; }
+  if (heap_offset != 0) {
+    for (cell_ptr = (CPtr *)(heap_top + heap_offset);
+	 cell_ptr-- > (CPtr *)new_heap_bot;
+	 )
+      { reallocate_heap_or_ls_pointer(cell_ptr) ; }
+  }
 
   /* Update the pointers in the Local Stack */
   for (cell_ptr = (CPtr *)(ls_top + local_offset);

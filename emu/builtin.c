@@ -2459,10 +2459,6 @@ case WRITE_OUT_PROFILE:
 	complstack_realloc(CTXTc complstack.init_size);
 
     if (glstack.size != glstack.init_size)
-      if ( (unsigned int)((glstack.high - (byte *)top_of_localstk) +
-			  ((byte *)hreg - glstack.low))
-	   < glstack.init_size * K - OVERFLOW_MARGIN )
-	// this is a noop since glstack_realloc won't shrink space.
 	glstack_realloc(CTXTc glstack.init_size,0);  
 
     tstShrinkDynStacks(CTXT);
