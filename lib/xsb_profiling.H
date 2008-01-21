@@ -36,5 +36,9 @@
 :- import telling/1 from standard.
 :- import write/1 from standard.
 :- import writeln/1 from standard.
+:- import catch/3 from standard.
+:- import throw/1 from standard.
+
+:- import write_term/2 from write_term.
 
 :- import findall/3 from setof.
