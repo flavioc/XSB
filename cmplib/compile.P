@@ -92,56 +92,6 @@ compile(Modname, Basename, Extension,Options, ExportList) :-
 compile(Modname, Basename, Options, ExportList) :-
 	compile(Modname, Basename, XSB_SRC_EXTENSION_ATOM, Options, ExportList).
 
-/****	telling(OldFile),
-	file_names(Basename, PFile, HFile, OFile, AFile, DFile,
-		   SpecFile, TIFile, TableFile, _OptFile),
-	setoptions(Options), initialize,
-	%% If --quietload, don't print Compiling/compiled messages
-	stat_flag(BANNER_CTL,BannerCtl),
-	(   KeepQuiet is BannerCtl mod QUIETLOAD, KeepQuiet =:= 0
-	->  true
-	;
-	    message(('[Compiling ', Basename, ']'))
-	),
-	cputime(TimeStart),
-	retractall(current_compiled_module(_)),
-	assert(current_compiled_module(Basename)),
-%	db_preprocess(PFile, HFile, OptFile, SourceFile),
-	parse(Modname, PFile, HFile, Module_0),
-	( option(profile) -> 
-	    time_message(TimeStart, 'Parse finita'), cputime(TimeParse)
-	; TimeParse = TimeParse ), % To avoid a silly lamp variable message!
-	abort_if_syntax_errors(Modname), !,
-	useinfer(Module_0, IsModule, ExportList), !,
-	( option(profile) -> 
-	    time_message(TimeParse, 'Useinfer finita'), cputime(TimeUse)
-	; TimeUse = TimeUse ), % To avoid a silly lamp variable message!
-	modeinfer(Modname, Module_0, DFile),
-	specialise(Module_0, Module0, SpecFile),
-	table_process(Module0, Module, TableFile),
-	hack_self_compile,
-	get_symtab(Module, SymTab),
-	compile1(Modname, Module, SymTab, AFile, OFile, TIFile, IsModule),
-	dispose_symtab( SymTab ),
-	( option(compile_off) -> print_result(Module) ; true ),
-	(conget('error occurred', 1) ->
-	    sys_unlink(OFile,_), 
-	    message(('The file ', OFile, ' is removed')),
-	    abort_quietly
-	; true
-	), !,
-	( IsModule =:= 0 -> IsModuleMsg = '' ; IsModuleMsg = 'Module ' ),
-	%% If --quietload, don't print Compiling/compiled messages
-	stat_flag(BANNER_CTL,BannerCtl1),
-	(   KeepQuiet1 is BannerCtl1 mod QUIETLOAD, KeepQuiet1 =:= 0
-	->  true
-	;   time_message(TimeStart, (IsModuleMsg, Modname, ' compiled'))
-	),
-	!,
-	retractall(current_compiled_module(_)),
-	tell(OldFile).******/
-
-
 file_names(Basename, Ext,PFile, HFile, OFile, AFile, DFile,
 	   SpecFile, TIFile, TableFile, OptFile) :-
 	str_cat(Basename,Ext,PFile),
@@ -153,18 +103,6 @@ file_names(Basename, Ext,PFile, HFile, OFile, AFile, DFile,
 	str_cat(Basename, '.ti', TIFile),
 	str_cat(Basename, '.table', TableFile),
 	str_cat(PFile, '.opt', OptFile).
-
-/**file_names(Basename, PFile, HFile, OFile, AFile, DFile,
-	   SpecFile, TIFile, TableFile, OptFile) :-
-	str_cat(Basename,XSB_SRC_EXTENSION_ATOM,PFile),
-	str_cat(Basename,XSB_HDR_EXTENSION_ATOM,HFile),
-	str_cat(Basename,XSB_OBJ_EXTENSION_ATOM,OFile),
-	str_cat(Basename,XSB_ASM_EXTENSION_ATOM,AFile),
-	str_cat(Basename,XSB_DCL_EXTENSION_ATOM,DFile),
-	str_cat(Basename, '.spec', SpecFile),
-	str_cat(Basename, '.ti', TIFile),
-	str_cat(Basename, '.table', TableFile),
-	str_cat(PFile, '.opt', OptFile).***/
 
 initialize :-
 	conset('table #', 0),
@@ -187,28 +125,6 @@ abort_if_syntax_errors(Modname) :-
 abort_quietly :-
 	throw(error(misc_error,'Aborting...',[[]])).
 
-/*================================================================*/
-/* db_preprocess(+PFile, +HFile, +OptFile, -SourceFile)	*/
-/*	Calls the database optimizer of XSB as a preprocessor that	*/
-/*	produces the file OptFile out of PFile and HFile.		*/
-/*==============================================================*/
-
-/* TLS: taken out 11/03.  Could not find any predicate definition for
-db_optimize
-*                                                                                                    *
-*  db_preprocess(PFile, HFile, OptFile, SourceFile) :-                        * 
-* 	(option(db_opt) ->                                                              * 
-* 	    (option(unfold),option(reorder) ->                                   * 
-* 	          DB_Opt_Options =[unfold,reorder]                             *
-* 	       ;  option(unfold) ->                                                      * 
-* 	               DB_Opt_Options = [unfold]                                   *
-* 	           ;  option(reorder) ->                                                 * 
-* 		    DB_Opt_Options = [reorder]                                 * 
-* 		  ; DB_Opt_Options = [] ),                                        *
-*  	    db_optimize(PFile, HFile, DB_Opt_Options, OptFile),         * 
-* 	    SourceFile = OptFile                                                         *
-* 	  ; SourceFile = PFile ).                                                         *
-*/
 /*============================================================*/
 /* table_process(+ModuleIn, -ModuleOut, +SFile)				*/
 /*	Performs necessary module-level analyses for tabling.		*/
