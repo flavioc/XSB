@@ -77,24 +77,25 @@ set_symbol_hash_table_size(FileSize,module(sym_tab(_,_,HashTab),_,_,_)) :-
 parse1(Modname, File, Module) :-
 	seeing(OldFile),
 	open_or_xpp_file(File,XPP_process),
-	(parse_clauses(Modname, Module), ! 
+	(parse_clauses(Modname, Module)
 	%% check if must restart
-	->  (conget(needs_restart,1)
-	    ->	seen, see(OldFile), fail
-	    ;	true
-	    )
-	;   true
+	 ->	(conget(needs_restart,1)
+		 ->	seen, see(OldFile), fail
+		 ;	!	% doesn't need restart so cut away 2nd parse1 cls.
+		)
+	 ;	true
 	),
-	(
-	    XPP_process == none, ! 
-	;   %% Wait, if cpp was spawned so as to not leave zombies
+	(XPP_process == none
+	 ->	true
+	 ;	%% Wait, if cpp was spawned so as to not leave zombies
 	    (   xsb_configuration(host_os,windows)
 	    -> (process_control(XPP_process,kill);true)
 	    ;  process_control(XPP_process, wait(XPP_status)),
- 	       (   XPP_status == 0, !
- 	       ;   error(('While preprocessing ', File,
-			  '. Compilation aborted.')),
-		   fail
+ 	       (   XPP_status == 0
+		->     true
+ 	        ;      error(('While preprocessing ', File,
+			      '. Compilation aborted.')),
+		       fail
 	       )
 	    ),
 	    %% Also, release the file descriptor used to read from cpp
@@ -130,7 +131,7 @@ parse1(Modname, File, Module) :-
 %% If xpp_on option is not set, just open the file.
 %% Otherwise, pass it through the C preprocessor
 open_or_xpp_file(File, XPP_process) :-
-	(conget(xpp_on,0), ! -> see(File), XPP_process = none
+	(conget(xpp_on,0) -> see(File), XPP_process = none
 	; 
 	    %% xpp_on is set: use preprocessor
 	    xpp_process_file(File, XPP_process, IOportFromProc),
@@ -144,7 +145,8 @@ open_or_xpp_file(File, XPP_process) :-
 %% This can then be used, for example, to bind this port to XSB standard 
 %% output (stat_set_flag(CURRENT_OUTPUT,port)
 xpp_process_file(FileName, XPP_process, IOportFromProc) :-
-	(xpp_program(XPP_command), !
+	(xpp_program(XPP_command)
+	 ->	true
 	;   make_gpp_command(XPP_command,FileName)
 	),
 	((integer(FileName) ; var(FileName))
@@ -170,7 +172,7 @@ xpp_process_file(FileName, XPP_process, IOportFromProc) :-
 	),
 	%% Redirect cpp's stderr to XSB's STDWARN
 	spawn_process(FullXPP_command, InputStream, IOportFromProc, STDWARN, XPP_process),
-	!,
+%%	!,  %% why would this cut be needed?
 #ifdef DEBUG_GPP
 	message('[Preprocessing done]'),
 #endif
@@ -532,12 +534,22 @@ parse_directive(index(X), _QrList,SymTab,_ModName) :- !,	% for compiled-code ind
 	parse_index(X, SymTab).
 parse_directive(index(Ps,Arg,Size), QrList,SymTab,_ModName) :- !,
 	(Ps = Pname/Arity -> true ; functor(Ps,Pname,Arity)),
-	sym_insert(Pname,Arity,[index(Arg)],SymTab,_),
+	(integer(Arg)
+	 ->	sym_insert(Pname,Arity,[index(Arg)],SymTab,_)
+	 ; Arg = [Arg0|_], integer(Arg0) % if multiple, take first
+	 ->	sym_insert(Pname,Arity,[index(Arg0)],SymTab,_)
+	 ;	true
+	),
 	index(Ps,Arg,Size), 
 	parse_query(index(Ps,Arg,Size), QrList,SymTab).
 parse_directive(index(Ps,Arg), QrList,SymTab,_ModName) :- !,
 	(Ps = Pname/Arity -> true ; functor(Ps,Pname,Arity)),
-	sym_insert(Pname,Arity,[index(Arg)],SymTab,_),
+	(integer(Arg)
+	 ->	sym_insert(Pname,Arity,[index(Arg)],SymTab,_)
+	 ; Arg = [Arg0|_], integer(Arg0) % if multiple, take first
+	 ->	sym_insert(Pname,Arity,[index(Arg0)],SymTab,_)
+	 ;	true
+	),
 	index(Ps,Arg),
 	parse_query(index(Ps,Arg), QrList,SymTab).
 parse_directive(mode(X), _QrList,SymTab,_ModName) :- !,
