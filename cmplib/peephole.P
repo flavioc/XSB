@@ -52,6 +52,8 @@ compile_popt11(puttvar(T,R), [getstr(R,S)|PilRest], [putstr(T,S)|OptPilRest]) :-
 	compile_popt1a(PilRest, OptPilRest).
 compile_popt11(puttvar(T,T), [movreg(T,R)|PilRest], [puttvar(T,R)|OptPilRest]) :-
 	compile_popt1a(PilRest, OptPilRest).
+compile_popt11(puttvar(T,T), [getnumcon(T,C)|PilRest], [putnumcon(T,C)|OptPilRest]) :-
+	compile_popt1a(PilRest, OptPilRest).
 compile_popt11(puttval(T,T), [movreg(T,R)|PilRest], [puttval(T,R)|OptPilRest]) :-
 	compile_popt1a(PilRest, OptPilRest).
 compile_popt11(movreg(T,R), [puttbreg(R)|PilRest], [puttbreg(T)|OptPilRest]) :-
