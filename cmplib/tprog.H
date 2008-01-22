@@ -32,10 +32,10 @@
 :- import merge/3 from listutil.
 :- import flatten/2 from flatten.
 :- import gennum/1 from gensym.
-:- import geninline/10 from tpinline.
+:- import geninline/9 from tpinline.
 :- import inline_builtin/3 from builtin.
 :- import release/3, reserve/3 from tp_var.
-:- import tcond/10, tvar_hold/3 from tp_cond.
+:- import tcond/9, tvar_hold/3 from tp_cond.
 :- import sym_name/3, sym_type/2 from symtab.
 :- import tgetpar/6, tgoalargs/7 from tp_goal.
 

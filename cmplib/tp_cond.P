@@ -57,32 +57,32 @@ tvar_hold_arg(varocc(Vid,Prag), HoldIn, HoldOut) :-
 
 /*======================================================================*/
 /* tcond(+TestGoal, +SuccessLabel, +FailLabel, 				*/
-/*	 -Pil-Pilr, +Tin, -Tout, +HoldRegs, +PredSym, +NC)		*/
+/*	 -Pil-Pilr, +Tin, -Tout, +HoldRegs, e(+PredSym,+NC))		*/
 /* 	Generates code for the test part of an 'if_then_else'.		*/
 /*======================================================================*/
 
-tcond(and(Goal,Goals),SuccLab,FailLab,Pil,Pilr,Tin,Tout,Hold,PredSym,NC) :-
+tcond(and(Goal,Goals),SuccLab,FailLab,Pil,Pilr,Tin,Tout,Hold,EPN) :-
     gennum(LabId), IntSuccLab = label(_,(disj,LabId)),
     tcond(Goal,IntSuccLab,FailLab,Pil,[IntSuccLab|Pilm],
-	  Tin,Tmid,Hold,PredSym,NC),
-    tcond(Goals,SuccLab,FailLab,Pilm,Pilr,Tmid,Tout,Hold,PredSym,NC).
-tcond(or(Goal,Goals),SuccLab,FailLab,Pil,Pilr,Tin,Tout,Hold,PredSym,NC) :-
+	  Tin,Tmid,Hold,EPN),
+    tcond(Goals,SuccLab,FailLab,Pilm,Pilr,Tmid,Tout,Hold,EPN).
+tcond(or(Goal,Goals),SuccLab,FailLab,Pil,Pilr,Tin,Tout,Hold,EPN) :-
     gennum(LabId), IntFailLab = label(_,(disj,LabId)),
     tcond(Goal,SuccLab,IntFailLab,Pil,[IntFailLab|Pilm],
-	  Tin,Tmid,Hold,PredSym,NC),
-    tcond(Goals,SuccLab,FailLab,Pilm,Pilr,Tmid,Tout,Hold,PredSym,NC).
+	  Tin,Tmid,Hold,EPN),
+    tcond(Goals,SuccLab,FailLab,Pilm,Pilr,Tmid,Tout,Hold,EPN).
 tcond(inlinegoal(Op,_,Args),SuccLab,FailLab,
-      Pil,Pilr,Tin,Tout,Hold,PredSym,NC) :-
+      Pil,Pilr,Tin,Tout,Hold,EPN) :-
     ( Args = [Arg1,Arg2],
 	( arithrelop(Op) -> 
 	     tcond_relop(Op,Arg1,Arg2,SuccLab,FailLab,
-			 Pil,Pilr,Tin,Tout,Hold,PredSym,NC)
+			 Pil,Pilr,Tin,Tout,Hold,EPN)
 	; term_comp_op(Op) ->
 	     tcond_compop(Op,Arg1,Arg2,SuccLab,FailLab,Pil,Pilr,Tin,Tout,Hold)
 	; Op == '=' ->	% these inlines are introduced by flattening
-	     geninline(Op, Args, Hold, 0, Pil, Pilr, Tin, Tout, PredSym, NC)
+	     geninline(Op, Args, Hold, 0, Pil, Pilr, Tin, Tout, EPN)
 	; Op == 'is' ->	% these inlines are introduced by flattening
-	     geninline(Op, Args, Hold, 0, Pil, Pilr, Tin, Tout, PredSym, NC)
+	     geninline(Op, Args, Hold, 0, Pil, Pilr, Tin, Tout, EPN)
 	; Op == '@=' ->
 	     tcond_componfun(Op,Arg1,Arg2,SuccLab,FailLab,Pil,Pilr,Tin,Tout,Hold)
 	)
@@ -93,10 +93,10 @@ tcond(inlinegoal(Op,_,Args),SuccLab,FailLab,
     ).
 
 tcond_relop(Op, Arg1, Arg2, SuccLab, FailLab,
-	    Pil, Pilr, Tin, Tout, Hold, PredSym, NC) :-
+	    Pil, Pilr, Tin, Tout, Hold, EPN) :-
     SuccLab = label(_,SL0), FailLab = label(_,FL0),
     eval_relop(Op, Arg1, Arg2, Hold, FL0,
-	       Pil, [jump(SL0)|Pilr], Tin, Tout, PredSym, NC).
+	       Pil, [jump(SL0)|Pilr], Tin, Tout, EPN).
 
 tcond_cof(BIT_Code,Arg,SuccLab,FailLab,Pil,Pilr,Tin,Tout,Hold) :-
     SuccLab = label(_,SL0), FailLab = label(_,FL0),

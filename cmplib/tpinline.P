@@ -26,30 +26,30 @@
 
 /*======================================================================*/
 /* geninline(+Pname, +Args, +HoldRegs, +ARSize, -Pil, -PilRest, +Tin,	*/
-/*           -Tout, +PredSym, +NC)					*/
+/*           -Tout, e(+PredSym,+NC))					*/
 /*	Generate code for inline predicates.				*/
 /*		+ Args: in intermediate program format.			*/
 /*		- Pil-PilRest: pil code generated, as a differential	*/
 /*			       list.					*/
 /*======================================================================*/
 
-geninline(true, [], _, _, Pil, Pil, T, T, _, _).
-geninline(fail, [], _, _, [fail|Pil], Pil, T, T, _, _).
-geninline(halt, [], _, _, [halt|Pilr], Pilr, T, T, _, _).
+geninline(true, [], _, _, Pil, Pil, T, T, _).
+geninline(fail, [], _, _, [fail|Pil], Pil, T, T, _).
+geninline(halt, [], _, _, [halt|Pilr], Pilr, T, T, _).
 
-geninline('_$builtin', [integer(N)], _, _, [builtin(N)|Pilr], Pilr, T, T, _, _).
-geninline('_$savecp', [Arg], _, _, Pil, Pilr, Tin, Tout, _, _) :-
+geninline('_$builtin', [integer(N)], _, _, [builtin(N)|Pilr], Pilr, T, T, _).
+geninline('_$savecp', [Arg], _, _, Pil, Pilr, Tin, Tout, _) :-
 	geninline_savecp(Arg, Pil, Pilr, Tin, Tout).
-geninline('_$cutto', [Arg], HoldR, ARSize, Pil, Pilr, Tin, Tout, _, _) :-
+geninline('_$cutto', [Arg], HoldR, ARSize, Pil, Pilr, Tin, Tout, _) :-
 	geninline_cutto(Arg, HoldR, ARSize, Pil, Pilr, Tin, Tout).
 
-geninline(is, [Arg1,Arg2], HoldR, _, Pil, Pilr, Tin, Tout, PredSym, NC) :-
-	geninline_is(Arg1, Arg2, HoldR, Pil, Pilr, Tin, Tout, PredSym, NC).
-geninline(@=, [Arg1,Arg2], _HoldR, _, Pil, Pilr, Tin, Tout, _PredSym, _NC) :-
+geninline(is, [Arg1,Arg2], HoldR, _, Pil, Pilr, Tin, Tout, EPN) :-
+	geninline_is(Arg1, Arg2, HoldR, Pil, Pilr, Tin, Tout, EPN).
+geninline(@=, [Arg1,Arg2], _HoldR, _, Pil, Pilr, Tin, Tout, _EPN) :-
 	geninl_load_lhs(Arg1, R1, Pil, Pilm, Tin, Tmid, _),
 	geninl_load_lhs(Arg2, R2, Pilm,
 			[fun_test_ne(R1,R2,abs(-1))|Pilr], Tmid, Tout, _).
-geninline(=, [Lhs,Rhs], HoldR, _, Pil, Pilr, Tin, Tout, _, _) :-
+geninline(=, [Lhs,Rhs], HoldR, _, Pil, Pilr, Tin, Tout, _) :-
 	(if_void_var(Lhs),if_void_var(Rhs)
 	 ->	Pilr = Pil, Tout = Tin
 	 ;	geninl_load_lhs(Lhs, R, Pil, Pil1, Tin, Tmid0, SaveReg),
@@ -61,12 +61,12 @@ geninline(=, [Lhs,Rhs], HoldR, _, Pil, Pilr, Tin, Tout, _, _) :-
 		),
 		geninl_unload_lhs(Lhs, R, HoldR, Tmid3, Tout)
 	).
-geninline(Op, [Arg1,Arg2], HoldR, _, Pil, Pilr, Tin, Tout, PredSym, NC) :-
+geninline(Op, [Arg1,Arg2], HoldR, _, Pil, Pilr, Tin, Tout, EPN) :-
 	arithrelop(Op),
 	!,
 	eval_relop(Op, Arg1, Arg2, HoldR, abs(-1),
-		   Pil, Pilr, Tin, Tout, PredSym, NC).
-geninline(TermCompOp, [Arg1,Arg2], HoldR, _, Pil, Pilr, Tin, Tout, _, _) :-
+		   Pil, Pilr, Tin, Tout, EPN).
+geninline(TermCompOp, [Arg1,Arg2], HoldR, _, Pil, Pilr, Tin, Tout, _) :-
 	term_comp_op(TermCompOp), !,
 	geninl_load_lhs(Arg1, R1, Pil, Pilm, Tin, Tmid, _),
 	geninl_load_lhs(Arg2, R2, Pilm,
@@ -76,7 +76,7 @@ geninline(TermCompOp, [Arg1,Arg2], HoldR, _, Pil, Pilr, Tin, Tout, _, _) :-
 	geninl_unload_lhs(Arg1, R1, HoldR, Tout1, Tout2),
 	geninl_unload_lhs(Arg2, R2, HoldR, Tout2, Tout).
 :- import inline_jumpcof_cond/3 from builtin.
-geninline(Cof, [Arg], HoldR, _, Pil, Pilr, Tin, Tout, _PredSym, _NC) :-
+geninline(Cof, [Arg], HoldR, _, Pil, Pilr, Tin, Tout, _EPN) :-
 	inline_jumpcof_cond(Cof,1,CofNum), !,
 	geninl_load_lhs(Arg, R, Pil, 
 			[jumpcof(CofNum,R,abs(-1))|Pilr], Tin, Tmid, _),
@@ -121,24 +121,25 @@ geninl_unload_lhs(Term, R, HoldR, Tin, Tout) :-
 /*======================================================================*/
 /*======================================================================*/
 
-geninline_is(LHS,Exp,HoldR,Pil,Pilr,Tin,Tout,PredSym,NC) :-
+geninline_is(LHS,Exp,HoldR,Pil,Pilr,Tin,Tout,EPN) :-
 	( LHS = varocc(_Vid,_Prag) ->
-		eval_exp(Exp,R,Pil,Pilm,HoldR,Tin,Tout1,PredSym,NC),
+		eval_exp(Exp,R,Pil,Pilm,HoldR,Tin,Tout1,EPN),
 		release_if_tvar_if_done(LHS,R,HoldR,Tout1,Tout2),
 		tgetpar(LHS,R,Pilm,Pilr,Tout2,Tout)
 	; LHS = integer(Int) ->
 		getreg(Tin, R1), hold(R1, Tin, Tmid),
 		Pil = [putnumcon(R1,Int)|Pil1],
 		eval_exp(Exp,R,Pil1,[subreg(R,R1),jumpnz(R1,abs(-1))|Pilr],
-			 HoldR,Tmid,Tout1,PredSym,NC),
+			 HoldR,Tmid,Tout1,EPN),
 		release(R1,Tout1,Tout2), release(R,Tout2,Tout)
 	; LHS = real(Real) ->
 		getreg(Tin, R1), hold(R1, Tin, Tmid),
 		Pil = [putfloat(R1,Real)|Pil1],
 		eval_exp(Exp,R,Pil1,[subreg(R,R1),jumpnz(R1,abs(-1))|Pilr],
-			 HoldR,Tmid,Tout1,PredSym,NC),
+			 HoldR,Tmid,Tout1,EPN),
 		release(R1,Tout1,Tout2), release(R,Tout2,Tout)
-	; sym_name(PredSym, P, A),
+	; EPN = e(PredSym,NC),
+	  sym_name(PredSym, P, A),
 	  error('variable or numerical constant expected as 1st arg of is/2'),
 	  message(('          in clause #', NC, ' of predicate ', P,'/',A)),
 	  Pil = [fail | Pilr], Tin = Tout

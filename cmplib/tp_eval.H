@@ -25,7 +25,7 @@
 
 
 :- export force_tp_eval_loaded/0.
-:- export eval_relop/11, eval_exp/9, arithrelop/1.
+:- export eval_relop/10, eval_exp/8, arithrelop/1.
 
 :- import sym_name/3 from symtab.
 :- import error/1, message/1 from auxlry.

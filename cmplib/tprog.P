@@ -61,7 +61,7 @@ tclause(Sym, clause(Args,Body,crec(ARSize,Label)),
 	),
 	theadpars(Args,1,Pil1,Pil3,Tin,TRegs),
 	tbody(Body,ARSize1,Pil3,Pilr,TRegs,_,lastgoal,no,
-	      [],Tabled,Tabar,Sym,NC).
+	      [],Tabled,Tabar,e(Sym,NC)).
 
 %:- import telling/1, tell/1, write/1, nl/0, told/0 from standard.
 
@@ -123,7 +123,7 @@ theadpars([Par|Rest], N, Pil, Pilr, TRin, TRout) :-
 
 /*======================================================================*/
 /* tbody(+Goal, +ARSize, Pil-Pilr, +Tin, -Tout,				*/
-/*	 +Meet, +Nested, +HoldRegs, +Sym, +NC)				*/
+/*	 +Meet, +Nested, +HoldRegs, e(+Sym,+NC))			*/
 /*	Tin, Tout: the registers in use at the entry and at the exit.	*/
 /*	Meet: When processing the nested or-branches, this is the label	*/
 /*	      to meet. It can be also "lastgoal", in which case all	*/
@@ -134,12 +134,12 @@ theadpars([Par|Rest], N, Pil, Pilr, TRin, TRout) :-
 /*		if "yes", this would be a nested or-branch.		*/
 /*======================================================================*/
 
-tbody(and(Goal,Goals),A,Pil,Pilr,Tin,Tout,Meet,_,HoldRegs,Tabled,Tabar,Sym,NC) :-
-    tbody(Goal,A,Pil,Pil1,Tin,Tmid,midgoal,no,HoldRegs,Tabled,Tabar,Sym,NC),
+tbody(and(Goal,Goals),A,Pil,Pilr,Tin,Tout,Meet,_,HoldRegs,Tabled,Tabar,EPN) :-
+    tbody(Goal,A,Pil,Pil1,Tin,Tmid,midgoal,no,HoldRegs,Tabled,Tabar,EPN),
     !,
-    tbody(Goals,A,Pil1,Pilr,Tmid,Tout,Meet,no,HoldRegs,Tabled,Tabar,Sym,NC),
+    tbody(Goals,A,Pil1,Pilr,Tmid,Tout,Meet,no,HoldRegs,Tabled,Tabar,EPN),
     !.
-tbody(or(Goal,Goals),A,Pil,Pilr,Tin,[],Meet,Nested,HoldRegs,Tabled,Tabar,Sym,NC) :-
+tbody(or(Goal,Goals),A,Pil,Pilr,Tin,[],Meet,Nested,HoldRegs,Tabled,Tabar,EPN) :-
     ( Nested == no ->
 	Pil = [trymeorelse(A,Label2)|Pil1],
 	( Meet == lastgoal -> ThisMeet = Meet, Pil5 = Pilr
@@ -149,24 +149,24 @@ tbody(or(Goal,Goals),A,Pil,Pilr,Tin,[],Meet,Nested,HoldRegs,Tabled,Tabar,Sym,NC)
     ; 	Pil = [retrymeorelse(A,Label2)|Pil1],
 	Pil5 = Pilr, ThisMeet = Meet
     ),
-    tbody(Goal,A, Pil1,Pil2,Tin,_,Meet,no,HoldRegs,Tabled,Tabar,Sym,NC),
+    tbody(Goal,A, Pil1,Pil2,Tin,_,Meet,no,HoldRegs,Tabled,Tabar,EPN),
     gennum(LabId2), Label2 = (disj,LabId2),
     ( Meet == lastgoal ->
 	Pil2 = [label(disj,Label2)|Pil3]
     ;	Pil2 = [jump(ThisMeet),label(disj,Label2)|Pil3]
     ),
     ( more_branches(Goals) -> Pil3=Pil4 ; Pil3 = [trustmeorelsefail(A)|Pil4] ),
-    tbody(Goals,A,Pil4,Pil5,Tin,_,ThisMeet,yes,HoldRegs,Tabled,Tabar,Sym,NC).
+    tbody(Goals,A,Pil4,Pil5,Tin,_,ThisMeet,yes,HoldRegs,Tabled,Tabar,EPN).
 tbody(if_then_else(inlinegoal(fail,0,[]),_,FGoal),A,Pil,Pilr,Tin,Tout,M,N,
-      HoldRegs,Tabled,Tabar,Sym,NC) :- !,  % to handle test of fail
-    tbody(FGoal,A,Pil,Pilr,Tin,Tout,M,N,HoldRegs,Tabled,Tabar,Sym,NC).
+      HoldRegs,Tabled,Tabar,EPN) :- !,  % to handle test of fail
+    tbody(FGoal,A,Pil,Pilr,Tin,Tout,M,N,HoldRegs,Tabled,Tabar,EPN).
 tbody(if_then_else(Test,TGoal,FGoal),A,Pil,Pilr,Tin,Tout,M,_,
-      HoldRegs0,Tabled,Tabar,Sym,NC) :-
+      HoldRegs0,Tabled,Tabar,EPN) :-
     gennum(TLabId), TLabel = label(then,(disj,TLabId)),
     gennum(FLabId), FLabel = label(else,(disj,FLabId)),
     tvar_hold(Test, HoldRegs0, HoldRegs1),
-    tcond(Test,TLabel,FLabel,Pil,[TLabel|Pil1],Tin,Tmid,HoldRegs1,Sym,NC),
-    tbody(TGoal,A,Pil1,Pil2,Tmid,Tout0,M,no,HoldRegs1,Tabled,Tabar,Sym,NC),
+    tcond(Test,TLabel,FLabel,Pil,[TLabel|Pil1],Tin,Tmid,HoldRegs1,EPN),
+    tbody(TGoal,A,Pil1,Pil2,Tmid,Tout0,M,no,HoldRegs1,Tabled,Tabar,EPN),
     ( M == lastgoal ->
 	Pil2 = [FLabel|Pil3], Pil4 = Pilr
     ;	Pil2 = [jump(ThisMeet),FLabel|Pil3],
@@ -174,14 +174,14 @@ tbody(if_then_else(Test,TGoal,FGoal),A,Pil,Pilr,Tin,Tout,M,_,
 	Pil4 = [label(meet, ThisMeet)|Pilr]
     ),
     merge(Tmid,Tout0,Tout1),
-    tbody(FGoal,A,Pil3,Pil4,Tout1,Tout2,M,no,HoldRegs0,Tabled,Tabar,Sym,NC), 
+    tbody(FGoal,A,Pil3,Pil4,Tout1,Tout2,M,no,HoldRegs0,Tabled,Tabar,EPN), 
     /* tvar may be in */
     merge(Tout1,Tout2,Tout), !.		/* branches of an i-t-e */
-tbody(nil,_,Pil,Pilr,T,T,_,_,_,Tabled,Tabar,Sym,_) :-
+tbody(nil,_,Pil,Pilr,T,T,_,_,_,Tabled,Tabar,EPN) :-
     ( Tabled =:= 0 -> Pil = [proceed|Pilr]
-    ; Pil = [check_interrupt(Sym,3), new_answer_dealloc(Tabar,2)|Pilr]
+    ; EPN=e(Sym,_),Pil = [check_interrupt(Sym,3), new_answer_dealloc(Tabar,2)|Pilr]
     ).
-tbody(goal(Sym,Args),A,Pil,Pilr,Tin,Tout,Meet,_,_HoldRegs,Tabled,Tabar,_,_) :-
+tbody(goal(Sym,Args),A,Pil,Pilr,Tin,Tout,Meet,_,_HoldRegs,Tabled,Tabar,_) :-
     sym_name(Sym, Pred, Arity),
     reserve(Arity,Tin,T1), Tout = [],
     tgoalargs(Args,1,Pil,Pil1,T1,_,Tabled),
@@ -206,11 +206,12 @@ tbody(goal(Sym,Args),A,Pil,Pilr,Tin,Tout,Meet,_,_HoldRegs,Tabled,Tabar,_,_) :-
     !.
 
 tbody(inlinegoal(Pred,_Ar,Args),A,Pil,Pilr,Tin,Tout,Meet,_,HoldRegs,
-							Tabled,Tabar,Sym,NC) :-
-    geninline(Pred,Args,HoldRegs,A,Pil,Pil1,Tin,Tout,Sym,NC),
+							Tabled,Tabar,EPN) :-
+    geninline(Pred,Args,HoldRegs,A,Pil,Pil1,Tin,Tout,EPN),
     ( Meet == lastgoal ->
 	( Tabled =:= 1 ->      /* if tabled = 1, A>0 */
 		A1 is A-1,
+		EPN = e(Sym,_),
 		Pil1 = [check_interrupt(Sym,A),
 			new_answer_dealloc(Tabar,A1)|Pilr]
 	 ; ( A > 0 -> Pil1 = [deallocate,proceed_gc|Pilr]
