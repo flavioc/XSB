@@ -39,11 +39,11 @@
 
 /* This software has been slightly modified in order to port it to XSB -- TLS*/
 
-/* TLS: several DCGs changed to handle lists explicitly because of
-   XSBs problems with {}/1 in dcgs. */
-
-:- export dump/3, projecting_assert/1.
-
+:- module(dump,
+	[
+	    dump/3,
+	    projecting_assert/1
+	]).
 :- use_module(class,
 	[
 	    class_allvars/2
@@ -96,13 +96,13 @@ dump(Target,NewVars,Constraints) :-
 	    project_attributes(Target,All),
 	    related_linear_vars(Target,Again),	% project drops/adds vars
 	    all_attribute_goals(Again,Gs,Nonlin),
-	    writeln(all_attribute_goals(Again,Gs,Nonlin)),
+%	    writeln(all_attribute_goals(Again,Gs,Nonlin)),
 	    empty_assoc(D0),
 	    mapping(Target,NewVars,D0,D1),	% late (AVL suffers from put_atts)
 	    copy(Gs,Copy,D1,_),			% strip constraints
-	    writeln(copy(Gs,Copy,D1,_)),			
+%	    writeln(copy(Gs,Copy,D1,_)),			
 	    nb_setval(clpqr_dump,NewVars/Copy),
-	    writeln(copy(Copy)),
+%	    writeln(copy(Copy)),
 	    fail				% undo projection
 	;   catch(nb_getval(clpqr_dump,NewVars/Constraints),_,fail),
 	    nb_delete(clpqr_dump)

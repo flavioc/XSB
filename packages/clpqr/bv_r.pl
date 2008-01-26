@@ -40,9 +40,11 @@
 /* This software has been slightly modified in order to port it to XSB -- TLS*/
 
 /* TLS: several DCGs changed to handle lists explicitly because of
-   XSB's problems with {}/1 in dcgs. */
+   XSBs problems with {}/1 in dcgs. */
 
-:- export   allvars/2,
+:- module(bv_r,
+	[
+            allvars/2,
 	    backsubst/3,
 	    backsubst_delta/4,
 	    basis_add/2,
@@ -84,7 +86,8 @@
 	    'solve_<'/1,
 	    'solve_=<'/1,
 	    'solve_=\\='/1,
-	    log_deref/4.
+	    log_deref/4
+	]).
 
 :- use_module(store_r,
 	[
@@ -116,6 +119,7 @@
 	]).
 :- use_module(nf_r,
 	[
+	    {}/1,
 	    split/3,
 	    wait_linear/3
 	]).
@@ -123,9 +127,11 @@
 	[
 	    vertex_value/2
 	]).
-:- import	    {}/1 from nf_r.
+:- use_module(ordsets,
+	[
+	    ord_add_element/3
+	]).
 
-:- import   ord_add_element/3 from ordsets.
 :- import nb_delete/1, nb_getval/2, nb_setval/2, setarg/3 from swi.
 :- import length/2 from basics.
 
@@ -1690,7 +1696,6 @@ narrow_l( t_lu(_,U), X, L) :-
 /* TLS: helps get around XSB module limitations */
 bv_r_dump_var(Q,W,E,R,T,Y):- dump_var(Q,W,E,R,T,Y).
 
-/*
 dump_var(t_none,V,I,H) --> 
 	!,
 	(   {
@@ -1707,28 +1712,13 @@ dump_var(t_none,V,I,H) -->
 	;   {nf2sum(H,I,Sum)},
 	    [V = Sum]
 	).
-*/
-dump_var(t_none,V,I,H,F,T) :- 
-	!,
-	(H = [l(W*K,_)],
-	 V == W,
-	 I >= -1.0e-10, % I=:=0
-	 I =< 1.0e-010,
-	 TestK is K - 1.0, % K=:=1
-	 TestK >= -1.0e-10,
-	 TestK =< 1.0e-10
-	->  % indep var
-	    F = T
-	;   nf2sum(H,I,Sum),
-	    F = [V = Sum|T]
-	).
+
 dump_var(t_L(L),V,I,H) -->
 	!,
 	dump_var(t_l(L),V,I,H).
 % case lowerbound: V >= L or V > L
 % say V >= L, and V = K*V1 + ... + I, then K*V1 + ... + I >= L
 % and K*V1 + ... >= L-I and V1 + .../K = (L-I)/K
-/*
 dump_var(t_l(L),V,I,H) -->
 	!,
 	{
@@ -1746,31 +1736,11 @@ dump_var(t_l(L),V,I,H) -->
 	    )
 	},
 	[Result].
-*/
-dump_var(t_l(L),V,I,H,F,T) :-
-	!,
-	(
-	    H = [l(_*K,_)|_], % avoid 1 >= 0
-	    get_attr(V,itf,Att),
-	    arg(3,Att,strictness(Strict)),
-	    Sm is Strict /\ 2,
-	    Kr is 1.0/K,
-	    Li is Kr*(L - I),
-	    mult_hom(H,Kr,H1),
-	    nf2sum(H1,0.0,Sum),
-	    (   K > 1.0e-10 % K > 0
-	    ->	dump_strict(Sm,Sum >= Li,Sum > Li,Result)
-	    ;   dump_strict(Sm,Sum =< Li,Sum < Li,Result)
-	    )
-	),
-%	writeln(dump_var1(t_l(L),V,I,H,Result,F,T)),
-	F = [Result|T].
-%	writeln(dump_varexit(t_l(L),V,I,H,Result,F,T)).
-	
+
 dump_var(t_U(U),V,I,H) -->
 	!,
 	dump_var(t_u(U),V,I,H).
-/*
+
 dump_var(t_u(U),V,I,H) -->
 	!,
 	{
@@ -1788,25 +1758,7 @@ dump_var(t_u(U),V,I,H) -->
 	    )
 	},
 	[Result].
-*/
-dump_var(t_u(U),V,I,H,F,T) :-
-	!,
-	(
-	    H = [l(_*K,_)|_], % avoid 0 =< 1
-	    get_attr(V,itf,Att),
-	    arg(3,Att,strictness(Strict)),
-	    Sm is Strict /\ 1,
-	    Kr is 1.0/K,
-	    Ui is Kr*(U-I),
-	    mult_hom(H,Kr,H1),
-	    nf2sum(H1,0.0,Sum),
-	    (   K > 1.0e-10 % K > 0
-	    ->	dump_strict(Sm,Sum =< Ui,Sum < Ui,Result)
-	    ;   dump_strict(Sm,Sum >= Ui,Sum > Ui,Result)
-	    )
-	),
-%	writeln(dump_var2(t_u(U),V,I,H,F,T)),
-	F = [Result|T].
+
 dump_var(t_Lu(L,U),V,I,H) -->
 	!,
 	dump_var(t_l(L),V,I,H),
@@ -1841,7 +1793,6 @@ bv_r_dump_nz(Q,W,E,R,T):- dump_nz(Q,W,E,R,T).
 % Returns in Dump a representation of the nonzero constraint of variable V
 % which has linear
 % equation H + I.
-/*
 dump_nz(_,H,I) -->
 	{
 	    H = [l(_*K,_)|_],
@@ -1851,7 +1802,24 @@ dump_nz(_,H,I) -->
 	    nf2sum(H1,0.0,Sum)
 	},
 	[Sum =\= I1].
-*/
+
+end_of_file.
+
+dump_var(t_none,V,I,H,F,T) :- 
+	!,
+	(H = [l(W*K,_)],
+	 V == W,
+	 I >= -1.0e-10, % I=:=0
+	 I =< 1.0e-010,
+	 TestK is K - 1.0, % K=:=1
+	 TestK >= -1.0e-10,
+	 TestK =< 1.0e-10
+	->  % indep var
+	    F = T
+	;   nf2sum(H,I,Sum),
+	    F = [V = Sum|T]
+	).
+
 dump_nz(_,H,I,F,T) :-
 	    H = [l(_*K,_)|_],
 	    Kr is 1.0/K,
@@ -1859,3 +1827,42 @@ dump_nz(_,H,I,F,T) :-
 	    mult_hom(H,Kr,H1),
 	    nf2sum(H1,0.0,Sum),
 	F = [Sum =\= I1|T].
+
+dump_var(t_l(L),V,I,H,F,T) :-
+	!,
+	(
+	    H = [l(_*K,_)|_], % avoid 1 >= 0
+	    get_attr(V,itf,Att),
+	    arg(3,Att,strictness(Strict)),
+	    Sm is Strict /\ 2,
+	    Kr is 1.0/K,
+	    Li is Kr*(L - I),
+	    mult_hom(H,Kr,H1),
+	    nf2sum(H1,0.0,Sum),
+	    (   K > 1.0e-10 % K > 0
+	    ->	dump_strict(Sm,Sum >= Li,Sum > Li,Result)
+	    ;   dump_strict(Sm,Sum =< Li,Sum < Li,Result)
+	    )
+	),
+%	writeln(dump_var1(t_l(L),V,I,H,Result,F,T)),
+	F = [Result|T].
+%	writeln(dump_varexit(t_l(L),V,I,H,Result,F,T)).
+	
+dump_var(t_u(U),V,I,H,F,T) :-
+	!,
+	(
+	    H = [l(_*K,_)|_], % avoid 0 =< 1
+	    get_attr(V,itf,Att),
+	    arg(3,Att,strictness(Strict)),
+	    Sm is Strict /\ 1,
+	    Kr is 1.0/K,
+	    Ui is Kr*(U-I),
+	    mult_hom(H,Kr,H1),
+	    nf2sum(H1,0.0,Sum),
+	    (   K > 1.0e-10 % K > 0
+	    ->	dump_strict(Sm,Sum =< Ui,Sum < Ui,Result)
+	    ;   dump_strict(Sm,Sum >= Ui,Sum > Ui,Result)
+	    )
+	),
+%	writeln(dump_var2(t_u(U),V,I,H,F,T)),
+	F = [Result|T].

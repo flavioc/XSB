@@ -41,15 +41,31 @@
 
 #include "quantum.h"
 
-:- export  bb_inf/3, bb_inf/5, vertex_value/2.
-
-:- import deref/2, deref_var/2, determine_active_dec/1, inf/2, iterate_dec/2,
-	    sup/2, var_with_def_assign/2 from bv_r.
-
-:- import entailed/1, nf/2, nf_constant/2, repair/2, wait_linear/3
-    from nf_r.
-
-:- import {}/1 from nf_r.
+:- module(bb_r,
+	[
+	    bb_inf/3,	
+	    bb_inf/5,
+	    vertex_value/2
+	]).
+:- use_module(bv_r,
+	[
+	    deref/2,
+	    deref_var/2,
+	    determine_active_dec/1,
+	    inf/2,
+	    iterate_dec/2,
+	    sup/2,
+	    var_with_def_assign/2
+	]).
+:- use_module(nf_r,
+	[
+	    {}/1,
+	    entailed/1,
+	    nf/2,
+	    nf_constant/2,
+	    repair/2,
+	    wait_linear/3		
+	]).
 
 :- import nb_delete/1, nb_getval/2, nb_setval/2 from swi.
 

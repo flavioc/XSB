@@ -1,6 +1,6 @@
 /*  
 
-    Part of CLP(Q,R) (Constraint zvLogic Programming over Rationals and Reals)
+    Part of CLP(Q,R) (Constraint Logic Programming over Rationals and Reals)
 
     Author:        Leslie De Koninck
     E-mail:        Leslie.DeKoninck@cs.kuleuven.be
@@ -62,15 +62,15 @@ clp_type(Var,Type) :-
 	->  arg(1,Att,Type)
 	).
 
-/*
+
 dump_linear(V) -->
 	{
-	    (get_attr(V,itf,Att),
+	    get_attr(V,itf,Att),
 	    arg(1,Att,CLP),
 	    arg(2,Att,type(Type)),
 	    arg(4,Att,lin(Lin)),
 	    !,
-	    Lin = [I,_|H])
+	    Lin = [I,_|H]
 	},
 	(   {
 		(Type=t_none
@@ -79,41 +79,20 @@ dump_linear(V) -->
 	->  []
 	;   dump_v(CLP,t_none,V,I,H)
 	),
-  	(   {(
+  	(   {
 		Type=t_none,
 		arg(9,Att,n) % attribute should not have changed by dump_v...
-	      )
 	    }
 	->  % nonzero produces such
 	    []
 	;   dump_v(CLP,Type,V,I,H)
 	).
-*/
-dump_linear(V,F,T):- 
-	get_attr(V,itf,Att),
-	arg(1,Att,CLP),
-	arg(2,Att,type(Type)),
-	arg(4,Att,lin(Lin)),
-	!,
-	Lin = [I,_|H],
-	(   (Type=t_none ; arg(9,Att,n)) -> 
-              T1 = F
-	 ; 
-	     dump_v(CLP,t_none,V,I,H,F,T1)
-	),
-  	(  Type=t_none,
-		arg(9,Att,n) % attribute should not have changed by dump_v...
-	->  % nonzero produces such
-	    T1 = T
-	;   dump_v(CLP,Type,V,I,H,T1,T)
-%    writeln(dump_linear(V,F,T1,T))
-	).
+
 dump_linear(_) --> [].
 
 dump_v(clpq,Type,V,I,H,F,T):- bv_q_dump_var(Type,V,I,H,F,T).
 dump_v(clpr,Type,V,I,H,F,T):- bv_r_dump_var(Type,V,I,H,F,T).
 
-/*
 dump_nonzero(V) -->
 	{
 	    get_attr(V,itf,Att),
@@ -124,29 +103,20 @@ dump_nonzero(V) -->
 	    Lin = [I,_|H]
 	},
 	dump_nz(CLP,V,H,I).
-*/
-dump_nonzero(V,F,T):- 
-	get_attr(V,itf,Att),
-	arg(1,Att,CLP),
-	arg(4,Att,lin(Lin)),
-	arg(8,Att,nonzero),
-	!,
-	Lin = [I,_|H],
-	dump_nz(CLP,V,H,I,F,T).
 
 dump_nonzero(_) --> [].
 
 dump_nz(clpq,V,H,I) --> bv_q_dump_nz(V,H,I).
-dump_nz(clpr,V,H,I) --> bv_r_dump_nz(V,H,I).
+dump_nz(clpr,V,H,I) -->  bv_r_dump_nz(V,H,I).
 
 % XSB
 :- import install_verify_attribute_handler/4 from machine.
 
 :- install_verify_attribute_handler(itf,Attr,Other,attr_unify_hook(Attr,Other)).
 
-my_attr_unify_hook(Attr,Other):-
-    writeln(my_attr_unify_hook(Attr,Other)),
-    attr_unify_hook(Attr,Other).
+%my_attr_unify_hook(Attr,Other):-
+%    writeln(my_attr_unify_hook(Attr,Other)),
+%    attr_unify_hook(Attr,Other).
 
 attr_unify_hook(t(CLP,n,n,n,n,n,n,n,_,_,_),Y) :- 
 	!,
@@ -170,3 +140,40 @@ do_checks(clpq,Y,Ty,St,Li,Or,Cl,No,Later) :-
 	itf_q:do_checks(Y,Ty,St,Li,Or,Cl,No,Later).
 do_checks(clpr,Y,Ty,St,Li,Or,Cl,No,Later) :-
 	itf_r:do_checks(Y,Ty,St,Li,Or,Cl,No,Later).
+
+end_of_file.
+
+% XSB has a problem in compiling dcgs when CLPR is loaded -- so I
+% thought I needed these.  I'm keeping them around just in case.
+/*
+dump_nonzero(V,F,T):- 
+	get_attr(V,itf,Att),
+	arg(1,Att,CLP),
+	arg(4,Att,lin(Lin)),
+	arg(8,Att,nonzero),
+	!,
+	Lin = [I,_|H],
+	dump_nz(CLP,V,H,I,F,T).
+*/
+
+/*
+dump_linear(V,F,T):- 
+	get_attr(V,itf,Att),
+	arg(1,Att,CLP),
+	arg(2,Att,type(Type)),
+	arg(4,Att,lin(Lin)),
+	!,
+	Lin = [I,_|H],
+	(   (Type=t_none ; arg(9,Att,n)) -> 
+              T1 = F
+	 ; 
+	     dump_v(CLP,t_none,V,I,H,F,T1)
+	),
+  	(  Type=t_none,
+		arg(9,Att,n) % attribute should not have changed by dump_v...
+	->  % nonzero produces such
+	    T1 = T
+	;   dump_v(CLP,Type,V,I,H,T1,T)
+%    writeln(dump_linear(V,F,T1,T))
+	).
+*/
