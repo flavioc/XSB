@@ -318,7 +318,8 @@ read5(punc(CH_LBRACE), S1, Precedence, Answer, S) :-
         read4(S1, 1200, Term, S2),
         read_expect(punc(CH_RBRACE), S2, S3), 
         !,
-        read_exprtl0(S3, '{}'(Term), Precedence, Answer, S).
+	BracTerm =.. ['{}',Term],  % use current usermod '{}'/1 psc_rec
+        read_exprtl0(S3, BracTerm, Precedence, Answer, S).
 
 % Term ::= String
 read5(string(String), S0, Precedence, Answer, S) :- 

@@ -32,7 +32,7 @@
 :- import '_$op'/3 from file_op.
 :- import file_put/2 from file_io.
 :- import file_write0/2, file_nl/1 from xsb_writ.
-:- import atom/1, atom_codes/2, repeat/0 from standard.
+ :- import atom/1, atom_codes/2, repeat/0, '=..'/2 from standard.
 :- import syntax_error/1 from error_handler.
 :- import '_$hilog_symbol'/1 from hilogsym.
 :- import term_new/2, term_set_arg/4, 
