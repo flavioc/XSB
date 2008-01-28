@@ -1642,7 +1642,9 @@ int builtin_call(CTXTdeclc byte number)
     if (value)       /* if predicate is new */
       set_data(pair_psc(sym), (psc));
     env_type_set(pair_psc(sym), T_IMPORTED, T_ORDI, (xsbBool)value);
-    link_sym(pair_psc(sym), (Psc)flags[CURRENT_MODULE]);
+    if (flags[CURRENT_MODULE]) /* in case before flags is initted */
+      link_sym(pair_psc(sym), (Psc)flags[CURRENT_MODULE]);
+    else link_sym(pair_psc(sym), global_mod);
     break;
   }
 
