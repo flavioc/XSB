@@ -81,6 +81,7 @@
 
 :- import length/2 from basics.
 :- import term_variables/2 from swi.
+:- import instantiation_error/2, domain_error/4 from error_handler.
 
 %goal_expansion(geler(X,Y),geler(clpr,X,Y)).
 
@@ -99,7 +100,8 @@ geler(X,Y):- geler(clpr,X,Y).
 {Rel} :- 
 	var(Rel),
 	!,
-	throw(instantiation_error({Rel},1)).
+    instantiation_error({}/1,1).
+%	throw(instantiation_error({Rel},1)).
 {R,Rs} :-
 	!,
 	{R},{Rs}.
@@ -138,7 +140,8 @@ geler(X,Y):- geler(clpr,X,Y).
 	!,
 	nf(L-R,Nf),
 	submit_eq(Nf).
-{Rel} :- throw(type_error({Rel},1,'a constraint',Rel)).
+{Rel}:- domain_error('constraint relation',Rel,{}/1,1).
+%{Rel} :- throw(type_error({Rel},1,'a constraint',Rel)).
 
 % entailed(C)
 %
@@ -159,7 +162,8 @@ entailed(C) :-
 negate(Rel,_) :- 
 	var(Rel),
 	!,
-	throw(instantiation_error(entailed(Rel),1)).
+        instantiation_error(entailed/1,1).
+%	throw(instantiation_error(entailed(Rel),1)).
 negate((A,B),(Na;Nb)) :- 
 	!,
 	negate(A,Na),
@@ -175,7 +179,8 @@ negate(A>=B,A<B) :- !.
 negate(A=:=B,A=\=B) :- !.
 negate(A=B,A=\=B) :- !.
 negate(A=\=B,A=:=B) :- !.
-negate(Rel,_) :- throw( type_error(entailed(Rel),1,'a constraint',Rel)).
+negate(Rel,_) :- domain_error('constraint relation',Rel,entailed/1,1).
+%negate(Rel,_) :- throw( type_error(entailed(Rel),1,'a constraint',Rel)).
 
 % submit_eq(Nf)
 %
@@ -588,7 +593,8 @@ nf(Term,Norm) :-
 	nf_nonlin_2(Skel,A1n,A2n,Sa1,Sa2,Norm).
 %
 nf(Term,_) :-
-	throw(type_error(nf(Term,_),1,'a numeric expression',Term)).
+        domain_error('numeric expression',Term,{}/1,1).
+%	throw(type_error(nf(Term,_),1,'a numeric expression',Term)).
 
 % nf_number(N,Res)
 % 

@@ -74,6 +74,7 @@
 
 :- import nb_delete/1, nb_getval/2, nb_setval/2, term_variables/2,strip_module/3
           from swi.
+:- import instantiation_error/2from error_handler.
 
 % dump(Target,NewVars,Constraints)
 %
@@ -88,7 +89,8 @@ dump(Target,NewVars,Constraints) :-
 	(   (	proper_varlist(Target)
 	    ->  true
 	    ;   % Target is not a list of variables
-		throw(instantiation_error(dump(Target,NewVars,Constraints),1))
+		instantiation_error(dump/3,1)
+%		throw(instantiation_error(dump(Target,NewVars,Constraints),1))
 	    ),
 	    ordering(Target),
 	    related_linear_vars(Target,All),	% All contains all variables of the classes of Target variables.

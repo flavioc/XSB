@@ -77,12 +77,12 @@
 	    var_intern/3,
 	    var_with_def_assign/2,
 	    var_with_def_intern/4,
-	    maximize/1,
-	    minimize/1,
-	    sup/2,
-	    sup/4,
-	    inf/2,
-	    inf/4,
+	    bv_r_maximize/1,
+	    bv_r_minimize/1,
+	    bv_r_sup/2,
+	    bv_r_sup/4,
+	    bv_r_inf/2,
+	    bv_r_inf/4,
 	    'solve_<'/1,
 	    'solve_=<'/1,
 	    'solve_=\\='/1,
@@ -347,8 +347,8 @@ export_binding(Y,X) :-
 	split(Nf,H,I),
 	ineq(H,I,Nf,nonstrict).
 
-maximize(Term) :-
-	minimize(-Term).
+bv_r_maximize(Term) :-
+	bv_r_minimize(-Term).
 
 %
 % This is NOT coded as minimize(Expr) :- inf(Expr,Expr).
@@ -375,7 +375,7 @@ maximize(Term) :-
 % outperforms the provided formulation for minimize - so be it.
 % Both forms are available to the user.
 %
-minimize(Term) :-
+bv_r_minimize(Term) :-
 	wait_linear(Term,Nf,minimize_lin(Nf)).
 
 % minimize_lin(Lin)
@@ -390,16 +390,16 @@ minimize_lin(Lin) :-
 	iterate_dec(Dep,Inf),
 	{ Dep =:= Inf }.
 
-sup(Expression,Sup) :-
-	sup(Expression,Sup,[],[]).
+bv_r_sup(Expression,Sup) :-
+	bv_r_sup(Expression,Sup,[],[]).
 
-sup(Expression,Sup,Vector,Vertex) :-
-	inf(-Expression,-Sup,Vector,Vertex).
+bv_r_sup(Expression,Sup,Vector,Vertex) :-
+	bv_r_inf(-Expression,-Sup,Vector,Vertex).
 
-inf(Expression,Inf) :-
-	inf(Expression,Inf,[],[]).
+bv_r_inf(Expression,Inf) :-
+	bv_r_inf(Expression,Inf,[],[]).
 
-inf(Expression,Inf,Vector,Vertex) :-
+bv_r_inf(Expression,Inf,Vector,Vertex) :-
 	% wait until Expression becomes linear, Nf contains linear Expression
 	% in normal form
 	wait_linear(Expression,Nf,inf_lin(Nf,Inf,Vector,Vertex)).

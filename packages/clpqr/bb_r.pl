@@ -68,6 +68,7 @@
 	]).
 
 :- import nb_delete/1, nb_getval/2, nb_setval/2 from swi.
+:- import instantiation_error/2 from error_handler.
 
 % bb_inf(Ints,Term,Inf)
 %
@@ -233,8 +234,9 @@ bb_intern([v(One,[V^1])],X,_,_) :-
 	V = X,
 	bb_narrow_lower(X),
 	bb_narrow_upper(X).
-bb_intern(_,_,Term,_) :-
-	throw(instantiation_error(bb_inf(Term,_,_),1)).
+bb_intern(_,_,_Term,_) :-
+    instantiation_error(bb_inf/3,1).
+%	throw(instantiation_error(bb_inf(Term,_,_),1)).
 
 % bb_narrow_lower(X)
 %
