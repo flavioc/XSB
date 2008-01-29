@@ -1,0 +1,65 @@
+/* File:      clpqr.P
+** Author(s): Swift
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) The Research Foundation of SUNY, 1998
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+**
+** $Id$
+** 
+*/
+
+%% bootstrap(package-dirname-as-string, package-name-as-symbol).
+%% This also asserts 
+%% package_configuration(dir(PackageName), FullPackageDirname)
+%% some packages use it.
+
+:- import bootstrap_package/2 from packaging.
+
+/*
+:- import bb_inf/3, bb_inf/5 from bb.
+:- import ordering/1 from ordering.
+:- import dump/3 from dump.
+:- import get_atts/2, put_atts/2 from atts.
+:- import dump/3 from dump.
+
+:- attribute class/1, order/1, lin/1, forward/1,
+	     type/1, strictness/1, nonzero/0,
+	     target/0, keep_indep/0, keep/0, class_atts/4.
+
+this_linear_solver(clpr).
+*/
+
+:- export {}/1, entailed/1, maximize/1, minimize/1, sup/2, inf/2, sup/4, inf/4.
+:- import bv_r_sup/2, bv_r_inf/2, bv_r_sup/4, bv_r_inf/4, 
+	  bv_r_minimize/1, bv_r_maximize/1 from bv_r.
+
+{F}:- nf_r:{F}.
+entailed(C):- nf_r:entailed(C).
+sup(A,B):- bv_r_sup(A,B).
+inf(A,B):- bv_r_inf(A,B).
+sup(A,B,C,D):- bv_r_sup(A,B,C,D).
+inf(A,B,C,D):- bv_r_inf(A,B,C,D).
+maximize(A):- bv_r_maximize(A).
+minimize(A):- bv_r_minimize(A).
+
+:- bootstrap_package('clpqr', clpr).
+:- [dump].
+
+%:- [itf].
+%:- [bv_r].
+%:- [nf_r].
+%:- [nf].
