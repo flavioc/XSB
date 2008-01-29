@@ -8,14 +8,17 @@
 \end{center}
 
 The CLP(R) library supports solutions of linear equations and
-inequalities over the real numbers and the lazy treatment of
-nonlinear equations.  In displaying sets of equations and
-disequations, the library removes redundancies, performs projections,
-and provides for linear optimization.  The goal of the XSB port is to
-provide the same CLP(R) functionality as in other platforms, but also
-to allow constraints to be used by tabled predicates.  This section
-provides a general introduction to the CLP(R) functionality available
-in XSB, for further information see {\tt http://www.ai.univie.ac.at/clpqr}.
+inequalities over the real numbers and the lazy treatment of nonlinear
+equations.  In displaying sets of equations and disequations, the
+library removes redundancies, performs projections, and provides for
+linear optimization.  The goal of the XSB port is to provide the same
+CLP(R) functionality as in other platforms, but also to allow
+constraints to be used by tabled predicates.  This section provides a
+general introduction to the CLP(R) functionality available in XSB, for
+further information on the API described in Section~\ref{sec:clpr-api}
+see {\tt http://www.ai.univie.ac.at/clpqr}, or the Sicstus Prolog
+manual (the CLP(R) library should behave similarly on XSB and
+Sicstus at the level of this API).
 
 The {\tt clpr} package may be loaded by the command {\tt [clpr]}.
 Loading the package imports exported predicates from the various files
@@ -34,15 +37,15 @@ Formally:
 {\it
 \begin{tabbing}
 12 \= 12345678901234567890 \= 12345678901234567890 \=	\kill
-\> ConstraintSet --$>$   \>  C     \\
-\> \>                      $|$ C {\tt ,} C   \\
+\> ConstraintSet --$>$   \>  C $|$ C {\tt ,} C   \\
 \\
 \> C --$>$ \> Expr {\tt =:=} Expr \> {\rm equation} \\
 \>    \> $|$ Expr {\tt =} Expr \> {\rm equation} \\
 \>    \> $|$ Expr {\tt $<$} Expr \> {\rm strict inequation} \\
-\>    \> $|$ Expr {\tt $>$} Expr \> {\rm nonstrict inequation} \\
+\>    \> $|$ Expr {\tt $>$} Expr \> {\rm strict inequation} \\
 \>    \> $|$ Expr {\tt =$<$} Expr \> {\rm nonstrict inequation} \\
-\>    \> $|$ Expr {\tt $>$=} Expr \> {\rm disequation} \\
+\>    \> $|$ Expr {\tt $>$=} Expr \> {\rm nonstrict inequation} \\
+\>    \> $|$ Expr {\tt =/=} Expr \> {\rm disequation} \\
 \\
 \> Expr --$>$  \> variable \> {\rm Prolog variable} \\
 \> \> $|$ number \> {\rm floating point number} \\
@@ -64,20 +67,33 @@ Formally:
 \end{tabbing}
 }
 
+\section{The CLP(R) API} \label{sec:clpr-api}
+%
+From the command line, it is usually easiest to load the {\tt clpr}
+package and call the predicates below directly from {\tt usermod} (the
+module implicitly used by the command line).  This can be done for all
+predicates {\em except} {\tt {}/1} -- see below.  However, when
+calling any of these predicates from compiled code, they must be
+explicitly imported from their modules.
+
 \begin{description}
-\ournewitem{\{+Constraints\}} {} \index{{\tt \{\}/1}}
-
+\ournewitem{\{+Constraints\}} {clpr} \index{{\tt \{\}/1}}
+%
 When the CLP(R) package is loaded, inclusion of equations in braces
-({\tt \{\}}) adds the equations to the constraint store where they are
-checked for satisfiability.
+({\tt \{\}}) adds {\tt Constraints} to the constraint store where they
+are checked for satisfiability.  {\em Note that from the command line,
+  {\tt {}/2} must be called with the module prefix {\tt nf\_r}.  This
+  requirement is intended to be temporary}.
 
+{\bf Example:}
 {\small
 \begin{verbatim}
-
      | ?- [clpr].
      [clpr loaded]
-     [itf3 loaded]
-     [nf loaded]
+     [itf loaded]
+     [dump loaded]
+     [bv_r loaded]
+     [nf_r loaded]
 
      yes
 
@@ -89,30 +105,60 @@ checked for satisfiability.
      yes
 \end{verbatim}
 }
+{\bf Error Cases}
+\bi
+\item 	{\tt Constraints} is not instantiated
+\bi
+\item 	{\tt instantiation\_error}
+\ei
+%
+\item 	{\tt Constraints} is not an equation, an inequation or a disequation
+\bi
+\item 	{\tt domain\_error('constraint relation',Rel)}
+\ei
+\item {\tt Constraints} contains an expression {\tt Expr} that is not
+  a numeric expression 
+\bi
+\item 	{\tt domain\_error('numeric expression',Expr)}
+\ei
+\ei
 
-\ournewitem{entailed(Constraint)} {} \index{{\tt entailed/1}}
-
+\ournewitem{entailed(Constraint)} {clpr} \index{{\tt entailed/1}}
+%
 Succeeds if {\tt Constraint} is logically implied by the current
 constraint store.  {\tt entailed/1} does not change the constraint
 store.
+%
 
+{\bf Example:}
 {\small
 \begin{verbatim}
-
 | ?- {A =< 4},entailed(A =\= 5).
 
 yes   
 \end{verbatim}
 }
+{\bf Error Cases}
+\bi
+\item 	{\tt Constraints} is not instantiated
+\bi
+\item 	{\tt instantiation\_error}
+\ei
+%
+\item 	{\tt Constraints} is not an equation, an inequation or a disequation
+\bi
+\item 	{\tt domain\_error('constraint relation',Rel)}
+\ei
+\ei
 
-\ournewitem{inf(+Expr,-Val)} {bv} \index{{\tt inf/2}}
+\ourrepeatnewitem{inf(+Expr,-Val)} {clpr} \index{{\tt inf/2}}
 
-\ournewitem{sup(+Expr,-Val)} {bv} \index{{\tt sup/2}}
+\ourrepeatnewitem{sup(+Expr,-Val)} {clpr} \index{{\tt sup/2}}
 
-\ournewitem{minimize(Expr)} {bv} \index{{\tt minimize/1}}
+\ourrepeatnewitem{minimize(Expr)} {clpr} \index{{\tt minimize/1}}
 
-\ournewitem{maximize(Expr)} {bv} \index{{\tt maximize/1}}
-
+\ournewitem{maximize(Expr)} {clpr} \index{{\tt maximize/1}}
+%
 These four related predicates provide various mechanisms to compute
 the maximum and minimum of expressions over variables in a constraint
 store.  In the case where the expression is not bounded from above
@@ -120,9 +166,9 @@ over the reals {\tt sup/2} and {\tt maximize/1} will fail; similarly
 if the expression is not bounded from below {\tt inf/2} and {\tt
 minimize/1} will fail.
 
+{\bf Examples:}
 {\small
 \begin{verbatim}
-
 | ?- {X = 2*Y,Y >= 7},inf(X,F).
 
 X = _h8841
@@ -155,8 +201,8 @@ yes
 \end{verbatim}
 }
 
-\ouritem{bb\_inf(+IntegerList,+Expr,-Inf,-Vertex, +Eps)}  
-
+\ournewitem{bb\_inf(+IntegerList,+Expr,-Inf,-Vertex, +Eps)}  {bb\_r}
+%
 Works like {\tt inf/2} in {\tt Expr} but assumes that all the
 variables in {\tt IntegerList} have integral values.  {\tt Eps} is a
 positive number between $0$ and $0.5$ that specifies how close an
@@ -166,6 +212,7 @@ Upon success, {\tt Vertex} is instantiated to the integral values of
 all variables in {\tt IntegerList}.  {\tt bb\_inf/5} works properly for
 non-strict inequalities only.
 
+{\bf Example:}
 \begin{verbatim}
 | ?- {X > Y + Z,Y > 1, Z > 1},bb_inf([Y,Z],X,Inf,Vertex,0).
 
@@ -177,12 +224,21 @@ Vertex = [2.0000,2.0000]
 
 yes
 \end{verbatim}
+%
+{\bf Error Cases}
+\bi
+\item 	{\tt IntegerList} is not instantiated
+\bi
+\item 	{\tt instantiation\_error}
+\ei
+\ei
 
-\ouritem{bb\_inf(+IntegerList,+Expr,-Inf)}  
-
+\ournewitem{bb\_inf(+IntegerList,+Expr,-Inf)}  {bb\_r}
+%
 Works like {\tt bb\_inf/5}, but with the neighborhood, {\tt Eps}, set
 to {\tt 0.001}.
 
+{\bf Example}
 \begin{verbatim}
 |?- {X >= Y+Z, Y > 1, Z > 1}, bb_inf([Y,Z],X,Inf)
 
@@ -194,14 +250,14 @@ Inf = 4.
 yes
 \end{verbatim}
 
-\ournewitem{dump(+Variables,+NewVars,-CodedVars} {clpr} 
+\ournewitem{dump(+Variables,+NewVars,-CodedVars} {dump} 
 \index{{\tt dump/3}}
 %
 For a list of variables {\tt Variables} and a list of variable names
 {\tt NewVars}, returns in {\tt CodedVars} the constraints on the
 variables, without affecting the constraint store.
 
-Example:
+{\bf Example:}
 \begin{verbatim}
 | ?- {X > Y+1, Y > 2},
      dump([X,Y], [x,y], CS).
@@ -210,7 +266,13 @@ X = _h17748
 Y = _h17139
 CS = [y > 2.0000,x - y > 1.0000];
 \end{verbatim}
+%
+{\bf Error Cases}
+\bi
+\item 	{\tt Variables} is not instantiated to a list of variables
+\bi
+\item 	{\tt instantiation\_error}
+\ei
+\ei
 
 \end{description}
-
-
