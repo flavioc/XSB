@@ -1453,7 +1453,7 @@ void init_symbols(CTXTdecl)
   if (new) {
     set_data(c_callloop_psc,ccall_mod_psc);
     env_type_set(c_callloop_psc, T_IMPORTED, T_ORDI, (xsbBool)new);
-    link_sym(c_callloop_psc, (Psc)flags[CURRENT_MODULE]);
+    link_sym(c_callloop_psc, global_mod);
   }
 
 

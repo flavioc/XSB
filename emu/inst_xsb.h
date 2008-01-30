@@ -216,6 +216,8 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 #define bldtval_putlist_bldnumcon 0x24  /* combined, same reg, 16-bit int */
 #define bldtvar_list_numcon 0x25  /* combined, same reg, 16-bit int */
 #define getkpvars	0x26 /* get k pvars, k>=2 */
+#define addintfastuni	0x2d /* add int to t/p var and unify with t/p var */
+#define addintfastasgn	0x2e /* add int to t/p var and assign to t/p var */
 #define xorreg          0x2f
 
 #define getattv		0x30

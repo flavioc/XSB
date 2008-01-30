@@ -855,7 +855,7 @@ void setProfileBit(void *place_holder) {
     if (if_profiling) {
       if (asynint_val & PROFINT_MARK) {
 	unhandled++;
-	if (!(unhandled % 10)) printf("Unhandled profile ints: %ld\n",unhandled);
+	if (!(unhandled % 500)) printf("Unhandled profile ints: %ld\n",unhandled);
       }
       asynint_val |= PROFINT_MARK;
     }
