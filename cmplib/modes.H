@@ -58,3 +58,5 @@
 :- import get_maximal_calls/1 from usermod.
 
 :- import '_$local_calls'/1, apply/2, (:-)/2, (:-)/1 from usermod.
+
+:- import inline_predicate/2 from builtin.

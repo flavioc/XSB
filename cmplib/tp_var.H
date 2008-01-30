@@ -33,6 +33,7 @@
 :- import abort/0 from standard.
 :- import append/3, memberchk/2 from basics.
 :- import member2/2 from listutil.
+:- import sort/2 from setof.
 :- import error/1, warning/1 from auxlry.
 :- import vprag_occ/2, vprag_loc/2, vprag_use/2, vprag_type/2,
 	  vprag_nouse/2, vprag_type1/2

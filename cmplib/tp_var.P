@@ -160,7 +160,7 @@ in release/3, instead of just the first as here, then it doesn't pass
 the testsuite, several ai_tests in particular.  Note the sort above in
 getreg is OK, since it doesn't return the de-duplicated list it
 generates.  Next time I'm here, I should try to figure out why this
-is.... dsw */
+is.... dsw - look at Kostis's comment in release_if_done/6. */
 
 release(_, [], []).
 release(N, [Reg|R], Rest) :-
@@ -172,7 +172,6 @@ release(N, [Reg|R], Rest) :-
 /* get an unused register (not in TRList)				*/
 /*======================================================================*/
 
-:- import sort/2 from setof.
 getreg(TRList, Reg) :-
 	sort(TRList,STRList),
 	choose_reg_not_in(STRList,1,Reg).

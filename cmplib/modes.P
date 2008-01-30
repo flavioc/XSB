@@ -711,7 +711,6 @@ get_std_pred_defs(Flag) :-
 		fail
 	).
 
-:- import inline_predicate/2 from builtin.
 
 default_import(std, _P, _A).
 default_import(sysmod, P, A) :-	inline_predicate(P,A).

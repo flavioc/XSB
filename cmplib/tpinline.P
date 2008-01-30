@@ -44,7 +44,7 @@ geninline('_$cutto', [Arg], HoldR, ARSize, Pil, Pilr, Tin, Tout, _) :-
 	geninline_cutto(Arg, HoldR, ARSize, Pil, Pilr, Tin, Tout).
 
 geninline(is, [Arg1,Arg2], HoldR, _, Pil, Pilr, Tin, Tout, EPN) :-
-	geninline_is(Arg1, Arg2, HoldR, Pil, Pilr, Tin, Tout, EPN).
+	geninline_isindeed(Arg1, Arg2, HoldR, Pil, Pilr, Tin, Tout, EPN).
 geninline(@=, [Arg1,Arg2], _HoldR, _, Pil, Pilr, Tin, Tout, _EPN) :-
 	geninl_load_lhs(Arg1, R1, Pil, Pilm, Tin, Tmid, _),
 	geninl_load_lhs(Arg2, R2, Pilm,
@@ -75,7 +75,6 @@ geninline(TermCompOp, [Arg1,Arg2], HoldR, _, Pil, Pilr, Tin, Tout, _) :-
 	getreg(Tout1, R3),
 	geninl_unload_lhs(Arg1, R1, HoldR, Tout1, Tout2),
 	geninl_unload_lhs(Arg2, R2, HoldR, Tout2, Tout).
-:- import inline_jumpcof_cond/3 from builtin.
 geninline(Cof, [Arg], HoldR, _, Pil, Pilr, Tin, Tout, _EPN) :-
 	inline_jumpcof_cond(Cof,1,CofNum), !,
 	geninl_load_lhs(Arg, R, Pil, 
@@ -84,7 +83,6 @@ geninline(Cof, [Arg], HoldR, _, Pil, Pilr, Tin, Tout, _EPN) :-
 
 /*======================================================================*/
 /*======================================================================*/
-:- import memberchk/2 from basics.
 geninl_load_lhs(Term,R,Pil,Pilr,Tin,Tout,SaveR) :-
 	(Term = varocc(_Vid,Prag)
 	 ->	alloc_reg(Prag, Tin, Tmid), vprag_type(Prag, T),
@@ -117,33 +115,6 @@ geninl_unload_lhs(Term, R, HoldR, Tin, Tout) :-
 		release_if_done(Vid, R, Prag, HoldR, Tin, Tout)
 	; release(R, Tin, Tout)
 	).
-
-/*======================================================================*/
-/*======================================================================*/
-
-geninline_is(LHS,Exp,HoldR,Pil,Pilr,Tin,Tout,EPN) :-
-	( LHS = varocc(_Vid,_Prag) ->
-		eval_exp(Exp,R,Pil,Pilm,HoldR,Tin,Tout1,EPN),
-		release_if_tvar_if_done(LHS,R,HoldR,Tout1,Tout2),
-		tgetpar(LHS,R,Pilm,Pilr,Tout2,Tout)
-	; LHS = integer(Int) ->
-		getreg(Tin, R1), hold(R1, Tin, Tmid),
-		Pil = [putnumcon(R1,Int)|Pil1],
-		eval_exp(Exp,R,Pil1,[subreg(R,R1),jumpnz(R1,abs(-1))|Pilr],
-			 HoldR,Tmid,Tout1,EPN),
-		release(R1,Tout1,Tout2), release(R,Tout2,Tout)
-	; LHS = real(Real) ->
-		getreg(Tin, R1), hold(R1, Tin, Tmid),
-		Pil = [putfloat(R1,Real)|Pil1],
-		eval_exp(Exp,R,Pil1,[subreg(R,R1),jumpnz(R1,abs(-1))|Pilr],
-			 HoldR,Tmid,Tout1,EPN),
-		release(R1,Tout1,Tout2), release(R,Tout2,Tout)
-	; EPN = e(PredSym,NC),
-	  sym_name(PredSym, P, A),
-	  error('variable or numerical constant expected as 1st arg of is/2'),
-	  message(('          in clause #', NC, ' of predicate ', P,'/',A)),
-	  Pil = [fail | Pilr], Tin = Tout
-	). 
 
 /*======================================================================*/
 /*======================================================================*/
