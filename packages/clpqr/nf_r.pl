@@ -49,6 +49,7 @@
 	    nf_constant/2,
 	    wait_linear/3,
 	    nf2term/2,
+	 nf_r_transg/3,
 	 resubmit_eq/1
 	]).
 
@@ -1064,7 +1065,7 @@ f02t(v(K,P),T) :-
 fn2t(v(K,P),Term,Op) :-
 	(   TestK is K - 1.0, % K =:= 1
 	    (TestK >= -1.0e-10, TestK =< 1.0e-10)
-	->  ( *(Term) = Pt,
+	->  ( Term = Pt,
 	      Op = + )
 	;   TestK is K + 1.0, % K =:= -1
 	    (TestK >= -1.0e-10, TestK =< 1.0e-10)
@@ -1092,6 +1093,7 @@ p2term([X^P|Xs],Term) :-
 	    p2term(Xs,Xst)
 	).
 
+
 % 
 exp2term(1,X,X) :- !.
 exp2term(-1,X,1.0/X) :- !. 
@@ -1112,6 +1114,8 @@ pe2term_args([],[]).
 pe2term_args([A|As],[T|Ts]) :-
 	nf2term(A,T),
 	pe2term_args(As,Ts). 
+
+nf_r_transg(A,B,C):- transg(A,B,C).
 
 % transg(Goal,[OutList|OutListTail],OutListTail)
 %

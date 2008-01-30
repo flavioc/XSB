@@ -43,7 +43,7 @@
 
 :- import maplist/2,term_variables/2, ignore/1 from swi.
 :- import del_attr/2, install_verify_attribute_handler/4 from machine.
-:- import nf_r_resubmit_eq/1 from nf_r.
+:- import nf_r_resubmit_eq/1, nf_r_transg/3 from nf_r.
 
 % l2conj(List,Conj)
 %
@@ -149,6 +149,12 @@ transg((A,B)) -->
 %transg(M:G) -->
 %	!,
 %	M:transg(G).
+%transg(M:G,F,T):- 
+%	!,
+%	M:transg(G,F,T).
+transg(nf_r:G,F,T):- 
+	!,
+	nf_r_transg(G,F,T).
 transg(G) --> [G].
 
 
