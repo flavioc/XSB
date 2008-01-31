@@ -1,0 +1,19 @@
+
+:- export make_clpr/0.
+
+make_clpr:- 
+	compile('bb_r.pl'),
+	compile('bv_r.pl'),
+	compile('class.pl'),
+	compile('fourmotz_r.pl'),
+	compile('geler.pl'),
+	compile('ineq_r.pl'),
+	compile('itf.pl'),
+	compile('itf_r.pl'),
+	compile('nf_r.pl'),
+	compile('ordering.pl'),
+	compile('project.pl'),
+	compile('redund.pl'),
+	compile('store_r.pl'),
+	compile('swi.P').
+	
