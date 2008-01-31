@@ -56,8 +56,12 @@ inf(A,B,C,D):- bv_r_inf(A,B,C,D).
 maximize(A):- bv_r_maximize(A).
 minimize(A):- bv_r_minimize(A).
 
+:- import make_clpr/0 from clpr_make.
+
 :- bootstrap_package('clpqr', clpr).
 :- [dump].
+:- shell_to_list('ls clpqr/nf_r.xwam',F,_G),
+	(F = [] -> cd(clpqr),make_clpr,cd('..') ; true).
 
 %:- [itf].
 %:- [bv_r].
