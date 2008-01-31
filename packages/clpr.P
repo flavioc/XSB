@@ -57,11 +57,14 @@ maximize(A):- bv_r_maximize(A).
 minimize(A):- bv_r_minimize(A).
 
 :- import make_clpr/0 from clpr_make.
+:- import xsb_configuration/2 from xsb_configuration.
 
 :- bootstrap_package('clpqr', clpr).
 :- [dump].
-:- shell_to_list('ls clpqr/nf_r.xwam',F,_G),
+:- xsb_configuration(packagesdir,Pdir),
+   shell_to_list([ls,' ',Pdir,'/clpqr/nf_r.xwam'],F,G),
 	(F = [] -> cd(clpqr),make_clpr,cd('..') ; true).
+
 
 %:- [itf].
 %:- [bv_r].
