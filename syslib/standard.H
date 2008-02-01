@@ -65,7 +65,7 @@
             set_input/1,    set_output/1,  
 	demand_once/1,
 	skip/1,		statistics/1,	statistics/0,	structure/1,
-	tab/1,		tell/1,		telling/1,	told/0,
+	tab/1,		tell/1,		telling/1,	time/1,	told/0,
 	ttywrite/1,	ttywritenl/1,   ttywrite/2,	ttywritenl/2, 
 	var/1,		walltime/1,	true/0,
 	write/1,	write/2,	write_prolog/1,	write_prolog/2,
