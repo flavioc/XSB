@@ -995,6 +995,13 @@ all threads.
 Returns the \texttt{Time}, in seconds, since execution started, or
 since the last call to \texttt{statistics(0)} by any thread.
 
+\ouritem{time(+Goal)}\index{\texttt{time/1}}
+%
+Prints both the CPU time and wall time taken by the execution of \texttt{Goal}.
+Any choice-points of \texttt{Goal} are discarded. The definition of predicate is based 
+on the SWI-Prolog definition (minus reporting the number of inferences, which XSB does 
+not currently support). This predicate is also found on other Prolog compilers such as YAP.
+
 \ouritem{statistics}\index{\texttt{statistics/0}} 
 %
 Displays usage information on the current output stream, including: 
