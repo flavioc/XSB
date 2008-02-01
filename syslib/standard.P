@@ -1200,7 +1200,7 @@ time(Goal) :-
 	),
 	TimeSecs is UsedTime/1000,
 	WallSecs is Wall/1000,
-	fmt_write("%% %f CPU in %f seconds (%f%% CPU)\n", args(TimeSecs, WallSecs, CPU)),
+	fmt_write("%% %S CPU in %S seconds (%S%% CPU)\n", args(TimeSecs, WallSecs, CPU)),
 	(   nonvar(E)
 	->  throw(E)
 	;   Result == yes
