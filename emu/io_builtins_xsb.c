@@ -1282,9 +1282,9 @@ void next_format_substr(CTXTdeclc char *format, struct next_fmt_state *fmt_state
   do {
     /* last substring (and has no conversion spec) */
     if ((ptr=strchr(workspace.string+pos, '%')) == NULL) {
-      current_substr_start = workspace.length;
       result->type = '.';  /* last substring with no type specifier */
-      result->fmt  = workspace.string+pos;
+      result->fmt = workspace.string+current_substr_start;
+      current_substr_start = workspace.length;
       return;
     }
 
