@@ -519,13 +519,28 @@ In the single-threaded engine this predicate always succeeds.
 %----------------------------------------------------------------------------
 \section{Backtraces}
 \label{sec:backtrace}
+\index{permanent variables}
 
-Displaying a backtrace in addition to an error message can greatly
-expedite debugging.  For XSB's default error handler, backtraces are
-printed out by default, a behavior that can be overridden for a given
-thread by the command: {\tt set\_xsb\_flag(backtrace\_on\_error,off)}.
-For users who write their own error handlers, the following predicates
-can be used to manipulate backtraces.
+Displaying a backtrace of the calling context of an error in addition
+to an error message can greatly expedite debugging.  For XSB's default
+error handler, backtraces are printed out by default, a behavior that
+can be overridden for a given thread by the command: {\tt
+  set\_xsb\_flag(backtrace\_on\_error,off)}.  For users who write
+their own error handlers, the following predicates can be used to
+manipulate backtraces.
+
+It is important to note that Prolog backtraces differ in a significant
+manner from backtraces obtained from other languages, such as C
+backtraces produced by GDB.  This is because a Prolog backtrace
+obtains forward continuations from the local environment stack, and in
+the WAM, local stack frames are only created when a given clause
+requires permanent variables -- otherwise these stack frames are
+optimized away.  The precise conditions for optimizing away a local
+stack frame require an understanding of the WAM (and of a specific
+compiler).  However in general, longer clauses with many variables
+require a local stack frame and their forward continuations will be
+displayed, while shorter clauses with fewer variables do not and their
+forward continuations will not be displayed.
 
 \begin{description}
 \ournewitem{xsb\_backtrace(-Backtrace)}{machine}
