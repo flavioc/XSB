@@ -9,12 +9,12 @@
 
 % emulating non-backtrackable "global" variables using private tries.
 
-nb_delete(Key):- trie_delete(swi_global,pair(Key,_)).
+nb_delete(Key):- (trie_delete(swi_global,pair(Key,_)) ; true),!.
 
 nb_getval(Key,Val):- trie_unify(swi_global,pair(Key,Val)).
 
 nb_setval(Key,Val):- (trie_delete(swi_global,pair(Key,_)) ; true),
-	             trie_insert(swi_global,pair(Key,Val)).
+	             trie_insert(swi_global,pair(Key,Val)),!.
 
 ?- trie_create(Tid,[alias(swi_global),type(pras)]).
 

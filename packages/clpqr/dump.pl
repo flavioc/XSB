@@ -116,8 +116,8 @@ projecting_assert(QClause) :-
 	strip_module(QClause, Module, Clause),  % JW: SWI-Prolog not always qualifies the term!
 	copy_term(Clause,Copy,Constraints),
 	l2c(Constraints,Conj),			% fails for []
-	(   Sm = clpq
-	;   Sm = clpr
+    (   % Sm = clpq ; 
+	   Sm = clpr
 	),			% proper module for {}/1
 	!,
 	(   Copy = (H:-B)

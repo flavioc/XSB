@@ -101,6 +101,7 @@ bb_inf_internal(Is,Lin,Eps,_,_) :-
 	bb_loop(Dep,IsNf,Eps),
 	fail.
 bb_inf_internal(_,_,_,Inf,Vertex) :-
+%    trace,
 	catch(nb_getval(prov_opt,InfVal-Vertex),_,fail),
 	{Inf =:= InfVal},
 	nb_delete(prov_opt).
@@ -139,8 +140,9 @@ bb_reoptimize(Obj,Inf) :-
 %
 % Checks if the new infimum Inf is better than the previous one (if such exists).
 
+% SWI throws exception and succeeds -- my nb_getval just fails.
 bb_better_bound(Inf) :-
-	catch((nb_getval(prov_opt,Inc-_),Inf - Inc < -1.0e-10),_,true).
+    (catch((nb_getval(prov_opt,Inc-_),Inf - Inc < -1.0e-10),_,true) ; true).
 
 % bb_branch(V,U,L)
 %
@@ -229,7 +231,7 @@ bb_intern([v(One,[V^1])],X,_,_) :-
 %	Test =< 1e-010,
 %	Test >= -1e-010,
 	Test =< QUANTUM,
-	Test >= QUANTUM,
+	Test >= -QUANTUM,
 	!,
 	V = X,
 	bb_narrow_lower(X),
