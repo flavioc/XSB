@@ -303,6 +303,7 @@ standard_symbol(spawn_process, 5, shell).
 standard_symbol((spy), 1, debugger).
 standard_symbol(statistics, 0, standard).
 standard_symbol(statistics, 1, standard).
+standard_symbol(time, 1, standard).			% also in SWI-Prolog and YAP
 standard_symbol(str_cat, 3, string).
 standard_symbol(str_length, 2, string).
 standard_symbol(str_match, 5, string).
