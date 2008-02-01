@@ -41,6 +41,7 @@
 #include "biassert_defs.h"
 
 :- import (:-)/2 from usermod.
+:- import fmt_write/2 from file_io.
 
 			/************************/
 			/*   INPUT and OUTPUT   */
@@ -1189,8 +1190,8 @@ time(Goal) :-
 	->  Result = yes
 	;   Result = no
 	),
-	stat_cputime(UsedTime),
-	stat_walltime(Wall),
+	stat_cputime(NewTime),
+	stat_walltime(NewWall),
 	UsedTime is NewTime - OldTime, 
 	Wall     is NewWall - OldWall,
 	(   Wall =:= 0
