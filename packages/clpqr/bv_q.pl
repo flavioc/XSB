@@ -50,8 +50,8 @@
 	    detach_bounds_vlv/5,
 	    determine_active_dec/1,
 	    determine_active_inc/1,
-	    dump_var/6,	    bv_q_dump_var/6,
-	    dump_nz/5,	    bv_q_dump_nz/5,
+	    dump_var/6,
+	    dump_nz/5,
 	    export_binding/1,
 	    get_or_add_class/2,
 	    inc_step/2,
@@ -97,7 +97,7 @@
 	    mult_hom/3,
 	    mult_linear_factor/3
 	]).
-:- use_module(class,
+:- use_module('../clpqr/class',
 	[
 	    class_allvars/2,
 	    class_basis/2,
