@@ -40,6 +40,7 @@ minimize(A):- bv_r:minimize(A).
 
 :- bootstrap_package('clpqr', clpr).
 :- [dump].
+:- [itf].
 :- import member/2 from basics.
 :- import install_constraint_portray_hook/4 from machine.
 :- import dump/3 from dump.
