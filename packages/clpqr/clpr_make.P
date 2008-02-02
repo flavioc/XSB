@@ -4,6 +4,7 @@
 make_clpr:- 
 	compile('bb_r.pl'),
 	compile('bv_r.pl'),
+	%% compile('bv_q.pl'), % does not compile?
 	compile('class.pl'),
 	compile('fourmotz_r.pl'),
 	compile('geler.pl'),
