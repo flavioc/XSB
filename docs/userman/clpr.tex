@@ -134,6 +134,7 @@ store.
 {\small
 \begin{verbatim}
 | ?- {A =< 4},entailed(A =\= 5).
+ { A =< 4.0000 }
 
 yes   
 \end{verbatim}
@@ -170,13 +171,14 @@ minimize/1} will fail.
 {\small
 \begin{verbatim}
 | ?- {X = 2*Y,Y >= 7},inf(X,F).
+ { X >= 14.0000 }
+ { Y = 0.5000 * X }
 
 X = _h8841
 Y = _h9506
 F = 14.0000
 
 | ?- {X = 2*Y,Y >= 7},minimize(X).
-
 X = 14.0000
 Y = 7.0000
 
@@ -186,6 +188,8 @@ X = 14.0000
 Y = 7.0000
 
 | ?- {X = 2*Y,Y =< 7},sup(X-2,Z).
+ { X =< 14.0000 }
+ { Y = 0.5000 * X }
 
 X = _h8975
 Y = _h9640
@@ -216,6 +220,10 @@ variable $V$ in {\tt Vector}, the value of $V$ at the extremal point
 \begin{verbatim}
 | ?= { 2*X+Y =< 16, X+2*Y =< 11,X+3*Y =< 15, Z = 30*X+50*Y},
      sup(Z, Sup, [X,Y], Vertex).
+ { X + 3.0000 * Y =< 15.0000 }
+ { X + 0.5000 * Y =< 8.0000 }
+ { X + 2.0000 * Y =< 11.0000 }
+ { Z = 30.0000 * X + 50.0000 * Y }
 
 X = _h816
 Y = _h869
@@ -241,6 +249,9 @@ non-strict inequalities only.
 {\small
 \begin{verbatim}
 | ?- {X > Y + Z,Y > 1, Z > 1},bb_inf([Y,Z],X,Inf,Vertex,0).
+ { Z > 1.0000 }
+ { Y > 1.0000 }
+ { X - Y - Z > 0.0000 }
 
 X = _h14286
 Y = _h10914
@@ -270,6 +281,9 @@ to {\tt 0.001}.
 {\small
 \begin{verbatim}
 |?- {X >= Y+Z, Y > 1, Z > 1}, bb_inf([Y,Z],X,Inf)
+ { Z > 1.0000 }
+ { Y > 1.0000 }
+ { X - Y - Z >= 0.0000 }
 
 X = _h14289
 Y = _h10913
@@ -292,6 +306,8 @@ variables, without affecting the constraint store.
 \begin{verbatim}
 | ?- {X > Y+1, Y > 2},
      dump([X,Y], [x,y], CS).
+ { Y > 2.0000 }
+ { X - Y > 1.0000 }
 
 X = _h17748
 Y = _h17139
@@ -322,6 +338,7 @@ predicate works with either standard or trie-indexed dynamic code.
 {\small
 \begin{verbatim}
 | ?- {X > 3},projecting_assert(q(X)).
+ { X > 3.0000 }
 
 X = _h396
 
@@ -332,6 +349,7 @@ q(A) :-
 
 yes
 | ?- q(X),entailed(X > 2).
+ { X > 3.0000 }
 
 X = _h358
 
