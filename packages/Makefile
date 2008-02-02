@@ -27,10 +27,10 @@ OBJEXT=.xwam
 ALL = 	slx${OBJEXT} perlmatch${OBJEXT} gap${OBJEXT} \
 	regmatch${OBJEXT} wildmatch${OBJEXT} \
 	xasp${OBJEXT} libwww${OBJEXT} xsbdoc${OBJEXT} \
-	xmc${OBJEXT} justify${OBJEXT}
+	xmc${OBJEXT} justify${OBJEXT} clpr${OBJECT}
 
 SUBDIR = flora2 slx perlmatch gap regmatch wildmatch libwww xasp \
-	 xsbdoc xmc justify
+	 xsbdoc xmc justify clpqr
 
 Option = [optimize]
 
@@ -66,9 +66,9 @@ all:  init $(ALL) finish $(SUBDIR)
 	@rm cmd...
 	@cat $(SVFILE)
 
-# clpqr::
-# 	@echo ""
-# 	cd clpqr; make
+clpr::
+	@echo ""
+	cd clpqr; make
 
 slx::
 	@echo ""
