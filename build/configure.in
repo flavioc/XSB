@@ -116,6 +116,14 @@ AC_ARG_WITH(xpath,
 [  --with-xpath=DIR             the libxml2 library used for XPath is at DIR])
 AC_ARG_WITH(dbdrivers,
 [  --with-dbdrivers             configure dbdrivers package])
+AC_ARG_WITH(odbc-libdir,
+[  --with-odbc-libdir=DIR       provide info on where the ODBC libraries are])
+AC_ARG_WITH(odbc-incdir,
+[  --with-odbc-incdir=DIR       provide info on where the ODBC include files are])
+AC_ARG_WITH(mysql-libdir,
+[  --with-mysql-libdir=DIR       provide info on where the MySQL libraries are])
+AC_ARG_WITH(mysql-incdir,
+[  --with-mysql-incdir=DIR       provide info on where the MySQL include files are])
 AC_ARG_WITH(oracle,
 [  --with-oracle                compile with support of Oracle])
 AC_ARG_WITH(odbc,
