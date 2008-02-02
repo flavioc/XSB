@@ -2,9 +2,10 @@
 %===========================
 
 \begin{center}
-{\Large  {\bf By Leslie De Koninck based on code by Christian Holzbaur}}~\footnote{The
-  CLP(R) files are based on those written by De Konink for SWI Prolog,
-  and were ported to XSB by Terrance Swift.}
+{\Large {\bf By Leslie De Koninck based on code by Christian
+    Holzbaur}}~\footnote{The CLP(R) package is based on the clpqr
+  package included in SWI Prolog version 5.6.49, and was ported to XSB
+  by Terrance Swift.}
 \end{center}
 
 The CLP(R) library supports solutions of linear equations and
@@ -56,7 +57,7 @@ Formally:
 \> \> $|$ Expr {\tt *} Expr \\
 \> \> $|$ Expr {\tt /} Expr \\
 \> \> $|$ {\tt abs($Expr$)} \\
-\> \> $|$ {\tt sin($Expr$)} \\
+`\> \> $|$ {\tt sin($Expr$)} \\
 \> \> $|$ {\tt cos($Expr$)} \\
 \> \> $|$ {\tt tan($Expr$)} \\
 \> \> $|$ {\tt pow($Expr$,$Expr$)} \> {\rm raise to the power} \\
@@ -74,8 +75,27 @@ package and call the predicates below directly from {\tt usermod} (the
 module implicitly used by the command line).  However, when calling
 any of these predicates from compiled code, they must be explicitly
 imported from their modules (e.g. {\tt \{\}} must be explicitly
-imported from {\tt clpr}).
+imported from {\tt clpr}).  Figure~\ref{fig:clpr} shows an example of
+how this is done.
+%
+\begin{figure} \label{fig:clpr}
+{\small 
+\begin{verbatim}
+   :- import {}/1 from clpr.
 
+   root(N, R) :-
+   root(N, 1, R).
+   root(0, S, R) :- !, S=R.
+   root(N, S, R) :-
+	N1 is N-1,
+	{ S1 = S/2 + 1/S },
+	root(N1, S1, R).
+\end{verbatim}
+}
+\caption{Example of a file with a CLP(R) predicate}
+\end{figure}
+%
+`
 \begin{description}
 \ournewitem{\{+Constraints\}} {clpr} \index{{\tt \{\}/1}}
 %
