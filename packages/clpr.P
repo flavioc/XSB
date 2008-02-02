@@ -25,7 +25,7 @@
 :- import bootstrap_package/2 from packaging.
 
 :- export {}/1, entailed/1, maximize/1, minimize/1, sup/2, inf/2, sup/4, inf/4,
-	bb_inf/3, bb_inf/5.
+	bb_inf/3, bb_inf/5, clpr_portray_hook/1.
 
 {F}:- nf_r:{F}.
 entailed(C):- nf_r:entailed(C).
@@ -38,15 +38,31 @@ inf(A,B,C,D):- bv_r:inf(A,B,C,D).
 maximize(A):- bv_r:maximize(A).
 minimize(A):- bv_r:minimize(A).
 
-:- import make_clpr/0 from clpr_make.
-:- import xsb_configuration/2 from xsb_configuration.
-
 :- bootstrap_package('clpqr', clpr).
 :- [dump].
-:- xsb_configuration(packagesdir,Pdir),
-   shell_to_list([ls,' ',Pdir,'/clpqr/nf_r.xwam'],F,G),
-	(F = [] -> cd(clpqr),make_clpr,cd('..') ; true).
+:- import member/2 from basics.
+:- import install_constraint_portray_hook/4 from machine.
+:- import dump/3 from dump.
 
+:- install_constraint_portray_hook(clpr,Vars,Names,clpr_portray_varlist(Vars,Names)).
+:- import console_write/1, console_writeln/1 from standard.
+
+clpr_portray_varlist(Vars,Names):- 
+	filter_varlist(Vars,Names,V1,N1),
+	dump(V1,N1,Constraints),
+	member(C,Constraints),
+	console_write(' { '),
+	console_write(C),
+	console_writeln(' } '),
+	fail.
+clpr_portray_varlist(_V,_N).
+
+filter_varlist([],[],[],[]).
+filter_varlist([V1|R1],[N1|R2],[V1|R3],[N1|R4]):- 
+	var(V1),!,
+	filter_varlist(R1,R2,R3,R4).
+filter_varlist([_V1|R1],[_N1|R2],R3,R4):- 
+	filter_varlist(R1,R2,R3,R4).
 
 end_of_file.
 
@@ -65,4 +81,10 @@ Baos old stuff:
 
 this_linear_solver(clpr).
 */
+
+%:- xsb_configuration(packagesdir,Pdir),
+%   shell_to_list([ls,' ',Pdir,'/clpqr/nf_r.xwam'],F,G),
+%	(F = [] -> cd(clpqr),make_clpr,cd('..') ; true).
+:- import make_clpr/0 from clpr_make.
+:- import xsb_configuration/2 from xsb_configuration.
 
