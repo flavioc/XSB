@@ -71,19 +71,17 @@ Formally:
 %
 From the command line, it is usually easiest to load the {\tt clpr}
 package and call the predicates below directly from {\tt usermod} (the
-module implicitly used by the command line).  This can be done for all
-predicates {\em except} {\tt {}/1} -- see below.  However, when
-calling any of these predicates from compiled code, they must be
-explicitly imported from their modules.
+module implicitly used by the command line).  However, when calling
+any of these predicates from compiled code, they must be explicitly
+imported from their modules (e.g. {\tt \{\}} must be explicitly
+imported from {\tt clpr}).
 
 \begin{description}
 \ournewitem{\{+Constraints\}} {clpr} \index{{\tt \{\}/1}}
 %
 When the CLP(R) package is loaded, inclusion of equations in braces
 ({\tt \{\}}) adds {\tt Constraints} to the constraint store where they
-are checked for satisfiability.  {\em Note that from the command line,
-  {\tt {}/2} must be called with the module prefix {\tt nf\_r}.  This
-  requirement is intended to be temporary}.
+are checked for satisfiability. 
 
 {\bf Example:}
 {\small

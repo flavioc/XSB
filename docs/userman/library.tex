@@ -2930,7 +2930,7 @@ library was originally written for Sicstus by Mats Carlsson.
 
 
 \subsection{Justification}
-
+%
 Most Prolog debuggers, including XSB's, are based on a mechanism that
 allows a user to trace the evaluation of a goal by interrupting the
 evaluation at call, success, retry, or failure of various subgoals.
@@ -2947,8 +2947,8 @@ produced by an evaluation to construct a {\em justification} after the
 evaluation has finished.  The justification library does just this
 using algorithms described in \cite{GuRR01}.
 
-\subsection{Ordered Sets}
-
+\subsection{Ordered Sets: {\tt ordsets.P}}
+%
 {\tt ordset.P} provides an XSB port of the widely used ordset library,
 written by Richard O'Keefe, whose summary we paraphrase here.  In the
 ordset library, sets are represented by ordered lists with no
@@ -2960,6 +2960,17 @@ elementary set operations can be done in time proportional to the sum
 of the argument sizes rather than their product.  Some of the
 unordered set routines, such as {\tt member/2}, {\tt length/2}, or
 {\tt select/3} can be used unchanged.
+
+\subsection{Unweighted Graphs: {\tt ugraphs.P}}
+%
+XSB also includes a library for unweighted graphs, originally written
+by Mats Carlsson.  This library allows for the representation and
+manipulation of directed and non-directed unlabelled graphs, including
+predicates to find the transitive closure of a graph, maximal paths,
+minimal paths, and other features.  This library represents graphs as
+an ordered set of their edges and does not use tabling.  As a result,
+it may be slower for large graphs than similar predicates based on a
+datalog representatoin of edges.
 
 
 %%% TeX-master: "manual2"
