@@ -50,14 +50,9 @@ compile0(Path, Options) :-
 	 ;
 	    permission_error(compile,'file/module',Path,compile/[1,2])
 	).
-%	    file_write0(STDERR, 'Cannot compile a file with .xwam extension'),
-%	    fail 	
 compile0(Path, _) :-
 	existence_error('file/module',Path,compile/[1,2],1).
-/*
-	file_write0(STDERR, 'Cannot find the file/module '),
-	file_write0(STDERR, Path), file_nl(STDERR), fail.
-*/
+
 compile_f(XSB_SRC_EXTENSION_ATOM_SANS_DOT, Base, Opts, ExList, Mod, _) :- !,
 	compile(Mod, Base, XSB_SRC_EXTENSION_ATOM, Opts, ExList).
 compile_f(pl, Base, Opts, ExList, Mod, _) :- !,
@@ -152,8 +147,6 @@ reconsult0(Path, Options, Ensure_loaded) :-
 		)
 	    
          ;	existence_error('file/module',Path,consult/1,1)
-%	 ;	file_write0(STDERR, 'Cannot find the file/module '),
-%		file_write0(STDERR, Path), file_nl(STDERR), fail
 	).
 
 i_want_compile(SExt, Base, Obj) :-
@@ -316,9 +309,6 @@ load_exec(File, ModName) :-
 	( Init =\= 0			% load succeeded
 	; Init =:= 0, 
 	        abort(['Error in loading file ',File])
-%	        file_write0(STDERR, 'Error in loading file '), 
-%		file_write0(STDERR, File),
-%		file_nl(STDERR), fail
 	),
 	!,
 	(   banner_control(quietload)
@@ -576,11 +566,6 @@ load_dync(File) :- load_dync(File,1).  % assertz
 load_dync(File,Dirin) :-
 	check_one_thread(load,file,load_dync/2),
 	check_atom(File,load_dync/[1,2],1),
-%	(atom(File)
-%	 ->	true
-%	 ;	file_write0(STDERR, 'Wrong type in argument 1 of load_dync/1'),
-%		fail
-%	),
 	load_dync_nocheck(File,Dirin).
 	
 load_dync_nocheck(File,Dirin) :-

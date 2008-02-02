@@ -150,6 +150,7 @@ process_query1(X, Vars) :-
 	call_query(X),
 	xwam_state(2,DelayReg),
 	stat_flag(LETTER_VARS, LetterVars),
+	maybe_print_constraints(Vars),
 	( LetterVars =:= 0 -> print_answer(Vars)
 	; ( numbervars(Vars), print_answer(Vars), fail ; true )
 	),
@@ -220,8 +221,19 @@ portray_attributes_1([Mod,Attr|T]):-
 	    file_write(STDFDBK,' } ')
 	 ; true),
 	 portray_attributes_1(T).
-	
 
+:- import writeln/1 from standard.
+:- import constraint_portray_hook/4 from machine.
+maybe_print_constraints(VarList):- 
+	constraint_portray_hook(_Mod,ValList,NameList,Hook),
+	split_lists(VarList,ValList,NameList),
+	call(Hook),
+	fail.
+maybe_print_constraints(_VarList).
+
+split_lists([],[],[]).
+split_lists([vv(Name,Val)|R],[Val|R1],[Name|R2]):- 
+	split_lists(R,R1,R2).
 
 /* === break =========================================================== */
 
@@ -261,7 +273,6 @@ readl_brklp1 :-
 :- import thread_peek_signal/1 from mutex_xsb.
 :- import repeat/0 from standard.
 
-%:- import writeln/1 from standard.
 % Continuation is in first arg as opposed to second in attv_int 
 '_$thread_int'(One,_Two) :- 
 	execute_messages_on_signale_queue,
@@ -287,14 +298,15 @@ execute_messages_on_signale_queue:-
 
 handle_interrupts([]) :- !.
 handle_interrupts([[Atts|Value]|Ints]) :-
- 	%file_write(1, '....  [Var|Value] = '),
- 	%file_write(1, [Var|Value]), file_nl(1),
-	% verify_attributes(Var, Value)
-	%write(Var),write(Value),nl,
+% 	file_write(1, '....  [Var|Value] = '),
+% 	file_write(1, [Var|Value]), file_nl(1),
+%	verify_attributes(Var, Value)
+%	write(Var),write(Value),nl,
 	general_verify_attributes(Atts,Value),
 	handle_interrupts(Ints).
 
 general_verify_attributes(Atts,Value) :-
+%	writeln(general_verify_attributes(Atts,Value)),
 	%get_attributes(Var,Atts),
 	%attv_unify(Var,Value),
  	%file_write(1, '.... attv_unify(Var,Value) '),

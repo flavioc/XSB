@@ -1304,6 +1304,11 @@ abort :- misc_error('Aborting...').
 %  abort/1
 abort(Msg) :- misc_error(Msg).
 
+console_write(X):- 
+	message(X,STDFDBK).
+console_writeln(X):- 
+	messageln(X,STDFDBK).
+
 error_write(X):- 
 	message(X,STDERR).
 error_writeln(X):- 
@@ -1541,3 +1546,4 @@ cleanup_handler(Attr,_Target):-
 ?- dynamic_code_function(INIT_CALL_CLEANUP_BLOCKS,_,_,_,_).
 
 /* --------------------- end of file standard.P ----------------------- */
+

@@ -237,88 +237,6 @@ formatted_io(_OPnumber, _FileOrString,_Format,_ArgTerm,_RetCode) :-
 
 trimcore :- '_$builtin'(TRIMCORE).
 
-put_attributes(_Var, _LNew) :- '_$builtin'(PUT_ATTRIBUTES).
-get_attributes(_Var, _L) :- '_$builtin'(GET_ATTRIBUTES).
-delete_attributes(_Var) :- '_$builtin'(DELETE_ATTRIBUTES).
-
-'_$attv_unify'(_Var,_Value) :- '_$builtin'(ATTV_UNIFY).
-
-attv_unify(Var, Value) :-
-	(   is_attv(Var)
-	->  '_$attv_unify'(Var,Value)
-	;   Var = Value
-	).
-
-/* TLS: an attribute list has the form [Module1,Value1,Module2,Value2,...]
-   where there is a unique value for each module */
-
-put_attr(Var,Mod,Val) :-
-      ( get_attributes(Var,Atts) ->
-              '$put_attr'(Atts,Mod,Val,NAtts),
-              put_attributes(Var,NAtts)
-      ;
-              put_attributes(Var,[Mod,Val])
-      ).
- 
-'$put_attr'([],Mod,Val,[Mod,Val]).
-'$put_attr'([M,A|R],Mod,Val,NAtts) :-
-      ( M == Mod ->
-              NAtts = [Mod,Val|R]
-      ;
-              NAtts = [M,A|NR],
-              '$put_attr'(R,Mod,Val,NR)
-      ).
- 
-get_attr(Var,Mod,Attr) :-
-      get_attributes(Var,Atts),
-      '$get_attr'(Atts,Mod,Attr).
- 
-'$get_attr'([M,A|Rest],Mod,Attr) :-
-      ( M == Mod ->
-              Attr = A
-      ;
-              '$get_attr'(Rest,Mod,Attr)
-      ).
- 
-del_attr(Var,Mod) :-
-      ( get_attributes(Var,Atts) ->
-              '$del_attr'(Atts,Mod,NAtts),
-              ( NAtts == [] ->
-                      delete_attributes(Var)
-              ;
-                      put_attributes(Var,NAtts)
-              )
-      ;
-              true
-      ).
- 
-'$del_attr'([],_,[]).
-'$del_attr'([M,A|R],Mod,NAtts) :-
-      ( M == Mod ->
-              NAtts = R
-      ;
-              NAtts = [M,A|NR],
-              '$del_attr'(R,Mod,NR)
-      ).
- 
-:- dynamic verify_attribute_handler(_,_,_,_).
-install_verify_attribute_handler(Mod,Attr,Value,Handler) :-
-      ( retract(verify_attribute_handler(Mod,_,_,_)) ->
-              write('Warning: replacing previous verify_attribute_handler for module '),write(Mod),writeln('.')
-      ;
-              true
-      ),
-      assert(verify_attribute_handler(Mod,Attr,Value,Handler)).
-
-:- dynamic attribute_portray_hook(_,_,_).
-install_attribute_portray_hook(Mod,Attr,Handler) :-
-      ( retract(attribute_portray_hook(Mod,_,_)) ->
-              write('Warning: replacing previous attribute_portray_hook for module '),write(Mod),writeln('.')
-      ;
-              true
-      ),
-      assert(attribute_portray_hook(Mod,Attr,Handler)).
-
 /* This is the builtin where people should put their private, experimental
    builtin code. SEE THE EXAMPLE IN emu/private_builtin.c to UNDERSTAND HOW 
    TO DO IT. Note: even though this is a single builtin, YOU CAN SIMULATE 
@@ -435,5 +353,118 @@ set_prompt(Pstore,Prompt) :-
 	psc_set_prop(Psc, String).
 
 get_breg(_):- '_$builtin'(GET_BREG).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% General Purpose Constraint Stuff
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+put_attributes(_Var, _LNew) :- '_$builtin'(PUT_ATTRIBUTES).
+get_attributes(_Var, _L) :- '_$builtin'(GET_ATTRIBUTES).
+delete_attributes(_Var) :- '_$builtin'(DELETE_ATTRIBUTES).
+
+'_$attv_unify'(_Var,_Value) :- '_$builtin'(ATTV_UNIFY).
+
+attv_unify(Var, Value) :-
+	(   is_attv(Var)
+	->  '_$attv_unify'(Var,Value)
+	;   Var = Value
+	).
+
+/* TLS: an attribute list has the form [Module1,Value1,Module2,Value2,...]
+   where there is a unique value for each module */
+
+put_attr(Var,Mod,Val) :-
+      ( get_attributes(Var,Atts) ->
+              '$put_attr'(Atts,Mod,Val,NAtts),
+              put_attributes(Var,NAtts)
+      ;
+              put_attributes(Var,[Mod,Val])
+      ).
+ 
+'$put_attr'([],Mod,Val,[Mod,Val]).
+'$put_attr'([M,A|R],Mod,Val,NAtts) :-
+      ( M == Mod ->
+              NAtts = [Mod,Val|R]
+      ;
+              NAtts = [M,A|NR],
+              '$put_attr'(R,Mod,Val,NR)
+      ).
+ 
+get_attr(Var,Mod,Attr) :-
+      get_attributes(Var,Atts),
+      '$get_attr'(Atts,Mod,Attr).
+ 
+'$get_attr'([M,A|Rest],Mod,Attr) :-
+      ( M == Mod ->
+              Attr = A
+      ;
+              '$get_attr'(Rest,Mod,Attr)
+      ).
+ 
+del_attr(Var,Mod) :-
+      ( get_attributes(Var,Atts) ->
+              '$del_attr'(Atts,Mod,NAtts),
+              ( NAtts == [] ->
+                      delete_attributes(Var)
+              ;
+                      put_attributes(Var,NAtts)
+              )
+      ;
+              true
+      ).
+ 
+'$del_attr'([],_,[]).
+'$del_attr'([M,A|R],Mod,NAtts) :-
+      ( M == Mod ->
+              NAtts = R
+      ;
+              NAtts = [M,A|NR],
+              '$del_attr'(R,Mod,NR)
+      ).
+ 
+:- dynamic verify_attribute_handler(_,_,_,_).
+install_verify_attribute_handler(Mod,Attr,Value,Handler) :-
+      ( retract(verify_attribute_handler(Mod,_,_,_)) ->
+              write('Warning: replacing previous verify_attribute_handler for module '),write(Mod),writeln('.')
+      ;
+              true
+      ),
+      assert(verify_attribute_handler(Mod,Attr,Value,Handler)).
+
+%---------------
+
+:- dynamic attribute_portray_hook(_,_,_).
+install_attribute_portray_hook(Mod,Attr,Handler) :-
+      ( retract(attribute_portray_hook(Mod,_,_)) ->
+              write('Warning: replacing previous attribute_portray_hook for module '),
+	      write(Mod),writeln('.')
+      ;
+              true
+      ),
+      assert(attribute_portray_hook(Mod,Attr,Handler)).
+
+%---------------
+
+:- dynamic attribute_portray_hook(_,_,_).
+install_attribute_portray_hook(Mod,Attr,Handler) :-
+      ( retract(attribute_portray_hook(Mod,_,_)) ->
+              write('Warning: replacing previous attribute_portray_hook for module '),
+	      write(Mod),writeln('.')
+      ;
+              true
+      ),
+      assert(attribute_portray_hook(Mod,Attr,Handler)).
+
+%---------------
+
+:- dynamic constraint_portray_hook(_,_,_,_).
+install_constraint_portray_hook(Mod,Vars,Names,Handler) :-
+      ( retract(constraint_portray_hook(Mod,_,_,_)) ->
+              write('Warning: replacing previous constraint_portray_hook for module '),
+	      write(Mod),writeln('.')
+      ;
+              true
+      ),
+      assert(constraint_portray_hook(Mod,Vars,Names,Handler)).
 
 /* --------------------- end of file machine.P ------------------------ */
