@@ -1902,23 +1902,26 @@ floats can be activated for speed purposes by passing the option
 --enable-fast-floats to the configure script at configuration time.
 This option is not recommended when any sort of precision is desired,
 as there may be as little as 28 bits available to represent a given
-number value under a tagged architecture.  In addition, evaluation of
-arithmetic expressions through {\tt is/2} does not check for overflow
-or underflow.  As a result, XSB's floating point operations do not
-conform to IEEE floating point standards, and deviates in this regard
-from the ISO Prolog standard (see \cite{ISO-Prolog} Section 9)~ We
-hope to fix these problems in a future release \footnote{We also note
-  that the ISO Prolog evaluable functors{\tt float\_integer\_part/1}
-  (which can be obtained via {\tt truncate/1}), {\tt
-    float\_fractional\_part/1} (which can be obtained via {\tt X -
-    truncate(X)}), and bitwise complement (which is implementation
-  dependent in the ISO standard) are not implemented in \version .}.
+number value under a tagged architecture.  
 
 All of the evaluable functors described below throw an instantiation
 error if one of their evaluated inputs is a variable, and an {\tt
   evaluation(undefined)} error if one of their evaluated inputs is
 instantiated but non-numeric.  With this in mind, we describe below
 only their behavior on correctly typed input.
+
+\compatability
+In addition, evaluation of arithmetic expressions through {\tt is/2}
+does not check for overflow or underflow.  As a result, XSB's floating
+point operations do not conform to IEEE floating point standards, and
+deviates in this regard from the ISO Prolog standard (see
+\cite{ISO-Prolog} Section 9)~ We hope to fix these problems in a
+future release \footnote{We also note that the ISO Prolog evaluable
+  functors{\tt float\_integer\_part/1} (which can be obtained via {\tt
+    truncate/1}), {\tt float\_fractional\_part/1} (which can be
+  obtained via {\tt X - truncate(X)}), and bitwise complement (which
+  is implementation dependent in the ISO standard) are not implemented
+  in \version .}.
 
 \begin{description}
 \ouritem{is(?Result,+Expression)}\index{\texttt{is/2}} 
