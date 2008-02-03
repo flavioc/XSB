@@ -184,8 +184,8 @@ eval_numgetinst(VPrag,R,Pil,Pilr,Tin,Tout) :-
 	).
 
 :- index geninline_isindeed/8-2.
-geninline_isindeed(LHS,varocc(_,Prag),HoldR,Pil,Pilr,Tin,Tout,EPN) :-
-	isindeed_var(LHS,Prag,HoldR,Pil,Pilr,Tin,Tout,EPN).
+geninline_isindeed(LHS,varocc(Vid,Prag),HoldR,Pil,Pilr,Tin,Tout,EPN) :-
+	isindeed_var(LHS,Prag,HoldR,Pil,Pilr,Tin,Tout,EPN,Vid).
 geninline_isindeed(LHS,integer(N),HoldR,Pil,Pilr,Tin,Tout,EPN) :-
 	isindeed_int(LHS,N,HoldR,Pil,Pilr,Tin,Tout,EPN).
 geninline_isindeed(LHS,real(Real),HoldR,Pil,Pilr,Tin,Tout,EPN) :-
@@ -201,21 +201,30 @@ geninline_isindeed(_LHS,string(Sym),_HoldR,[fail|Pilr],Pilr,Tin,Tin,e(PredSym,NC
 	error(('non-numeric string ', Sym, ' in a numeric expression')),
 	message(('         in clause #', NC, ' of predicate ', P,'/',A)).
 
-isindeed_var(varocc(LVid,LPrag),RPrag,HoldR,Pil,Pilr,Tin,Tout,EPN) :- !,
+/***isindeed_var(varocc(LVid,LPrag),RPrag,HoldR,Pil,Pilr,Tin,Tout,EPN,_RVid) :- !,
 	eval_var(RPrag,R,Pil,Pilm,Tin,Tout1,EPN),
 	release_if_done(LVid,R,LPrag,HoldR,Tout1,Tout2),
-	tgetpar(varocc(LVid,LPrag),R,Pilm,Pilr,Tout2,Tout).
-isindeed_var(integer(Int),RPrag,_HoldR,Pil,Pilr,Tin,Tout,EPN) :- !,
+	tgetpar(varocc(LVid,LPrag),R,Pilm,Pilr,Tout2,Tout).***/
+isindeed_var(varocc(_LVid,LPrag),RPrag,HoldR,Pil,Pilr,Tin,Tout,EPN,RVid) :- !,
+	eval_var_source(varocc(RVid,RPrag),RLoc,RType,HoldR,Tin,Tmid1,EPN),
+	eval_var_target(LPrag,LLoc,LType,UniAsgn,Tmid1,Tout,EPN),  %% register dealloc?
+	RInt is (LType<<1) + RType,  %% int = 0
+	Pil = [Instr|Pilr],
+	(UniAsgn == uni
+	 ->	Instr = addintfastuni(LLoc,RLoc,RInt)
+	 ;	Instr = addintfastasgn(LLoc,RLoc,RInt)
+	).
+isindeed_var(integer(Int),RPrag,_HoldR,Pil,Pilr,Tin,Tout,EPN,_RVid) :- !,
 	eval_var(RPrag,R,Pil,Pilm,Tin,Tout1,EPN),
 	getreg(Tin, R1), hold(R1, Tout1, Tout2),
 	Pilm = [putnumcon(R1,Int)|Pilr],
 	release(R1,Tout2,Tout3), release(R,Tout3,Tout).
-isindeed_var(real(Real),RPrag,_HoldR,Pil,Pilr,Tin,Tout,EPN) :- !,
+isindeed_var(real(Real),RPrag,_HoldR,Pil,Pilr,Tin,Tout,EPN,_RVid) :- !,
 	eval_var(RPrag,R,Pil,Pilm,Tin,Tout1,EPN),
 	getreg(Tin, R1), hold(R1, Tout1, Tout2),
 	Pilm = [putfloat(R1,Real)|Pilr],
 	release(R1,Tout2,Tout3), release(R,Tout3,Tout).
-isindeed_var(_,_,_HoldR,[fail|Pilr],Pilr,Tin,Tin,e(PredSym,NC)) :-
+isindeed_var(_,_,_HoldR,[fail|Pilr],Pilr,Tin,Tin,e(PredSym,NC),_RVid) :-
 	sym_name(PredSym, P, A),
 	error('Incorrect type in second argument'),
 	message(('         involving is/2 or =:=/2 in clause #', NC,
@@ -268,22 +277,20 @@ get_basic_type(_,unk).***/
 
 %% The first clause(s) handle special cases to generate specialized instructions for better code
 isindeed_binary(varocc(_,LPrag),Op,varocc(RVid,RPrag),integer(Int),HoldR,Pil,Pilr,Tin,Tout,EPN) :-
-%%	fail,
 	plus_or_minus(Op),
 	(Int < 0 -> fail ; Int > 31 -> fail ; true),  %% 0--31
 	eval_var_source(varocc(RVid,RPrag),RLoc,RType,HoldR,Tin,Tmid1,EPN),
-	eval_var_target(LPrag,LLoc,LType,UniAsgn,Tmid1,Tout,EPN),
-%%	!,  % below until have uni form.. %% can use optimized instruction. (Reg/Var must be <128
+	eval_var_target(LPrag,LLoc,LType,UniAsgn,Tmid1,Tout,EPN),  % register dealloc?
+	!,			% can use optimized instruction.
 	(Op == '-'
 	 ->	RInt is ((-Int)<<2) + (LType<<1) + RType
 	 ;	RInt is (Int<<2) + (LType<<1) + RType
 	),
+	Pil = [Instr|Pilr],
 	(UniAsgn == uni
-	 ->	fail, Instr = addintfastuni(LLoc,RLoc,RInt) %not yet
+	 ->	Instr = addintfastuni(LLoc,RLoc,RInt)
 	 ;	Instr = addintfastasgn(LLoc,RLoc,RInt)
-	),
-	!,  % eliminate and uncomment one above when addintfastuni is implemented
-	Pil = [Instr|Pilr].
+	).
 isindeed_binary(varocc(Vid,Prag),Op,E1,E2,HoldR,Pil,Pilr,Tin,Tout,EPN) :- !,
 	eval_binop(Op,E1,E2,R,Pil,Pilm,HoldR,Tin,Tmid,EPN),
 	release_if_done(Vid,R,Prag,HoldR,Tmid,Tmid2),
