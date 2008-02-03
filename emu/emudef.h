@@ -201,8 +201,8 @@ unsigned long dec[8] = {_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL
   }									\
   else if (isattv(OP1)) {						\
     xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_float, interrupt needed\n"));	\
-    add_interrupt(CTXTc cell(((CPtr)dec_addr(op1) + 1)),makefloat(OP2)); \
-    bind_float_tagged((CPtr)dec_addr(op1), makefloat(OP2));		\
+    add_interrupt(CTXTc cell(((CPtr)dec_addr(OP1) + 1)),makefloat(OP2)); \
+    bind_float_tagged((CPtr)dec_addr(OP1), makefloat(OP2));		\
   }									\
   else Fail1;	/* op1 is INT, STRING, STRUCT, or LIST */ 
 
@@ -222,8 +222,8 @@ unsigned long dec[8] = {_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL_ULONG_BITS,_FULL
   }									\
   else if (isattv(OP1)) {						\
     xsb_dbgmsg((LOG_ATTV,">>>> ATTV nunify_with_float, interrupt needed\n"));	\
-    add_interrupt(CTXTc cell(((CPtr)dec_addr(op1) + 1)),makefloat(OP2)); \
-    bind_boxedfloat((CPtr)dec_addr(op1), OP2);				\
+    bind_boxedfloat((CPtr)dec_addr(OP1), OP2);				\
+    add_interrupt(CTXTc cell(((CPtr)dec_addr(OP1) + 1)),cell((CPtr)dec_addr(OP1))); \
   }									\
   else Fail1;	/* op1 is INT, STRING, STRUCT, or LIST */ 
 
