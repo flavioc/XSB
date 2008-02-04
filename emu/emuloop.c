@@ -1581,8 +1581,7 @@ argument positions.
 	    Float temp = fiflt_val(fivar) OP (Float)int_val(op1);	\
 	    bld_boxedfloat(CTXTc op3, temp);				\
 	  }								\
-	}								\
-	else { arithmetic_abort(CTXTc op2, STROP, op1); }		\
+	} else { arithmetic_abort(CTXTc op2, STROP, op1); }		\
       }									\
     }									\
     else if (isfloat(op1)) {						\
@@ -1608,7 +1607,7 @@ argument positions.
 	    temp = fiflt_val(fivar) OP float_val(op1);			\
 	  }								\
 	  bld_boxedfloat(CTXTc op3, temp);				\
-	}								\
+	} else { arithmetic_abort(CTXTc op2, STROP, op1); }		\
       }									\
     }									\
     else if (isboxedfloat(op1)) {					\
@@ -1634,8 +1633,7 @@ argument positions.
 	    temp = fiflt_val(fivar) OP float_val(op1);			\
 	  }								\
 	  bld_boxedfloat(CTXTc op3, temp);				\
-	}								\
-	else { arithmetic_abort(CTXTc op2, STROP, op1); }		\
+	} else { arithmetic_abort(CTXTc op2, STROP, op1); }		\
       }									\
     }									\
     else if (isboxedinteger(op1)) {					\
@@ -1661,8 +1659,7 @@ argument positions.
 	    Float temp = fiflt_val(fivar) OP (Float)boxedint_val(op1);	\
 	    bld_boxedfloat(CTXTc op3, temp);				\
 	  }								\
-	}								\
-	else { arithmetic_abort(CTXTc op2, STROP, op1); }		\
+	} else { arithmetic_abort(CTXTc op2, STROP, op1); }		\
       }									\
     }									\
     else {								\
@@ -1833,7 +1830,7 @@ argument positions.
 	    if (fop2 > fop1) res = 1; else if (fop2 == fop1) res = 0; else res = -1;
 	  }
 	}
-	else { arithmetic_abort(CTXTc op2, "compare operator", op1); }
+	else { arithmetic_abort(CTXTc op2, "compare-operator", op1); }
       }
     }
     else if (isfloat(op1)) {
@@ -1860,7 +1857,7 @@ argument positions.
 	    fop2 = fiflt_val(fivar);
 	  }
 	  if (fop2 > fop1) res = 1; else if (fop2 == fop1) res = 0; else res = -1;
-	} else { arithmetic_abort(CTXTc op2, "compare operator", op1); }
+	} else { arithmetic_abort(CTXTc op2, "compare-operator", op1); }
       }
     }
     else if (isboxedfloat(op1)) {
@@ -1888,7 +1885,7 @@ argument positions.
 	  }
 	if (fop2 > fop1) res = 1; else if (fop2 == fop1) res = 0; else res = -1;
 	}
-	else { arithmetic_abort(CTXTc op2, "compare operator" , op1); }
+	else { arithmetic_abort(CTXTc op2, "compare-operator" , op1); }
       }
     }
     else if (isboxedinteger(op1)) {
