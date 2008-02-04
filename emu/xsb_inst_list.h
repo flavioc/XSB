@@ -51,7 +51,7 @@ XSB_INST(0x28, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0x29, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0x2a, no_inst, _no_inst, PPP,X,X,X);
 XSB_INST(0x2b, no_inst, _no_inst, PPP,X,X,X);
-XSB_INST(0x2c, no_inst, _no_inst, PPP,X,X,X);
+XSB_INST(0x2c, cmpreg,  _cmpreg,  P,R,R,X);
 XSB_INST(0x2d, addintfastuni, _addintfastuni, RRR,X,X,X);
 XSB_INST(0x2e, addintfastasgn, _addintfastasgn, RRR,X,X,X);
 XSB_INST(0x2f, xorreg, _xorreg, P,R,R,X);

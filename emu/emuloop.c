@@ -1794,6 +1794,164 @@ argument positions.
     ARITHPROC(-, "-");
   XSB_End_Instr() 
 
+  XSB_Start_Instr(cmpreg,_cmpreg) /* PRR */
+    Def3ops
+    int res;
+    Op1(Register(get_xrx));
+    Op3(get_xxr);
+    ADVANCE_PC(size_xxx);
+    op2 = *(op3);
+    XSB_Deref(op1);
+    XSB_Deref(op2);
+    if (isinteger(op1)) {
+      if (isinteger(op2)) {
+	Integer iop1 = int_val(op1);
+	Integer iop2 = int_val(op2);
+	if (iop2 > iop1) res = 1; else if (iop2 == iop1) res = 0; else res = -1;
+      } else if (isboxedfloat(op2)) {
+	Float fop1 = (Float)int_val(op1);
+	Float fop2 = boxedfloat_val(op2);
+	if (fop2 > fop1) res = 1; else if (fop2 == fop1) res = 0; else res = -1;
+      }	else if (isfloat(op2)) {
+	Float fop1 = (Float)int_val(op1);
+	Float fop2 = float_val(op2);
+	if (fop2 > fop1) res = 1; else if (fop2 == fop1) res = 0; else res = -1;
+      } else if (isboxedinteger(op2)) {
+	Integer iop1 = int_val(op1);
+	Integer iop2 = boxedint_val(op2);
+	if (iop2 > iop1) res = 1; else if (iop2 == iop1) res = 0; else res = -1;
+      } else {
+	FltInt fivar;
+	if (xsb_eval(CTXTc op2, &fivar)) {
+	  if (isfiint(fivar)) {
+	    Integer iop1 = int_val(op1);
+	    Integer iop2 = fiint_val(fivar);
+	    if (iop2 > iop1) res = 1; else if (iop2 == iop1) res = 0; else res = -1;
+	  } else {
+	    Float fop1 = (Float)int_val(op1);
+	    Float fop2 = fiflt_val(fivar);
+	    if (fop2 > fop1) res = 1; else if (fop2 == fop1) res = 0; else res = -1;
+	  }
+	}
+	else { arithmetic_abort(CTXTc op2, "compare operator", op1); }
+      }
+    }
+    else if (isfloat(op1)) {
+      Float fop1 = float_val(op1);
+      if (isboxedfloat(op2)) {
+	Float fop2 = boxedfloat_val(op2);
+	if (fop2 > fop1) res = 1; else if (fop2 == fop1) res = 0; else res = -1;
+      } else if (isfloat(op2)) {
+	Float fop2 = float_val(op2);
+	if (fop2 > fop1) res = 1; else if (fop2 == fop1) res = 0; else res = -1;
+      } else if (isinteger(op2)) {
+	Float fop2 = (Float)int_val(op2);
+	if (fop2 > fop1) res = 1; else if (fop2 == fop1) res = 0; else res = -1;
+      } else if (isboxedinteger(op2)) {
+	Float fop2 = (Float)boxedint_val(op2);
+	if (fop2 > fop1) res = 1; else if (fop2 == fop1) res = 0; else res = -1;
+      } else {
+	FltInt fivar;
+	if (xsb_eval(CTXTc op2, &fivar)) {
+	  Float fop2;
+	  if (isfiint(fivar)) {
+	    fop2 = fiint_val(fivar);
+	  } else {
+	    fop2 = fiflt_val(fivar);
+	  }
+	  if (fop2 > fop1) res = 1; else if (fop2 == fop1) res = 0; else res = -1;
+	} else { arithmetic_abort(CTXTc op2, "compare operator", op1); }
+      }
+    }
+    else if (isboxedfloat(op1)) {
+      Float fop1 = boxedfloat_val(op1);
+      if (isboxedfloat(op2)) {
+	Float fop2 = boxedfloat_val(op2);
+	if (fop2 > fop1) res = 1; else if (fop2 == fop1) res = 0; else res = -1;
+      } else if (isfloat(op2)) {
+	Float fop2 = float_val(op2);
+	if (fop2 > fop1) res = 1; else if (fop2 == fop1) res = 0; else res = -1;
+      } else if (isinteger(op2)) {
+	Float fop2 = (Float)int_val(op2);
+	if (fop2 > fop1) res = 1; else if (fop2 == fop1) res = 0; else res = -1;
+      } else if (isboxedinteger(op2)) {
+	Float fop2 = (Float)boxedint_val(op2);
+	if (fop2 > fop1) res = 1; else if (fop2 == fop1) res = 0; else res = -1;
+      } else {
+	FltInt fivar;
+	if (xsb_eval(CTXTc op2, &fivar)) {
+	  Float fop2;
+	  if (isfiint(fivar)) {
+	    fop2 = (Float)fiint_val(fivar);
+	  } else {
+	    fop2 = fiflt_val(fivar);
+	  }
+	if (fop2 > fop1) res = 1; else if (fop2 == fop1) res = 0; else res = -1;
+	}
+	else { arithmetic_abort(CTXTc op2, "compare operator" , op1); }
+      }
+    }
+    else if (isboxedinteger(op1)) {
+      if (isinteger(op2)) {
+	Integer iop1 = boxedint_val(op1);
+	Integer iop2 = int_val(op2);
+	if (iop2 > iop1) res = 1; else if (iop2 == iop1) res = 0; else res = -1;
+      } else if (isboxedinteger(op2)) {
+	Integer iop1 = boxedint_val(op1);
+	Integer iop2 = boxedint_val(op2);
+	if (iop2 > iop1) res = 1; else if (iop2 == iop1) res = 0; else res = -1;
+      } else if (isboxedfloat(op2)) {
+	Float fop1 = (Float)boxedint_val(op1);
+	Float fop2 = boxedfloat_val(op2);
+	if (fop2 > fop1) res = 1; else if (fop2 == fop1) res = 0; else res = -1;
+      } else if (isfloat(op2)) {
+	Float fop1 = (Float)boxedint_val(op1);
+	Float fop2 = float_val(op2);
+	if (fop2 > fop1) res = 1; else if (fop2 == fop1) res = 0; else res = -1;
+      } else  {
+	FltInt fivar;
+	if (xsb_eval(CTXTc op2, &fivar)) {
+	  if (isfiint(fivar)) {
+	    Integer iop1 = boxedint_val(op1);
+	    Integer iop2 = fiint_val(fivar);
+	    if (iop2 > iop1) res = 1; else if (iop2 == iop1) res = 0; else res = -1;
+	  } else {
+	    Float fop1 = (Float)boxedint_val(op1);
+	    Float fop2 = fiflt_val(fivar);
+	    if (fop2 > fop1) res = 1; else if (fop2 == fop1) res = 0; else res = -1;
+	  }
+	}
+	else { arithmetic_abort(CTXTc op2, "compare-operator", op1); }
+      }
+    }
+    else {
+      FltInt fiop1,fiop2;
+      if (xsb_eval(CTXTc op1,&fiop1) && xsb_eval(CTXTc op2,&fiop2)) {
+	if (isfiint(fiop1)) {
+	  if (isfiint(fiop2)) {
+	    Integer iop1 = fiint_val(fiop1);
+	    Integer iop2 = fiint_val(fiop2);
+	    if (iop2 > iop1) res = 1; else if (iop2 == iop1) res = 0; else res = -1;
+	  } else {
+	    Float fop1 = (Float)fiint_val(fiop1);
+	    Float fop2 = fiflt_val(fiop2);
+	    if (fop2 > fop1) res = 1; else if (fop2 == fop1) res = 0; else res = -1;
+	  }
+	} else {
+	  Float fop1 = fiflt_val(fiop1);
+	  Float fop2;
+	  if (isfiint(fiop2)) {
+	    fop2 = (Float)fiint_val(fiop2);
+	  } else {
+	    fop2 = fiflt_val(fiop2);
+	  }
+	  if (fop2 > fop1) res = 1; else if (fop2 == fop1) res = 0; else res = -1;
+	}
+      } else { arithmetic_abort(CTXTc op2, "compare-operator", op1); }
+    }
+    bld_oint(op3,res);
+  XSB_End_Instr() 
+
   XSB_Start_Instr(mulreg,_mulreg) /* PRR */
     Def3ops
     ARITHPROC(*, "*");
