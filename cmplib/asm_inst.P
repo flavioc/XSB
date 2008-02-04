@@ -65,6 +65,7 @@ asm_inst(bldtval_putlist_bldnumcon(R,A1,A2),4,36,[r(R),a(A1),a(A2)]).
 asm_inst(bldtvar_list_numcon(R,A1,A2),4,37,[r(R),a(A1),a(A2)]).
 asm_inst(getkpvars(K,V,R),	4,	38,	[a(K), v(V), r(R)]).
 
+asm_inst(cmpreg(R,R1),		4,	44,	[p, r(R), r(R1)]).
 asm_inst(addintfastuni(T,S,I),	4,	45,	[r(T),r(S),a(I)]).
 asm_inst(addintfastasgn(T,S,I),	4,	46,	[r(T),r(S),a(I)]).
 asm_inst(xorreg(R,R1),	        4,	47,	[p, r(R), r(R1)]).

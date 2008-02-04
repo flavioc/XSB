@@ -35,7 +35,7 @@ eval_relop(Op, Arg1, Arg2, HoldR, Label, Pil, Pilr, Tin, Tout, EPN) :-
 
 'eval relop'(Op, Arg1, Arg2, HoldR, Label, Pil, Pilr, Tin, Tout, EPN) :-
 	eval_exp(Arg1, R1, Pil, Pilm, HoldR, Tin, Tmid, EPN),
-	eval_exp(Arg2, R2, Pilm,[subreg(R2,R1),JumpInst|Pilr],
+	eval_exp(Arg2, R2, Pilm,[cmpreg(R2,R1),JumpInst|Pilr],
 		 HoldR, Tmid, Tout1, EPN),
 	eval_arithreloptab(Op, R1, Label, JumpInst),
 	release_if_done0(Arg1, R1, HoldR, Tout1, Tout2),
