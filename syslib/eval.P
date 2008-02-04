@@ -21,12 +21,12 @@
 ** $Id$
 ** 
 */
-
+/**
 :- compiler_options([xpp_on,optimize,sysmod]).
 
 #include "celltags_xsb.h"
 #include "thread_defs_xsb.h"
-
+***/
 /*-------------------------------------------------------------------------
 
 NOTE: In XSB, evaluable functions within is/2 or arithmetic comparison
@@ -58,6 +58,12 @@ ONLY. Everything else should simply fail as far as evaluation is
 concerned.
 
 -------------------------------------------------------------------------*/
+
+/* entirely replaced by is/2 */
+eval(Expr, Res) :- Res is Expr.
+
+end_of_file.
+/** all the following is irrelevant; now in C **/
 
 eval(Expr, Res) :- 
 	eval(Expr,Res,Expr).

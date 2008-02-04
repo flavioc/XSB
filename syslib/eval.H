@@ -26,6 +26,7 @@
 
 :- export eval/2.
 
+/**
 :- import number/1, throw/1 from standard.
 :- import term_type/2, pow/3 from machine.
-
+**/

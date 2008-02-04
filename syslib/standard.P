@@ -1077,12 +1077,12 @@ X @>= Y :- X @>= Y.
 %	only instantiation errors. For example the following should simply
 %	fail 4+a =< foo(1,3)
 
-  '<'(X,Y) :- eval(X, X1), eval(Y, Y1), X1 < Y1.
- '=<'(X,Y) :- eval(X, X1), eval(Y, Y1), X1 =< Y1.
- '>='(X,Y) :- eval(X, X1), eval(Y, Y1), X1 >= Y1.
-  '>'(X,Y) :- eval(X, X1), eval(Y, Y1), X1 > Y1.
-'=:='(X,Y) :- eval(X, X1), eval(Y, Y1), X1 =:= Y1.
-'=\='(X,Y) :- eval(X, X1), eval(Y, Y1), X1 =\= Y1.
+  '<'(X,Y) :- X < Y.
+ '=<'(X,Y) :- X =< Y.
+ '>='(X,Y) :- X >= Y.
+  '>'(X,Y) :- X > Y.
+'=:='(X,Y) :- X =:= Y.
+'=\='(X,Y) :- X =\= Y.
 
 '?='(X,Y):- (X == Y ; X \= Y),!.
 
@@ -1091,7 +1091,7 @@ X @>= Y :- X @>= Y.
 			/*   ARITHMETIC EVALUATION   */
 			/*****************************/
 
-is(Head, Expr) :- eval(Expr, Head).	% Pred eval/2 handles errors in is/2
+is(Head, Expr) :- Head is Expr. 
 
 
 			/***************/
