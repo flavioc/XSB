@@ -1702,8 +1702,9 @@ void call_conv write_canonical_term_rec(CTXTdeclc Cell prologterm, int letter_fl
       break;
     case XSB_FLOAT:
       //      sprintf(wcan_buff->string,"%2.4f",float_val(prologterm));
-      sprintf(wcan_buff->string,"%.15g",float_val(prologterm));
+      sprintf(wcan_buff->string,"%1.15g",float_val(prologterm));
       XSB_StrAppendV(wcan_string,wcan_buff);
+      if (!strchr(wcan_buff->string,'.')) XSB_StrAppend(wcan_string,".0");
       break;
     case XSB_REF:
     case XSB_REF1: {
@@ -1735,8 +1736,9 @@ void call_conv write_canonical_term_rec(CTXTdeclc Cell prologterm, int letter_fl
      else if (isboxedfloat(prologterm))
      {
        //          sprintf(wcan_buff->string,"%2.4f",boxedfloat_val(prologterm));
-          sprintf(wcan_buff->string,"%.15g",boxedfloat_val(prologterm));
+          sprintf(wcan_buff->string,"%1.15g",boxedfloat_val(prologterm));
           XSB_StrAppendV(wcan_string,wcan_buff);
+	  if (!strchr(wcan_buff->string,'.')) XSB_StrAppend(wcan_string,".0");
           break;         
      }
         
