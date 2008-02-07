@@ -24,10 +24,6 @@
 * 
 */
 
-:- export sub_atom/5.
-:- import check_nonneg_integer/3, 
-          domain_error/4,instantiation_error/2, type_error/4 from error_handler.
-
 sub_atom(At, Bef, Size, After, SubAt) :-
 	atom(At), !,
 	atom_codes(At, Atl),
@@ -122,21 +118,25 @@ sub_atom(At, _Bef, _Size, _After, _SubAt) :-
 	I is I0-1,
 	'$sub_atom_get_subchars'(I, Atl, NAtl).
 
+/**** unused
 '$sub_atom_get_subchars'(0, Atl, [], Atl) :- !.
 '$sub_atom_get_subchars'(I0, [C|Atl], [C|L], NAtl) :-
 	I is I0-1,
 	'$sub_atom_get_subchars'(I, Atl, L, NAtl).
+***/
 
 '$sub_atom_get_subchars_and_match'(0, Atl, [], Atl) :- !.
 '$sub_atom_get_subchars_and_match'(I0, [C|Atl], [C|Match], NAtl) :-
 	I is I0-1,
 	'$sub_atom_get_subchars_and_match'(I, Atl, Match, NAtl).
 
+/*** unused
 '$sub_atom_check_length'([],0).
 '$sub_atom_check_length'([_|L],N1) :-
 	N1 > 0,
 	N is N1-1,
 	'$sub_atom_check_length'(L,N).	
+***/
 
 '$sub_atom_get_last_subchars'([],[],_,0,0).
 '$sub_atom_get_last_subchars'([C|Atl],SubAt,After,Total,Size) :-
@@ -170,13 +170,16 @@ sub_atom(At, _Bef, _Size, _After, _SubAt) :-
 	type_error(atom,A,sub_atom/5,Arg).
 %	'$do_error'(type_error(atom,A),ErrorTerm).
 
+/** unused
 '$singletons_in_term'(T,VL) :-
 	'$variables_in_term'(T,[],V10),
 	'$sort'(V10, V1),
 	'$non_singletons_in_term'(T,[],V20),
 	'$sort'(V20, V2),	
 	'$subtract_lists_of_variables'(V2,V1,VL).
+***/
 
+/*** unused
 '$subtract_lists_of_variables'([],VL,VL).
 '$subtract_lists_of_variables'([_|_],[],[]) :- !.
 '$subtract_lists_of_variables'([V1|VL1],[V2|VL2],VL) :-
@@ -184,6 +187,7 @@ sub_atom(At, _Bef, _Size, _After, _SubAt) :-
 	'$subtract_lists_of_variables'(VL1,VL2,VL).
 '$subtract_lists_of_variables'([V1|VL1],[V2|VL2],[V2|VL]) :-
 	'$subtract_lists_of_variables'([V1|VL1],VL2,VL).
+***/
 
 '$$_length1'([], M, M).
 '$$_length1'([_|L], N, O) :-

@@ -313,6 +313,7 @@ standard_symbol(stream_property,2,file_io).
 standard_symbol(string_substitute, 4, string).
 standard_symbol(structure, 1, standard).
 standard_symbol(substring, 4, string).
+standard_symbol(sub_atom, 5, sub_atom).
 standard_symbol(sys_exit, 1, shell).
 
 standard_symbol(tab, 1, standard).
