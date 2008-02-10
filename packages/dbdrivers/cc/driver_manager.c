@@ -224,9 +224,11 @@ DllExport int call_conv queryConnection(void)
       errorMesg =
 	"XSB DBI ERROR: Same query handle used for different queries";
       errorNumber = "XSB_DBI_010";
+      free(sqlQuery);
       return FALSE;
     }
 
+    free(sqlQuery);
     result = queryDriver(qHandle);
     if (result == NULL && qHandle->state == QUERY_RETRIEVE) {
       closeQueryHandle(qhandle);

@@ -36,3 +36,5 @@
 	exception/2,
 	moreResults/1.
 
+%% :- ldoption(' -g ').
+
