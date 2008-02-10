@@ -960,7 +960,7 @@ interpreter level for any thread created through
 {\ xsb\_ccall\_thread\_create()} (see Volume 2, Chapter 3 {\em
   Embedding XSB in a Process}).
 
-\ouritem{gc\_heap}\index{texttt{gc\_heap/0}}
+\ouritem{gc\_heap}\index{\texttt{gc\_heap/0}}
 \index{garbage collection!heap}
 %
 Explicitly invokes the garbage collector for a thread's heap. By
@@ -996,6 +996,8 @@ Returns the \texttt{Time}, in seconds, since execution started, or
 since the last call to \texttt{statistics(0)} by any thread.
 
 \ouritem{time(+Goal)}\index{\texttt{time/1}}
+\index{Prologs!SWI}
+\index{Prologs!YAP}
 %
 Prints both the CPU time and wall time taken by the execution of \texttt{Goal}.
 Any choice-points of \texttt{Goal} are discarded. The definition of predicate is based 

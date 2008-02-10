@@ -3137,13 +3137,15 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
 	{\tt CharList} is not a list of ASCII characters.
     \end{description}
 
-\ouritem{atom\_chars(?Number, ?CharAtomList)}\index{\texttt{atom\_chars/2}} 
+\ournewitem{atom\_chars(?Number, ?CharAtomList)}{ISO}
+\index{\texttt{atom\_chars/2}} 
     Like \verb|atom_codes|, but the list returned (or input) is a list of
     characters \emph{as atoms} rather than ASCII codes. For instance, 
     \verb|atom_chars(abc,X)| binds {\tt X} to the list {\tt [a,b,c]}
     instead of {\tt [97,98,99]}.
 
-\ouritem{number\_codes(?Number, ?CharCodeList)}\index{\texttt{number\_codes/2}} 
+\ournewitem{number\_codes(?Number, ?CharCodeList)}{ISO}
+\index{\texttt{number\_codes/2}} 
     The standard predicate {\tt number\_codes/2} performs the conversion 
     between a number and its character list representation. 
     If {\tt Number} is supplied (and is a number), {\tt CharList} is
@@ -3191,7 +3193,8 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
 	{\tt CharList} is not a list of ASCII characters.
     \end{description}
 
-\ouritem{number\_chars(?Number, ?CharAtomList)}\index{\texttt{number\_chars/2}} 
+\ournewitem{number\_chars(?Number, ?CharAtomList)}{ISO}
+\index{\texttt{number\_chars/2}} 
     Like \verb|number_codes|, but the list returned (or input) is a list of
     characters \emph{as atoms} rather than ASCII codes. For instance, 
     \verb|number_chars(123,X)| binds {\tt X} to the list {\tt ['1','2','3']}
@@ -3208,6 +3211,167 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
 \ourisousageitem{atom\_concat(Atom1,Atom2,Atom3)}\index{\texttt{atom\_concat/3}}
 \ourusage{atom\_concat(?Atom,?Atom,+Atom)}
 \ourusage{atom\_concat(+Atom,+Atom,-Atom)}
+%
+Suceeds if {\tt Atom12} is the concatenation of {\tt Atom1} and {\tt Atom2}.
+
+{\bf Examples}
+{\small
+\begin{verbatim}
+| ?- atom_concat(hello,world,F).
+
+F = hello world
+
+| ?- atom_concat(X,Y,'hello world').
+
+X =
+Y = hello world;
+
+X = h
+Y = ello world 
+\end{verbatim}
+}
+The last query will resucceed for all combinations of atoms that
+produce {\tt hello world}.
+
+{\bf Error Cases}
+\begin{itemize}
+  \item {\tt Atom1} and {\tt Atom3} are both variables
+\begin{itemize}
+\item {\tt instantiation\_error}
+\end{itemize}
+  \item {\tt Atom2} and {\tt Atom3} are both variables
+\begin{itemize}
+\item {\tt instantiation\_error}
+\end{itemize}
+\item {\tt Atom1} is neither a variable nor an atom
+\begin{itemize}      
+\item   {\tt type\_error(atom,Atom1)}
+\end{itemize}
+\item {\tt Atom2} is neither a variable nor an atom
+\begin{itemize}      
+\item   {\tt type\_error(atom,Atom2)}
+\end{itemize}
+\item {\tt Atom3} is neither a variable nor an atom
+\begin{itemize}      
+\item   {\tt type\_error(atom,Atom3)}
+\end{itemize}
+\end{itemize}
+
+\ournewitem{sub\_atom(+Atom,?LeftLength,?CenterLength,?RightLength,?CenterAtom}{ISO}
+\index{\texttt{sub\_atom/5 }}
+%
+Succeeds if {\tt Atom} can be broken into three pieces: A left atom of
+length {\tt LeftLength}, a center atom {\tt CenterAtom} of length {\tt
+  CenterLength} and a right atom of length {\tt RightLength}.  If
+sufficient arguments are uninstantiated to produce {\tt CenterAtom} in
+non-deterministic starting positions, the predicate will backtrack
+through all center atoms for which the left atom length is the
+smallest , up to those whose left atom length is greatest (see
+examples below).
+
+{\bf Examples}
+{\small
+\begin{verbatim}
+| ?- sub_atom(trilobyte,5,4,RL,CA).
+
+RL = 0
+CA = byte
+| ?- sub_atom(trilobyte,1,CL,2,CA).
+
+CL = 6
+CA = riloby
+| ?- sub_atom(trilobyte,LL,6,RL,riloby).
+
+LL = 1
+RL = 2
+| ?- sub_atom(trilobyte,RL,4,LL,CA).
+
+RL = 0
+LL = 5
+CA = tril;
+
+RL = 1
+LL = 4
+CA = rilo;
+
+RL = 2
+CL = 3
+CA = ilob
+| ?- sub_atom(trilobyte,LL,CL,RL,CA).
+
+LL = 0
+CL = 0
+RL = 9
+CA = ;
+
+LL = 0
+CL = 1
+RL = 8
+CA = t;
+
+LL = 0
+CL = 2
+RL = 7
+CA = tr;
+
+:
+
+LL = 0
+CL = 9
+RL = 0
+CA = trilobyte;
+
+LL = 1
+CL = 0
+RL = 8
+CA = ;
+
+LL = 1
+CL = 1
+RL = 7
+CA = r;
+\end{verbatim}
+}
+
+{\bf Error Cases}
+\bi
+\item  {\tt Atom} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item  {\tt Atom} is neither a variable nor an atom
+\bi
+\item {\tt type\_error(atom, Atom)}
+\ei
+\item  {\tt CenterAtom} is neither a variable nor an atom
+\bi
+\item {\tt type\_error(atom, CenterAtom)}
+\ei
+\item  {\tt LeftLength} is neither a variable nor an integer
+\bi
+\item  {\tt  type\_error(integer, LeftLength)}
+\ei
+\item  {\tt CenterLength} is neither a variable nor an integer
+\bi
+\item  {\tt  type\_error(integer, CenterLength)}
+\ei
+\item  {\tt RightLength} is neither a variable nor an integer
+\bi
+\item  {\tt type\_error(integer, RightLength)}
+\ei
+\item  {\tt LeftLength} is an integer that is less than zero
+\bi
+\item  {\tt  domain\_error(not\_less\_than\_zero, LeftLength)}
+\ei
+\item  {\tt CenterLength} is an integer that is less than zero
+\bi
+\item  {\tt  domain\_error(not\_less\_than\_zero, CenterLength)}
+\ei
+\item  {\tt RightLength} is an integer that is less than zero
+\bi
+\item  {\tt  domain\_error(not\_less\_than\_zero, RightLength)}
+\ei
+\ei
 
 \ournewitem{term\_to\_atom(+Term,-Atom,+Options)}{string}
 \index{\texttt{term\_to\_atom/3 }}
@@ -3308,7 +3472,8 @@ numbervars(false)}.
 %
 This predicate is used in the definition of {\tt term\_to\_atom/3} but
 only converts a term into a list of ASCII codes, and does not intern
-the list as an atom.
+the list as an atom.  Allowed values for {\tt OptionList} and error
+cases are the same as in {\tt term\_to\_atm/3}.
 
 \ournewitem{term\_to\_codes(+Term,-CodeList)}{string}
 \index{\texttt{term\_to\_codes/2 }}
@@ -3327,17 +3492,18 @@ automatically, unless the {\tt xsb\_flag} {\tt
   atom\_garbage\_collection} is set to {\tt false}, or if more than
 one thread is active.  However there are reasons why a user may need
 to invoke atom table garbage collection.  First, in \version{}, if
-atom table garbage collection is invoked automatically, and it occurs
+atom table garbage collection is invoked automatically, it occurs
 periodically on heap garbage collection, or if numerous asserts and
 retracts have taken place.  These heuristics overlook certain cases
 where numerous atoms may be created without invoking the garbage
 collector -- e.g. through repeated uses of {\tt
   format\_write\_string/3}.  In addition if user-defined C code
 contains pointers to XSB's atom table, atom table garbage collection
-will be unsafe, as XSB has no way to detect such pointers in external
-code.  In such cases, atom table garbage collection should be turned
-off, and reinvoked at a point where the external pointers are no
-longer used.
+will be unsafe, as \version{} of XSB does not detect such pointers in
+external code.  In such cases, atom table garbage collection should be
+turned off via the {\tt xsb\_flag} {\tt atom\_garbage\_collection},
+and reinvoked at a point where the external pointers are no longer
+used.
 
 \end{description}
 
