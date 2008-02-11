@@ -844,6 +844,65 @@ remove_from_list([H|T],H,T):-
 remove_from_list([H|T],Elt,[H|T1]):- 
 	remove_from_list(T,Elt,T1).
 
+%% assert(cdf_flags(newDLRuleSingle,check(Ctxt,Term,[check_dl_rule(Ctxt,Term)]))).
+
+:- document_export check_dl_rule/2.
+
+check_dl_rule(Context,'<='(Head,Body)) :- !,
+%%	writeln(Head),
+%%	write(' <='),writeln(Body),
+	check_type_dl_head(Head,Context),
+	check_type_dl_body(Body,Context).
+check_dl_rule(Context,BadRule) :-
+	cdf_warning(Context,[BadRule, ' is not a well-formed DL rule.']),
+	fail.
+
+check_type_dl_head((CE1,CE2),Context) :- !,
+	check_type_dl_head(CE1,Context),
+	check_type_dl_head(CE2,Context).
+check_type_dl_head(Cid,_Context) :- cdf_id_fields(Cid,cid,_,_), !.
+check_type_dl_head(Fmla,Context) :-
+	dl_type_table(Fmla,Typecall),
+	!,
+	arg(1,Typecall,Context),
+	call0(Typecall).
+check_type_dl_head(Head,Context) :-
+	cdf_warning(Context,
+		    [Head, ' does not have proper sorts and cannot be added.']),
+	fail.
+	
+dl_type_table(exists(R,C),check_ind_types(_,exists(R,C),[[rid],[cid]])).
+dl_type_table(all(R,C),check_ind_types(_,all(R,C),[[rid],[cid]])).
+dl_type_table(atLeast(N,R,C),check_ind_types(_,atLeast(N,R,C),[posint,[rid],[cid]])).
+dl_type_table(atMost(N,R,C),check_ind_types(_,atMost(N,R,C),[posint,[rid],[cid]])).
+dl_type_table(component(Cmpt),isatom2(_,Cmpt)).
+
+isatom2(Context,Atom) :-
+	(atom(Atom)
+	 ->	true
+	 ;	cdf_warning(Context,[Atom, ' cannot be a component name.']),
+		fail
+	).
+
+check_type_dl_body((C1,C2),Context) :- !,
+	check_type_dl_body(C1,Context),
+	check_type_dl_body(C2,Context).
+check_type_dl_body((C1;C2),Context) :- !,
+	check_type_dl_body(C1,Context),
+	check_type_dl_body(C2,Context).
+check_type_dl_body(not(C1),Context) :- !,
+	check_type_dl_body(C1,Context).
+check_type_dl_body(Cid,_Context) :- cdf_id_fields(Cid,cid,_,_), !.
+check_type_dl_body(Fmla,Context) :-
+	dl_type_table(Fmla,Typecall),
+	!,
+	arg(1,Typecall,Context),
+	call0(Typecall).
+check_type_dl_body(Body,Context) :-
+	cdf_warning(Context,
+		    [Body, ' does not have proper sorts and cannot be added.']),
+	fail.
+
 end_of_file.
 
 :- import  marginal_clear/0, marginal_add/1, marginal_get/2 from marginals.

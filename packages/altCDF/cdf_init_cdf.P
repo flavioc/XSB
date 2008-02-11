@@ -1755,7 +1755,9 @@ retractallIntRule_1(_,_,_).
 %DL rules are a specialized form of intensional rules.
 
 newDLRule(Head,Body,Name):-
-    dlrule_to_cdf('<='(Head,Body),CDFList,Cmpt),
+    DLRule = '<='(Head,Body),
+    apply_checks(newDLRuleSingle,DLRule),
+    dlrule_to_cdf(DLRule,CDFList,Cmpt),
     asserta(compdlrule(Cmpt,Head,Body)),
     member((:-(H,B)),CDFList),
     (var(Cmpt) -> Cmpt = Name ; true),
