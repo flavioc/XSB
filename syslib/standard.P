@@ -145,6 +145,7 @@ open(File,Mode,Stream) :- 'open aux'(File,Mode,0,Stream).
 'open aux'(File,Mode,New,Stream):- 
 	atom(File),!,
 	file_translate(Mode,M),
+	check_var(Stream,open/[3,4],3),
 	file_open(File, M, New, Stream),
 	(Stream < 0 -> 
 	    permission_error(open,file,File,open/3)
@@ -181,7 +182,7 @@ examine_open_options([eof_action(Action)|T],Aliases,[eof_action(Action)|Eof]):- 
 examine_open_options([alias(A)|T],[A|Aliases],Eof):- !,
 	examine_open_options(T,Aliases,Eof).
 examine_open_options([Option|_],_,_):- 
-	domain_error(open_options,Option,open/4,4).
+	domain_error(stream_options,Option,open/4,4).
 
 %------------------------------------------------
 close(user) :- !.
@@ -330,6 +331,15 @@ file_exists(F) :-
 	check_atom(F,'file_exists/1',1),
 	expand_filename(F, EF),
 	machine_file_exists(EF).
+
+:- import peek_code/1, peek_code/2 from file_io.
+% Just for ISO compatability
+get_byte(C):- get_code(C).
+get_byte(S,C):- get_code(S,C).
+peek_byte(C):- peek_code(C).
+peek_byte(S,C):- peek_code(S,C).
+put_byte(C):- put_code(C).
+put_byte(S,C):- put_code(S,C).
 
 %---------------------%
 % Term I/O Predicates %
@@ -699,7 +709,7 @@ atom_concat(One,Two,Three):-
                ; var(One) -> 
 	        (atom(Three) -> 
 	            atom_disassemble(Three,One,Two)
-	          ; instantiation_error(atom_concat/2,'2 or 3',ground) )
+	          ; instantiation_error(atom_concat/2,'1 or 3',ground) )
 	       ; type_error(atom,Two,atom_concat/3,1) ).
 
 % TLS: I dont think this mode will be used much, so I'm not bothering
@@ -712,7 +722,7 @@ atom_disassemble(Three,One,Two):-
 	atom_codes(One,OneL),
 	atom_codes(Two,TwoL).
 
-
+char_code(Char,Code):- atom_codes(Char,[Code]).
 
 			/********************/
 			/*   TERM READING   */
