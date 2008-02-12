@@ -1982,7 +1982,11 @@ The main difference of XSB with the ISO standard is in terms of
 parsing.  \version{} of XSB does not support full ISO
 syntax~\footnote{XSB also does not support multiple character sets or
   Unicode, which is perhaps a bigger limitation than the lack of full
-  ISO syntax.}.  
+  ISO syntax.}.  In addition, XSB supports only the ASCII character
+set for atoms, predicates and functions, so that ISO predicates
+relating to different character sets, such as {\tt
+  char\_conversion/2}, {\tt current\_char\_conversion/2} and others
+are not supported.
 
 Another difference is that XSB does not support the logical update
 semantics for assert and retract, but instead supports an immediate

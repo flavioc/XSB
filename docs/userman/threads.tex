@@ -1080,14 +1080,14 @@ throws an exception $E$, the continuation will be the handler for $E$.
 \ei
 \ei
 
-\ournewitem{thread\_disable\_cancel/0}{thread}
+\ourmoditem{thread\_disable\_cancel/0}{thread}
 \index{\texttt{thread\_disable\_cancel/0}} 
 % 
 Disables the calling thread from being cancelled, so that it can be
 ensured that critical operations can run to completion.  This
 predicate always succeeds.
 
-\ournewitem{thread\_enable\_cancel/0}{thread}
+\ourmoditem{thread\_enable\_cancel/0}{thread}
 \index{\texttt{thread\_enable\_cancel/0}} 
 % 
 Enables the calling thread to be cancelled.  By default, threads may
@@ -1179,7 +1179,7 @@ before resuming.
 
 %----------
 
-\ournewitem{usleep(+Microseconds)}{thread}
+\ourmoditem{usleep(+Microseconds)}{thread}
 \index{\texttt{usleep/1}} 
 %
 Causes the calling thread to sleep approximately {\tt Microseconds}

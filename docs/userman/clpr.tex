@@ -97,7 +97,7 @@ how this is done.
 %
 `
 \begin{description}
-\ournewitem{\{+Constraints\}} {clpr} \index{{\tt \{\}/1}}
+\ourmoditem{\{+Constraints\}} {clpr} \index{{\tt \{\}/1}}
 %
 When the CLP(R) package is loaded, inclusion of equations in braces
 ({\tt \{\}}) adds {\tt Constraints} to the constraint store where they
@@ -141,7 +141,7 @@ are checked for satisfiability.
 \ei
 \ei
 
-\ournewitem{entailed(+Constraint)} {clpr} \index{{\tt entailed/1}}
+\ourmoditem{entailed(+Constraint)} {clpr} \index{{\tt entailed/1}}
 %
 Succeeds if {\tt Constraint} is logically implied by the current
 constraint store.  {\tt entailed/1} does not change the constraint
@@ -176,7 +176,7 @@ yes
 
 \ourrepeatnewitem{minimize(Expr)} {clpr} \index{{\tt minimize/1}}
 
-\ournewitem{maximize(Expr)} {clpr} \index{{\tt maximize/1}}
+\ourmoditem{maximize(Expr)} {clpr} \index{{\tt maximize/1}}
 %
 These four related predicates provide various mechanisms to compute
 the maximum and minimum of expressions over variables in a constraint
@@ -225,7 +225,7 @@ yes
 
 \ourrepeatnewitem{inf(+Expr,-Val, +Vector, -Vertex)} {clpr} \index{{\tt inf/4}}
 
-\ournewitem{sup(+Expr,-Val, +Vector, -Vertex)} {clpr} \index{{\tt sup/4}}
+\ourmoditem{sup(+Expr,-Val, +Vector, -Vertex)} {clpr} \index{{\tt sup/4}}
 %
 These predicates work like {\tt inf/2} and {\tt sup/2} with the
 following addition.  {\tt Vector} is a list of Variables, and for each
@@ -251,7 +251,7 @@ Vertex = [7.0000,2.0000]
 \end{verbatim}
 }
 
-\ournewitem{bb\_inf(+IntegerList,+Expr,-Inf,-Vertex, +Eps)}  {clpr}
+\ourmoditem{bb\_inf(+IntegerList,+Expr,-Inf,-Vertex, +Eps)}  {clpr}
 \index{{\tt bb\_inf/4}}
 %
 Works like {\tt inf/2} in {\tt Expr} but assumes that all the
@@ -289,7 +289,7 @@ yes
 \ei
 \ei
 
-\ournewitem{bb\_inf(+IntegerList,+Expr,-Inf)}  {clpr}
+\ourmoditem{bb\_inf(+IntegerList,+Expr,-Inf)}  {clpr}
 \index{{\tt bb\_inf/3}}
 %
 Works like {\tt bb\_inf/5}, but with the neighborhood, {\tt Eps}, set
@@ -312,7 +312,7 @@ yes
 \end{verbatim}
 }
 
-\ournewitem{dump(+Variables,+NewVars,-CodedVars} {dump} 
+\ourmoditem{dump(+Variables,+NewVars,-CodedVars} {dump} 
 \index{{\tt dump/3}}
 %
 For a list of variables {\tt Variables} and a list of variable names
@@ -341,7 +341,7 @@ CS = [y > 2.0000,x - y > 1.0000];
 \ei
 \ei
 
-\ournewitem{projecting\_assert(+Clause)}{dump}
+\ourmoditem{projecting\_assert(+Clause)}{dump}
 \index{projecting\_assert/1}
 \index{constraints!asserting dynamic code with}
 %

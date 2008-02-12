@@ -54,6 +54,11 @@ mean the following:
 \item 	{\tt domain\_error(stream\_or\_variable,Stream))}
 \ei
 \ei
+%
+\compatability 
+%
+In XSB {\tt current\_input/1} does not throw an error if {\tt Stream}
+is not a current input stream, but quietly fails instead.
 
 \ournewitem{current\_output(?Stream)}{ISO}\index{\texttt{current\_output/1}}
     Succeeds iff stream {\tt Stream} is the current output stream, or 
@@ -66,6 +71,11 @@ mean the following:
 \item 	{\tt domain\_error(stream\_or\_variable,Stream))}
 \ei
 \ei
+%
+\compatability 
+%
+In XSB {\tt current\_input/1} does not throw an error if {\tt Stream}
+is not a current input stream, but quietly fails instead.
 
 \ournewitem{current\_prolog\_flag(?Flag\_Name, ?Value)}{ISO}
 \index{\texttt{current\_prolog\_flag/2}}
@@ -139,7 +149,7 @@ user defined module, use:
     \> \>	| ?- current\_predicate(Module:Functor/Arity).
     }
 
-    This succeeds once for every predicate that is loaded in \ourprolog's 
+    This succeeds once for every predicate that is loaded in XSB's
     database.
 
     To find the predicates having arity 3 that are loaded in {\tt
@@ -155,8 +165,7 @@ user defined module, use:
     \stuff{
     \> \>	| ?- current\_predicate(usermod:Predicate). \\
     }
-
-
+%
 {\bf Error Cases}
 \bi
 \item 	{\tt Predicate\_indicator} is neither a variable nor a predicate indicator
@@ -164,6 +173,12 @@ user defined module, use:
 \item 	{\tt type\_error(predicate\_indicator,Predicate\_indicator))}
 \ei
 \ei
+%
+\compatability
+%
+In XSB, {\tt current\_predicate} will backtrack through system
+predicates as well as user predicates.
+
 
 %-----------------------------------------------------------------------------------------------
 \comment{
@@ -856,8 +871,6 @@ specifier of the types above.
 \ei
 \ei
 
-
-
 \ouritem{hilog\_op(?Precedence, ?Type, ?Name)}\index{\texttt{hilog\_op/3}}
     This predicate has exactly the same behaviour as {\tt current\_op/3}
     with the only difference that {\tt Type} can only have the values
@@ -948,7 +961,7 @@ used to report various degrees of abnormality.
         \>   \>     Yes master >
     }
 
-\ournewitem{trimcore}{machine}\index{\texttt{trimcore/0}}
+\ourmoditem{trimcore}{machine}\index{\texttt{trimcore/0}}
 %
 A call to {\tt trimcore/0} reallocates an XSB thread's execution
 stacks (and some tabling stacks) to their initial allocation size, the

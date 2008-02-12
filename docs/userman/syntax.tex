@@ -496,17 +496,17 @@ represents the structure
                                      / \
                                     2   []
 \end{verbatim}
-Contrasting this picture with the picture above for {\tt 1-2+3} shows the
-difference between {\tt 'yfx'} operators where the tree grows to the left,
-and {\tt 'xfy'} operators where it grows to the right.  The tree cannot
-grow at all for {\tt 'xfx'} type operators.  It is simply illegal to combine
-{\tt 'xfx'} operators having equal precedences in this way.
+Contrasting this picture with the picture above for {\tt 1-2+3} shows
+the difference between {\tt 'yfx'} operators where the tree grows to
+the left, and {\tt 'xfy'} operators where it grows to the right.  The
+tree cannot grow at all for {\tt 'xfx'} type operators.  It is simply
+illegal to combine {\tt 'xfx'} operators having equal precedences in
+this way.
 
 If these precedence and associativity rules seem rather complex, remember
 that you can always use parentheses when in any doubt.
 
-In XSB, at the time when this is written, the possible types for
-prefix operators are:
+In \version{} of XSB the possible types for prefix operators are:
 \begin{verbatim}
                       fx       fy       hx       hy
 \end{verbatim}
@@ -515,8 +515,8 @@ and the possible types for postfix operators are:
                                xf       yf
 \end{verbatim}
 
-We end our discussion about operators by just mentioning that prefix operators
-of type {\tt hx} and {\tt hy} are {\em proper HiLog operators}.  The discussion 
-of proper HiLog operators and their properties is deferred for the manual
-of a future version.
+We end our discussion about operators by mentioning that prefix
+operators of type {\tt hx} and {\tt hy} are {\em proper HiLog
+  operators}.  The discussion of proper HiLog operators and their
+properties is deferred for the manual of a future version.
 

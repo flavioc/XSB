@@ -73,8 +73,8 @@ clauses are presently defining it, the call will quietly fail instead
 of issuing an {\sf ``Undefined predicate''} error message.
 
 \begin{description}
-
-\ouritem{asserta(+Clause)}\index{\texttt{asserta/1}} 
+%
+\ournewitem{asserta(+Clause)}{ISO}\index{\texttt{asserta/1}} 
 %
 If the index specification for the predicate is not {\tt trie}, this
 predicate adds a dynamic clause, {\tt Clause}, to the database {\em
@@ -110,7 +110,7 @@ containing this operator requires an extra set of parentheses: {\tt
 %
 \ei
 
-\ouritem{assertz(+Clause)}\index{\texttt{assertz/1}} 
+\ournewitem{assertz(+Clause)}{ISO}\index{\texttt{assertz/1}} 
 %
 If the index specification for the predicate is not {\tt trie}, this
 predicate adds a dynamic clause, {\tt Clause}, to the database {\em
@@ -166,7 +166,7 @@ asserted as the last one in the predicate and the better register
 allocation will be used.  {\tt Index} indicates the argument(s) on
 which to index.
 
-\ouritem{retract(+Clause)}\index{\texttt{retract/1}} 
+\ournewitem{retract(+Clause)}{ISO}\index{\texttt{retract/1}} 
 %
 Removes through backtracking all clauses in the database that match
 with {\tt Clause}.  {\tt Clause} must be of one of the forms: {\tt
@@ -224,7 +224,7 @@ and always succeeds.  The term {\tt Head} is not further instantiated
 by this call.  Conditions for space reclamation and error cases are as
 with {\tt retract/1}.
 
-\ouritem{abolish(+PredSpec)}\index{\texttt{abolish/1}} Removes all
+\ournewitem{abolish(+PredSpec)}{ISO}\index{\texttt{abolish/1}} Removes all
 information about the specified predicate. {\tt PredSpec} is of the
 form {\tt Pred/Arity}.  Everything about the abolished predicate is
 completely forgotten by the system (including the {\tt dynamic or
@@ -290,14 +290,20 @@ safe to use.
 %
 \ei
 
-\ouritem{clause(+Head,?Body)}\index{\texttt{clause/2}}
-Returns through backtracking all dynamic clauses in the database whose head
-matches {\tt Head} and Body matches {\tt Body}.  For facts the {\tt Body} is
-{\tt true}.  
+\ournewitem{clause(+Head,?Body)}{ISO}\index{\texttt{clause/2}}
+%
+Returns through backtracking all dynamic clauses in the database whose
+head matches {\tt Head} and Body matches {\tt Body}.  For facts the
+{\tt Body} is {\tt true}.  {\tt clause/2} works properly for all
+dynamically {\em asserted} clauses, even if they are trie-indexed;
+however {\tt clause/2} does not access trie-inserted terms.  In the
+multi-threaded engine, when a thread $T$ calls {\tt clause/2} it
+accesses both thread-shared dynamic code and thread-private dynamic
+code for $T$.
 
 {\bf Error Cases}
 \bi
-\item 	{\tt Head} or {\tt Body} is not instantiated
+\item 	{\tt Head} is not instantiated
 \bi
 \item 	{\tt instantiation\_error}
 \ei
@@ -721,7 +727,7 @@ backward compatibility, {\tt 0} and {\tt 1} are also allowed.}:
 \ei
 \ei
 
-\ournewitem{load\_dync(+FileName,+Dir)}{consult}
+\ourmoditem{load\_dync(+FileName,+Dir)}{consult}
 \index{\texttt{load\_dync/2}}\label{load_dync/2}
     Acts as {\tt load\_dyn/2}, but assumes that facts are in
     ``canonical'' format.  {\tt Dir} is ignored for trie-asserted
@@ -813,7 +819,7 @@ is consulted.
 %
 \ei
 
-\ournewitem{cvt\_canonical(+FileName1,+FileName2)}{consult}
+\ourmoditem{cvt\_canonical(+FileName1,+FileName2)}{consult}
 \index{\texttt{cvt\_canonical/2}}
     Converts a file from standard term format to ``canonical'' format.
     The input file name is {\tt FileName1}; the converted file is put in

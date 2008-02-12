@@ -18,23 +18,23 @@ of the XSB system, and the interested user can find them by
 looking at the sources.
 
 \begin{description}
-\ournewitem{append(?List1, ?List2, ?List3)}{basics}\index{\texttt{append/3}}
+\ourmoditem{append(?List1, ?List2, ?List3)}{basics}\index{\texttt{append/3}}
 %\predindex{append/3~(L)}
     Succeeds if list {\tt List3} is the concatenation of lists 
     {\tt List1} and {\tt List2}.
 
-\ournewitem{member(?Element, ?List)}{basics}\index{\texttt{member/2}}
+\ourmoditem{member(?Element, ?List)}{basics}\index{\texttt{member/2}}
 %\predindex{member/2~(L)}
     Checks whether {\tt Element} unifies with any element of list 
     {\tt List}, succeeding more than once if there are multiple 
     such elements.
 
-\ournewitem{memberchk(?Element, ?List)}{basics}\index{\texttt{memberchk/2}}
+\ourmoditem{memberchk(?Element, ?List)}{basics}\index{\texttt{memberchk/2}}
 %\predindex{memberchk/2~(L)}
     Similar to {\tt member}/2, except that {\tt memberchk}/2 is
     deterministic, i.e.\ does not succeed more than once for any call.
 
-\ournewitem{ith(?Index, ?List, ?Element)}{basics}\index{\texttt{ith/3}}
+\ourmoditem{ith(?Index, ?List, ?Element)}{basics}\index{\texttt{ith/3}}
 %\predindex{ith/3~(L)}
     Succeeds if the ${\tt Index^{th}}$ element of the list {\tt List} 
     unifies with {\tt Element}.  Fails if {\tt Index} is not a positive
@@ -43,7 +43,7 @@ looking at the sources.
     should be instantiated (but not necessarily ground) at the time of 
     the call.
 
-\ournewitem{delete\_ith(+Index, +List, ?Element, ?RestList)}{listutil}
+\ourmoditem{delete\_ith(+Index, +List, ?Element, ?RestList)}{listutil}
 \index{\texttt{delete\_ith/4}}
 %\predindex{delete\_ith/4~(L)}
     Succeeds if the ${\tt Index^{th}}$ element of the list {\tt List}
@@ -51,7 +51,7 @@ looking at the sources.
     {\tt Element} removed.  Fails if {\tt Index} is not a positive
     integer or greater than the length of {\tt List}.
 
-\ournewitem{log\_ith(?Index, ?Tree, ?Element)}{basics}\index{\texttt{log\_ith/3}}
+\ourmoditem{log\_ith(?Index, ?Tree, ?Element)}{basics}\index{\texttt{log\_ith/3}}
 %\predindex{log\_ith/3~(L)}
     Succeeds if the ${\tt Index^{th}}$ element of the Tree {\tt Tree}
     unifies with {\tt Element}.  Fails if {\tt Index} is not a
@@ -64,7 +64,7 @@ looking at the sources.
     very similar to {\tt ith/3} except it uses a tree instead of a
     list to obtain log-time access to its elements.
 
-\ournewitem{log\_ith\_bound(?Index, ?Tree, ?Element)}{basics}
+\ourmoditem{log\_ith\_bound(?Index, ?Tree, ?Element)}{basics}
         \index{\texttt{log\_ith\_bound/3}}
 %\predindex{log\_ith\_bound/3~(L)}
     is like {\tt log\_ith/3}, but only if the ${\tt Index^{th}}$ element
@@ -75,7 +75,7 @@ looking at the sources.
     $N*logN$, for $N$ the number of non-variable entries in {\tt
     Tree}.)
 
-\ournewitem{length(?List, ?Length)}{basics}\index{\texttt{length/2}}
+\ourmoditem{length(?List, ?Length)}{basics}\index{\texttt{length/2}}
 %\predindex{length/2~(L)}
     Succeeds if the length of the list {\tt List} is {\tt Length}.
     This predicate is deterministic if {\tt List} is instantiated 
@@ -84,7 +84,7 @@ looking at the sources.
     is uninstantiated, it is unified with a list of length {\tt Length}
     that contains variables.
 
-\ournewitem{same\_length(?List1, ?List2)}{basics}\index{\texttt{same\_length/2}}
+\ourmoditem{same\_length(?List1, ?List2)}{basics}\index{\texttt{same\_length/2}}
 %\predindex{same\_length/2~(L)}
     Succeeds if list {\tt List1} and {\tt List2} are both lists of
     the same number of elements.  No relation between the types or
@@ -93,25 +93,25 @@ looking at the sources.
     the other, or to generate two lists of the same length, in which
     case the arguments will be bound to lists of length $0,1,2,\ldots$.
 
-\ournewitem{select(?Element, ?L1, ?L2)}{basics}\index{\texttt{select/3}}
+\ourmoditem{select(?Element, ?L1, ?L2)}{basics}\index{\texttt{select/3}}
 %\predindex{select/3~(L)}
     {\tt List2} derives from {\tt List1} by selecting (removing) an 
     {\tt Element} non-deterministically.
 
-\ournewitem{reverse(+List, ?ReversedList)}{basics}\index{\texttt{reverse/2}}
+\ourmoditem{reverse(+List, ?ReversedList)}{basics}\index{\texttt{reverse/2}}
 %\predindex{reverse/2~(L)}
     Succeeds if {\tt ReversedList} is the reverse of list {\tt List}.
     If {\tt List} is not a proper list, {\tt reverse/2} can succeed
     arbitrarily many times.  It works only one way.
 
-\ournewitem{perm(+List, ?Perm)}{basics}\index{\texttt{perm/2}}
+\ourmoditem{perm(+List, ?Perm)}{basics}\index{\texttt{perm/2}}
 %\predindex{perm/2~(L)}
     Succeeds when {\tt List} and {\tt Perm} are permutations of each
     other.  The main use of {\tt perm/2} is to generate permutations
     of a given list.  {\tt List} must be a proper list.
     {\tt Perm} may be partly instantiated.
 
-\ournewitem{subseq(?Sequence, ?SubSequence, ?Complement)}{basics}
+\ourmoditem{subseq(?Sequence, ?SubSequence, ?Complement)}{basics}
 \index{\texttt{subseq/3}}
 %\predindex{subseq/3(L)}
     Succeeds when {\tt SubSequence} and {\tt Complement} are both
@@ -126,7 +126,7 @@ looking at the sources.
     complements together, but can also be used to interleave two lists
     in all possible ways.
 
-\ournewitem{merge(+List1, +List2, ?List3)}{listutil}\index{\texttt{merge/3}}
+\ourmoditem{merge(+List1, +List2, ?List3)}{listutil}\index{\texttt{merge/3}}
 %\predindex{merge/3~(L)}
     Succeeds if {\tt List3} is the list resulting from ``merging'' lists 
     {\tt List1} and {\tt List2},
@@ -135,17 +135,17 @@ looking at the sources.
     If~{\tt List1} or~{\tt List2} contain duplicates, {\tt List3} may 
     also contain duplicates.
 
-\ournewitem{absmerge(+List1, +List2, ?List3)}{listutil}\index{\texttt{absmerge/3}}
+\ourmoditem{absmerge(+List1, +List2, ?List3)}{listutil}\index{\texttt{absmerge/3}}
     Predicate {\tt absmerge/3} is similar to {\tt merge/3}, except that 
     it uses predicate {\tt absmember/2} described below rather than 
     {\tt member/2}.
 
-\ournewitem{absmember(+Element, +List)}{listutil}\index{\texttt{absmember/2}}
+\ourmoditem{absmember(+Element, +List)}{listutil}\index{\texttt{absmember/2}}
     Similar to {\tt member}/2, except that it checks for identity
     (through the use of predicate {\tt '=='/2}) rather than unifiability 
     (through {\tt '='/2}) of {\tt Element} with elements of {\tt List}.
 
-\ournewitem{member2(?Element, ?List)}{listutil}\index{\texttt{member2/2}}
+\ourmoditem{member2(?Element, ?List)}{listutil}\index{\texttt{member2/2}}
     Checks whether {\tt Element} unifies with any of the actual elements 
     of {\tt List}.  The only difference between this predicate and 
     predicate {\tt member/2} is on lists having a variable tail, 
@@ -154,7 +154,7 @@ looking at the sources.
     Predicate {\tt member2/2} only checks for membership but does not 
     insert the {\tt Element} into the list if it is not there.
 
-\ournewitem{closetail(?List)}{listutil}\index{\texttt{closetail/1}}
+\ourmoditem{closetail(?List)}{listutil}\index{\texttt{closetail/1}}
     Predicate {\tt closetail/1} closes the tail of an open-ended list.
     It succeeds only once.
 
@@ -168,7 +168,7 @@ preprocessing.  XSB libraries include the following simple utilities.
 
 \begin{description}
 
-\ournewitem{comma\_to\_list(+CommaList,-List)}{basics}
+\ourmoditem{comma\_to\_list(+CommaList,-List)}{basics}
 \index{\texttt{comma\_to\_list/2}}
 %
 Transforms {\tt CommaList} to {\tt List}.
@@ -182,7 +182,7 @@ Transforms {\tt CommaList} to {\tt List}.
 \ourrepeatnewitem{comma\_member(?Element,?CommaList)}{basics}
 \index{\texttt{comma\_member/2}}
 %
-\ournewitem{comma\_member(?Element,?CommaList)}{basics}
+\ourmoditem{comma\_member(?Element,?CommaList)}{basics}
 \index{\texttt{comma\_memberchk/2}}
 %
 Analogues for comma lists of {\tt append/3}, {\tt length/3}, {\tt member/2} and {\tt
@@ -218,21 +218,21 @@ Attributes can be manipulated with the following three predicates
 defined in the module \texttt{machine}.
 
 \begin{description}
-\ournewitem{get\_attr(-Var,+Mod, ?Val)}{machine}\index{\texttt{get\_attr/3}} 
+\ourmoditem{get\_attr(-Var,+Mod, ?Val)}{machine}\index{\texttt{get\_attr/3}} 
 %
 Gets the value of the attribute of \texttt{Var} in attribute module
 \texttt{Mod}. Non-variable terms in \texttt{Var} cause a type
 error. \texttt{Val} will be unified with the value of the attribute,
 if it exists. Otherwise the predicate fails.
 
-\ournewitem{put\_attr(-Var,+Mod, ?Val)}{machine}\index{\texttt{put\_attr/3}}
+\ourmoditem{put\_attr(-Var,+Mod, ?Val)}{machine}\index{\texttt{put\_attr/3}}
 %
 Sets the value of the attribute of \texttt{Var} in attribute module
 \texttt{Mod}. Non-variable terms in \texttt{Var} cause a type
 error. The previous value of the attribute is overwritten, if it
 exists.
 
-\ournewitem{del\_attr(-Var,  +Mod)}{machine}\index{\texttt{del\_attr/2}} 
+\ourmoditem{del\_attr(-Var,  +Mod)}{machine}\index{\texttt{del\_attr/2}} 
 %
 Removes the attribute of \texttt{Var} in attribute module
 \texttt{Mod}. Non-variable terms in \texttt{Var} cause a type
@@ -342,7 +342,7 @@ in computing the well-founded semantics, and is not based on the state
 of instantiation of a term.}.
 
 \begin{description}
-\ournewitem{when(+Condition,Goal)}{constraintLib}\index{\texttt{when/2}}
+\ourmoditem{when(+Condition,Goal)}{constraintLib}\index{\texttt{when/2}}
 %
 Delays the execution of {\tt Goal} until {\tt Condition} is satisfied,
 whereupon {\tt Goal} will be executed.  Condition can have the form
@@ -369,7 +369,7 @@ X = f(_h245)
 \end{verbatim}
 \end{small}
 
-\ournewitem{unifiable(X, Y, -Unifier)}{constraintLib}
+\ourmoditem{unifiable(X, Y, -Unifier)}{constraintLib}
 \index{\texttt{unifiable/3}}
 %
 If {\tt X} and {\tt Y} can unify, succeeds unifying {\tt Unifier} with
@@ -382,120 +382,11 @@ variables. Associated hooks are not executed~\footnote{In \version ,
 
 \end{description}
 
-\section{Ground, Numbervars, Subsumption, Variant} \label{NumberVars}
-%====================================================================
-
-\begin{description}
-\ournewitem{ground(+X)}{basics}\index{\texttt{ground/1}}
-    Succeeds if {\tt X} is currently instantiated to a term that is 
-    completely bound (has no uninstantiated variables in it); 
-    otherwise it fails.  Predicate {\tt ground/1} has no associated 
-    error conditions.
-
-\ournewitem{numbervars(+Term, +FirstN, ?LastN)}{num\_vars}
-\index{\texttt{numbervars/3}}
-%\predindex{numbervars/3~(L)}
-    This predicate provides a mechanism for grounding a (HiLog) term
-    so that it may be analyzed.  Each variable in the (HiLog) term
-    {\tt Term} is instantiated to a term of the form \verb|'$VAR'(N)|,
-    where {\tt N} is an integer starting from {\tt FirstN}.  
-    {\tt FirstN} is used as the value of {\tt N} for the first
-    variable in {\tt Term} (starting from the left). The second distinct
-    variable in {\tt Term} is given a value of {\tt N} satisfying
-    {\tt "N is FirstN + 1"} and so on.  The last variable in {\tt Term}
-    has the value {\tt LastN-1}.
-% $ for prettyprinter....
-
-\ournewitem{numbervars(+Term)}{num\_vars}\index{\texttt{numbervars/1}}
-%\predindex{numbervars/1~(L)}
-    This predicate is defined as:
-    \begin{center}
-    {\tt   numbervars(Term, 0, \_)}.
-    \end{center}
-    It is included solely for convenience.
-
-%\ournewitem{varnumbers(Term, FirstN, Copy)}{num\_vars}
-%\index{\texttt{varnumbers/3}}
-%%\predindex{varnumbers/3~(B)}
-%    This predicate is a partial inverse of predicate {\tt numbervars/3}.
-%    It unifies {\tt Copy} with a copy of {\tt Term} in which subterms of
-%    the form \verb|'$VAR'(N)| where {\tt N} is an integer not less than
-%    {\tt FirstN} have been systematically replaced by fresh variables. 
-%    Since 0 is the usual second argument of numbervars/3,
-%    \begin{center}
-%    {\tt   varnumbers(Term, Copy)}
-%    \end{center}
-%    is also provided.
-
-\ournewitem{unnumbervars(+Term, +FirstN, ?Copy)}{num\_vars}
-\index{\texttt{unnumbervars/3}}
-%\predindex{unnumbervars/3~(B)}
-    This predicate is a partial inverse of predicate {\tt
-    numbervars/3}.  It creates a copy of Term in which all subterms of
-    the form \verb|'$VAR'(<int>)| where \verb|<int>| is not less than
-    {\tt FirstN} are uniformly replaced by variables.  \verb|'$VAR''|
-    subterms with the same integer are replaced by the same variable.
-    Also a version {\tt unnumbervars/2} is provided which calls {\tt
-    unnumbervars/3} with the second parameter set to 0.
-
-\ournewitem{subsumes(?Term1, +Term2)}{subsumes}\index{\texttt{subsumes/2}}
-%\predindex{subsumes/2~(L)}
-    Term subsumption is a sort of one-way unification.  Term {\tt Term1}
-    and {\tt Term2} unify if they have a common instance, and unification
-    in Prolog instantiates both terms to that (most general) common instance.
-    {\tt Term1} subsumes {\tt Term2} if {\tt Term2} is already an instance of
-    {\tt Term1}.  For our purposes, {\tt Term2} is an instance of {\tt Term1}
-    if there is a substitution that leaves {\tt Term2} unchanged and makes
-    {\tt Term1} identical to {\tt Term2}.  Predicate {\tt subsumes/2} does
-    not work as described if {\tt Term1} and {\tt Term2} share common
-    variables.
-
-\ournewitem{subsumes\_chk(+Term1, +Term2)}{subsumes}
-\index{\texttt{subsumes\_chk/2}}
-%\predindex{subsumes\_chk/2~(L)}
-    The {\tt subsumes\_chk/2} predicate is true when {\tt Term1} subsumes 
-    {\tt Term2}; that is, when {\tt Term2} is already an instance of
-    {\tt Term1}.  This predicate simply checks for subsumption and 
-    does not bind any variables either in {\tt Term1} or in {\tt Term2}.
-    {\tt Term1} and {\tt Term2} should not share any variables.
-
-    Examples:
-    {\footnotesize
-     \begin{verbatim}
-            | ?- subsumes_chk(a(X,f,Y,X),a(U,V,b,S)).
-
-            no
-            | ?- subsumes_chk(a(X,Y,X),a(b,b,b)).
-
-            X = _595884
-            Y = _595624
-     \end{verbatim}}
-
-\ournewitem{variant(?Term1, ?Term2)}{subsumes}\index{\texttt{variant/2}}
-%\predindex{variant/2~(L)}
-    This predicate is true when {\tt Term1} and {\tt Term2} are 
-    alphabetic variants.  That is, you could imagine that {\tt variant/2}
-    as being defined like:
-    \begin{center}
-    \begin{minipage}{3.5in}
-    \begin{verbatim}
-        variant(Term1, Term2) :-
-             subsumes_chk(Term1, Term2),
-             subsumes_chk(Term2, Term1).
-    \end{verbatim}
-    \end{minipage}
-    \end{center}
-    but the actual implementation of {\tt variant/2} is considerably more
-    efficient.  However, in general, it does not work for terms that share
-    variables; an assumption that holds for most (reasonable) uses of
-    {\tt variant/2}.
-\end{description}
-
 \section{Formatted Output}
 
 \begin{description}
-\ournewitem{format(+String,+Control)}{format}\index{\texttt{format/2}}
-\ournewitem{format(+Stream,+String,+Control)}{format}\index{\texttt{format/3}}
+\ourmoditem{format(+String,+Control)}{format}\index{\texttt{format/2}}
+\ourmoditem{format(+Stream,+String,+Control)}{format}\index{\texttt{format/3}}
 
 {\tt format/2} and {\tt format/3} act as a Prolog analog to the C {\tt
 stdio} function {\tt printf()}, allowing formatted
@@ -853,9 +744,9 @@ position movement to @var{N}, where @var{N} defaults to @key{SPC}.
 
 \begin{description}
 
-%\ournewitem{current\_input\_port(-IOport)}{curr\_sym} \index{\texttt{current\_input\_port/}}
+%\ourmoditem{current\_input\_port(-IOport)}{curr\_sym} \index{\texttt{current\_input\_port/}}
 %   See {\tt current\_output\_port/1}.
-%\ournewitem{current\_output\_port(-IOport)}{curr\_sym} \index{\texttt{current\_output\_port/}}
+%\ourmoditem{current\_output\_port(-IOport)}{curr\_sym} \index{\texttt{current\_output\_port/}}
 %   The above two predicates instantiate {\tt IOport} to the XSB I/O port
 %   for the current user input and output ({\it i.e.}, the things 
 %   that are manipulated through {\tt see/seen} and {\tt tell/told} predicates).
@@ -863,7 +754,7 @@ position movement to @var{N}, where @var{N} defaults to @key{SPC}.
 %   lower-level I/O predicates described below interchangeably with stream
 %   I/O. 
     
-%\ournewitem{file\_open(+FileName,+Mode,-IOport)}{file\_io} \index{\texttt{file\_open/3}}
+%\ourmoditem{file\_open(+FileName,+Mode,-IOport)}{file\_io} \index{\texttt{file\_open/3}}
 %    Opens a file with name {\tt FileName} to be accessed
 %    in mode {\tt Mode} and returns a file-descriptor in {\tt IOport} that
 %    can be used to access the file.  If {\tt Mode} is atom ``{\tt r}'', the
@@ -879,28 +770,28 @@ position movement to @var{N}, where @var{N} defaults to @key{SPC}.
 %    The old-style mode specification, 0 ({\tt OREAD}), 1 ({\tt OWRITE}), 2
 %    ({\tt OAPPEND}), or 3 ({\tt OSTRING}), is also supported.
 %
-%\ournewitem{file\_close(+IOport)}{file\_io}\index{\texttt{file\_close/1}}
+%\ourmoditem{file\_close(+IOport)}{file\_io}\index{\texttt{file\_close/1}}
 %    Closes the file (or string) for descriptor {\tt IOport}.
 
-%\ournewitem{ioport2iostream(+IOport, -Stream)}{file\_io}
+%\ourmoditem{ioport2iostream(+IOport, -Stream)}{file\_io}
 %\index{\texttt{ioport2iostream/2}}
 %Takes a valid open I/O port and returns an I/O stream. This stream can then
 %be used by the standard I/O predicates, like see/1, tell/1, read/1, etc.
 %The stream returns by this predicate is identified by a newly created atom,
 %such as \verb|_$newstream_#123|. 
 
-\ournewitem{file\_write(+IOport,+Term)}{xsb\_writ}
+\ourmoditem{file\_write(+IOport,+Term)}{xsb\_writ}
 \index{\texttt{file\_write/2}}
     Writes the term {\tt Term} to the file (or string) with descriptor {\tt
     IOport}.
 
-\ournewitem{file\_read(+IOport,-Term)}{xsb\_read}
+\ourmoditem{file\_read(+IOport,-Term)}{xsb\_read}
 \index{\texttt{file\_read/2}}
     Reads a term from the file (or string) with descriptor {\tt
     IOport} into {\tt Term}.  Note that the term must be terminated
     with a period (.) (whether it appears in a file or in a string.)
 
-\ournewitem{file\_read(+IOport,-Term,-Vars)}{xsb\_read}
+\ourmoditem{file\_read(+IOport,-Term,-Vars)}{xsb\_read}
 \index{\texttt{file\_read/3}}
     Reads a term from the file (or string) with descriptor {\tt
     IOport} into {\tt Term}, and returns in {\tt Vars} an open-tailed list of
@@ -914,7 +805,7 @@ position movement to @var{N}, where @var{N} defaults to @key{SPC}.
     {\tt Vars} is not a proper list, but has a free variable instead 
     of [] at its end.
 
-\ournewitem{file\_read\_canonical(+IOport,-Term,-Psc)}{machine}
+\ourmoditem{file\_read\_canonical(+IOport,-Term,-Psc)}{machine}
 \index{\texttt{file\_read\_canonical/3}}
     Reads a term that is in canonical format from the the I/O port
     indicated by {\tt IOport} (as returned by {\tt file\_open/3} or
@@ -927,7 +818,7 @@ position movement to @var{N}, where @var{N} defaults to @key{SPC}.
     its previous psc value to zero, this predicate can be called with
     {\tt IOport} of -1000.
 
-\ournewitem{fget\_line(+Str,-Inlist,-Next)}{scrptutl}
+\ourmoditem{fget\_line(+Str,-Inlist,-Next)}{scrptutl}
 \index{\texttt{fget\_line/3}}
     {\tt fget\_line/3} reads one line from the input stream {\tt Str} and
     unifies {\tt Inlist} to the list of ASCII integers representing the
@@ -955,7 +846,7 @@ Chapter~\ref{chap-posix}~\footnote{Not all string
   manipulation predicates have been made thread-safe in \version{}.}.
 
 \begin{description}
-\ournewitem{str\_sub(+Sub, +Str, ?Pos)}{string}
+\ourmoditem{str\_sub(+Sub, +Str, ?Pos)}{string}
 \index{\texttt{str\_sub/3}}
 \index{\texttt{str\_sub/2}}
 
@@ -964,7 +855,7 @@ unifies with the position where the match occurred. Positions start
 from 0. {\tt str\_sub/2} is also available, which is equivalent
 to having {\tt \_} in the third argument of {\tt str\_sub/3}.
 
-\ournewitem{str\_match(+Sub, +Str, +Direction, ?Beg, ?End)}{string}
+\ourmoditem{str\_match(+Sub, +Str, +Direction, ?Beg, ?End)}{string}
 \index{\texttt{str\_match/5}}
 
 This is an enhanced version of the previous predicate.
@@ -1007,13 +898,13 @@ offset (from the beginning of {\tt Str}) of the last character of {\tt
 
 %-----------------------------------------------------------------------
 
-\ournewitem{str\_length(+Str, ?Result)}{string}
+\ourmoditem{str\_length(+Str, ?Result)}{string}
 \index{\texttt{str\_length/2}}
 
 Unifies the {\tt Result}  with the length of {\tt Str}.
 
 %%
-\ournewitem{substring(+String, +BeginOffset, +EndOffset, -Result)}{string}
+\ourmoditem{substring(+String, +BeginOffset, +EndOffset, -Result)}{string}
 \index{\texttt{substring/4}}
 %%
 {\tt String} can be an atom or a list of characters, and the offsets must
@@ -1046,7 +937,7 @@ L = [101,102]
 %%
 ({\it i.e.}, L = ef represented using ASCII codes).
 
-\ournewitem{string\_substitute(+InpStr, +SubstrList, +SubstitutionList, -OutStr)}{string}
+\ourmoditem{string\_substitute(+InpStr, +SubstrList, +SubstitutionList, -OutStr)}{string}
 \index{\texttt{string\_substitute/4}}
 
 {\tt InputStr} can an atom or a list of characters.  {\tt SubstrList} must
@@ -1101,7 +992,7 @@ X = 1---6---89---
 \end{verbatim}
 %%
 
-\ournewitem{concat\_atom(+AtomList,?Atom)}{string}
+\ourmoditem{concat\_atom(+AtomList,?Atom)}{string}
 \index{\texttt{concat\_atom/2 }}
 
 {\tt AtomList} must be a list structure containing atoms, integers
@@ -1110,7 +1001,7 @@ concatenates the atoms and integers into a single atom, returned in
 {\tt Atom}.  Integers and floats are converted to character strings
 using {\tt number\_codes/2}.
 
-\ournewitem{concat\_atom(+AtomList,+Sep,?Atom)}{string}
+\ourmoditem{concat\_atom(+AtomList,+Sep,?Atom)}{string}
 \index{\texttt{concat\_atom/3 }}
 
 {\tt AtomList} must be a list containing atoms, integers and/or
@@ -1142,7 +1033,7 @@ single mutex, and may cause contention if many threads seek to
 concurrently use sockets.
 
 \begin{description}
-\ournewitem{expand\_filename(+FileName,-ExpandedName)}{machine}
+\ourmoditem{expand\_filename(+FileName,-ExpandedName)}{machine}
 \index{\texttt{expand\_filename/2}}
 %
 Expands the file name passed as the first argument and binds the
@@ -1160,13 +1051,13 @@ Under Windows, this predicates does rectification as described above,
 (using backslashes when appropriate), but it does not expand the
 tildes.
 
-\ournewitem{expand\_filename\_no\_prepend(+FileName,-ExpandedName)}{shell}
+\ourmoditem{expand\_filename\_no\_prepend(+FileName,-ExpandedName)}{shell}
 \index{\texttt{expand\_filename\_no\_prepend/2}}
 This predicate behaves as {\tt expand\_filename/2}, but only expands
 tildes and does rectification. It does not prepend the current working
 directory to relative file names.
 
-\ournewitem{parse\_filename(+FileName,-Dir,-Base,-Extension)}{machine}
+\ourmoditem{parse\_filename(+FileName,-Dir,-Base,-Extension)}{machine}
 \index{\texttt{parse\_filename/4}}
 This predicate parses file names by separating the directory part, the base
 name part, and file extension. If file extension is found, it is removed
@@ -1178,7 +1069,7 @@ For instance, {\tt $\sim$john///doe/dir1//../foo.bar} will be parsed into:
 {\tt /home/john/doe/}, {\tt foo}, and {\tt bar} (where we assume that    
 {\tt /home/john} is what {\tt $\sim$john} expands into).  
 
-\ournewitem{sleep(+Seconds)}{shell}
+\ourmoditem{sleep(+Seconds)}{shell}
 \index{\texttt{sleep/1}}
 Put XSB to sleep for a given number of seconds.
 
@@ -1194,11 +1085,11 @@ Put XSB to sleep for a given number of seconds.
 \ei
 \ei
 
-\ournewitem{sys\_pid(-Pid)}{shell}
+\ourmoditem{sys\_pid(-Pid)}{shell}
 \index{\texttt{pid/1}}
 Get Id of the current process.
 
-\ournewitem{getenv(+VarName,-VarVal}{machine} 
+\ourmoditem{getenv(+VarName,-VarVal}{machine} 
 \index{\texttt{getenv/2}}
 %
 Unifies {\tt VarVal} with the value of {\tt VarName} in the current
@@ -1215,7 +1106,7 @@ yes
 F = intel-pc
 \end{verbatim}
 
-\ournewitem{putenv(+String)}{machine} 
+\ourmoditem{putenv(+String)}{machine} 
 \index{\texttt{setenv/3}}
 %
 If {\tt String} is of the form {\tt VarName=Value}, inserts or resets
@@ -1238,7 +1129,7 @@ Exceptions:
 TLS: Taken out of doc.  But I didn't touch the code, so as to not
 introduce any incompatibilities.
 
-\ournewitem{rm(+Path)}{shell}
+\ourmoditem{rm(+Path)}{shell}
 \index{\texttt{rm/1}}
 Remove file.
 
@@ -1299,7 +1190,7 @@ Remove file.
           in user's home directory.
     \end{enumerate}
 
-\ournewitem{file\_time(+FileName, -time(Time1,Time2))}{file\_io}
+\ourmoditem{file\_time(+FileName, -time(Time1,Time2))}{file\_io}
 \index{\texttt{file\_time/2}}
 
 Returns file's modification time. Because XSB steals 5 bits from each
@@ -1307,29 +1198,29 @@ word, time must be returned as two words: Time1, representing the most
 significant digits, and Time2, representing the less significant
 digits.
 
-\ournewitem{file\_size(+FileName, -Size)}{file\_io}
+\ourmoditem{file\_size(+FileName, -Size)}{file\_io}
 \index{\texttt{file\_size/2}}
 
 Returns file size.
 
-\ournewitem{cwd(-Dir)}{shell}
+\ourmoditem{cwd(-Dir)}{shell}
 \index{\texttt{cwd/1}}
 Get current working directory.
 
-\ournewitem{is\_absolute\_filename(+FileName)}{machine} 
+\ourmoditem{is\_absolute\_filename(+FileName)}{machine} 
 \index{\texttt{is\_absolute\_filename/1}} Succeeds, if file name is absolute; fails
 otherwise.  This predicate works also under Windows, {\it
 i.e.}, it recognizes drive letters, etc.
 
-\ournewitem{cd(+Path)}{shell}
+\ourmoditem{cd(+Path)}{shell}
 \index{\texttt{cd/1}}
 Change directory.
 
-\ournewitem{rename(+Old,-New)}{shell}
+\ourmoditem{rename(+Old,-New)}{shell}
 \index{\texttt{rename/2}}
 Rename file.
 
-\ournewitem{directory(+Path,?Directory)}{directry}
+\ourmoditem{directory(+Path,?Directory)}{directry}
 \index{\texttt{directory/2}}
 
 Unifies {\tt Directory} with a list of files in the directory specified by
@@ -1340,7 +1231,7 @@ and {\tt readdir()}.
 
 TLS: I think I put this in, and I think its overtaken by
 file_read_line_list plus scan . 
-\ournewitem{file\_to\_list(S, List)}{scrptutls}
+\ourmoditem{file\_to\_list(S, List)}{scrptutls}
 \index{\texttt{file\_to\_list/2}}
 %%
 Read lines from an \emph{open} I/O port. Return a
@@ -1370,7 +1261,7 @@ application program responsibility.
 %% This predicate is superseded by spawn_process/5 and shell/5
 %% Do not use it!
 %%
-%%\ournewitem{sysin(+Command,?Output)}{scrptutl}
+%%\ourmoditem{sysin(+Command,?Output)}{scrptutl}
 %%\index{\texttt{sysin/2}}
 %%
 %%      Unifies {\tt Output} with the stdout of {\tt Command}
@@ -1393,7 +1284,7 @@ application program responsibility.
 \index{\texttt{ls/0}}
 Does {\tt ls -F} in Unix, and a {\tt dir} in Windows.
 
-\ournewitem{edit(+Path)}{shell}
+\ourmoditem{edit(+Path)}{shell}
 \index{\texttt{edit/1}}
 Edit file using your favorite editor (specified by the environment variable
 {\tt EDITOR}. Unix only.
@@ -1647,7 +1538,7 @@ the following shell command:
     \emph{Note}: under Windows, the programmer's manual warns of dire
     consequences if one kills a process that has DLLs attached to it.
 %
-\ournewitem{get\_process\_table(-ProcessList)}{shell}
+\ourmoditem{get\_process\_table(-ProcessList)}{shell}
 \index{\texttt{get\_process\_table/1}} 
     This predicate is imported from module {\tt shell}.
     It binds {\tt ProcessList} to the list of terms, each describing one of
@@ -2166,7 +2057,7 @@ regular read/write commands can be used with such streams. In XSB, such
 promotion can be done using the following predicate:
 %%
 \begin{description}
-\ournewitem{fd2ioport(+Pipe, -IOport)}{shell}\index{\texttt{fd2ioport/2}} 
+\ourmoditem{fd2ioport(+Pipe, -IOport)}{shell}\index{\texttt{fd2ioport/2}} 
     Take a socket descriptor and convert it to an XSB I/O port that can be used
     for regular file I/O. 
 \end{description}
@@ -2206,16 +2097,16 @@ backtrackable array implementation.  The predicates through which the
 array objects are manipulated are:
 
 \begin{description}
-\ournewitem{array\_new(-Array, +Size)}{array1}\index{\texttt{array\_new/2}}
+\ourmoditem{array\_new(-Array, +Size)}{array1}\index{\texttt{array\_new/2}}
 %\predindex{array\_new/2~(L)}
     Creates a one dimensional empty array of size {\tt Size}.  All the 
     elements of this array are variables.
-\ournewitem{array\_elt(+Array, +Index, ?Element)}{array1}
+\ourmoditem{array\_elt(+Array, +Index, ?Element)}{array1}
 \index{\texttt{array\_elt/3}}
 %\predindex{array\_elt/3~(L)}
     True iff {\tt Element} is the {\tt Index}-th element of array 
     {\tt Array}.
-\ournewitem{array\_update(+Array, +Index, +Elem, -NewArray)}{array1}
+\ourmoditem{array\_update(+Array, +Index, +Elem, -NewArray)}{array1}
 \index{\texttt{array\_update/4}}
 %\predindex{array\_update/4~(L)}
     Updates the array {\tt Array} such that the {\tt Index}-th element
@@ -2271,7 +2162,7 @@ invokes profiling~\footnote{The profiling library should only be used
   with the single-threaded engine in \version{}.}.
 
 \begin{description}
-\ournewitem{profile\_call(+Goal)}{xsb\_profiling}\index{profile\_call/1}
+\ourmoditem{profile\_call(+Goal)}{xsb\_profiling}\index{profile\_call/1}
 
 Calls the goal {\tt Goal}, and when it first returns, prints out (on
 userout) a table of predicate names indicating for each, the
@@ -2379,10 +2270,10 @@ tries for backtrackable updates and associative arrays.
 %%
 \begin{description}
   %%
-\ournewitem{new\_trie(-Root)}{intern} \index{\texttt{newtrie/1}}
+\ourmoditem{new\_trie(-Root)}{intern} \index{\texttt{newtrie/1}}
         {\tt Root} is instantiated to a handle for a new trie.
 
-\ournewitem{trie\_intern(+Term,+Root)}{intern}
+\ourmoditem{trie\_intern(+Term,+Root)}{intern}
 \index{\texttt{trie\_intern/2}}
 % 
 Effectively asserts \texttt{Term} by interning into the trie
@@ -2403,7 +2294,7 @@ added to the trie.
 \end{itemize}
 %%
 
-\ournewitem{trie\_interned(?Term,+Root)}{intern}
+\ourmoditem{trie\_interned(?Term,+Root)}{intern}
 \index{\texttt{trie\_interned/2}}
 %%
 This predicate backtracks through the terms that unify with {\tt Term}
@@ -2423,7 +2314,7 @@ and that are interned into the trie represented by the handle {\tt
 \end{itemize}
 %%
 
-\ournewitem{delete\_trie(+Root)}{intern} \index{\texttt{delete\_trie/1}}
+\ourmoditem{delete\_trie(+Root)}{intern} \index{\texttt{delete\_trie/1}}
 %%
 Deletes all the terms in the trie pointed to by {\tt Root}.
 
@@ -2459,7 +2350,7 @@ implement modules such as the {\tt storage} module described in Volume
 %%
 \begin{description}
   %%
-\ournewitem{trie\_intern(+Term,+Root,-Leaf,-Flag,-Skel)}{intern}
+\ourmoditem{trie\_intern(+Term,+Root,-Leaf,-Flag,-Skel)}{intern}
 \index{\texttt{trie\_intern/5}}
 %%
 Acts as {\tt trie\_intern/2} but returns additional information: {\tt
@@ -2483,12 +2374,12 @@ the XSB manual).
 \end{itemize}
 %%
 
-\ournewitem{trie\_intern(+Term,-Leaf,-Skel)}{intern}\index{\texttt{trie\_intern/3}}
+\ourmoditem{trie\_intern(+Term,-Leaf,-Skel)}{intern}\index{\texttt{trie\_intern/3}}
 %%
 Acts as {\tt trie\_intern/5}, but interns {\tt Term} into the default
 trie and does not return the new/old flag.
 
-\ournewitem{trie\_interned(?Term,+Root,?Leaf,-Skel)}{intern}
+\ourmoditem{trie\_interned(?Term,+Root,?Leaf,-Skel)}{intern}
 \index{\texttt{trie\_interned/4}}
 %%
 This predicate backtracks through the terms that unify with {\tt Term}
@@ -2513,11 +2404,11 @@ collection of all the variables in {\tt Term}; it has the form {\tt
 \end{itemize}
 %%
 
-\ournewitem{trie\_interned(?Term,?Leaf,-Skel)}{intern} \index{\texttt{trie\_interned/3}}
+\ourmoditem{trie\_interned(?Term,?Leaf,-Skel)}{intern} \index{\texttt{trie\_interned/3}}
 %%
 Similar to {\tt trie\_interned/4}  but uses the default trie.
 
-\ournewitem{trie\_unintern(+Root,+Leaf)}{intern} \index{\texttt{trie\_unintern/2}}
+\ourmoditem{trie\_unintern(+Root,+Leaf)}{intern} \index{\texttt{trie\_unintern/2}}
 %%
 Uninterns a term indicated by {\tt Leaf} from the trie indicated by
 root.  If there are failure continuations that point to trie nodes in
@@ -2525,7 +2416,7 @@ root.  If there are failure continuations that point to trie nodes in
 Otherwise, the term is really deleted.
 %%
 
-\ournewitem{trie\_unintern\_nr(+Root,+Leaf)}{intern}\index{\texttt{trie\_unintern\_nr/2}}
+\ourmoditem{trie\_unintern\_nr(+Root,+Leaf)}{intern}\index{\texttt{trie\_unintern\_nr/2}}
 %%
 This is a safe version of {\tt trie\_unintern/2}. The term pointed to by
 {\tt Leaf} is marked as deleted, but is not deleted from the trie. This
@@ -2545,7 +2436,7 @@ permits an efficient implementation of backtrackable updates.
 \end{itemize}
 %%
 
-\ournewitem{unmark\_uninterned\_nr(+Root,+Leaf)}{intern}\index{\texttt{unmark\_uninterned\_nr/2}}
+\ourmoditem{unmark\_uninterned\_nr(+Root,+Leaf)}{intern}\index{\texttt{unmark\_uninterned\_nr/2}}
 The term pointed to by {\tt Leaf} should have been previously marked for
 deletion using
 {\tt trie\_unintern\_nr/2}. This term is then ``unmarked'' (or undeleted)
@@ -2565,7 +2456,7 @@ and becomes again a normal interned term.
 \end{itemize}
 %%
 
-\ournewitem{reclaim\_uninterned\_nr(+Root)}{intern}
+\ourmoditem{reclaim\_uninterned\_nr(+Root)}{intern}
 \index{\texttt{reclaim\_uninterned\_rn/1}}
 %%
 Runs through the chain of leaves of the trie {\tt Root} and deletes
@@ -2598,18 +2489,18 @@ The Gensym library provides a convenient way to generate unique
 integers or constants.  
 
 \begin{description}
-\ournewitem{prepare(+Index)}{gensym} \index{\texttt{prepare/1}}
+\ourmoditem{prepare(+Index)}{gensym} \index{\texttt{prepare/1}}
 %
 Sets the initial integer to be used for generation to {\tt Index}.
 Thus, the command {\tt ?- prepare(0)} would cause the first call to
 {\tt gennum/1} to return {\tt 1}.  {\tt Index} must be a non-negative
 integer.
 
-\ournewitem{gennum(-Var)}{gensym} \index{\texttt{gennum/1}}
+\ourmoditem{gennum(-Var)}{gensym} \index{\texttt{gennum/1}}
 %
 Unifies {\tt Var} with a new integer.
 
-\ournewitem{gensym(+Atom,-Var)}{gensym} \index{\texttt{gensym/2}}
+\ourmoditem{gensym(+Atom,-Var)}{gensym} \index{\texttt{gensym/2}}
 %
 Generates a new integer, and concatenates this integer with {\tt
 Atom}, unifying the result with {\tt Var}.  For instance a call {\tt
@@ -2630,38 +2521,38 @@ sequences of random numbers.
 
 \begin{description}
 
-\ournewitem{random(-Number)}{random} \index{\texttt{random/1}}
+\ourmoditem{random(-Number)}{random} \index{\texttt{random/1}}
 %
 Binds \texttt{Number} to a random float in the interval [0.0, 1.0).
 Note that 1.0 will never be generated.
 
-\ournewitem{random(+Lower,+Upper,-Number)}{random} \index{\texttt{random/3}}
+\ourmoditem{random(+Lower,+Upper,-Number)}{random} \index{\texttt{random/3}}
     Binds \texttt{Number} to a random integer in the interval
     [\texttt{Lower},\texttt{Upper}) if \texttt{Lower} and \texttt{Upper}
     are integers.  Otherwise \texttt{Number} is bound to a random float
     between \texttt{Lower} and \texttt{Upper}.  \texttt{Upper} will
     never be generated.
 
-\ournewitem{getrand(?State)}{random} \index{\texttt{getrand/1}}
+\ourmoditem{getrand(?State)}{random} \index{\texttt{getrand/1}}
     Tries to unify \texttt{State} with the term \texttt{rand(X,Y,Z)}
     where \texttt{X},\texttt{Y},and \texttt{Z} are integers describing
     the state of the random generator.
 
-\ournewitem{setrand(rand(+X,+Y,+Z))}{random} \index{\texttt{setrand/1}}
+\ourmoditem{setrand(rand(+X,+Y,+Z))}{random} \index{\texttt{setrand/1}}
     Sets the state of the random generator.  \texttt{X},\texttt{Y}, and
     \texttt{Z} must be integers in the ranges [1,30269), [1,30307),
     [1,30323), respectively.
 
-\ournewitem{datime\_setrand}{random} \index{\texttt{datime\_setrand/0}}
+\ourmoditem{datime\_setrand}{random} \index{\texttt{datime\_setrand/0}}
 This simple initialization utility sets the random seed triple based on a
 function of the current day, hour, minute and second. 
 
-\ournewitem{randseq(+K, +N, -RandomSeq)}{random} \index{\texttt{randseq/3}}
+\ourmoditem{randseq(+K, +N, -RandomSeq)}{random} \index{\texttt{randseq/3}}
     Generates a sequence of \texttt{K} unique integers chosen randomly
     in the range from 1 to \texttt{N}.  \texttt{RandomSeq} is not
     returned in any particular order.
 
-\ournewitem{randset(+K, +N, -RandomSet)}{random} \index{\texttt{randset/3}}
+\ourmoditem{randset(+K, +N, -RandomSet)}{random} \index{\texttt{randset/3}}
     Generates an ordered set of \texttt{K} unique integers chosen
     randomly in the range from 1 to \texttt{N}.  The set is returned in
     reversed order, with the largest element first and the smallest
@@ -2684,7 +2575,7 @@ lex} or {\em flex}.
 
 \begin{description}
 
-\ournewitem{scan(+List,-Tokens)}{stdscan} \index{\texttt{scan/2}}  
+\ourmoditem{scan(+List,-Tokens)}{stdscan} \index{\texttt{scan/2}}  
 
 Given as input a {\tt List} of character codes, {\tt scan/2} scans
 this list producing a list of atoms constituting the lexical tokens.
@@ -2694,7 +2585,7 @@ Tokens produced are either a sequence of {\em letters} and/or {\em
 numbers} or consist of a single {\em special character} (e.g. {\tt (}
 or {\tt )}).  Whitespaces may occur between tokens.
 
-\ournewitem{scan(+List,+FieldSeparator,-Tokens)}{stdscan} 
+\ourmoditem{scan(+List,+FieldSeparator,-Tokens)}{stdscan} 
 \index{\texttt{scan/3}}  
 
 Given as input a {\tt List} of character codes, along with a character
@@ -2703,7 +2594,7 @@ list of list of atoms constituting the lexical tokens in each field.
 {\em scan/3} thus can be used to scan tabular information.  Its
 parameters are set via {\tt set\_scan\_pars/1}.
 
-\ournewitem{set\_scan\_pars(+List)}{stdscan} 
+\ourmoditem{set\_scan\_pars(+List)}{stdscan} 
 \index{\texttt{set\_scan\_pars/1}}  
 
 {\tt set\_scan\_pars(+List)} is used to configure the tokenizer to a
@@ -2752,7 +2643,7 @@ A--Z} are regarded as letters.
 \end{verbatim}
 \end{itemize}
 
-\ournewitem{get\_scan\_pars(-List)}{stdscan} 
+\ourmoditem{get\_scan\_pars(-List)}{stdscan} 
 \index{\texttt{get\_scan\_pars/1}}  
 {\tt get\_scan\_pars/1} returns a list of the currently active
 parameters.
@@ -2864,14 +2755,14 @@ currently equivalent to {\tt checkImpExps([],FileNameList)}.
 
 \begin{description}
 
-\ournewitem{term\_hash(+Term,+HashSize,-HashVal)}{machine}
+\ourmoditem{term\_hash(+Term,+HashSize,-HashVal)}{machine}
 \index{\texttt{term\_hash/3}}
 %
 Given an arbitrary Prolog term, {\tt Term}, that is to be hashed into
 a table of {\tt HashSize} buckets, this predicate returns a hash value
 for {\tt Term} that is between {\tt 0} and {\tt HashSize -1}.
 
-\ournewitem{pretty\_print(+ClausePairs)}{pretty\_print}
+\ourmoditem{pretty\_print(+ClausePairs)}{pretty\_print}
 \index{\texttt{pretty\_print/1}}
 %
 The input to {\tt pretty\_print/1}, {\tt ClausePairs}, can be either a

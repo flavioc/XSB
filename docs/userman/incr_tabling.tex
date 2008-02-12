@@ -135,7 +135,7 @@ made, the user should call {\tt incr\_table\_update}.
 The following directives support incremental tabling:
 
 \begin{description}
-\ournewitem{use\_incremental\_tabling(+PredSpecs)}{standard}\index{\texttt{use\_incremental\_tabling/1}}
+\ournewitem{use\_incremental\_tabling(+PredSpecs)}{Tabling}\index{\texttt{use\_incremental\_tabling/1}}
 is a executable predicate that indicates that each tabled predicate
 specified in {\tt PredSpec} is to have its tables maintained
 incrementally.  {\tt PredSpec} is a list of skeletons, i.e. open
@@ -153,14 +153,14 @@ use\_incremental\_dynamic}.  But if one is not declared {\tt
 use\_incremental\_dynamic}, then changes to it will not be propagated
 to incrementally maintained tables.
 
-\ournewitem{use\_incremental\_dynamic(+PredSpecs)}{standard}\index{\texttt{use\_incremental\_dynamic/1}}
+\ournewitem{use\_incremental\_dynamic(+PredSpecs)}{Tabling}\index{\texttt{use\_incremental\_dynamic/1}}
 is an executable predicate that indicates that a predicate is dynamic
 and used to define an incrementally tabled predicate and will be
 updated using {\tt incr\_assert} and/or {\tt incr\_retractall} (or
 relatives.)  This predicate, when called as a compiler directive,
 implies that its arguments are dynamic predicates.
 
-\ournewitem{use\_opaque\_tabling(+PredSpecs)}{standard}\index{\texttt{use\_opaque\_tabling/1}}
+\ournewitem{use\_opaque\_tabling(+PredSpecs)}{Tabling}\index{\texttt{use\_opaque\_tabling/1}}
 is an executable predicate that indicates that a predicate is tabled
 and is used in the definition of some incrementally tabled predicate
 but it should not be maintained incrementally.  In this case the
@@ -182,28 +182,28 @@ The following predicates are used to manipulate incrementally
 maintained tables:
 
 \begin{description}
-\ournewitem{incr\_assert(+Clause)}{increval}\index{\texttt{incr\_assert/1}}
+\ourmoditem{incr\_assert(+Clause)}{increval}\index{\texttt{incr\_assert/1}}
 is a version of {\tt assert/1} for dynamic predicates declared as
 \linebreak {\tt use\_incremental\_dynamic}.  This adds the clause to
 the database after any other clauses for the same predicate currently
 in the database.  It then updates all incrementally maintained tables
 that depend on this predicate.
 
-\ournewitem{incr\_assertz(+Clause)}{increval}\index{\texttt{incr\_assert/1}}
+\ourmoditem{incr\_assertz(+Clause)}{increval}\index{\texttt{incr\_assert/1}}
 is the same as {\tt incr\_assert/1}.
 
-\ournewitem{incr\_asserta(+Clause)}{increval}\index{\texttt{incr\_assert/1}}
+\ourmoditem{incr\_asserta(+Clause)}{increval}\index{\texttt{incr\_assert/1}}
 is the same as {\tt incr\_assert/1} except that it adds the clause
 before any other clauses for the same predicate currently in the
 database.
 
-\ournewitem{incr\_retractall(+Clause)}{increval}\index{\texttt{incr\_retractall/1}}
+\ourmoditem{incr\_retractall(+Clause)}{increval}\index{\texttt{incr\_retractall/1}}
 is a version of {\tt retractall/1} for dynamic predicates declared as
 {\tt use\_incremental\_dynamic}.  This removes all clauses in the database that
 match Clause.  It then updates all incrementally maintained tables
 that depend on this predicate.
 
-\ournewitem{incr\_assert\_inval(+Clause)}{increval}\index{\texttt{incr\_assert\_inval/1}}
+\ourmoditem{incr\_assert\_inval(+Clause)}{increval}\index{\texttt{incr\_assert\_inval/1}}
 is similar to {\tt incr\_assert/1} except that it does not update the
 incrementally maintained tables, but only marks them as invalid.  The
 tables should be updated by an explicit call to {\tt
@@ -211,32 +211,32 @@ incr\_table\_update/0} (or {\tt /1} or {\tt /2}).  This separation of
 function allows for more efficient processing of table maintenance
 after a batch of operations.
 
-\ournewitem{incr\_assertz\_inval(+Clause)}{increval}\index{\texttt{incr\_assert\_inval/1}}
+\ourmoditem{incr\_assertz\_inval(+Clause)}{increval}\index{\texttt{incr\_assert\_inval/1}}
 is similar to {\tt incr\_assertz/1} except that it does not update the
 incrementally maintained tables, but only marks them as invalid.  The
 tables should be updated by an explicit call to {\tt
 incr\_table\_update/0} (or {\tt /1} or {\tt /2}).
 
-\ournewitem{incr\_asserta\_inval(+Clause)}{increval}\index{\texttt{incr\_assert\_inval/1}}
+\ourmoditem{incr\_asserta\_inval(+Clause)}{increval}\index{\texttt{incr\_assert\_inval/1}}
 is similar to {\tt incr\_asserta/1} except that it does not update the
 incrementally maintained tables, but only marks them as invalid.  The
 tables should be updated by an explicit call to {\tt
 incr\_table\_update/0} (or {\tt /1} or {\tt /2}).
 
-\ournewitem{incr\_retractall\_inval(+Clause)}{increval}\index{\texttt{incr\_retractall\_inval/1}}
+\ourmoditem{incr\_retractall\_inval(+Clause)}{increval}\index{\texttt{incr\_retractall\_inval/1}}
 is similar to {\tt incr\_retractall/1} except that it does not update
 the incrementally maintained tables, but only marks them as invalid.
 The tables should be updated by an explicit call to {\tt
 incr\_table\_update/0} (or {\tt /1} or {\tt /2}).
 
-\ournewitem{incr\_retract\_inval(+Clause)}{increval}\index{\texttt{incr\_retract\_inval/1}}
+\ourmoditem{incr\_retract\_inval(+Clause)}{increval}\index{\texttt{incr\_retract\_inval/1}}
 is similar to {\tt retract/1} but is applied to dynamic predicates
 declared with \linebreak {\tt use\_incremental\_dynamic}.  It removes the matching
 clauses through backtracking and marks the depending tables as
 invalid.  All invalid tables should be updated by an explicit call to
 {\tt incr\_table\_update/0} (or {\tt /1} or {\tt /2}).
 
-\ournewitem{incr\_table\_update}{increval}\index{\texttt{incr\_table\_update/0}}
+\ourmoditem{incr\_table\_update}{increval}\index{\texttt{incr\_table\_update/0}}
 is called after base predicates have been changed (by {\tt
 incr\_assert\_inval/1} and/or \linebreak {\tt incr\_retractall\_inval/1} or
 friends).  This predicate updates all the incrementally maintained
@@ -247,13 +247,13 @@ incr\_retractall\_inval}) so that a set of base predicate changes can be
 processed all at once, which may be much more efficient that updating
 the tables at every base update.
 
-\ournewitem{incr\_table\_update(-GoalList)}{increval}\index{\texttt{incr\_table\_update/1}}
+\ourmoditem{incr\_table\_update(-GoalList)}{increval}\index{\texttt{incr\_table\_update/1}}
 is similar to {\tt incr\_table\_update/0} in that it updates the
 incrementally maintained tables after changes to base predicates.  It
 returns the list of goals to incrementally maintained tables whose
 tables were changed in the update process.
 
-\ournewitem{incr\_table\_update(+SkelList,-GoalList)}{increval}\index{\texttt{incr\_table\_update/2}}
+\ourmoditem{incr\_table\_update(+SkelList,-GoalList)}{increval}\index{\texttt{incr\_table\_update/2}}
 is similar to {\tt incr\_table\_update/1} in that it updates the
 incrementally maintained tables after changes to base predicates.  The
 first argument is a list of predicate skeletons (open terms) for
@@ -264,7 +264,7 @@ acts as a filter to restrict the goals that are returned to those of
 interest.  If {\tt SkelList} is a variable or the empty list, all
 affected goals are returned in {\tt GoalList}.
 
-\ournewitem{incr\_invalidate\_call(+Goal)}{increval}\index{\texttt{incr\_invalidate\_call/1}}
+\ourmoditem{incr\_invalidate\_call(+Goal)}{increval}\index{\texttt{incr\_invalidate\_call/1}}
 is used to directly invalidate a call to an incrementally maintained
 table.  {\tt Goal} is the tabled call to invalidate.  A subsequent
 invocation of {\tt incr\_table\_update} will cause that tabled goal to
@@ -278,7 +278,7 @@ then this predicate can be used to invalidate the table when the
 external relation changes.  The application programmer must know when
 the external relation changes and invoke this predicate as necessary.
 
-\ournewitem{incr\_directly\_depends(?DependentGoal,?Goal)}{increval}\index{\texttt{incr\_directly\_depends/2}}
+\ourmoditem{incr\_directly\_depends(?DependentGoal,?Goal)}{increval}\index{\texttt{incr\_directly\_depends/2}}
 accesses the dependency structures used by the incremental table
 maintenance subsystem to provide information about which incremental
 table calls depend on which others.  At least one of {\tt
@@ -289,7 +289,7 @@ tables unifying (?) with {\tt DependentGoal} directly depend on.  If
 {\tt Goal} is bound, then it returns the directly dependent tabled
 goals in {\tt DependentGoal}.  [check this out...]
 
-\ournewitem{incr\_trans\_depends(?DependentGoal,?Goal)}{increval}\index{\texttt{incr\_trans\_depends/2}}
+\ourmoditem{incr\_trans\_depends(?DependentGoal,?Goal)}{increval}\index{\texttt{incr\_trans\_depends/2}}
 is similar to {\tt incr\_directly\_depends} except that it returns
 goals according to the transitive closure of the ``directly depends''
 relation.

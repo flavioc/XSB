@@ -66,10 +66,10 @@ For example, here is a list of terms sorted in increasing standard order:
 The basic predicates for unification and comparison of arbitrary terms are:
 \begin{description}
 
-\ouritem{X = Y}\index{\texttt{=/2}} 
+\ournewitem{X = Y}{ISO}\index{\texttt{=/2}} 
     Unifies {\tt X} and {\tt Y} without occur check.
 
-\ouritem{unify\_with\_occurs\_check(One,Two)} 
+\ournewitem{unify\_with\_occurs\_check(One,Two)}{ISO} 
 \index{\texttt{unify\_with\_occurs\_check/2}}
 %
 Unifies {\tt One} and {\tt Two} using an occur check, and failing if
@@ -95,7 +95,7 @@ subterm of {\tt One}.
                 yes
   \end{verbatim}}
 
-\ouritem{T1 == T2}
+\ournewitem{T1 == T2}{ISO}
 \index{\texttt{==/2}}
     Tests if the terms currently instantiating {\tt T1} and {\tt T2}
     are literally identical (in particular, variables in equivalent positions
@@ -113,12 +113,12 @@ subterm of {\tt One}.
     \noindent
     succeeds because the first goal unifies the two variables.
 
-\ouritem{X $\backslash$\,= Y}\index{\texttt{$\backslash$=/2}}
+\ournewitem{X $\backslash$\,= Y}{ISO}\index{\texttt{$\backslash$=/2}}
     Succeeds if~{\tt X} and~{\tt Y} are not unifiable,
     fails if~{\tt X} and~{\tt Y} are unifiable.
     It is thus equivalent to {\tt $\backslash$+}\/{\tt (X = Y)}.
 
-\ouritem{T1 {$\backslash$==} T2}
+\ournewitem{T1 {$\backslash$==} T2}{ISO}
 \index{\texttt{$\backslash$==/2}}
     Tests if the terms currently instantiating {\tt T1} and {\tt T2}
     are not literally identical.
@@ -131,7 +131,7 @@ compared safely, i.e. whether the result of {\tt Term1 = Term2} can
 change due to further instantiation of either term. It is defined as
 by {\tt ?=(A,B) :- (A==B ; A \= B), !.} 
 
-\ournewitem{unifiable(X, Y, -Unifier)}{constraintLib}
+\ourmoditem{unifiable(X, Y, -Unifier)}{constraintLib}
 \index{\texttt{unifiable/3}}
 %
 If {\tt X} and {\tt Y} can unify, succeeds unifying {\tt Unifier} with
@@ -143,19 +143,19 @@ variables. Associated hooks are not executed~\footnote{In \version ,
   than many of the predicates in this section.}.
 
 % TLS: for some reason index statements for these @ comparison operators don't work.
-\ouritem{T1 @$<$ T2}
+\ournewitem{T1 @$<$ T2}{ISO}
 \index{@/2}
     Succeeds if term {\tt T1} is before term {\tt T2} in the standard order.
 
-\ouritem{T1 @$>$ T2}
+\ournewitem{T1 @$>$ T2}{ISO}
 \index{\verb|@>/2|}
     Succeeds if term {\tt T1} is after term {\tt T2} in the standard order.
 
-\ouritem{T1 @$=<$ T2}
+\ournewitem{T1 @$=<$ T2}{ISO}
 \index{@$=</2$}
     Succeeds if term {\tt T1} is not after term {\tt T2} in the standard order.
 
-\ouritem{T1 @$>=$ T2}
+\ournewitem{T1 @$>=$ T2}{ISO}
 \index{@$>=/2$}
     Succeeds if term {\tt T1} is not before term {\tt T2} in the standard order.
 
@@ -175,6 +175,64 @@ variables. Associated hooks are not executed~\footnote{In \version ,
     \end{description}
     Thus {\tt compare(=, T1, T2)} is equivalent to {\tt T1==T2}.
     Predicate {\tt compare/3} has no associated error conditions.
+
+\ourmoditem{ground(+X)}{basics}\index{\texttt{ground/1}}
+    Succeeds if {\tt X} is currently instantiated to a term that is 
+    completely bound (has no uninstantiated variables in it); 
+    otherwise it fails.  Predicate {\tt ground/1} has no associated 
+    error conditions.
+
+\ourmoditem{subsumes(?Term1, +Term2)}{subsumes}\index{\texttt{subsumes/2}}
+%\predindex{subsumes/2~(L)}
+    Term subsumption is a sort of one-way unification.  Term {\tt Term1}
+    and {\tt Term2} unify if they have a common instance, and unification
+    in Prolog instantiates both terms to that (most general) common instance.
+    {\tt Term1} subsumes {\tt Term2} if {\tt Term2} is already an instance of
+    {\tt Term1}.  For our purposes, {\tt Term2} is an instance of {\tt Term1}
+    if there is a substitution that leaves {\tt Term2} unchanged and makes
+    {\tt Term1} identical to {\tt Term2}.  Predicate {\tt subsumes/2} does
+    not work as described if {\tt Term1} and {\tt Term2} share common
+    variables.
+
+\ourmoditem{subsumes\_chk(+Term1, +Term2)}{subsumes}
+\index{\texttt{subsumes\_chk/2}}
+%\predindex{subsumes\_chk/2~(L)}
+    The {\tt subsumes\_chk/2} predicate is true when {\tt Term1} subsumes 
+    {\tt Term2}; that is, when {\tt Term2} is already an instance of
+    {\tt Term1}.  This predicate simply checks for subsumption and 
+    does not bind any variables either in {\tt Term1} or in {\tt Term2}.
+    {\tt Term1} and {\tt Term2} should not share any variables.
+
+    Examples:
+    {\footnotesize
+     \begin{verbatim}
+            | ?- subsumes_chk(a(X,f,Y,X),a(U,V,b,S)).
+
+            no
+            | ?- subsumes_chk(a(X,Y,X),a(b,b,b)).
+
+            X = _595884
+            Y = _595624
+     \end{verbatim}}
+
+\ourmoditem{variant(?Term1, ?Term2)}{subsumes}\index{\texttt{variant/2}}
+%\predindex{variant/2~(L)}
+    This predicate is true when {\tt Term1} and {\tt Term2} are 
+    alphabetic variants.  That is, you could imagine that {\tt variant/2}
+    as being defined like:
+    \begin{center}
+    \begin{minipage}{3.5in}
+    \begin{verbatim}
+        variant(Term1, Term2) :-
+             subsumes_chk(Term1, Term2),
+             subsumes_chk(Term2, Term1).
+    \end{verbatim}
+    \end{minipage}
+    \end{center}
+    but the actual implementation of {\tt variant/2} is considerably more
+    efficient.  However, in general, it does not work for terms that share
+    variables; an assumption that holds for most (reasonable) uses of
+    {\tt variant/2}.
 
 \end{description}
 
@@ -240,7 +298,7 @@ collection, or other reasons.
      form \verb'Key-Value'.  
 \end{description}
 
-\ournewitem{parsort(+L1, +SortSpec, +ElimDupl, ?L2)}{machine}
+\ourmoditem{parsort(+L1, +SortSpec, +ElimDupl, ?L2)}{machine}
 \index{\texttt{parsort/4}}
 
     {\tt parsort/4} is a very general sorting routine.  The list {\tt
