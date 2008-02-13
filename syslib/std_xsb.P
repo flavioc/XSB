@@ -237,6 +237,7 @@ standard_symbol(number, 1, standard).
 standard_symbol(number_chars, 2, standard).     % ISO
 standard_symbol(number_codes, 2, standard).	% ISO
 standard_symbol(number_digits, 2, standard).    % not ISO
+standard_symbol(numbervars, 3, num_vars).       % ISO draft revision
 
 standard_symbol(obsolete, 2, obsolete).
 standard_symbol(once, 1, standard).
