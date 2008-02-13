@@ -2071,6 +2071,10 @@ set_passive(State) :-
 	setarg(1,State,passive).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-attr_portray_hook(bounds(L,U,_),_) :-
+:- import install_attribute_portray_hook/3 from machine.
+
+:- install_attribute_portray_hook(bounds,Attr,bounds_attr_portray_hook(Attr)).
+
+bounds_attr_portray_hook(bounds(L,U,_)) :-
 	write(L..U).
 
