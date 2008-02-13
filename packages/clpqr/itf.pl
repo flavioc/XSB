@@ -111,7 +111,6 @@ dump_nz(clpr,V,H,I) -->  bv_r_dump_nz(V,H,I).
 
 % XSB
 :- import install_verify_attribute_handler/4 from machine.
-
 :- install_verify_attribute_handler(itf,Attr,Other,attr_unify_hook(Attr,Other)).
 
 %my_attr_unify_hook(Attr,Other):-
@@ -119,6 +118,7 @@ dump_nz(clpr,V,H,I) -->  bv_r_dump_nz(V,H,I).
 %    attr_unify_hook(Attr,Other).
 
 attr_unify_hook(t(CLP,n,n,n,n,n,n,n,_,_,_),Y) :- 
+%    writeln(itf_attr_unify_hook(t(CLP,n,n,n,n,n,n,n,_,_,_),Y)),
 	!,
 	(   var(Y),get_attr(Y,itf,AttY),
 	    \+ arg(1,AttY,CLP)
@@ -127,6 +127,7 @@ attr_unify_hook(t(CLP,n,n,n,n,n,n,n,_,_,_),Y) :-
 	;   true
 	).
 attr_unify_hook(t(CLP,Ty,St,Li,Or,Cl,_,No,_,_,_),Y) :-
+%    writeln(itf_attr_unify_hook(t(CLP,Ty,St,Li,Or,Cl,_,No,_,_,_),Y)),
 	(   var(Y),get_attr(Y,itf,AttY),
 	    \+ arg(1,AttY,CLP)
 	->  throw(error(permission_error('mix CLP(Q) variables with',
