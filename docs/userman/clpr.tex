@@ -1,25 +1,55 @@
-\chapter{{\tt clpr}: The CPL(R) package}
+\chapter{Constraint Packages}
 %===========================
 
-\begin{center}
-{\Large {\bf By Leslie De Koninck based on code by Christian
-    Holzbaur}}~\footnote{The CLP(R) package is based on the clpqr
-  package included in SWI Prolog version 5.6.49, and was ported to XSB
-  by Terrance Swift.}
-\end{center}
+Constraint packages are an important part of modern logic programming,
+but approaches to constraints differ both in their semantics and in
+their implementation.  At a semantic level, {\em Constraint Logic
+  Programming} associates constraints with logical variables, and
+attempts to determine solutions that are inconsistent with or entailed
+by those constaints.  At an implementational level, the constraints
+can either be manipulated by accessing attributed variables or by
+adding {\em constraint handling rules} to a program.  The former
+approach of attributed variables can be much more efficient than
+constraint handling rules (which are themselves implemented through
+attributed variables) but are much more difficult to use than
+constraint handling rules.  These variable-based approaches differ
+from that of {\em Answer Set Programming} in which a constraint
+problem is formulated as a set of rules, which are consistent if a
+stable model can be constructed for them.
 
+XSB supports all of these approaches.  Two packages based on
+attributed variables are presented in this chapter: CLP(R) and the
+{\tt bounds} package, which provides a simple library for handling
+finite domains.  XSB's CHR package is described in Chapter~\ref{chr},
+and XSB's Answer Set Programming Package, {\tt XASP} is described in
+Chapter~\ref{xasp}.
+
+Before describing the individual packages, we note that these packages
+can be freely used with variant tabling, the mechanisms for which
+handle attributed variables.  However in \version{}, calling a
+predicate $P$ that is tabled using call subsumption will raise an
+error if the call to $P$ contains any constrained variables
+(attributed variables).
+
+\section{{\tt clpr}: The CPL(R) package}
+\index{Prologs!SWI}
+%
 The CLP(R) library supports solutions of linear equations and
 inequalities over the real numbers and the lazy treatment of nonlinear
-equations.  In displaying sets of equations and disequations, the
-library removes redundancies, performs projections, and provides for
-linear optimization.  The goal of the XSB port is to provide the same
-CLP(R) functionality as in other platforms, but also to allow
+equations~\footnote{The CLP(R) package is based on the clpqr package
+  included in SWI Prolog version 5.6.49.  This package was originally
+  written by Christian Holzbaur and ported to SWI by Leslie De Konick.
+  Terrance Swift ported the package to XSB and and wrote this XSB
+  manual section.}.  In displaying sets of equations and disequations,
+the library removes redundancies, performs projections, and provides
+for linear optimization.  The goal of the XSB port is to provide the
+same CLP(R) functionality as in other platforms, but also to allow
 constraints to be used by tabled predicates.  This section provides a
 general introduction to the CLP(R) functionality available in XSB, for
 further information on the API described in Section~\ref{sec:clpr-api}
 see {\tt http://www.ai.univie.ac.at/clpqr}, or the Sicstus Prolog
-manual (the CLP(R) library should behave similarly on XSB and
-Sicstus at the level of this API).
+manual (the CLP(R) library should behave similarly on XSB and Sicstus
+at the level of this API).
 
 The {\tt clpr} package may be loaded by the command {\tt [clpr]}.
 Loading the package imports exported predicates from the various files
@@ -68,7 +98,7 @@ Formally:
 \end{tabbing}
 }
 
-\section{The CLP(R) API} \label{sec:clpr-api}
+\subsection{The CLP(R) API} \label{sec:clpr-api}
 %
 From the command line, it is usually easiest to load the {\tt clpr}
 package and call the predicates below directly from {\tt usermod} (the
@@ -97,7 +127,7 @@ how this is done.
 %
 `
 \begin{description}
-\ourmoditem{\{+Constraints\}} {clpr} \index{{\tt \{\}/1}}
+\ourmoditem{\{+Constraints\}} {clpr} \index{\texttt{\{\}/1}}
 %
 When the CLP(R) package is loaded, inclusion of equations in braces
 ({\tt \{\}}) adds {\tt Constraints} to the constraint store where they
@@ -141,7 +171,7 @@ are checked for satisfiability.
 \ei
 \ei
 
-\ourmoditem{entailed(+Constraint)} {clpr} \index{{\tt entailed/1}}
+\ourmoditem{entailed(+Constraint)} {clpr} \index{\texttt{entailed/1}}
 %
 Succeeds if {\tt Constraint} is logically implied by the current
 constraint store.  {\tt entailed/1} does not change the constraint
@@ -170,13 +200,13 @@ yes
 \ei
 \ei
 
-\ourrepeatnewitem{inf(+Expr,-Val)} {clpr} \index{{\tt inf/2}}
+\ourrepeatnewitem{inf(+Expr,-Val)} {clpr} \index{\texttt{inf/2}}
 
-\ourrepeatnewitem{sup(+Expr,-Val)} {clpr} \index{{\tt sup/2}}
+\ourrepeatnewitem{sup(+Expr,-Val)} {clpr} \index{\texttt{sup/2}}
 
-\ourrepeatnewitem{minimize(Expr)} {clpr} \index{{\tt minimize/1}}
+\ourrepeatnewitem{minimize(Expr)} {clpr} \index{\texttt{minimize/1}}
 
-\ourmoditem{maximize(Expr)} {clpr} \index{{\tt maximize/1}}
+\ourmoditem{maximize(Expr)} {clpr} \index{\texttt{maximize/1}}
 %
 These four related predicates provide various mechanisms to compute
 the maximum and minimum of expressions over variables in a constraint
@@ -223,9 +253,9 @@ yes
 \end{verbatim}
 }
 
-\ourrepeatnewitem{inf(+Expr,-Val, +Vector, -Vertex)} {clpr} \index{{\tt inf/4}}
+\ourrepeatnewitem{inf(+Expr,-Val, +Vector, -Vertex)} {clpr} \index{\texttt{inf/4}}
 
-\ourmoditem{sup(+Expr,-Val, +Vector, -Vertex)} {clpr} \index{{\tt sup/4}}
+\ourmoditem{sup(+Expr,-Val, +Vector, -Vertex)} {clpr} \index{\texttt{sup/4}}
 %
 These predicates work like {\tt inf/2} and {\tt sup/2} with the
 following addition.  {\tt Vector} is a list of Variables, and for each
@@ -252,7 +282,7 @@ Vertex = [7.0000,2.0000]
 }
 
 \ourmoditem{bb\_inf(+IntegerList,+Expr,-Inf,-Vertex, +Eps)}  {clpr}
-\index{{\tt bb\_inf/4}}
+\index{\texttt{bb\_inf/4}}
 %
 Works like {\tt inf/2} in {\tt Expr} but assumes that all the
 variables in {\tt IntegerList} have integral values.  {\tt Eps} is a
@@ -290,7 +320,7 @@ yes
 \ei
 
 \ourmoditem{bb\_inf(+IntegerList,+Expr,-Inf)}  {clpr}
-\index{{\tt bb\_inf/3}}
+\index{\texttt{bb\_inf/3}}
 %
 Works like {\tt bb\_inf/5}, but with the neighborhood, {\tt Eps}, set
 to {\tt 0.001}.
@@ -313,7 +343,7 @@ yes
 }
 
 \ourmoditem{dump(+Variables,+NewVars,-CodedVars} {dump} 
-\index{{\tt dump/3}}
+\index{\texttt{dump/3}}
 %
 For a list of variables {\tt Variables} and a list of variable names
 {\tt NewVars}, returns in {\tt CodedVars} the constraints on the
@@ -378,3 +408,333 @@ no
 \end{verbatim}
 }
 \end{description}
+
+\section{The {\tt bounds} Package}
+%
+\index{Prologs!Sicstus}
+\index{Prologs!SWI}
+
+\version{} of XSB does not support a full-fledged CLP(FD) package.
+However it does support a simplified package that maintains an upper
+and lower bound for logical variables.  {\tt bounds} can thus be used
+for simple constraint problems in the style of finite domains, as long
+as these problems that do not rely on too heavily on propagation of
+information about constraint domains~\footnote{The {\tt bounds}
+  package was written by Tom Schrijvers, and ported to XSB from SWI
+  Prolog version 5.6.49 by Terrance Swift, who also wrote this manual
+  section.}
+
+Perhaps the simplest way to explain the functionality of {\tt bounds}
+is by example.  The query
+%
+{\small
+\begin{verbatim}
+|?- X in 1..2,X #> 1.
+\end{verbatim}
+}
+%
+\noindent
+first indicates via {\tt X in 1..2} that the lower bound of {\tt X} is
+{\tt 1} and the higher bound {\tt 2}, and then constraints {\tt X},
+which is not yet bound, to be greater than {\tt 1}.  Applying this
+latter constraint to {\tt X} forces the lower bound to equal the upper
+bound, instantiating {\tt X}, so that the answer to this query is {\tt
+  X = 2}.
+
+Next, consider the slightly more complex query
+%
+{\small
+\begin{verbatim}
+|?- X in 1..3,Y in 1..3,Z in 1..3,all_different([X,Y,Z]),X = 1, Y = 2.
+\end{verbatim}
+}
+%
+\noindent
+{\tt all\_different/3} constraints {\tt X}, {\tt Y} and {\tt Z} each
+to be different, whatever their values may be.  Accordingly, this
+constraint together with the bound restrictions, implies that
+instantiating {\tt X} and {\tt Y} also causes the instantiation of
+{\tt Z}.  In a similar manner, the query
+%
+{\small
+\begin{verbatim}
+|?- X in 1..3,Y in 1..3,Z in 1..3,sum([X,Y,Z],#=,9),
+\end{verbatim}
+}
+%
+\noindent
+onstrains the sum of the three variables to equal {\tt 9} -- and in
+this case assigns them a concrete value due to their domain
+restrictions.
+
+In many constraint problems, it does not suffice to know whether a set
+of constraints is satisfiable; rather, concrete values may be needed
+that satisfy all constraints.  One way to produce such values is
+through the predicate {\tt labelling/2}
+%
+{\small
+\begin{verbatim}
+|?- X in 1..5,Y in 1..5,X #< Y,labeling([max(X)],[X,Y]))
+\end{verbatim}
+}
+%
+\noindent
+In this query, it is specified that {\tt X} and {\tt Y} are both to be
+instantiated not just by any element of their domains, but by a value
+that assigns {\tt X} to be the maximal element consistent with the
+constraints.  Accordingly {\tt X} is instantiated to {\tt 4} and {\tt
+  Y} to {\tt 5}.
+
+Because constraints in {\tt bounds} are based on attributed variables
+which are handled by XSB's variant tabling mechanisms, constrained
+variables can be freely used with variant tabling as the folowing
+fragment shows:
+%
+{\small
+\begin{verbatim}
+table_test(X):- X in 2..3,p(X).
+
+:- table p/1.
+p(X):- X in 1..2.
+
+?- table_test(Y).
+
+Y = 2
+\end{verbatim}
+}
+%
+
+For a more elaborate example, we turn to the {\em SEND MORE MONEY}
+example, , in which the problem is to assign numbers to each of the
+letters {\em S,E,N,D,M,O,R,Y} so that the number {\em SEND} plus the
+number {\em MORE} equals the number {\em MONEY}.  Borrowing a solution
+from the SWI manual~\cite{SWI-manual}, the {\tt bounds} package solves
+this problem as:
+%
+{\small
+\begin{verbatim}
+send([[S,E,N,D], [M,O,R,E], [M,O,N,E,Y]]) :-
+    Digits = [S,E,N,D,M,O,R,Y],
+    Carries = [C1,C2,C3,C4],
+    Digits in 0..9,
+    Carries in 0..1,
+    M #= C4,
+    O + 10 * C4 #= M + S + C3,
+    N + 10 * C3 #= O + E + C2,
+    E + 10 * C2 #= R + N + C1,
+    Y + 10 * C1 #= E + D,
+    M #>= 1,
+    S #>= 1,
+    all_different(Digits),
+    label(Digits).
+\end{verbatim}
+}
+
+In many cases, it may be useful to test whether a given constraint is
+true or false.  This can be done by unifying a variable with the truth
+value of a given constraint -- i.e.  by {\em reifying} the constraint.
+As an example, the query
+%
+{\small
+\begin{verbatim}
+|?-  X in 1..10, Y in 1..10,Z in 0..1,X #< Y, X #= Y #<=> Z,label([Z]).
+\end{verbatim}
+}
+%
+\noindent
+sets the bounded variable {\tt Z} to the truth value of {\tt X \#= Y},
+or {\tt 0}~\footnote{The current version of the {\tt bounds} package
+  does not always seem to propagate entailment into the values of
+  reified variables.}.
+
+A reader familiar with the finite domain library of
+Sicstus~\cite{sicstus-manual} will have noticed that the syntax of
+{\tt bounds} is consistent with that library.  It is important to note
+however, {\tt bounds} maintains only the upper and lower bounds of a
+variables as its attributes, (along, of course with constraints on
+those variables) rather than an explicit vector of permissable values.
+As a result, {\tt bounds} may not be suitable for large or complex
+constraint problems.
+
+\subsection{The {\tt bounds} API}
+
+Note that {\tt bounds} does not perform error checking, but instead
+relies on the error checking of lower-level comparison and arithmetic
+operators.
+
+\begin{description}
+
+\ournewitem{in(-Variable,+Bound)}{bounds}\index{\texttt{in/2}}
+%
+Adds the constraint {\tt Bound} to {\tt Variable}, where {\tt Bound}
+should be of the form {\tt Low..High}, with {\tt Low} and {\tt High}
+instantiated to integers.  This constraint ensures that any value of
+{\tt Variable} must be greater than or equal to {\tt Low} and less
+than or equal to {\tt High}.  Unlike some finite-domain constraint
+systems, it does {\em not} materialize a vector of currently allowable
+values for {\tt Variable}.
+
+Variables that have not had their domains explicitly constrained are
+considered to be in the range {\tt min\_integer}..{\tt max\_integer}.
+
+%\ourrepeatitem{\#/\(Expr1,Expr2)}{bound}\index{\texttt{\#>/2}}
+%\ourrepeatitem{\#\\/(Expr1,Expr2)}{bound}\index{\texttt{\#>/2}}
+%\ourrepeatitem{\#\(Expr1,Expr2)}{bound}\index{\texttt{\#>/2}}
+%\ournewitem{\#\(Expr1,Expr2)}{bound}\index{\texttt{\#>/2}}
+
+\ourrepeatnewitem{\#>(Expr1,Expr2)}{bounds}\index{\texttt{\#>/2}}
+\ourrepeatnewitem{\#<(Expr1,Expr2)}{bounds}\index{\texttt{\#</2}}
+\ourrepeatnewitem{\#>=(Expr1,Expr2)}{bounds}\index{\texttt{\#>=/2}}
+\ourrepeatnewitem{\#=<(Expr1,Expr2)}{bounds}\index{\texttt{\#=</2}}
+\ourrepeatnewitem{\#=(Expr1,Expr2)}{bounds}\index{\texttt{\#=/2}}
+\ournewitem{\#\\=(Expr1,Expr2)}{bounds} %\index{\texttt{\#\=/2}}
+%
+Ensures that a given relation holds between {\tt Expr1} and {\tt
+  Expr2}.  Within these constraints, expressions may contain the
+functions {\tt +/2}, {\tt -/2}, {\tt */2}, {\tt +/2}, {\tt +/2}, {\tt
+  +/2}, {\tt mod/2}, and {\tt abs/1} in addition to integers and
+variables.
+
+\ourrepeatnewitem{\#<=>(Const1,Const2)}{bounds}\index{\texttt{\#>/2}}
+\ourrepeatnewitem{\#=>(Const1,Const2)}{bounds}\index{\texttt{\#>/2}}
+\ournewitem{\#<=(Const1,Const2)}{bounds}\index{\texttt{\#>/2}}
+%
+Constrains the truth-value of {\tt Const1} to have the speficied
+logical relation (``iff'', ``only-if'' or ``if'') to {\tt Const2},
+where {\tt Const1} and {\tt Const2} have one of the six relational
+operators above.  
+
+\ournewitem{all\_different(+VarList)}{bounds}\index{\texttt{all\_different/1}}
+%
+{\tt VarList} must be a list of variables: constrains all variables in
+{\tt VarList} to have different values.
+
+\ournewitem{sum(VarList,Op,?Value)}{bounds}\index{\texttt{sum/3}}
+%
+{\tt VarList} must be a list of variables and {\tt Value} an integer
+or variable: constrains the sum of all variables in {\tt VarList} to
+have the relation {\tt Op} to {\tt Value} (see preceding example).
+
+\ournewitem{labeling(+Opts,+VarList}{bounds}\index{\texttt{labelling/2}}
+%
+This predicate succeeds if it can assign a value to each variable in
+{\tt VarList} such that no constraint is violated.  Note that
+assigning a value to each constrained variable is equivalent to
+deriving a solution that satisfies all constraints on the variables,
+which may be intractible depending on the constraints.  {\tt Opts}
+allows some control over how value assignment is performed in deriving the solution.
+%
+\begin{itemize}
+\item {\tt leftmost} Assigns values to variables in the order in which
+  they occur.  For example the query:
+%
+{\small
+\begin{verbatim}
+|?- X in 1..4,Y in 1..3,X #< Y,labeling([leftmost],[X,Y]),writeln([X,Y]),fail.
+[1,2]
+[1,3]
+[2,3]
+
+no
+\end{verbatim}
+}
+%
+instantiates {\tt X} and {\tt Y} to all values that satisfy their
+constraints, and does so by considering each value in the domain of
+{\tt X}, checking whether it violates any constraints, then
+considering each value of {\tt Y} and checking whether it violates any
+constraints.
+%
+\item {\tt ff} This ``first-fail'' strategy assignes values to
+  variables based on the size of their domains, from smallest to
+  largest.  By adopting this strategy, it is possible to perform a
+  smaller search for a satisfiable solution because the most
+  constrained variables may be considered first (though the bounds of
+  the variable are checked rather than a vector of allowable values).  
+%
+\item {\tt min} and {\tt max} This strategy labels variables in the
+  order of their minimal lower bound or maximal upper bound.
+%
+\item {\tt min(Expr)} and {\tt max(Expr)} This strategy labels the
+  variables so that their assignment causes {\tt Expr} to have a
+  minimal or maximal value.  Consider for example how these strategies
+  would affect the labelling of the preceding query:
+{\small
+\begin{verbatim}
+|?- X in 1..4,Y in 1..3,X #< Y,labeling([min(Y)],[X,Y]),writeln([X,Y]),fail.
+[1,2]
+
+no
+|?- X in 1..4,Y in 1..3,X #< Y,labeling([max(X)],[X,Y]),writeln([X,Y]),fail.
+[2,3]
+
+no
+\end{verbatim}
+}
+\end{itemize}
+
+\ournewitem{label(+VarList)}{bounds}\index{\texttt{label/1}}
+%
+Shorthand for {\tt labeling([leftmost],+VarList)}.
+
+\ournewitem{indomain(?Var)}{bounds}\index{\texttt{}}
+%
+Unifies {\tt Var} with an element of its domain, and upon sucessive
+backttrakcing, with all other elements of its domain.
+
+\ournewitem{serialized(+BeginList,+Durations}{bounds}\index{\texttt{serialized/2}}
+% 
+{\tt serialized/2} can be useful for scheduling problems.  As input it
+takes a list of variables or integers representing the beginnings of
+temporal events, along with a list of non-negative intergers
+indicating the duration of each event in {\tt BeginList}.  The effect
+of this predicate is to constrain each of the events in {\tt
+  BeginList} to have a start time such that their durations do not
+overlap.  As an example, consier the query
+%
+{\small
+\begin{verbatim}
+|?- X in 1..10, Y in 1..10, serialized([X,Y],[8,1]),label([X,Y]),writeln((X,Y)),fail.
+\end{verbatim}
+}
+%
+In this query event {\tt X} is taken to have duration of {\tt 8}
+units, while event {\tt Y} is taken to have duration of {\tt 1} unit.
+Executing this query will instantiate {\tt X} and {\tt Y} to many
+different values, such as {\tt (1,9)}, {\tt (1,10)}, and {\tt (2,10)}
+where {\tt X} is less than {\tt Y}, but also {\tt (10,1)}, {\tt
+  (10,2)} and many others where {\tt Y} is less than {\tt X}.  Refining the query as
+%
+{\small
+\begin{verbatim}
+X in 1..10, Y in 1..10, serialized([X,Y],[8,1]),X #< Y,label([X,Y]),writeln((X,Y)),fail.
+\end{verbatim}
+}
+%
+removes all solutions where {\tt Y} is less than {\tt X}.
+
+\ournewitem{lex\_chain(+List)}{bounds}\index{\texttt{}}
+%
+{\tt lex\_chain/1} takes as input a list of lists of variables and
+integers, and enforces the constraint that each element in a given
+list is less than or equal to the elements in all succeeding lists.
+As an example, consider the query
+%
+{\small
+\begin{verbatim}
+|?- X in 1..3,Y in 1..3,lex_chain([[X],[2],[Y]]),label([X,Y]),writeln([X,Y]),fail.
+[1,2]
+[1,3]
+[2,2]
+[2,3]
+\end{verbatim}
+}
+%
+{\tt lex\_chain/1} ensures that {\tt X} is less than or equal to {\tt
+  2} which is less than or equal to {\tt Y}.
+
+% Not 100% sure what they mean here.
+%\ournewitem{tuples\_in/2}{bounds}\index{\texttt{}}
+
+\end{description}
+

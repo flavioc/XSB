@@ -1,4 +1,4 @@
-
+5
 \chapter{sgml and xpath: SGML/XML/HTML Parsers and XPath}
 
   \begin{center}
@@ -112,7 +112,7 @@ will parse the document and bind {\tt Term} to the following Prolog term:
 
 
 
-\index{{\tt CDATA}}
+\index{\texttt{CDATA}}
 \noindent
 The XML document is converted into a list of Prolog terms of the form {\tt
   element(\emph{Name},\emph{Attributes},\emph{Content})}.  Each term
@@ -181,12 +181,12 @@ needed only for advanced uses of the package.
   The list {\it Content}  can have the following members:
 %%
   \begin{description}
-    \index{{\tt CDATA}}
+    \index{\texttt{CDATA}}
   \item[A Prolog atom]\mbox{}\\
     Atoms are used to represent character strings, i.e., {\tt CDATA}. 
 
-    \index{{\tt NAMES}}
-    \index{{\tt NUMBER}}
+    \index{\texttt{NAMES}}
+    \index{\texttt{NUMBER}}
   \item[{\bf element}{\bf (}{\it Name, Attributes, Content}{\bf
     )}]\mbox{}\\{\it Name} is the name of the element tag. Since SGML is 
     case-insensitive, all element names are returned as lowercase atoms.
@@ -227,12 +227,12 @@ needed only for advanced uses of the package.
     %%
     Note that entity names are case sensitive in both SGML and XML.
 
-    \index{{\tt SDATA}}
+    \index{\texttt{SDATA}}
   \item[{\bf sdata}{\bf (}{\it Text}{\bf )}]\mbox{}\\
     If an entity with declared content-type {\tt SDATA} is encountered, this 
     term is used. The data of the entity instantiates {\it Text}.
 
-    \index{{\tt NDATA}}
+    \index{\texttt{NDATA}}
   \item[{\bf ndata}{\bf (}{\it Text}{\bf )}]\mbox{}\\
     If an entity with declared content-type {\tt NDATA} is encountered, this 
     term is used. The data instantiates {\it Text}.
@@ -256,9 +256,9 @@ needed only for advanced uses of the package.
     a the variable \emph{DTD} gets bound to
     the DTD object created out of the DTD supplied with the document.
 
-    \index{{\tt xml}}
-    \index{{\tt sgml}}
-    \index{{\tt xmlns}}
+    \index{\texttt{xml}}
+    \index{\texttt{sgml}}
+    \index{\texttt{xmlns}}
   \item[{\bf dialect}{\bf (}{\it +Dialect}{\bf )}]\mbox{}\\
     Specify the parsing dialect. The supported dialects are
     {\tt sgml} (default),
@@ -271,8 +271,8 @@ needed only for advanced uses of the package.
     value using the XML reserved attribute {\bf xml:space}. See
     Section~\ref{sec:space} for details.
 
-    \index{{\tt token}}
-    \index{{\tt integer}}
+    \index{\texttt{token}}
+    \index{\texttt{integer}}
   \item[{\bf number}{\bf (}{\it +NumberMode}{\bf )}]\mbox{}\\
     Determines how attributes of type {\tt NUMBER} and {\tt NUMBERS} are
     handled.  If {\tt token} is specified (the default) they are passed as
@@ -286,7 +286,7 @@ needed only for advanced uses of the package.
     negative values are silently accepted and the minus sign is ignored.
 
 
-    \index{{\tt false}}
+    \index{\texttt{false}}
   \item[{\bf defaults}{\bf (}{\it +Bool}{\bf )}]\mbox{}\\
     Determines how default and fixed attributes from the DTD are used.  By
     default, defaults are included in the output if they do not appear in
@@ -340,13 +340,13 @@ modes are:
   white space handling to the application. This is the default mode for
   the XML dialect. 
 
-  \index{{\tt sgml} space mode}
+  \index{\texttt{sgml} space mode}
 \item[{\bf space}{\bf (default)}]\mbox{}\\
   In addition to {\tt sgml} space-mode, all consecutive whitespace is 
   reduced to a single space-character.
 
-  \index{{\tt default} space mode}
-  \index{{\tt preserve} space mode}
+  \index{\texttt{default} space mode}
+  \index{\texttt{preserve} space mode}
 \item[{\bf space}{\bf (remove)}]\mbox{}\\
   In addition to {\tt default}, all leading and trailing white-space is 
   removed from {\tt CDATA} objects. If, as a result, the {\tt CDATA} 
@@ -369,8 +369,8 @@ modes are:
 
 \subsection{XML documents}\label{sec:xml}
 
-\index{{\tt sgml}}
-\index{{\tt xml}}
+\index{\texttt{sgml}}
+\index{\texttt{xml}}
 The parser can operate in two modes:
 the {\tt sgml} mode and
 the {\tt xml} mode, as 
@@ -407,8 +407,8 @@ Switching to XML mode implies:
   In XML mode, underscore (\verb$_$) and colon (\verb$:$) are
   allowed in names. 
 
-  \index{{\tt preserve} space mode}
-  \index{{\tt remove} space mode}
+  \index{\texttt{preserve} space mode}
+  \index{\texttt{remove} space mode}
 \item \emph{White-space handling}\mbox{}\\
   White space mode is set to {\tt preserve}. In addition,
   the XML reserved attribute
@@ -429,7 +429,7 @@ Switching to XML mode implies:
 
 \subsubsection{XML Namespaces}\label{sec:xmlns}
 
-\index{{\tt xmlns} dialect}
+\index{\texttt{xmlns} dialect}
 Using the dialect {\tt xmlns}, the parser will recognize XML 
 namespace prefixes. In this case, the names of elements are returned as a term 
 of the format
@@ -566,15 +566,15 @@ which might not be covered by the {\tt load\_structure/4} predicate.
 
 
     \begin{description}
-      \index{{\tt sgml}}
+      \index{\texttt{sgml}}
     \item[{\tt sgml}]\mbox{}\\
       The default dialect. This implies markup is case-insensitive and
       standard SGML abbreviation is allowed (abbreviated attributes and
       omitted tags). 
-      \index{{\tt xml}}
+      \index{\texttt{xml}}
     \item[{\tt xml}]\mbox{}\\
       This dialect is selected automatically if the processing instruction
-      \verb$<?xml ...>$ is encountered.  \index{{\tt xmlns}}
+      \verb$<?xml ...>$ is encountered.  \index{\texttt{xmlns}}
     \item[{\tt xmlns}]\mbox{}\\
       Process file as XML file with namespace support. 
     \end{description}
@@ -633,16 +633,16 @@ which might not be covered by the {\tt load\_structure/4} predicate.
     
 
     \begin{description}
-      \index{{\tt file}}
+      \index{\texttt{file}}
     \item[{\tt file}]\mbox{}\\
       Default.  Parse everything upto the end of the input.
-      \index{{\tt element}}
+      \index{\texttt{element}}
     \item[{\tt element}]\mbox{}\\
       The parser stops after reading the first element. Using {\tt source(\emph{Stream})}, this implies reading is stopped as soon as the
       element is complete, and another call may be issued on the same stream
       to read the next element. 
 
-      \index{{\tt declaration}}
+      \index{\texttt{declaration}}
     \item[{\tt declaration}]\mbox{}\\
       This may be used to stop the parser after reading the first
       declaration.  This is useful if we want to parse only the {\tt doctype}
@@ -662,7 +662,7 @@ which might not be covered by the {\tt load\_structure/4} predicate.
       Suppress all messages.
     \item[print]\mbox{}\\
       Default.  Print messages.
-      \index{{\tt informational}}
+      \index{\texttt{informational}}
       
     \end{description}
     
@@ -673,7 +673,7 @@ which might not be covered by the {\tt load\_structure/4} predicate.
 
 \subsection{External Entities}
 
-\index{{\tt DOCTYPE} declaration}
+\index{\texttt{DOCTYPE} declaration}
 While processing an SGML document the document may refer to external 
 data. This occurs in three places: external parameter entities, normal 
 external entities and the {\tt DOCTYPE} declaration. The current version 

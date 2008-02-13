@@ -193,16 +193,15 @@ memberchk/2}, respectively.
 \section{Attributed Variables} \label{sec:attributed-variables}
 %=============================
 
+\index{Prologs!hProlog}
+\index{Prologs!SWI}
+%
 Attributed variables are a special data type that associates variables
 with arbitrary attributes as well as supports extensible unification.
 Attributed variables have proven to be a flexible and powerful
 mechanism to extend a classic logic programming system with the
-ability of constraint solving.  They have been implemented in SICStus
-\cite{sicstus-manual}, ECL$^i$PS$^e$ \cite{eclipse-manual} and
-hProlog \footnote{In \version, the implementation of attributed
-  variables is compatible with hProlog.  This allows the programmer
-  more control over structuring attributes than our previous
-  implementation, whose API was modeled on SICStus.}  \cite{hprolog}.
+ability of constraint solving.  Our low-level API for constraints
+closely resembles that of hProlog~\cite{hprolog} and SWI~\cite{SWI}.
 
 \subsection{Lowlevel Interface}
 %
@@ -379,6 +378,55 @@ cyclic terms. Attributed variables are handles as normal
 variables. Associated hooks are not executed~\footnote{In \version ,
   {\tt unifiable/3} is written as a Prolog predicate and so is slower
   than many of the predicates in this section.}.
+
+\ourmoditem{setarg(+Index,+Term,+Value)}{constraintLib}\index{\texttt{setarg/3}}
+%
+The predicate {\tt setarg/3} provides an efficient but non-logical way
+to update argument {\tt Index} of a Prolog term {\tt Term} to {\tt
+  Value} via destructive assignment and without the necessity of
+copying {\tt Term}.  {\tt setarg/3} should be used sparingly, to
+ensure both clarity and portability of code.
+
+{\bf Example}
+{\small
+\begin{verbatim}
+|?- X = p(f(1),g(2),r([a])),
+    writeln(zero(X)),
+    (  set_arg(X,2,g([b])),
+       writeln(one(X)),
+       fail
+     ; writeln(two(X))).
+zero(p(f(1),g(2),r([a])))
+one(p(f(1),g([b]),r([a])))
+two(p(f(1),g(2),r([a])))
+
+X = p(f(1),g(2),r([a]))
+\end{verbatim}
+}
+
+{\bf Error Cases} 
+\bi
+\item 	{\tt Index} is a variable
+\bi
+\item    {\tt instantiation\_error}
+\ei
+\item 	{\tt Index} neither a variable nor an integer
+\bi
+\item    {\tt type\_error(integer,Index)}
+\ei
+\item 	{\tt Index} is less than 0
+\bi
+\item    {\tt domain\_error(not\_less\_than\_zero,Index)}
+\ei
+\item 	{\tt Term} is a variable
+\bi
+\item    {\tt instantiation\_error}
+\ei
+\item 	{\tt Term} neither a variable nor a compound term
+\bi
+\item    {\tt type\_error(integer,Index)}
+\ei
+\ei
 
 \end{description}
 
