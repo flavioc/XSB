@@ -146,13 +146,13 @@ to parse SGML, XML, HTML, and XHTML documents
 respectively.
 %%
 \begin{description}
-  \index{load\_sgml\_structure/3}
+  \index{\texttt{load\_sgml\_structure/3}}
 \item[load\_sgml\_structure({\it +Source, -Content, -Warn})]\mbox{}
-  \index{load\_xml\_structure/3}
+  \index{\texttt{load\_xml\_structure/3}}
 \item[load\_xml\_structure({\it +Source, -Content, -Warn})]\mbox{}
-  \index{load\_html\_structure/3}
+  \index{\texttt{load\_html\_structure/3}}
 \item[load\_html\_structure({\it +Source, -Content, -Warn})]\mbox{}
-  \index{load\_xhtml\_structure/3}
+  \index{\texttt{load\_xhtml\_structure/3}}
 \item[load\_xhtml\_structure({\it +Source, -Content, -Warn})]\mbox{}
 \end{description}
 %%
@@ -166,7 +166,7 @@ needed only for advanced uses of the package.
 
 
 \begin{description}
-  \index{load\_structure/4}
+  \index{\texttt{load\_structure/4}}
 \item[{\bf load\_structure}{\bf (}{\it +Source, -Content, +Options, -Warn}{\bf )}]\mbox{}
   \\
   {\it Source} can have one of the following forms:
@@ -458,17 +458,17 @@ for handling the DTD.
 
 
 \begin{description}
-  \index{new\_dtd/2}
+  \index{\texttt{new\_dtd/2}}
 \item[{\bf new\_dtd}{\bf (}{\it +DocType, -DTD, -Warn}{\bf )}]\mbox{}\\Creates an empty DTD for the named {\it DocType}. The returned 
   DTD-reference is an opaque term that can be used in the other predicates
   of this package. {\it Warn} is the list of warnings generated.
 
-  \index{free\_dtd/1}
+  \index{\texttt{free\_dtd/1}}
 \item[{\bf free\_dtd}{\bf (}{\it +DTD, -Warn}{\bf )}]\mbox{}\\
   Deallocate all resources associated to the DTD. Further use of {\it DTD}
   is invalid. {\it Warn} is the list of warnings generated.
 
-  \index{open\_dtd/3}
+  \index{\texttt{open\_dtd/3}}
 \item[{\bf open\_dtd}{\bf (}{\it +DTD, +Options, -Warn}{\bf )}]\mbox{}\\
    This opens and loads a DTD from a specified location (given in the
    \emph{Options} parameter (see next).
@@ -485,8 +485,8 @@ for handling the DTD.
    %%
  
 
-  \index{dtd/3}
-  \index{doctype}
+  \index{\texttt{dtd/3}}
+  \index{\texttt{doctype}}
 \item[{\bf dtd}{\bf (}{\it +DocType, -DTD, -Warn}{\bf )}]\mbox{}\\
   Certain DTDs are part of the system and have known
   doctypes. Currently, 'HTML' and 'XHTML' are the only recognized built-in
@@ -497,7 +497,7 @@ for handling the DTD.
   creates a dtd object for it.  {\it Warn} is the list of warnings
   generated.
 
-  \index{dtd/3}
+  \index{\texttt{dtd/3}}
 \item[{\bf dtd}{\bf (}{\it +DocType, -DTD, +DtdFile -Warn}{\bf )}]\mbox{}\\
   
   The predicate parses the DTD present at the location \emph{DtdFile} and
@@ -514,7 +514,7 @@ The following primitives are used only for more complex types of parsing,
 which might not be covered by the {\tt load\_structure/4} predicate. 
 
 \begin{description}
-  \index{new\_sgml\_parser/2}
+  \index{\texttt{new\_sgml\_parser/2}}
 \item[{\bf new\_sgml\_parser}{\bf (}{\it -Parser, +Options, -Warn}{\bf
     )}]\mbox{}\\Creates a new parser. {\it Warn} is the list of warnings
   generated. A parser can be used one or multiple times for parsing
@@ -534,14 +534,14 @@ which might not be covered by the {\tt load\_structure/4} predicate.
 
 
 
-  \index{free\_sgml\_parser/1}
+  \index{\texttt{free\_sgml\_parser/1}}
 \item[{\bf free\_sgml\_parser}{\bf (}{\it +Parser, -Warn}{\bf
     )}]\mbox{}\\Destroy all resources related to the parser. This does not
   destroy the DTD if the parser was created using the {\tt dtd(\emph{DTD})}
   option. {\it Warn} is the list of warnings generated during parsing (can
     be empty).
 
-  \index{set\_sgml\_parser/2}
+  \index{\texttt{set\_sgml\_parser/2}}
 \item[{\bf set\_sgml\_parser}{\bf (}{\it +Parser, +Option, -Warn}{\bf
     )}]\mbox{}\\Sets attributes to the parser. {\it Warn} is the list of
   warnings generated. \emph{Options} is a list that can contain the
@@ -605,7 +605,7 @@ which might not be covered by the {\tt load\_structure/4} predicate.
     {\bf sgml\_parse/3}).
   \end{description}
   
-  \index{sgml\_parse/3}
+  \index{\texttt{sgml\_parse/3}}
 \item[{\bf sgml\_parse}{\bf (}{\it +Parser, +Options, -Warn}{\bf
     )}]\mbox{}\\Parse an XML file.  The parser can operate in two input and
   two output modes. Output is a structured term as described with {\bf
@@ -891,7 +891,7 @@ The program needs to include the following directive:
 XPath query evaluation is done by using the {\tt parse\_xpath}  predicate.
 
 \begin{description}
-  \index{parse\_xpath/4}
+  \index{\texttt{parse\_xpath/4}}
 \item[{\bf parse\_xpath}{\bf (}{\it +Source, +XPathQuery, -Output, +NamespacePrefixList}{\bf )}]\mbox{}\\
   {\it Source} is a term of the format {\tt url({\it {url}})}, {\tt
     file({\it {filename}})} or {\tt string({\it

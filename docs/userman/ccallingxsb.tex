@@ -1187,7 +1187,7 @@ but otherwise has no effect.
 \subsection{Obtaining Information about Errors}
 
 \begin{description}
-\ouritem{char * xsb\_get\_init\_error\_message()} \index{xsb\_get\_error\_message}
+\ouritem{char * xsb\_get\_init\_error\_message()} \index{\texttt{xsb\_get\_error\_message}}
 %
 Used to find error messages if {\tt xsb\_init\_string()} or {\tt
   xsb\_init()} returns {\tt XSB\_ERROR}.  Any errors returned by these
@@ -1195,7 +1195,7 @@ functions have type {\tt init\_error}.  Because initialization errors
 occur before XSB or any of its threads have been initialized,
 initialization errors do not require a thread context for input.
 
-\ouritem{char * xsb\_get\_error\_type(th\_context *th)} \index{xsb\_get\_error\_type}
+\ouritem{char * xsb\_get\_error\_type(th\_context *th)} \index{\texttt{xsb\_get\_error\_type}}
 %
 If a function called for {\tt th} returned {\tt XSB\_ERROR} this
 function provides a pointer to a string representing the type of the
@@ -1205,7 +1205,7 @@ initialization of XSB, and {\tt unrecoverable\_error} for errors from
 which no recovery is possible for XSB (e.g. inability to allocate new
 memory).  
 
-\ouritem{char *xsb\_get\_error\_message(th\_context *th)}\index{xsb\_get\_error\_message}
+\ouritem{char *xsb\_get\_error\_message(th\_context *th)}\index{\texttt{xsb\_get\_error\_message}}
 %
 If a function called for {\tt th} returned {\tt XSB\_ERROR} this
 function provides a pointer to a string representing a message
@@ -1220,7 +1220,7 @@ portion of execution, messages are as in Volume 1 {\em Exception
 \begin{description}
 
 \ouritem{int xsb\_ccall\_thread\_create(th\_context *callingThread, th\_context **newThread)}
-\index{xsb\_ccall\_thread\_create}
+\index{\texttt{xsb\_ccall\_thread\_create}}
 %
 Causes {\tt callingThread} to create a thread pointed to by {\tt
   newThread}.  {\tt newThread} runs exactly the same interpreter loop
@@ -1232,16 +1232,16 @@ specific task or a detached thread, rather than one that executes a
 command loop, simply call the query {\tt thread\_create/[2,3]} from
 one of the query functions.
 
-\ouritem{th\_context *xsb\_get\_main\_thread()}\index{xsb\_get\_main\_thread}
+\ouritem{th\_context *xsb\_get\_main\_thread()}\index{\texttt{xsb\_get\_main\_thread}}
 %
 Returns a pointer to the thread context of XSB's main thread.  If XSB
 has not been initialized or has been closed this function returns 0.
 
 \ouritem{xsb\_tid xsb\_thread\_id\_to\_context(th\_context *th)}
-\index{xsb\_thread\_id\_to\_context}
+\index{\texttt{xsb\_thread\_id\_to\_context}}
 
 \ouritem{th\_context *xsb\_thread\_context\_to\_id(xsb\_tid id)}
-\index{xsb\_thread\_context\_to\_id}
+\index{\texttt{xsb\_thread\_context\_to\_id}}
 
 \end{description}
 
