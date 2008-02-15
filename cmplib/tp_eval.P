@@ -74,6 +74,7 @@ int_eq(Op, integer(N), N) :-
 /*     f(X,Y):	  code(X,R1),code(Y,R2),Corres. Inst.	in R1		*/
 /*     ... ... 								*/
 /*======================================================================*/
+%:- import console_writeln/1 from standard.
 
 eval_exp(varocc(_,Prag),R,Pil,Pilr,_,Tin,Tout,EPN) :-
 	eval_var(Prag,R,Pil,Pilr,Tin,Tout,EPN).
@@ -98,6 +99,12 @@ eval_exp(structure(Sym,Args),R,Pil,Pilr,HoldR,Tin,Tout,EPN) :-
 	  message(('         involving is/2 or =:=/2 in clause #', NC,
 		   ' of predicate ', P, '/', A))
 	).
+% TLS: added this clause for pi, e and other constants we might like.
+eval_exp(constant(Sym),R,[Inst|Pil],Pil,_,Tin,Tout,e(PredSym,NC)) :-
+	sym_name(Sym,SymName,_),
+	eval_constant(SymName,Val),
+%	console_writeln(eval_exp(Val,R,[Inst|Pil],Pil,_,Tin,Tout,e(PredSym,NC))),
+	eval_exp(Val,R,[Inst|Pil],Pil,_,Tin,Tout,e(PredSym,NC)).
 eval_exp(constant(Sym),R,[Inst|Pil],Pil,_,Tin,Tout,e(PredSym,NC)) :-
 	sym_name(PredSym, P, A), sym_name(Sym, Const, _),
 	error(('non-numeric constant ', Const, ' in a numeric expression')),
@@ -108,6 +115,10 @@ eval_exp(string(Sym),R,[Inst|Pil],Pil,_,Tin,Tout,e(PredSym,NC)) :-
 	error(('non-numeric string ', Sym, ' in a numeric expression')),
 	message(('         in clause #', NC, ' of predicate ', P,'/',A)),
 	Inst = fail, Tin = Tout, R = 0.
+
+:- import pi/1,e/1 from eval.
+eval_constant(pi,real(V)):- pi(V). 
+eval_constant(e,real(V)):- e(V).
 
 eval_binoptab(+,R1,R2,addreg(R2,R1)).
 eval_binoptab(-,R1,R2,subreg(R2,R1)).
@@ -192,9 +203,16 @@ geninline_isindeed(LHS,real(Real),HoldR,Pil,Pilr,Tin,Tout,EPN) :-
 	isindeed_real(LHS,Real,HoldR,Pil,Pilr,Tin,Tout,EPN).
 geninline_isindeed(LHS,structure(Sym,Args),HoldR,Pil,Pilr,Tin,Tout,EPN) :-
 	isindeed_struct(Sym,Args,HoldR,Pil,Pilr,Tin,Tout,EPN,LHS).
-geninline_isindeed(_LHS,constant(Sym),[fail|Pilr],_HoldR,Pilr,Tin,Tin,e(PredSym,NC)) :-
+% TLS: added this clause for pi, e and other constants we might like.
+geninline_isindeed(LHS,constant(Sym),HoldR,Pil,Pilr,Tin,Tout,EPN) :-
+%	console_writeln(isindeed(LHS,constant(Sym),HoldR,Pil,Pilr,Tin,Tout,EPN)),
+	sym_name(Sym,Const,_),
+	eval_constant(Const,real(Val)),
+	isindeed_real(LHS,Val,HoldR,Pil,Pilr,Tin,Tout,EPN).
+geninline_isindeed(_LHS,constant(Sym),_HoldR,[fail|Pilr],Pilr,Tin,Tin,e(PredSym,NC)) :-
 	sym_name(PredSym, P, A),
-	error(('non-numeric string ', Sym, ' in a numeric expression')),
+	sym_name(Sym,Const,_),
+	error(('non-numeric string ', Const, ' in a numeric expression')),
 	message(('         in clause #', NC, ' of predicate ', P,'/',A)).
 geninline_isindeed(_LHS,string(Sym),_HoldR,[fail|Pilr],Pilr,Tin,Tin,e(PredSym,NC)) :-
 	sym_name(PredSym, P, A),
@@ -389,10 +407,15 @@ eval_exp_vc(real(N),R,[Inst|Pil],Pil,_,Tin,Tout,_) :-
 	getreg(Tin,R),
 	hold(R,Tin,Tout),
 	Inst = putfloat(R,N).
+% TLS: added this clause for pi, e and other constants we might like.
+eval_exp_vc(constant(C),R,Pil1,Pil2,HoldR,Tin,Tout,EPN) :-
+	sym_name(C,Const,_),
+	eval_constant(Const,Val),
+	eval_exp_vc(Val,R,Pil1,Pil2,HoldR,Tin,Tout,EPN).
 eval_exp_vc(_,0,[fail|Pilr],Pilr,_HoldR,Tout,Tout,e(PredSym,NC)) :-
 	sym_name(PredSym, P, A),
 	error('variable or numerical constant expected in 2nd arg of is/2'),
-	message(('          in clause #', NC, ' of predicate ', P,'/',A)).
+	message(('          in clause #', NC, ' of predicate ', P,'/',A )).
 
 eval_var_source(Varocc,Loc,Type0,HoldR,Tin,Tout,EPN) :-
 	Varocc = varocc(Vid,Prag),
