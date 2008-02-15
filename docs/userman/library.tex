@@ -211,7 +211,7 @@ XSB value (term, variable, atom, \ldots). Any variable has at most one
 attribute for a particular attribute module.  Attribute modules are
 distinct from XSB modules: although it is most efficient to keep each
 handlers for each attribute module in their own XSB module.
-
+c
 Attributes can be manipulated with the following three predicates
 (\texttt{get\_attr/3}, \texttt{put\_attr/3} and \texttt{del\_attr/2})
 defined in the module \texttt{machine}.
@@ -315,6 +315,112 @@ show_domain(X) :-                            % print out the domain of X
 
 \end{verbatim}
 \end{small}
+
+When writing or porting a constraint package, it is usually useful to
+adjust the way that correct answer substitutions are shown in the
+command line.  This can be controlled using the following two predicates:
+
+\begin{description}
+
+\ourmoditem{install\_attribute\_portray\_hook(Module,Attribute,Handler)}{machine}
+\index{install\_attribute\_portray\_hook/3}
+%
+This hook is called by the command-line interpreter when printing out
+the value of each variable in a top-level query.  When a printing out
+an attributed variable, any appropriate handlers are called to portray
+the constraints represented by the attribute.  As an example, the {\tt
+  bounds} package (Section~\ref{sec:bounds}) uses a hook to print out
+the bounds of variables:
+%
+\begin{small}
+\begin{verbatim}
+| ?- X in 1..10,Y in 1..10,X + 4 #< Y -3.
+
+X = _h629 { bounds : 1 .. 2 }
+Y = _h673 { bounds : 9 .. 10 }
+\end{verbatim}
+\end{small}
+%
+Writing a handler can be as simple as possible or as elaborate as
+desired.  In the case of {\tt bounds} the handler is simple:
+
+{\small
+{\tt bounds\_attr\_portray\_hook(bounds(L,U,\_)) :- write(L..U).}
+}
+
+The hook is installed when the constraint package is loaded by placing
+in the package loader directive such as:
+
+{\small
+{\tt  :- install\_attribute\_portray\_hook(bounds,Attr,bounds\_attr\_portray\_hook(Attr)).}
+}
+
+Note that the hook will be indexed on the module associated with the
+attribute (in this case {\tt bounds}).  XSB's command-line interpreter
+will unify the second argument of the portray hook with the attribute,
+and then call {\tt Handler}.
+
+\ourmoditem{install\_attribute\_constraint\_hook(Module,Vars,Names,Handler)}{machine}
+\index{install\_attribute\_constraint\_hook/4}
+%
+For some constraint packages, it may not be particularly useful to
+associate constraints with variables: instead, the projection of
+global constraints onto the variables of the top-level query may be
+more useful.  This is the case in the CLP(R) package
+(Section~\ref{sec:clpr}), where the command-line interaction may look as follows:
+%
+{\small
+\begin{verbatim}
+| ?- {X = 2*Y,Y >= 7},inf(X,F).
+ { X >= 14.0000 }
+ { Y = 0.5000 * X }
+
+X = _h8841
+Y = _h9506
+F = 14.0000
+\end{verbatim}
+}
+%
+In XSB, the (projection of the) global constraints in CLP(R) are
+displayed by the following routines:
+%
+{\small
+\begin{verbatim}
+clpr_portray_varlist(Vars,Names):- 
+	filter_varlist(Vars,Names,V1,N1),
+	dump(V1,N1,Constraints),
+	member(C,Constraints),
+	console_write(' { '), console_write(C),	console_writeln(' } '),
+	fail.
+clpr_portray_varlist(_V,_N).
+
+filter_varlist([],[],[],[]).
+filter_varlist([V1|R1],[N1|R2],[V1|R3],[N1|R4]):- 
+	var(V1),!,
+	filter_varlist(R1,R2,R3,R4).
+filter_varlist([_V1|R1],[_N1|R2],R3,R4):- 
+	filter_varlist(R1,R2,R3,R4).
+\end{verbatim}
+}
+%
+This predicate sets up a call to the CLP(R) library predicate {\tt
+  dump/3}, whose constraints it then writes out to the console.
+Analogous to the portray hook, the console hook is installed using the
+directive:
+%
+{\small
+\begin{verbatim}
+:- install_constraint_portray_hook(clpr,Vars,Names,clpr_portray_varlist(Vars,Names)).
+\end{verbatim}
+}
+%
+If the {\tt clpr} module is loaded, the command line interpreter
+checks any constraint portray hooks upon the first success of a
+top-level goal.  It then unifies the second argument {\tt Vars} with
+the variables of the goal, and {\tt Names} with the names of the
+variables of the goal which are then passed on to {\tt Handler}
+
+\end{description}
 
 \section{{\tt constraintLib}: a library for CLP} \label{constraintLib}
 %====================================================================
@@ -946,10 +1052,13 @@ offset (from the beginning of {\tt Str}) of the last character of {\tt
 
 %-----------------------------------------------------------------------
 
+\comment{
+% taken out -- most people should be using atom_length/2
 \ourmoditem{str\_length(+Str, ?Result)}{string}
 \index{\texttt{str\_length/2}}
 
 Unifies the {\tt Result}  with the length of {\tt Str}.
+}
 
 %%
 \ourmoditem{substring(+String, +BeginOffset, +EndOffset, -Result)}{string}

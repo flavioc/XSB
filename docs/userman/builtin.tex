@@ -159,7 +159,7 @@ textual and not repositionable.
 \ei
 
 %------------------------------------------------------------------------------------------------
-\subsection{I/O Stream Implementation}
+\subsection{I/O Stream Implementation} \label{sec:IO-streams}
 
 A user may note that XSB's I/O streams are small integers, but they
 should not be confused with the file descriptors used by the OS.  The
@@ -214,6 +214,9 @@ provided at the top of the source file:
     #include "standard.h"
 \end{verbatim}
 %%
+If this header is used, the various streams can be used as any other output stream -- e.g. 
+{\tt ?- write(STDWARN,'watch it!')}.
+%
 (Note: the XSB preprocessor is not invoked on clauses typed into an
 interactive XSB session, so the above applies only to programs loaded from
 a file using {\tt consult} and such.)
@@ -1475,6 +1478,46 @@ or alias.
 
 \end{description}
 
+\subsubsection{Term Writing to Designated I/O Streams}
+%
+While XSB has standard I/O streams for errors, warnings, messages, and
+feedback (cf. Section~\ref{sec:IO-streams}), the predicates above
+write to {\tt STDOUT} which is the standard output for the process.
+Most of the time there is no issue with this as these streams are
+aliased to {\tt STDOUT}.  However in a number of circumstances, {\tt
+  STDOUT} may be redirected: a user may have invoked {\tt tell/1}, XSB
+may be invoked through C or interprolog, etc.  In such cases, it may
+be useful to ensure that output goes to one of the other I/O streams.  
+
+\begin{description}
+
+\ourrepeatmoditem{error\_write(?Message)}{standard}\index{\texttt{error\_write/1}}
+\ourmoditem{error\_writeln(?Message)}{standard}\index{\texttt{error\_writeln/1}}
+%
+These predicates output {\tt Message} to XSB's {\tt STDERR} stream,
+rather than to XSB's {\tt STDOUT} stream, as does {\tt write/1} and
+{\tt writeln/1}.  In addition, if {\tt Message} is a comma list, the
+elements in the comma list are output as if they were concatenated
+together.  Each of these predicates must be imported from the module
+{\tt standard}.
+
+\ourrepeatmoditem{console\_write(?Message)}{standard}\index{\texttt{console\_write/1}}
+\ourmoditem{console\_writeln(?Message)}{standard}\index{\texttt{console\_writeln/1}}
+%
+As above, but writes to {\tt STDFDBK}, the console feedback stream.
+
+\ourrepeatmoditem{warning(?Message)}{standard}\index{\texttt{warning/1}}
+\ourmoditem{warningln(?Message)}{standard}\index{\texttt{warningln/1}}
+%
+As above, but writes to {\tt STDFWARN}, the standard warning stream.
+
+\ourrepeatmoditem{message(?Message)}{standard}\index{\texttt{message/1}}
+\ourmoditem{messageln(?Message)}{standard}\index{\texttt{messageln/1}}
+%
+As above, but writes to {\tt STDMSG} the standard stream for messages.
+
+\end{description}
+
 \subsection{Special I/O}
 
 \begin{description}
@@ -2177,6 +2220,15 @@ If {\tt +Expr} evaluates to {\tt Number}, {\tt sign(Number)} returns
 {\tt 1} if {\tt Number} is greater than 0, {\tt 0} if {\tt Number} is
 equal to 0, and {\tt -1} if {\tt Number} is less than 0.
 
+\ournewitem{pi}{Evaluable Functor}\index{\texttt{pi/0}} 
+% 
+Evaluates to $\pi$ within an arithemetic expression.
+
+\ournewitem{e}{Evaluable Functor}\index{\texttt{e/0}} 
+% 
+Evaluates to $e$, the base of the natural logarithm, within an
+arithemetic expression.
+
 \end{description}
 
 \subsubsection{Mathematical Functions from {\tt math.h}}
@@ -2184,11 +2236,11 @@ equal to 0, and {\tt -1} if {\tt Number} is less than 0.
 \index{\texttt{acos/1}} \index{\texttt{asin/1}} \index{\texttt{atan/1}}
 \index{\texttt{log/1}} \index{\texttt{log10/1}}
 
-XSB also allows as evaluable functors, many of the functions form the
+XSB also allows as evaluable functors, many of the functions from the
 C library {\tt math.h}.  Functions included in XSB \version{} are {\tt
-cos/1}, {\tt sin/1}, {\tt tan/1}, {\tt acos/1}, {\tt asin/1}, {\tt
-atan/1}. {\tt log/1}, and {\tt log10/1}.  For their semantics, see
-documentation to {\tt math.h}.
+  cos/1}, {\tt sin/1}, {\tt tan/1}, {\tt acos/1}, {\tt asin/1}, {\tt
+  atan/1}, {\tt log/1} (natural logarithm), and {\tt log10/1}.  For
+  their semantics, see documentation to {\tt math.h}.
 
 \section{Convenience} \label{Convenience}
 These predicates are standard and often self-explanatory, so they are 
