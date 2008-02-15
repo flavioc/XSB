@@ -87,8 +87,9 @@ db_query(Connhandle, QueryHandle, SQLQueryList, ReturnList) :-
 %% prepared statements
 
 db_prepare(ConnHandle, QueryHandle, SQLQueryList) :-
-	(stringify_compound_terms(SQLQueryList, CanSQLQueryList)
-	->  prepareStatement(ConnHandle, QueryHandle, CanSQLQueryList)
+	(stringify_compound_terms(SQLQueryList, CanSQLQueryList),
+	 prepareStatement(ConnHandle, QueryHandle, CanSQLQueryList)
+	-> true
 	;
 	    exception(Number, Mesg),
 	    throw(xsb_error(database(Number), Mesg))
