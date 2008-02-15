@@ -576,7 +576,7 @@ PACKAGE_VERSION=
 PACKAGE_STRING=
 PACKAGE_BUGREPORT=
 
-ac_unique_file="odbc_driver_config.P"
+ac_unique_file="mysqlembedded_driver_config.P"
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>
@@ -1253,8 +1253,8 @@ if test -n "$ac_init_help"; then
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-odbc-libdir=DIR	   the directory where the ODBC library lives
-  --with-odbc-incdir=DIR	   the directory of ODBC include files
+  --with-mysqlembedded-libdir=DIR	   the directory where the MySQL Embedded Server library lives
+  --with-mysqlembedded-incdir=DIR	   the directory of MySQL Embedded Server include files
 
 
 Some influential environment variables:
@@ -1693,9 +1693,9 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 SHELL=/bin/sh
 
 
-# Check whether --with-odbc was given.
-if test "${with_odbc+set}" = set; then
-  withval=$with_odbc;
+# Check whether --with-mysqlembedded was given.
+if test "${with_mysqlembedded+set}" = set; then
+  withval=$with_mysqlembedded;
 fi
 
 
@@ -1837,25 +1837,39 @@ umask 022
 
 /bin/rm config.cache
 
-with_odbc=
-odbc_error=
+with_mysqlembedded=
+mysqlembedded_error=
 
-if test -z "$with_odbc_libdir" ; then
-   libdir=
+if test -z "$with_mysqlembedded_libdir" ; then
+   if test -d /usr/lib/mysql ; then
+      libdir="/usr/lib/mysql"
+   elif test -d /usr/local/lib/mysql ; then
+      libdir="/usr/local/lib/mysql"
+   else
+      echo "***Configuring MySQL failed: cannot find installation; please use the option --with-mysql-libdir"
+      exit 1
+   fi
 else
-   libdir=$with_odbc_libdir
+   libdir=$with_mysqlembedded_libdir
 fi
-if test -z "$with_odbc_incdir" ; then
-   incdir=
+if test -z "$with_mysqlembedded_incdir" ; then
+   if test -d /usr/include/mysql ; then
+       incdir="/usr/include/mysql"
+   elif test -d /usr/local/mysql/include/mysql ; then
+       incdir="/usr/local/mysql/include/mysql"
+   else
+      echo "***Configuring MySQL failed: cannot find installation; please use the option --with-mysql-incdir"
+      exit 1
+   fi
 else
-   incdir=$with_odbc_incdir
+   incdir=$with_mysqlembedded_incdir
 fi
 
-# check if libodbc.so can be found
-# If the ODBC library is missing, set odbc_error
-# If libodbc.so is not in a standard place, we must use --with-odbc-libdir
-if test -n "$with_odbc_libdir" ; then
-   LDFLAGS="-L${with_odbc_libdir} ${LDFLAGS}"
+# check if libmysqld.a can be found
+# If the MySQL Embedded Server library is missing, set mysqlembedded_error
+# If libmysqld.a is not in a standard place, we must use --with-mysqlembedded-libdir
+if test -n "$libdir" ; then
+   LDFLAGS="-L${libdir} -s -lmysqld -lz -lm -lcrypt -lpthread ${LDFLAGS}"
 fi
 
 ac_ext=c
@@ -2779,13 +2793,13 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-{ echo "$as_me:$LINENO: checking for main in -lodbc" >&5
-echo $ECHO_N "checking for main in -lodbc... $ECHO_C" >&6; }
-if test "${ac_cv_lib_odbc_main+set}" = set; then
+{ echo "$as_me:$LINENO: checking for main in -lmysqld" >&5
+echo $ECHO_N "checking for main in -lmysqld... $ECHO_C" >&6; }
+if test "${ac_cv_lib_mysqld_main+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-lodbc  $LIBS"
+LIBS="-lmysqld  $LIBS"
 cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -2820,39 +2834,38 @@ eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
 	 test ! -s conftest.err
        } && test -s conftest$ac_exeext &&
        $as_test_x conftest$ac_exeext; then
-  ac_cv_lib_odbc_main=yes
+  ac_cv_lib_mysqld_main=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-	ac_cv_lib_odbc_main=no
+	ac_cv_lib_mysqld_main=no
 fi
 
 rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
       conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ echo "$as_me:$LINENO: result: $ac_cv_lib_odbc_main" >&5
-echo "${ECHO_T}$ac_cv_lib_odbc_main" >&6; }
-if test $ac_cv_lib_odbc_main = yes; then
+{ echo "$as_me:$LINENO: result: $ac_cv_lib_mysqld_main" >&5
+echo "${ECHO_T}$ac_cv_lib_mysqld_main" >&6; }
+if test $ac_cv_lib_mysqld_main = yes; then
   cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBODBC 1
+#define HAVE_LIBMYSQLD 1
 _ACEOF
 
-  LIBS="-lodbc $LIBS"
+  LIBS="-lmysqld $LIBS"
 
 else
-  odbc_error=yes
+  mysqlembedded_error=yes
 fi
-
 
 # Here we provide additional directories to check headers in
 # AC_CHECK_HEADERS uses CPPFLAGS to find the include path.
 #
-# If any of the headers is not in a standard place, use --with-odbc-incdir
-if test -n "${with_odbc_incdir}"; then
-   CPPFLAGS="-I${with_odbc_incdir} ${CPPFLAGS}"
-   CFLAGS="-I${with_odbc_incdir} ${CPFLAGS}"
+# If any of the headers is not in a standard place, use --with-mysqlembedded-incdir
+if test -n "${incdir}"; then
+   CPPFLAGS="-I${incdir} -D_THREAD_SAFE -D_REENTRANT ${CPPFLAGS}"
+   CFLAGS="-g -W -Wall -I${incdir} ${CPFLAGS}"
 fi
 
 ac_ext=c
@@ -3493,8 +3506,7 @@ done
 
 
 
-
-for ac_header in sql.h sqlext.h sqltypes.h
+for ac_header in mysql.h mysql_com.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
@@ -3628,20 +3640,20 @@ if test `eval echo '${'$as_ac_Header'}'` = yes; then
   cat >>confdefs.h <<_ACEOF
 #define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
- with_odbc=yes
+ with_mysqlembedded=yes
 else
-  odbc_error=yes
+  mysqlembedded_error=yes
 fi
 
 done
 
 
-if test "$odbc_error" = "yes"; then
+if test "$mysqlembedded_error" = "yes"; then
 echo ""
-{ echo "$as_me:$LINENO: WARNING:  ****Your system is missing sql.h, sqlext.h, or sqltypes.h, which are required for ODBC support
-****ODBC driver will be disabled" >&5
-echo "$as_me: WARNING:  ****Your system is missing sql.h, sqlext.h, or sqltypes.h, which are required for ODBC support
-****ODBC driver will be disabled" >&2;}
+{ echo "$as_me:$LINENO: WARNING:  ****Your system is missing mysql.h or mysql_com.h, which are required for MySQL Embedded Server support
+****MySQL Embedded Server driver will be disabled" >&5
+echo "$as_me: WARNING:  ****Your system is missing mysql.h or mysql_com.h, which are required for MySQL Embedded Server support
+****MySQL Embedded Server driver will be disabled" >&2;}
 echo ""
 
 support=no
@@ -3658,14 +3670,15 @@ fi
 
 (
 echo ""
-echo "  ODBC support:                                   $support"
-echo "  ODBC library directory:                         $libdir"
-echo "  ODBC C Flags:                                   $CFLAGS"
-echo "  ODBC Loader Flags:                              $LDFLAGS"
+echo "  MySQL Embedded Server support:                                  $support"
+echo "  MySQL Embedded Server library directory:                        $libdir"
+echo "  MySQL Embedded Server header directory:                         $incdir"
+echo "  MySQL Embedded Server C Flags:                                  $CFLAGS"
+echo "  MySQL Embedded Server Loader Flags:                             $LDFLAGS"
 echo ""
 ) | tee Installation_summary
 
-ac_config_files="$ac_config_files odbc_init.P:odbc_init.in"
+ac_config_files="$ac_config_files mysqlembedded_init.P:mysqlembedded_init.in"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -4234,7 +4247,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
-    "odbc_init.P") CONFIG_FILES="$CONFIG_FILES odbc_init.P:odbc_init.in" ;;
+    "mysqlembedded_init.P") CONFIG_FILES="$CONFIG_FILES mysqlembedded_init.P:mysqlembedded_init.in" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}

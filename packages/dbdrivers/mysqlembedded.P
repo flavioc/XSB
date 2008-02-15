@@ -1,5 +1,5 @@
 /*
-** File: mysql.P
+** File: mysqlembedded.P
 ** Author: Saikat Mukherjee
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
@@ -21,19 +21,22 @@
 **
 */
 
-% This dynamically loads up the MySQL driver.
+% This dynamically loads up the MySQL embedded server driver.
 
 :- import bootstrap_package/2 from packaging.
 :- import slash/1 from machine.
 :- import fmt_write_string/3 from file_io.
-:- import driverMySQL_register/0 from mysql_driver.
-:- import driverMySQL_initialise/0 from mysql_driver.
-
+:- import
+	driverMySQLEmbedded_register/0,
+	driverMySQLEmbedded_initialise/0,
+	driverMySQLEmbedded_lib_init/0
+   from mysqlembedded_driver.
 
 
 :-	slash(Slash),
-	fmt_write_string(Dir, 'dbdrivers%smysql', a(Slash)),
-	bootstrap_package([Dir,cc], mysql_driver),
-	[mysql_driver_config],
-	driverMySQL_register,
-	driverMySQL_initialise.
+	fmt_write_string(Dir, 'dbdrivers%smysqlembedded', a(Slash)),
+	bootstrap_package([Dir,cc], mysqlembedded_driver),
+	[mysqlembedded_driver_config],
+	driverMySQLEmbedded_register,
+	driverMySQLEmbedded_initialise,
+	driverMySQLEmbedded_lib_init. 

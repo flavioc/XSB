@@ -1,4 +1,5 @@
 *.xwam
 Installation_summary
+autom4te.cache
 config.*
 odbc_init.P

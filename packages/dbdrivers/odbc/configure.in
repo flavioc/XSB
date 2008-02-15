@@ -29,7 +29,7 @@ dnl  in the directory containing this script.
 dnl
 dnl
 
-AC_PREREQ(2.12)dnl
+AC_PREREQ(2.53)dnl
 
 AC_INIT(odbc_driver_config.P)
 
@@ -88,7 +88,7 @@ if test -n "$with_odbc_libdir" ; then
    LDFLAGS="-L${with_odbc_libdir} ${LDFLAGS}"
 fi
 
-AC_CHECK_LIB(odbc, , odbc_error=yes)
+AC_CHECK_LIB(odbc, main, , odbc_error=yes)
 
 # Here we provide additional directories to check headers in
 # AC_CHECK_HEADERS uses CPPFLAGS to find the include path.

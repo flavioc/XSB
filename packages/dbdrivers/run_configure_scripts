@@ -10,3 +10,6 @@ cd $curdir
 
 cd mysql; ./configure $*; cat Installation_summary >> ../Installation_summary
 cd $curdir
+
+cd mysqlembedded; ./configure $*; cat Installation_summary >> ../Installation_summary
+cd $curdir

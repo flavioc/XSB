@@ -1,0 +1,6 @@
+*.xwam
+Installation_summary
+config.status
+config.status.lineno
+mysql_init.P
+mysqlembedded_init.P

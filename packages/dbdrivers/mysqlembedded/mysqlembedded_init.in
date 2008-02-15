@@ -1,9 +1,10 @@
-/*
-** File: mysql.P
-** Author: Saikat Mukherjee
+%% @configure_input@
+
+/* File:      mysqlembedded_init.in -- configuration info for MySQL
+** Author(s): kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
-** Copyright (C) The Research Foundation of SUNY, 2002-2006
+** Copyright (C) The Research Foundation of SUNY, 2003-2008
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -19,21 +20,13 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
+** 
 */
 
-% This dynamically loads up the MySQL driver.
 
-:- import bootstrap_package/2 from packaging.
-:- import slash/1 from machine.
-:- import fmt_write_string/3 from file_io.
-:- import driverMySQL_register/0 from mysql_driver.
-:- import driverMySQL_initialise/0 from mysql_driver.
+:- export mysqlembedded_info/2.
 
-
-
-:-	slash(Slash),
-	fmt_write_string(Dir, 'dbdrivers%smysql', a(Slash)),
-	bootstrap_package([Dir,cc], mysql_driver),
-	[mysql_driver_config],
-	driverMySQL_register,
-	driverMySQL_initialise.
+mysqlembedded_info(support, '@support@').
+mysqlembedded_info(libdir,  '@libdir@').
+mysqlembedded_info(ccflags, '@CFLAGS@').
+mysqlembedded_info(ldflags, '@LDFLAGS@').
