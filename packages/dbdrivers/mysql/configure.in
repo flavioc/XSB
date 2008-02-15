@@ -29,7 +29,7 @@ dnl  in the directory containing this script.
 dnl
 dnl
 
-AC_PREREQ(2.12)dnl
+AC_PREREQ(2.53)dnl
 
 AC_INIT(mysql_driver_config.P)
 
@@ -71,12 +71,26 @@ with_mysql=
 mysql_error=
 
 if test -z "$with_mysql_libdir" ; then
-   libdir="/usr/lib/mysql"
+   if test -d /usr/lib/mysql ; then
+      libdir="/usr/lib/mysql"
+   elif test -d /usr/local/lib/mysql ; then
+      libdir="/usr/local/lib/mysql"
+   else
+      echo "***Configuring MySQL failed: cannot find installation; please use the option --with-mysql-libdir"
+      exit 1
+   fi
 else
    libdir=$with_mysql_libdir
 fi
 if test -z "$with_mysql_incdir" ; then
-   incdir="/usr/include/mysql"
+   if test -d /usr/include/mysql ; then
+       incdir="/usr/include/mysql"
+   elif test -d /usr/local/mysql/include/mysql ; then
+       incdir="/usr/local/mysql/include/mysql"
+   else
+      echo "***Configuring MySQL failed: cannot find installation; please use the option --with-mysql-incdir"
+      exit 1
+   fi
 else
    incdir=$with_mysql_incdir
 fi
@@ -88,7 +102,7 @@ if test -n "$libdir" ; then
    LDFLAGS="-L${libdir} ${LDFLAGS}"
 fi
 
-AC_CHECK_LIB(mysqlclient, , mysql_error=yes)
+AC_CHECK_LIB(mysqlclient, main, , mysql_error=yes)
 # Here we provide additional directories to check headers in
 # AC_CHECK_HEADERS uses CPPFLAGS to find the include path.
 #

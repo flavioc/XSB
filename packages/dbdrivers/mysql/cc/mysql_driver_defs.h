@@ -35,7 +35,8 @@
 #include "driver_manager_defs.h"
 
 #define MAX_HANDLES 25
-#define MAX_QUERIES 25
+#define MySQL_MAX_QUERIES 25
+#define MAX_PREP_QUERIES 25
 
 /****** data structures for handles *****/
 
@@ -49,33 +50,35 @@ struct driverMySQL_queryInfo
 {
 	char* query;
 	char* handle;
+        int returnFields;
 	MYSQL_RES* resultSet;
 	struct driverMySQL_connectionInfo* connection;
 };
 
-/*struct driverMySQL_preparedresultset
+struct driverMySQL_preparedresultset
 {
 	MYSQL_STMT* statement;
 	struct xsb_queryHandle* handle;
 	int returnFields;
 	struct xsb_data** metaInfo;
-};*/
+        MYSQL_BIND* bindResult;
+};
 
 
 /****** function declarations *******/
 
 DllExport int call_conv driverMySQL_initialise();
-DllExport int call_conv driverMySQL_connect(struct xsb_connectionHandle* handle);
-DllExport int call_conv driverMySQL_disconnect(struct xsb_connectionHandle* handle);
-DllExport struct xsb_data** call_conv driverMySQL_query(struct xsb_queryHandle* handle);
+int driverMySQL_connect(struct xsb_connectionHandle* handle);
+int driverMySQL_disconnect(struct xsb_connectionHandle* handle);
+struct xsb_data** driverMySQL_query(struct xsb_queryHandle* handle);
+int driverMySQL_prepareStatement(struct xsb_queryHandle* handle);
+struct xsb_data** driverMySQL_execPrepareStmt(struct xsb_data** bindvalues, struct xsb_queryHandle* handle);
+int driverMySQL_closeStatement(struct xsb_queryHandle* handle);
+char* driverMySQL_errorMesg();
 DllExport int call_conv driverMySQL_register();
-DllExport char* call_conv driverMySQL_errorMesg();
-
-//int driverMySQL_prepareStatement(char*, struct xsb_queryHandle*);
-//struct xsb_data** driverMySQL_execPrepareStmt(struct xsb_data**, struct xsb_queryHandle*);
-//struct xsb_data** driverMySQL_prepNextRow(struct driverMySQL_preparedresultset*);
-
-extern DllExport int call_conv registerXSBDriver(char* dr, int num);
-extern DllExport int call_conv registerXSBFunction(char* dr, int type, union functionPtrs* func);
 
 
+DllExport extern int call_conv registerXSBDriver(char* dr, int num);
+DllExport extern int call_conv registerXSBFunction(char* dr, int type, union functionPtrs* func);
+
+#define NUMBER_OF_MYSQL_DRIVER_FUNCTIONS 7
