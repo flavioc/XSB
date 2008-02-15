@@ -1843,8 +1843,8 @@ mysqlembedded_error=
 if test -z "$with_mysqlembedded_libdir" ; then
    if test -d /usr/lib/mysql ; then
       libdir="/usr/lib/mysql"
-   elif test -d /usr/local/lib/mysql ; then
-      libdir="/usr/local/lib/mysql"
+   elif test -d /usr/local/mysql/lib/mysql ; then
+      libdir="/usr/local/mysql/lib/mysql"
    else
       echo "***Configuring MySQL failed: cannot find installation; please use the option --with-mysql-libdir"
       exit 1

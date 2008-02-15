@@ -1843,8 +1843,8 @@ mysql_error=
 if test -z "$with_mysql_libdir" ; then
    if test -d /usr/lib/mysql ; then
       libdir="/usr/lib/mysql"
-   elif test -d /usr/local/lib/mysql ; then
-      libdir="/usr/local/lib/mysql"
+   elif test -d /usr/local/mysql/lib/mysql ; then
+      libdir="/usr/local/mysql/lib/mysql"
    else
       echo "***Configuring MySQL failed: cannot find installation; please use the option --with-mysql-libdir"
       exit 1
@@ -1871,6 +1871,18 @@ fi
 if test -n "$libdir" ; then
    LDFLAGS="-L${libdir} ${LDFLAGS}"
 fi
+
+# Here we provide additional directories to check headers in
+# AC_CHECK_HEADERS uses CPPFLAGS to find the include path.
+#
+# If any of the headers is not in a standard place, use --with-mysql-incdir
+if test -n "${incdir}"; then
+   CPPFLAGS=" -I${incdir} ${CPPFLAGS}"
+   CFLAGS="-I${incdir} ${CPFLAGS}"
+fi
+
+echo $incdir
+echo $libdir
 
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -2857,15 +2869,6 @@ _ACEOF
 
 else
   mysql_error=yes
-fi
-
-# Here we provide additional directories to check headers in
-# AC_CHECK_HEADERS uses CPPFLAGS to find the include path.
-#
-# If any of the headers is not in a standard place, use --with-mysql-incdir
-if test -n "${incdir}"; then
-   CPPFLAGS=" -I${incdir} ${CPPFLAGS}"
-   CFLAGS="-I${incdir} ${CPFLAGS}"
 fi
 
 ac_ext=c

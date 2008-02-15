@@ -2,4 +2,5 @@
 Installation_summary
 autom4te.cache
 config.*
+configure.lineno
 odbc_init.P
