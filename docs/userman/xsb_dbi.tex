@@ -3,7 +3,7 @@
 %====================================================
 
 \begin{center}
-{\Large {\bf By Saikat Mukherjee and Michael Kifer }}
+{\Large {\bf By Saikat Mukherjee, Michael Kifer and Hui Wan }}
 \end{center}
 
 \section{Introduction}
@@ -64,6 +64,21 @@ the following parameters to the configure script:
   the directory where MySQL's header files live.  
 \end{itemize}
 %%
+If you are also using the embedded MySQL server and want to take advantage
+of the corresponding XSB driver, you need to provide the following directories
+to tell XSB where the copy of MySQL that supports the embedded server is installed.
+This has to be done \emph{only} if that copy is not in a standard place,
+like {\tt /usr/lib/mysql}.  
+
+\begin{itemize}%% 
+\item {\tt --with-mysqlembedded-libdir=MySQLlibdir} -- {\tt MySQLlibdir} is the
+  directory where MySQL's shared libraries live on your system.
+  This copy of MySQL must be configured with support for the embedded
+  server.
+\item {\tt --with-mysqlembedded-incdir=MySQLincludeDir} -- {\tt MySQLincludeDir} is
+  the directory where MySQL's header files live.  
+\end{itemize}
+%% 
 
 Under Cygwin, the ODBC libraries come with the distribution; they are
 located in the directory {\tt /cygdrive/c/cygwin/lib/w32api/} and are called
@@ -159,6 +174,12 @@ Similarly, to load the mysql driver call:
 
 \begin{verbatim}
 | ?- load_driver(mysql).
+\end{verbatim}
+%%
+or
+%%
+\begin{verbatim}
+| ?- load_driver(mysqlembedded).
 \end{verbatim}
 
 \subsection{Connecting to and Disconnecting from Databases}
@@ -403,16 +424,64 @@ connecting to a database using a DSN, (b) direct querying of the database,
 statement handle, and (d) disconnecting from the database.
 The ODBC driver has also been tested under Windows and Cygwin.
 
+
 \subsubsection{MySQL Driver}
 
-The MySQL driver has been implemented using the native MySQL C API.
+The MySQL driver provides access to the native MySQL C API.
 Currently, it has support for the following functionality: (a) connecting
-to a database using the non-DSN {\tt db\_connect}, (b) direct querying of
-the database, and (c) disconnecting from the database. Support for prepared
-statements will be available from MySQL 4.1 version at which point the
-driver can be updated with such a feature.
+to a database using {\tt db\_connect}, (b) direct querying of
+the database, (c) using prepared statements to query the database, (d) closing a
+statement handle, and (e) disconnecting from the database.
 
-The MySQL driver has been tested under Linux and Windows.
+The MySQL driver has been tested under Linux.
+
+
+\subsubsection{Driver for the Embedded MySQL Server}
+
+This driver provides access to the Embedded MySQL Server Library {\tt libmysqld}. Currently, it has support for the following functionality: (a) connecting
+to a database {\tt db\_connect}, (b) direct querying of
+the database, (c) using prepared statements to query the database, (d) closing a
+statement handle, and (e) disconnecting from the database.
+
+The MySQL driver for Embedded MySQL Server has been tested under Linux.
+
+In order to use this driver, you will need
+\begin{itemize}
+ \item MySQL with Embedded Server installed on your machine. If your don't
+ have a precompiled binary distribution of MySQL, which was configured with
+ libmysqld support (the embedded server library), you will need to build
+ MySQL from sources and configure MySQL using the {\tt --with-embedded-server} option.
+
+ \item append to {\tt /etc/my.cnf} or $\sim${\tt/.my.cnf}:
+       \begin{verbatim}
+               [mysqlembedded_driver_SERVER]
+               language = /usr/local/mysql/share/mysql/english
+               datadir = ..... 
+       \end{verbatim}
+       You may need to replace
+       {\tt /usr/local/mysql/share/mysql/english} with the directory
+       appropriate for your MySQL installation.
+
+       You might also need to set the {\tt datadir} parameter to specify
+       the directory where the databases are to be kept. This has to be
+       done if there is a possibility of running the embedded MySQL server
+       alongside the regular MySQL server. In that case, the {\tt datadir}
+       directory of the embedded server must be different from the {\tt
+         datadir} directory of the regular server. This is because
+       specifying the same directory might lead to the corruption of your
+       databases. See
+       {\tt http://dev.mysql.com/doc/refman/5.1/en/multiple-servers.html}
+       for further details on running multiple servers.
+\end{itemize}
+
+Please note that loading the embedded MySQL driver increases the memory
+footprint of XSB. This additional memory is released automatically when XSB
+exits. If you need to release the memory before exiting XSB, you can call {\tt
+  driverMySQLEmbedded\_lib\_end} after disconnecting from MySQL.  Note
+that once {\tt driverMySQLEmbedded\_lib\_end} is called, no further
+connections to MySQL are allowed from the currently running session of XSB
+(or else XSB will exit abnormally).
+
 
 
 %%% Local Variables: 

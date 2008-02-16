@@ -337,11 +337,17 @@ these steps:
 \begin{enumerate}
 
 \item
-   cd build
+   {\tt cd build}  
+ \item 
+   {\tt ./configure --with-wind}   \\
+   This step is necessary if you downloaded XSB from CVS. \emph{Note} that to run
+   the configure script you must be in the Cygwin window or booted into
+   Unix (for instance, if the directory where you unpacked XSB is shared
+   between Windows and a Unix system.
 
 \item
   Type:\\
-  {\tt makexsb\_wind "CFG=option" ["DLL=yes"] ["ORACLE=yes"] ["SITE\_LIBS=libraries"]}
+  {\tt makexsb\_wind ["CFG=option"] ["DLL=yes"] ["ORACLE=yes"] ["SITE\_LIBS=libraries"]}
   %%
   \begin{itemize}
   \item The items in square brackets are optional.
