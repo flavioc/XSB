@@ -36,4 +36,5 @@
    putvarinst/5, release_if_done/6
      from tp_var.
 :- import tgetpar/6 from tp_goal.
+:- import eval/2 from eval.
 

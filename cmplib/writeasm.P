@@ -143,6 +143,7 @@ write_inst_arg(AStr,s(_I), Sym) :- sp(AStr), write_sym(AStr,Sym).
 write_inst_arg(AStr,c(_I), Sym) :- sp(AStr), write_sym(AStr,Sym).
 write_inst_arg(AStr,i(_N), Int) :- sp(AStr), write(AStr,Int).
 write_inst_arg(AStr,n(_N), Int) :- sp(AStr), write(AStr,Int).
+write_inst_arg(AStr,d(_N), Int) :- sp(AStr), write(AStr,Int).
 write_inst_arg(AStr,a(_A), Int) :- sp(AStr), write(AStr,Int).
 write_inst_arg(AStr,l(_L), Lab) :- sp(AStr), write_label(AStr,Lab).
 write_inst_arg(AStr,t(_T), Arg) :- sp(AStr), write(AStr,Arg).

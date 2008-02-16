@@ -27,6 +27,7 @@
 	file_write_quoted/2, file_write_canonical/2,
 	file_nl/1.
 :- export write_int/1, write_float/1, write_int/2, write_float/2.
+:- export write_double/1, write_double/2.
 :- export write_canonical_lettervar/1.
 :- export set_file_write_depth/1, get_file_write_depth/1.
 

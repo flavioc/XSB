@@ -241,7 +241,8 @@ index_argpats([clause(Arglist,_,crec(_,L))|CRest], N,
 
 index_argpat(constant(Sym), n, []) :- sym_name(Sym, [], 0).
 index_argpat(integer(X), i, X).
-index_argpat(real(X), f, X). %% dsw changed from i...
+%%index_argpat(real(X), f, X). %% dsw changed from i...
+index_argpat(real(X), d, X). %% dsw changed from f for double.....
 index_argpat(constant(C), c, C).
 index_argpat(varocc(_), v, v).
 index_argpat(string(_), l, l).

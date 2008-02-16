@@ -58,7 +58,7 @@ int_eq(Op, integer(N), N) :-
 /* Generate code for an evaluable term.					*/
 /* The code generated for different terms are listed below.		*/
 /*  integer(N):   putnumcon(R, N)			Res in R	*/
-/*  real(N):	  putfloat(R, N)			in R		*/
+/*  real(N):	  putdfloat(R, N)			in R		*/
 /*  constant(S):  error							*/
 /*  varocc(_,_):  movreg(Loc,R)/none			in Loc/R	*/
 /*  structure cases ......						*/
@@ -85,7 +85,7 @@ eval_exp(integer(N),R,[Inst|Pil],Pil,_,Tin,Tout,_) :-
 eval_exp(real(N),R,[Inst|Pil],Pil,_,Tin,Tout,_) :- 
 	getreg(Tin,R),
 	hold(R,Tin,Tout),
-	Inst = putfloat(R,N).
+	Inst = putdfloat(R,N).
 eval_exp(structure(Sym,Args),R,Pil,Pilr,HoldR,Tin,Tout,EPN) :-
 	sym_name(Sym, Op, Arity),
 	( Arity =:= 2 -> Args = [E1,E2],
@@ -116,9 +116,8 @@ eval_exp(string(Sym),R,[Inst|Pil],Pil,_,Tin,Tout,e(PredSym,NC)) :-
 	message(('         in clause #', NC, ' of predicate ', P,'/',A)),
 	Inst = fail, Tin = Tout, R = 0.
 
-:- import pi/1,e/1 from eval.
-eval_constant(pi,real(V)):- pi(V). 
-eval_constant(e,real(V)):- e(V).
+eval_constant(pi,real(V)):- eval(pi,V). 
+eval_constant(e,real(V)):- eval(e,V).
 
 eval_binoptab(+,R1,R2,addreg(R2,R1)).
 eval_binoptab(-,R1,R2,subreg(R2,R1)).
@@ -240,7 +239,7 @@ isindeed_var(integer(Int),RPrag,_HoldR,Pil,Pilr,Tin,Tout,EPN,_RVid) :- !,
 isindeed_var(real(Real),RPrag,_HoldR,Pil,Pilr,Tin,Tout,EPN,_RVid) :- !,
 	eval_var(RPrag,R,Pil,Pilm,Tin,Tout1,EPN),
 	getreg(Tin, R1), hold(R1, Tout1, Tout2),
-	Pilm = [putfloat(R1,Real)|Pilr],
+	Pilm = [putdfloat(R1,Real)|Pilr],
 	release(R1,Tout2,Tout3), release(R,Tout3,Tout).
 isindeed_var(_,_,_HoldR,[fail|Pilr],Pilr,Tin,Tin,e(PredSym,NC),_RVid) :-
 	sym_name(PredSym, P, A),
@@ -258,7 +257,7 @@ isindeed_int(_,_,_HoldR,[fail|Pilr],Pilr,Tin,Tin,_EPN).
 
 isindeed_real(varocc(Vid,Prag),Real,HoldR,Pil,Pilr,Tin,Tout,_EPN) :- !,
 	getreg(Tin,R), hold(R,Tin,Tmid),
-	Pil = [putfloat(R,Real)|Pilm],
+	Pil = [putdfloat(R,Real)|Pilm],
 	release_if_done(Vid,R,Prag,HoldR,Tmid,Tmid2),
 	tgetpar(varocc(Vid,Prag),R,Pilm,Pilr,Tmid2,Tout).
 isindeed_real(real(R),R,_HoldR,Pil,Pil,Tin,Tin,_EPN) :- !.
@@ -320,7 +319,7 @@ isindeed_binary(integer(Int),Op,E1,E2,HoldR,Pil,Pilr,Tin,Tout,EPN) :- !,
 	release(R,Tmid,Tout).
 isindeed_binary(real(Real),Op,E1,E2,HoldR,Pil,Pilr,Tin,Tout,EPN) :- !,
 	eval_binop(Op,E1,E2,R,Pil,Pil1,HoldR,Tin,Tmid,EPN),
-	Pil1 = [putfloat(R1,Real),subreg(R,R1),jumpnz(R1,abs(-1))|Pilr],
+	Pil1 = [putdfloat(R1,Real),subreg(R,R1),jumpnz(R1,abs(-1))|Pilr],
 	getreg(Tmid, R1), %%hold(R1, Tmid, Tmid2),release(R1,Tmid2,Tmid3),
 	release(R,Tmid,Tout).
 isindeed_binary(_LHS,_Op,_E1,_E2,_HoldR,[fail|Pilr],Pilr,Tout,Tout,e(PredSym,NC)) :- !,
@@ -345,7 +344,7 @@ isindeed_unary(integer(Int),Op,E,HoldR,Pil,Pilr,Tin,Tout,EPN) :- !,
 isindeed_unary(real(Real),Op,E,HoldR,Pil,Pilr,Tin,Tout,EPN) :- !,
 	eval_uniop(Op,E,R,Pil,Pil1,HoldR,Tin,Tmid,EPN),
 	getreg(Tmid, R1), hold(R1, Tmid, Tmid2),
-	Pil1 = [putfloat(R1,Real),subreg(R,R1),jumpnz(R1,abs(-1))|Pilr],
+	Pil1 = [putdfloat(R1,Real),subreg(R,R1),jumpnz(R1,abs(-1))|Pilr],
 	release(R1,Tmid2,Tmid3),release(R,Tmid3,Tout).
 isindeed_unary(_LHS,_Op,_E,_HoldR,[fail|Pilr],Pilr,Tout,Tout,e(PredSym,NC)) :-
 	sym_name(PredSym, P, A),
@@ -406,7 +405,7 @@ eval_exp_vc(integer(N),R,[Inst|Pil],Pil,_,Tin,Tout,_) :-
 eval_exp_vc(real(N),R,[Inst|Pil],Pil,_,Tin,Tout,_) :- 
 	getreg(Tin,R),
 	hold(R,Tin,Tout),
-	Inst = putfloat(R,N).
+	Inst = putdfloat(R,N).
 % TLS: added this clause for pi, e and other constants we might like.
 eval_exp_vc(constant(C),R,Pil1,Pil2,HoldR,Tin,Tout,EPN) :-
 	sym_name(C,Const,_),

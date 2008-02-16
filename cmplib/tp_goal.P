@@ -94,7 +94,7 @@ load_from_nreg([Arg|Args],[Arg|Nargs],N,Reg) :-
 	load_from_nreg(Args,Nargs,N,Reg).
 
 tputpar(integer(V),N,[putnumcon(N,V)|Pil],Pil,Tin,Tin,_Tab).
-tputpar(real(V),N,[putfloat(N,V)|Pil],Pil,Tin,Tin,_Tab).
+tputpar(real(V),N,[putdfloat(N,V)|Pil],Pil,Tin,Tin,_Tab).
 tputpar(constant(Sym),N,[putcon(N,Sym)|Pil],Pil,Tin,Tin,_Tab).
 tputpar(string(String),N,Pil0,Pil,Tin,Tin,_Tab) :-
 	tputstring(String,N,Pil0,Pil).
@@ -144,7 +144,8 @@ tbldpar(constant(Sym),[bldcon(Sym)|Pilr],Pilr,T,T).
 /*======================================================================*/
 
 tgetpar(integer(V), N, [getnumcon(N,V)|Pil], Pil, Tin, Tin).
-tgetpar(real(V), N, [getfloat(N,V)|Pil], Pil, Tin, Tin).
+%%tgetpar(real(V), N, [getfloat(N,V)|Pil], Pil, Tin, Tin).
+tgetpar(real(V), N, [getdfloat(N,V)|Pil], Pil, Tin, Tin).
 tgetpar(constant(Sym), N, [getcon(N,Sym)|Pil], Pil, Tin, Tin).
 tgetpar(string(String), N, Pil0, Pil, Tin, Tin) :-
 	getreg(Tin,TReg),

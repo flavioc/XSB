@@ -76,6 +76,8 @@ asm_inst(getfloat(R,Float),	8,	128,	[pp, r(R), n(Float)]	).
 asm_inst(putfloat(R,Float),	8,	129,	[pp, r(R), n(Float)]	).
 asm_inst(unifloat(Float),	8,	130,	[ppp, n(Float)]	).
 asm_inst(bldfloat(Float),	8,	131,	[ppp, n(Float)]	).
+asm_inst(getdfloat(R,Float),	12,	132,	[pp, r(R), d(Float)]	).
+asm_inst(putdfloat(R,Float),	12,	133,	[pp, r(R), d(Float)]	).
 
 asm_inst(trymeelse(A,L),	8,	160,	[pp, a(A), l(L)]).
 asm_inst(retrymeelse(A,L),	8,	161,	[pp, a(A), l(L)]).
@@ -163,6 +165,7 @@ asm_inst(unifunc(W,R),		4,	252,	[p, a(W), r(R)]	).
 %  asm_inst(straight_noop,	4,	252,	[ppp]		).
 asm_inst(jumpcof(W,R,L),	8,	254,	[p, a(W), r(R), l(L)]).
 
+asm_inst(arglabel(d, I, L),	13,	-3,	[t(d), d(I), l(L)]) :- !.
 asm_inst(arglabel(T, I, L),	9,	-3,	[t(T), n(I), l(L)]).
 	% only used in index block
 asm_inst(arglabel(T, L),	5,	-3,	[t(T), l(L)]	).

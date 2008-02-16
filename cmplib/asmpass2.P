@@ -132,6 +132,7 @@ asm_genarg(OStr,s(Sym), _) :- sym_offset(Sym, I), write_int(OStr,I).
 asm_genarg(OStr,c(Sym), _) :- sym_offset(Sym, I), write_int(OStr,I).
 asm_genarg(OStr,g(Sym), _) :- sym_offset(Sym, I), write_int(OStr,I).
 asm_genarg(OStr,n(I), _) :- integer(I) -> write_int(OStr,I) ; write_float(OStr,I).
+asm_genarg(OStr,d(I), _) :- write_double(OStr,I).
 asm_genarg(OStr,i(I), _) :-  write_int(OStr,I).
 asm_genarg(OStr,l(L), LabelTab) :- hashed_find_label((L,I), LabelTab), write_int(OStr,I).
 asm_genarg(OStr,r(I), _) :- file_put(OStr,I).
@@ -163,6 +164,8 @@ asm_proc_index(OStr, arglabel(T,Val,L), LabelTab) :-
 	 ; T == i
 	 ->	Inst = arglabel(T,Val,L)
 	 ; T == f
+	 ->	Inst = arglabel(T,Val,L)
+	 ; T == d
 	 ->	Inst = arglabel(T,Val,L)
 	 ;	Inst = arglabel(T,L)
 	), 

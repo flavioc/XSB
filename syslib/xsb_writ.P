@@ -92,10 +92,25 @@ write_float(Num) :-
 %	xsb_sys_mutex_unlock(MUTEX_IO).
 	xsb_stream_unlock(File).
 
+write_double(Num) :- 
+	stat_flag(CURRENT_OUTPUT, File),
+	xsb_stream_lock(File),
+%	xsb_sys_mutex_lock(MUTEX_IO),
+	file_puttoken(File, TK_DOUBLE_0, Num),
+%	xsb_sys_mutex_unlock(MUTEX_IO).
+	xsb_stream_unlock(File).
+
 write_float(Str,Num) :-
 	xsb_stream_lock(Str),
 %	xsb_sys_mutex_lock(MUTEX_IO),
 	file_puttoken(Str,TK_FLOAT_0,Num),
+%	xsb_sys_mutex_unlock(MUTEX_IO).
+	xsb_stream_unlock(Str).
+
+write_double(Str,Num) :-
+	xsb_stream_lock(Str),
+%	xsb_sys_mutex_lock(MUTEX_IO),
+	file_puttoken(Str,TK_DOUBLE_0,Num),
 %	xsb_sys_mutex_unlock(MUTEX_IO).
 	xsb_stream_unlock(Str).
 
