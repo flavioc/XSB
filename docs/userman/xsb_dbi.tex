@@ -26,6 +26,9 @@ databases using different drivers concurrently~\footnote{In
   \version{}, this package has not been ported to the multi-threaded
   engine.}.
 
+Currently, this package provides drivers for ODBC, a native MySQL driver,
+and a driver for the embedded MySQL server.
+
 \section{Configuring the Interface}
 
 Generally, each driver has to be configured separately, but if the database
@@ -45,8 +48,14 @@ driver without problems. For the MySQL driver one has to edit the file
     packages\dbdrivers\mysql\cc\NMakefile.mak  
 \end{verbatim}
 %%
-to indicate where MySQL is installed.
-
+to indicate where MySQL is installed. To build the embedded MySQL driver
+under Windows, the file
+%%
+\begin{verbatim}
+    packages\dbdrivers\mysqlenbedded\cc\NMakefile.mak  
+\end{verbatim}
+%%
+might need to be edited.
 
 Under Unix, the {\tt configure} script will build the drivers automatically
 if the {\tt --with-dbdrivers} option is specified.  If, however, ODBC and
@@ -445,33 +454,37 @@ statement handle, and (e) disconnecting from the database.
 
 The MySQL driver for Embedded MySQL Server has been tested under Linux.
 
-In order to use this driver, you will need
+\noindent
+In order to use this driver, you will need:
 \begin{itemize}
  \item MySQL with Embedded Server installed on your machine. If your don't
  have a precompiled binary distribution of MySQL, which was configured with
  libmysqld support (the embedded server library), you will need to build
- MySQL from sources and configure MySQL using the {\tt --with-embedded-server} option.
+ MySQL from sources and configure it with the {\tt --with-embedded-server} option.
 
- \item append to {\tt /etc/my.cnf} or $\sim${\tt/.my.cnf}:
+ \item append to {\tt /etc/my.cnf} (or {\tt /etc/mysql/my.cnf} -- whichever
+   is used on your machine) or $\sim${\tt/.my.cnf}:
        \begin{verbatim}
                [mysqlembedded_driver_SERVER]
                language = /usr/local/mysql/share/mysql/english
                datadir = ..... 
        \end{verbatim}
-       You may need to replace
-       {\tt /usr/local/mysql/share/mysql/english} with the directory
+       You will probably need to replace
+       {\tt /usr/local/mysql/share/mysql/english} with a directory
        appropriate for your MySQL installation.
 
-       You might also need to set the {\tt datadir} parameter to specify
-       the directory where the databases are to be kept. This has to be
-       done if there is a possibility of running the embedded MySQL server
-       alongside the regular MySQL server. In that case, the {\tt datadir}
-       directory of the embedded server must be different from the {\tt
-         datadir} directory of the regular server. This is because
-       specifying the same directory might lead to the corruption of your
-       databases. See
-       {\tt http://dev.mysql.com/doc/refman/5.1/en/multiple-servers.html}
-       for further details on running multiple servers.
+       You might also need to set the {\tt datadir} option to specify
+       the directory where the databases managed by the embedded server are
+       to be kept. This has to be done if there is a possibility of running
+       the embedded MySQL server alongside the regular MySQL server. In
+       that case, the {\tt datadir} directory of the embedded server must
+       be different from the {\tt datadir} directory of the regular server
+       (which is likely to be specified using the {\tt datadir} option in
+       {\tt /etc/my.cnf} or {\tt /etc/mysql/my.cnf}. This is because
+       specifying the same directory might lead to a corruption of your
+       databases. See {\tt
+         http://dev.mysql.com/doc/refman/5.1/en/multiple-servers.html} for
+       further details on running multiple servers.
 \end{itemize}
 
 Please note that loading the embedded MySQL driver increases the memory
