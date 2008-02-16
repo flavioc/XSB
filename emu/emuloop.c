@@ -83,6 +83,7 @@
 #include "call_graph_xsb.h" /* incremental evaluation */
 #include "cinterf.h"
 
+//FILE *logfile;
 /*
  * Variable ans_var_pos_reg is a pointer to substitution factor of an
  * answer in the heap.  It is used and set in function
@@ -770,7 +771,7 @@ contcase:     /* the main loop */
   XSB_End_Instr()
 
   XSB_Start_Instr(getfloat,_getfloat) /* PPR-F */
-    //printf("\nGETFLOAT ENTERED!\n");
+    //    printf("\nGETFLOAT ENTERED!\n");
     Def2fops
     Op1(Register(get_xxr));
     Op2f(get_xxxf);
@@ -789,7 +790,7 @@ contcase:     /* the main loop */
   XSB_End_Instr()
 
   XSB_Start_Instr(putfloat,_putfloat) /* PPR-F */
-    //printf("\nPUTFLOAT ENTERED!\n");
+    //    printf("\nPUTFLOAT ENTERED!\n");
     Def2fops
     Op1(get_xxr);
     Op2f(get_xxxf);
@@ -797,6 +798,39 @@ contcase:     /* the main loop */
     //    bld_float_tagged((CPtr)op1, fop2);
     bld_boxedfloat(CTXTc (CPtr)op1, fop2);
     //printf("\nPUTFLOAT DONE!\n");
+  XSB_End_Instr()
+
+  XSB_Start_Instr(getdfloat,_getdfloat) /* PPR-D */
+    register Cell op1;
+    union {
+      struct {
+	long int1,int2;
+      } intp;
+      double fltp;
+    } cvtr;
+    Op1(Register(get_xxr));
+    cvtr.intp.int1 = *(pw)(lpcreg+sizeof(Cell));
+    cvtr.intp.int2 = *(pw)(lpcreg+2*sizeof(Cell));
+    ADVANCE_PC(size_xxxXX);
+    //    printf("getdfloat: %2.16f\n",cvtr.fltp);
+    nunify_with_float_get(op1,cvtr.fltp);
+  XSB_End_Instr()
+
+  XSB_Start_Instr(putdfloat,_putdfloat) /* PPR-D */
+    register Cell op1;
+    union {
+      struct {
+	long int1,int2;
+      } intp;
+      double fltp;
+    } cvtr;
+    Op1(get_xxr);
+    cvtr.intp.int1 = *(pw)(lpcreg+sizeof(Cell));
+    cvtr.intp.int2 = *(pw)(lpcreg+2*sizeof(Cell));
+    ADVANCE_PC(size_xxxXX);
+    //    bld_float_tagged((CPtr)op1, fop2);
+    //    printf("putdfloat: %2.16f\n",cvtr.fltp);
+    bld_boxedfloat(CTXTc (CPtr)op1, (Float)cvtr.fltp);
   XSB_End_Instr()
 
   XSB_Start_Instr(putpvar,_putpvar) /* PVR */
@@ -1000,7 +1034,7 @@ contcase:     /* the main loop */
   XSB_End_Instr()
 
   XSB_Start_Instr(unifloat,_unifloat) /* PPPF */
-    //printf("UNIFLOAT ENTERED\n");
+    printf("UNIFLOAT ENTERED\n");
     Def2fops
     Op2f(get_xxxf); /* num in fop2 */
     ADVANCE_PC(size_xxxX);
@@ -1022,7 +1056,7 @@ contcase:     /* the main loop */
   XSB_End_Instr()
 
   XSB_Start_Instr(bldfloat,_bldfloat) /* PPP-F */
-    //printf("BLDFLOAT ENTERED\n");
+    printf("BLDFLOAT ENTERED\n");
     Def1fop
     Op2f(get_xxxf); /* num to fop2 */
     ADVANCE_PC(size_xxxX);
@@ -1176,9 +1210,9 @@ contcase:     /* the main loop */
     Op1(Variable(get_xxv));
 /* In the multi-threaded system a signal can be issued be another thread
    with thread signal anytime */
-#ifndef MULTI_THREAD
+//#ifndef MULTI_THREAD
     if (attv_pending_interrupts) printf("Failed assertion putpbreg\n");
-#endif
+    //#endif
     ADVANCE_PC(size_xxx);
     cut_code(op1);
   XSB_End_Instr()
@@ -1311,15 +1345,28 @@ contcase:     /* the main loop */
     Op1(get_xxr);
     XSB_Deref(op1);
     switch (cell_tag(op1)) {
-    case XSB_STRUCT:
-      op1 = struct_hash_value(op1);
+    case XSB_STRUCT: {
+      Cell top1 = struct_hash_value(op1);
+      //      if (isboxedfloat(op1)) printf("dfloat struct lookup: %2.14f, %0x, size=%d\n", boxedfloat_val(op1),top1,*(CPtr *)(lpcreg+sizeof(Cell)*2));
+      op1 = top1;
+    }
       break;
     case XSB_STRING:	/* We should change the compiler to avoid this test */
       op1 = (Cell)(isnil(op1) ? 0 : string_val(op1));
       break;
     case XSB_INT: 
-    case XSB_FLOAT:  /* cvt to double and use that indexing.... */
       op1 = (Cell)int_val(op1);
+      break;
+    case XSB_FLOAT:  /* cvt to double and use that indexing.... */
+#ifndef FAST_FLOATS
+      {Float tempFloat = (Float)float_val(op1);
+	op1 = ((ID_BOXED_FLOAT << BOX_ID_OFFSET ) | FLOAT_HIGH_16_BITS(tempFloat) )
+	  ^ FLOAT_MIDDLE_24_BITS(tempFloat) ^ FLOAT_LOW_24_BITS(tempFloat);
+      }
+#else 
+      op1 = (Cell)int_val(op1);
+#endif
+	//	printf("old float indexing: %0x %f\n",op1,tempFloat);
       break;
     case XSB_LIST:
       op1 = (Cell)(list_pscPair); 
@@ -1567,6 +1614,7 @@ argument positions.
 	bld_boxedfloat(CTXTc op3, temp); }				\
       else if (isfloat(op2)) {						\
 	Float temp = float_val(op2) OP (Float)int_val(op1);		\
+	/*printf("arith on old float\n");*/\
 	bld_boxedfloat(CTXTc op3, temp); }				\
       else if (isboxedinteger(op2)) {					\
 	Integer temp = boxedint_val(op2) OP int_val(op1);		\
@@ -1585,11 +1633,13 @@ argument positions.
       }									\
     }									\
     else if (isfloat(op1)) {						\
+      /*printf("arith on old float\n");*/\
       if (isboxedfloat(op2)) {						\
 	Float temp = boxedfloat_val(op2) OP float_val(op1);		\
 	bld_boxedfloat(CTXTc op3, temp); }				\
       else if (isfloat(op2)) {						\
 	Float temp = float_val(op2) OP float_val(op1);			\
+	/*printf("arith on old float\n");*/					\
 	bld_boxedfloat(CTXTc op3, temp); }				\
       else if (isinteger(op2)) {					\
 	Float temp = (Float)int_val(op2) OP float_val(op1);		\
@@ -1616,6 +1666,7 @@ argument positions.
 	bld_boxedfloat(CTXTc op3, temp); }				\
       else if (isfloat(op2)) {						\
 	Float temp = float_val(op2) OP boxedfloat_val(op1);		\
+	/*printf("arith on old float\n");*/\
 	bld_boxedfloat(CTXTc op3, temp); }				\
       else if (isinteger(op2)) {					\
 	Float temp = (Float)int_val(op2) OP boxedfloat_val(op1);	\
@@ -1648,6 +1699,7 @@ argument positions.
 	bld_boxedfloat(CTXTc op3, temp); }				\
       else if (isfloat(op2)) {						\
 	Float temp = float_val(op2) OP (Float)boxedint_val(op1);	\
+	/*printf("arith on old float\n");*/\
 	bld_boxedfloat(CTXTc op3, temp); }				\
       else  {								\
 	FltInt fivar;							\
@@ -1717,6 +1769,7 @@ argument positions.
       bld_oint(op3, temp); 
     } else if (isfloat(op1)) {
       Float temp = float_val(op1) + (Float)op2int;
+      /*printf("arith on old float\n");*/
       bld_boxedfloat(CTXTc op3, temp); 
     } else if (isboxedfloat(op1)) {
       Float temp = boxedfloat_val(op1) + (Float)op2int;
@@ -1765,6 +1818,7 @@ argument positions.
       nunify_with_num(op3, temp); 
     } else if (isfloat(op1)) {
       Float temp = float_val(op1) + (Float)op2int;
+      /*printf("arith on old float\n");*/
       nunify_with_float_get(op3, temp); 
     } else if (isboxedfloat(op1)) {
       Float temp = boxedfloat_val(op1) + (Float)op2int;
@@ -1812,6 +1866,7 @@ argument positions.
       }	else if (isfloat(op2)) {
 	Float fop1 = (Float)int_val(op1);
 	Float fop2 = float_val(op2);
+	/*printf("arith on old float\n");*/
 	if (fop2 > fop1) res = 1; else if (fop2 == fop1) res = 0; else res = -1;
       } else if (isboxedinteger(op2)) {
 	Integer iop1 = int_val(op1);
@@ -1835,11 +1890,13 @@ argument positions.
     }
     else if (isfloat(op1)) {
       Float fop1 = float_val(op1);
+      /*printf("arith on old float\n");*/
       if (isboxedfloat(op2)) {
 	Float fop2 = boxedfloat_val(op2);
 	if (fop2 > fop1) res = 1; else if (fop2 == fop1) res = 0; else res = -1;
       } else if (isfloat(op2)) {
 	Float fop2 = float_val(op2);
+	/*printf("arith on old float\n");*/
 	if (fop2 > fop1) res = 1; else if (fop2 == fop1) res = 0; else res = -1;
       } else if (isinteger(op2)) {
 	Float fop2 = (Float)int_val(op2);
@@ -1852,7 +1909,7 @@ argument positions.
 	if (xsb_eval(CTXTc op2, &fivar)) {
 	  Float fop2;
 	  if (isfiint(fivar)) {
-	    fop2 = fiint_val(fivar);
+	    fop2 = (Float)fiint_val(fivar);
 	  } else {
 	    fop2 = fiflt_val(fivar);
 	  }
@@ -1867,6 +1924,7 @@ argument positions.
 	if (fop2 > fop1) res = 1; else if (fop2 == fop1) res = 0; else res = -1;
       } else if (isfloat(op2)) {
 	Float fop2 = float_val(op2);
+	/*printf("arith on old float\n");*/
 	if (fop2 > fop1) res = 1; else if (fop2 == fop1) res = 0; else res = -1;
       } else if (isinteger(op2)) {
 	Float fop2 = (Float)int_val(op2);
@@ -1904,6 +1962,7 @@ argument positions.
       } else if (isfloat(op2)) {
 	Float fop1 = (Float)boxedint_val(op1);
 	Float fop2 = float_val(op2);
+	/*printf("arith on old float\n");*/
 	if (fop2 > fop1) res = 1; else if (fop2 == fop1) res = 0; else res = -1;
       } else  {
 	FltInt fivar;
@@ -2014,7 +2073,7 @@ argument positions.
         bld_boxedfloat(CTXTc op3, temp); }
       else if (isboxedinteger(op2)) {
         Integer temp = (Integer) ((Float)boxedint_val(op2) / (Float)boxedint_val(op1));
-        bld_boxedfloat(CTXTc op3, temp); }
+        bld_boxedfloat(CTXTc op3, (Float)temp); }
       else if (isofloat(op2)) {
         Float temp = (Float)ofloat_val(op2) / (Float)boxedint_val(op1);
 	bld_boxedfloat(CTXTc op3, temp); }
@@ -2210,6 +2269,7 @@ argument positions.
 	}
 	else if( isfloat(op2) )
 	{	b = float_val(op2);
+	  /*printf("arith on old float\n");*/
 	}
 	else if( isboxedfloat(op2) )
 	{	b = boxedfloat_val(op2);
@@ -2235,6 +2295,7 @@ argument positions.
 	}
 	else if( isfloat(op1) )
 	{	e = float_val(op1);
+	  /*printf("arith on old float\n");*/
 	}
 	else if( isboxedfloat(op1) )
 	{	e = boxedfloat_val(op1);
@@ -2263,7 +2324,7 @@ argument positions.
 		}
 	}
 	else
-		bld_boxedfloat( CTXTc op3, r );
+	  bld_boxedfloat( CTXTc op3, (Float)r );
     }
   XSB_End_Instr() 
 
@@ -2411,7 +2472,7 @@ argument positions.
     ADVANCE_PC(size_xxxX);
     cpreg = lpcreg;
     psc = (Psc)op1;
-    //    printf("call %s/%d (h:%p,e:%p,pc:%p,b:%p,hs:%lx)\n",get_name(psc),get_arity(psc),hreg,ereg,lpcreg,breg,top_of_localstk-hreg);
+    //    fprintf(logfile,"call %s/%d (h:%p,e:%p,pc:%p,b:%p,hs:%lx)\n",get_name(psc),get_arity(psc),hreg,ereg,lpcreg,breg,top_of_localstk-hreg);
 #ifdef CP_DEBUG
     pscreg = psc;
 #endif
@@ -3143,6 +3204,7 @@ extern pthread_mutexattr_t attr_rec_gl ;
      if (flag == XSB_C_INIT) xsb_mode = C_CALLING_XSB;
      else xsb_mode = DEFAULT; /* MAY BE CHANGED LATER */
 
+     //     logfile = fopen("XSB_LOGFILE.txt","w");
      /* Set the name of the executable to the real name.
 	The name of the executable could have been set in cinterf.c:xsb_init
 	if XSB is called from C. In this case, we don't want `executable'

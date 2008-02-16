@@ -89,7 +89,7 @@ int ret_random(CTXTdecl) {
 
   term = ptoc_tag(CTXTc 2);
   if (isref(term)) {
-    ctop_float(CTXTc 2, T - (int)T);
+    ctop_float(CTXTc 2, (Float)(T - (int)T));
     return TRUE;
   }
   else return FALSE;

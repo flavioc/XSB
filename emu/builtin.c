@@ -553,7 +553,7 @@ DllExport void call_conv ctop_float(CTXTdeclc int regnum, prolog_float value)
 
   XSB_Deref(addr);
   if (isref(addr)) {
-    bind_boxedfloat(vptr(addr), value);
+    bind_boxedfloat(vptr(addr), (Float)value);
   }
   else xsb_abort("[CTOP_FLOAT] Wrong type of argument: %lux", addr);
 }
@@ -1731,6 +1731,11 @@ int builtin_call(CTXTdeclc byte number)
       fix_bb4((byte *)&ftmp);
       fwrite(&ftmp, 4, 1, fptr); 
       //printf("TK_FLOAT_0 case in put token left\n"); 
+      break;
+    }
+    case TK_DOUBLE_0: {
+      double ftmp = ptoc_float(CTXTc 3);
+      fwrite(&ftmp, 8, 1, fptr); 
       break;
     }
     case TK_PREOP  : print_op(fptr, ptoc_string(CTXTc 3), 1); break;

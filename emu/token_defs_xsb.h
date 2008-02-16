@@ -55,6 +55,7 @@
 #define TK_TERML    23          /* term, for write_canonical lettervar */
 #define TK_TERM     24          /* term, for write_canonical */
 #define TK_AQATOM   25          /* atom, ALWAYS quoted */
+#define TK_DOUBLE_0 27
 
 #define DIGIT    0              /* 0 .. 9 */
 #define BREAK    1              /* _ */

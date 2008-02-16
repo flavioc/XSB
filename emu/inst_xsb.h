@@ -53,6 +53,7 @@ extern void init_inst_table(void);
 #define F   17  /* floating point number */
 #define B   18  /* tagged (boxed) integer number */
 #define PRR 19  /* = P + R + R; for fun_test_ne */
+#define D   20  /* double float number 8 bytes (32-bits) generalize.. */
 
 /************************************************************************/
 /*	Macros to fetch the instructions/operands.			*/
@@ -284,6 +285,8 @@ extern Cell inst_table[BUILTIN_TBL_SZ][5];
 #define putfloat	0x81
 #define unifloat	0x82
 #define bldfloat	0x83
+#define getdfloat	0x84
+#define putdfloat	0x85
 
 /* Non-determinism instructions */
 
