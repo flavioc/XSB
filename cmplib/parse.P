@@ -882,7 +882,7 @@ trans_goals(T, Goal, SymTab, VidIn, VidOut) :-
 	trans_goal(T, Goal, SymTab, VidIn, VidOut).
 
 trans_goal(Term, Goal, SymTab, VidIn, VidOut) :-
-	(Term = Mod:Term1, atom(Mod), nonvar(Term1)
+	(Term = Mod:Term1, atom(Mod), Term1 \= '$$var'(_)
 	 ->	functor(Term1, P, A),
 		Goal = goal(Sym, ArgList),
 		(sym_insert(P,A,[],SymTab,Sym),sym_prop(im(Mod),Sym)
