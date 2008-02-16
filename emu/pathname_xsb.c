@@ -492,6 +492,7 @@ void transform_cygwin_pathname(char *filename)
 
   if (filename[0] == '/') {
     if (filename[1] == '/') diff = 1;
+    else if (filename[2] == 0) diff = 1;
     else if (filename[1] == 'c' &&
 	     filename[2] == 'y' &&
 	     filename[3] == 'g' &&
