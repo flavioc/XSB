@@ -35,13 +35,16 @@ Generally, each driver has to be configured separately, but if the database
 packages such as ODBC, MySql, etc., are installed in standard places then
 the XSB configuration mechanism will do the job automatically.
 
-Under Windows, the command
+Under Windows, first make sure that XSB is configured and built correctly
+for Windows, and that it runs. As part of that building process, the
+command
 %%
 \begin{verbatim}
     makexsb_wind  
 \end{verbatim}
 %%
-in the directory {\tt XSB$\backslash$build} will normally configure the ODBC
+must have been executed
+in the directory {\tt XSB$\backslash$build}. It will normally configure the ODBC
 driver without problems. For the MySQL driver one has to edit the file
 %%
 \begin{verbatim}
@@ -55,7 +58,20 @@ under Windows, the file
     packages\dbdrivers\mysqlenbedded\cc\NMakefile.mak  
 \end{verbatim}
 %%
-might need to be edited.
+might need to be edited. Then you should either rebuild XSB using the
+{\tt makexsb\_wind} command or by running
+%%
+\begin{verbatim}
+    nmake /f NMakefile.mak
+\end{verbatim}
+%% 
+in the appropriate directories (\verb|dbdrivers\mysql\cc| or
+\verb|dbdrivers\mysqlenbedded\cc|). Note that you need a C++ compiler and
+{\tt nmake} installed on your system for this to work.\footnote{
+  {\tt http://www.microsoft.com/express/vc/}\\
+  {\tt
+    http://download.microsoft.com/download/vc15/Patch/1.52/W95/EN-US/Nmake15.exe} 
+  }
 
 Under Unix, the {\tt configure} script will build the drivers automatically
 if the {\tt --with-dbdrivers} option is specified.  If, however, ODBC and
