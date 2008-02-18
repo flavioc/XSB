@@ -581,10 +581,12 @@ static int env_check[4][5] = {
 /* T_NEW      */ { T_VISIBLE, T_HIDDEN, T_UNLOADED, E_NOUSE, T_VISIBLE  }
 };
 
-void env_type_set(Psc psc, byte t_env, byte t_type, xsbBool is_new)
-{
-  int env;
-  byte type;
+/* TLS: changed the "soft" xsb errors into warnings and refactored.
+Not sure if its ever good to have a soft error as they are easy to
+confuse with a hard error, but in this case the query actually
+succeeds with an answer substitution. */
+void env_type_set(Psc psc, byte t_env, byte t_type, xsbBool is_new) {
+int env; byte type;
 
   if (is_new) {
     set_env(psc, env_check[T_NEW][t_env]);
@@ -592,26 +594,29 @@ void env_type_set(Psc psc, byte t_env, byte t_type, xsbBool is_new)
   } else {
     env = env_check[get_env(psc)][t_env];
     if (env < 0) {
-      xsb_error("Environment conflict in the use of %s/%d !", 
-		get_name(psc), get_arity(psc));
       /* In the following I am not sure whether setting the environment */
       /* in the presense of an environment conflict error is the right  */
       /* thing to do!  But an "imported_from" vs "local" (non-exported) */
       /* symbol conflict must definitely be resolved in favour of the   */
       /* "local" declaration.						*/
       if (env == E_HIDDEN) {
-	if (t_env == T_IMPORTED) 
+	if (t_env == T_IMPORTED) {
 	  /* Here the psc record of the symbol has already been created */
 	  /* by another module that imported (mistakenly) this symbol.  */
+	  xsb_warn("Environment conflict in the use of %s/%d !", 
+		    get_name(psc), get_arity(psc));
 	  set_env(psc, T_LOCAL);	
+	}
 	else {/* We are trying to load a module
 		that imports sth not exported. */
 	  Psc mod_psc = get_data(psc);
 	  if (mod_psc != NULL) 
-	    fprintf(stderr,"               %s/%d is imported from %s but not exported\n",
-		      get_name(psc),get_arity(psc),get_name(mod_psc));
-	  else fprintf(stderr,"               %s/%d is imported from somewhere but not exported\n",
-		      get_name(psc),get_arity(psc));
+	    xsb_warn("Environment conflict in the use of %s/%d: "
+		      "%s/%d is imported from %s but not exported\n",
+		     get_name(psc), get_arity(psc),get_name(psc),get_arity(psc),get_name(mod_psc));
+	  else 	    xsb_warn("Environment conflict in the use of %s/%d: "
+			     "%s/%d is imported but not exported\n",
+			     get_name(psc), get_arity(psc),get_name(psc),get_arity(psc));
 	}
       }
     }

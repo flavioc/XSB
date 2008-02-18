@@ -1205,6 +1205,8 @@ contcase:     /* the main loop */
     bld_int((CPtr)op1, ((pb)tcpstack.high - (pb)breg));
   XSB_End_Instr()
 
+    /* Assertion commented out in MT engine because inter-thread
+       signals use interrupt stack. */
   XSB_Start_Instr(putpbreg,_putpbreg) /* PPV */
     Def1op
     Op1(Variable(get_xxv));
@@ -3296,7 +3298,7 @@ extern pthread_mutexattr_t attr_rec_gl ;
 #endif
 #endif
 
-     if (xsb_mode != C_CALLING_XSB) {
+     if (xsb_mode != C_CALLING_XSB && flags[BANNER_CTL]%NOBANNER) {
        realtime = real_time() - realtime;
        fprintf(stdmsg, "\nEnd XSB (cputime %.2f secs, elapsetime ",
 	       cpu_time());
