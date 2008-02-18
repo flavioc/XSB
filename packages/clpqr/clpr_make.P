@@ -1,20 +1,21 @@
 
 :- export make_clpr/0.
 
+
+:- export make_clpr/0.
+
 make_clpr:- 
-	compile('bb_r.pl'),
-	compile('bv_r.pl'),
-	%% compile('bv_q.pl'), % does not compile?
-	compile('class.pl'),
-	compile('fourmotz_r.pl'),
-	compile('geler.pl'),
-	compile('ineq_r.pl'),
-	compile('itf.pl'),
-	compile('itf_r.pl'),
-	compile('nf_r.pl'),
-	compile('ordering.pl'),
-	compile('project.pl'),
-	compile('redund.pl'),
-	compile('store_r.pl'),
-	compile('swi.P').
-	
+	compile('bb_r'),
+	compile('bv_r'),
+	compile('class'),
+	compile('fourmotz_r'),
+	compile('geler'),
+	compile('ineq_r'),
+	compile('itf'),
+	compile('itf_r'),
+	compile('nf_r'),
+	compile('ordering'),
+	compile('project'),
+	compile('redund'),
+	compile('store_r'),
+	compile('swi').
