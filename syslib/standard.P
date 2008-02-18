@@ -898,104 +898,113 @@ call(Goal) :-
 	; type_error(callable,Goal,call/1,1)
 	).
 
-call(Mod:Goal,Arg):- !,
-	Goal =.. GoalList,
-	append(GoalList,[Arg],NewgoalList), 
-	Newgoal =.. NewgoalList,
-	call_c(Mod:Newgoal).
-call(Goal,Arg):- 
-	Goal =.. GoalList,
-	append(GoalList,[Arg],NewgoalList), 
-	Newgoal =.. NewgoalList,
-	call_c(Newgoal).
+call(G,Arg):- !,
+	(G @= _:_ -> 
+	    G = Mod: Goal,
+	    Goal =.. GoalList,
+	    append(GoalList,[Arg],NewgoalList), 
+	    Newgoal =.. NewgoalList,
+	    call_c(Mod:Newgoal)
+	;   G =.. GoalList,
+   	    append(GoalList,[Arg],NewgoalList), 
+   	    Newgoal =.. NewgoalList,
+	    call_c(Newgoal) ).
 
-call(Mod:Goal,Arg1,Arg2):- !,
-	Goal =.. GoalList,
-	append(GoalList,[Arg1,Arg2],NewgoalList), 
-	Newgoal =.. NewgoalList,
-	call_c(Mod:Newgoal).
-call(Goal,Arg1,Arg2):- 
-	Goal =.. GoalList,
-	append(GoalList,[Arg1,Arg2],NewgoalList), 
-	Newgoal =.. NewgoalList,
-	call_c(Newgoal).
+call(G,Arg1,Arg2):- 
+	(G @= _:_ -> 
+	    G = Mod: Goal,
+	    Goal =.. GoalList,
+	    append(GoalList,[Arg1,Arg2],NewgoalList), 
+	    Newgoal =.. NewgoalList,
+	    call_c(Mod:Newgoal)
+	;   G =.. GoalList,
+   	    append(GoalList,[Arg1,Arg2],NewgoalList), 
+   	    Newgoal =.. NewgoalList,
+	    call_c(Newgoal) ).
 
-call(Mod:Goal,Arg1,Arg2,Arg3):- !,
-	Goal =.. GoalList,
-	append(GoalList,[Arg1,Arg2,Arg3],NewgoalList), 
-	Newgoal =.. NewgoalList,
-	call_c(Mod:Newgoal).
-call(Goal,Arg1,Arg2,Arg3):- 
-	Goal =.. GoalList,
-	append(GoalList,[Arg1,Arg2,Arg3],NewgoalList), 
-	Newgoal =.. NewgoalList,
-	call_c(Newgoal).
+call(G,Arg1,Arg2,Arg3):- 
+	(G @= _:_ -> 
+	    G = Mod: Goal,
+	    Goal =.. GoalList,
+	    append(GoalList,[Arg1,Arg2,Arg3],NewgoalList), 
+	    Newgoal =.. NewgoalList,
+	    call_c(Mod:Newgoal)
+	;   G =.. GoalList,
+   	    append(GoalList,[Arg1,Arg2,Arg3],NewgoalList), 
+   	    Newgoal =.. NewgoalList,
+	    call_c(Newgoal) ).
 
-call(Mod:Goal,Arg1,Arg2,Arg3,Arg4):- !,
-	Goal =.. GoalList,
-	append(GoalList,[Arg1,Arg2,Arg3,Arg4],NewgoalList), 
-	Newgoal =.. NewgoalList,
-	call_c(Mod:Newgoal).
-call(Goal,Arg1,Arg2,Arg3,Arg4):- 
-	Goal =.. GoalList,
-	append(GoalList,[Arg1,Arg2,Arg3,Arg4],NewgoalList), 
-	Newgoal =.. NewgoalList,
-	call_c(Newgoal).
+call(G,Arg1,Arg2,Arg3,Arg4):- 
+	(G @= _:_ -> 
+	    G = Mod: Goal,
+	    Goal =.. GoalList,
+	    append(GoalList,[Arg1,Arg2,Arg3,Arg4],NewgoalList), 
+	    Newgoal =.. NewgoalList,
+	    call_c(Mod:Newgoal)
+	;   G =.. GoalList,
+   	    append(GoalList,[Arg1,Arg2,Arg3,Arg4],NewgoalList), 
+   	    Newgoal =.. NewgoalList,
+	    call_c(Newgoal) ).
 
-call(Mod:Goal,Arg1,Arg2,Arg3,Arg4,Arg5):- !,
-	Goal =.. GoalList,
-	append(GoalList,[Arg1,Arg2,Arg3,Arg4,Arg5],NewgoalList), 
-	Newgoal =.. NewgoalList,
-	call_c(Mod:Newgoal).
-call(Goal,Arg1,Arg2,Arg3,Arg4,Arg5):- 
-	Goal =.. GoalList,
-	append(GoalList,[Arg1,Arg2,Arg3,Arg4,Arg5],NewgoalList), 
-	Newgoal =.. NewgoalList,
-	call_c(Newgoal).
+call(G,Arg1,Arg2,Arg3,Arg4,Arg5):- 
+	(G @= _:_ -> 
+	    G = Mod: Goal,
+	    Goal =.. GoalList,
+	    append(GoalList,[Arg1,Arg2,Arg3,Arg4,Arg5],NewgoalList), 
+	    Newgoal =.. NewgoalList,
+	    call_c(Mod:Newgoal)
+	;   G =.. GoalList,
+   	    append(GoalList,[Arg1,Arg2,Arg3,Arg4,Arg5],NewgoalList), 
+   	    Newgoal =.. NewgoalList,
+	    call_c(Newgoal) ).
 
-call(Mod:Goal,Arg1,Arg2,Arg3,Arg4,Arg5,Arg6):- !,
-	Goal =.. GoalList,
-	append(GoalList,[Arg1,Arg2,Arg3,Arg4,Arg5,Arg6],NewgoalList), 
-	Newgoal =.. NewgoalList,
-	call_c(Mod:Newgoal).
-call(Goal,Arg1,Arg2,Arg3,Arg4,Arg5,Arg6):- 
-	Goal =.. GoalList,
-	append(GoalList,[Arg1,Arg2,Arg3,Arg4,Arg5,Arg6],NewgoalList), 
-	Newgoal =.. NewgoalList,
-	call_c(Newgoal).
+call(G,Arg1,Arg2,Arg3,Arg4,Arg5,Arg6):- 
+	(G @= _:_ -> 
+	    G = Mod: Goal,
+	    Goal =.. GoalList,
+	    append(GoalList,[Arg1,Arg2,Arg3,Arg4,Arg5,Arg6],NewgoalList), 
+	    Newgoal =.. NewgoalList,
+	    call_c(Mod:Newgoal)
+	;   G =.. GoalList,
+   	    append(GoalList,[Arg1,Arg2,Arg3,Arg4,Arg5,Arg6],NewgoalList), 
+   	    Newgoal =.. NewgoalList,
+	    call_c(Newgoal) ).
 
-call(Mod:Goal,Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7):- !,
-	Goal =.. GoalList,
-	append(GoalList,[Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7],NewgoalList), 
-	Newgoal =.. NewgoalList,
-	call_c(Mod:Newgoal).
-call(Goal,Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7):- 
-	Goal =.. GoalList,
-	append(GoalList,[Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7],NewgoalList), 
-	Newgoal =.. NewgoalList,
-	call_c(Newgoal).
+call(G,Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7):- 
+	(G @= _:_ -> 
+	    G = Mod: Goal,
+	    Goal =.. GoalList,
+	    append(GoalList,[Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7],NewgoalList), 
+	    Newgoal =.. NewgoalList,
+	    call_c(Mod:Newgoal)
+	;   G =.. GoalList,
+   	    append(GoalList,[Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7],NewgoalList), 
+   	    Newgoal =.. NewgoalList,
+	    call_c(Newgoal) ).
 
-call(Mod:Goal,Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8):- !,
-	Goal =.. GoalList,
-	append(GoalList,[Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8],NewgoalList), 
-	Newgoal =.. NewgoalList,
-	call_c(Mod:Newgoal).
-call(Goal,Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8):- 
-	Goal =.. GoalList,
-	append(GoalList,[Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8],NewgoalList), 
-	Newgoal =.. NewgoalList,
-	call_c(Newgoal).
+call(G,Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8):- 
+	(G @= _:_ -> 
+	    G = Mod: Goal,
+	    Goal =.. GoalList,
+	    append(GoalList,[Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8],NewgoalList), 
+	    Newgoal =.. NewgoalList,
+	    call_c(Mod:Newgoal)
+	;   G =.. GoalList,
+   	    append(GoalList,[Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8],NewgoalList), 
+   	    Newgoal =.. NewgoalList,
+	    call_c(Newgoal) ).
 
-call(Mod:Goal,Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8,Arg9):- !,
-	Goal =.. GoalList,
-	append(GoalList,[Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8,Arg9],NewgoalList), 
-	Newgoal =.. NewgoalList,
-	call_c(Mod:Newgoal).
-call(Goal,Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8,Arg9):- 
-	Goal =.. GoalList,
-	append(GoalList,[Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8,Arg9],NewgoalList), 
-	Newgoal =.. NewgoalList,
-	call_c(Newgoal).
+call(G,Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8,Arg9):- 
+	(G @= _:_ -> 
+	    G = Mod: Goal,
+	    Goal =.. GoalList,
+	    append(GoalList,[Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8,Arg9],NewgoalList), 
+	    Newgoal =.. NewgoalList,
+	    call_c(Mod:Newgoal)
+	;   G =.. GoalList,
+   	    append(GoalList,[Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8,Arg9],NewgoalList), 
+   	    Newgoal =.. NewgoalList,
+	    call_c(Newgoal) ).
 
 %  call_c(X)
 %  calls X when it is known that X contains no cuts!
