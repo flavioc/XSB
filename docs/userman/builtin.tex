@@ -4157,7 +4157,7 @@ bagAvg(Call,Avg) :-
     programming practice.  The use of a top level variable subgoal
     elicits a warning from the compiler.
 
-\ourmoditem{call(Goal,Arg,...)}{standard}\index{\texttt{call/[2,3]}}
+\ourmoditem{call(Goal,Arg,...)}{standard}\index{\texttt{call/[2,10]}}
 %
 {\tt call(Goal,Arg)} where {\tt Goal} is an N-ary callable term first
 constructs a new N+1-ary term {\tt NewGoal} with the same functor and
@@ -4168,14 +4168,14 @@ argument, and then calls {\tt NewGoal}.  As an example,
 
 is equivalent to {\tt call(member(X,[a,b,c])}.  {\tt Goal} must be a
 callable term, but can be prepended by a module name using the {\tt
-  :/2} symbol.  {\tt call(Goal,Arg1,Arg2)} will act similarly.  Note
-that {\tt Goal} should usually be atomic -- if the outer functor of
-{\tt Goal} is, say, {\tt ,/2}, {\tt call/[2-3]} will try to add the
-extra argument(s) to the comma functor, which is generally not the
-intended behavior.
+  :/2} symbol.  {\tt call(Goal,Arg1,Arg2,...)} will act similarly. 
+Note that {\tt Goal} should usually be atomic -- if the outer functor 
+of {\tt Goal} is, say, {\tt ,/2}, {\tt call/[2-10]} will try to add 
+the extra argument(s) to the comma functor, which is generally not 
+the intended behavior.
 
 While meta calls are generally fast in XSB, the extra term
-manipulation of {\tt call/[2-3]} makes it somewhat slower than {\tt
+manipulation of {\tt call/[2-10]} makes it somewhat slower than {\tt
   call/1}.
 
 \ournewitem{once(\#X)}{ISO}
