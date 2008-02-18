@@ -7,7 +7,7 @@
 Throughout this chapter, we use \verb'$XSB_DIR' to refer to the
 directory in which XSB was installed.
 
-\section{Entering and Exiting XSB}
+\section{Entering and Exiting XSB from the Command Line}
 %=================================
 
 After the system has been installed, the emulator's executable code appears 
@@ -20,25 +20,26 @@ If, after being built, XSB is later installed  at a central location,
 \begin{verbatim}
                      $SHARED_XSB/bin/xsb
 \end{verbatim}
-Either of these commands invokes XSB's top level interpreter which is
+Either of these commands invokes XSB's top-level interpreter, which is
 the most common way of using XSB.
 
-\version{} of XSB can also directly execute object code files from the
-command line interface.  Suppose you have a top-level routine {\tt go}
-in a file {\tt foo.P} that you would like to run from the UNIX or
-Windows command line.  As long as {\tt foo.P} contains a directive
-{\tt :- go.}, and {\tt foo} has been compiled to an object file ({\tt
-foo.xwam}), then
+XSB can also directly execute object code files from the command line
+interface.  Suppose you have a top-level routine {\tt go} in a file
+{\tt foo.P} that you would like to run from the UNIX or Windows
+command line.  As long as {\tt foo.P} contains a directive, e.g. {\tt
+  :- go.}, and {\tt foo.P} has been compiled to an object file ({\tt
+  foo.xwam}), then
 \begin{verbatim}
-                       $XSB_DIR/bin/xsb -B foo.xwam
+                     $XSB_DIR/bin/xsb -B foo.xwam
 \end{verbatim}
-will execute {\tt go}, loading the appropriate files as
-needed~\footnote{In XSB, all extensions except '.pl' --- (default
-'.P', '.H', '.xwam', '.D' (output by mode inferencing), and '.A'
-(assembly dump) --- are defined in C and Prolog code using macros in
-{\tt \$XSB\_DIR/emu/extensions\_xsb.h} and can be changed by a user if
-desired.  Of course, such a step should not be taken lightly, as it
-can cause severe compatibility problems.}.
+will execute {\tt go} (and any other directives), loading the
+appropriate files as needed~\footnote{In XSB, all extensions except
+  '.pl' --- (default '.P', '.H', '.xwam', '.D' (output by mode
+  inferencing), and '.A' (assembly dump) --- are defined in C and
+  Prolog code using macros in {\tt \$XSB\_DIR/emu/extensions\_xsb.h}
+  and can be changed by a user if desired.  Of course, such a step
+  should not be taken lightly, as it can cause severe compatibility
+  problems.}.
 %
 In fact the command
 \verb'$XSB_DIR/bin/xsb' is equivalent to the command:
@@ -46,6 +47,18 @@ In fact the command
              $XSB_DIR/bin/xsb -B $XSB_DIR/syslib/loader.xwam
 \end{verbatim}
 %%$
+There is one other way to execute XSB from a command line.  Using the
+{\tt -e} command-line option any goal can be can be executed, up to
+1024 characters.  For instance 
+\begin{verbatim}
+             $XSB_DIR/bin/xsb -e "writeln('hello world'),halt."
+\end{verbatim}
+%%$
+writes ``hello world'' and exits XSB.  Within the 1024 character
+limit, any query or command can be executed, including consulting
+files, so this method is actually quite general~footnote{Various
+  options can suppress XSB's startup and end messages, as discussed
+  below.}.
 
 There are several ways to exit XSB.  A user may issue the
 command \verb'halt.' or \verb'end_of_file.', or simply type
@@ -54,7 +67,7 @@ while it is executing a query, strike \verb'CTRL-c'.
 
 \section{The System and its Directories}
 %=======================================
-When installed, The XSB system resides in a single directory that
+When installed, the XSB system resides in a single directory that
 contains several subdirectories.  For completeness, we review the
 information in all subdirectories.  Normally, only the documentation
 and files in the Prolog subdirectories, particularly {\tt examples},
@@ -71,7 +84,7 @@ build XSB.
 particular configurations.
 %
 \item {\tt docs} contains the user manuals and other documentation,
-including the technical documentation manual for developers.
+including the technical documentation manual for developers.  
 %
 \item {\tt emu} contains the C source code for the XSB emulator, for
 I/O and for various interfaces.
@@ -108,6 +121,14 @@ code) files contain SLG-WAM instructions that can be executed by the
 emulator.  These byte-coded instructions are machine-independent, so
 usually no installation procedure is needed for the byte code files.
 
+If you are distributing an application based on XSB and need to cut
+down space, the {\tt packages}, {\tt examples} and {\tt docs}
+directories are not usually needed (unless of course you are using one
+of the packages in your application).  {\tt lib} may not be needed,
+(most core system files are in syslib) nor are Prolog source files
+necessary.  Unless your application needs to rebuild XSB, the {\tt
+  emu} and {\tt build} directories do not need to be distributed.
+
 \section{File Names and XSB}  \label{sec:filenames}
 %
 \index{base file name}
@@ -116,16 +137,17 @@ Three files are associated with Prolog source code in
 XSB~\footnote{Other types of files may be associated with foreign code
 --- see Volume 2.}.
 \begin{itemize}
-\item A single {\it source} file, whose name is the {\em base file name} plus 
-      the an extension suffix ``{\tt .P}'' or if a {\tt .P} file
-      cannot be found , {\tt .pl}.   
+\item A single {\it source} file, whose name is the {\em base file
+  name} plus the an extension suffix {\tt .P} or if a {\tt .P} file
+  cannot be found , {\tt .pl}.
 \item An {\it object (byte-code)} file, whose name consists of the
-base file name plus the suffix ``{\tt .xwam}''.
-\item An optional {\it header} file, whose name is the base file name plus 
-      the suffix ``{\tt .H}''.  When used, the header file normally
-      contains file-level declarations and directives while the source
-      file usually contains the actual definitions of the predicates
-      defined in that module.
+  base file name plus the suffix {\tt .xwam}.
+\item An optional {\it header} file, whose name is the base file name
+  plus the suffix ``{\tt .H}''.  When used, the header file normally
+  contains file-level declarations and directives while the source
+  file usually contains the actual definitions of the predicates
+  defined in that module.  However, such information can be
+  equivalently put into the {\tt .P} (or {\tt .pl} file.
 \end{itemize}
 %
 Most of the XSB system predicates, such as {\tt consult/[1,2]}, {\tt
@@ -134,44 +156,47 @@ file designation.  A file may be designated by a {\em file designator}
 which can be a base file name, a source file name; or the relative or
 absolute paths to a base or source file name.  Unfortunately, the
 exact semantics of a file designator differs among system predicates
-in \version, as well as among platforms.
+in \version, as well as among platforms.  
 
 \section{The Module System of XSB} \label{Modules}
 %========================================================
 XSB has been designed as a module-oriented Prolog system.  Modules
 provide a small step towards {\em logic programming ``in the large''}
-that facilitates large programs or projects to be put together from
-components which can be developed, compiled and tested separately.
-Also module systems support the {\em principle of information hiding}
-and can provide a basis for {\em data abstraction}.  The module system
-of XSB is {\em file based} -- one module per file -- and {\em flat} --
+that facilitates the construction of large programs or projects from
+components that are developed, compiled and tested separately.  Also
+module systems support the {\em principle of information hiding} and
+can provide a basis for {\em data abstraction}.  The module system of
+XSB is {\em file based} -- one module per file -- and {\em flat} --
 modules cannot be nested.  In addition, XSB's module system is to some
 extent {\em atom-based}, where any symbol in a module can be imported,
 exported or be a local symbol, as opposed to the predicate-based ones
 where this can be done only for predicate symbols~\footnote{Operator
   symbols can be exported as any other symbols, but their precedence
-  must be redeclared in the importing module.}.
+  must be redeclared in the importing module.}.  As we will discuss,
+this leads to certain differences of XSB's module system from those of
+some other Prologs.
 
-\index{modules!name}
+\paragraph*{Module Syntax}
+\index{modules!name} 
+%
 By default, files are not treated as modules.  In order for a file to
-be treated as a module, it must contain one or more {\it export
-declarations}, which specify that a set of symbols appearing in that
-module is visible and therefore can be used by any other module.  In
-XSB, the {\em module name} is equal to the base file name in which the
-module is defined.  Any file (either module or not) may also contain
-{\it import declarations}, which allow symbols defined in and exported
-by other modules to be used in the current module.  In addition, a
-module can also contain {\it local declarations}, which specify that a
-set of symbols are {\it visible by this module only}, and therefore
-cannot be accessed by any other module.  Export, local, and import
-declarations can appear anywhere in the source or header files and
-have the following forms:
+be treated as a module, it must contain one or more {\tt export/1} or
+{\tt module/1} declarations, which specify that a set of symbols
+appearing in that module is visible and therefore can be used by any
+other module.  In XSB, the {\em module name} is equal to the base file
+name in which the module is defined.  Any file (either module or not)
+may also contain {\tt import/1} or {\tt use\_module/2} declarations,
+which allow symbols defined in and exported by other modules to be
+used in the current module.  In addition, a module can also contain
+{\it local declarations}, which specify that a set of symbols is {\it
+  visible by this module only}, and therefore cannot be accessed by
+any other module.  Module declarations can appear anywhere in the
+source or header files and have the following forms:
 
-\index{modules!XSB syntax}
-\index{\texttt{export/1}} \index{\texttt{import/2}} \index{\texttt{local/1}}
-The module system of XSB is {\em file based} (one module per
-file), {\em atom based} (where all non-predicate symbols are normally
-assumed to be global to all modules), and {\em flat} (modules cannot
+\index{modules!XSB syntax} \index{\texttt{export/1}}
+\index{\texttt{import/2}} \index{\texttt{local/1}} 
+\index{modules!compatability syntax}
+\index{\texttt{module/2}}  \index{\texttt{use\_module/2}}    
 
 \demo{:- export $sym_1$, \ldots, $sym_l$. }
 
@@ -183,95 +208,7 @@ assumed to be global to all modules), and {\em flat} (modules cannot
 where $sym_i$ has the form $functor/arity$, and $module$ is a module
 name.
 
-We note that only exported symbols can be imported; for example
-importing a local symbol will cause an {\tt environment conflict
-error} when the file referred to by the import statement is loaded.
-When a non-module file is loaded, its predicates and symbols are
-loaded into the module {\tt usermod}, which is the working module of
-the XSB interpreter.  Dynamically asserted code is also loaded into
-{\tt usermod}.
-
-For modules, the base file name is stored in its byte code file, which
-means that if the byte code file is renamed, the base file name is not
-altered, and hence may cause confusion to the user and/or the system.
-However, byte code files generated for non-modules can be safely
-renamed.
-
-In order to understand the semantics of modules, the user should keep
-in mind that in a module oriented system, the name of each symbol is
-identified as if it were prefixed with its module name (equivalently
-its base file name), hence two symbols of the same $functor/arity$ but
-different module prefixes are distinct symbols.  Currently the
-following set of rules is used to determine the module prefix of a
-symbol:
-\begin{itemize}
-\item	Every predicate symbol appearing in a module (i.e. that appears as
-	the head of some clause) is assumed by default to be {\em
-	local} to that module unless it is declared otherwise (via an
-	export or import declaration).  Symbols that are local to a
-	given module are not visible to other modules.
-\item	Every other symbol (essentially function symbols) in a module is
-	assumed to be {\em global} (its module prefix is {\tt
-	usermod}) unless declared otherwise.
-\item	If a symbol is imported from another module (via an explicit import 
-	declaration), the module prefix of the symbol is the module it
-	is imported from; any other symbol takes the module where the
-	symbol occurs as its module prefix.
-\item	The XSB command-line interpreter treats {\tt usermod} as its
-working module. 
-\item	Symbols that are either defined in non-modules loaded into the
-	system or that are dynamically created (by the use of standard
-	predicates such as {\tt read/1, functor/3, '=..'/2}, etc) are
-	contained in {\tt usermod}%
-\footnote{The standard predicates of XSB are listed in {\tt
-\$XSB\_DIR/syslib/std\_xsb.P}.}.  \index{standard predicates}
-\end{itemize}
-%
-The following facts about the module system of XSB may not be
-immediately obvious:
-\begin{itemize}
-\item   If users want to use a symbol from another module, they must
-        explicitly import it otherwise the two symbols are different
-        even if they are of the same $functor/arity$ form.
-\item	A module can only export predicate symbols that are defined in
-        that module.  As a consequence, a module {\em cannot} export
-        predicate symbols that are imported from other modules.
-        This happens because an {\tt import} declaration is just a
-        request for permission to use a symbol from a module where
-        its definition and an {\tt export} declaration appear.
-\item   The implicit module for a particular symbol appearing in a
-        module must be uniquely determined.  As a consequence, a
-        symbol of a specific $functor/arity$ {\em cannot} be declared
-        as both exported and local, or both exported and imported from
-        another module, or declared to be imported from more than one
-        module, etc.  These types of environment conflicts are
-        detected at compile-time and abort the compilation.
-\item   It is an error to import a symbol from a module that does not
-        export it.  This error is {\em not\/} detected at compile-time
-        but at run-time when a call to that symbol is made.  If the
-        symbol is defined in, but not exported from the module that
-	defines it, an environment conflict error will take place.
-	If the symbol is not defined in that module an undefined
-	predicate/function error will be be reported to the user.
-	\index{errors!undefined predicate}
-\item   In the current implementation, at any time only one symbol of
-        a specific $functor/arity$ form can appear in a module.  As an
-        immediate consequence of this fact, only one $functor/arity$
-        symbol can be loaded into the current working module ({\tt
-        usermod}).  An attempt to load a module that redefines that
-        symbol results in a warning to the user and the newly loaded
-        symbol {\em overrides} the definition of the previously loaded
-        one.
-\end{itemize}
-
-\index{modules!compatability syntax}
-\index{\texttt{module/2}}  \index{\texttt{use\_module/2}}    
-{\bf Compatability Note:\ }  
-% 
-Unlike XSB, most other Prologs use a predicate-based module system
-that differs from XSB's module system in syntax and in certain
-semantic aspects.  Unlike the semantic issues, some syntactic issues
-can be easily addressed.  The declaration
+In XSB, the declaration
 
 \demo{:- module($filename$,[$sym_1$, \ldots, $sym_l$.]).}
 
@@ -287,13 +224,14 @@ Similarly,
 \demo{:- use\_module($module$,[$sym_1$, \ldots, $sym_l$.]).}
 
 \noindent
-is syntactic sugar for 
+is treated as semantically equivalent to 
 
 \demo{:- import $sym_1$, \ldots, $sym_n$ from $module$. }
 
 \noindent
-Accordingly, {\tt use\_module/2} and {\tt module/1} can be used just as
-{\tt import/2} and {\tt export/1}.  However the common declaration
+Accordingly, {\tt use\_module/2} and {\tt module/1} can be used
+interchangibly with {\tt import/2} and {\tt export/1}.  However the
+common declaration
 
 \demo{:- use\_module($module$).}
 
@@ -302,7 +240,261 @@ Accordingly, {\tt use\_module/2} and {\tt module/1} can be used just as
 statement must explicitly declare a list of predicates that are used
 from each module.
 
+For modules, the base file name is stored in its byte code file, so
+that renaming a byte-code file for a mule may cause problems, as the
+renaming will not affect the information within the byte-code file.
+However, byte code files generated for non-modules can be safely
+renamed.
 
+\paragraph*{Module Semantics} 
+%
+In XSB's atom-based module system, the name of each predicate and
+function symbol {\tt p/n} is identified as if it were prefixed with
+its module name (i.e. base file name).  Hence the occurrence of {\tt
+  p/n} in two different modules, {\tt m1} and {\tt m2} are distinct
+symbols that can be denoted as {\tt m1:p/n} and {\tt m2:p/n}.  
+
+Normally, only exported symbols can be imported; if a non-exported
+symbol {\tt p/2} is imported from a module {\tt m1} by module {\tt m2}
+an environment conflict warning will be issued as soon as {\tt m1} and
+{\tt m2} are loaded in the same session -- i.e. the conflict is
+detected at run-time.  When a non-module file is loaded, its
+predicates and symbols are loaded into the module {\tt usermod}, which
+is the working module of the XSB command-line interpreter and
+C-calling XSB interface.  Dynamically asserted code is also loaded
+into {\tt usermod} by default.
+%
+Currently the following set of rules is used to determine the module
+prefix of a symbol:
+\begin{itemize}
+%
+\item A predicate symbol {\tt p/n} is {\em defined} in a module {\tt
+  m} if {\tt m} contains a clause with head {\tt p/n} or a dynamic
+  declaration for {\tt p/n}.  Any predicate symbol {\tt p/n} defined
+  in a module {\tt m}, whether exported or not, can be called by
+  prepending the module prefix using the {\tt :/2} functor, e.g. {\tt
+    m:p(A,...)}.  For brevity, we call this an {\em explicit module
+    call} to {\tt p/n}.  The following example illustrates these
+  principles.
+%
+\begin{center}
+\begin{tabular}{cc}\hline \hline
+\multicolumn{2}{c}{\rule{0ex}{2.5ex}\textbf{Exported and Non-Exported Predicates}} \\ \hline \hline
+\rule[-2ex]{0ex}{5ex} \texttt{m1} &  \\
+\begin{minipage}{18.5em}
+\begin{verbatim}
+:- export p/2.
+
+exported(a,b).
+
+local(c,d).
+
+\end{verbatim}
+\end{minipage}
+&
+\begin{minipage}{14.5em}
+\begin{verbatim}
+| ?- exported(X,Y).
+
+X = a
+Y = b
+
+yes
+| ?- local(X,Y).
+/* Existence Error */
+| ?- m1:local(X,Y).
+
+X = c
+Y = d
+
+yes
+\end{verbatim}
+\end{minipage}
+%\vspace*{-2ex} 
+\\ \hline \hline
+\end{tabular}
+\end{center}
+%
+\item Every predicate symbol defined in a module is assumed by default
+  to be {\em local} to a module unless it is declared otherwise by an
+  export or import declaration.  Symbols that are local to a given
+  module are not visible to other modules except through explicit
+  module calls.  The following example shows how different
+  declarations for dynamic predicates within a module may be global
+  ({\tt usermod}) or local.  Calls to statically defined predicates
+  behave similarly.
+%
+\begin{center}
+\begin{tabular}{cc}\hline \hline
+\multicolumn{2}{c}{\rule{0ex}{2.5ex}\textbf{Visibility of Dynamic Predicates}} \\ \hline \hline
+\rule[-2ex]{0ex}{5ex} \texttt{m1} & \texttt{m2} \\
+\begin{minipage}{20.5em}
+\begin{verbatim}
+:- export p1/2, p2/2, p3/2, p4/2.
+:- dynamic d1/2.
+:- import d2/2 from usermod. 
+
+p10:- a1.
+
+p1(X,Y):- assert(d1(X,Y)).
+p2(X,Y):- d1(X,Y).
+
+p2(X,Y):- assert(d2(X,Y)).
+p3(X,Y):- d2(X,Y).
+\end{verbatim}
+\end{minipage}
+&
+\begin{minipage}{14.5em}
+\begin{verbatim}
+| ?- [m1].
+[m1 loaded]
+
+yes
+| ?- p1(a,b).
+
+yes
+| ?- p2(X,Y).
+
+X = a
+Y = b
+
+yes
+| ?- d1(X,Y).
+/* Existence Error */
+| ?- m1:d1(X,Y).
+
+X = a
+Y = b
+
+yes
+| ?- p3(1,2).
+
+yes
+| ?- p4(X,Y).
+
+X = 1
+Y = 2
+
+yes
+| ?- d2(X,Y).
+
+X = 1
+Y = 2
+
+yes
+\end{verbatim}
+\end{minipage}
+%\vspace*{-2ex} 
+\\ \hline \hline
+\end{tabular}
+\end{center}
+%
+\item Functors that occur as literals in the bodies of clauses, are
+  treated as predicate symbols.  
+\bi
+\item {\em Standard} predicates are taken to be a part of {\tt
+  usermod}, and are implicitly imported into user-defined modules.
+  Standard predicates include ISO predicates along with many other XSB
+  predicates for tabling, indexing and other functions.  The current
+  listing of standard predicates can be found in the index of this
+  manual under {\em Standard predicates}.
+%
+\item Other predicates are taken to be local to the module in which
+  they occur.
+\ei
+\item Functors that do not occur as literals in the body of clauses in
+  a module are taken to be structure symbols.  These symbols are
+  assumed to be global and do not require an explicit module call to
+  be used, unless declared otherwise through a {\tt local/1}
+  declaration.  In addition, terms that are dynamically created by
+  standard predicates such as {\tt read/1, functor/3, '=..'/2}, etc)
+  are taken to be structure symbols and are contained in {\tt
+    usermod}.  
+%
+%\item If a symbol is imported from another module (via an explicit
+%  import declaration), the module prefix of the symbol is the module
+%  it is imported from; any other symbol takes the module where the
+%  symbol occurs as its module prefix.
+%
+\item All atoms are assumed to be global and do not require an
+  explicit module call to be used.  This can occasionally lead to
+  unexpected results if a token is used both as an atom and a 0-ary
+  function symbol.  In the following table, the query {\tt ?- p10}
+  will call {\tt a1/0}, while {\tt ?- p11.} will throw an existence
+  error.
+
+\begin{center}
+\begin{tabular}{cc}\hline \hline
+\multicolumn{2}{c}{\rule{0ex}{2.5ex}\textbf{Atoms and 0-ary Predicates}} \\ \hline \hline
+\rule[-2ex]{0ex}{5ex} \texttt{m1} & \texttt{m2} \\
+\begin{minipage}{18.5em}
+\begin{verbatim}
+:- export p10/0, p11/0.
+:- import a1/0 from m2.
+
+p10:- a1.
+
+p11:- atom_chars(A1,[a,'1']),
+      call(A1).
+\end{verbatim}
+\end{minipage}
+&
+\begin{minipage}{14.5em}
+\begin{verbatim}
+:- export a1/0.
+
+
+
+
+a1:- writeln(found_a1).
+\end{verbatim}
+\end{minipage}
+%\vspace*{-2ex} 
+\\ \hline \hline
+\end{tabular}
+\end{center}
+%
+\end{itemize}
+%
+For clarity, we state a few consequences of these rules.
+\begin{itemize}
+%\item If users want to use a symbol (e.g. {\tt p/2}) from another
+%  module, {\tt mod}, they must explicitly import it otherwise the two
+%  symbols are different even if they are of the same $functor/arity$
+%  form.  Alternately, a call can be prepended with a module name, as
+%  {\tt mod:p(A,B)}.
+%
+\item In \version{}, a module {\em cannot} export predicate symbols
+  that are imported from other modules.  This happens because an {\tt
+    import} declaration is considered a request for permission to use
+  a symbol from a module where its definition and an {\tt export}
+  declaration appear. 
+%
+\item The implicit module for a particular symbol appearing in a
+  module must be uniquely determined.  As a consequence, a symbol of a
+  specific $functor/arity$ {\em cannot} be declared as both exported
+  and local, or (as just discussed) both exported and imported from
+  another module, or declared to be imported from more than one
+  module, etc.  These types of environment conflicts are detected at
+  compile-time and abort the compilation.
+%
+% Perhaps discuss symbols, if that isn't too confusing.
+\item If a module {\tt m1} imports a predicate {\tt p/n} from a module
+  {\tt m2}, but {\tt m2} does not export {\tt p/n}, nothing is
+  detected at the time of compilation.  As discussed above, if {\tt
+    p/n} is defined in {\tt m2} a runtime warning about an environment
+  conflict will be issued.  However, if {\tt p/n} is not defined
+  in {\tt m2}, a runtime existence error will be thrown.
+%
+\item Only one definition of a symbol {\tt p/n} can appear in a
+  module, without being explicitly associated with a module using the
+  {\tt :/2} functor.  Accordingly only one default definition of {\tt
+    p/n} can be loaded into the interpreter's module ({\tt usermod}).
+  An attempt to load a module that redefines {\tt p/n} results in a
+  warning to the user and the newly loaded symbol {\em redefines} the
+  definition of the previously loaded one.
+\end{itemize}
+% 
 \paragraph*{Usage inference and the module system}
 The import and export statements of a module $M$ are used by the
 compiler for inferring usage of predicates.  At compilation time, if a
