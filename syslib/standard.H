@@ -33,7 +33,7 @@
         arg/3,		arg0/3,		atom/1,		
 	atom_concat/3,   atomic/1,	atom_length/2,
 	goal_arg/3,	atom_chars/2,   atom_codes/2,
-   call/1,		call_expose/1,	callable/1, char_code/2,
+   call/1,	call/2, call/3,	call_expose/1,	callable/1, char_code/2,
    check_arity_integer/3,  call_cleanup/2, cleanup_handler/2,
 	close/1,             close/2,	compare/3,	
         compound/1,	cputime/1,	
@@ -93,7 +93,7 @@
         goal_cut_trans/3,	goal_cut_untrans/2,
 	tcall/1,	arity_integer/1,	prolog_arglist/4,
 	message/1,      message/2, messageln/2,
-        warning/1,      abort/1,	abort/0,
+   warning/1,      warningln/1, abort/1,	abort/0,
 	set_timer/1,
 	(import)/1,	(multifile)/1.
 	  :- export cleanup_handler/2.

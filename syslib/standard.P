@@ -898,6 +898,28 @@ call(Goal) :-
 	; type_error(callable,Goal,call/1,1)
 	).
 
+call(Mod:Goal,Arg):- !,
+	Goal =.. GoalList,
+	append(GoalList,[Arg],NewgoalList), 
+	Newgoal =.. NewgoalList,
+	call_c(Mod:Newgoal).
+call(Goal,Arg):- 
+	Goal =.. GoalList,
+	append(GoalList,[Arg],NewgoalList), 
+	Newgoal =.. NewgoalList,
+	call_c(Newgoal).
+
+call(Mod:Goal,Arg1,Arg2):- !,
+	Goal =.. GoalList,
+	append(GoalList,[Arg1,Arg2],NewgoalList), 
+	Newgoal =.. NewgoalList,
+	call_c(Mod:Newgoal).
+call(Goal,Arg1,Arg2):- 
+	Goal =.. GoalList,
+	append(GoalList,[Arg1,Arg2],NewgoalList), 
+	Newgoal =.. NewgoalList,
+	call_c(Newgoal).
+
 %  call_c(X)
 %  calls X when it is known that X contains no cuts!
 
@@ -1326,6 +1348,11 @@ error_writeln(X):-
 
 %  warning/1
 warning(Message) :- 
+	message('++Warning[XSB]: [Runtime/P] ', STDWARN),
+	messageln(Message, STDWARN).
+
+%  warning/1
+warningln(Message) :- 
 	message('++Warning[XSB]: [Runtime/P] ', STDWARN),
 	messageln(Message, STDWARN).
 

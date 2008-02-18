@@ -24,7 +24,7 @@
 */
 
 
-:- export eval/2.
+:- export eval/2, pi/1, e/1.
 
 /**
 :- import number/1, throw/1 from standard.
