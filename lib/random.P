@@ -160,6 +160,41 @@ insert_rand(J,L1,L) :-
 	).
 	 
 %-----------------------------------------------------------------------
+% gauss(-Y1,-Y2) uses the polar form of the Box-Muller algorithm to 
+% generate two random numbers with mean 0 and standard deviation 1.
+%-----------------------------------------------------------------------
+
+gauss(Y1,Y2):-
+    gauss_1(Square,X1,X2),
+    Y1 is X1 * sqrt( (-2.0 * log(Square)) / Square),
+    Y2 is X2 * sqrt( (-2.0 * log(Square)) / Square),!.
+			      
+gauss_1(Square,X1,X2):- 
+	repeat,
+	random(X1),
+	random(X2),
+	Square is sqrt(X1*X1 + X2*X2),
+	Square < 1.0,
+	Square > 0.
+
+/*
+Non-polar form:
+gauss_nonpolar(U1,U2,N1,N2):- 
+    N1 is sqrt( -2*log(U1)) * cos(2*pi*U2),
+    N2 is sqrt( -2*log(U1)) * sin(2*pi*U2).
+*/
+
+%-----------------------------------------------------------------------
+
+weibull(K,Lambda,X):-
+	random(R),
+	X is Lambda * (-log(R))**(1/K).
+
+exponential(Lambda,X):- 
+	random(R),
+	X is Lambda * (-log(R)).
+
+%-----------------------------------------------------------------------
 % The builtin predicate
 %-----------------------------------------------------------------------
 wh_random(_Type,_A,_B,_C) :- '_$builtin'(53).
