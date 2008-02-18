@@ -32,6 +32,7 @@
 /*		- Pil-PilRest: pil code generated, as a differential	*/
 /*			       list.					*/
 /*======================================================================*/
+%:- import console_writeln/1 from standard.
 
 geninline(true, [], _, _, Pil, Pil, T, T, _).
 geninline(fail, [], _, _, [fail|Pil], Pil, T, T, _).
@@ -44,6 +45,7 @@ geninline('_$cutto', [Arg], HoldR, ARSize, Pil, Pilr, Tin, Tout, _) :-
 	geninline_cutto(Arg, HoldR, ARSize, Pil, Pilr, Tin, Tout).
 
 geninline(is, [Arg1,Arg2], HoldR, _, Pil, Pilr, Tin, Tout, EPN) :-
+%	console_writeln(geninline_isindeed(Arg1, Arg2, HoldR, Pil, Pilr, Tin, Tout, EPN)),
 	geninline_isindeed(Arg1, Arg2, HoldR, Pil, Pilr, Tin, Tout, EPN).
 geninline(@=, [Arg1,Arg2], _HoldR, _, Pil, Pilr, Tin, Tout, _EPN) :-
 	geninl_load_lhs(Arg1, R1, Pil, Pilm, Tin, Tmid, _),
