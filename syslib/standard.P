@@ -888,16 +888,46 @@ use_opaque_tabling(Ps) :-
 			/*  LOGIC and CONTROL  */
 			/***********************/
 
+/* Call0 shoul be ok below as it is used as the last goal */
+
+/*
 call(Goal) :- 
 	( callable(Goal) ->
 		'_$savecp'(C), 
 		goal_cut_trans(Goal, Trans_Goal, C), 
-		call_c(Trans_Goal)
+		call0(Trans_Goal)
+	; var(Goal) -> 
+	        instantiation_error(call/1,1,bound)
+	; type_error(callable,Goal,call/1,1)
+	).
+*/
+
+% TLS: 02/08 -- use of directly_callable saves *lots* of time for normal case.
+call(Goal) :- 
+	( directly_callable(Goal) ->
+		call0(Goal)
+	;  callable(Goal) ->
+		'_$savecp'(C), 
+		goal_cut_trans(Goal, Trans_Goal, C), 
+		call0(Trans_Goal)
 	; var(Goal) -> 
 	        instantiation_error(call/1,1,bound)
 	; type_error(callable,Goal,call/1,1)
 	).
 
+call(G,Arg):- 
+	(G @= _:_ -> 
+	    G = Mod: Goal,
+	    Goal =.. GoalList,
+	    append(GoalList,[Arg],NewgoalList), 
+	    Newgoal =.. NewgoalList,
+	    call_c(Mod:Newgoal)
+	;   G =.. GoalList,
+	    append(GoalList,[Arg],NewgoalList), 
+   	    Newgoal =.. NewgoalList,
+	    call0(Newgoal) ).
+
+/*
 call(G,Arg):- !,
 	(G @= _:_ -> 
 	    G = Mod: Goal,
@@ -906,9 +936,10 @@ call(G,Arg):- !,
 	    Newgoal =.. NewgoalList,
 	    call_c(Mod:Newgoal)
 	;   G =.. GoalList,
-   	    append(GoalList,[Arg],NewgoalList), 
+	    append(GoalList,[Arg],NewgoalList), 
    	    Newgoal =.. NewgoalList,
 	    call_c(Newgoal) ).
+*/
 
 call(G,Arg1,Arg2):- 
 	(G @= _:_ -> 
@@ -1017,12 +1048,11 @@ call_c(X) :- call0(X).
 tcall(X) :- call0(X).
 
 %  transforms a goal to turn its cuts (!) into '_$cutto's.
-
+%  TLS: Calling retuires_cut_transforming1/1 at top level because goal_cut_trans/3
+%  has already checke for var.
 goal_cut_trans(Goal,TGoal,Cutpoint) :-
-	(requires_cut_transforming(Goal)
-	 ->	goal_cut_transform(Goal,TGoal,Cutpoint)
-	 ;	TGoal = Goal
-	).
+	(requires_cut_transforming1(Goal) ->
+	goal_cut_transform(Goal,TGoal,Cutpoint) ; TGoal = Goal ).
 
 requires_cut_transforming(X) :-
 	(var(X) -> true ; requires_cut_transforming1(X)).
