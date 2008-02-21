@@ -296,6 +296,7 @@
 #define IS_ATTV_TEST		10
 #define VAR_TEST		11
 #define NONVAR_TEST		12
+#define DIRECTLY_CALLABLE_TEST  13
 
 #define PLUS_FUNCT 1
 #define MINUS_FUNCT 2
