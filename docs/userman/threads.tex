@@ -749,8 +749,7 @@ correct calls to these predicates will give a miscellaneous error.
 
 \begin{description}
 
-\ouritem{thread\_create(+Goal,ThreadId,+OptionsList)}
-\index{\texttt{thread\_create/3}}
+\standarditem{thread\_create(+Goal,ThreadId,+OptionsList)}{thread\_create/3}
 %
 When called from thread $T$, this predicate creates a new XSB thread
 $T_{new}$ to execute {\tt Goal}.  When goal either succeeds, throws an
@@ -869,18 +868,18 @@ Their size is obtained through the settable XSB flag {\tt
 \ei
 \ei
 
-\ouritem{thread\_create(+Goal,-ThreadId)}
-\index{\texttt{thread\_create/2}}
+\standarditem{thread\_create(+Goal,-ThreadId)}
+{thread\_create/2}
 %
 Acts as {\tt thread\_create(Goal,ThreadId,[])}.
 
-\ouritem{thread\_create(+Goal)}
-\index{\texttt{thread\_create/1}}
+\standarditem{thread\_create(+Goal)}
+{thread\_create/1}
 %
 Acts as {\tt thread\_create(Goal,\_,[detached(true)])}.
 
-\ouritem{thread\_join(+Threads\_or\_aliases,-ExitDesignators)}
-\index{\texttt{thread\_join/2}} 
+\standarditem{thread\_join(+Threads\_or\_aliases,-ExitDesignators)}
+{thread\_join/2}
 % 
 When {\tt thread\_join/2} is called by thread $T$, {\tt
   Threads\_or\_aliases} must be instantiated to either 1) an XSB
@@ -925,8 +924,8 @@ or a list of such elements.
 a) Thread is a variable  instantiation_error
 }
 
-\ouritem{thread\_exit(+ExitTerm)}
-\index{\texttt{thread\_exit/1}} 
+\standarditem{thread\_exit(+ExitTerm)}
+{thread\_exit/1}
 %
 Exits a thread $T$ with {\tt ExitTerm} after releasing any mutexes
 held by $T$, freeing any thread-specific memory allocated for $T$ (we
@@ -944,8 +943,8 @@ termination of a thread as it is called implicitly on success or
 \ei
 \ei
 
-\ouritem{thread\_self(?ThreadId\_or\_Alias)}
-\index{\texttt{thread\_self/1}} 
+\standarditem{thread\_self(?ThreadId\_or\_Alias)}
+{thread\_self/1}
 %
 If {\tt ThreadId} is an atom, unifies {\tt ThreadId\_or\_Alias} with
 an alias of the calling thread.  Otherwise, unifies {\tt
@@ -954,8 +953,8 @@ There are no error conditions.
 
 %-------------------------------------------------------------------
 
-\ouritem{thread\_detach(+Thread\_or\_Alias)}
-\index{\texttt{thread\_detach/1}} 
+\standarditem{thread\_detach(+Thread\_or\_Alias)}
+{thread\_detach/1}
 %
 Detaches a joinable thread denoted by {\tt Thread\_or\_Alias} so that
 all resources will be reclaimed upon its exit.  The thread denoted by
@@ -991,8 +990,8 @@ all resources will be reclaimed upon its exit.  The thread denoted by
 \ei
 \ei
 
-\ouritem{thread\_cancel(+Thread\_or\_Alias)}
-\index{\texttt{thread\_cancel/1}} 
+\standarditem{thread\_cancel(+Thread\_or\_Alias)}
+{thread\_cancel/1}
 %
 Cancels the XSB thread denoted by {\tt Thread\_or\_Alias}.  The cancellation
 does not use Pthread cancellation mechanisms, rather it uses XSB's
@@ -1040,8 +1039,8 @@ can cancel any other thread.
 \ei
 \ei
 
-\ouritem{thread\_signal(Thread\_or\_Alias,Goal)}
-\index{\texttt{thread\_signal/2}} 
+\standarditem{thread\_signal(Thread\_or\_Alias,Goal)}
+{thread\_signal/2}
 % 
 {\tt thread\_signal(ThreadOrAlias, Goal)} interrupts thread {\tt
   ThreadOrAlias} so that it executes {\tt Goal} at the first
@@ -1081,22 +1080,22 @@ throws an exception $E$, the continuation will be the handler for $E$.
 \ei
 
 \ourmoditem{thread\_disable\_cancel/0}{thread}
-\index{\texttt{thread\_disable\_cancel/0}} 
+\index{\texttt{thread\_disable\_cancel/0}}
 % 
 Disables the calling thread from being cancelled, so that it can be
 ensured that critical operations can run to completion.  This
 predicate always succeeds.
 
 \ourmoditem{thread\_enable\_cancel/0}{thread}
-\index{\texttt{thread\_enable\_cancel/0}} 
+\index{\texttt{thread\_enable\_cancel/0}}
 % 
 Enables the calling thread to be cancelled.  By default, threads may
 be cancelled, so this predicate needs to be called if {\tt
   thread\_disable\_cancel/0} has been previously called.  This
 predicate always succeeds.
 
-\ouritem{thread\_yield}
-\index{\texttt{thread\_yield/0}} 
+\standarditem{thread\_yield}
+{thread\_yield/0}
 % 
 Make the calling thread ready to be run {\em after} other threads of
 the same priority.  This predicate relies on the real-time extensions
@@ -1111,8 +1110,8 @@ platforms.
 \ei
 \ei
 
-\ouritem{thread\_property(?ThreadOrAlias,?Property)}
-\index{\texttt{thread\_property/2}} 
+\standarditem{thread\_property(?ThreadOrAlias,?Property)}
+{thread\_property/2}
 %
 If {\tt ThreadOrAlias} is instantiated, unifies {\tt Property} with
 current properties of the thread that unify with {\tt Property}; if
@@ -1159,8 +1158,8 @@ clear_thread_table.
 \ei
 \ei
 
-\ouritem{thread\_sleep(+Seconds)}
-\index{\texttt{thread\_sleep/1}} 
+\standarditem{thread\_sleep(+Seconds)}
+{thread\_sleep/1}
 %
 Causes the calling thread to sleep approximately {\tt Seconds}
 before resuming.
@@ -1180,7 +1179,7 @@ before resuming.
 %----------
 
 \ourmoditem{usleep(+Microseconds)}{thread}
-\index{\texttt{usleep/1}} 
+\index{\texttt{usleep/1}}
 %
 Causes the calling thread to sleep approximately {\tt Microseconds}
 before resuming.
@@ -1219,8 +1218,8 @@ queue that is readable only by itself.  The following predicates are
 used to communicate using private and public message queues.
 %
 \begin{description}
-\ouritem{message\_queue\_create(-Queue,+Options)}
-\index{\texttt{message\_queue\_create/2}} 
+\standarditem{message\_queue\_create(-Queue,+Options)}
+{message\_queue\_create/2}
 %
 Creates a new public message queue with identifier {\tt Queue}.  {\tt
   Options} allows optional parameters to be passed for the maximum
@@ -1270,8 +1269,8 @@ number of terms in the queue, and for aliases of the queue.
 \ei
 \ei
 
-\ouritem{message\_queue\_detroy(+Queue\_or\_Alias,\#Message)}
-\index{\texttt{message\_queue\_destroy/1}} 
+\standarditem{message\_queue\_detroy(+Queue\_or\_Alias,\#Message)}
+{message\_queue\_destroy/1}
 %
 Destroys a message queue with alias or id {\tt Queue\_or\_alias}, as
 created by {\tt message\_queue\_create/[1,2]}.
@@ -1297,8 +1296,8 @@ error.
 %
 
 
-\ouritem{thread\_send\_message(+Queue\_or\_Alias,\#Message)}
-\index{\texttt{thread\_send\_message/2}} 
+\standarditem{thread\_send\_message(+Queue\_or\_Alias,\#Message)}
+{thread\_send\_message/2}
 %
 {\tt Queue\_or\_alias} may either be a queue id or alias, or a thread
 id or alias in which latter case the private queue for a thread is
@@ -1324,8 +1323,8 @@ when the thread will be awakened to put {\tt Message} onto the queue.
 \ei
 %
 
-\ouritem{thread\_get\_message(+Queue\_or\_Alias,?Message)}
-\index{\texttt{thread\_get\_message/2}} 
+\standarditem{thread\_get\_message(+Queue\_or\_Alias,?Message)}
+{thread\_get\_message/2}
 %
 If there are terms on {\tt Queue\_or\_Alias} {\tt
   thread\_get\_message/2} traverses {\tt Queue\_or\_Alias} to obtain
@@ -1354,13 +1353,13 @@ calling thread suspends until at least one term is added to {\tt
 \ei
 \ei
 %
-\ouritem{thread\_get\_message(?Message)}
-\index{\texttt{thread\_get\_message/1}} 
+\standarditem{thread\_get\_message(?Message)}
+{thread\_get\_message/1}
 %
 Acts as {\tt thread\_get\_message/2}, but on a thread's private queue.
 
-\ouritem{thread\_peek\_message(+Queue\_or\_Alias,?Message)}
-\index{\texttt{thread\_peek\_message/2}} 
+\standarditem{thread\_peek\_message(+Queue\_or\_Alias,?Message)}
+{thread\_peek\_message/2}
 %
 If there are terms on {\tt Queue\_or\_Alias} {\tt
   thread\_peek\_message/2} traverses {\tt Queue\_or\_Alias} to obtain
@@ -1386,8 +1385,8 @@ unifier of {\tt Message} and $T$.  If there are no terms on {\tt
 \ei
 \ei
 %
-\ouritem{thread\_peek\_message(?Message)}
-\index{\texttt{thread\_peek\_message/1}} 
+\standarditem{thread\_peek\_message(?Message)}
+{thread\_peek\_message/1}
 %
 Acts as {\tt thread\_peek\_message/2}, but on a thread's private queue.
 
@@ -1424,8 +1423,7 @@ recommend using it if possible, and making use of lower-level calls to
 only in rare cases when {\tt with\_mutex/2} is not applicable.
 
 \begin{description}
-\ouritem{with\_mutex(+Mutex,?Goal)}
-\index{\texttt{with\_mutex/2}} 
+\standarditem{with\_mutex(+Mutex,?Goal)}{with\_mutex/2}
 %
 Locks a current mutex or alias{\tt Mutex}, executes {\tt Goal}
 deterministically, then unlocks {\tt Mutex}.  If {\tt Goal} leaves
@@ -1468,8 +1466,8 @@ mutex has been successfully unlocked.
 %
 \ei
 
-\ouritem{mutex\_create(?Mutex)}
-\index{\texttt{mutex\_create/1}} 
+\standarditem{mutex\_create(?Mutex)}
+{mutex\_create/1}
 %
 Creates a new recursive user mutex with identifier {\tt Mutex}.  {\tt
   Options} allows optional parameters to be passed, currently only for
@@ -1512,8 +1510,8 @@ aliases of the mutex.
 \ei
 \ei
 
-\ouritem{mutex\_destroy(+Mutex)}
-\index{\texttt{mutex\_destroy/1}} 
+\standarditem{mutex\_destroy(+Mutex)}
+{mutex\_destroy/1}
 %
 Destroys a current unlocked mutex with alias or id {\tt Mutex} along
 with any memory it uses.
@@ -1540,8 +1538,8 @@ with any memory it uses.
 \ei
 \ei
 
-\ouritem{mutex\_lock(+Mutex)}
-\index{\texttt{mutex\_lock/1}} 
+\standarditem{mutex\_lock(+Mutex)}
+{mutex\_lock/1}
 %
 {\tt mutex\_lock(Mutex)} locks a (recursive) mutex with alias or id
 {\tt Mutex}. Locking and unlocking mutexes should be paired carefully
@@ -1575,8 +1573,8 @@ fails or raises an exception.
 \ei
 \ei
 
-\ouritem{mutex\_trylock(+Mutex)}
-\index{\texttt{mutex\_trylock/1}} 
+\standarditem{mutex\_trylock(+Mutex)}
+{mutex\_trylock/1}
 %
 Works as {\tt mutex\_lock/1} but fails immediately if {\tt Mutex} is
 held by another thread,  rather than suspending the calling thread.
@@ -1599,8 +1597,8 @@ held by another thread,  rather than suspending the calling thread.
 \ei
 \ei
 
-\ouritem{mutex\_unlock(+Mutex)}
-\index{\texttt{mutex\_unlock/1}} 
+\standarditem{mutex\_unlock(+Mutex)}
+{mutex\_unlock/1}
 %
 Unlocks the mutex with alias or id {\tt Mutex} when called by the same
 thread that locked {\tt Mutex}.
@@ -1627,14 +1625,13 @@ thread that locked {\tt Mutex}.
 \ei
 \ei
 
-\ouritem{mutex\_unlock\_all}
-\index{\texttt{mutex\_unlock\_all/0}} 
+\standarditem{mutex\_unlock\_all}{mutex\_unlock\_all/0}
 %
 {\tt mutex\_unlock\_all/0} unlocks all user mutexes owned by the
 current thread.  It has no error cases.
 
-\ouritem{mutex\_property(?MutexOrAlias,?Property)}
-\index{\texttt{mutex\_property/2}} 
+\standarditem{mutex\_property(?MutexOrAlias,?Property)}
+{mutex\_property/2}
 %
 If {\tt MutexOrAlias} is instantiated, unifies {\tt Property} with current
 properties of the mutex; if {\tt MutexOrAlias} is a variable, backtracks

@@ -74,7 +74,7 @@ of issuing an {\sf ``Undefined predicate''} error message.
 
 \begin{description}
 %
-\ournewitem{asserta(+Clause)}{ISO}\index{\texttt{asserta/1}} 
+\ournewitem{asserta(+Clause)}{ISO}\index{\texttt{asserta/1}}
 %
 If the index specification for the predicate is not {\tt trie}, this
 predicate adds a dynamic clause, {\tt Clause}, to the database {\em
@@ -124,7 +124,7 @@ Note that because of the precedence of {\tt :-/2}, asserting a clause
 containing this operator requires an extra set of parentheses: {\tt
   assert((Head :- Body))}.
 
-\ouritem{assert(+Clause)}\index{\texttt{assert/1}}
+\standarditem{assert(+Clause)}{assert/1}
 %
 If the index specification for the predicate is not {\tt trie}, this
 predicate adds a dynamic clause, {\tt Clause}, to the database {\em
@@ -137,7 +137,7 @@ Note that because of the precedence of {\tt :-/2}, asserting a clause
 containing this operator requires an extra set of parentheses: {\tt
   assert((Head :- Body))}.
 
-\ouritem{assert(+Clause,+AorZandVar,+Index)}\index{\texttt{assert/3}}
+\standarditem{assert(+Clause,+AorZandVar,+Index)}{assert/3}
 This is a lower-level interface to (non-trie-indexed) assert.  It is
 normally not needed except in one particular situation, when assert
 aborts because it needs too many registers.  In this case, this
@@ -215,7 +215,7 @@ later be reclaimed through garbage collection.  (See {\tt
 %
 \ei
 
-\ouritem{retractall(+Head)}\index{\texttt{retractall/1}} removes every
+\standarditem{retractall(+Head)}{retractall/1} removes every
 clause in the database whose head matches with {\tt Head}.  The
 predicate whose clauses have been retracted retains the {\tt dynamic}
 property (contrast this behavior with that of predicates {\tt
@@ -324,7 +324,7 @@ code for $T$.
 %
 \ei
 
-\ouritem{gc\_dynamic(-N)}\index{\texttt{gc\_dynamic/1}} 
+\standarditem{gc\_dynamic(-N)}{gc\_dynamic/1} 
 \index{garbage collection!dynamic clauses}
 %
 Invokes the garbage collector for dynamic clauses that have been
@@ -346,7 +346,7 @@ bindings.
 \comment{
 Now obsolete, what with GC.
 
-| \ouritem{retract\_nr(+Clause)}\index{\texttt{retract\_nr/1}}
+| \standarditem{retract\_nr(+Clause)}{retract\_nr/1}
 | Performs just as {\tt retract/1} does, except that it does not reclaim the
 | space used by the retracted clause. This is provided to allow programmers
 | to modify dynamic clauses while executing them (a practice that is 
@@ -370,7 +370,7 @@ Now obsolete, what with GC.
 %compatibility with the {\tt retract/1} predicate provided by SB-Prolog that
 %did not reclaim space.
 
-| \ouritem{reclaim\_space(+Head)}\index{\texttt{reclaim\_space/1}} Runs
+| \standarditem{reclaim\_space(+Head)}{reclaim\_space/1} Runs
 | through the dynamic code for the predicate indicated by {\tt Head},
 | and reclaims space for any clauses that have been deleted from that
 | predicate by {\tt retract\_nr/1}.  This cannot safely be used when
@@ -393,7 +393,7 @@ Now obsolete, what with GC.
 TLS: I don't think we need hashtable size given that we use dynamic
 hashing.  We still are supporting it, but we don't need to encourage it
 \vspace{-.35in}
-\ouritem{index(+PredSpec, +IndexSpec, +HashTableSize)}\index{\texttt{index/3}}
+\standarditem{index(+PredSpec, +IndexSpec, +HashTableSize)}{index/3}
 
 If {\tt index/3} is used, then the predicate indicated by {\tt
 PredSpec} is declared to be indexed according to {\tt IndexSpec} using
@@ -422,7 +422,7 @@ that case the joint index would never be used.)
 
 }
 
-\ouritem{index(+PredSpec, +IndexSpec)}\index{\texttt{index/2}}
+\standarditem{index(+PredSpec, +IndexSpec)}{index/2}
 \label{index_dynamic} \index{indexing!dynamic predicates}
 
 In general, XSB supports hash-based indexing on various arguments or
@@ -531,7 +531,7 @@ current version of XSB only allows trie indexing for unit clauses.
 Trie-based indexing is available only for dynamic predicates.
 \end{itemize}
 
-\ouritem{dynamic(+PredSpec)}\index{\texttt{dynamic/1}}\label{dynamic/1}
+\standarditem{dynamic(+PredSpec)}{dynamic/1}\label{dynamic/1}
 %
 As a compiler directive, {\tt dynamic/1} is necessary to specify that
 code in a compiled file is to be treated as dynamic: without this
@@ -563,7 +563,7 @@ semantics is different from that of the standard \cite{ISO-Prolog}
 when the file contains clauses defining the so-specified predicate.
 }
 
-\ouritem{table(+PredSpec)}\index{\texttt{table/1}}
+\standarditem{table(+PredSpec)}{table/1}
 is an executable predicate, where PredSpec is a predicate
 specification for a dynamic predicate. (This is also a compiler
 directive when {\tt PredSpec} specifies a compiled predicate. See the
@@ -593,8 +593,7 @@ proper prolog extensions, and makes use of the XSB library paths.  See
 Sections~\ref{LibPath} and~\ref{sec:filenames} for details.
 
 \begin{description}
-\ouritem{load\_dyn(+FileName)}
-\index{\texttt{load\_dyn/1}}\label{load_dyn/1}
+\standarditem{load\_dyn(+FileName)}{load\_dyn/1}\label{load_dyn/1}
 %\predindex{load\_dyn/1~(L)}
     Asserts the contents of file {\tt FileName} into the database.
     All existing clauses of the predicates in the file that already
@@ -611,7 +610,7 @@ Sections~\ref{LibPath} and~\ref{sec:filenames} for details.
 
     Dynamically loaded files can be filtered through the XSB preprocessor.
     To do this, put the following in the source file: 
-    %%
+    %%{
     \begin{verbatim}
     :- compiler_options([xpp_on]).      
     \end{verbatim}
@@ -640,8 +639,8 @@ Sections~\ref{LibPath} and~\ref{sec:filenames} for details.
 %
 \ei
 
-\ouritem{load\_dyn(+FileName,+Dir)}
-\index{\texttt{load\_dyn/2}}\label{load_dyn/2}
+\standarditem{load\_dyn(+FileName,+Dir)}
+{load\_dyn/2}\label{load_dyn/2}
     Asserts the contents of file {\tt FileName} into the database.
     {\tt Dir} indicates whether {\tt assertz} or {\tt asserta} is to
     be used.  If {\tt Dir} is {\tt z}, then {\tt assertz} is used and
@@ -677,7 +676,7 @@ backward compatibility, {\tt 0} and {\tt 1} are also allowed.}:
 \ei
 \ei
 
-\ouritem{load\_dync(+FileName)}\index{\texttt{load\_dync/1}}
+\standarditem{load\_dync(+FileName)}{load\_dync/1}
 \index{canonical forma}
     Acts as {\tt load\_dyn/1}, but assumes that facts are in
     ``canonical'' format and is much faster as a result.  In XSB, a
@@ -727,8 +726,7 @@ backward compatibility, {\tt 0} and {\tt 1} are also allowed.}:
 \ei
 \ei
 
-\ourmoditem{load\_dync(+FileName,+Dir)}{consult}
-\index{\texttt{load\_dync/2}}\label{load_dync/2}
+\ourmoditem{load\_dync(+FileName,+Dir)}{consult}\index{\texttt{load\_dync/2}}\label{load_dync/2}
     Acts as {\tt load\_dyn/2}, but assumes that facts are in
     ``canonical'' format.  {\tt Dir} is ignored for trie-asserted
     code, but otherwise indicates whether {\tt assertz} or {\tt
@@ -776,8 +774,7 @@ backward compatibility, {\tt 0} and {\tt 1} are also allowed.}:
 \ei
 \ei
 
-\ouritem{ensure\_loaded(+FileName,+Action)}
-\index{\texttt{ensure\_loaded/2}}
+\standarditem{ensure\_loaded(+FileName,+Action)}{ensure\_loaded/2}
 %
 This predicate does nothing if {\tt FileName} has been loaded or
 consulted into XSB, and has not changed since it was loaded or
@@ -869,7 +866,7 @@ module {\tt storage}.
 \subsubsection{Non-backtrackable Storage}
 
 \begin{description}
-\ouritem{storage\_insert\_keypair(+StorageName,+Key, +Value, ?Inserted)}\index{\texttt{storage\_insert\_keypair/4}}
+\standarditem{storage\_insert\_keypair(+StorageName,+Key, +Value, ?Inserted)}{storage\_insert\_keypair/4}
 %%
 Insert the given Key-Value pair into {\tt StorageName}.  If the pair
 is new, then {\tt Inserted} unifies with {\tt 1}. If the pair is
@@ -880,8 +877,8 @@ unifies with {\tt -1}.  The first argument, {\tt StorageName}, must be
 an atom naming the storage to be used. Different names denote
 different storages.  In all cases the predicate succeeds.
 
-\ouritem{storage\_delete\_keypair(+StorageName, +Key, ?Deleted)}
-\index{\texttt{storage\_delete\_keypair/3}}
+\standarditem{storage\_delete\_keypair(+StorageName, +Key, ?Deleted)}
+{storage\_delete\_keypair/3}
 %%
 Delete the key-value pair with the given key from {\tt
   StorageName}. If the pair was in {\tt StorageName} then {\tt
@@ -891,8 +888,8 @@ argument, {\tt StorageName}, must be an atom naming the storage object
 to be used. Different names denote different storages.  In both cases
 the predicate succeeds.
 
-\ouritem{storage\_find\_keypair(+StorageName, +Key, ?Value)}
-\index{\texttt{storage\_find\_keypair/3}}
+\standarditem{storage\_find\_keypair(+StorageName, +Key, ?Value)}
+{storage\_find\_keypair/3}
 %%
 If {\tt StorageName} has a key pair with the given key, then {\tt Value} unifies
 with the value stored in {\tt StorageName}. If no such pair exists in the
@@ -901,15 +898,15 @@ database, then the goal fails.
 Note that this predicate works with non-backtrackable associative arrays
 described above as well as with the backtrackable ones, described below.
 
-\ouritem{storage\_insert\_fact(+StorageName, +Fact, ?Inserted)}\index{\texttt{storage\_insert\_fact/3}}
+\standarditem{storage\_insert\_fact(+StorageName, +Fact, ?Inserted)}{storage\_insert\_fact/3}
 Similar to keypair insertion, but this primitive inserts facts rather than
 key pairs.
 
-\ouritem{storage\_delete\_fact(+StorageName, +Fact, ?Inserted)}\index{\texttt{storage\_delete\_fact/3}}
+\standarditem{storage\_delete\_fact(+StorageName, +Fact, ?Inserted)}{storage\_delete\_fact/3}
 Similar to key-pair deletion, but this primitive deletes facts rather than
 key pairs.
 
-\ouritem{storage\_find\_fact(+StorageName, +Fact)}\index{\texttt{storage\_find\_fact/2}}
+\standarditem{storage\_find\_fact(+StorageName, +Fact)}{storage\_find\_fact/2}
 Similar to key-pair finding, but this primitive finds facts facts rather than
 key pairs.
 %%
@@ -919,8 +916,8 @@ key pairs.
 \label{backtrackable update}
 
 \begin{description}
-\ouritem{storage\_insert\_keypair\_bt(+StorageName, +Key, +Value, ?Inserted)}
-\index{\texttt{storage\_insert\_keypair\_bt/4}} 
+\standarditem{storage\_insert\_keypair\_bt(+StorageName, +Key, +Value, ?Inserted)}
+{storage\_insert\_keypair\_bt/4}
 %%
 A call to this predicate inserts a key pair into {\tt StorageName} as
 does {\tt storage\_insert\_keypair/4}, and the key-value pair may be
@@ -939,22 +936,22 @@ inserted by a non-backtrackable update and (provisionally) deleted by
 a backtrackable update.  Of course, whether such a mixture makes sense
 would depend on a given application.
 
-\ouritem{storage\_delete\_keypair\_bt(+StorageName, +Key, ?Deleted)}
-\index{\texttt{storage\_delete\_keypair\_bt/3}}
+\standarditem{storage\_delete\_keypair\_bt(+StorageName, +Key, ?Deleted)}
+{storage\_delete\_keypair\_bt/3}
 %%
 Like {\tt storage\_delete\_keypair/3}, but backtrackable as described
 for {\tt storage\_insert\_keypair\_bt/4}.
 
-\ouritem{storage\_insert\_fact\_bt(+StorageName, +Goal)} \index{\texttt{storage\_insert\_fact\_bt/2}}
+\standarditem{storage\_insert\_fact\_bt(+StorageName, +Goal)} {storage\_insert\_fact\_bt/2}
 %%
 Like {\tt storage\_insert\_fact/2}, but backtrackable.
 
-\ouritem{storage\_delete\_fact\_bt(+StorageName, +Goal)} 
-\index{\texttt{storage\_delete\_fact\_bt/2}}
+\standarditem{storage\_delete\_fact\_bt(+StorageName, +Goal)} 
+{storage\_delete\_fact\_bt/2}
 %%
 This is a backtrackable version of {\tt storage\_delete\_fact/2}.
 
-\ouritem{storage\_commit(+StorageName)} \index{\texttt{storage\_commit/1}}
+\standarditem{storage\_commit(+StorageName)} {storage\_commit/1}
 %%
 Commits to {\tt StorageName} any backtrackable updates since the last
 commit, or since initialization if no commit has been made to {\tt
@@ -966,7 +963,7 @@ silently fails.
 \subsubsection{Reclaiming Space}
 %%
 \begin{description}
-\ouritem{storage\_reclaim\_space(+StorageName)} \index{\texttt{storage\_reclaim\_space/1}}
+\standarditem{storage\_reclaim\_space(+StorageName)}{storage\_reclaim\_space/1}
 %%
 This is similar to {\tt reclaim\_space/1} for {\tt assert} and {\tt
   retract}, but it is used for storage managed by the primitives defined in

@@ -539,12 +539,13 @@ resolution for predicates.
 Whenever XSB is invoked, a large set of {\em standard} predicates are
 defined and can be called from the interpreter or other
 interface~\footnote{Such predicates are sometimes called ``built-ins''
-in other Prologs.}.  These predicates include the various ISO
-predicates~\cite{}, along with predicates for tabling, I/O and for
-interaction with the operating system, for HiLog, and for other
-functionality.  Standard predicates are declared in the file {\tt
-\$XSB\_DIR/syslib/std\_xsb.P} and are covered in
-Chapter~\ref{standard} of this manual.  If a user wishes to redefine a
+  in other Prologs.}.  These predicates include the various ISO
+predicates~\cite{ISO-Prolog}, along with predicates for tabling, I/O,
+for interaction with the operating system, for HiLog, and for much
+other functionality.  Standard predicates are listed in this manual
+under the index heading {\em Standard predicates} and at an
+implementation level are declared in the file {\tt
+  \$XSB\_DIR/syslib/std\_xsb.P}.  If a user wishes to redefine a
 standard predicate, she has several choices.  First, the appropriate
 fact in {\tt \$XSB\_DIR/syslib/std\_xsb.P} should be commented out.
 Once this is done, a user may define the predicate as any other user
