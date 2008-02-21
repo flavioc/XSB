@@ -242,6 +242,7 @@ inline_jumpcof_cond(number, 1, NUMBER_TEST).
 inline_jumpcof_cond(atomic, 1, ATOMIC_TEST).
 inline_jumpcof_cond(compound, 1, COMPOUND_TEST).
 inline_jumpcof_cond(callable, 1, CALLABLE_TEST).
+inline_jumpcof_cond(directly_callable, 1, DIRECTLY_CALLABLE_TEST).
 inline_jumpcof_cond(is_list, 1, IS_LIST_TEST).
 inline_jumpcof_cond(is_most_general_term, 1, IS_MOST_GENERAL_TERM_TEST).
 inline_jumpcof_cond(is_attv, 1, IS_ATTV_TEST).
