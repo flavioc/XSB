@@ -312,7 +312,7 @@ inline static xsbBool atom_to_list(CTXTdeclc int call_type)
   Cell list, new_list;
   CPtr top = 0;
   char *call_name = (call_type == ATOM_CODES ? "atom_codes/2" : "atom_chars/2");
-  char *elt_type = (call_type == ATOM_CODES ? "ASCII code" : "character atom");
+  char *elt_type = (call_type == ATOM_CODES ? "ASCII code" : "character");
 
   term = ptoc_tag(CTXTc 1);
   list = ptoc_tag(CTXTc 2);
@@ -334,7 +334,7 @@ inline static xsbBool atom_to_list(CTXTdeclc int call_type)
 	if (((call_type==ATOM_CODES) && !isinteger(heap_addr))
 	    || ((call_type==ATOM_CHARS) && !isstring(heap_addr))) {
 	  if (isnonvar(heap_addr)) {
-	    xsb_type_error(CTXTc elt_type,list,call_name,2); 
+	    xsb_type_error(CTXTc elt_type,heap_addr,call_name,2); 
 	  }
 	  else xsb_instantiation_error(CTXTc call_name,2);
 	  mem_dealloc(atomnameaddr,atomnamelen,LEAK_SPACE);

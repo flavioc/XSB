@@ -213,6 +213,13 @@ extern unsigned long enc[], dec[];
 #define islist(dcell) (cell_tag(dcell)==XSB_LIST)	/* dcell -> xsbBool */
 #define isattv(dcell) (cell_tag(dcell)==XSB_ATTV)	/* dcell -> xsbBool */
 
+#define iscallable(op2) ((isconstr(op2) && !isboxed(op2)) || isstring(op2) || islist(op2))
+
+#define is_directly_callable(op2) (((isconstr(op2) && !isboxed(op2)) || isstring(op2)) \
+				   && op2 != (Cell) comma_psc		\
+				   && op2 != (Cell) colon_psc && op2 != (Cell) cut_psc \
+				   && op2 != (Cell) cond_psc)
+
 #define isstring(dcell) (cell_tag(dcell)==XSB_STRING)
 #define numequal(num1, num2) num1 == num2
 

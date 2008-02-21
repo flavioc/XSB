@@ -2878,7 +2878,10 @@ argument positions.
 		      (islist(op2))) && !isboxedfloat(op2) && !isboxedinteger(op2));
       break;
     case CALLABLE_TEST:
-      jump_cond_fail((isconstr(op2) && !isboxed(op2)) || isstring(op2) || islist(op2));
+      jump_cond_fail(iscallable(op2));
+      break;
+    case DIRECTLY_CALLABLE_TEST:
+      jump_cond_fail(is_directly_callable(op2));
       break;
     case IS_LIST_TEST:
       jump_cond_fail(is_proper_list(op2));

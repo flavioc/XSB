@@ -1445,8 +1445,9 @@ void init_symbols(CTXTdecl)
   true_string = get_name(true_psc);
   
   comma_psc = make_code_psc_rec(",", 2, standard_psc);
-
   colon_psc = make_code_psc_rec(":", 2, standard_psc);
+  cut_psc = make_code_psc_rec(":", 0, standard_psc);
+  cond_psc = make_code_psc_rec("->", 2, standard_psc);
 
   ccall_mod_psc = pair_psc(insert_module(0,"ccallxsb"));
   c_callloop_psc = pair_psc(insert("c_callloop_query_loop",1,ccall_mod_psc,&new));
