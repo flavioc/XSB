@@ -74,8 +74,18 @@ standard_symbol(break, 0, x_interp).
 standard_symbol('C', 3, dcg).
 
 standard_symbol(call, 1, standard).                                % ISO
+standard_symbol(call, 2, standard).                                % new ISO?
+standard_symbol(call, 3, standard).                                % new ISO?
+standard_symbol(call, 4, standard).                                % new ISO?
+standard_symbol(call, 5, standard).                                % new ISO?
+standard_symbol(call, 6, standard).                                % new ISO?
+standard_symbol(call, 7, standard).                                % new ISO?
+standard_symbol(call, 8, standard).                                % new ISO?
+standard_symbol(call, 9, standard).                                % new ISO?
+standard_symbol(call, 10, standard).                                % new ISO?
+standard_symbol(call, 11, standard).                                % new ISO?
 standard_metapredicate(call,1,1).
-standard_symbol(call_cleanup, 2, standard).                                % ISO (new)
+standard_symbol(call_cleanup, 2, standard).                                % new ISO?
 standard_metapredicate(call_cleanup,2,1).
 standard_metapredicate(call_cleanup,2,2).
 standard_symbol(callable, 1, standard).
