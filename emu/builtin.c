@@ -1537,8 +1537,8 @@ int builtin_call(CTXTdeclc byte number)
       return TRUE;
     } else if (isconstr(goal)) {
       Psc modpsc, psc = get_str_psc(goal);
-      int arity = get_arity(psc);
-      char *goalname = get_name(psc);
+      int arity;
+      char *goalname;
       CPtr addr;
       if (psc == colon_psc) {
 	Cell modstring = cell(clref_val(goal)+1);
@@ -1548,7 +1548,11 @@ int builtin_call(CTXTdeclc byte number)
 	  return FALSE;
 	}
 	modpsc = pair_psc(insert_module(0,string_val(modstring)));
-	psc = (Psc)cell(clref_val(goal)+2);
+	goal = cell(clref_val(goal)+2);
+	XSB_Deref(goal);
+	if (!isstring(goal)) {
+	  psc = get_str_psc(goal);
+	}
       } else {
 	modpsc = get_data(psc);
       }
@@ -1561,6 +1565,7 @@ int builtin_call(CTXTdeclc byte number)
 	if (asynint_val) intercept(CTXTc newpsc);
 	return TRUE;
       }
+      arity = get_arity(psc);
       if (arity == 0) {
 	for (i = 1; i <= k; i++) {
 	  bld_copy(reg+i,cell(reg+i+1));
@@ -1574,6 +1579,7 @@ int builtin_call(CTXTdeclc byte number)
       for (i = 1; i <= arity; i++) {
 	bld_copy(reg+i,cell(addr+i));
       }
+      goalname = get_name(psc);
       if (modpsc) newpsc = pair_psc(insert(goalname,(byte)(arity+k),modpsc,&new));
       else newpsc = pair_psc(insert(goalname,(byte)(arity+k),(Psc)flags[CURRENT_MODULE],&new));
       pcreg = get_ep(newpsc);
