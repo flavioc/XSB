@@ -171,6 +171,7 @@ extern Psc c_callloop_psc;
 extern Psc delay_psc;
 extern Psc cond_psc;
 extern Psc cut_psc;
+extern Psc load_undef_psc;
 extern char *nil_string;
 extern char *true_string;
 extern Pair list_pscPair;

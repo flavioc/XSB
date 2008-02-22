@@ -1382,7 +1382,7 @@ Psc make_code_psc_rec(char *name, int arity, Psc mod_psc) {
    ------------------------------- */
 void init_symbols(CTXTdecl)
 {
-  Psc  tables_psc, standard_psc;
+  Psc  tables_psc, standard_psc, loader_psc;
   Pair temp, tp;
   int  i, new_indicator;
 #ifdef MULTI_THREAD
@@ -1440,10 +1440,12 @@ void init_symbols(CTXTdecl)
   delay_psc = pair_psc(insert("DL", 3, global_mod, &new_indicator));
 
   standard_psc = pair_psc(insert_module(0, "standard"));	/* unloaded */
+  loader_psc = pair_psc(insert_module(0, "loader"));	/* unloaded */
 
   true_psc = make_code_psc_rec("true", 0, standard_psc);
   true_string = get_name(true_psc);
-  
+
+  load_undef_psc = make_code_psc_rec("_$load_undef", 1, loader_psc);
   comma_psc = make_code_psc_rec(",", 2, standard_psc);
   colon_psc = make_code_psc_rec(":", 2, standard_psc);
   cut_psc = make_code_psc_rec(":", 0, standard_psc);
