@@ -915,127 +915,19 @@ call(Goal) :-
 	; type_error(callable,Goal,call/1,1)
 	).
 
-call(G,Arg):- 
-	(G @= _:_ -> 
-	    G = Mod: Goal,
-	    Goal =.. GoalList,
-	    append(GoalList,[Arg],NewgoalList), 
-	    Newgoal =.. NewgoalList,
-	    call_c(Mod:Newgoal)
-	;   G =.. GoalList,
-	    append(GoalList,[Arg],NewgoalList), 
-   	    Newgoal =.. NewgoalList,
-	    call0(Newgoal) ).
-
-/*
-call(G,Arg):- !,
-	(G @= _:_ -> 
-	    G = Mod: Goal,
-	    Goal =.. GoalList,
-	    append(GoalList,[Arg],NewgoalList), 
-	    Newgoal =.. NewgoalList,
-	    call_c(Mod:Newgoal)
-	;   G =.. GoalList,
-	    append(GoalList,[Arg],NewgoalList), 
-   	    Newgoal =.. NewgoalList,
-	    call_c(Newgoal) ).
-*/
-
-call(G,Arg1,Arg2):- 
-	(G @= _:_ -> 
-	    G = Mod: Goal,
-	    Goal =.. GoalList,
-	    append(GoalList,[Arg1,Arg2],NewgoalList), 
-	    Newgoal =.. NewgoalList,
-	    call_c(Mod:Newgoal)
-	;   G =.. GoalList,
-   	    append(GoalList,[Arg1,Arg2],NewgoalList), 
-   	    Newgoal =.. NewgoalList,
-	    call_c(Newgoal) ).
-
-call(G,Arg1,Arg2,Arg3):- 
-	(G @= _:_ -> 
-	    G = Mod: Goal,
-	    Goal =.. GoalList,
-	    append(GoalList,[Arg1,Arg2,Arg3],NewgoalList), 
-	    Newgoal =.. NewgoalList,
-	    call_c(Mod:Newgoal)
-	;   G =.. GoalList,
-   	    append(GoalList,[Arg1,Arg2,Arg3],NewgoalList), 
-   	    Newgoal =.. NewgoalList,
-	    call_c(Newgoal) ).
-
-call(G,Arg1,Arg2,Arg3,Arg4):- 
-	(G @= _:_ -> 
-	    G = Mod: Goal,
-	    Goal =.. GoalList,
-	    append(GoalList,[Arg1,Arg2,Arg3,Arg4],NewgoalList), 
-	    Newgoal =.. NewgoalList,
-	    call_c(Mod:Newgoal)
-	;   G =.. GoalList,
-   	    append(GoalList,[Arg1,Arg2,Arg3,Arg4],NewgoalList), 
-   	    Newgoal =.. NewgoalList,
-	    call_c(Newgoal) ).
-
-call(G,Arg1,Arg2,Arg3,Arg4,Arg5):- 
-	(G @= _:_ -> 
-	    G = Mod: Goal,
-	    Goal =.. GoalList,
-	    append(GoalList,[Arg1,Arg2,Arg3,Arg4,Arg5],NewgoalList), 
-	    Newgoal =.. NewgoalList,
-	    call_c(Mod:Newgoal)
-	;   G =.. GoalList,
-   	    append(GoalList,[Arg1,Arg2,Arg3,Arg4,Arg5],NewgoalList), 
-   	    Newgoal =.. NewgoalList,
-	    call_c(Newgoal) ).
-
-call(G,Arg1,Arg2,Arg3,Arg4,Arg5,Arg6):- 
-	(G @= _:_ -> 
-	    G = Mod: Goal,
-	    Goal =.. GoalList,
-	    append(GoalList,[Arg1,Arg2,Arg3,Arg4,Arg5,Arg6],NewgoalList), 
-	    Newgoal =.. NewgoalList,
-	    call_c(Mod:Newgoal)
-	;   G =.. GoalList,
-   	    append(GoalList,[Arg1,Arg2,Arg3,Arg4,Arg5,Arg6],NewgoalList), 
-   	    Newgoal =.. NewgoalList,
-	    call_c(Newgoal) ).
-
-call(G,Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7):- 
-	(G @= _:_ -> 
-	    G = Mod: Goal,
-	    Goal =.. GoalList,
-	    append(GoalList,[Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7],NewgoalList), 
-	    Newgoal =.. NewgoalList,
-	    call_c(Mod:Newgoal)
-	;   G =.. GoalList,
-   	    append(GoalList,[Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7],NewgoalList), 
-   	    Newgoal =.. NewgoalList,
-	    call_c(Newgoal) ).
-
-call(G,Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8):- 
-	(G @= _:_ -> 
-	    G = Mod: Goal,
-	    Goal =.. GoalList,
-	    append(GoalList,[Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8],NewgoalList), 
-	    Newgoal =.. NewgoalList,
-	    call_c(Mod:Newgoal)
-	;   G =.. GoalList,
-   	    append(GoalList,[Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8],NewgoalList), 
-   	    Newgoal =.. NewgoalList,
-	    call_c(Newgoal) ).
-
-call(G,Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8,Arg9):- 
-	(G @= _:_ -> 
-	    G = Mod: Goal,
-	    Goal =.. GoalList,
-	    append(GoalList,[Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8,Arg9],NewgoalList), 
-	    Newgoal =.. NewgoalList,
-	    call_c(Mod:Newgoal)
-	;   G =.. GoalList,
-   	    append(GoalList,[Arg1,Arg2,Arg3,Arg4,Arg5,Arg6,Arg7,Arg8,Arg9],NewgoalList), 
-   	    Newgoal =.. NewgoalList,
-	    call_c(Newgoal) ).
+% call/n for n>1, adds outer arguments to end of goal arguments and calls
+% that predicate (in same module as G).
+% This dingles arguments so it can use a single builtin CALLN from machine.
+call(G,A1) :- calln(1,A1,G).
+call(G,A1,A2) :- calln(2,A1,A2,G).
+call(G,A1,A2,A3) :- calln(3,A1,A2,A3,G).
+call(G,A1,A2,A3,A4) :- calln(4,A1,A2,A3,A4,G).
+call(G,A1,A2,A3,A4,A5) :- calln(5,A1,A2,A3,A4,A5,G).
+call(G,A1,A2,A3,A4,A5,A6) :- calln(6,A1,A2,A3,A4,A5,A6,G).
+call(G,A1,A2,A3,A4,A5,A6,A7) :- calln(7,A1,A2,A3,A4,A5,A6,A7,G).
+call(G,A1,A2,A3,A4,A5,A6,A7,A8) :- calln(8,A1,A2,A3,A4,A5,A6,A7,A8,G).
+call(G,A1,A2,A3,A4,A5,A6,A7,A8,A9) :- calln(9,A1,A2,A3,A4,A5,A6,A7,A8,A9,G).
+call(G,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10) :- calln(10,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,G).
 
 %  call_c(X)
 %  calls X when it is known that X contains no cuts!

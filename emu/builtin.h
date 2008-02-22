@@ -81,6 +81,7 @@
 #define CONPSC		45
 
 #define PSC_INSERTMOD	46
+#define CALLN		47
 
 #define FILE_GETTOKEN	48
 #define FILE_PUTTOKEN	49

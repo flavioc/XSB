@@ -128,6 +128,19 @@ unify_with_occurs_check(_One,_Two):-
 	'_$builtin'(UNIFY_WITH_OCCURS_CHECK).
 
 call0(Term) :- call0(Term).
+
+calln(_0,_Goal) :- '_$builtin'(CALLN).
+calln(_1,_A1,_Goal) :- '_$builtin'(CALLN).
+calln(_2,_A1,_A2,_Goal) :- '_$builtin'(CALLN).
+calln(_3,_A1,_A2,_A3,_Goal) :- '_$builtin'(CALLN).
+calln(_4,_A1,_A2,_A3,_A4,_Goal) :- '_$builtin'(CALLN).
+calln(_5,_A1,_A2,_A3,_A4,_A5,_Goal) :- '_$builtin'(CALLN).
+calln(_6,_A1,_A2,_A3,_A4,_A5,_A6,_Goal) :- '_$builtin'(CALLN).
+calln(_7,_A1,_A2,_A3,_A4,_A5,_A6,_A7,_Goal) :- '_$builtin'(CALLN).
+calln(_8,_A1,_A2,_A3,_A4,_A5,_A6,_A7,_A,_Goal8) :- '_$builtin'(CALLN).
+calln(_9,_A1,_A2,_A3,_A4,_A5,_A6,_A7,_A8,_A9,_Goal) :- '_$builtin'(CALLN).
+calln(_10,_A1,_A2,_A3,_A4,_A5,_A6,_A7,_A8,_A9,_A10,_Goal) :- '_$builtin'(CALLN).
+
 stat_sta(X) :- stat_sta(X).
 stat_cputime(X) :- stat_cputime(X).
 stat_walltime(X) :- stat_walltime(X).

@@ -33,7 +33,7 @@
 	arg/3,		arg0/3,		atom/1,		
 	atom_concat/3,   atomic/1,	atom_length/2,
 	goal_arg/3,	atom_chars/2,   atom_codes/2,
-	call/1,	call/2, call/3, call/4, call/5, call/6, call/7, call/8, call/9, call/10,
+   call/1,	call/2, call/3, call/4, call/5, call/6, call/7, call/8, call/9, call/10, call/11,
 	call_expose/1,	callable/1, char_code/2,
 	check_arity_integer/3,  call_cleanup/2, cleanup_handler/2,
 	close/1,             close/2,	compare/3,	
@@ -122,7 +122,7 @@
 :- import '_$load_undef'/1 from loader.
 
 
- :- import call0/1, conname/2,
+:- import call0/1, conname/2,
           dynamic_code_function/5,
           expand_filename/2, gc_stuff/2,is_charlist/1,
           machine_file_exists/1, 
@@ -132,6 +132,8 @@
 	  stat_sta/1, stat_cputime/1, stat_walltime/1,str_len/2,
           term_psc/2, term_new/2, term_new_mod/3, term_type/2  %%, close_open_tables/0
 	  from machine.
+:- import calln/3,calln/4,calln/5,calln/6,calln/7,calln/8,calln/9,calln/10,calln/11,calln/12 from machine.
+
 :- import '$$set_scope_marker'/0, '$$unwind_stack'/0, 
 	  '$$clean_up_block'/1
      from machine. 

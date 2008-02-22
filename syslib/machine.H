@@ -69,6 +69,7 @@
 	code_call/3, 
 	trie_assert_hdr_info/3,
 	call0/1,
+        calln/2,calln/3,calln/4,calln/5,calln/6,calln/7,calln/8,calln/9,calln/10,calln/11,calln/12,
 	code_load/3, 
 	file_gettoken/5,
 	stat_cputime/1,

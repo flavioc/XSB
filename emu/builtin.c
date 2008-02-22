@@ -931,6 +931,7 @@ void init_builtin_table(void)
   set_builtin_table(PSC_IMPORT, "psc_import");
   set_builtin_table(PSC_DATA, "psc_data");
   set_builtin_table(PSC_INSERTMOD, "psc_insertmod");
+  set_builtin_table(CALLN, "calln");
 
   set_builtin_table(FILE_GETTOKEN, "file_gettoken");
   set_builtin_table(FILE_PUTTOKEN, "file_puttoken");
@@ -1515,6 +1516,75 @@ int builtin_call(CTXTdeclc byte number)
     Cell term = ptoc_tag(CTXTc 1);
     /* in call_xsb_i.h */
     return prolog_call0(CTXTc term);
+  }
+
+  case CALLN: { /* R1 is K: Number of arguments to add,
+		   R2-R(2+K-1) are the added arguments,
+		   R(K+2) is the Goal. */
+    int i,new;
+    Psc newpsc;
+    long k = ptoc_int(CTXTc 1);
+    Cell goal = ptoc_tag(CTXTc (k+2));
+    if (k == 0) {
+      return prolog_call0(CTXTc goal);
+    } else if (isstring(goal)) {
+      for (i = 1; i <= k; i++) {
+	bld_copy(reg+i,cell(reg+i+1));
+      }
+      newpsc = pair_psc(insert(string_val(goal),(byte)k,(Psc)flags[CURRENT_MODULE],&new));
+      pcreg = get_ep(newpsc);
+      if (asynint_val) intercept(CTXTc newpsc);
+      return TRUE;
+    } else if (isconstr(goal)) {
+      Psc modpsc, psc = get_str_psc(goal);
+      int arity = get_arity(psc);
+      char *goalname = get_name(psc);
+      CPtr addr;
+      if (psc == colon_psc) {
+	Cell modstring = cell(clref_val(goal)+1);
+	XSB_Deref(modstring);
+	if (!isstring(modstring)) {
+	  xsb_type_error(CTXTc "module",goal,"call/n",1);
+	  return FALSE;
+	}
+	modpsc = pair_psc(insert_module(0,string_val(modstring)));
+	psc = (Psc)cell(clref_val(goal)+2);
+      } else {
+	modpsc = get_data(psc);
+      }
+      if (isstring(goal)) {
+	for (i = 1; i <= k; i++) {
+	  bld_copy(reg+i,cell(reg+i+1));
+	}
+	newpsc = pair_psc(insert(string_val(goal),(byte)k,modpsc,&new));
+	pcreg = get_ep(newpsc);
+	if (asynint_val) intercept(CTXTc newpsc);
+	return TRUE;
+      }
+      if (arity == 0) {
+	for (i = 1; i <= k; i++) {
+	  bld_copy(reg+i,cell(reg+i+1));
+	}
+      } else if (arity > 1) {
+	for (i = k+1; i > 1; i--) {
+	  bld_copy(reg+i+arity-1,cell(reg+i));
+	}
+      }
+      addr = (clref_val(goal));
+      for (i = 1; i <= arity; i++) {
+	bld_copy(reg+i,cell(addr+i));
+      }
+      if (modpsc) newpsc = pair_psc(insert(goalname,(byte)(arity+k),modpsc,&new));
+      else newpsc = pair_psc(insert(goalname,(byte)(arity+k),(Psc)flags[CURRENT_MODULE],&new));
+      pcreg = get_ep(newpsc);
+      if (asynint_val) intercept(CTXTc newpsc);
+      return TRUE;
+    } else {
+      if (isnonvar(goal))
+	xsb_type_error(CTXTc "callable",goal,"call/n",1);
+      else xsb_instantiation_error(CTXTc "call/n",1);
+      return FALSE;
+    }
   }
 
   case CODE_CALL: {		/* R1: +Code (addr), the code address */
