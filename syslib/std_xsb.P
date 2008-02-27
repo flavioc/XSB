@@ -85,6 +85,16 @@ standard_symbol(call, 9, standard).                                % new ISO?
 standard_symbol(call, 10, standard).                                % new ISO?
 standard_symbol(call, 11, standard).                                % new ISO?
 standard_metapredicate(call,1,1).
+standard_metapredicate(call,2,1).
+standard_metapredicate(call,3,1).
+standard_metapredicate(call,4,1).
+standard_metapredicate(call,5,1).
+standard_metapredicate(call,6,1).
+standard_metapredicate(call,7,1).
+standard_metapredicate(call,8,1).
+standard_metapredicate(call,9,1).
+standard_metapredicate(call,10,1).
+standard_metapredicate(call,11,1).
 standard_symbol(call_cleanup, 2, standard).                                % new ISO?
 standard_metapredicate(call_cleanup,2,1).
 standard_metapredicate(call_cleanup,2,2).
