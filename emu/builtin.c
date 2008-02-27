@@ -1580,8 +1580,13 @@ int builtin_call(CTXTdeclc byte number)
 	bld_copy(reg+i,cell(addr+i));
       }
       goalname = get_name(psc);
-      if (modpsc) newpsc = pair_psc(insert(goalname,(byte)(arity+k),modpsc,&new));
-      else newpsc = pair_psc(insert(goalname,(byte)(arity+k),(Psc)flags[CURRENT_MODULE],&new));
+      if (!modpsc) modpsc = (Psc)flags[CURRENT_MODULE];
+      newpsc = pair_psc(insert(goalname,(byte)(arity+k),modpsc,&new));
+      if (new) {
+	set_data(newpsc, modpsc);
+	set_env(newpsc,T_UNLOADED);
+	set_type(newpsc, T_ORDI);
+      }
       pcreg = get_ep(newpsc);
       if (asynint_val) intercept(CTXTc newpsc);
       return TRUE;
