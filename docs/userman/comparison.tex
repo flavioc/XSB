@@ -123,8 +123,7 @@ subterm of {\tt One}.
     Tests if the terms currently instantiating {\tt T1} and {\tt T2}
     are not literally identical.
 
-\ouritem{Term1 ?= Term2}
-\index{\texttt{?=/2}}
+\standarditem{Term1 ?= Term2}{?=/2}
 %
 Succeeds if the equality of {\tt Term1} and {\tt Term2} can be
 compared safely, i.e. whether the result of {\tt Term1 = Term2} can
@@ -164,8 +163,7 @@ variables. Associated hooks are not executed~\footnote{In \version ,
     Succeeds if {\tt T1} and {\tt T2} are identical variables, or if
     the main structure symbols of {\tt T1} and {\tt T2} are identical.
 
-\ouritem{compare(?Op, +T1, +T2)}
-\index{\texttt{compare/3}}
+\standarditem{compare(?Op, +T1, +T2)}{compare/3}
     Succeeds if the result of comparing terms {\tt T1} and {\tt T2} 
     is {\tt Op}, where the possible values for {\tt Op} are:
     \begin{description}
@@ -245,8 +243,7 @@ the course of program evaluation due to variable aliasing, garbage
 collection, or other reasons.
 
 \begin{description}
-\ouritem{sort(+L1, ?L2)} 
-\index{\texttt{sort/2}}
+\standarditem{sort(+L1, ?L2)}{sort/2}
     The elements of the list {\tt L1} are sorted into the standard order,
     and any identical (i.e.\ `==') elements are merged, yielding the 
     list~{\tt L2}.  The time to perform the sorting is $O(n log n)$ where 
@@ -267,9 +264,7 @@ collection, or other reasons.
 	Argument 1 of {\tt sort/2} is a variable or is not a proper list.
     \end{description}
 
-
-\ouritem{keysort(+L1, ?L2)}
-\index{\texttt{keysort/2}}
+\standarditem{keysort(+L1, ?L2)}{keysort/2}
     The list {\tt L1} must consist of elements of the form \verb'Key-Value'.
     These elements are sorted into order according to the value of {\tt Key},
     yielding the list~{\tt L2}.  The elements of list {\tt L1} are scanned

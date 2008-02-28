@@ -86,8 +86,7 @@ character followed by a return, with the following meanings:
 Other standard predicates that are useful in debugging are:
 
 \begin{description}
-\ouritem{spy(Preds)} \index{\texttt{spy/1}}
-%\predindex{spy/1~(L)}
+\standarditem{spy(Preds)}{spy/1}
     where {\tt Preds} is a spy specification or a list of such
     specifications, and must be instantiated. This predicate sets spy
     points (conditional or unconditional) on predicates.  A spy
@@ -110,8 +109,7 @@ Other standard predicates that are useful in debugging are:
     $:$) with a module name. One should not put both conditional and
     unconditional spy points on the same predicate.
 
-\ouritem{nospy(Preds)} \index{\texttt{nospy/1}}
-%\predindex{nospy/1~(L)}
+\standarditem{nospy(Preds)}{nospy/1}
     where {\tt Preds} is a spy specification, or a list of such
     specifications, and must be instantiated at the time of call.  What
     constitutes a spy specification is described above under {\tt spy}.
@@ -119,24 +117,21 @@ Other standard predicates that are useful in debugging are:
     specification is given in the form of a fact, all conditional spy points
     whose heads match that fact are removed.
 
-\ouritem{debug} \index{\texttt{debug/0}} 
-%\predindex{debug/0~(L)}
+\standarditem{debug}{debug/0}
     Turns on debugging mode.
     This causes subsequent execution of predicates with trace or spy
     points to be traced, and is a no-op if there are no such predicates.
     The predicates {\tt trace/1} and {\tt spy/1} cause debugging mode
     to be turned on automatically.
 
-\ouritem{nodebug} \index{\texttt{nodebug/0}}
-%\predindex{nodebug/0~(L)}
+\standarditem{nodebug}{nodebug/0}
     Turns off debugging mode.  This causes trace and spy points to be ignored.
 
-\ouritem{debugging} \index{\texttt{debugging/0}}
-%\predindex{debugging/0~(L)}
+\standarditem{debugging}{debugging/0}
     Displays information about whether debug mode is on or not, and lists
     predicates that have trace points or spy points set on them.
 
-\ouritem{debug\_ctl(option,value)} \index{\texttt{debug\_ctl/2}}
+\standarditem{debug\_ctl(option,value)}{debug\_ctl/2}
    {\tt debug\_ctl/2} performs debugger control functions as described below.
    These commands can be entered before starting a trace or inside the trace.
    The latter can be done by responding with ``{\tt b}'' at the prompt,
@@ -201,14 +196,13 @@ Other standard predicates that are useful in debugging are:
 %--------------------------------------------------
 \index{low-level tracing} \index{tracing!low-level}
 
-\ourprolog\ also provides a facility for low-level tracing of execution.
-This can be activated by invoking the emulator with the {\tt -T} option
-(see Section~\ref{sec:EmuOptions}), or through the predicate {\tt trace/0}.
-\index{\texttt{\$trace/0}} 
-It causes trace information to be printed out at every call (including
-those to system trap handlers).  The volume of such trace information
-can very become large very quickly, so this method of tracing is not
-recommended in general.
+XSB also provides a facility for low-level tracing of execution.  This
+can be activated by invoking the emulator with the {\tt -T} option
+(see Section~\ref{sec:EmuOptions}), or through the predicate {\tt
+  trace/0}.  \index{\texttt{\$trace/0}} It causes trace information to
+be printed out at every call (including those to system trap
+handlers).  The volume of such trace information can very become large
+very quickly, so this method of tracing is not recommended in general.
 
 XSB debugger also provides means for the low-level control of what must be
 traced. Normally, various low-level predicates are masked out from the

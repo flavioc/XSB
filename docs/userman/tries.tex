@@ -187,8 +187,7 @@ paramount.
 
 \begin{description}
 %
-\ouritem{trie\_create(-TrieId,+OptionList)}
-\index{\texttt{trie\_create/2}}
+\ourmoditem{trie\_create(-TrieId,+OptionList)}{intern}\index{\texttt{trie\_create/2}}
 %
 {\tt OptionList} allows optional parameters in the configuration of a
 trie to indicate its type and whether an alias should be used.  In the
@@ -251,7 +250,7 @@ present version of
 \ei
 \ei
 
-\ouritem{trie\_insert(+TrieIdOrAlias,Term)}
+\ourmoditem{trie\_insert(+TrieIdOrAlias,Term)}{intern}
 \index{\texttt{trie\_insert/2}} 
 %
 Inserts {\tt Term} into the trie denoted by {\tt TrieIdOrAlias}.  If
@@ -286,7 +285,7 @@ predicate fails.
 \ei
 %
 
-\ouritem{trie\_unify(+TrieIdOrAlias,Term)}
+\ourmoditem{trie\_unify(+TrieIdOrAlias,Term)}{intern}
 \index{\texttt{trie\_unify/2}} 
 %
 Unifies {\tt Term} with a term in the trie denoted by {\tt
@@ -317,7 +316,7 @@ the form {\tt pair(Key,Value)} where {\tt Key} is ground.
 \ei
 \ei
 
-\ouritem{trie\_delete(+TrieIdOrAlias,Term)}
+\ourmoditem{trie\_delete(+TrieIdOrAlias,Term)}{intern}
 \index{\texttt{trie\_delete/2}}
 %
 Deletes a term unifying with {\tt Term} from the trie denoted by {\tt
@@ -350,7 +349,7 @@ preicate fails.
 \ei
 \ei
 %
-\ouritem{trie\_truncate(+TrieIdOrAlias)}
+\ourmoditem{trie\_truncate(+TrieIdOrAlias)}{intern}
 \index{\texttt{trie\_truncate/1}}
 %
 Removes all terms from {\tt TrieIdOrAlias}, but does not change any of
@@ -368,7 +367,7 @@ its properties (e.g. the type of the trie or its aliases).
 \ei
 \ei
 
-\ouritem{trie\_drop(+TrieIdOrAlias)}
+\ourmoditem{trie\_drop(+TrieIdOrAlias)}{intern}
 \index{\texttt{trie\_drop/1}}
 %
 Drops {\tt TrieIdOrAlias}.  {\tt trie\_drop/1} not only removes all
@@ -509,7 +508,7 @@ will return the the $N^3 - N^2$ terms still in {\tt TrieIdOrAlias}.
 \ei
 \ei
 
-\ouritem{trie\_property(?TrieOrAlias,?Property)}
+\ourmoditem{trie\_property(?TrieOrAlias,?Property)}{intern}
 \index{\texttt{trie\_property/2}} 
 %
 If {\tt TrieOrAlias} is instantiated, unifies {\tt Property} with

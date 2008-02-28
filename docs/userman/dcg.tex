@@ -319,7 +319,7 @@ The library predicates of XSB that support DCGs are the following:
 
 \begin{description}
 
-\ouritem{phrase(+Phrase, ?List)}\index{\texttt{phrase/2}}
+\standarditem{phrase(+Phrase, ?List)}{phrase/2}
     This predicate is true iff the list {\tt List} can be parsed as a phrase 
     (i.e. sequence of terminals) of type {\tt Phrase}.  {\tt Phrase} can be 
     any term which would
@@ -334,7 +334,7 @@ The library predicates of XSB that support DCGs are the following:
     {\tt Phrase}; otherwise if {\tt List} is unbound, then the grammar
     is being used for generation.
 
-\ouritem{tphrase(+Phrase)}\index{\texttt{tphrase/1}} This predicate is
+\standarditem{tphrase(+Phrase)}{tphrase/1} This predicate is
     succeeds if the current database of {\tt word/3} facts can be
     parsed via a call to the term expansion of {\tt +Phrase} whose
     input argument is set to {\tt 0} and whose output argument is set
@@ -348,7 +348,7 @@ The library predicates of XSB that support DCGs are the following:
 
 % TLS: handle error condition better in predicate.
 
-\ouritem{phrase(+Phrase, ?List, ?Rest)}\index{\texttt{phrase/3}}
+\standarditem{phrase(+Phrase, ?List, ?Rest)}{phrase/3}
     This predicate is true iff the segment between the start of list 
     {\tt List} and the start of list {\tt Rest} can be parsed as a phrase 
     (i.e. sequence of terminals) of type {\tt Phrase} . In other words, if 
@@ -367,7 +367,7 @@ The library predicates of XSB that support DCGs are the following:
     as though {\tt phrase(X)} appeared instead, {\tt X} would expand into 
     a call to {\tt phrase(X, L, R)} for some lists {\tt L} and {\tt R}.  
 
-\ouritem{expand\_term(+Term1, ?Term2)}\index{\texttt{expand\_term/2}}
+\standarditem{expand\_term(+Term1, ?Term2)}{expand\_term/2}
     This predicate is used to transform terms that appear in a Prolog program
     before the program is compiled or consulted.
     The standard transformation performed by {\tt expand\_term/2} is that 
@@ -390,7 +390,7 @@ The library predicates of XSB that support DCGs are the following:
     module ({\tt usermod}) and should be loaded there before the compilation
     begins.
 
-\ouritem{'C'(?L1, ?Terminal, ?L2)}\index{\texttt{`C'/3}}
+\standarditem{'C'(?L1, ?Terminal, ?L2)}{`C'/3}
 This predicate generally is of no concern to the user.  Rather it is used 
     in the transformation of terminal symbols in 
     grammar rules and expresses the fact that {\tt L1} is connected 
@@ -405,7 +405,7 @@ This predicate generally is of no concern to the user.  Rather it is used
     The name 'C' was chosen for this predicate so that another useful
     name might not be preempted.
 
-\ouritem{tphrase\_set\_string(+List)}\index{\texttt{tphrase\_set\_string/1}}
+\standarditem{tphrase\_set\_string(+List)}{tphrase\_set\_string/1}
 This predicate 
 
 \begin{enumerate}
@@ -418,17 +418,17 @@ described in Section \ref{sec:dcg_tabling}.
 \noindent
 implicitly changing the DCG mode from list to datalog.
 
-\ouritem{tphrase\_set\_string\_keeping\_tables(+List)}\index{\texttt{tphrase\_set\_string\_keeping\_tables/1}}
+\ourmoditem{tphrase\_set\_string\_keeping\_tables(+List)}{dcg}\index{\texttt{tphrase\_set\_string\_keeping\_tables/1}}
 This predicate is the same as {\tt tphrase\_set\_string}, except
 it does not abolish any tables.  When using this predicate, the
 user is responsible for explicitly abolishing the necessary tables.
 
-\ouritem{tphrase\_set\_string\_auto\_abolish(+List)}\index{\texttt{tphrase\_set\_string\_auto\_abolish/1}}
+\ourmoditem{tphrase\_set\_string\_auto\_abolish(+List)}{dcg}\index{\texttt{tphrase\_set\_string\_auto\_abolish/1}}
 This predicate is the same as {\tt tphrase\_set\_string}, except
 it abolishes tables that have been indicated as dcg-supported tables
 by a previous call to {\tt set\_dcg\_supported\_table/1}.
 
-\ouritem{set\_dcg\_supported\_table(+TabSkel)}\index{\texttt{set\_dcg\_supported\_table/1}}
+\ourmoditem{set\_dcg\_supported\_table(+TabSkel)}{dcg}\index{\texttt{set\_dcg\_supported\_table/1}}
 This predicate is used to indicate to the DCG subsystem that a
 particular tabled predicate is part of a DCG grammar, and thus the
 contents of its table depends on the string being parsed.  {\tt

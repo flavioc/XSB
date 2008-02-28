@@ -1169,7 +1169,7 @@ load\_dync/[1,2]}).
 Other predicates for loading files are {\tt ensure\_loaded/[1,2]}.  
 
 \begin{description}
-\ouritem{ensure\_loaded(+FileName)}\index{\texttt{ensure\_loaded/1}}
+\standarditem{ensure\_loaded(+FileName)}{ensure\_loaded/1}
 %
 This predicate checks to see whether the object file for {\tt
 FileName} is newer than the source code and header files for {\tt
@@ -1309,8 +1309,7 @@ from a directive in the file to be compiled (see compiler directive
 {\tt compiler\_options/1}).
 
 \begin{description}
-\ouritem{set\_global\_compiler\_options(+OptionsList)}
-\index{\texttt{set\_global\_compiler\_options/1}} 
+\standarditem{set\_global\_compiler\_options(+OptionsList)}{set\_global\_compiler\_options/1}
     {\tt OptionsList} is a list of compiler options (described below).
     Each can optionally be prefixed by \verb|+| or \verb|-|,
     indicating that the option is to be turned on, or off,

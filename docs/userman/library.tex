@@ -531,10 +531,15 @@ X = p(f(1),g(2),r([a]))
 \ei
 \item 	{\tt Term} neither a variable nor a compound term
 \bi
-\item    {\tt type\_error(integer,Index)}
+\item    {\tt type\_error(compound,Term)}
 \ei
 \ei
 
+\ourmoditem{term\_variables(+Term,-Variables}{constraintLib}
+\index{\texttt{term\_variables/2}}
+% 
+Given any Prolog term {\tt Term} as input, returns a sorted list of
+variables in the term.  
 \end{description}
 
 \section{Formatted Output}
@@ -2250,60 +2255,49 @@ Here is an example of the use of this feature:
 \section{Arrays}
 %===============
 
-The module {\tt array1} in directory {\tt lib} provides a very simple 
-backtrackable array implementation.  The predicates through which the 
-array objects are manipulated are:
+The module {\tt array1} provides a simple backtrackable array
+implementation that requires no copying.  In Version 3.2, this package
+was changed to make use of the backtrackable destructive assignment
+made possible by {\tt setarg/3}.  We note that as of Version 3.2 this
+library provides simple syntactic sugar for {\tt functor/3}, {\tt
+  arg/3} and {\tt setarg/3} and relies on error messages for these
+predicates.
 
 \begin{description}
-\ourmoditem{array\_new(-Array, +Size)}{array1}\index{\texttt{array\_new/2}}
-%\predindex{array\_new/2~(L)}
-    Creates a one dimensional empty array of size {\tt Size}.  All the 
-    elements of this array are variables.
-\ourmoditem{array\_elt(+Array, +Index, ?Element)}{array1}
-\index{\texttt{array\_elt/3}}
-%\predindex{array\_elt/3~(L)}
-    True iff {\tt Element} is the {\tt Index}-th element of array 
-    {\tt Array}.
-\ourmoditem{array\_update(+Array, +Index, +Elem, -NewArray)}{array1}
-\index{\texttt{array\_update/4}}
-%\predindex{array\_update/4~(L)}
-    Updates the array {\tt Array} such that the {\tt Index}-th element
-    of the new array is {\tt Elem} and returns the new array in 
-    {\tt NewArray}.  The implementation is quite efficient in that it 
-    avoids the copying of the entire array.
+\ourmoditem{array\_new(-Array,+Size)}{array}\index{\texttt{array\_new/2}}
+%
+Creates a one dimensional empty array of size {\tt Size}.  All the
+elements of this array are variables.  
+
+\ourmoditem{array\_elt(+Array, +Index, ?Element)}{array} \index{\texttt{array\_elt/3}} 
+%
+Succeeds iff {\tt Element} unifies with the {\tt Index}-th element of
+array {\tt Array}.  
+%
+\ourmoditem{array\_update(+Array, +Index, +Elem)}{array} \index{\texttt{array\_update/3}} 
+%
+Updates the array {\tt Array} such that the {\tt Index}-th element of
+the new array is {\tt Elem} using destructive assignement.  The
+implementation is quite efficient in that it avoids the copying of the
+entire array.
 \end{description}
 
-A small example that shows the use of these predicates is the following:
+The following example shows the use of these predicates:
 {\footnotesize
- \begin{verbatim}
-           | ?- import [array_new/2, array_elt/3, array_update/4] from array1.
+\begin{verbatim}
+| ?- import array_new/2, array_elt/3, array_update/4 from array.
 
-           yes
-           | ?- array_new(A, 4), array_update(A,1,1,B), array_update(B,2,2,C),
-                ( array_update(C,3,3,D), array_elt(D,3,E)
-                ; array_update(C,3,6,D), array_elt(D,3,E)
-                ; array_update(C,3,7,D), array_elt(D,3,E)
-                ).
+yes
+| ?- array_new(A,3), array_update(A,1,1), array_update(A,2,2),
+     ( array_update(A,3,3), writeln(first(A))
+     ; array_update(A,3,6), writeln(second(A))
+     ; array_update(A,3,7), writeln(third(A))),fail.
 
-           A = array(1,2,3,_874600)
-           B = array(1,2,3,_874600)
-           C = array(1,2,3,_874600)
-           D = array(1,2,3,_874600)
-           E = 3;
+first(array(1,2,3))
+second(array(1,2,6))
+third(array(1,2,7))
 
-           A = array(1,2,6,_874600)
-           B = array(1,2,6,_874600)
-           C = array(1,2,6,_874600)
-           D = array(1,2,6,_874600)
-           E = 6;
-
-           A = array(1,2,7,_874600)
-           B = array(1,2,7,_874600)
-           C = array(1,2,7,_874600)
-           D = array(1,2,7,_874600)
-           E = 7;
-
-           no
+no
  \end{verbatim}
 }
 
