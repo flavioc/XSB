@@ -21,7 +21,10 @@
 ** 
 */
 
-:- export when/2, unifiable/3.
+:- compiler_options([sysmod,xpp_on]).
+#include "builtin.h"
+
+:- export when/2, unifiable/3, term_variables/2,setarg/3.
 :- export globalize/1, unglobalize/1, var_compare/3, lookup_variable_id/2.
 
 :- import
@@ -30,9 +33,7 @@
 	del_attr/2,
 	install_verify_attribute_handler/4
    from machine.
-
-:- ensure_loaded(chr).
-:- import term_variables/2 from chr_interp.
+:- import sort/2 from setof.
 
 :- import check_var/3 from error_handler.
 :- import ground/1 from basics.
@@ -42,7 +43,12 @@
 :- import call/1, compare/3, nl/0, structure/1, throw/1, 
 	  write/1, '=..'/2 from standard.
 
+/*
 :- import ensure_loaded/1 from consult.
+
+:- ensure_loaded(chr).
+:- import term_variables/2 from chr_interp.
+*/
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %	
@@ -233,7 +239,27 @@ unifiable_list([],[],List,List).
 unifiable_list([Term1|R1],[Term2|R2],ListIn,ListOut):- 
 	unifiable_1(Term1,Term2,ListIn,ListMid),
 	unifiable_list(R1,R2,ListMid,ListOut).
+
+%---------
 	
+term_variables(Term, Vars) :-
+	listofvars(Term, Vs, []),
+	sort(Vs, Vars).	
+
+listofvars(Term, Vh, Vt) :-
+	(var(Term)
+	 ->	Vh = [Term | Vt]
+	 ;	Term =.. [_|Args],
+		listofvars1(Args, Vh, Vt)
+	).
+
+listofvars1([], V, V).
+listofvars1([T|Ts], Vh, Vt) :-
+	listofvars(T, Vh, Vm),
+	listofvars1(Ts, Vm, Vt).
+
+:- import set_arg/3 from machine.
+setarg(T,N,A):-  set_arg(T,N,A).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Ordering 
