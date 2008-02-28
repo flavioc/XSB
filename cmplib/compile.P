@@ -299,8 +299,9 @@ check_possible_hilog_conflict(SymTab) :-
 	 ->	(sym_gen(Sym,SymTab),
 		 sym_name(Sym,Name,Arity), Arity =\= 0,
 		 '_$hilog_symbol'(Name),
-		 warning(('Symbol: ', Name,
-			  ' is both a HiLog symbol and has a Prolog term of arity ',Arity))
+		 warning((Name,
+			  ' is both a HiLog symbol and a Prolog functor of arity ',Arity)),
+		 fail
 		 ;
 		 true
 		)
