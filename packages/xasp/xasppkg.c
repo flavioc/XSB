@@ -36,6 +36,7 @@
 // These variables should not be global in the MT-engine.
 // They will soon be moved to the th_context structure so that
 // each thread can have its own Smodels instance.
+#define MULTI_THREAD 1
 #ifdef MULTI_THREAD
 #include "context.h"
 #include "xasp.h"
@@ -69,7 +70,7 @@ extern "C" void numberAtoms(CTXTdeclc int nAtoms)
   totatoms=nAtoms;
 }
 
-/*
+/***
 extern "C" void atomName(CTXTdeclc char *name)
 { 
   Atom ** loc_atoms = atoms;
@@ -77,7 +78,9 @@ extern "C" void atomName(CTXTdeclc char *name)
   api->set_name(globatoms[loc_curatom],name);
   curatom++;
 }
-*/
+***/
+extern "C" void __assert(const char *a, int b, const char *c) { return; }
+
 
 extern "C" void beginBasicRule(CTXTdecl)
 {

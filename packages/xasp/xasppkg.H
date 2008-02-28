@@ -27,7 +27,7 @@
 	
 :- private_foreign_pred smodelsInit from init(void):void.
 :- private_foreign_pred smodelsNumAtoms(+a) from numberAtoms(a:int):void.
-:- private_foreign_pred smodelsAtomName(+a) from atomName(a:string):void.
+%%:- private_foreign_pred smodelsAtomName(+a) from atomName(a:string):void.
 
 :- private_foreign_pred smodelsBeginBasicRule from beginBasicRule(void):void.
 :- private_foreign_pred smodelsBeginChoiceRule from beginChoiceRule(void):void.
