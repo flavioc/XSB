@@ -230,6 +230,7 @@ compile_c(Modname, Base, Ext, Options, Dir, LdOption, CompComm, TempFile) :-
 	    ;	str_sub('windows', Configuration)
 	    ->  %% check if Module.dll exists in the bindir or current dir
 		%% If not - issue a warning
+		%%% TLS: dont really understand -- shd this throw an error?
 		fmt_write_string(DLLhere, '%s.dll', arg(Modname)),
 		xsb_configuration(config_bindir,BINDIR),
 		fmt_write_string(DLLbin, '%s\%s.dll', arg(BINDIR,Modname)),

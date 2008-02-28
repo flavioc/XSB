@@ -52,6 +52,7 @@
 	filterPO/2,
 	filterPO/3,
 	filterReduce/4,
+	filterReduce_u/4,
         filterReduce1/4,  % this predicate only for demonstration purposes.
 	table_once/1.
 

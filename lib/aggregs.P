@@ -326,15 +326,16 @@ filterReduce(Call,Op,Id,Res) :- filterReduce1(Call,Op,Id,Res).
 filterReduce1(Call,Op,Id,Res) :-
 	'_$savecp'(Breg),
 	breg_retskel(Breg,4,Skel,Cs),
-		functor(Comp,Op,3),
-		functor(Idcomp,Op,3),
+%		functor(Comp,Op,3),
+%		functor(Idcomp,Op,3),
 	copy_term(Skel,Oskel),
-	apply_last(Call,[Nvar],New_call),   % rather than copy_term,
+%	apply_last(Call,[Nvar],New_call),   % rather than copy_term,
 					    % since we want variant.
-		arg(1,Idcomp,Id),arg(2,Idcomp,Nvar),arg(3,Idcomp,Res),
-		arg(1,Comp,Oopt),arg(2,Comp,Nvar),arg(3,Comp,Res),
+%		arg(1,Idcomp,Id),arg(2,Idcomp,Nvar),arg(3,Idcomp,Res),
+%		arg(1,Comp,Oopt),arg(2,Comp,Nvar),arg(3,Comp,Res),
 	get_non_opt(Skel,Sargs),	        % divide into opt arg and rest
-	New_call,
+%	New_call,
+	call(Call,Nvar),
 %	writeln(New_call),
 	(get_returns(Cs,Oskel,Leaf),
 %	 writeln(get_returns(Cs,Oskel,Leaf)),
@@ -343,12 +344,32 @@ filterReduce1(Call,Op,Id,Res) :-
 %	 writeln((Sargs,Osargs)),
 	 variant(Sargs,Osargs)
 	 ->	
-		Comp,
+%		Comp,
 %		writeln(p(Comp,Res,Oopt)),
+	        call(Op,Oopt,Nvar,Res),
 		Res \== Oopt,
 		delete_return(Cs,Leaf)
 	 ;	
-		Idcomp	
+	        call(Op,Id,Nvar,Res)
+%		Idcomp	
+	).
+
+% Reduce elements using associative Op with identity Id.
+filterReduce_u(Call,Op,Id,_Res) :- filterReduce1_u(Call,Op,Id,_), fail.
+filterReduce_u(Call,Op,Id,Res) :- filterReduce1_u(Call,Op,Id,Res0), Res=Res0.
+:- table filterReduce1_u/4.
+:- use_variant_tabling filterReduce1_u(_,_,_,_).
+filterReduce1_u(Call,Op,Id,Res) :-
+	'_$savecp'(Breg),
+	breg_retskel(Breg,4,Skel,Cs),
+	copy_term(p(Call,Res,Skel),p(Call,Ovar,Oskel)),
+	call(Call,Nvar),
+%	 writeln(getting_return_for(Skel,Oskel)),
+	(get_returns(Cs,Oskel,Leaf)
+	 ->	call(Op,Ovar,Nvar,Res),
+		Res \== Ovar,
+		delete_return(Cs,Leaf)
+	 ;	call(Op,Id,Nvar,Res)
 	).
 
 % Keep all lubs in a partial order (HiLog) PO(/2).
