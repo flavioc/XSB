@@ -71,6 +71,7 @@ compile(Modname, Basename, Extension,Options, ExportList) :-
 	hack_self_compile,
 	get_symtab(Module, SymTab),
 	compile1(Modname, Module, SymTab, AFile, OFile, TIFile, IsModule),
+	check_possible_hilog_conflict(SymTab),
 	dispose_symtab( SymTab ),
 	( option(compile_off) -> print_result(Module) ; true ),
 	(conget('error occurred', 1) ->
@@ -79,12 +80,12 @@ compile(Modname, Basename, Extension,Options, ExportList) :-
 	    abort_quietly
 	; true
 	), !,
-	( IsModule =:= 0 -> IsModuleMsg = '' ; IsModuleMsg = 'Module ' ),
 	%% If --quietload, don't print Compiling/compiled messages
 	stat_flag(BANNER_CTL,BannerCtl1),
 	(   KeepQuiet1 is BannerCtl1 mod QUIETLOAD, KeepQuiet1 =:= 0
 	->  true
-	;   time_message(TimeStart, (IsModuleMsg, Modname, ' compiled'))
+	;   ( IsModule =:= 0 -> IsModuleMsg = '' ; IsModuleMsg = 'Module ' ),
+	    time_message(TimeStart, (IsModuleMsg, Modname, ' compiled'))
 	),
 	!,
 	retractall(current_compiled_module(_)).
@@ -293,6 +294,19 @@ compile_clauses([Clause|Clauses], Sym, PilCode, PilCodeR, Nin, Nout) :-
 	compile_clause(Sym, Clause, PilCode, PilCodeM, Nmid),
 	compile_clauses(Clauses, Sym, PilCodeM, PilCodeR, Nmid, Nout).
 
+check_possible_hilog_conflict(SymTab) :-
+	('_$hilog_symbol'(HS), HS \== '^~'
+	 ->	(sym_gen(Sym,SymTab),
+		 sym_name(Sym,Name,Arity), Arity =\= 0,
+		 '_$hilog_symbol'(Name),
+		 warning(('Symbol: ', Name,
+			  ' is both a HiLog symbol and has a Prolog term of arity ',Arity))
+		 ;
+		 true
+		)
+	 ;	!
+	).
+		
 
 /*======================================================================*/
 /* hack_self_compile/0							*/

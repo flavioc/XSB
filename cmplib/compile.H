@@ -55,6 +55,7 @@
 :- import dump_module/2, write_preds/2 from sanity.
 :- import force_tp_geninline_loaded/0 from tpinline.
 :- import sym_name/3, sym_type/2, sym_prop/2 from symtab.
+:- import sym_gen/2 from symtab.
 :- import dispose_symtab/1 from symtab.
 :- import force_tprog_loaded/0, compile_clause/5 from tprog.
 :- import force_tp_index_loaded/0, makeindex/6 from tp_index.
@@ -72,3 +73,4 @@
 
 :- import modeanalyze/3 from modeinf.
 :- import assert/1, retractall/1, (dynamic)/1  from assert.
+:- import '_$hilog_symbol'/1 from hilogsym.
