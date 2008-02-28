@@ -1355,12 +1355,17 @@ int builtin_call(CTXTdeclc byte number)
   }
 
     /* TLS: it turns out that term_set_arg, and the perm. flag are
-       still used in array.P. */
+       still used in array.P.  Added error conditions for form in
+       constraintLib */
   case TERM_SET_ARG: {	/* R1: +term; R2: index (+int) */
 			/* R3: newarg (+term) */
     /* used in file_read.P, array.P, array1.P */
-    int  disp = ptoc_int(CTXTc 2);
-    Cell term = ptoc_tag(CTXTc 1);
+    //    int  disp = ptoc_int(CTXTc 2);
+    int  disp = (int) iso_ptoc_int(CTXTc 2,"setarg/3");
+    if (disp < 1) xsb_domain_error(CTXTc "positive_integer",ptoc_tag(CTXTc 2),"setarg/3",2);
+
+  //    Cell term = ptoc_tag(CTXTc 1);
+    Cell term = iso_ptoc_callable(CTXTc 1,"setarg/3");
     CPtr arg_loc = clref_val(term)+disp;
     Cell new_val = cell(reg+3);
     int perm_flag = ptoc_int(CTXTc 4);
@@ -1678,7 +1683,7 @@ int builtin_call(CTXTdeclc byte number)
     case 2: /* value of delayreg */
       ctop_int(CTXTc 2, (Integer)delayreg);
       break;
-    default: xsb_error("Undefined component of XWAM_STATE");
+    default: xsb_domain_error(CTXTc "xwam_state_case",ptoc_tag(CTXTc 1),"xwam_state/2",1);
     }
     break;
   }
@@ -3280,3 +3285,4 @@ prolog_term build_xsb_backtrace(CTXTdecl) {
 
 /*------------------------- end of builtin.c -----------------------------*/
 
+ 
