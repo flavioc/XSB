@@ -58,8 +58,9 @@
 
 :- import apply/2,apply/3,apply/4 from usermod.
 
-:- import arg/3, call/1, call_c/1, atom/1, functor/3, '=..'/2 from standard.
-:- import member/2, copy_term/2, append/3 from basics.
+:- import arg/3, call/1, call_c/1, atom/1, '=..'/2 from standard.
+:- import call/2, call/3, call/4 from standard.
+:- import member/2, copy_term/2 from basics.
 :- import sort/2, findall/3, bagof/3, excess_vars/4 from setof.
 :- import ','/2 from usermod.
 :- import subsumes/2, variant/2 from subsumes.

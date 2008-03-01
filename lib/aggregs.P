@@ -414,10 +414,11 @@ filterPO1(Call,Var,PO) :-
 		)
 	).
 
-apply_last(Call,Var,Newcall):-
+/*apply_last(Call,Var,Newcall):-
 	Call =.. List,
 	append(List,Var,Newlist),
 	Newcall =.. Newlist.
+*/
 
 get_opt_non_opt(Call,Args,Opt):- 
 	Call =.. [_Functor|List],
