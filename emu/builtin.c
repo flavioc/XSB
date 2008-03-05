@@ -1361,14 +1361,13 @@ int builtin_call(CTXTdeclc byte number)
 			/* R3: newarg (+term) */
     /* used in file_read.P, array.P, array1.P */
     //    int  disp = ptoc_int(CTXTc 2);
-    int  disp = (int) iso_ptoc_int(CTXTc 2,"setarg/3");
-    if (disp < 1) xsb_domain_error(CTXTc "positive_integer",ptoc_tag(CTXTc 2),"setarg/3",2);
-
   //    Cell term = ptoc_tag(CTXTc 1);
+    int  disp = (int) iso_ptoc_int(CTXTc 2,"setarg/3");
     Cell term = iso_ptoc_callable(CTXTc 1,"setarg/3");
     CPtr arg_loc = clref_val(term)+disp;
     Cell new_val = cell(reg+3);
     int perm_flag = ptoc_int(CTXTc 4);
+    if (disp < 1) xsb_domain_error(CTXTc "positive_integer",ptoc_tag(CTXTc 2),"setarg/3",2);
     if (perm_flag == 0) {
       pushtrail(arg_loc,new_val);
     } else if (perm_flag < 0) {
