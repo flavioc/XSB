@@ -55,6 +55,7 @@
 	filterReduce_u/4,
         filterReduce1/4,  % this predicate only for demonstration purposes.
 	table_once/1.
+:- export filterMax/2, filterMin/2, filterPOA/4.
 
 :- import apply/2,apply/3,apply/4 from usermod.
 

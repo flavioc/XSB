@@ -18,7 +18,6 @@
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
-** $Id$
 ** 
 */
 
@@ -301,8 +300,6 @@ get_returns_type(Cs,Skel,VarList,Oskel,OVarList,POCA,POCB,Leaf,Tp) :-
 
 
 /*=======================================================================*/
-/* Need to figure out a way around module system so that 
-   the proper call of min is done.
 
 filterMin(Call,Var) :- filterReduce(Call,min,neg_inf,Var).
 
@@ -315,7 +312,6 @@ max(X,Y,Z):- (X > Y -> Z = X ; Z = Y).
 min(X,Y,Y):- \+ number(X),!.
 min(X,Y,X):- \+ number(Y),!.
 min(One,Two,Min):- One > Two -> Min = Two ; Min = One.
-*/
 
 /* Variant seems a better semantics, but is more expensive.  The issue
    is that in order to ensure variance we need to examine the table
@@ -414,11 +410,87 @@ filterPO1(Call,Var,PO) :-
 		)
 	).
 
-/*apply_last(Call,Var,Newcall):-
-	Call =.. List,
-	append(List,Var,Newlist),
-	Newcall =.. Newlist.
-*/
+% Keep all lubs in a partial order (HiLog) PO(/2).
+filterPOA(Call,Var,PO,Abstract) :- filterPOA1(Call,Var,PO,Abstract), fail.
+filterPOA(Call,Var,PO,Abstract) :- filterPOA1(Call,Var,PO,Abstract).
+:- table filterPOA1/4.
+:- use_variant_tabling filterPOA1(_,_,_,_).
+filterPOA1(Call,Var,PO,Abstract) :- 
+	'_$savecp'(Breg),
+	breg_retskel(Breg,3,Skel,Cs),
+	copy_term(p(Call,Var,Skel),p(Call,Ovar,Oskel)),
+	call(Call,VarTmp),
+%	writeln(oskel(Oskel,VarTmp,Out)),
+	((get_returns(Cs,Oskel,Leaf),
+	    (Ovar==VarTmp
+	    ->  true
+            ;   call(PO,Ovar,VarTmp)))
+	 ->	fail
+	 ;	findall(p(Cs,Ovar,Leaf),
+			 (get_returns(Cs,Oskel,Leaf), 
+%			  writeln(get_returns(Cs,Oskel,Leaf)), 
+%			  writeln(call(PO,VarTmp,Ovar)),
+			  call(PO,VarTmp,Ovar)
+			  ),
+			 Rets),
+		 sort(Rets,Rets1),
+%		 writeln(Rets1),
+		 filterOutCalls(Rets1,Calls),
+%		 writeln(call(Abstract,Calls,VarTmp,Var)),
+		 call(Abstract,Calls,VarTmp,Var),
+%		 writeln(aftercall(Abstract,Calls,VarTmp,Var)),
+		 ( member(p(Cs,Ovar,Leaf),Rets1),
+%		   delete_return(Cs,Leaf),
+		   fail
+		  ;
+		   true )
+	).
+%, writeln(success(Call,Var)).
+
+:- export filterPOA/5.
+
+% Keep all lubs in a partial order (HiLog) PO(/2).
+filterPOA(Call,Var,PO,Abstract,CallAbs) :- filterPOA1(Call,Var,PO,Abstract,CallAbs), fail.
+filterPOA(Call,Var,PO,Abstract,CallAbs) :- filterPOA1(Call,Var,PO,Abstract,CallAbs).
+:- table filterPOA1/5.
+:- use_variant_tabling filterPOA1(_,_,_,_,_).
+filterPOA1(Call,Var,PO,Abstract,CallAbs) :- 
+	'_$savecp'(Breg),
+	breg_retskel(Breg,3,Skel,Cs),
+	copy_term(p(Call,Var,Skel),p(Call,Ovar,Oskel)),
+	call(Call,VarTmp),
+	call(CallAbs,VarTmp,Out),
+	Oskel = ret(Out),
+%	writeln(oskel(Oskel,VarTmp,Out)),
+	((get_returns(Cs,Oskel,Leaf),
+	    (Ovar==VarTmp
+	    ->  true
+            ;   call(PO,Ovar,VarTmp)))
+	 ->	fail
+	 ;	findall(p(Cs,Ovar,Leaf),
+			 (get_returns(Cs,Oskel,Leaf), 
+%			  writeln(get_returns(Cs,Oskel,Leaf)), 
+%			  writeln(call(PO,VarTmp,Ovar)),
+			  call(PO,VarTmp,Ovar)
+			  ),
+			 Rets),
+		 sort(Rets,Rets1),
+%		 writeln(Rets1),
+		 filterOutCalls(Rets1,Calls),
+%		 writeln(call(Abstract,Calls,VarTmp,Var)),
+		 call(Abstract,Calls,VarTmp,Var),
+%		 writeln(aftercall(Abstract,Calls,VarTmp,Var)),
+		 ( member(p(Cs,Ovar,Leaf),Rets1),
+%		   delete_return(Cs,Leaf),
+		   fail
+		  ;
+		   true )
+	).
+%, writeln(success(Call,Var)).
+
+filterOutCalls([],[]).
+filterOutCalls([p(_,V,_)|R],[V|R1]):- 
+	filterOutCalls(R,R1).
 
 get_opt_non_opt(Call,Args,Opt):- 
 	Call =.. [_Functor|List],
@@ -486,4 +558,10 @@ table_once(Call) :-
 breg_retskel(_BregOffset,_Arity,_RetTerm,_SubgoalPtr) :- '_$builtin'(154).
 
 
+end_of_file.
+
+apply_last(Call,Var,Newcall):-
+	Call =.. List,
+	append(List,Var,Newlist),
+	Newcall =.. Newlist.
 
