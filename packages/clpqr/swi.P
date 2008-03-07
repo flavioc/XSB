@@ -3,9 +3,10 @@
 	  setarg/3, maplist/2, term_variables/2, ignore/1,
 	  strip_module/3,statistics/2, unifiable/2, freeze/2.
 
+/* Should now take out setarg/3 and use one in constraintlib */
+
 :- import trie_delete/2,trie_create/2, trie_unify/2, trie_insert/2 from intern.
-:- import append/3,ground/1 from basics.
-:- import call_c/1 from standard.
+:- import ground/1 from basics.
 :- import when/2 from constraintLib.
 
 % emulating non-backtrackable "global" variables using private tries.
@@ -36,12 +37,6 @@ maplist2([Elem|Tail], Goal) :-
 	call(Goal, Elem), 
 	maplist2(Tail, Goal).
 
-call(Goal,Arg):- 
-	Goal =.. GoalList,
-	append(GoalList,[Arg],NewgoalList), 
-	Newgoal =.. NewgoalList,
-	call_c(Newgoal).
-	
 term_variables(Term, Vars) :-
 	listofvars(Term, Vs, []),
 	sort(Vs, Vars).	
