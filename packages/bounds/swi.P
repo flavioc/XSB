@@ -44,18 +44,6 @@ maplist2([Elem|Tail], Goal) :-
 	call(Goal, Elem), 
 	maplist2(Tail, Goal).
 
-call(Goal,Arg):- 
-	Goal =.. GoalList,
-	append(GoalList,[Arg],NewgoalList), 
-	Newgoal =.. NewgoalList,
-	call_c(Newgoal).
-	
-call(Goal,Arg1,Arg2):- 
-	Goal =.. GoalList,
-	append(GoalList,[Arg1,Arg2],NewgoalList), 
-	Newgoal =.. NewgoalList,
-	call_c(Newgoal).
-	
 term_variables(Term, Vars) :-
 	listofvars(Term, Vs, []),
 	sort(Vs, Vars).	
