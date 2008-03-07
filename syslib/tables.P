@@ -70,7 +70,8 @@ set_tabled_eval(Predicate,EvalMethod) :-
  */
 
 table_state(Call, PredType, CallType, AnsSetStatus) :-
-	table_status(Call, PredTypeCode, CallTypeCode, AnsSetStatusCode),
+	(Call = M:Goal -> term_new_mod(M,Goal,NewGoal) ; Call = NewGoal),
+	table_status(NewGoal, PredTypeCode, CallTypeCode, AnsSetStatusCode),
 	predicate_type_code(PredTypeCode, PredType),
 	call_type_code(CallTypeCode, CallType),
 	answer_set_status_code(AnsSetStatusCode, AnsSetStatus).
@@ -269,11 +270,14 @@ were instantiated and so it subsumes the call in the table.
 
  */
 
+:- import term_new_mod/3 from machine.
+
 get_calls(CallTerm, Handle, Template) :-
-	findall('_$get_calls'(CallTerm,Handle,Template),
-		'_$$get_calls'(CallTerm,Handle,Template),
+	(CallTerm = M:Goal -> term_new_mod(M,Goal,NewGoal) ; CallTerm = NewGoal),
+	findall('_$get_calls'(NewGoal,Handle,Template),
+		'_$$get_calls'(NewGoal,Handle,Template),
 		List),
-	member('_$get_calls'(CallTerm,Handle,Template),List).
+	member('_$get_calls'(NewGoal,Handle,Template),List).
 
 
 get_calls(_CallTerm) :- '_$builtin'(TRIE_UNIFY_CALL).
@@ -290,11 +294,13 @@ get_calls(_CallTerm) :- '_$builtin'(TRIE_UNIFY_CALL).
 get_calls_for_table(PredSpec,Call) :-
 	( PredSpec = P/N
 	 ->	functor(Call,P,N)
-	 ;	term_psc(PredSpec,PSC),
-		term_new(PSC,Call)
+	 ; (PredSpec = M:Goal -> term_new_mod(M,Goal,PredSpec1) ; Call = PredSpec1),
+	   term_psc(PredSpec1,PSC),
+	   term_new(PSC,Call)
 	        %% functor(PredSpec,P,N), functor(Call,P,N) ),
 	),
 	get_calls(Call, _CallStr, _RetSkel).
+
 
 
 /*
@@ -327,7 +333,6 @@ get_returns(TableEntry, ReturnTemplate) :-
 	trie_get_return(TableEntry,RetTmplt),
 	get_lastnode_cs_retskel(_,RetLeaf,_,_).
 	
-
 get_returns(TableEntry, RetTmplt, RetLeaf) :-
 	findall('_$get_returns'(TableEntry,RetTmplt,RetLeaf),
 		'_$$get_returns'(TableEntry,RetTmplt,RetLeaf),
@@ -522,4 +527,28 @@ find_forward_dependencies(Call):-
 find_answers(Pred):- 
 	table_inspection_function(FIND_ANSWERS,Pred,_,_,_).
 
+/* Right now, experimental for aggregs.P */
 	
+:- export get_unifiable_returns/3.
+
+:- import t_assert_2/2 from assert.
+:- import (index)/2 from standard.
+:- dynamic '_$return'/1.
+:- index('_$return'/1,trie).
+:- import system_retract_fact/1 from assert.
+
+
+get_unifiable_returns(TableEntry,Skel, Leaf) :-
+	\+ \+ (get_unifiable_returns_1(TableEntry, Skel, ReturnList),
+	       ReturnList \== [],
+	       t_assert_2('_$return'(ReturnList),_)),
+	system_retract_fact('_$return'(ReturnList)),
+%	    change_attv_to_var(ReturnTemplate),
+	member('_$get_returns'(TableEntry,Leaf),ReturnList).
+	
+get_unifiable_returns_1(TableEntry, Skel, ReturnsList):- 
+	findall('_$get_returns'(TableEntry,RetLeaf),
+		'_$$get_returns'(TableEntry,Skel,RetLeaf),
+		ReturnsList).
+
+
