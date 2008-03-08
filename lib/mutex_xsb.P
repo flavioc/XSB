@@ -140,19 +140,29 @@ get_next_mutex_property(Ptr,Locks,Owner,Next):-
 mutex_unlock_all:- 
 	thread_request( MUTEX_UNLOCK_ALL,_,_,_,_,_,_,_,_).
 
-mutex_property(Mutex,Property):-
-	(atom(Mutex) -> 
-	    get_alias(Mutex,MUTEX_ALIAS,M),
-	    bound_mutex_property(M,Property)
-	 ; (integer(Mutex) -> 
-	       bound_mutex_property(Mutex,Property)
-   	    ;  (var(Mutex) ->
-   	        mutex_property_list(Mutex,Property)
-	        ;  type_error(mutex_or_alias,Mutex,mutex_property/2,1) ) ) ).
+mutex_property(Mutex, _) :-
+	nonvar(Mutex),
+	\+ integer(Mutex),
+	\+ atom(Mutex),
+	domain_error(mutex_or_alias, Mutex, mutex_property/2, 1).
+mutex_property(Mutex, Property) :-
+	(	atom(Mutex) -> 
+	    (	get_alias(Mutex, MUTEX_ALIAS, M) ->
+			bound_mutex_property(M, Property)
+		;	existence_error(mutex, Mutex, mutex_property/2, 1)
+		)
+	;	integer(Mutex) ->
+		(	get_alias(_, MUTEX_ALIAS, Mutex) ->
+			bound_mutex_property(Mutex, Property)
+		;	existence_error(mutex, Mutex, mutex_property/2, 1)		
+		)
+	;	mutex_property_list(Mutex, Property)
+	).
 
 /* Could optimize away a CP, but I dont think this pred will be used much...
    (famous last words) */
-mutex_property_list(Mutex,Property):-
+mutex_property_list(Mutex, Property):-
+	valid_mutex_property(Property),
 	get_first_mutex_property(This,Locks,Owner,Next),
 	This \== 0,
 	(   This = Mutex,
@@ -168,9 +178,10 @@ form_mutex_property(_Mutex,Owner,Locks,Prop):-
 	    Prop = status(unlocked)
 	 ;  Prop = status(locked(Owner,Locks)) ).
 
-bound_mutex_property(Mutex,Property):-
-	get_next_mutex_property(Mutex,Locks,Owner,_Next),
-	form_mutex_property(Mutex,Owner,Locks,Property).
+bound_mutex_property(Mutex, Property):-
+	valid_mutex_property(Property),
+	get_next_mutex_property(Mutex, Locks, Owner, _Next),
+	form_mutex_property(Mutex, Owner, Locks, Property).
 
 mutex_property_list_1(This,Mutex,Property):- 
 	get_next_mutex_property(This,Locks,Owner,Next),
@@ -179,6 +190,14 @@ mutex_property_list_1(This,Mutex,Property):-
           ; 
 	    Next \== 0,
 	    mutex_property_list_1(Next,Mutex,Property) ).
+
+valid_mutex_property(Property) :-
+	nonvar(Property),
+	Property \= alias(_),
+	Property \= status(unlocked),
+	Property \= status(locked(_, _)),
+	domain_error(mutex_property, Property, mutex_property/2, 2).
+valid_mutex_property(_).
 
 /* ==================================================================  */
 /* Proto-ISO Message Queues. */
