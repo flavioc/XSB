@@ -867,7 +867,10 @@ void mutex_unlock_all(CTXTdecl) {
   while (dmp != NULL) {
     if (dmp-> owner == xsb_thread_id) {
       //      printf("unlocking all %p\n",dmp);
-      unlock_mutex(CTXTc dmp);
+      while (dmp->num_locks > 0) {
+	unlock_mutex(CTXTc dmp);
+	dmp->num_locks--;
+      }
     }
     dmp = dmp->next_dynmut;
   }
