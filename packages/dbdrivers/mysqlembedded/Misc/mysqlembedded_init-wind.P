@@ -1,6 +1,6 @@
-%% Generated automatically from Misc\mysql_init-wind.P
+%% Generated automatically from Misc\mysqlembedded_init-wind.P
 
-/* File:      mysql_init.in -- configuration info for MySQL
+/* File:      mysqlembedded_init.in -- configuration info for MySQL Embedded Server
 ** Author(s): kifer
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 

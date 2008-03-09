@@ -44,6 +44,7 @@
 #define EXEC_PREPARE 4
 #define CLOSE_STMT 5
 #define ERROR_MESG 6
+#define FREE_RESULT 7
 
 #define INT_TYPE 1
 #define FLOAT_TYPE 2
@@ -59,7 +60,7 @@
 #define QUERY_SIZE 18000
 #define ELEMENT_SIZE 1500
 
-#define DB_INTERFACE_TERM_SYMBOL '\255'
+#define DB_INTERFACE_TERM_SYMBOL '\377'
 
 // codes returned by bindReturnList
 #define RESULT_EMPTY_BUT_REQUESTED 0
@@ -136,6 +137,7 @@ union functionPtrs
   struct xsb_data** (*executeStmtDriver)(struct xsb_data**, struct xsb_queryHandle*);
   int (*closeStmtDriver)(struct xsb_queryHandle*);
   char* (*errorMesgDriver)();
+  void (*freeResultDriver)();
 };
 
 DllExport int call_conv registerXSBDriver(char* driver, int num);

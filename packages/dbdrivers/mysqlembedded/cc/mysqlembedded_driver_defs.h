@@ -1,8 +1,8 @@
 /* File: mysqlembedded_driver.h
-** Author: Saikat Mukherjee
+** Author: Hui Wan
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
-** Copyright (C) The Research Foundation of SUNY, 2002-2006
+** Copyright (C) The Research Foundation of SUNY, 2002-2008
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -28,8 +28,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "/usr/local/mysql/include/mysql/mysql.h"
-#include "/usr/local/mysql/include/mysql/mysql_com.h"
+#include "mysql.h"
+#include "mysql_com.h"
 
 #include "cinterf.h"
 #include "driver_manager_defs.h"
@@ -77,13 +77,14 @@ int driverMySQL_prepareStatement(struct xsb_queryHandle* handle);
 struct xsb_data** driverMySQL_execPrepareStmt(struct xsb_data** bindvalues, struct xsb_queryHandle* handle);
 int driverMySQL_closeStatement(struct xsb_queryHandle* handle);
 char* driverMySQL_errorMesg();
+void driverMySQL_freeResult();
 DllExport int call_conv driverMySQLEmbedded_register();
 
 
 DllExport extern int call_conv registerXSBDriver(char* dr, int num);
 DllExport extern int call_conv registerXSBFunction(char* dr, int type, union functionPtrs* func);
 
-#define NUMBER_OF_MYSQLEMBEDDED_DRIVER_FUNCTIONS  7 
+#define NUMBER_OF_MYSQLEMBEDDED_DRIVER_FUNCTIONS  8 
 
 
 

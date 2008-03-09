@@ -124,6 +124,10 @@ AC_ARG_WITH(mysql-libdir,
 [  --with-mysql-libdir=DIR       provide info on where the MySQL libraries are])
 AC_ARG_WITH(mysql-incdir,
 [  --with-mysql-incdir=DIR       provide info on where the MySQL include files are])
+AC_ARG_WITH(mysqlembedded-libdir,
+[  --with-mysqlembedded-libdir=DIR       provide info on where the MySQL Embedded Server libraries are])
+AC_ARG_WITH(mysqlembedded-incdir,
+[  --with-mysqlembedded-incdir=DIR       provide info on where the MySQL Embedded Server include files are])
 AC_ARG_WITH(oracle,
 [  --with-oracle                compile with support of Oracle])
 AC_ARG_WITH(odbc,
@@ -919,6 +923,8 @@ if test -n "${with_dbdrivers}" && test -d $topdir/packages/dbdrivers; then
                             --with-odbc-incdir="$with_odbc_incdir" \
                             --with-mysql-libdir="$with_mysql_libdir" \
                             --with-mysql-incdir="$with_mysql_incdir" \
+                            --with-mysqlembedded-libdir="$with_mysqlembedded_libdir" \
+                            --with-mysqlembedded-incdir="$with_mysqlembedded_incdir" \
                             > /dev/null
     cd $build_dir
 fi

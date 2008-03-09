@@ -2,8 +2,13 @@
 
 # !!!!
 # !!!! Replace with a correct path to MySQL!!!
-#MySQLLib="<Insert Proper Path>\mysqlclient.lib"
+#MySQLLib="<Insert Proper Path>\mysqld.lib"
 #MySQLIncludeDir="<Insert Proper Path>"
+# !!!! You may need to copy the mysql embedded server library files and
+# !!!! header files to directories with no spaces in their names
+# !!!! The following commented path doesn't work!
+#MySQLLib="C:\Program Files\MySQL\MySQL Server 6.0\lib\opt\mysqld.lib"
+#MySQLIncludeDir="C:\Program Files\MySQL\MySQL Server 6.0\include"
 
 XSBDIR=..\..\..\..
 MYPROGRAM=mysqlembedded_driver
@@ -24,7 +29,7 @@ CLEAN :
 CPP_PROJ=/nologo /MT /W3 /GX /O2 /I "$(XSBDIR)\config\x86-pc-windows" \
 		 /I "$(XSBDIR)\emu" /I "$(XSBDIR)\prolog_includes" \
 		 /I "$(XSBDIR)\packages\dbdrivers\cc" \
-		 /I "$(MySQLIncludeDir) \
+		 /I "$(MySQLIncludeDir)" \
 		 /D "WIN32" /D "WIN_NT" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" \
 		 /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /c 
 	
@@ -37,6 +42,7 @@ LINK32=link.exe
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib \
 		advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib \
 		odbc32.lib odbccp32.lib \
+		WS2_32.lib \
 		$(DRIVER_MANAGER_LIB) $(MySQLLib) \
 		/nologo /dll \
 		/machine:I386 /out:"$(OUTDIR)\$(MYPROGRAM).dll"

@@ -27,7 +27,7 @@
 
 :- compiler_options([xpp_on]).
 
-#define DB_INTERFACE_TERM_SYMBOL   '\255'
+#define DB_INTERFACE_TERM_SYMBOL   '\377'
 
 :- import file_read_canonical/3 from machine.
 :- import length/2 from basics.

@@ -50,7 +50,7 @@ static int bindReturnList(prolog_term returnList, struct xsb_data** result, stru
 static void freeQueryHandle(struct xsb_queryHandle* qHandle, int pos);
 static void freeConnectionHandle(struct xsb_connectionHandle* cHandle, int pos);
 static int closeQueryHandle(char* queryHandle);
-void freeResult(struct xsb_data** result, int numOfElements); 
+//void freeResult(struct xsb_data** result, int numOfElements); 
 void freeBindValues(struct xsb_data** bindValues, int numOfElements);
 
 struct xsb_connectionHandle* CHandles[MAX_CONNECTIONS];
@@ -188,6 +188,7 @@ DllExport int call_conv closeConnection(void)
 DllExport int call_conv queryConnection(void)
 {
   struct xsb_data** (*queryDriver)(struct xsb_queryHandle*);
+  void (*freeResultDriver)();
   char* (*errorMesgDriver)();
   prolog_term returnList, sqlQueryList;
   struct xsb_connectionHandle* cHandle;
@@ -255,13 +256,19 @@ DllExport int call_conv queryConnection(void)
     return FALSE;		
   }
 
+  val = bindReturnList(returnList, result, qHandle);
+
   if (result == NULL) {
     closeQueryHandle(qhandle);
   }
-  
-  val = bindReturnList(returnList, result, qHandle);
-  
-  freeResult(result, qHandle->numResultCols); 
+  else {
+    if (getDriverFunction(qHandle->connHandle->driver, FREE_RESULT) != NULL)
+      freeResultDriver = getDriverFunction(qHandle->connHandle->driver, FREE_RESULT)->freeResultDriver;
+    else
+      return FALSE;
+
+    freeResultDriver(result, qHandle->numResultCols); 
+  }
   
   if ((cHandle = isConnectionHandle(chandle)) != NULL) {
     if (getDriverFunction(cHandle->driver, ERROR_MESG) != NULL)
@@ -342,6 +349,7 @@ DllExport int call_conv executePreparedStatement(void)
 {
   struct xsb_data** (*executeStmtDriver)(struct xsb_data**, struct xsb_queryHandle*);
   char* (*errorMesgDriver)();
+  void (*freeResultDriver)();
   struct xsb_queryHandle* qHandle;
   struct xsb_connectionHandle* cHandle;
   struct xsb_data** bindValues;
@@ -433,9 +441,15 @@ DllExport int call_conv executePreparedStatement(void)
   if (result == NULL) {
     qHandle->state = QUERY_BEGIN;
   }
-  else
-    freeResult(result,qHandle->numResultCols); 
-  
+  else {
+    if (getDriverFunction(qHandle->connHandle->driver, FREE_RESULT) != NULL)
+      freeResultDriver = getDriverFunction(qHandle->connHandle->driver, FREE_RESULT)->freeResultDriver;
+    else 
+      return FALSE;
+
+    freeResultDriver(result, qHandle->numResultCols); 
+  }
+
   if (val == TOO_MANY_RETURN_COLS || val == TOO_FEW_RETURN_COLS || val == INVALID_RETURN_LIST)
     return FALSE;
 
@@ -790,7 +804,7 @@ static union functionPtrs* getDriverFunction(char* drivername, int type)
   return NULL;
 }
 
-
+/*
 void freeResult(struct xsb_data** result, int numOfElements)
 {
   int i;
@@ -806,6 +820,7 @@ void freeResult(struct xsb_data** result, int numOfElements)
   }
   return;
 }
+*/
 
 void freeBindValues(struct xsb_data** bindValues, int numOfElements)
 {

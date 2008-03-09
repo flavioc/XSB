@@ -2,7 +2,7 @@
 ** Author: Saikat Mukherjee
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
-** Copyright (C) The Research Foundation of SUNY, 2002-2006
+** Copyright (C) The Research Foundation of SUNY, 2002-2008
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -75,11 +75,12 @@ int driverODBC_prepareStatement(struct xsb_queryHandle* qHandle);
 struct xsb_data** driverODBC_execPrepareStatement(struct xsb_data** param, struct xsb_queryHandle* handle);
 int driverODBC_closeStatement(struct xsb_queryHandle* handle);
 char* driverODBC_errorMesg();
+void driverODBC_freeResult();
 DllExport int call_conv driverODBC_register();
 
 
 DllExport extern int call_conv registerXSBDriver(char* dr, int num);
 DllExport extern int call_conv registerXSBFunction(char* dr, int type, union functionPtrs* func);
 
-#define NUMBER_OF_ODBC_DRIVER_FUNCTIONS  7
+#define NUMBER_OF_ODBC_DRIVER_FUNCTIONS  8
 

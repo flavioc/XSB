@@ -1,8 +1,8 @@
 /* File: mysqlembedded_driver.c
-** Author: Saikat Mukherjee
+** Author: Hui Wan
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
-** Copyright (C) The Research Foundation of SUNY, 2002-2006
+** Copyright (C) The Research Foundation of SUNY, 2002-2008
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -44,7 +44,6 @@ static struct xsb_data** driverMySQL_prepNextRow(struct driverMySQL_preparedresu
 
 void freeQueryInfo(struct driverMySQL_queryInfo* query);
 void freeConnection(struct driverMySQL_connectionInfo* connection);
-void freeResult(struct xsb_data** result, int numOfElements);
 void freeResultset(struct driverMySQL_preparedresultset* rs);
 void freeBind(MYSQL_BIND* bind, int num);
 
@@ -147,7 +146,7 @@ struct xsb_data** driverMySQL_query(struct xsb_queryHandle* handle)
 	struct driverMySQL_connectionInfo* connection;
 	struct driverMySQL_queryInfo* query;
 	MYSQL_RES* resultSet;
-	int i;
+	int i,n;
 
 	query = NULL;
 	connection = NULL;
@@ -197,7 +196,7 @@ struct xsb_data** driverMySQL_query(struct xsb_queryHandle* handle)
 			query->resultSet = resultSet;
 			mysqlQueries[numQueries++] = query;
 			handle->state = QUERY_RETRIEVE;
-			int n = mysql_num_fields(resultSet);
+			n = mysql_num_fields(resultSet);
 			handle->numResultCols = n;
 			query->returnFields = n;
 		}
@@ -213,6 +212,7 @@ static struct xsb_data** driverMySQL_getNextRow(struct driverMySQL_queryInfo* qu
 	MYSQL_ROW row;
 	int numFields;
 	int i, j;
+	char** p_temp=NULL;
 
 	result = NULL;
 	if ((row = mysql_fetch_row(query->resultSet)) == NULL)
@@ -243,8 +243,6 @@ static struct xsb_data** driverMySQL_getNextRow(struct driverMySQL_queryInfo* qu
 		result[i]->val = (union xsb_value *)malloc(sizeof(union xsb_value));
 		result[i]->type = driverMySQL_getXSBType(mysql_fetch_field_direct(query->resultSet, i));
 
-		char** p_temp = NULL;
-
 		switch (result[i]->type)
 		{
 			case INT_TYPE:
@@ -266,7 +264,7 @@ static struct xsb_data** driverMySQL_getNextRow(struct driverMySQL_queryInfo* qu
 }
 
 
-/* **** PREPARED STATEMENT FUNCTIONALITY (for MySQL 5.1 version) *****/
+/***** PREPARED STATEMENT FUNCTIONALITY (for MySQL 5.1 version) *****/
 
 
 int driverMySQL_prepareStatement(struct xsb_queryHandle* handle)
@@ -277,6 +275,8 @@ int driverMySQL_prepareStatement(struct xsb_queryHandle* handle)
 	MYSQL_RES* res;
 	int i;
 	char* sqlQuery;
+	int numResultCols;
+	MYSQL_FIELD* field;
 
 	sqlQuery = (char *)malloc((strlen(handle->query) + 1) * sizeof(char));
 	strcpy(sqlQuery, handle->query);
@@ -312,7 +312,6 @@ int driverMySQL_prepareStatement(struct xsb_queryHandle* handle)
 
 	res = mysql_stmt_result_metadata(stmt);
 
-	int numResultCols;
 	numResultCols = 0;
 	if (res == NULL)
 	  {
@@ -341,7 +340,7 @@ int driverMySQL_prepareStatement(struct xsb_queryHandle* handle)
 	for (i = 0 ; i < rs->returnFields ; i++)
 	{
 		rs->metaInfo[i] = (struct xsb_data *)malloc(sizeof(struct xsb_data));
-		MYSQL_FIELD* field = mysql_fetch_field_direct(res, i);
+		field = mysql_fetch_field_direct(res, i);
 		rs->metaInfo[i]->type = driverMySQL_getXSBType(field);
 		rs->metaInfo[i]->length = field->length;
 	}
@@ -350,14 +349,19 @@ int driverMySQL_prepareStatement(struct xsb_queryHandle* handle)
 	free(sqlQuery);
 	sqlQuery = NULL;
 
-	
 	return rs->handle->numParams;
 }
 
 struct xsb_data** driverMySQL_execPrepareStmt(struct xsb_data** bindValues, struct xsb_queryHandle* handle)
 {
 	struct driverMySQL_preparedresultset* rs;
-	int i;
+	int i, numOfParams;
+	MYSQL_BIND *bind, *bindResult;
+	
+	int* intTemp;
+	double* doubleTemp;
+	unsigned long* lengthTemp;
+	char* charTemp;
 
 	rs = NULL;
 
@@ -380,16 +384,15 @@ struct xsb_data** driverMySQL_execPrepareStmt(struct xsb_data** bindValues, stru
 		return driverMySQL_prepNextRow(rs);		
 	  }
 	
-	int numOfParams;
 	numOfParams = rs->handle->numParams;
-	MYSQL_BIND* bind = (MYSQL_BIND *)calloc( numOfParams, sizeof(MYSQL_BIND));
+	bind = (MYSQL_BIND *)calloc( numOfParams, sizeof(MYSQL_BIND));
 	memset(bind, 0, sizeof(bind));
 	for (i = 0 ; i < numOfParams ; i++)
 	{
 		if (bindValues[i]->type == INT_TYPE)
 		{			
 		        bind[i].buffer_type = MYSQL_TYPE_LONG;
-			int* intTemp = (int*)malloc (sizeof(int));
+			intTemp = (int*)malloc (sizeof(int));
 			*intTemp = bindValues[i]->val->i_val;
 			bind[i].buffer = intTemp;
 			bind[i].is_null = calloc(1,sizeof(my_bool));
@@ -397,7 +400,7 @@ struct xsb_data** driverMySQL_execPrepareStmt(struct xsb_data** bindValues, stru
 		else if (bindValues[i]->type == FLOAT_TYPE)
 		{		        
 		        bind[i].buffer_type = MYSQL_TYPE_DOUBLE;
-			double* doubleTemp = (double*)malloc (sizeof(double));
+			doubleTemp = (double*)malloc (sizeof(double));
 			*doubleTemp = bindValues[i]->val->f_val;
 			bind[i].buffer = doubleTemp;
 			bind[i].is_null = calloc(1,sizeof(my_bool)) ;  			
@@ -405,12 +408,12 @@ struct xsb_data** driverMySQL_execPrepareStmt(struct xsb_data** bindValues, stru
 		else if (bindValues[i]->type == STRING_TYPE)
 		{
 		        bind[i].buffer_type = MYSQL_TYPE_STRING;
-			unsigned long* lengthTemp = (unsigned long*)malloc (sizeof(unsigned long));
+			lengthTemp = (unsigned long*)malloc (sizeof(unsigned long));
 			*lengthTemp = strlen(bindValues[i]->val->str_val);
 			bind[i].length = lengthTemp;
 			bind[i].buffer_length = strlen(bindValues[i]->val->str_val);
 			bind[i].is_null = calloc(1,sizeof(my_bool)) ;    
-			char* charTemp = (char*)malloc((strlen(bindValues[i]->val->str_val)+1) * sizeof(char));
+			charTemp = (char*)malloc((strlen(bindValues[i]->val->str_val)+1) * sizeof(char));
 			strcpy( charTemp, bindValues[i]->val->str_val);
 		        bind[i].buffer = charTemp;
 		}
@@ -428,8 +431,6 @@ struct xsb_data** driverMySQL_execPrepareStmt(struct xsb_data** bindValues, stru
 		return NULL;
 	}
 
-	MYSQL_BIND* bindResult;
-	
 	if (rs->returnFields == 0)
 	  {
 	    freeBind(bind,numOfParams);
@@ -623,6 +624,32 @@ static int driverMySQL_getXSBType(MYSQL_FIELD* field)
 	return type;
 }
 
+void driverMySQL_freeResult(struct xsb_data** result, int numOfElements)
+{
+  int i;
+  if (result != NULL) {
+    for (i=0; i<numOfElements; i++) {
+      if(result[i]!=NULL){
+	if(result[i]->val != NULL){
+	  if(result[i]->type == STRING_TYPE && result[i]->val->str_val != NULL )
+	    { 
+	      free(result[i]->val->str_val);
+	      result[i]->val->str_val = NULL;
+	    }
+
+	  free(result[i]->val);
+	  result[i]->val = NULL;
+	}
+	free(result[i]);
+	result[i]= NULL;
+      }
+    }
+    free(result);
+    result = NULL;
+  }
+  return;
+}
+
 
 DllExport int call_conv driverMySQLEmbedded_register(void)
 {
@@ -633,6 +660,7 @@ DllExport int call_conv driverMySQLEmbedded_register(void)
 	union functionPtrs* funcPrepare;
         union functionPtrs* funcExecPrepare;
         union functionPtrs* funcCloseStmt;
+	union functionPtrs* funcFreeResult;
 
 	registerXSBDriver("mysqlembedded", NUMBER_OF_MYSQLEMBEDDED_DRIVER_FUNCTIONS);
 
@@ -664,6 +692,10 @@ DllExport int call_conv driverMySQLEmbedded_register(void)
 	funcErrorMesg->errorMesgDriver = driverMySQL_errorMesg;
 	registerXSBFunction("mysqlembedded", ERROR_MESG, funcErrorMesg);
 
+	funcFreeResult = (union functionPtrs *)malloc(sizeof(union functionPtrs));
+	funcFreeResult->freeResultDriver = driverMySQL_freeResult;
+	registerXSBFunction("mysqlembedded", FREE_RESULT, funcFreeResult);
+
 	return TRUE;
 }
 
@@ -672,10 +704,12 @@ void freeQueryInfo(struct driverMySQL_queryInfo* query)
   if (query == NULL)
     return;
 
+
   if (query->handle != NULL)
     { free(query->handle);
       query->handle = NULL;
       }
+
   if (query->query != NULL)
     { free(query->query);
       query->query = NULL;
@@ -702,33 +736,6 @@ void freeConnection(struct driverMySQL_connectionInfo* connection)
     }
   free(connection);
   connection = NULL;
-  return;
-}
-
-
-void freeResult(struct xsb_data** result, int numOfElements)
-{
-  int i;
-  if (result != NULL) {
-    for (i=0; i<numOfElements; i++) {
-      if(result[i]!=NULL){
-	if(result[i]->val != NULL){
-	  if(result[i]->type == STRING_TYPE && result[i]->val->str_val != NULL )
-	    { 
-	      free(result[i]->val->str_val);
-	      result[i]->val->str_val = NULL;
-	    }
-
-	  free(result[i]->val);
-	  result[i]->val = NULL;
-	}
-	free(result[i]);
-	result[i]= NULL;
-      }
-    }
-    free(result);
-    result = NULL;
-  }
   return;
 }
 

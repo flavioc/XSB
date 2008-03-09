@@ -2,7 +2,7 @@
 ** Author: Saikat Mukherjee
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
-** Copyright (C) The Research Foundation of SUNY, 2002-2006
+** Copyright (C) The Research Foundation of SUNY, 2002-2008
 ** 
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
@@ -514,6 +514,32 @@ static void driverODBC_error(SQLSMALLINT handleType, SQLHANDLE handle)
   free(sqlState);
 }
 
+void driverODBC_freeResult(struct xsb_data** result, int numOfElements)
+{
+  int i;
+  if (result != NULL) {
+    for (i=0; i<numOfElements; i++) {
+      if(result[i]!=NULL){
+	if(result[i]->val != NULL){
+	  if(result[i]->type == STRING_TYPE && result[i]->val->str_val != NULL )
+	    { 
+	      free(result[i]->val->str_val);
+	      result[i]->val->str_val = NULL;
+	    }
+
+	  free(result[i]->val);
+	  result[i]->val = NULL;
+	}
+	free(result[i]);
+	result[i]= NULL;
+      }
+    }
+    free(result);
+    result = NULL;
+  }
+  return;
+}
+
 
 DllExport int call_conv driverODBC_register(void)
 {
@@ -524,6 +550,7 @@ DllExport int call_conv driverODBC_register(void)
   union functionPtrs* funcExecPrepare;
   union functionPtrs* funcCloseStmt;
   union functionPtrs* funcErrorMesg;
+  union functionPtrs* funcFreeResult;
 
   registerXSBDriver("odbc", NUMBER_OF_ODBC_DRIVER_FUNCTIONS);
 
@@ -554,6 +581,10 @@ DllExport int call_conv driverODBC_register(void)
   funcErrorMesg = (union functionPtrs *)malloc(sizeof(union functionPtrs));
   funcErrorMesg->errorMesgDriver = driverODBC_errorMesg;
   registerXSBFunction("odbc", ERROR_MESG, funcErrorMesg);
+
+  funcFreeResult = (union functionPtrs *)malloc(sizeof(union functionPtrs));
+  funcFreeResult->freeResultDriver = driverODBC_freeResult;
+  registerXSBFunction("odbc", FREE_RESULT, funcFreeResult);
 
   return TRUE;
 }

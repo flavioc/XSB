@@ -1411,6 +1411,8 @@ Optional Packages:
   --with-odbc-incdir=DIR       provide info on where the ODBC include files are
   --with-mysql-libdir=DIR       provide info on where the MySQL libraries are
   --with-mysql-incdir=DIR       provide info on where the MySQL include files are
+  --with-mysqlembedded-libdir=DIR       provide info on where the MySQL Embedded Server libraries are
+  --with-mysqlembedded-incdir=DIR       provide info on where the MySQL Embedded Server include files are
   --with-oracle                compile with support of Oracle
   --with-odbc                  compile with support for ODBC
   --with-iodbc                 use iODBC driver manager
@@ -2045,6 +2047,18 @@ fi
 # Check whether --with-mysql-incdir was given.
 if test "${with_mysql_incdir+set}" = set; then
   withval=$with_mysql_incdir;
+fi
+
+
+# Check whether --with-mysqlembedded-libdir was given.
+if test "${with_mysqlembedded_libdir+set}" = set; then
+  withval=$with_mysqlembedded_libdir;
+fi
+
+
+# Check whether --with-mysqlembedded-incdir was given.
+if test "${with_mysqlembedded_incdir+set}" = set; then
+  withval=$with_mysqlembedded_incdir;
 fi
 
 
@@ -4540,6 +4554,8 @@ if test -n "${with_dbdrivers}" && test -d $topdir/packages/dbdrivers; then
                             --with-odbc-incdir="$with_odbc_incdir" \
                             --with-mysql-libdir="$with_mysql_libdir" \
                             --with-mysql-incdir="$with_mysql_incdir" \
+                            --with-mysqlembedded-libdir="$with_mysqlembedded_libdir" \
+                            --with-mysqlembedded-incdir="$with_mysqlembedded_incdir" \
                             > /dev/null
     cd $build_dir
 fi
