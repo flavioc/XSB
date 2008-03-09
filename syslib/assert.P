@@ -150,16 +150,25 @@ assertzi(Clause,Index) :- assert(Clause,1,Index).
 % Safeguard.
 assert(Clause,AZL,Index):- assert(Clause,AZL,Index,'assert/1').
 
+/* TLS - arranged this code so that check for trie_asserted is done
+   first, and a minimal amount of checks are done afterwards.  This
+   sped up the time for trie_asserts significantly.  trie asserts did
+   *not* properly check for :-/2 before -- now they do. */
+
 assert(Clause, AZL, Index1,ErrPred) :-
+	('_$trie_asserted'(Clause) -> 
+	    t_assert_2(Clause,_Flag)
+	  ; 
 	(Clause = (Head:-_)
-	 ->	conpsc(Head, PSC)
+	 ->	conpsc(Head, PSC),
+                ('_$trie_asserted'(Head) -> 
+		    permission_error(assert_clause_with_body,trie_asserted_head,
+		                     Clause,ErrPred) ; true)
 	 ;	Clause = Head -> conpsc(Head, PSC)
 	),
 	psc_arity(PSC, Arity),
-	('_$trie_asserted'(Clause) 
-	 ->	t_assert_1(Clause, _Flag)
-	 ;	( '_$index'(Head,Index,HashTabSize)
-		 ->	true
+	( '_$index'(Head,Index,HashTabSize)
+              ->	true
 		 ;	integer(Index1)
 		 ->	(Index1 > Arity
 			 ->	Index = 0,default_assert_size(HashTabSize)
@@ -168,11 +177,11 @@ assert(Clause, AZL, Index1,ErrPred) :-
 			 ;	Index = Index1,default_assert_size(HashTabSize)
 			)
 		 ;	Index = Index1,default_assert_size(HashTabSize)
-		),
-		NArity is Arity+1, % to hold the cut addr
-		convert_to_dyna(Head,Prref,ErrPred),
-		cut_transform(Clause,Nclause),
-		(integer(AZL)
+	 ),
+	NArity is Arity+1, % to hold the cut addr
+	convert_to_dyna(Head,Prref,ErrPred),
+	cut_transform(Clause,Nclause),
+	(integer(AZL)
 		 ->	AZLI = AZL
 		 ;	(memberchk(large_clause,AZL)
 			 ->	AZLLC = 2
@@ -186,8 +195,7 @@ assert(Clause, AZL, Index1,ErrPred) :-
 		),
 		code_to_buff(Nclause,AZLI),
 		AZ is AZLI /\ 1,
-		assert_buff_to_clref(Head,NArity,Prref,AZ,Index,HashTabSize)
-	).
+		assert_buff_to_clref(Head,NArity,Prref,AZ,Index,HashTabSize) ).
 
 /* Must fail after code is put into buffer, to reset variables bound in 
    the process */
@@ -394,7 +402,9 @@ retract(Rule) :-	% changed for multifile predicates (2/24/98)
 	(nonvar(Head), '_$multifile_retract'(Head, _, _)
 	 % argument 1 fo retract/1 must be instantiated
 	 ->	do_multifile_retract(Head, Body)
-	 ;	retract0((Head :- Body))
+     ;		check_retract(Head, retract/1),
+           	get_dynamic_pred_ep(Head,'retract/1',PredEP,PSC),
+		db_retract(Head, Body, PredEP,PSC)
 	).
 
 do_multifile_retract(Head, Body) :-
@@ -654,4 +664,21 @@ exchange_definitions(Skel1,Skel2) :-
 
 trie_assert_builtin(_Clause,_PSC,_Arity,_Prref,_Flag) :-
 	'_$builtin'(TRIE_ASSERT).
+
+
+/* These predicates are intended to be used only experimentally, for get_unifiable_returns */
+
+:- export system_retract_fact/1.
+system_retract_fact(Rule) :-	
+	get_dynamic_pred_ep(Rule,'retract/1',PredEP,PSC),
+	db_retract(Rule, true, PredEP,PSC).
+
+:- export t_assert_2/2.
+t_assert_2(Clause, Flag) :- 
+	conpsc(Clause, PSC),
+	psc_arity(PSC, Arity),
+%	db_get_prref(PSC,Prref),
+	convert_to_dyna(Clause,Prref,trie_assert/1),
+%	writeln(clause(Clause) +psc(PSC) +arity(Arity) +prref(Prref)),
+	trie_assert_builtin(Clause,PSC,Arity,Prref,Flag).
 
