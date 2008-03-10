@@ -1755,6 +1755,7 @@ argument positions.
            (Lowest 2 bits indicate reg or local var of 1st 2 args.)
     */
     register Cell op1; register char op2int; register CPtr op3;
+    int targvar;
     Op1(get_xax);
     op2int = (char)(get_xxa);
     Op3((Cell)get_axx);
@@ -1762,23 +1763,33 @@ argument positions.
     //    printf("addintfastasgn: op1=%d, op2int=%d, op3=%d\n",(Integer)op1,(Integer)op2int,(Integer)op3);
     if (op2int & 0x1) op1 = (Cell)(ereg -(Cell)op1);
     else op1 = (Cell)(rreg + (Integer)op1);
-    if (op2int & 0x2) op3 = (CPtr)(ereg - (Cell)op3);
-    else op3 = (CPtr)(rreg + (Integer)op3);
+    if (op2int & 0x2) {
+      targvar = TRUE;
+      op3 = (CPtr)(ereg - (Cell)op3);
+    }
+    else {
+      targvar = FALSE;
+      op3 = (CPtr)(rreg + (Integer)op3);
+    }
     op2int = op2int >> 2;
     XSB_Deref(op1);
     if (isinteger(op1)) {
       Integer temp = int_val(op1) + op2int;
-      bld_oint(op3, temp); 
+      if (targvar) {bind_oint(op3, temp);}
+      else {bld_oint(op3, temp);}
     } else if (isfloat(op1)) {
       Float temp = float_val(op1) + (Float)op2int;
       /*printf("arith on old float\n");*/
-      bld_boxedfloat(CTXTc op3, temp); 
+      if (targvar) {bind_boxedfloat(op3, temp);}
+      else {bld_boxedfloat(CTXTc op3, temp);}
     } else if (isboxedfloat(op1)) {
       Float temp = boxedfloat_val(op1) + (Float)op2int;
-      bld_boxedfloat(CTXTc op3, temp);
+      if (targvar) {bind_boxedfloat(op3, temp);}
+      else {bld_boxedfloat(CTXTc op3, temp);}
     } else if (isboxedinteger(op1)) {
-            Integer temp = boxedint_val(op1) + op2int;
-            bld_oint(op3, temp);
+      Integer temp = boxedint_val(op1) + op2int;
+      if (targvar) {bind_oint(op3, temp);}
+      else {bld_oint(op3, temp);}
     } else {
       FltInt fiop1;
       if (xsb_eval(CTXTc op1,&fiop1)) {

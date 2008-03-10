@@ -288,7 +288,7 @@ case IS_INCOMPLETE: {
 	   * copy_of_num_heap_term_vars at the end of build_delay_list().
 	   */
 	  copy_of_num_heap_term_vars = global_num_vars + 1;
-	  build_delay_list(CTXTc dls_head, de);
+	  build_delay_list(CTXTc dls_head, de);  /* BUG may move heap, and so saved dls_tail destroyed */
 	  if ((dl = dl_next(dl)) != NULL) {
 	    bind_list(dls_tail, hreg);
 	  }

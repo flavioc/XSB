@@ -1461,8 +1461,10 @@ void load_solution_trie(CTXTdeclc int arity, int attv_num, CPtr cptr, BTNptr Tri
       }
     }
     heap_needed = follow_par_chain(CTXTc TriePtr);
-    if (glstack_overflow(heap_needed*sizeof(Cell))) 
+    if (glstack_overflow(heap_needed*sizeof(Cell))) {
+      printf("stack overflow could cause problems for delay lists\n");
       handle_heap_overflow_trie(CTXTc &cptr,arity,heap_needed);
+    }
     load_solution_from_trie(CTXTc arity,cptr);
   }
 }
