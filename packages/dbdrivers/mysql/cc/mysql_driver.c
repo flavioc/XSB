@@ -58,184 +58,184 @@ const char* errorMesg;
 
 DllExport int call_conv driverMySQL_initialise()
 {
-	numHandles = 0;
-	numQueries = 0;
-	numPrepQueries = 0;
-	errorMesg = NULL;
+  numHandles = 0;
+  numQueries = 0;
+  numPrepQueries = 0;
+  errorMesg = NULL;
 
-	return TRUE;
+  return TRUE;
 }
 
 
 int driverMySQL_connect(struct xsb_connectionHandle* handle)
 {
-	struct driverMySQL_connectionInfo* mysqlHandle;
-	MYSQL* mysql = mysql_init( NULL );
-	if ( mysql == NULL )
-	{
-		printf("mysql_init() failed\n");	
-		return FAILURE;
-	}
+  struct driverMySQL_connectionInfo* mysqlHandle;
+  MYSQL* mysql = mysql_init( NULL );
+  if ( mysql == NULL )
+    {
+      printf("mysql_init() failed\n");	
+      return FAILURE;
+    }
 	
-	if (!mysql_real_connect(mysql, handle->server, handle->user, handle->password, handle->database, 0, NULL, 0))
-	{
-		driverMySQL_error(mysql);
-		free(mysql);
-		mysql = NULL;
-		return FAILURE; 
-	}
+  if (!mysql_real_connect(mysql, handle->server, handle->user, handle->password, handle->database, 0, NULL, 0))
+    {
+      driverMySQL_error(mysql);
+      free(mysql);
+      mysql = NULL;
+      return FAILURE; 
+    }
 	
-	mysqlHandle = (struct driverMySQL_connectionInfo *)malloc(sizeof(struct driverMySQL_connectionInfo));
-	mysqlHandle->handle = (char *)malloc((strlen(handle->handle) + 1) * sizeof(char));
-	strcpy(mysqlHandle->handle, handle->handle);
-	mysqlHandle->mysql = mysql;
-	mysqlHandles[numHandles++] = mysqlHandle;
+  mysqlHandle = (struct driverMySQL_connectionInfo *)malloc(sizeof(struct driverMySQL_connectionInfo));
+  mysqlHandle->handle = (char *)malloc((strlen(handle->handle) + 1) * sizeof(char));
+  strcpy(mysqlHandle->handle, handle->handle);
+  mysqlHandle->mysql = mysql;
+  mysqlHandles[numHandles++] = mysqlHandle;
 
-	return SUCCESS;
+  return SUCCESS;
 }
 
 
 int driverMySQL_disconnect(struct xsb_connectionHandle* handle)
 {
-	int i, j;
+  int i, j;
 
-	for (i = 0 ; i < numHandles ; i++)
+  for (i = 0 ; i < numHandles ; i++)
+    {
+      if (!strcmp(handle->handle, mysqlHandles[i]->handle))
 	{
-		if (!strcmp(handle->handle, mysqlHandles[i]->handle))
-		{
-			mysql_close(mysqlHandles[i]->mysql);
-			freeConnection(mysqlHandles[i]);
-			for (j = i + 1 ; j < numHandles ; j++)
-				mysqlHandles[j-1] = mysqlHandles[j];
-			numHandles--;
-			break;
-		}
+	  mysql_close(mysqlHandles[i]->mysql);
+	  freeConnection(mysqlHandles[i]);
+	  for (j = i + 1 ; j < numHandles ; j++)
+	    mysqlHandles[j-1] = mysqlHandles[j];
+	  numHandles--;
+	  break;
 	}
+    }
 
-	return SUCCESS;
+  return SUCCESS;
 }
 
 
 struct xsb_data** driverMySQL_query(struct xsb_queryHandle* handle)
 {
-	struct driverMySQL_connectionInfo* connection;
-	struct driverMySQL_queryInfo* query;
-	MYSQL_RES* resultSet;
-	int i,n;
+  struct driverMySQL_connectionInfo* connection;
+  struct driverMySQL_queryInfo* query;
+  MYSQL_RES* resultSet;
+  int i,n;
 
-	query = NULL;
-	connection = NULL;
-	resultSet = NULL;
-	if (handle->state == QUERY_RETRIEVE)
+  query = NULL;
+  connection = NULL;
+  resultSet = NULL;
+  if (handle->state == QUERY_RETRIEVE)
+    {
+      for (i = 0 ; i < numQueries ; i++)
 	{
-		for (i = 0 ; i < numQueries ; i++)
-		{
-			if (!strcmp(mysqlQueries[i]->handle, handle->handle))
-			{
-				query = mysqlQueries[i];
-				break;
-			}
-		}
+	  if (!strcmp(mysqlQueries[i]->handle, handle->handle))
+	    {
+	      query = mysqlQueries[i];
+	      break;
+	    }
 	}
-	else if (handle->state == QUERY_BEGIN)
+    }
+  else if (handle->state == QUERY_BEGIN)
+    {
+      for (i = 0 ; i < numHandles ; i++)
 	{
-		for (i = 0 ; i < numHandles ; i++)
-		{
-			if (!strcmp(mysqlHandles[i]->handle, handle->connHandle->handle))
-			{
-				connection = mysqlHandles[i];
-				break;
-			}
-		}
-		query = (struct driverMySQL_queryInfo *)malloc(sizeof(struct driverMySQL_queryInfo));
-		query->handle = (char *)malloc((strlen(handle->handle) + 1) * sizeof(char));
-		strcpy(query->handle, handle->handle);
-		query->query = (char *)malloc((strlen(handle->query) + 1) * sizeof(char));
-		strcpy(query->query, handle->query);
-		query->connection = connection;
-		query->resultSet = NULL;
-
-		if (mysql_query(query->connection->mysql, query->query))
-		{
-			driverMySQL_error(query->connection->mysql);
-			freeQueryInfo(query);
-			return NULL;	
-		}
-		else
-		{
-			if ((resultSet = mysql_store_result(query->connection->mysql)) == NULL)
-			{
-				freeQueryInfo(query);
-				return NULL;
-			}
-			query->resultSet = resultSet;
-			mysqlQueries[numQueries++] = query;
-			handle->state = QUERY_RETRIEVE;
-			n = mysql_num_fields(resultSet);
-			handle->numResultCols = n;
-			query->returnFields = n;
-		}
+	  if (!strcmp(mysqlHandles[i]->handle, handle->connHandle->handle))
+	    {
+	      connection = mysqlHandles[i];
+	      break;
+	    }
 	}
+      query = (struct driverMySQL_queryInfo *)malloc(sizeof(struct driverMySQL_queryInfo));
+      query->handle = (char *)malloc((strlen(handle->handle) + 1) * sizeof(char));
+      strcpy(query->handle, handle->handle);
+      query->query = (char *)malloc((strlen(handle->query) + 1) * sizeof(char));
+      strcpy(query->query, handle->query);
+      query->connection = connection;
+      query->resultSet = NULL;
 
-	return driverMySQL_getNextRow(query);
+      if (mysql_query(query->connection->mysql, query->query))
+	{
+	  driverMySQL_error(query->connection->mysql);
+	  freeQueryInfo(query);
+	  return NULL;	
+	}
+      else
+	{
+	  if ((resultSet = mysql_store_result(query->connection->mysql)) == NULL)
+	    {
+	      freeQueryInfo(query);
+	      return NULL;
+	    }
+	  query->resultSet = resultSet;
+	  mysqlQueries[numQueries++] = query;
+	  handle->state = QUERY_RETRIEVE;
+	  n = mysql_num_fields(resultSet);
+	  handle->numResultCols = n;
+	  query->returnFields = n;
+	}
+    }
+
+  return driverMySQL_getNextRow(query);
 }
 
 
 static struct xsb_data** driverMySQL_getNextRow(struct driverMySQL_queryInfo* query)
 {
-	struct xsb_data** result;
-	MYSQL_ROW row;
-	int numFields;
-	int i, j;
-	char** p_temp=NULL;
+  struct xsb_data** result;
+  MYSQL_ROW row;
+  int numFields;
+  int i, j;
+  char** p_temp=NULL;
 
-	result = NULL;
-	if ((row = mysql_fetch_row(query->resultSet)) == NULL)
+  result = NULL;
+  if ((row = mysql_fetch_row(query->resultSet)) == NULL)
+    {
+      if (mysql_errno(query->connection->mysql))
+	driverMySQL_error(query->connection->mysql);
+      else
 	{
-		if (mysql_errno(query->connection->mysql))
-			driverMySQL_error(query->connection->mysql);
-		else
+	  for (i = 0 ; i < numQueries ; i++)
+	    {
+	      if (!strcmp(mysqlQueries[i]->handle, query->handle))
 		{
-			for (i = 0 ; i < numQueries ; i++)
-			{
-				if (!strcmp(mysqlQueries[i]->handle, query->handle))
-				{
-				        freeQueryInfo(query);
-					for (j = i + 1 ; j < numQueries ; j++)
-						mysqlQueries[j-1] = mysqlQueries[j];
-					numQueries--;
-				}
-			}
+		  freeQueryInfo(query);
+		  for (j = i + 1 ; j < numQueries ; j++)
+		    mysqlQueries[j-1] = mysqlQueries[j];
+		  numQueries--;
 		}
-		return NULL;
+	    }
 	}
+      return NULL;
+    }
 
-	numFields = query->returnFields;
-	result = (struct xsb_data **)malloc(numFields * sizeof(struct xsb_data *));
-	for (i = 0 ; i < numFields ; i++)
+  numFields = query->returnFields;
+  result = (struct xsb_data **)malloc(numFields * sizeof(struct xsb_data *));
+  for (i = 0 ; i < numFields ; i++)
+    {
+      result[i] = (struct xsb_data *)malloc(sizeof(struct xsb_data));
+      result[i]->val = (union xsb_value *)malloc(sizeof(union xsb_value));
+      result[i]->type = driverMySQL_getXSBType(mysql_fetch_field_direct(query->resultSet, i));
+
+      switch (result[i]->type)
 	{
-		result[i] = (struct xsb_data *)malloc(sizeof(struct xsb_data));
-		result[i]->val = (union xsb_value *)malloc(sizeof(union xsb_value));
-		result[i]->type = driverMySQL_getXSBType(mysql_fetch_field_direct(query->resultSet, i));
+	case INT_TYPE:
+	  result[i]->val->i_val = strtol(row[i],p_temp,10);
+	  break;
 
-		switch (result[i]->type)
-		{
-			case INT_TYPE:
-			  result[i]->val->i_val = strtol(row[i],p_temp,10);
-			  break;
+	case FLOAT_TYPE:
+	  result[i]->val->f_val = strtod(row[i],p_temp);
+	  break;
 
-			case FLOAT_TYPE:
-			  result[i]->val->f_val = strtod(row[i],p_temp);
-					break;
-
-			case STRING_TYPE:
-					result[i]->val->str_val = (char *)malloc(strlen(row[i]) * sizeof(char));
-					strcpy(result[i]->val->str_val, (char *)row[i]);
-					break;
-		}
+	case STRING_TYPE:
+	  result[i]->val->str_val = (char *)malloc(strlen(row[i]) * sizeof(char));
+	  strcpy(result[i]->val->str_val, (char *)row[i]);
+	  break;
 	}
+    }
 
-	return result;
+  return result;
 }
 
 
@@ -244,228 +244,228 @@ static struct xsb_data** driverMySQL_getNextRow(struct driverMySQL_queryInfo* qu
 
 int driverMySQL_prepareStatement(struct xsb_queryHandle* handle)
 {
-	struct driverMySQL_preparedresultset* rs;
-	MYSQL* mysql;
-	MYSQL_STMT* stmt;
-	MYSQL_RES* res;
-	int i;
-	char* sqlQuery;
-	int numResultCols;
-	MYSQL_FIELD* field;
+  struct driverMySQL_preparedresultset* rs;
+  MYSQL* mysql;
+  MYSQL_STMT* stmt;
+  MYSQL_RES* res;
+  int i;
+  char* sqlQuery;
+  int numResultCols;
+  MYSQL_FIELD* field;
 
-	sqlQuery = (char *)malloc((strlen(handle->query) + 1) * sizeof(char));
-	strcpy(sqlQuery, handle->query);
+  sqlQuery = (char *)malloc((strlen(handle->query) + 1) * sizeof(char));
+  strcpy(sqlQuery, handle->query);
 	
-	mysql = NULL;	
+  mysql = NULL;	
 
-	for (i = 0 ; i < numHandles ; i++)
+  for (i = 0 ; i < numHandles ; i++)
+    {
+      if (!strcmp(mysqlHandles[i]->handle, handle->connHandle->handle))
 	{
-	  if (!strcmp(mysqlHandles[i]->handle, handle->connHandle->handle))
-	    {
-	      mysql = mysqlHandles[i]->mysql;
-	      break;
-	    }
+	  mysql = mysqlHandles[i]->mysql;
+	  break;
 	}
+    }
 
-	if ((stmt = mysql_stmt_init(mysql)) == NULL)
+  if ((stmt = mysql_stmt_init(mysql)) == NULL)
+    {
+      errorMesg = mysql_stmt_error(stmt);
+      free(sqlQuery);
+      sqlQuery = NULL;
+      return FAILURE;		
+    }
+  if ( mysql_stmt_prepare(stmt, sqlQuery, strlen(sqlQuery)))
+    {
+      errorMesg = mysql_stmt_error(stmt);
+      free(sqlQuery);
+      sqlQuery = NULL;
+      return FAILURE;		
+    }
+
+  rs = (struct driverMySQL_preparedresultset *)malloc(sizeof(struct driverMySQL_preparedresultset));
+  rs->statement = stmt;
+
+  res = mysql_stmt_result_metadata(stmt);
+
+  numResultCols = 0;
+  if (res == NULL)
+    {
+      if (mysql_errno(mysql))
 	{
 	  errorMesg = mysql_stmt_error(stmt);
 	  free(sqlQuery);
 	  sqlQuery = NULL;
-		return FAILURE;		
+	  free(rs);
+	  rs = NULL;
+	  return FAILURE;
 	}
-	if ( mysql_stmt_prepare(stmt, sqlQuery, strlen(sqlQuery)))
-	{
-	  errorMesg = mysql_stmt_error(stmt);
-	  free(sqlQuery);
-	  sqlQuery = NULL;
-	  return FAILURE;		
-	}
+    }
+  else numResultCols = mysql_num_fields(res);
 
-	rs = (struct driverMySQL_preparedresultset *)malloc(sizeof(struct driverMySQL_preparedresultset));
-	rs->statement = stmt;
+  rs->returnFields = numResultCols;
 
-	res = mysql_stmt_result_metadata(stmt);
-
-	numResultCols = 0;
-	if (res == NULL)
-	  {
-	    if (mysql_errno(mysql))
-	      {
-		errorMesg = mysql_stmt_error(stmt);
-		free(sqlQuery);
-		sqlQuery = NULL;
-		free(rs);
-		rs = NULL;
-		return FAILURE;
-	      }
-	  }
-	else numResultCols = mysql_num_fields(res);
-
-	rs->returnFields = numResultCols;
-
-	handle->numParams = mysql_stmt_param_count(stmt);
-	handle->numResultCols = rs->returnFields;
-	handle->state = QUERY_BEGIN;
+  handle->numParams = mysql_stmt_param_count(stmt);
+  handle->numResultCols = rs->returnFields;
+  handle->state = QUERY_BEGIN;
 	
-	rs->handle = handle;
-	rs->bindResult = NULL;
+  rs->handle = handle;
+  rs->bindResult = NULL;
 	
-	rs->metaInfo = (struct xsb_data **)malloc(rs->returnFields * sizeof(struct xsb_data *));
-	for (i = 0 ; i < rs->returnFields ; i++)
-	{
-		rs->metaInfo[i] = (struct xsb_data *)malloc(sizeof(struct xsb_data));
-		field = mysql_fetch_field_direct(res, i);
-		rs->metaInfo[i]->type = driverMySQL_getXSBType(field);
-		rs->metaInfo[i]->length = field->length;
-	}
-	prepQueries[numPrepQueries++] = rs;
+  rs->metaInfo = (struct xsb_data **)malloc(rs->returnFields * sizeof(struct xsb_data *));
+  for (i = 0 ; i < rs->returnFields ; i++)
+    {
+      rs->metaInfo[i] = (struct xsb_data *)malloc(sizeof(struct xsb_data));
+      field = mysql_fetch_field_direct(res, i);
+      rs->metaInfo[i]->type = driverMySQL_getXSBType(field);
+      rs->metaInfo[i]->length = field->length;
+    }
+  prepQueries[numPrepQueries++] = rs;
 
-	free(sqlQuery);
-	sqlQuery = NULL;
+  free(sqlQuery);
+  sqlQuery = NULL;
 
-	return rs->handle->numParams;
+  return rs->handle->numParams;
 }
 
 struct xsb_data** driverMySQL_execPrepareStmt(struct xsb_data** bindValues, struct xsb_queryHandle* handle)
 {
-	struct driverMySQL_preparedresultset* rs;
-	int i, numOfParams;
-	MYSQL_BIND *bind, *bindResult;
+  struct driverMySQL_preparedresultset* rs;
+  int i, numOfParams;
+  MYSQL_BIND *bind, *bindResult;
 	
-	int* intTemp;
-	double* doubleTemp;
-	unsigned long* lengthTemp;
-	char* charTemp;
+  int* intTemp;
+  double* doubleTemp;
+  unsigned long* lengthTemp;
+  char* charTemp;
 
-	rs = NULL;
+  rs = NULL;
 
-	for (i = 0 ; i < numPrepQueries; i++)
+  for (i = 0 ; i < numPrepQueries; i++)
+    {
+      if (!strcmp(prepQueries[i]->handle->handle, handle->handle))
 	{
-	  if (!strcmp(prepQueries[i]->handle->handle, handle->handle))
-	    {
-	      rs = prepQueries[i];
-	      break;
-	    }
+	  rs = prepQueries[i];
+	  break;
 	}
+    }
 
-	if (rs == NULL)
-	  {
-	    errorMesg = "no specified query handle exists";
-	    return NULL;
-	  }
-	if (handle->state == QUERY_RETRIEVE)
-	  {
-		return driverMySQL_prepNextRow(rs);		
-	  }
+  if (rs == NULL)
+    {
+      errorMesg = "no specified query handle exists";
+      return NULL;
+    }
+  if (handle->state == QUERY_RETRIEVE)
+    {
+      return driverMySQL_prepNextRow(rs);		
+    }
 	
-	numOfParams = rs->handle->numParams;
-	bind = (MYSQL_BIND *)calloc( numOfParams, sizeof(MYSQL_BIND));
-	memset(bind, 0, sizeof(bind));
-	for (i = 0 ; i < numOfParams ; i++)
-	{
-		if (bindValues[i]->type == INT_TYPE)
-		{			
-		        bind[i].buffer_type = MYSQL_TYPE_LONG;
-			intTemp = (int*)malloc (sizeof(int));
-			*intTemp = bindValues[i]->val->i_val;
-			bind[i].buffer = intTemp;
-			bind[i].is_null = calloc(1,sizeof(my_bool));
-		}
-		else if (bindValues[i]->type == FLOAT_TYPE)
-		{		        
-		        bind[i].buffer_type = MYSQL_TYPE_DOUBLE;
-			doubleTemp = (double*)malloc (sizeof(double));
-			*doubleTemp = bindValues[i]->val->f_val;
-			bind[i].buffer = doubleTemp;
-			bind[i].is_null = calloc(1,sizeof(my_bool)) ;  			
-		}
-		else if (bindValues[i]->type == STRING_TYPE)
-		{
-		        bind[i].buffer_type = MYSQL_TYPE_STRING;
-			lengthTemp = (unsigned long*)malloc (sizeof(unsigned long));
-			*lengthTemp = strlen(bindValues[i]->val->str_val);
-			bind[i].length = lengthTemp;
-			bind[i].buffer_length = strlen(bindValues[i]->val->str_val);
-			bind[i].is_null = calloc(1,sizeof(my_bool)) ;    
-			charTemp = (char*)malloc((strlen(bindValues[i]->val->str_val)+1) * sizeof(char));
-			strcpy( charTemp, bindValues[i]->val->str_val);
-		        bind[i].buffer = charTemp;
-		}
+  numOfParams = rs->handle->numParams;
+  bind = (MYSQL_BIND *)calloc( numOfParams, sizeof(MYSQL_BIND));
+  memset(bind, 0, sizeof(bind));
+  for (i = 0 ; i < numOfParams ; i++)
+    {
+      if (bindValues[i]->type == INT_TYPE)
+	{			
+	  bind[i].buffer_type = MYSQL_TYPE_LONG;
+	  intTemp = (int*)malloc (sizeof(int));
+	  *intTemp = bindValues[i]->val->i_val;
+	  bind[i].buffer = intTemp;
+	  bind[i].is_null = calloc(1,sizeof(my_bool));
 	}
-	if (mysql_stmt_bind_param(rs->statement, bind))
-	{
-	        errorMesg = mysql_stmt_error(rs->statement);
-		freeBind(bind,numOfParams);
-		return NULL;
+      else if (bindValues[i]->type == FLOAT_TYPE)
+	{		        
+	  bind[i].buffer_type = MYSQL_TYPE_DOUBLE;
+	  doubleTemp = (double*)malloc (sizeof(double));
+	  *doubleTemp = bindValues[i]->val->f_val;
+	  bind[i].buffer = doubleTemp;
+	  bind[i].is_null = calloc(1,sizeof(my_bool)) ;  			
 	}
-	if (mysql_stmt_execute(rs->statement))
+      else if (bindValues[i]->type == STRING_TYPE)
 	{
-	        errorMesg = mysql_stmt_error(rs->statement);
-		freeBind(bind,numOfParams);
-		return NULL;
+	  bind[i].buffer_type = MYSQL_TYPE_STRING;
+	  lengthTemp = (unsigned long*)malloc (sizeof(unsigned long));
+	  *lengthTemp = strlen(bindValues[i]->val->str_val);
+	  bind[i].length = lengthTemp;
+	  bind[i].buffer_length = strlen(bindValues[i]->val->str_val);
+	  bind[i].is_null = calloc(1,sizeof(my_bool)) ;    
+	  charTemp = (char*)malloc((strlen(bindValues[i]->val->str_val)+1) * sizeof(char));
+	  strcpy( charTemp, bindValues[i]->val->str_val);
+	  bind[i].buffer = charTemp;
 	}
+    }
+  if (mysql_stmt_bind_param(rs->statement, bind))
+    {
+      errorMesg = mysql_stmt_error(rs->statement);
+      freeBind(bind,numOfParams);
+      return NULL;
+    }
+  if (mysql_stmt_execute(rs->statement))
+    {
+      errorMesg = mysql_stmt_error(rs->statement);
+      freeBind(bind,numOfParams);
+      return NULL;
+    }
 
-	if (rs->returnFields == 0)
-	  {
-	    freeBind(bind,numOfParams);
-	    return NULL;
-	  }
+  if (rs->returnFields == 0)
+    {
+      freeBind(bind,numOfParams);
+      return NULL;
+    }
 
-	bindResult = (MYSQL_BIND *)malloc(rs->returnFields * sizeof(MYSQL_BIND));
-	memset(bindResult, 0, sizeof(bindResult));
-	for (i = 0 ; i < rs->returnFields ; i++)
+  bindResult = (MYSQL_BIND *)malloc(rs->returnFields * sizeof(MYSQL_BIND));
+  memset(bindResult, 0, sizeof(bindResult));
+  for (i = 0 ; i < rs->returnFields ; i++)
+    {
+      switch (rs->metaInfo[i]->type)
 	{
-		switch (rs->metaInfo[i]->type)
-		{
-			case INT_TYPE:
-					bindResult[i].buffer_type = MYSQL_TYPE_LONG;
-					bindResult[i].buffer = malloc( sizeof(int) );
-					bindResult[i].is_null = calloc(1,sizeof(my_bool)) ;
-					bindResult[i].length = malloc( sizeof(unsigned long) );
-					bindResult[i].error = calloc(1,sizeof(my_bool)) ; 
-					break;
+	case INT_TYPE:
+	  bindResult[i].buffer_type = MYSQL_TYPE_LONG;
+	  bindResult[i].buffer = malloc( sizeof(int) );
+	  bindResult[i].is_null = calloc(1,sizeof(my_bool)) ;
+	  bindResult[i].length = malloc( sizeof(unsigned long) );
+	  bindResult[i].error = calloc(1,sizeof(my_bool)) ; 
+	  break;
 
-			case FLOAT_TYPE:
-					bindResult[i].buffer_type = MYSQL_TYPE_DOUBLE;
-					bindResult[i].buffer = malloc( sizeof(double) );
-					bindResult[i].is_null = calloc(1,sizeof(my_bool));
-					bindResult[i].length = malloc( sizeof(unsigned long) ) ;
-					bindResult[i].error = calloc(1,sizeof(my_bool)) ;
-					break;
+	case FLOAT_TYPE:
+	  bindResult[i].buffer_type = MYSQL_TYPE_DOUBLE;
+	  bindResult[i].buffer = malloc( sizeof(double) );
+	  bindResult[i].is_null = calloc(1,sizeof(my_bool));
+	  bindResult[i].length = malloc( sizeof(unsigned long) ) ;
+	  bindResult[i].error = calloc(1,sizeof(my_bool)) ;
+	  break;
 			
-			case STRING_TYPE:
-					bindResult[i].buffer_type = MYSQL_TYPE_VAR_STRING;
-					bindResult[i].buffer_length = rs->metaInfo[i]->length+1;
-					bindResult[i].buffer = malloc((rs->metaInfo[i]->length+1) * sizeof(char));
-					bindResult[i].is_null = calloc(1,sizeof(my_bool)) ;
-					bindResult[i].length = malloc( sizeof(unsigned long) );
-					*(bindResult[i].length) =  rs->metaInfo[i]->length+1;
-					bindResult[i].error = calloc(1,sizeof(my_bool)) ;
-					break;
-		}
+	case STRING_TYPE:
+	  bindResult[i].buffer_type = MYSQL_TYPE_VAR_STRING;
+	  bindResult[i].buffer_length = rs->metaInfo[i]->length+1;
+	  bindResult[i].buffer = malloc((rs->metaInfo[i]->length+1) * sizeof(char));
+	  bindResult[i].is_null = calloc(1,sizeof(my_bool)) ;
+	  bindResult[i].length = malloc( sizeof(unsigned long) );
+	  *(bindResult[i].length) =  rs->metaInfo[i]->length+1;
+	  bindResult[i].error = calloc(1,sizeof(my_bool)) ;
+	  break;
 	}
+    }
 	
-	if (mysql_stmt_bind_result(rs->statement, bindResult))
-	{
-	  	errorMesg = mysql_stmt_error(rs->statement);
-		mysql_stmt_free_result(rs->statement);
-		mysql_stmt_reset(rs->statement);
-		freeBind(bind,numOfParams);
-		freeBind(bindResult,rs->returnFields);
-		return NULL;
-	}
+  if (mysql_stmt_bind_result(rs->statement, bindResult))
+    {
+      errorMesg = mysql_stmt_error(rs->statement);
+      mysql_stmt_free_result(rs->statement);
+      mysql_stmt_reset(rs->statement);
+      freeBind(bind,numOfParams);
+      freeBind(bindResult,rs->returnFields);
+      return NULL;
+    }
 
-	if(rs->bindResult!=NULL)
-	  freeBind(rs->bindResult,rs->returnFields);
+  if(rs->bindResult!=NULL)
+    freeBind(rs->bindResult,rs->returnFields);
 
-	rs->bindResult = bindResult;
+  rs->bindResult = bindResult;
 
-	handle->state = QUERY_RETRIEVE;
+  handle->state = QUERY_RETRIEVE;
 
-	freeBind(bind,numOfParams);
+  freeBind(bind,numOfParams);
 
-	return driverMySQL_prepNextRow(rs);
+  return driverMySQL_prepNextRow(rs);
 }
 
 struct xsb_data** driverMySQL_prepNextRow(struct driverMySQL_preparedresultset* rs)
@@ -475,40 +475,40 @@ struct xsb_data** driverMySQL_prepNextRow(struct driverMySQL_preparedresultset* 
   MYSQL_BIND *bindResult = rs->bindResult;
   int i;
 
-	int flag;
-	flag = mysql_stmt_fetch(rs->statement);
-	if (flag == MYSQL_NO_DATA)
-	  {
-		mysql_stmt_free_result(rs->statement);
-		mysql_stmt_reset(rs->statement);
-		return NULL;
-	  }
+  int flag;
+  flag = mysql_stmt_fetch(rs->statement);
+  if (flag == MYSQL_NO_DATA)
+    {
+      mysql_stmt_free_result(rs->statement);
+      mysql_stmt_reset(rs->statement);
+      return NULL;
+    }
 
-	result = (struct xsb_data **)malloc(rs->returnFields * sizeof(struct xsb_data *));
-	for ( i = 0 ; i < rs->returnFields ; i++){
+  result = (struct xsb_data **)malloc(rs->returnFields * sizeof(struct xsb_data *));
+  for ( i = 0 ; i < rs->returnFields ; i++){
 
-	  result[i] = (struct xsb_data *)malloc(sizeof(struct xsb_data));
-	  result[i]->type = rs->metaInfo[i]->type;
-	  result[i]->length = rs->metaInfo[i]->length;
-	  result[i]->val = (union xsb_value *)malloc(sizeof(union xsb_value));
-	  result[i]->val->str_val = NULL;
+    result[i] = (struct xsb_data *)malloc(sizeof(struct xsb_data));
+    result[i]->type = rs->metaInfo[i]->type;
+    result[i]->length = rs->metaInfo[i]->length;
+    result[i]->val = (union xsb_value *)malloc(sizeof(union xsb_value));
+    result[i]->val->str_val = NULL;
 
-	  switch (result[i]->type){
-	  case INT_TYPE:
-	    result[i]->val->i_val = *( (int*) bindResult[i].buffer );
-	    break;
-	  case FLOAT_TYPE:
-	    result[i]->val->f_val = *( (double*) bindResult[i].buffer );
-	    break;
-	  case STRING_TYPE:
-	    result[i]->val->str_val = (char *)malloc((strlen((char *)(bindResult[i].buffer))+1) * sizeof(char));
-	    strcpy( result[i]->val->str_val, bindResult[i].buffer );
-	    break;
-	  }
-	}
+    switch (result[i]->type){
+    case INT_TYPE:
+      result[i]->val->i_val = *( (int*) bindResult[i].buffer );
+      break;
+    case FLOAT_TYPE:
+      result[i]->val->f_val = *( (double*) bindResult[i].buffer );
+      break;
+    case STRING_TYPE:
+      result[i]->val->str_val = (char *)malloc((strlen((char *)(bindResult[i].buffer))+1) * sizeof(char));
+      strcpy( result[i]->val->str_val, bindResult[i].buffer );
+      break;
+    }
+  }
 
 
-	return result;
+  return result;
 }
 
 int driverMySQL_closeStatement(struct xsb_queryHandle* handle)
@@ -539,64 +539,64 @@ int driverMySQL_closeStatement(struct xsb_queryHandle* handle)
 
 char* driverMySQL_errorMesg()
 {
-	char* temp;
-	if (errorMesg != NULL)
-	{
-		temp = (char *)malloc((strlen(errorMesg) + 1) * sizeof(char));
-		strcpy(temp, errorMesg);
-		errorMesg = NULL;
-		return temp;
-	}
-	return NULL;
+  char* temp;
+  if (errorMesg != NULL)
+    {
+      temp = (char *)malloc((strlen(errorMesg) + 1) * sizeof(char));
+      strcpy(temp, errorMesg);
+      errorMesg = NULL;
+      return temp;
+    }
+  return NULL;
 }
 
 static void driverMySQL_error(MYSQL* mysql)
 {
-	errorMesg = mysql_error(mysql);
+  errorMesg = mysql_error(mysql);
 }
 
 static int driverMySQL_getXSBType(MYSQL_FIELD* field)
 {
-	int type;
+  int type;
 
-	type = 0;
-	switch (field->type)
-	{
-		case FIELD_TYPE_TINY:
-		case FIELD_TYPE_SHORT:
-		case FIELD_TYPE_LONG:
-		case FIELD_TYPE_INT24:
-		case FIELD_TYPE_LONGLONG:
-				type = INT_TYPE;
-				break;
+  type = 0;
+  switch (field->type)
+    {
+    case FIELD_TYPE_TINY:
+    case FIELD_TYPE_SHORT:
+    case FIELD_TYPE_LONG:
+    case FIELD_TYPE_INT24:
+    case FIELD_TYPE_LONGLONG:
+      type = INT_TYPE;
+      break;
 		
-		case FIELD_TYPE_DECIMAL:
-		case FIELD_TYPE_FLOAT:
-		case FIELD_TYPE_DOUBLE:
-				type = FLOAT_TYPE;
-				break;
+    case FIELD_TYPE_DECIMAL:
+    case FIELD_TYPE_FLOAT:
+    case FIELD_TYPE_DOUBLE:
+      type = FLOAT_TYPE;
+      break;
 
-		case FIELD_TYPE_STRING:
-		case FIELD_TYPE_DATE:
-		case FIELD_TYPE_TIMESTAMP:
-		case FIELD_TYPE_TIME:
-		case FIELD_TYPE_DATETIME:
-		case FIELD_TYPE_YEAR:
-		case FIELD_TYPE_NEWDATE:
-		case FIELD_TYPE_ENUM:
-		case FIELD_TYPE_SET:
-		case FIELD_TYPE_TINY_BLOB:
-		case FIELD_TYPE_MEDIUM_BLOB:
-		case FIELD_TYPE_LONG_BLOB:
-		case FIELD_TYPE_BLOB:
-		case FIELD_TYPE_VAR_STRING:
-		case FIELD_TYPE_NULL:
-		default:
-				type = STRING_TYPE;
-				break;
-	}
+    case FIELD_TYPE_STRING:
+    case FIELD_TYPE_DATE:
+    case FIELD_TYPE_TIMESTAMP:
+    case FIELD_TYPE_TIME:
+    case FIELD_TYPE_DATETIME:
+    case FIELD_TYPE_YEAR:
+    case FIELD_TYPE_NEWDATE:
+    case FIELD_TYPE_ENUM:
+    case FIELD_TYPE_SET:
+    case FIELD_TYPE_TINY_BLOB:
+    case FIELD_TYPE_MEDIUM_BLOB:
+    case FIELD_TYPE_LONG_BLOB:
+    case FIELD_TYPE_BLOB:
+    case FIELD_TYPE_VAR_STRING:
+    case FIELD_TYPE_NULL:
+    default:
+      type = STRING_TYPE;
+      break;
+    }
 
-	return type;
+  return type;
 }
 
 void driverMySQL_freeResult(struct xsb_data** result, int numOfElements)
@@ -628,50 +628,50 @@ void driverMySQL_freeResult(struct xsb_data** result, int numOfElements)
 
 DllExport int call_conv driverMySQL_register(void)
 {
-	union functionPtrs* funcConnect;
-	union functionPtrs* funcDisconnect;
-	union functionPtrs* funcQuery;
-	union functionPtrs* funcErrorMesg;
-	union functionPtrs* funcPrepare;
-        union functionPtrs* funcExecPrepare;
-        union functionPtrs* funcCloseStmt;
-	union functionPtrs* funcFreeResult;
+  union functionPtrs* funcConnect;
+  union functionPtrs* funcDisconnect;
+  union functionPtrs* funcQuery;
+  union functionPtrs* funcErrorMesg;
+  union functionPtrs* funcPrepare;
+  union functionPtrs* funcExecPrepare;
+  union functionPtrs* funcCloseStmt;
+  union functionPtrs* funcFreeResult;
 
-	registerXSBDriver("mysql", NUMBER_OF_MYSQL_DRIVER_FUNCTIONS);
+  registerXSBDriver("mysql", NUMBER_OF_MYSQL_DRIVER_FUNCTIONS);
 
-	funcConnect = (union functionPtrs *)malloc(sizeof(union functionPtrs));
-	funcConnect->connectDriver = driverMySQL_connect;
-	registerXSBFunction("mysql", CONNECT, funcConnect);
+  funcConnect = (union functionPtrs *)malloc(sizeof(union functionPtrs));
+  funcConnect->connectDriver = driverMySQL_connect;
+  registerXSBFunction("mysql", CONNECT, funcConnect);
 
-	funcDisconnect = (union functionPtrs *)malloc(sizeof(union functionPtrs));
-	funcDisconnect->disconnectDriver = driverMySQL_disconnect;
-	registerXSBFunction("mysql", DISCONNECT, funcDisconnect);
+  funcDisconnect = (union functionPtrs *)malloc(sizeof(union functionPtrs));
+  funcDisconnect->disconnectDriver = driverMySQL_disconnect;
+  registerXSBFunction("mysql", DISCONNECT, funcDisconnect);
 
-	funcQuery = (union functionPtrs *)malloc(sizeof(union functionPtrs));
-	funcQuery->queryDriver = driverMySQL_query;
-	registerXSBFunction("mysql", QUERY, funcQuery);
+  funcQuery = (union functionPtrs *)malloc(sizeof(union functionPtrs));
+  funcQuery->queryDriver = driverMySQL_query;
+  registerXSBFunction("mysql", QUERY, funcQuery);
 
-	funcPrepare = (union functionPtrs *)malloc(sizeof(union functionPtrs));
-	funcPrepare->prepareStmtDriver = driverMySQL_prepareStatement;
-	registerXSBFunction("mysql", PREPARE, funcPrepare);
+  funcPrepare = (union functionPtrs *)malloc(sizeof(union functionPtrs));
+  funcPrepare->prepareStmtDriver = driverMySQL_prepareStatement;
+  registerXSBFunction("mysql", PREPARE, funcPrepare);
 
-	funcExecPrepare = (union functionPtrs *)malloc(sizeof(union functionPtrs));
-	funcExecPrepare->executeStmtDriver = driverMySQL_execPrepareStmt;
-	registerXSBFunction("mysql", EXEC_PREPARE, funcExecPrepare);
+  funcExecPrepare = (union functionPtrs *)malloc(sizeof(union functionPtrs));
+  funcExecPrepare->executeStmtDriver = driverMySQL_execPrepareStmt;
+  registerXSBFunction("mysql", EXEC_PREPARE, funcExecPrepare);
 
-	funcCloseStmt = (union functionPtrs *)malloc(sizeof(union functionPtrs));
-	funcCloseStmt->closeStmtDriver = driverMySQL_closeStatement;
-	registerXSBFunction("mysql", CLOSE_STMT, funcCloseStmt);
+  funcCloseStmt = (union functionPtrs *)malloc(sizeof(union functionPtrs));
+  funcCloseStmt->closeStmtDriver = driverMySQL_closeStatement;
+  registerXSBFunction("mysql", CLOSE_STMT, funcCloseStmt);
 	
-	funcErrorMesg = (union functionPtrs *)malloc(sizeof(union functionPtrs));
-	funcErrorMesg->errorMesgDriver = driverMySQL_errorMesg;
-	registerXSBFunction("mysql", ERROR_MESG, funcErrorMesg);
+  funcErrorMesg = (union functionPtrs *)malloc(sizeof(union functionPtrs));
+  funcErrorMesg->errorMesgDriver = driverMySQL_errorMesg;
+  registerXSBFunction("mysql", ERROR_MESG, funcErrorMesg);
 
-	funcFreeResult = (union functionPtrs *)malloc(sizeof(union functionPtrs));
-	funcFreeResult->freeResultDriver = driverMySQL_freeResult;
-	registerXSBFunction("mysql", FREE_RESULT, funcFreeResult);
+  funcFreeResult = (union functionPtrs *)malloc(sizeof(union functionPtrs));
+  funcFreeResult->freeResultDriver = driverMySQL_freeResult;
+  registerXSBFunction("mysql", FREE_RESULT, funcFreeResult);
 
-	return TRUE;
+  return TRUE;
 }
 
 void freeQueryInfo(struct driverMySQL_queryInfo* query)
@@ -683,7 +683,7 @@ void freeQueryInfo(struct driverMySQL_queryInfo* query)
   if (query->handle != NULL)
     { free(query->handle);
       query->handle = NULL;
-      }
+    }
 
   if (query->query != NULL)
     { free(query->query);
@@ -705,7 +705,7 @@ void freeConnection(struct driverMySQL_connectionInfo* connection)
   if (connection == NULL)
     return;
 
-    if (connection->handle!= NULL)
+  if (connection->handle!= NULL)
     { free(connection->handle);
       connection->handle = NULL;
     }

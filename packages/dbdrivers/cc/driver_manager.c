@@ -466,11 +466,14 @@ DllExport int call_conv executePreparedStatement(void)
     errorNumber = "XSB_DBI_000";
   }
 
-  if (errorMesg == NULL && (val == RESULT_NONEMPTY_OR_NOT_REQUESTED
+  /* 
+     if (errorMesg == NULL && (val == RESULT_NONEMPTY_OR_NOT_REQUESTED
 			    || val == RESULT_EMPTY_BUT_REQUESTED)){
+  */
+  if (errorMesg == NULL && val == RESULT_NONEMPTY_OR_NOT_REQUESTED) {
     return TRUE;
   }
-  else 
+  else
     return FALSE;
 }
 

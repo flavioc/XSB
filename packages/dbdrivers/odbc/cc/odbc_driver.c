@@ -405,6 +405,8 @@ struct xsb_data** driverODBC_execPrepareStatement(struct xsb_data** param, struc
   }
   handle->numResultCols = query->resultmeta->numCols;
   if (query->resultmeta->numCols == 0) {
+    free(query->resultmeta);
+    query->resultmeta=NULL;
     return NULL; 
   }
 
@@ -521,11 +523,10 @@ void driverODBC_freeResult(struct xsb_data** result, int numOfElements)
     for (i=0; i<numOfElements; i++) {
       if(result[i]!=NULL){
 	if(result[i]->val != NULL){
-	  if(result[i]->type == STRING_TYPE && result[i]->val->str_val != NULL )
-	    { 
-	      free(result[i]->val->str_val);
-	      result[i]->val->str_val = NULL;
-	    }
+	  if(result[i]->type==STRING_TYPE && result[i]->val->str_val != NULL) { 
+	    free(result[i]->val->str_val);
+	    result[i]->val->str_val = NULL;
+	  }
 
 	  free(result[i]->val);
 	  result[i]->val = NULL;
