@@ -1704,7 +1704,19 @@ void call_conv write_canonical_term_rec(CTXTdeclc Cell prologterm, int letter_fl
       //      sprintf(wcan_buff->string,"%2.4f",float_val(prologterm));
       sprintf(wcan_buff->string,"%1.15g",float_val(prologterm));
       XSB_StrAppendV(wcan_string,wcan_buff);
-      if (!strchr(wcan_buff->string,'.')) XSB_StrAppend(wcan_string,".0");
+      if (!strchr(wcan_buff->string,'.')) {
+	char *eloc = strchr(wcan_buff->string,'e');
+	if (!eloc) XSB_StrAppend(wcan_string,".0");
+	else {	
+	  char exp[5],fstr[30];
+	  strcpy(exp,eloc);
+	  eloc[0] = 0;
+	  strcpy(fstr,wcan_buff->string);
+	  XSB_StrSet(wcan_string,fstr);
+	  XSB_StrAppend(wcan_string,".0");
+	  XSB_StrAppend(wcan_string,exp);
+	}
+      }
       break;
     case XSB_REF:
     case XSB_REF1: {
@@ -1736,12 +1748,23 @@ void call_conv write_canonical_term_rec(CTXTdeclc Cell prologterm, int letter_fl
      else if (isboxedfloat(prologterm))
      {
        //          sprintf(wcan_buff->string,"%2.4f",boxedfloat_val(prologterm));
-          sprintf(wcan_buff->string,"%1.15g",boxedfloat_val(prologterm));
-          XSB_StrAppendV(wcan_string,wcan_buff);
-	  if (!strchr(wcan_buff->string,'.')) XSB_StrAppend(wcan_string,".0");
-          break;         
-     }
-        
+       sprintf(wcan_buff->string,"%1.15g",boxedfloat_val(prologterm));
+       XSB_StrAppendV(wcan_string,wcan_buff);
+       if (!strchr(wcan_buff->string,'.')) {
+	 char *eloc = strchr(wcan_buff->string,'e');
+	 if (!eloc) XSB_StrAppend(wcan_string,".0");
+	 else {	
+	   char exp[5],fstr[30];
+	   strcpy(exp,eloc);
+	   eloc[0] = 0;
+	   strcpy(fstr,wcan_buff->string);
+	   XSB_StrSet(wcan_string,fstr);
+	   XSB_StrAppend(wcan_string,".0");
+	   XSB_StrAppend(wcan_string,exp);
+	 }
+       }
+       break;         
+     }        
       if (!dollar_var_psc) {
 	int new_indicator;
 	dollar_var_psc = pair_psc(insert("$VAR", 1, global_mod, &new_indicator));
