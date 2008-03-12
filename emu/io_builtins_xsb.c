@@ -1703,20 +1703,21 @@ void call_conv write_canonical_term_rec(CTXTdeclc Cell prologterm, int letter_fl
     case XSB_FLOAT:
       //      sprintf(wcan_buff->string,"%2.4f",float_val(prologterm));
       sprintf(wcan_buff->string,"%1.15g",float_val(prologterm));
-      XSB_StrAppendV(wcan_string,wcan_buff);
+      wcan_buff->length = strlen(wcan_buff->string);
       if (!strchr(wcan_buff->string,'.')) {
 	char *eloc = strchr(wcan_buff->string,'e');
-	if (!eloc) XSB_StrAppend(wcan_string,".0");
+	if (!eloc) XSB_StrAppend(wcan_buff,".0");
 	else {	
 	  char exp[5],fstr[30];
 	  strcpy(exp,eloc);
 	  eloc[0] = 0;
 	  strcpy(fstr,wcan_buff->string);
-	  XSB_StrSet(wcan_string,fstr);
-	  XSB_StrAppend(wcan_string,".0");
-	  XSB_StrAppend(wcan_string,exp);
+	  XSB_StrSet(wcan_buff,fstr);
+	  XSB_StrAppend(wcan_buff,".0");
+	  XSB_StrAppend(wcan_buff,exp);
 	}
       }
+      XSB_StrAppendV(wcan_string,wcan_buff);
       break;
     case XSB_REF:
     case XSB_REF1: {
@@ -1749,20 +1750,21 @@ void call_conv write_canonical_term_rec(CTXTdeclc Cell prologterm, int letter_fl
      {
        //          sprintf(wcan_buff->string,"%2.4f",boxedfloat_val(prologterm));
        sprintf(wcan_buff->string,"%1.15g",boxedfloat_val(prologterm));
-       XSB_StrAppendV(wcan_string,wcan_buff);
+       wcan_buff->length = strlen(wcan_buff->string);
        if (!strchr(wcan_buff->string,'.')) {
 	 char *eloc = strchr(wcan_buff->string,'e');
-	 if (!eloc) XSB_StrAppend(wcan_string,".0");
+	 if (!eloc) XSB_StrAppend(wcan_buff,".0");
 	 else {	
 	   char exp[5],fstr[30];
 	   strcpy(exp,eloc);
 	   eloc[0] = 0;
 	   strcpy(fstr,wcan_buff->string);
-	   XSB_StrSet(wcan_string,fstr);
-	   XSB_StrAppend(wcan_string,".0");
-	   XSB_StrAppend(wcan_string,exp);
+	   XSB_StrSet(wcan_buff,fstr);
+	   XSB_StrAppend(wcan_buff,".0");
+	   XSB_StrAppend(wcan_buff,exp);
 	 }
        }
+       XSB_StrAppendV(wcan_string,wcan_buff);
        break;         
      }        
       if (!dollar_var_psc) {
