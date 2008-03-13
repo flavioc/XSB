@@ -25,139 +25,145 @@
 #include "thread_defs_xsb.h"
 #include "io_defs_xsb.h"
 
+% How do you check for the validity of pointers to dynamically created
+% C structures like mutexes?  I make sure that if they
+% arent created wdith an explicit alias, an alias of the form
+% Ptr,Type,Ptr is created, so that I can check the alias for validity
+% no matter what.
+
+add_dyn_struct_aliases(Alias,Type,Ptr,Error):- 
+	(Alias == [] -> 
+	    add_alias(Ptr,Type,Ptr,Error)
+	  ; 	   
+	    add_aliases(Alias,Type,Ptr,Error) ).
+
 /* ==================================================================  */
 /* Proto-ISO Mutexes: see manual for documentation. */
 
-:- dynamic '_$user_mutex'/2.
-:- thread_shared('_$user_mutex'(_,_)).
-:- index('_$user_mutex'/2,[1,2]).
-
 mutex_create(Mut):- 
 	(var(Mut) -> 
-	    thread_request( XSB_MUTEX_INIT,Mut,_,_,_,_,_,_,_)
+	    thread_request( XSB_MUTEX_INIT,Mut,_,_,_,_,_,_,_),
+	    add_alias(Mut,MUTEX_ALIAS,Mut,mutex_create/1)
 	  ; type_error(mutex_or_alias,Mut,mutex_create/1,1) ).
 
 mutex_create(Mut,Options):- 
 	(var(Mut) -> 
-	    check_mutex_options_list(Options,Alias),
-	    check_aliases(Options,mutex_create/2),
+	    check_mutex_options_list(Options,Aliases),
+	    check_aliases(Aliases,mutex_create/2),
 	    thread_request( XSB_MUTEX_INIT,Mut,_,_,_,_,_,_,_),
-	    add_aliases(Alias,MUTEX_ALIAS,Mut,mutex_create/2)
-	  ; type_error(mutex_or_alias,Mut,mutex_create/1,1) ).
+	    add_dyn_struct_aliases(Aliases,MUTEX_ALIAS,Mut,mutex_create/2)
+	  ; type_error(mutex_or_alias,Mut,mutex_create/2,1) ).
 
 check_mutex_options_list(Options,Alias):- 
-	check_nonvar(Options,message_queue_create/2,2),
+	check_nonvar(Options,mutex_create/2,2),
 	check_mutex_options_list_1(Options,Alias).
 
 check_mutex_options_list_1([],[]):- !.
 check_mutex_options_list_1([Option|Rest],Alias):- !,
-%	check_nonvar(Option,message_queue_create/2,2),
 	(Option @= alias(_) -> 
 	    Option = alias(A),check_atom(A,mutex_create/2,2),Alias = [A|R]
 	     ; 	domain_error(thread_option,Option,mutex_create/2,2,'') ),
        check_mutex_options_list_1(Rest,R).
 check_mutex_options_list_1(Culprit,_Alias):- 
-	type_error(list,Culprit,message_queue_create/2,2).
+	type_error(list,Culprit,mutex_create/2,2).
 
 %---------------------------
+% direct calls to save some time for mutexes.
+:- import '_$alias_dynamic'/3 from file_io.
 
+/*
+Old style
 mutex_lock(Mutex):- 
 	(integer(Mutex) -> 
+   	   ('_$alias_dynamic'(Mutex,MUTEX_ALIAS,_) -> true ; existence_error(mutex, Mutex,mutex_lock/1,1)),
 	   thread_request( XSB_MUTEX_LOCK,Mutex,_,_,_,_,_,_,_)
-        ;  (atom(Mutex),get_alias(Mutex,MUTEX_ALIAS,Mid) -> 
- 	       thread_request(XSB_MUTEX_LOCK,Mid,_,_,_,_,_,_,_)
+        ;  (atom(Mutex) -> 
+   	       ('_$alias_dynamic'(Mutex,MUTEX_ALIAS,Mid) -> true ; existence_error(mutex, Mutex,mutex_lock/1,1)),
+	       thread_request(XSB_MUTEX_LOCK,Mid,_,_,_,_,_,_,_)
            ;  (var(Mutex) -> 
 	         instantiation_error(mutex_lock/1,1,ground)
 	      ;  domain_error(mutex_or_alias,Mutex,mutex_lock/1,1,'')))).
 
+*/
+
+mutex_lock(Mutex):- 
+	(nonvar(Mutex) -> 
+   	   ('_$alias_dynamic'(Mutex,MUTEX_ALIAS,Mid) -> true ; mutex_error(Mutex,mutex_lock/1)),
+	   thread_request( XSB_MUTEX_LOCK,Mid,_,_,_,_,_,_,_)
+          ;     instantiation_error(mutex_lock/1,1,ground)).
+
 %---------------------------
 
 mutex_unlock(Mutex):- 
-	(integer(Mutex) -> 
-	   thread_request( XSB_MUTEX_UNLOCK,Mutex,_,_,_,_,_,_,_)
-        ;  (atom(Mutex),get_alias(Mutex,MUTEX_ALIAS,Mid) -> 
- 	       thread_request(XSB_MUTEX_UNLOCK,Mid,_,_,_,_,_,_,_)
-           ;  (var(Mutex) -> 
-	         instantiation_error(mutex_unlock/1,1,ground)
-	      ;  domain_error(mutex_or_alias,Mutex,mutex_unlock/1,1,'') ) ) ).
+	(nonvar(Mutex) -> 
+   	   ('_$alias_dynamic'(Mutex,MUTEX_ALIAS,Mid) -> true ; mutex_error(Mutex,mutex_unlock/1)),
+	   thread_request( XSB_MUTEX_UNLOCK,Mid,_,_,_,_,_,_,_)
+          ;     instantiation_error(mutex_unlock/1,1,ground)).
 
 %---------------------------
 
 mutex_trylock(Mutex):- 
-	(integer(Mutex) -> 
-	   thread_request( XSB_MUTEX_TRYLOCK,Mutex,_,_,_,_,_,_,_)
-        ;  (atom(Mutex),get_alias(Mutex,MUTEX_ALIAS,Mid) -> 
- 	       thread_request(XSB_MUTEX_TRYLOCK,Mid,_,_,_,_,_,_,_)
-           ;  (var(Mutex) -> 
-	         instantiation_error(mutex_trylock/1,1,ground)
-	      ;  domain_error(mutex_or_alias,Mutex,mutex_trylock/1,1,'') ) ) ).
+	(nonvar(Mutex) -> 
+   	   ('_$alias_dynamic'(Mutex,MUTEX_ALIAS,Mid) -> true ; mutex_error(Mutex,mutex_trylock/1)),
+	   thread_request( XSB_MUTEX_TRYLOCK,Mid,_,_,_,_,_,_,_)
+          ;     instantiation_error(mutex_trylock/1,1,ground)).
 
 %---------------------------
 
 mutex_destroy(Mutex):- 
-	(integer(Mutex) -> 
-           remove_alias(_,MUTEX_ALIAS,Mutex),
-	   thread_request( XSB_MUTEX_DESTROY,Mutex,_,_,_,_,_,_,_)
-        ;  (atom(Mutex),get_alias(Mutex,MUTEX_ALIAS,Mid) -> 
-	       remove_alias(_,MUTEX_ALIAS,Mid),
- 	       thread_request(XSB_MUTEX_DESTROY,Mid,_,_,_,_,_,_,_)
-           ;  (var(Mutex) -> 
-	         instantiation_error(mutex_destroy/1,1,ground)
-	      ;  domain_error(mutex_or_alias,Mutex,mutex_destroy/1,1,'') ) ) ).
+	(nonvar(Mutex) -> 
+   	   ('_$alias_dynamic'(Mutex,MUTEX_ALIAS,Mid) -> true ; mutex_error(Mutex,mutex_destroy/1)),
+	   remove_alias(_,MUTEX_ALIAS,Mid),
+	   thread_request( XSB_MUTEX_DESTROY,Mid,_,_,_,_,_,_,_)
+          ;     instantiation_error(mutex_destroy/1,1,ground)).
+
+%---------------------------
+
+mutex_error(Mutex,Pred):- 
+	( (atom(Mutex) ; integer(mutex)) -> 
+	    existence_error(mutex_or_alias, Mutex,Pred,1)
+	      ;  domain_error(mutex_or_alias,Mutex,Pred,1,'')).
 
 %---------------------------
 
 with_mutex(Mutex,Goal):- 
-	(integer(Mutex) -> 
-	    with_mutex_1(Mutex,Goal)
-        ;  (atom(Mutex),get_alias(Mutex,MUTEX_ALIAS,Mid) -> 
-	       with_mutex_1(Mid,Goal)
-           ;  (var(Mutex) -> 
-	         instantiation_error(with_mutex/2,1,ground)
-	      ;  domain_error(mutex_or_alias,Mutex,with_mutex/2,1,'') ) ) ).
+	(nonvar(Mutex) -> 
+   	   ('_$alias_dynamic'(Mutex,MUTEX_ALIAS,Mid) -> true ; mutex_error(Mutex,with_mutex/2)),
+	   with_mutex_1(Mid,Goal)
+          ;     instantiation_error(with_mutex/2,1,ground)).
 
+% No need for mutex existence rechecks.
 with_mutex_1(Mutex,Goal):- 
-%	check_atom(Mutex,with_mutex/2,1),
-	mutex_lock(Mutex),
+	thread_request(XSB_MUTEX_LOCK,Mutex,_,_,_,_,_,_,_),
 	catch(Goal,Ball,with_mutex_handler(Ball,Mutex)),
 	!,
-	mutex_unlock(Mutex).
+	thread_request(XSB_MUTEX_UNLOCK,Mutex,_,_,_,_,_,_,_).
 with_mutex_1(Mutex,_Goal):- 
-	mutex_unlock(Mutex),fail.
+	thread_request(XSB_MUTEX_UNLOCK,Mutex,_,_,_,_,_,_,_),
+	fail.
 
 with_mutex_handler(Ball,Mutex):- 
-	mutex_unlock(Mutex),
+	thread_request(XSB_MUTEX_UNLOCK,Mutex,_,_,_,_,_,_,_),
 	throw(Ball).
 
 %-----------------------------
+
+mutex_unlock_all:- 
+	thread_request( MUTEX_UNLOCK_ALL,_,_,_,_,_,_,_,_).
+
+%-----------------------------
+
+mutex_property(Mutex, Property) :-
+	(nonvar(Mutex) -> 
+   	   ('_$alias_dynamic'(Mutex,MUTEX_ALIAS,Mid) -> true ; mutex_error(Mutex,mutex_property/2)),
+	   bound_mutex_property(Mid, Property)
+          ;     mutex_property_list(Mutex, Property) ).
 
 get_first_mutex_property(This,Locks,Owner,Next):-
 	thread_request( GET_FIRST_MUTEX_PROPERTY,This,Locks,Owner,Next,_,_,_,_).
 
 get_next_mutex_property(Ptr,Locks,Owner,Next):-
 	thread_request( GET_NEXT_MUTEX_PROPERTY,Ptr,Locks,Owner,Next,_,_,_,_).
-
-mutex_unlock_all:- 
-	thread_request( MUTEX_UNLOCK_ALL,_,_,_,_,_,_,_,_).
-
-mutex_property(Mutex, _) :-
-	nonvar(Mutex),
-	\+ integer(Mutex),
-	\+ atom(Mutex),
-	domain_error(mutex_or_alias, Mutex, mutex_property/2, 1).
-mutex_property(Mutex, Property) :-
-	(	atom(Mutex) -> 
-	    (	get_alias(Mutex, MUTEX_ALIAS, M) ->
-			bound_mutex_property(M, Property)
-		;	existence_error(mutex, Mutex, mutex_property/2, 1)
-		)
-	;	integer(Mutex) ->
-		(	get_alias(_, MUTEX_ALIAS, Mutex) ->
-			bound_mutex_property(Mutex, Property)
-		;	existence_error(mutex, Mutex, mutex_property/2, 1)		
-		)
-	;	mutex_property_list(Mutex, Property)
-	).
 
 /* Could optimize away a CP, but I dont think this pred will be used much...
    (famous last words) */
@@ -172,7 +178,8 @@ mutex_property_list(Mutex, Property):-
 	    mutex_property_list_1(Next,Mutex,Property) ).
 
 form_mutex_property(Mutex,_Owner,_Locks,alias(Alias)):- 
-	get_alias(Alias, MUTEX_ALIAS, Mutex).
+	get_alias(Alias, MUTEX_ALIAS, Mutex),
+	Alias \== Mutex.
 form_mutex_property(_Mutex,Owner,Locks,Prop):- 
 	(Owner == -1 -> 
 	    Prop = status(unlocked)
@@ -200,7 +207,7 @@ valid_mutex_property(Property) :-
 valid_mutex_property(_).
 
 /* ==================================================================  */
-/* Proto-ISO Message Queues. */
+/* ISO Message Queues. */
 
 /* For right now, I'm not trying to make the optioned version as fast as possible. */
 message_queue_create(Queue,Options):-
@@ -240,7 +247,8 @@ check_aliases([H|T],Pred):-
 
 message_queue_create(Queue):-
 	check_var(Queue,message_queue_create,1),
-	thread_request(MESSAGE_QUEUE_CREATE,Queue,MQ_CHECK_FLAGS,_,_,_,_,_,_).
+	thread_request(MESSAGE_QUEUE_CREATE,Queue,MQ_CHECK_FLAGS,_,_,_,_,_,_),
+	add_alias(Queue,MESSAGE_QUEUE_CREATE,Queue,message_queue_create/1).
 
 %------------------------------------------------------------
 
@@ -281,7 +289,6 @@ thread_get_message(Queue,Message):-
 	          instantiation_error(thread_get_message/2,1,ground)
 	       ;  domain_error(queue_or_alias,Queue,thread_get_message/2,1,'') ) ) ).
 
-%:- import writeln/1 from standard.
 thread_get_message_1(Queue,Message):-
 %	writeln(calling(thread_get_message_1(Queue,Message))),
 	thread_request(THREAD_TRY_MESSAGE,Queue,MaybeMessage,_,_,_,_,_,_),

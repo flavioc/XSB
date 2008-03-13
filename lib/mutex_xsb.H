@@ -33,12 +33,12 @@
 :- export thread_peek_signal/1, thread_get_signal/1.
 
 :- import xsb_flag/2 from curr_sym.
-:- import (dynamic)/1, code_to_buff/2 from assert.
+:- import code_to_buff/2 from assert.
 :- import check_atom/3,
 	existence_error/4, permission_error/4, domain_error/4, domain_error/5, misc_error/1,
 	type_error/4, instantiation_error/3, check_var/3, check_nonvar/3
 	from error_handler.
-:- import get_alias/3, add_aliases/4, remove_alias/3 from file_io.
+   :- import get_alias/3, add_aliases/4, add_alias/4, remove_alias/3 from file_io.
 :- import thread_request/9 from machine.
-:- import catch/3, (index)/2, repeat/0, throw/1, (\=)/2 from standard.
+:- import catch/3, repeat/0, throw/1, (\=)/2 from standard.
 %:- import thread_self/1 from thread.
