@@ -4,8 +4,7 @@
 	  strip_module/3,statistics/2, unifiable/2, freeze/2.
 
 :- import trie_delete/2,trie_create/2, trie_unify/2, trie_insert/2 from intern.
-:- import append/3,ground/1 from basics.
-:- import call_c/1 from standard.
+:- import ground/1 from basics.
 :- import when/2 from constraintLib.
 
 % emulating non-backtrackable "global" variables using private tries.
