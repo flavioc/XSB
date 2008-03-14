@@ -558,7 +558,7 @@ spy0(P) :- atom(P),!,
 spy0(M:P) :- atom(P),!,
 	(findall(M:P/A,current_predicate(M:P/A),Preds),Preds \== [] -> 
 	    spy0(Preds)
-	  ; console_writeln(['Warning: cannot find predicate ',P,' for any arity in ',M']) ).
+	  ; console_writeln(['Warning: cannot find predicate ',P,' for any arity in ',M]) ).
 spy0(M:P/A) :- !,
 	functor(Call,P,A),
 	(( M \== usermod, M \== global, \+ predicate_property(M:Call,_))
@@ -587,7 +587,7 @@ spy0((M:T:-B)) :- !,
 	assert0(('_b_SPY_condition'(NewT):-B)).
 spy0((T:-B)) :- !, spy0((usermod:T:-B)).
 spy0(T) :- callable(T),!,spy0((usermod:T:-true)).
-spy0(T):- type_error(predicate_indicator,T,spy/1,1).
+spy0(T):- type_error(predicate_indicator,T,(spy)/1,1).
 
 make_pretty_list([H],H):-!.
 make_pretty_list(Lin,Lout):-
