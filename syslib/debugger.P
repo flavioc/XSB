@@ -23,7 +23,7 @@
 */
 
 
-:- compiler_options([xpp_on]).
+:- compiler_options([xpp_on,sysmod]).
 #include "flag_defs_xsb.h"
 #include "celltags_xsb.h"
 #include "char_defs.h"
@@ -540,20 +540,25 @@ deb_skiptoaft.
 
 %% '_b_SPY_condition'/1 will be undefined, but that''s OK.
 :- dynamic('_b_SPY_condition'(_)).
+:- import console_writeln/1 from standard.
+:- import type_error/4 from error_handler.
 
 spy(X) :- 
 	var(X)
 	 ->	warning('Spy specification cannot be a variable. Ignored.')
 	 ;	spy0(X), debug.
-spy0(X) :- var(X),!,warning('Spy specification cannot be a variable. Ignored.').
+
+%spy0(X) :- var(X),!,warning('Spy specification cannot be a variable. Ignored.').
 spy0([Pred|More]) :- !, spy0(Pred),spy0(More).
 spy0([]) :- !.
 spy0(P) :- atom(P),!,
-	findall(usermod:P/A,current_predicate(usermod:P/A),Preds),
-	spy0(Preds).
+	(findall(usermod:P/A,current_predicate(usermod:P/A),Preds),Preds \== [] -> 
+	    spy0(Preds)
+	  ; console_writeln(['Warning: cannot find predicate ',P,' for any arity in usermod']) ).
 spy0(M:P) :- atom(P),!,
-	findall(M:P/A,current_predicate(M:P/A),Preds),
-	spy0(Preds).
+	(findall(M:P/A,current_predicate(M:P/A),Preds),Preds \== [] -> 
+	    spy0(Preds)
+	  ; console_writeln(['Warning: cannot find predicate ',P,' for any arity in ',M']) ).
 spy0(M:P/A) :- !,
 	functor(Call,P,A),
 	(( M \== usermod, M \== global, \+ predicate_property(M:Call,_))
@@ -561,8 +566,16 @@ spy0(M:P/A) :- !,
 	 ;	true
 	),
 	spy_psc(M, P, A, NPsc),
-	psc_set_spy(NPsc,128).
-spy0(P/A) :- !, spy0(usermod:P/A).
+	psc_set_spy(NPsc,128),
+	console_writeln(['Spy point set on ',M,':',P/A]).
+spy0(P/A) :- !, 
+	(current_predicate(usermod:P/A) -> 
+	    spy0(usermod:P/A)
+	 ;  findall(P/A1,current_predicate(usermod:P/A1),List),List \== [] -> 
+	    make_pretty_list(List,L),
+	    console_writeln(['Warning: ',P/A,' not found in usermod (but ',L,' found)'])
+	 ;  console_writeln(['Warning: ',P/A,' not found in usermod']) ).
+% TLS: dont know about these next 3 -- leaving them alone.
 spy0((M:T:-B)) :- !,
 	(( M \== usermod, M\== global, \+ predicate_property(M:T,_))
 	 ->	functor(T,P,A),
@@ -573,7 +586,16 @@ spy0((M:T:-B)) :- !,
 	psc_set_spy(Psc, 192),
 	assert0(('_b_SPY_condition'(NewT):-B)).
 spy0((T:-B)) :- !, spy0((usermod:T:-B)).
-spy0(T) :- spy0((usermod:T:-true)).
+spy0(T) :- callable(T),!,spy0((usermod:T:-true)).
+spy0(T):- type_error(predicate_indicator,T,spy/1,1).
+
+make_pretty_list([H],H):-!.
+make_pretty_list(Lin,Lout):-
+	make_pretty_list_1(Lin,Lout).
+
+make_pretty_list_1([H],['and ',H]):- !.
+make_pretty_list_1([H|T],[H,', '|T1]):- 
+	make_pretty_list_1(T,T1).
 
 nospy(X) :- var(X),!,warning('Spy specification cannot be a variable. Ignored.').
 nospy([Pred|More]) :- !, nospy(Pred),nospy(More).

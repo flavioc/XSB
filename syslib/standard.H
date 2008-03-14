@@ -93,7 +93,7 @@
         catch/3,                throw/1,        '$$exception_ball'/2,
         goal_cut_trans/3,	goal_cut_untrans/2,
 	tcall/1,	arity_integer/1,	prolog_arglist/4,
-	message/1,      message/2, messageln/2,
+   message/1,      messageln/1, message/2, messageln/2,
    warning/1,      warningln/1, abort/1,	abort/0,
 	set_timer/1,
 	(import)/1,	(multifile)/1.

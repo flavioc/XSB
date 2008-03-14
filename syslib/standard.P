@@ -881,14 +881,9 @@ use_opaque_tabling(Ps) :-
 	add_opaque(Ps).
 
 
-
-
-
 			/***********************/
 			/*  LOGIC and CONTROL  */
 			/***********************/
-
-/* Call0 shoul be ok below as it is used as the last goal */
 
 /*
 call(Goal) :- 
@@ -902,18 +897,18 @@ call(Goal) :-
 	).
 */
 
-% TLS: 02/08 -- use of directly_callable saves *lots* of time for normal case.
-call(Goal) :- 
-	( directly_callable(Goal) ->
-		call0(Goal)
-	;  callable(Goal) ->
-		'_$savecp'(C), 
-		goal_cut_trans(Goal, Trans_Goal, C), 
-		call0(Trans_Goal)
-	; var(Goal) -> 
-	        instantiation_error(call/1,1,bound)
-	; type_error(callable,Goal,call/1,1)
-	).
+/* TLS: 02/08 -- use of directly_callable saves *lots* of time for
+   normal case.  Need call_c/1 in first condition -- otherwise trace
+   is broken since call0 is apparently hidden from trace.  In second
+   condition, tracing is done via goal_cut_trans/3. */
+call(Goal) :-
+   ( directly_callable(Goal) -> 
+       call_c(Goal) 
+     ; callable(Goal) ->
+	'_$savecp'(C), goal_cut_trans(Goal, Trans_Goal, C),call0(Trans_Goal) 
+     ; var(Goal) ->
+	instantiation_error(call/1,1,bound) 
+     ;  type_error(callable,Goal,call/1,1) ).
 
 % call/n for n>1, adds outer arguments to end of goal arguments and calls
 % that predicate (in same module as G).
@@ -1366,6 +1361,7 @@ warningln(Message) :-
 
 %  message/1
 message(X) :- message(X, STDMSG).
+messageln(X) :- message(X, STDMSG),nl
 
 message(Message, File) :-
 	var(Message), !,
