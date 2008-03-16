@@ -218,8 +218,8 @@ can be seen as syntactic sugar for
 \demo{:- export $sym_1$, \ldots, $sym_l$. }
 
 \noindent
-as long as the module name is the same as the file name, $filename$.
-Similarly,
+as long as the $filename$ is the same as the name of the file in which
+it was contained.  Similarly,
 
 \demo{:- use\_module($module$,[$sym_1$, \ldots, $sym_l$.]).}
 
@@ -231,14 +231,15 @@ is treated as semantically equivalent to
 \noindent
 Accordingly, {\tt use\_module/2} and {\tt module/1} can be used
 interchangibly with {\tt import/2} and {\tt export/1}.  However the
-common declaration
+declaration
 
 \demo{:- use\_module($module$).}
 
 \noindent
-`is {\em not} equivalent to an XSB import statement, as each XSB import
-statement must explicitly declare a list of predicates that are used
-from each module.
+which is often used in other Prolog systems, is {\em not} equivalent
+to an XSB import statement, as each XSB import statement must
+explicitly declare a list of predicates that are used from each
+module.  Such a declaration will raise a compilation error.
 
 For modules, the base file name is stored in its byte code file, so
 that renaming a byte-code file for a mule may cause problems, as the
@@ -308,6 +309,7 @@ X = c
 Y = d
 
 yes
+
 \end{verbatim}
 \end{minipage}
 %\vspace*{-2ex} 
@@ -436,6 +438,7 @@ p10:- a1.
 
 p11:- atom_chars(A1,[a,'1']),
       call(A1).
+
 \end{verbatim}
 \end{minipage}
 &
@@ -447,6 +450,7 @@ p11:- atom_chars(A1,[a,'1']),
 
 
 a1:- writeln(found_a1).
+
 \end{verbatim}
 \end{minipage}
 %\vspace*{-2ex} 
@@ -483,8 +487,9 @@ For clarity, we state a few consequences of these rules.
   {\tt m2}, but {\tt m2} does not export {\tt p/n}, nothing is
   detected at the time of compilation.  As discussed above, if {\tt
     p/n} is defined in {\tt m2} a runtime warning about an environment
-  conflict will be issued.  However, if {\tt p/n} is not defined
-  in {\tt m2}, a runtime existence error will be thrown.
+  conflict will be issued.  However, if {\tt p/n} is not defined in
+  {\tt m2}, a runtime existence error will be thrown~\footnote{This
+    behavior can be altered through the Prolog flag {\tt unknown}.}.
 %
 \item Only one definition of a symbol {\tt p/n} can appear in a
   module, without being explicitly associated with a module using the

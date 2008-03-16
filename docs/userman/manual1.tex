@@ -44,9 +44,10 @@
 \newcommand{\standarditem}[2]{\item[{\mbox{\tt #1}}] \index{standard predicates!#2} \index{\texttt{#2}}\ \\}
 \newcommand{\ourstandarditem}[3]{\item[{\mbox{\tt #1}}] \index{standard predicates!#2} \index{\texttt{#2}} \hspace*{\fill}{\mbox{\sf #2}}\ \\}
 \newcommand{\ournewitem}[2]{\item[{\mbox{\tt #1}}]\hspace*{\fill}{\mbox{\sf #2}}\ \\}
-\newcommand{\ourmoditem}[2]{\item[{\mbox{\tt #1}}]\hspace*{\fill}{\mbox{\tt module: #2}}\ \\}
-%\newcommand{\ourrepeatmoditem}[2]{\item[{\mbox{\tt #1}}]\hspace*{\fill}{\mbox{\tt module: #2}}\ \\}
-\newcommand{\ourrepeatmoditem}[2]{\item[{\mbox{\tt #1}}]\hspace*{\fill}{\mbox{\tt module: #2}}\ \\ \vspace*{-.35in}}
+\newcommand{\ourmoditem}[2]{\item[{\mbox{\tt #1}}]\hspace*{\fill}{\mbox{\sf module:} {\tt #2}}\ \\}
+\newcommand{\ournewmoditem}[2]{\item[{\mbox{\tt #1}}]\hspace*{\fill}{\sf #2}
+                   {\mbox{\sf module: }{\tt #2}}\ \\}
+\newcommand{\ourrepeatmoditem}[2]{\item[{\mbox{\tt #1}}]\hspace*{\fill}{\mbox{\sf module:} {\tt #2}}\ \\ \vspace*{-.35in}}
 
 \newcommand{\ourusageitem}[1]{\item[{\mbox{\tt #1}}]\ \\ \vspace*{-.25in}}
 \newcommand{\ourisousageitem}[1]{\item[{\mbox{\tt #1}}]\hspace*{\fill}{\mbox{\sf ISO}}\ \\ \vspace*{-.25in}}
