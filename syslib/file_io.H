@@ -73,7 +73,7 @@
 	  file_clearerr/1, tmpfile_open/1,
    print_openfiles/0, check_enumerate_stream_or_alias/4, 
    check_stream_or_alias/4, check_open_stream_or_alias/5, 
-   add_aliases/4,add_aliases_flag_error/4,get_alias/3,remove_alias/3,
+   add_aliases/4,add_aliases_flag_error/4,get_alias/3,remove_alias/3,add_alias/4,
    is_valid_stream/2, peek_code/1, peek_code/2, peek_char/1, peek_char/2,
    at_end_of_stream/1, at_end_of_stream/0, set_stream_position/2,
    xsb_stream_lock/1,xsb_stream_unlock/1.   

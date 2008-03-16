@@ -27,6 +27,7 @@
 #include "builtin.h"
 #include "psc_defs.h"
 #include "thread_defs_xsb.h"
+#include "biassert_defs.h"
 
 /*======================================================================*/
 /* Predicates to add dynamic clauses in Prolog's database:		*/
@@ -113,17 +114,17 @@
 
 assert0(Clause) :- assert(Clause,1,1).
 
-
+% check_asserts factored into main assert body.
 assert(Clause)  :-
-	check_assert(Clause, 'assert/1'),
+%	check_assert(Clause, 'assert/1'),
 	call_xsb_hook(xsb_assert_hook(_),Clause,all),
 	assert(Clause,1,1,'assert/1').
 asserta(Clause) :-
-	check_assert(Clause,'asserta/1'),
+%	check_assert(Clause,'asserta/1'),
 	call_xsb_hook(xsb_assert_hook(_),Clause,all),
 	assert(Clause,0,1,'asserta/1').
 assertz(Clause) :-
-	check_assert(Clause,'assertz/1'),
+%	check_assert(Clause,'assertz/1'),
 	call_xsb_hook(xsb_assert_hook(_),Clause,all),
 	assert(Clause,1,1,'assertz/1').
 
@@ -155,19 +156,29 @@ assert(Clause,AZL,Index):- assert(Clause,AZL,Index,'assert/1').
    sped up the time for trie_asserts significantly.  trie asserts did
    *not* properly check for :-/2 before -- now they do. */
 
+:- import dynamic_code_function/5 from machine.
+ 
+% TLS: uglified the code by moving check_assert and cut_transform into
+% this predicate -- but it saves a few percent.
 assert(Clause, AZL, Index1,ErrPred) :-
+	( var(Clause) -> instantiation_error(Pred,1,nonvar) ; true),
 	('_$trie_asserted'(Clause) -> 
 	    t_assert_2(Clause,_Flag)
 	  ; 
-	(Clause = (Head:-_)
-	 ->	conpsc(Head, PSC),
-                ('_$trie_asserted'(Head) -> 
+	  (Clause = (Head:-_) ->
+	      check_assert_fact(Head, Pred), 
+  	      ( check_body(Body) -> true ; type_error(callable,Body,Pred,1)),
+              ('_$trie_asserted'(Head) -> 
 		    permission_error(assert_clause_with_body,trie_asserted_head,
-		                     Clause,ErrPred) ; true)
-	 ;	Clause = Head -> conpsc(Head, PSC)
-	),
-	psc_arity(PSC, Arity),
-	( '_$index'(Head,Index,HashTabSize)
+		                     Clause,ErrPred) ; true),
+	     cut_transform(Clause,Nclause)
+            ;	Clause = Head,Body = true,
+  	        check_assert_fact(Head, Pred),
+		Nclause = Clause
+           ),
+	   conpsc(Head, PSC),
+	   psc_arity(PSC, Arity),
+           ( '_$index'(Head,Index,HashTabSize)
               ->	true
 		 ;	integer(Index1)
 		 ->	(Index1 > Arity
@@ -179,8 +190,10 @@ assert(Clause, AZL, Index1,ErrPred) :-
 		 ;	Index = Index1,default_assert_size(HashTabSize)
 	 ),
 	NArity is Arity+1, % to hold the cut addr
-	convert_to_dyna(Head,Prref,ErrPred),
-	cut_transform(Clause,Nclause),
+%	writeln(calling_dynamic_code_function(CONVERT_TO_DYNA, Head,Prref,_,_)),
+	dynamic_code_function(CONVERT_TO_DYNA, Head,Prref,assert,1),
+%	writeln(called_dynamic_code_function(CONVERT_TO_DYNA, Head,Prref,_,_)),
+%	convert_to_dyna(Head,Prref,ErrPred),
 	(integer(AZL)
 		 ->	AZLI = AZL
 		 ;	(memberchk(large_clause,AZL)
@@ -193,9 +206,11 @@ assert(Clause, AZL, Index1,ErrPred) :-
 			),
 			AZLI is AZLLC + AZLF
 		),
-		code_to_buff(Nclause,AZLI),
-		AZ is AZLI /\ 1,
-		assert_buff_to_clref(Head,NArity,Prref,AZ,Index,HashTabSize) ).
+	code_to_buff(Nclause,AZLI),
+	AZ is AZLI /\ 1,
+	assert_buff_to_clref(Head,NArity,Prref,AZ,Index,HashTabSize) ).
+
+:- import writeln/1 from standard.
 
 /* Must fail after code is put into buffer, to reset variables bound in 
    the process */
@@ -255,7 +270,8 @@ check_assert((Head :- Body), Pred) :-
 	  ; type_error(callable,Body,Pred,1)
 	  )
 	).
-check_assert(Head, Pred) :- check_assert_fact(Head, Pred).
+%check_assert(Head, Pred). :- check_assert_fact(Head, Pred).
+check_assert(_Head,_Pred).
 
 % TLS: note that checking for static is done in convert_to_dyna
 check_assert_fact(Head, Pred) :- 	% asserting a fact
@@ -274,7 +290,7 @@ check_body((X,Y)) :- !, check_body(X), check_body(Y).
 check_body(X) :- callable(X).
 
 /*======================================================================*/
-/* cut_transform(+Clause, -NewClause)					*/
+/* cut_tra<nsform(+Clause, -NewClause)					*/
 /*	Transform cuts to '_$cutto'.					*/
 /*======================================================================*/
 
@@ -315,10 +331,12 @@ dynamic_1(Spec) :-
 %		psc_set_type(Psc,T_DYNA)
 %	 ;	true
 %	),
-	convert_to_dyna(Head,_,'dynamic/1'),!.
+	dynamic_code_function(CONVERT_TO_DYNA, Head,_Prref,_,_),!.
+%	convert_to_dyna(Head,_,'dynamic/1'),!.
 dynamic_1(Spec) :- 
 	type_error(comma_list_callable,Spec,dynamic,1).
 
+/* Should no longer be needed now that convert to dyna is in C */
 convert_to_dyna(PHead,Prref,ErrPred) :-
 	xsb_sys_mutex_lock(MUTEX_DYNAMIC),
 	conpsc(PHead, PSC),
@@ -445,6 +463,11 @@ retractall0(Fact) :-
 	 ;	true
 	).
 
+:- export system_retractall/1.
+system_retractall(Fact):- 
+	get_dynamic_pred_ep(Fact,'retractall/1',PredEP,PSC),
+	db_retractall(Fact, PredEP,PSC).
+
 retract_nr(Rule) :-
 	obsolete(retract_nr/1, retract/1),
 	(Rule = (Head :- Body)
@@ -503,16 +526,12 @@ do_dyn_code_call(EntryPt,Skel) :-
 /*======================================================================*/
 
 % TLS: note that static check is done in get_dynamic_pred_ep
+% this can easily be moved to C.
 check_retract(Head, Pred) :-
 	( var(Head) ->
 	    instantiation_error(Pred,1,nonvar)
 	; (callable(Head) -> 
-	    (   functor(Head, F, A),
-		standard_symbol(F, A, _Prop),
-		\+ standard_dynamic_symbol(F, A) ->
-		    permission_error(modify,builtin,F/A,Pred)
-		;   true
-		)
+	   true
 	;  type_error(callable,Head,Pred,1))
 	).
 
@@ -639,7 +658,8 @@ t_assert_1((Head :- Body), _Flag) :- t_assert_exit((Head :- Body)).
 t_assert_1(Clause, Flag) :- 
 	conpsc(Clause, PSC),
 	psc_arity(PSC, Arity),
-	convert_to_dyna(Clause,Prref,trie_assert/1),
+	dynamic_code_function(CONVERT_TO_DYNA, Clause,Prref,_,_),
+%	convert_to_dyna(Clause,Prref,trie_assert/1),
 %	writeln(clause(Clause) +psc(PSC) +arity(Arity) +prref(Prref)),
 	trie_assert_builtin(Clause,PSC,Arity,Prref,Flag).
 
@@ -678,7 +698,8 @@ t_assert_2(Clause, Flag) :-
 	conpsc(Clause, PSC),
 	psc_arity(PSC, Arity),
 %	db_get_prref(PSC,Prref),
-	convert_to_dyna(Clause,Prref,trie_assert/1),
+	dynamic_code_function(CONVERT_TO_DYNA, Clause,Prref,_,_),
+%	convert_to_dyna(Clause,Prref,trie_assert/1),
 %	writeln(clause(Clause) +psc(PSC) +arity(Arity) +prref(Prref)),
 	trie_assert_builtin(Clause,PSC,Arity,Prref,Flag).
 

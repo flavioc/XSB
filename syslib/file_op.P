@@ -254,8 +254,9 @@ assert_trie_index(Pcall) :-
 	retract_index(Pcall),
 	assert('_$trie_asserted1'(Pcall)).
 
+:- import system_retractall/1 from assert.
 retract_trie_index(Pcall) :-
-	retractall('_$trie_asserted1'(Pcall)).
+	system_retractall('_$trie_asserted1'(Pcall)).
 
 add_index(Pred,Arg,Size) :-
 	mpa_to_skel(Pred,Pcall),
@@ -283,7 +284,7 @@ retract_index(Pred) :-
 	 ->	functor(Pcall,P,Arity)
 	;	Pcall = Pred
 	),
-	retractall('_$index1'(Pcall,_,_)).
+	system_retractall('_$index1'(Pcall,_,_)).
 
 
 fix_arg([],_,[]) :- !.
