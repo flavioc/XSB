@@ -3813,6 +3813,9 @@ void init_call_cleanup(void) {
   call_cleanup_gl = (CPtr) (get_ep(psc) +  ZOOM_FACTOR * 0x10);
 }
 
+#include "term_psc_xsb_i.h"
+#include "ptoc_tag_xsb_i.h"
+
 #ifdef MULTI_THREAD
 extern struct shared_interned_trie_t* shared_itrie_array;
 #endif
@@ -3906,6 +3909,32 @@ xsbBool dynamic_code_function( CTXTdecl )
 
   case TRIE_DROP:
     trie_drop(CTXT);
+    break;
+
+  case CONVERT_TO_DYNA: {
+    Psc psc;
+    Cell addr;
+    byte termType;
+
+    addr = iso_ptoc_callable(CTXTc 2,"assert");
+    psc = term_psc(addr);
+    termType = get_type(psc);
+    //    printf("here %d %d %d\n",addr,psc,termType);
+    if ( termType == T_DYNA ) {			             /* already dynamic */
+      ctop_int(CTXTc 3,(Integer)get_prref(CTXTc psc));
+      //      printf("prref %d\n",get_prref(psc));
+    }
+    else if (termType == T_ORDI || termType == T_UDEF) {     /* undefined, it's first clause */
+      SYS_MUTEX_LOCK( MUTEX_DYNAMIC);
+      ctop_int(CTXTc 3, (Integer)build_prref(CTXTc psc));
+      SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
+    }
+    else if (termType == T_PRED) 
+      xsb_permission_error(CTXTc "modufy","static",ptoc_tag(CTXTc 2),
+			   ptoc_string(CTXTc 3),ptoc_int(CTXTc 4));
+    else 
+      xsb_type_error(CTXTc "callable",ptoc_tag(CTXTc 2),ptoc_string(CTXTc 3),ptoc_int(CTXTc 4));
+  }
     break;
 
   default: 
