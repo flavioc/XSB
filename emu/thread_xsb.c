@@ -593,7 +593,7 @@ static Integer xsb_thread_setup(th_context *th, int is_detached, int is_aliased)
   if (pos < 0) 
   {     pthread_mutex_unlock( &th_mutex );
         mem_dealloc(new_th_ctxt,sizeof(th_context),THREAD_SPACE);
-        xsb_resource_error(CTXTc "maximum threads","thread_create",3);
+        xsb_resource_error(CTXTc "threads","thread_create",3);
   }
   /* initialize the thread's private message queue */
   init_message_queue(&mq_table[pos], MQ_CHECK_FLAGS);
@@ -676,7 +676,7 @@ call_conv int xsb_ccall_thread_create(th_context *th,th_context **thread_return)
   th_context *new_th_ctxt ;
   pthread_t *thr ;
   Integer id, pos ;
-       
+
   new_th_ctxt = mem_alloc(sizeof(th_context),THREAD_SPACE) ;
 
   pthread_mutex_lock( &th_mutex );
@@ -684,7 +684,7 @@ call_conv int xsb_ccall_thread_create(th_context *th,th_context **thread_return)
   id = pos = th_new( new_th_ctxt, 0, 0 );
   if (pos < 0) 
   {     pthread_mutex_unlock( &th_mutex );
-        xsb_resource_error(CTXTc "maximum threads","thread_create",3);
+        xsb_resource_error(CTXTc "threads","thread_create",3);
   }
   flags[NUM_THREADS]++ ;
   max_threads_sofar = xsb_max( max_threads_sofar, flags[NUM_THREADS] );
