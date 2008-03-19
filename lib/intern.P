@@ -276,7 +276,7 @@ trie_property(Input,Property) :-
 	         ;  domain_error(trie,Input,trie_property/2,1,'') ) ),
              trie_property_1(Tid, Property) ).
 
-:- import writeln/1 from standard.
+%:- import writeln/1 from standard.
 var_trie_property(TrOrAl,Property):- 
 	    dynamic_code_function(FIRST_TRIE_PROPERTY, Old,Type,Next,_),
 %	    writeln(dynamic_code_function(FIRST_TRIE_PROPERTY, Old,Type,Next,_)),
@@ -332,7 +332,6 @@ trie_pras_insert(Root,Term) :-
 
 %----- 
 
-%:- import writeln/1 from standard.
 trie_prge_delete(Root,Term) :-
 %	writeln(d1(Term)),
 	trie_interned(Term,Root,Leaf,_Skel),

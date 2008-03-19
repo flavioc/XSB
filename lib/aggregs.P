@@ -301,10 +301,11 @@ get_returns_type(Cs,Skel,VarList,Oskel,OVarList,POCA,POCB,Leaf,Tp) :-
 
 /*=======================================================================*/
 
-filterMin(Call,Var) :- filterReduce(Call,min,neg_inf,Var).
+filterMin(Call,Var) :- filterReduce(Call,aggregs:min,neg_inf,Var).
 
-filterMax(Call,Var) :- filterReduce(Call,max,inf,Var).
+filterMax(Call,Var) :- filterReduce(Call,aggregs:max,inf,Var).
 
+:- fail, min(_,_,_), max(_,_,_).  % to shut compiler up! They are use above.
 max(X,Y,Y):- \+ number(X),!.
 max(X,Y,X):- \+ number(Y),!.
 max(X,Y,Z):- (X > Y -> Z = X ; Z = Y).
