@@ -1361,7 +1361,8 @@ warningln(Message) :-
 
 %  message/1
 message(X) :- message(X, STDMSG).
-messageln(X) :- message(X, STDMSG),nl
+
+messageln(X) :- message(X, STDMSG),nl.
 
 message(Message, File) :-
 	var(Message), !,

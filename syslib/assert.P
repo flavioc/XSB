@@ -210,7 +210,7 @@ assert(Clause, AZL, Index1,ErrPred) :-
 	AZ is AZLI /\ 1,
 	assert_buff_to_clref(Head,NArity,Prref,AZ,Index,HashTabSize) ).
 
-:- import writeln/1 from standard.
+%:- import writeln/1 from standard.
 
 /* Must fail after code is put into buffer, to reset variables bound in 
    the process */

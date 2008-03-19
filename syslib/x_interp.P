@@ -222,7 +222,7 @@ portray_attributes_1([Mod,Attr|T]):-
 	 ; true),
 	 portray_attributes_1(T).
 
-:- import writeln/1 from standard.
+%%:- import writeln/1 from standard.
 :- import constraint_portray_hook/4 from machine.
 maybe_print_constraints(VarList):- 
 	constraint_portray_hook(_Mod,ValList,NameList,Hook),

@@ -62,7 +62,7 @@
 :- import thread_request/9 from machine.
 :- import stat_set_flag/2, term_psc/2 from machine.
 
-   :- import call/1, catch/3, integer/1,throw/1,call_cleanup/2 from standard.
+   :- import call/1, catch/3, integer/1,throw/1 /*,call_cleanup/2*/ from standard.
 
 :- import '_$thread_exit_ball'/2 from usermod.
 
