@@ -1378,14 +1378,14 @@ int builtin_call(CTXTdeclc byte number)
   }
   case STAT_FLAG: {	/* R1: flagname(+int); R2: value(-int) */
     int flagname = ptoc_int(CTXTc 1);
-    int flagval;
+    prolog_int flagval;
     if (flagname < MAX_PRIVATE_FLAGS ) flagval = pflags[flagname];
     else flagval = flags[flagname];
     ctop_int(CTXTc 2, flagval);
     break;
   }
   case STAT_SET_FLAG: {	/* R1: flagname(+int); R2: value(+int); */
-    int flagval = ptoc_int(CTXTc 2);
+    prolog_int flagval = ptoc_int(CTXTc 2);
     int flagname = ptoc_int(CTXTc 1);
     if (flagname < MAX_PRIVATE_FLAGS )
     	pflags[flagname] = flagval;
