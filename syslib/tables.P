@@ -294,7 +294,7 @@ get_calls(_CallTerm) :- '_$builtin'(TRIE_UNIFY_CALL).
 get_calls_for_table(PredSpec,Call) :-
 	( PredSpec = P/N
 	 ->	functor(Call,P,N)
-	 ; (PredSpec = M:Goal -> term_new_mod(M,Goal,PredSpec1) ; Call = PredSpec1),
+	 ; (PredSpec = M:Goal -> term_new_mod(M,Goal,PredSpec1) ; PredSpec = PredSpec1),
 	   term_psc(PredSpec1,PSC),
 	   term_new(PSC,Call)
 	        %% functor(PredSpec,P,N), functor(Call,P,N) ),
@@ -328,6 +328,29 @@ get_returns(TableEntry, ReturnTemplate) :-
 	% to free regular variables.
 	change_attv_to_var(ReturnTemplate),
 	member('_$get_returns'(TableEntry,ReturnTemplate),ReturnsList).
+
+:- export get_unifiable_returns/3.
+
+:- import t_assert_2/2 from assert.
+:- import (index)/2 from standard.
+:- dynamic '_$return'/1.
+:- index('_$return'/1,trie).
+:- import system_retract_fact/1 from assert.
+
+
+get_unifiable_returns(TableEntry,Skel, Leaf) :-
+	\+ \+ (get_unifiable_returns_1(TableEntry, Skel, ReturnList),
+	       ReturnList \== [],
+	       t_assert_2('_$return'(ReturnList),_)),
+	system_retract_fact('_$return'(ReturnList)),
+%	    change_attv_to_var(ReturnTemplate),
+	member('_$get_returns'(TableEntry,Leaf),ReturnList).
+	
+get_unifiable_returns_1(TableEntry, Skel, ReturnsList):- 
+	findall('_$get_returns'(TableEntry,RetLeaf),
+		'_$$get_returns'(TableEntry,Skel,RetLeaf),
+		ReturnsList).
+
 
 '_$$get_returns'(TableEntry,RetTmplt,RetLeaf) :-
 	trie_get_return(TableEntry,RetTmplt),

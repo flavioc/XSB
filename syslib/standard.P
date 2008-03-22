@@ -62,6 +62,7 @@ display_current_stream(Pred):-
 	display(current_input(Curr,Pred)).
 */
 
+see(Var):- var(Var),!,instantiation_error(see/1,1).
 see(userin):- !,	stat_set_flag(CURRENT_INPUT, STDIN).
 see(user):- !,	stat_set_flag(CURRENT_INPUT, STDIN).
 see(Integer):- 
@@ -83,6 +84,7 @@ set_output(Stream):-
 	check_open_stream_or_alias(Stream,set_output/1,1,output,Stream1),
 	stat_set_flag(CURRENT_OUTPUT, Stream1).
 
+tell(Var):- var(Var),!,instantiation_error(tell/1,1).
 tell(userout):- !,	stat_set_flag(CURRENT_OUTPUT, STDOUT).
 tell(user):- !,	stat_set_flag(CURRENT_OUTPUT, STDOUT).
 tell(Integer):- 
@@ -185,6 +187,7 @@ examine_open_options([Option|_],_,_):-
 	domain_error(stream_options,Option,open/4,4).
 
 %------------------------------------------------
+close(Var):- var(Var),!,instantiation_error(close/1,1).
 close(user) :- !.
 close(userin) :- !.
 close(userout) :- !.
@@ -198,6 +201,7 @@ close(S_or_A) :-
 
 %----
 
+close(Var,_):- var(Var),!,instantiation_error(close/2,1).
 close(user,_) :- !.
 close(userin,_) :- !.
 close(userout,_) :- !.
@@ -433,14 +437,14 @@ write_prolog(S_or_A,Term):-
 write_prolog(T) :- stat_flag(CURRENT_OUTPUT, Str), file_write_prolog(Str, T).
 
 writeq(S_or_A,Term):-
-	check_open_stream_or_alias(S_or_A,write_prolog/2,1,output,Ostr),
+	check_open_stream_or_alias(S_or_A,writeq/2,1,output,Ostr),
 	file_write_quoted(Ostr, Term).
 
 writeq(T) :- stat_flag(CURRENT_OUTPUT, Str), 
 	     file_write_quoted(Str, T).
 
 write_canonical(S_or_A,Term):- 
-	check_open_stream_or_alias(S_or_A,write_prolog/2,1,output,Ostr),
+	check_open_stream_or_alias(S_or_A,write_canonical/2,1,output,Ostr),
 	file_write_canonical(Ostr,Term).
 
 write_canonical(T) :-  
@@ -1361,7 +1365,6 @@ warningln(Message) :-
 
 %  message/1
 message(X) :- message(X, STDMSG).
-
 messageln(X) :- message(X, STDMSG),nl.
 
 message(Message, File) :-

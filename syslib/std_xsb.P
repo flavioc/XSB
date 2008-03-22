@@ -110,6 +110,7 @@ standard_symbol(cwd, 1, shell).
 standard_symbol(clause, 2, assert).                               % ISO
 standard_metapredicate(clause,2,1).
 standard_symbol(close, 1, standard).                             % ISO 
+standard_symbol(close, 2, standard).                             % ISO 
 standard_symbol(compare, 3, standard).
 standard_symbol(compound, 1, standard).                      % ISO
 standard_symbol(compile, 1, consult).

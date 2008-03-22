@@ -39,19 +39,20 @@ fmt_write(Fmt, Args) :-
        stat_flag(CURRENT_OUTPUT, IOport),   % Current output
 	fmt_write(IOport, Fmt, Args).
 
-fmt_write(IOport, Fmt, Args) :-
-	formatted_io(FMT_WRITE, IOport, Fmt, Args, _Ret).
+fmt_write(S_or_A, Fmt, Args) :-
+	check_open_stream_or_alias(S_or_A,fmt_write/3,1,output,Stream),
+	formatted_io(FMT_WRITE, Stream, Fmt, Args, _Ret).
 
 fmt_write_string(Str, Fmt, Args) :-
 	formatted_io(FMT_WRITE_STRING, Str, Fmt, Args, _Ret).
-
 
 fmt_read(Fmt,Result,Status) :-
         stat_flag(CURRENT_INPUT, IOport),  % Current input
 	fmt_read(IOport, Fmt,Result,Status).
 
-fmt_read(IOport, Fmt, Result, Status) :-
-	formatted_io(FMT_READ, IOport, Fmt, Result, Status).
+fmt_read(S_or_A, Fmt, Result, Status) :-
+	check_open_stream_or_alias(S_or_A,fmt_read/4,1,input,Stream),
+	formatted_io(FMT_READ, Stream, Fmt, Result, Status).
 
 
 /***************************************************************/
@@ -64,8 +65,9 @@ file_flush(IOport, Ret) :-
 	file_function(FILE_FLUSH, IOport, Ret).
 file_seek(IOport, Offset, Place, Ret) :-
 	file_function(FILE_SEEK, IOport, Offset, Place, Ret, _,_).
-file_truncate(IOport, Length, Ret) :-
-	file_function(FILE_TRUNCATE, IOport, Length, Ret, _E, _,_).
+file_truncate(S_or_A, Length, Ret) :-
+	check_open_stream_or_alias(S_or_A,fmt_truncate/3,1,output,Stream),
+	file_function(FILE_TRUNCATE, Stream, Length, Ret, _E, _,_).
 file_pos(IOport, Pos) :-
 	file_function(FILE_POS, IOport, Pos_1),
 	(Pos_1 < 0 -> Pos = end_of_file ; Pos = Pos_1).
@@ -353,6 +355,7 @@ fails otherwise. If variable, backtracks through the valid streams.
 */
 
 %-----
+
 is_valid_stream(Stream) :- 
 	is_valid_stream(Stream,_).
 
@@ -361,6 +364,7 @@ is_valid_stream(Stream,Mode) :-
 	(M =:= 0 -> Mode = input ; Mode = output).
 
 %-----
+
 check_stream_or_alias(S_or_A,Predicate,Arg,Stream) :- 
 	(integer(S_or_A) -> 
 	    Stream = S_or_A
@@ -369,7 +373,9 @@ check_stream_or_alias(S_or_A,Predicate,Arg,Stream) :-
 	        ('_$alias'(S_or_A,Stream) -> 
 		    true 
 		;   domain_error(stream_or_alias,S_or_A,Predicate,Arg) )
-	    ;  domain_error(stream_or_alias,S_or_A,Predicate,Arg) ) ).
+	    ;  (var(S_or_A) -> 
+	         instantiation_error(Predicate,Arg)
+	         ;  domain_error(stream_or_alias,S_or_A,Predicate,Arg) ) ) ).
 
 '_$alias'(userin,0).
 '_$alias'(user_in,0).
@@ -379,7 +385,9 @@ check_stream_or_alias(S_or_A,Predicate,Arg,Stream) :-
 '_$alias'(user_output,1).
 '_$alias'(In,Out):-  '_$alias_dynamic'(In,STREAM_ALIAS,Out).
 
+:- import (index)/2 from standard.
 :- dynamic '_$alias_dynamic'/3.
+:- index('_$alias_dynamic'/3,[1,3]).
 :- thread_shared '_$alias_dynamic'/3.
 
 add_aliases_flag_error([],_Type,_Obj,Flag):- (var(Flag) -> Flag = 0 ; true).
@@ -405,6 +413,7 @@ add_alias(Alias,Type,Stream,Predicate):-
   	   permission_error(create,alias,Alias,Predicate)
 	 ; asserta('_$alias_dynamic'(Alias,Type,Stream)).
 
+:- export '_$alias_dynamic'/3.
 get_alias(main,THREAD_ALIAS,0):- !.
 get_alias(Alias,Type,Stream):- 
 	'_$alias_dynamic'(Alias,Type,Stream).
@@ -458,7 +467,7 @@ current_stream_or_alias(S_or_A,Stream):-
 print_openfiles:- file_function(PRINT_OPENFILES,_,_,_,_,_,_).
 
 peek_code(S_or_A,Code):- 
-	check_open_stream_or_alias(S_or_A,at_end_of_file/1,1,_Mode,Str),
+	check_open_stream_or_alias(S_or_A,peek_code/1,1,_Mode,Str),
 	file_function(FILE_PEEK,Str,Ret,_Y,_Z, _,_),
 	Ret = Code.
 
@@ -469,7 +478,7 @@ peek_code(Code):-
 
 % TLS: need char_conversion table.
 peek_char(S_or_A,Char):- 
-	check_open_stream_or_alias(S_or_A,at_end_of_file/1,1,_Mode,Str),
+	check_open_stream_or_alias(S_or_A,peek_char/1,1,_Mode,Str),
 	file_function(FILE_PEEK,Str,Ret,_Y,_Z, _,_),
 	(Ret >= 0 -> 
 	    atom_codes(Char,[Ret])
