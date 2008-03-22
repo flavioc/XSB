@@ -144,7 +144,8 @@ inline static xsbBool file_function(CTXTdecl)
     }
     break;
   case FILE_TRUNCATE: /* file_function(2,+IOport,+Length,-Ret,_) */
-    size = ptoc_int(CTXTc 3);
+    size = iso_ptoc_int_arg(CTXTc 3,"file_truncate/3", 2);
+    //    size = ptoc_int(CTXTc 3);
     io_port = ptoc_int(CTXTc 2);
     XSB_STREAM_LOCK(io_port);
     SET_FILEPTR(fptr, io_port);

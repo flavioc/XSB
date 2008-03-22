@@ -760,7 +760,8 @@ DllExport void call_conv xsb_abort(char *description, ...)
   va_list args;
 
   va_start(args, description);
-  strcpy(message, "++Error[XSB]: [Runtime/C] ");
+  //  strcpy(message, "++Error[XSB]: [Runtime/C] ");
+  strcpy(message, " ");
   vsprintf(message+strlen(message), description, args);
   if (message[strlen(message)-1] == '\n') message[strlen(message)-1] = 0;
   va_end(args);

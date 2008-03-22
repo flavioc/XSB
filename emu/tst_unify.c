@@ -132,7 +132,8 @@ static void consumption_error(CTXTdeclc char *string) {
   fprintf(stderr,
 	  "(* Note: this template may be partially instantiated *)\n");
 #ifdef DEBUG_ASSERTIONS
-  xsb_error(string);
+
+  //  xsb_error(string);
   /* Get Consumer SF from the CPS, using the ptr to AnsTmplt */
   {
     VariantSF pSF;
