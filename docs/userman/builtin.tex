@@ -349,7 +349,12 @@ interned atom itself is not affected.
 
 {\bf Error Cases}
 \bi
-\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term or alias.
+\item 	{\tt Stream\_or\_alias} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item {\tt Stream\_or\_alias} is neither a variable, nor a a stream
+  term nor an alias.  
 \bi
 \item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
 \ei
@@ -383,8 +388,12 @@ Behaves as {\tt close(Stream\_or\_alias,[force(false)])}.
 
 {\bf Error Cases}
 \bi
-\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term
-or alias.
+\item 	{\tt Stream\_or\_alias} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item {\tt Stream\_or\_alias} is neither a variable, nor a a stream
+  term nor an alias.  
 \bi
 \item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
 \ei
@@ -399,8 +408,12 @@ or alias.
 
 {\bf Error Cases}
 \bi
-\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term
-or alias.
+\item 	{\tt Stream\_or\_alias} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item {\tt Stream\_or\_alias} is neither a variable, nor a a stream
+  term nor an alias.  
 \bi
 \item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
 \ei
@@ -473,13 +486,18 @@ atom}), no action is taken.
 
 {\bf Error Cases}
 \bi
-\item 	{\tt Stream} is not instantiated to a stream term or alias.
+\item 	{\tt Stream\_or\_alias} is a variable
 \bi
-\item 	{\tt domain\_error(stream,Stream)}
+\item {\tt instantiation\_error}
+\ei
+\item {\tt Stream\_or\_alias} is neither a variable, nor a a stream
+  term nor an alias.  
+\bi
+\item 	{\tt domain\_error(Stream\_or\_alias,Stream)}
 \ei
 \item 	{\tt Stream} is not associated with an open output stream 
 \bi
-\item 	{\tt existence\_error(stream,Stream)}
+\item 	{\tt existence\_error(Stream\_or\_alias,Stream)}
 \ei
 \item 	Flushing (i.e. {\tt fflush()}) returns an error.
 \bi
@@ -503,8 +521,12 @@ placed from the origin.
 
 {\bf Error Cases}
 \bi
-\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term
-or alias.
+\item 	{\tt Stream\_or\_alias} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item {\tt Stream\_or\_alias} is neither a variable, nor a a stream
+  term nor an alias.  
 \bi
 \item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
 \ei
@@ -531,8 +553,12 @@ stream.
 
 {\bf Error Cases}
 \bi
-\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term
-or alias
+\item 	{\tt Stream\_or\_alias} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item {\tt Stream\_or\_alias} is neither a variable, nor a a stream
+  term nor an alias.  
 \bi
 \item 	{\tt domain\_error(stream,Stream\_or\_alias)}
 \ei
@@ -625,6 +651,32 @@ is used.  There are minor semantic differences between these two
 system calls, which are reflected by the behavior of {\tt
 file\_truncate/2} on different platforms.
 
+{\bf Error Cases}
+\bi
+\item 	{\tt Stream\_or\_alias} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item {\tt Stream\_or\_alias} is neither a variable, nor a a stream
+  term nor an alias.  
+\bi
+\item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
+\ei
+\item 	{\tt Stream\_or\_alias} is not associated with an open stream
+\bi
+\item 	{\tt existence\_error(stream,Stream\_or\_alias)}
+\ei
+\item {\tt Length} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item {\tt Length} is neither a variable nor an integer
+\bi
+\item 	{\tt type\_error(integer,Length)}
+\ei
+\ei
+\comment{Not checking for uninstantiated Return or for negative Length}
+
 \standarditem{tmpfile\_open(-Stream)}{tmpfile\_open/1}
     Opens a temporary file with a unique filename. The file is deleted
     when it is closed or when the program terminates.
@@ -634,31 +686,47 @@ file\_truncate/2} on different platforms.
 \subsection{DEC-IO Style File Handling}
 
 \begin{description}
-\standarditem{see(+F)}{see/1}
-    Makes file {\tt F} the current input stream. 
-    \begin{itemize}
-    \item If there is an open input stream associated with the file that 
-          has {\tt F} as its file name, and that stream was opened previously
-	  by {\tt see/1}, then it is made the current input stream.
-    \item Otherwise, the specified file is opened for input and made the
-          current input stream. If the file does not exist, {\tt see/1} 
-	  fails.
-    \end{itemize}
-    Also note that different file names (that is, names which do not unify) 
-    represent different input streams (even if these different file names 
-    correspond to the same file).
+\standarditem{see(+File\_or\_stream)}{see/1}
+%
+Makes {\tt File\_or\_stream} the current input stream. 
+%
+\begin{itemize}
+\item If there is an open input stream associated with the file that
+  has {\tt File\_or\_stream} as its file name, and that stream was
+  opened previously, then it is made the current input stream.
+%
+\item Otherwise, the specified file is opened for input and made the
+  current input stream. If the file does not exist, {\tt see/1} throws
+  a permission error.
+\end{itemize}
+%
+Note that {\tt see/1} is incompatable with ISO aliases -- calling {\tt
+  see(Alias)} with an ISO alias will try to open a file named {\tt
+  Alias} rather than using the alias.  Also note that different file
+names (that is, names which do not unify) represent different input
+streams (even if these different file names correspond to the same
+file).
 
 {\bf Error Cases}
-    \begin{description}
-    \item[{\tt permission\_error(open,file,F)}]
-    	File {\tt F} is directory or file is not readable. 
-    \item[{\tt instantiation\_error}]
-    	{\tt F} is not instantiated at the time of call. 
-    \item[{\tt existence\_error(stream\_or\_path,F)}]
-    	File {\tt F} does not exist. 
-    \item[{\tt domain\_error(stream\_or\_path,F)}]
-    	{\tt F} is not an atomic file identifier or stream identifier.
-    \end{description}
+\bi
+\item  {\tt File\_or\_stream} is  a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item {\tt File\_or\_stream} is neither a variable nor an atomic file identifier nor
+  a stream identifier.
+\bi
+\item {\tt domain\_error(stream\_or\_path,F)}
+\ei
+\item File {\tt File\_or\_stream} is directory or file is not readable. 
+\bi
+\item {\tt permission\_error(open,file,F)}
+\ei
+\item File {\tt File\_or\_stream} does not exist. 
+\bi
+\item {\tt existence\_error(stream\_or\_path,F)}
+\ei
+\ei
 
 \standarditem{seeing(?F)}{seeing/1}
     {\tt F} is unified with the name of the current input stream.
@@ -689,14 +757,25 @@ file\_truncate/2} on different platforms.
     essentially that of {\tt tell/1}.
 
 {\bf Error Cases}
-    \begin {description}
-    \item[{\tt permission\_error(write,file,F)}]
-	File {\tt F} does not have write permission, or is a directory.
-    \item[{\tt instantiation\_error}]
-	{\tt F} is uninstantiated.
-    \item[{\tt domain\_error(stream\_or\_path,F)}]
-    	{\tt F} is not an atomic file identifier
-    \end{description}
+\bi
+\item  {\tt File\_or\_stream} is  a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item {\tt File\_or\_stream} is neither a variable nor an atomic file identifier nor
+  a stream identifier.
+\bi
+\item {\tt domain\_error(stream\_or\_path,F)}
+\ei
+\item File {\tt File\_or\_stream} is directory or file is not readable. 
+\bi
+\item {\tt permission\_error(open,file,F)}
+\ei
+\item File {\tt File\_or\_stream} does not exist. 
+\bi
+\item {\tt existence\_error(stream\_or\_path,F)}
+\ei
+\ei
 
 \standarditem{telling(?F)}{telling/1}
     {\tt F} is unified with the name of the current output stream.
@@ -728,12 +807,16 @@ file\_truncate/2} on different platforms.
 \ournewitem{nl}{ISO}\index{\texttt{nl/0}}
 A new line character is sent to the current output stream.
 
-\ournewitem{nl(+Stream)}{ISO}\index{\texttt{nl/1}}
+\ournewitem{nl(+Stream\_or\_alias)}{ISO}\index{\texttt{nl/1}}
 A new line character is sent to the designated output stream.
 
 {\bf Error Cases}
 \bi
-\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term or alias.
+\item 	{\tt Stream\_or\_alias} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item 	{\tt Stream\_or\_alias} is neither a variable nor a stream term nor an alias.
 \bi
 \item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
 \ei
@@ -754,7 +837,11 @@ A new line character is sent to the designated output stream.
 
 {\bf Error Cases}
 \bi
-\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term or alias.
+\item 	{\tt Stream\_or\_alias} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item 	{\tt Stream\_or\_alias} is neither a variable nor a stream term nor an alias.
 \bi
 \item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
 \ei
@@ -788,7 +875,11 @@ Behaves as {\tt get\_char/2}, but reads from the current input stream.
 
 {\bf Error Cases}
 \bi
-\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term or alias.
+\item 	{\tt Stream\_or\_alias} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item 	{\tt Stream\_or\_alias} is neither a variable nor a stream term nor an alias.
 \bi
 \item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
 \ei
@@ -814,12 +905,13 @@ Behaves as {\tt get\_code/2}, but reads from the current input stream.
 \ei
 \ei
 
-\standarditem{get0(?N)}{get0/1} 
-    {\tt N} is the ASCII code of the next character read from the
-    current input stream (regarded as a text stream). If the current
-    input stream reaches its end of file, a {\tt -1} is returned.
-    This predicate does not check for errors, so that it is faster
-    (and less safe) than, e.g. {\tt get\_code/1}.
+\standarditem{get0(?N)}{get0/1}
+%
+{\tt N} is the ASCII code of the next character read from the current
+input stream (regarded as a text stream). If the current input stream
+reaches its end of file, a {\tt -1} is returned.  This predicate does
+not check for errors, so that it is faster (and potentially less safe)
+than, e.g. {\tt get\_code/1}.
 
 \standarditem{get(?N)}{get/1}
     {\tt N} is the ASCII code of the next non-blank printable
@@ -838,7 +930,11 @@ unified with -1 if an end of file condition is detected.
 
 {\bf Error Cases}
 \bi
-\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term or alias.
+\item 	{\tt Stream\_or\_alias} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item 	{\tt Stream\_or\_alias} is neither a variable nor a stream term nor an alias.
 \bi
 \item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
 \ei
@@ -874,7 +970,11 @@ unified with -1 if an end of file condition is detected.
 
 {\bf Error Cases}
 \bi
-\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term or alias.
+\item 	{\tt Stream\_or\_alias} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item 	{\tt Stream\_or\_alias} is neither a variable nor a stream term nor an alias.
 \bi
 \item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
 \ei
@@ -910,7 +1010,11 @@ Puts the ASCII character {\tt Char} to {\tt Stream\_or\_alias}.
 
 {\bf Error Cases}
 \bi
-\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term or alias.
+\item 	{\tt Stream\_or\_alias} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item 	{\tt Stream\_or\_alias} is neither a variable nor a stream term nor an alias.
 \bi
 \item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
 \ei
@@ -944,7 +1048,11 @@ Stream\_or\_alias}.
 
 {\bf Error Cases}
 \bi
-\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term or alias.
+\item 	{\tt Stream\_or\_alias} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item 	{\tt Stream\_or\_alias} is neither a variable nor a stream term nor an alias.
 \bi
 \item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
 \ei
@@ -1043,7 +1151,11 @@ file indicator.
 
 {\bf Error Cases}
 \bi
-\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term or alias.
+\item 	{\tt Stream\_or\_alias} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item 	{\tt Stream\_or\_alias} is neither a variable nor a stream term nor an alias.
 \bi
 \item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
 \ei
@@ -1072,7 +1184,11 @@ Behaves as {\tt read\_canonical/1}, but reads from {\tt Stream\_or\_alias}.
 
 {\bf Error Cases}
 \bi
-\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term or alias.
+\item 	{\tt Stream\_or\_alias} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item 	{\tt Stream\_or\_alias} is neither a variable nor a stream term nor an alias.
 \bi
 \item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
 \ei
@@ -1127,7 +1243,11 @@ the input stream is explicitly designated using the first argument.
 {\bf Error Cases} are the same as {\tt read\_term/2}, but with the
 additional errors that may arise in stream checking.
 \bi
-\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term or alias.
+\item 	{\tt Stream\_or\_alias} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item 	{\tt Stream\_or\_alias} is neither a variable nor a stream term nor an alias.
 \bi
 \item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
 \ei
@@ -1256,8 +1376,11 @@ Behaves as {\tt write\_term/2}, but writes to {\tt Stream\_or\_alias}.
 {\bf Error Cases} are the same as {\tt write\_term/2} but with these
 additions.
 \bi
-\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term
-or alias.
+\item 	{\tt Stream\_or\_alias} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item 	{\tt Stream\_or\_alias} is neither a variable nor a stream term nor an alias.
 \bi
 \item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
 \ei
@@ -1309,7 +1432,11 @@ anonymous variable \verb|'_'|.
 {\bf Error Cases} are the same as {\tt read\_term/2}, but with the
 additional errors that may arise in stream checking.
 \bi
-\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term or alias.
+\item 	{\tt Stream\_or\_alias} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item 	{\tt Stream\_or\_alias} is neither a variable nor a stream term nor an alias.
 \bi
 \item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
 \ei
@@ -1337,7 +1464,11 @@ producing an error.
 
 {\bf Error Cases} 
 \bi
-\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term or alias.
+\item 	{\tt Stream\_or\_alias} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item 	{\tt Stream\_or\_alias} is neither a variable nor a stream term nor an alias.
 \bi
 \item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
 \ei
@@ -1390,7 +1521,11 @@ using the first argument.
 
 {\bf Error Cases} 
 \bi
-\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term or alias.
+\item 	{\tt Stream\_or\_alias} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item 	{\tt Stream\_or\_alias} is neither a variable nor a stream term nor an alias.
 \bi
 \item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
 \ei
@@ -1432,8 +1567,11 @@ using the first argument.
 {\bf Error Cases} are the same as {\tt write\_term/2} but with these
 additions.
 \bi
-\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term
-or alias.
+\item 	{\tt Stream\_or\_alias} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item 	{\tt Stream\_or\_alias} is neither a variable nor a stream term nor an alias.
 \bi
 \item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
 \ei
@@ -1566,46 +1704,125 @@ As above, but writes to {\tt STDMSG} the standard stream for messages.
   should use size modifiers in format strings ({\it e.g.}, {\tt \%2000s}),
   if such long strings might occur in the input.
 
+% Maybe some other error cases, who knows?
+{\bf Error Cases}
+\bi
+\item 	{\tt Stream\_or\_alias} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item 	{\tt Stream\_or\_alias} is neither a variable nor a stream term nor an alias.
+\bi
+\item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
+\ei
+\item 	{\tt Stream\_or\_alias} is not associated with an open output stream
+\bi
+\item 	{\tt existence\_error(stream,Stream\_or\_alias)}
+\ei
+\ei
+
+If the number of arguments in {\tt Term} is greater than the number of
+conversion specifiers in {\tt Fmt} no error is thrown, but a warning
+is issued.
+
 \standarditem{fmt\_write(+Fmt,+Term)}{fmt\_write/2}
 \vspace{-7mm}
-\standarditem{fmt\_write(+Stream,+Fmt,+Term)}{fmt\_write/3}
-    This predicate provides a routine for writing data to the current
-    output file (which must have been already opened by using {\tt
-    tell/1}) according to a C format, as used in the C function {\tt
-    printf}.  {\tt Fmt} must be a string of characters (enclosed in ")
-    representing the format that will be passed to the C call to {\tt
-    printf}.  See the C documentation for {\tt printf} for the meaning
-    of this string.  The usual alphabetical C escape characters ({\it
-    e.g.}, $\backslash n$) are recognized, but not the octal or the
-    hexadecimal ones.
+\standarditem{fmt\_write(+Stream\_or\_alias,+Fmt,+Term)}{fmt\_write/3} 
+%
+These predicates provide routines for writing formatted data to a
+given output stream ({\tt fmt\_write/3}) or the current output stream
+({\tt fmt\_write/2}).
 
-    In addition to the usual C conversion specifiers, {\tt \%S} is also
-    allowed. The corresponding argument can be any Prolog term. This
-    provides an easy way to print the values of Prolog variables, etc.  
-    Also {\tt \%!} is supported and indicates that the corresponding argument
-    is to be ignored and will generate nothing in the output.
-
-    Another difference with C is that, unlike most C compilers, XSB insists
-    that a single {\tt \%} in the format string signifies format conversion
-    specification. (Some C compilers might output {\tt \%} if it is not
-    followed by a valid type conversion spec.) So, to output {\tt \%}
-    you must type {\tt \%\%}.
+{\tt Fmt} should be a Prolog character list (string) or atom.  A
+Prolog character list is preferred, as space can be more easily
+reclaimed for character lists than for atoms.  {\tt Term} is a Prolog
+term ({\it e.g.}, {\tt args(X,Y,Z)}) whose arguments will be
+output. The number of arguments in {\tt Term} should equal the number
+of conversion specifiers in {\tt Fmt}.  The functor symbol of {\tt
+  Term} is ignored~\footnote{In the case where {\tt Fmt} contains only
+  a single conversion specifier, {\tt Term} may be a string, integer
+  or a float, and is considered to be equivalent to specifying {\tt
+    arg(Term)}.}.
     
-    Format can also be an atom, but then escape sequences are not
-    recognized.
+Allowable syntaxes for {\tt Fmt} reflect the syntax of the C function
+{\tt printf()} on a given platform, with the following exceptions
+%
+\bi
+\item The usual alphabetical C escape characters ({\it e.g.},
+  $\backslash n$) are recognized, but not the octal or the hexadecimal
+  ones.
+\item {\tt \%S} is supported, in addition to the usual C conversion
+  specifiers.  The corresponding argument can be any Prolog term. This
+  provides an easy way to print the values of Prolog variables, etc.
+\item {\tt \%!} is supported and indicates that the corresponding
+  argument is to be ignored and will generate nothing in the output.
+\item A single {\tt \%} in the format string must be followed by a
+  conversion operator (e.g. {\tt d}, {\tt s}, etc.). (Some C compilers
+  output {\tt \%} if the percentage character is not followed by a
+  valid type conversion spec.)  However, to output {\tt \%}, {\tt
+    fmt\_write} must contain {\tt \%\%}.
+\ei    
+%
+{\bf Example}
+{\small
+\begin{verbatim}
+| ?- fmt_write("%d %f %s %S \n",args(1,3.14159,ready,hello(world))).
+1 3.141590 ready hello(world)
 
-    {\tt Term} is a term ({\it e.g.}, {\tt args(X,Y,Z)}) whose arguments
-    will be output. The functor symbol of {\tt Term} is ignored.
-    
-    Special syntactic sugar is provided for the following cases: If {\tt
-      Term} is a variable, {\tt X}, then it is ignored and only the format
-    string is printed. If {\tt Term} is a string, integer or a float, then
-    it is assumed that this is the only argument to be printed, {\it i.e.},
-    it is equivalent to specifying {\tt arg(Term)}.
+yes
+\end{verbatim}
+}
+%
+XSB also offers an alternate version of formatted output in the {\tt
+  format} library described in volume 2.  While not as efficient as
+{\tt fmt\_write/[2,3]}, the {\tt format} library is more compatable
+with the formatted output found in other Prologs.
 
-    If the number of format specifiers is greater than the number of
-    arguments to be printed, an error is issued. If the number of arguments
-    is greater, then a warning is issued.
+{\bf Error Cases}
+\bi
+\item 	{\tt Stream\_or\_alias} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item 	{\tt Stream\_or\_alias} is neither a variable nor a stream term nor an alias.
+\bi
+\item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
+\ei
+\item 	{\tt Stream\_or\_alias} is not associated with an open output stream
+\bi
+\item 	{\tt existence\_error(stream,Stream\_or\_alias)}
+\ei
+\item {\tt Fmt} is uninstantiated or not a character string or atom
+\bi
+\item   {\tt type\_error('character string or atom',Fmt)}
+\ei
+\item A format specifier in {\tt Fmt} and its corresponding argument
+  in {\tt Term} are of incompatable types.
+\bi
+\item   {\tt misc\_error}
+\ei
+\item {\tt Term} contains fewer arguments than {\tt Fmt} has format
+  specifiers or {\tt Term} is uninstantiated
+\bi
+\item   {\tt misc\_error}
+\ei
+\ei
+
+If the number of arguments in {\tt Term} is greater than the number of
+conversion specifiers in {\tt Fmt} no error is thrown, but a warning
+is issued.
+
+{\bf Caution for 64-bit Platforms}
+%
+As discussed, {\tt fmt\_write/[2,3]} calls {\tt printf()} and inherits
+the flexibility of that function, but also its ``features''.  One of
+these features is that in most 64-bit platforms, large integers that
+behave perfectly well otherwise are not printed out properly by {\tt
+  printf()} with the {\tt \%d} format -- rather another format string
+needs to be used (such as {\tt \%ld} on Linux).  {\tt
+  fmt\_write/[1,2]} recognizes the {\tt \%ld} option and passes it
+onto {\tt fprintf()}, but the proper format string for 64-bit integers
+may be different on other platforms.
 
 \standarditem{fmt\_write\_string(-String,+Fmt,+Term)}{fmt\_write\_string/3}
     This predicate works like the C function {\tt sprintf}. It takes the
@@ -1640,8 +1857,11 @@ Acts as does {\tt file\_read\_line\_list}, but uses {\tt Stream\_or\_atom}.
 
 {\bf Error Cases} 
 \bi
-\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term
-or alias.
+\item 	{\tt Stream\_or\_alias} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item 	{\tt Stream\_or\_alias} is neither a variable nor a stream term nor an alias.
 \bi
 \item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
 \ei
@@ -1661,8 +1881,11 @@ Like {\tt file\_read\_line\_atom/1} but reads from {\tt Stream\_or\_alias}.
 %
 {\bf Error Cases} 
 \bi
-\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term
-or alias.
+\item 	{\tt Stream\_or\_alias} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item 	{\tt Stream\_or\_alias} is neither a variable nor a stream term nor an alias.
 \bi
 \item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
 \ei
@@ -1672,31 +1895,36 @@ or alias.
 \ei
 \ei
 
-\ourmoditem{file\_write\_line(+String, +Offset)}{file\_io}
-\index{\texttt{file\_write\_line/2}}
-   Write {\tt String} beginning with character {\tt Offset} to the
-   current output stream. {\tt String} can be an atom or a list of
-   ASCII character codes. This does \emph{not} put the newline
-   character at the end of the string (unless {\tt String} already had
-   this character). Note that escape sequences, like \verb|\n|, are
-   recognized if {\tt String} is a character list, but are output as
-   is if {\tt String} is an atom.
-
+\ourrepeatmoditem{file\_write\_line(+String, +Offset)}{file\_io}
 \ourmoditem{file\_write\_line(+Stream\_or\_alias, +String, +Offset)}{file\_io}
+\index{\texttt{file\_write\_line/2}}
 \index{\texttt{file\_write\_line/3}}
-Like \verb|file_write_line/2|, but output goes to {\tt
-Stream\_or\_alias}.  
+%
+These predicates write {\tt String} beginning with character {\tt
+  Offset} to the current output stream. {\tt String} can be an atom or
+a list of ASCII character codes. This does \emph{not} put the newline
+character at the end of the string (unless {\tt String} already had
+this character). Note that escape sequences, like \verb|\n|, are
+recognized if {\tt String} is a character list, but are output as is
+if {\tt String} is an atom.
 
 {\bf Error Cases}
 \bi
-\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term
-or alias.
+\item 	{\tt Stream\_or\_alias} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item 	{\tt Stream\_or\_alias} is neither a variable nor a stream term nor an alias.
 \bi
 \item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
 \ei
 \item 	{\tt Stream\_or\_alias} is not associated with an open input stream
 \bi
 \item 	{\tt existence\_error(stream,Stream\_or\_alias)}
+\ei
+\item {\tt String} is neither a Prolog character list not an atom
+\bi
+\item {\tt misc\_error}
 \ei
 \ei
 
@@ -1748,8 +1976,11 @@ read\_getbuf\_list} or another predicate in this case.
 
 {\bf Error Cases} 
 \bi
-\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term
-or alias.
+\item 	{\tt Stream\_or\_alias} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item 	{\tt Stream\_or\_alias} is neither a variable nor a stream term nor an alias.
 \bi
 \item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
 \ei
@@ -1773,8 +2004,11 @@ ASCII characters.
 
 {\bf Error Cases} 
 \bi
-\item 	{\tt Stream\_or\_alias} is not instantiated to a stream term
-or alias.
+\item 	{\tt Stream\_or\_alias} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item 	{\tt Stream\_or\_alias} is neither a variable nor a stream term nor an alias.
 \bi
 \item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
 \ei

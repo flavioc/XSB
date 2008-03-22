@@ -2206,13 +2206,18 @@ text files are processed more than binary files.
 % public/private
 
 Most other differences with the core standard are mentioned under
-portability notes for the various predicates.  However, we do not
+portability notes for the various predicates.  
+
+\comment{
+% We're halfway ok on this by now.
+However, we do not
 always note when there are deviations in the types of errors reported
 by predicates.  While XSB throws errors whenever the standard throws
 errors, and vice-versa sometimes XSB may throw a different error than
 specified by the standard.  This is often due to an effort in XSB to
 minimize the amount of error checking performed, and should rarely if
 ever cause a problem for applciations.
+}
 
 XSB supports most new features mentioned in the revisions to the core
 standard~\cite{ISO-Revision}, including {\tt call\_cleanup/2} and
