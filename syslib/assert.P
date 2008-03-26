@@ -321,20 +321,15 @@ dynamic(Spec):-
 	    instantiation_error(dynamic,1,nonvar)
 	 ;  dynamic_1(Spec) ).
 
+% TLS added [H|T] -- it had been core-dumping on this
 dynamic_1((P1,P2)) :- !, dynamic(P1), dynamic(P2).
+dynamic_1([P1,P2]) :- !, dynamic(P1), dynamic(P2).
 dynamic_1(Spec) :- 
-	mpa_to_skel(Spec,Head), !,
-%	conpsc(Head,Psc),
-%	psc_type(Psc,SymType),
-%	(SymType \== T_DYNA
-%	 ->	psc_set_ep(Psc,4), % set to addr of fail instruction
-%		psc_set_type(Psc,T_DYNA)
-%	 ;	true
-%	),
-	dynamic_code_function(CONVERT_TO_DYNA, Head,_Prref,_,_),!.
-%	convert_to_dyna(Head,_,'dynamic/1'),!.
-dynamic_1(Spec) :- 
-	type_error(comma_list_callable,Spec,dynamic,1).
+	mpa_to_skel(Spec,Head), 
+	dynamic_code_function(CONVERT_TO_DYNA, Head,_Prref,'dynamic/1',1).
+% Not needed: error checking handled through dynamic code function
+%dynamic_1(Spec) :- 
+%	type_error(comma_list_callable,Spec,dynamic,1).
 
 /* Should no longer be needed now that convert to dyna is in C */
 convert_to_dyna(PHead,Prref,ErrPred) :-
@@ -658,7 +653,7 @@ t_assert_1((Head :- Body), _Flag) :- t_assert_exit((Head :- Body)).
 t_assert_1(Clause, Flag) :- 
 	conpsc(Clause, PSC),
 	psc_arity(PSC, Arity),
-	dynamic_code_function(CONVERT_TO_DYNA, Clause,Prref,_,_),
+	dynamic_code_function(CONVERT_TO_DYNA, Clause,Prref,t_assert,_),
 %	convert_to_dyna(Clause,Prref,trie_assert/1),
 %	writeln(clause(Clause) +psc(PSC) +arity(Arity) +prref(Prref)),
 	trie_assert_builtin(Clause,PSC,Arity,Prref,Flag).
@@ -698,7 +693,7 @@ t_assert_2(Clause, Flag) :-
 	conpsc(Clause, PSC),
 	psc_arity(PSC, Arity),
 %	db_get_prref(PSC,Prref),
-	dynamic_code_function(CONVERT_TO_DYNA, Clause,Prref,_,_),
+	dynamic_code_function(CONVERT_TO_DYNA, Clause,Prref,t_assert,_),
 %	convert_to_dyna(Clause,Prref,trie_assert/1),
 %	writeln(clause(Clause) +psc(PSC) +arity(Arity) +prref(Prref)),
 	trie_assert_builtin(Clause,PSC,Arity,Prref,Flag).

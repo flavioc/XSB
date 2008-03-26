@@ -801,7 +801,7 @@ index(Ps,Arg,S) :-
 	check_nonvar(Ps,(index)/3,1),
 	check_nonneg_integer(S,(index)/3,3),
 	check_nonvar(Arg,(index)/3,1),
-	check_index(Arg),
+	check_index(Ps,Arg),
 	add_index(Ps,Arg,S),!.
 index(Ps,_Arg,_S) :-
 	type_error(predicate_indicator,Ps,(index)/3,1).
@@ -811,29 +811,37 @@ index(Ps,Arg) :-
 	check_nonvar(Arg,(index)/2,2),
 	(Arg == trie
 	 ->	add_trie_index(Ps)
-	 ;	check_index(Arg),add_index(Ps,Arg,0)
+	 ;	check_index(Ps,Arg),add_index(Ps,Arg,0)
 	),!.
 index(Ps,_Arg) :-
 	type_error(predicate_indicator,Ps,(index)/2,1).
 
-check_index(X):-
+check_index(Ps,X):-
+	(Ps = _/A -> Arity = A ; functor(Ps,_,Arity)),
 	(X = [_|_] -> 
-	    check_index_list(X)
-	  ; check_index_element(X) ).
+	    check_index_list(X,Arity)
+	  ; check_index_element(X,Arity) ).
 
-check_index_list([]).
-check_index_list([H|T]):- 
-	check_index_element(H),
-	check_index_list(T).
+check_index_list([],_Arity).
+check_index_list([H|T],Arity):- 
+	check_index_element(H,Arity),
+	check_index_list(T,Arity).
 
-check_index_element(X):- 
-	(integer(X),X >= 0,X < 255 -> 
+% doing the same check twice for error condition -- I'm not worrying
+% about efficiency for errors, just about reporting them cleanly.
+check_index_element(X,Arity):- 
+%	(integer(X),X >= 0,X < 255 -> 
+	(integer(X),X >= 0,X =< Arity -> 
 	    true
-	  ; (X = *(Y),check_index_element(Y) -> 
+	  ; (X = *(Y),check_index_element(Y,Arity) -> 
 	       true 
-                 ; (X = Y + Z, check_index_element(Y),check_index_element(Z) -> 
+                 ; (X = Y + Z, check_index_element(Y,Arity),check_index_element(Z,Arity) -> 
 		true
-	        ;   domain_error(indexElement,X,(index)/[1,2],2) ) ) ).
+	        ;   % must be an error
+		    (integer(X),X >= 0 -> 
+		       domain_error(indexElement,X,(index)/[1,2],2,
+		       'indexing element is larger than the arity of the predicate')
+		     ; domain_error(indexElement,X,(index)/[1,2],2) ) ) ) ).
 
 /* add tabling declaration */
 table(Ps) :- 
