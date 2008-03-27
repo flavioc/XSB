@@ -33,12 +33,13 @@ mean the following:
       soon as it is loaded in the system or when another module that is
       loaded in the system imports some predicates from module {\tt M}.
 
-      Note that due to the dynamic loading of \ourprolog, a module can be 
-      current even if it has not been loaded, and that some predicates of 
-      that module may not be defined. In fact, a module can be current even
-      if it does not exist.  This situation occurs when a predicate is 
-      improperly imported from a non-existent module.  Despite this, 
-      a module can never lose the property of being {\em current}.
+      Note that due to the dynamic loading of XSB, a module can be
+      current even if it has not been loaded, and that some predicates
+      of that module may not be defined. In fact, a module can be
+      current even if it does not exist.  This situation occurs when a
+      predicate is improperly imported from a non-existent module.
+      Despite this, a module can never lose the property of being {\em
+        current}.
 \end{itemize}
 
 \begin{description}
