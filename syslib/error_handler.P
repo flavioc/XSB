@@ -160,8 +160,12 @@ get_sys_error_description(error(misc_error,Msg), ExceptionDesc) :-
 	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Miscellaneous] ', Msg).
 get_sys_error_description(error(permission_error(Op,Obj_type,Culprit),Msg), 
 	                          ExceptionDesc) :-
+	(Culprit == '' -> 
 	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Permission (Operation) ',
-		     Op,' on ',Obj_type,': ',Culprit,'] ', Msg).
+		     Op,' on ',Obj_type,' ] ', Msg) 
+		 ; 
+	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Permission (Operation) ',
+		     Op,' on ',Obj_type,': ',Culprit,'] ', Msg) ).
 get_sys_error_description(error(representation_error(Flag),Msg), ExceptionDesc) :- 
 	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Representation (',Flag,')] ', Msg) .
 get_sys_error_description(error(resource_error(Flag),Msg), ExceptionDesc) :- 
@@ -430,6 +434,9 @@ check_atom_list1([H|T],Predicate,Arg):-
 	; 
 	    instantiation_error(Predicate,Arg)).
 
+permission_warning(Op,Obj_type,Culprit,Msg,PredInd):- 
+	warningln(('[Permission (Operation) ',Op,' on ',Obj_type,': ',Culprit,'] in ',
+	            PredInd,' ',Msg)).
 %-------------
 end_of_file.
 

@@ -796,22 +796,25 @@ ok_ops([OP|OPs]) :-		% This captures lists containing
 
 ok_op(OP) :- atom(OP), OP \== ','.
 
+/*------------------------------------------------------------------*/
 /* add index declaration */
 index(Ps,Arg,S) :- 
-	check_nonvar(Ps,(index)/3,1),
+	check_nonvar(Ps,(index)/2,1),
 	check_nonneg_integer(S,(index)/3,3),
-	check_nonvar(Arg,(index)/3,1),
+	check_ground(Arg,(index)/3,2),
 	check_index(Ps,Arg),
 	add_index(Ps,Arg,S),!.
 index(Ps,_Arg,_S) :-
-	type_error(predicate_indicator,Ps,(index)/3,1).
+	type_error(predicate_or_term_indicator,Ps,(index)/3,1).
 
 index(Ps,Arg) :-
 	check_nonvar(Ps,(index)/2,1),
-	check_nonvar(Arg,(index)/2,2),
+	check_ground(Arg,(index)/2,2),
 	(Arg == trie
 	 ->	add_trie_index(Ps)
-	 ;	check_index(Ps,Arg),add_index(Ps,Arg,0)
+	 ;	check_index(Ps,Arg),
+%	        check_indexing_permissions(Ps,Arg),
+	        add_index(Ps,Arg,0)
 	),!.
 index(Ps,_Arg) :-
 	type_error(predicate_indicator,Ps,(index)/2,1).
@@ -830,18 +833,62 @@ check_index_list([H|T],Arity):-
 % doing the same check twice for error condition -- I'm not worrying
 % about efficiency for errors, just about reporting them cleanly.
 check_index_element(X,Arity):- 
-%	(integer(X),X >= 0,X < 255 -> 
 	(integer(X),X >= 0,X =< Arity -> 
 	    true
 	  ; (X = *(Y),check_index_element(Y,Arity) -> 
 	       true 
-                 ; (X = Y + Z, check_index_element(Y,Arity),check_index_element(Z,Arity) -> 
-		true
-	        ;   % must be an error
-		    (integer(X),X >= 0 -> 
+                 ; (X = _ + _ + _ + _ -> 
 		       domain_error(indexElement,X,(index)/[1,2],2,
-		       'indexing element is larger than the arity of the predicate')
-		     ; domain_error(indexElement,X,(index)/[1,2],2) ) ) ) ).
+		       'Only 3 or fewer arguments are allowed in a joint index')
+                    ; (X = Y + Z, check_index_element(Y,Arity),check_index_element(Z,Arity) -> 
+		        true
+		      ;   % must be an error
+		        (integer(X),X >= 0 -> 
+			    domain_error(indexElement,X,(index)/[1,2],2,
+			    'indexing element is larger than the arity of the predicate')
+			; domain_error(indexElement,X,(index)/[1,2],2) ) ) ) ) ).
+
+/***************
+Not ready yet...
+
+:- import concat_atom/2, term_to_atom/2 from string.
+:- import xsb_sys_mutex_lock/1, xsb_sys_mutex_unlock/1 from thread.
+:- import mpa_to_skel/2 from file_op.
+:- import conpsc/2, db_build_prref/3  from machine.
+
+check_indexing_permissions(Spec,Index):- 
+	mpa_to_skel(Spec,Pcall),
+	((integer(Index) ; Index = [I],integer(I)) -> Type = static_ok ; Type = dynamic_only),
+	index_convert_to_dyna(Pcall,Type,Index).
+
+index_convert_to_dyna(PHead,Type,Index) :-
+	conpsc(PHead, PSC),
+	psc_type(PSC, SYMTYPE),
+	( SYMTYPE =:= T_DYNA ->			% ok, indexes will work 
+	    true
+	; SYMTYPE =:= T_ORDI  ->   	        % undefined, it's first clause 
+	   (Type = dynamic_only -> 
+	        term_to_atom(Index,Atom),
+	        warningln(('Making ',PHead,' dynamic to support index ',Atom)),
+		xsb_sys_mutex_lock(MUTEX_DYNAMIC),
+		db_build_prref(PSC,PHead,_Prref),
+		xsb_sys_mutex_unlock(MUTEX_DYNAMIC)
+	    ;   true)
+	; SYMTYPE =:= T_UDEF  ->    	        % unloaded, this is 1st clause 
+	        term_to_atom(Index,Atom),
+	        warningln(('Making ',PHead,' dynamic to support index ',Atom)),
+		xsb_sys_mutex_lock(MUTEX_DYNAMIC),
+		db_build_prref(PSC,PHead,_Prref),
+		xsb_sys_mutex_unlock(MUTEX_DYNAMIC)
+	; SYMTYPE =:= T_PRED ->		        % compiled, illegal 
+                functor(PHead, F, A),
+		permission_error(index,static,F/A,'index/[2,3]')
+	; 
+		type_error(callable,PHead,'index/[2,3]',1)
+	).
+****************/
+
+/*------------------------------------------------------------------*/
 
 /* add tabling declaration */
 table(Ps) :- 

@@ -109,13 +109,15 @@
 :- import file_open/3, file_open/4, file_close/2, file_get/2, file_put/2,
   check_stream_or_alias/4, check_open_stream_or_alias/5, add_aliases/4,
   fd2iostream/3      from file_io.
-:- import add_ops/3, op_priority/1, op_specifier/1, add_index/3,
+:- import add_ops/3, op_priority/1, op_specifier/1, add_index/3, 
   add_trie_index/1, add_table/1, add_incr_table/1, add_incr_dynamic/1, add_opaque/1 /* incremental */
      from file_op.
 :- import '_$hilog_symbol'/1, add_hilog_symbol/1 from hilogsym.
 :- import retract0/1, assertz/1, clause/2, retractall/1 from assert.
-:- import domain_error/4, domain_error/5, check_atom/3, check_nonvar/3,check_var/3, type_error/4,
-   permission_error/4, instantiation_error/3, instantiation_error/2, check_nonneg_integer/3, 
+:- import domain_error/4, domain_error/5, check_atom/3, check_nonvar/3,check_var/3, 
+	  check_ground/3,
+   type_error/4, permission_error/4, 
+   instantiation_error/3, instantiation_error/2, check_nonneg_integer/3, 
    misc_error/1
      from error_handler.
 :- import  check_nonvar_list/3 from error_handler.
@@ -130,7 +132,7 @@
 	  psc_name/2, psc_type/2, psc_set_shared/2,
 	  stat_set_flag/2, stat_flag/2, term_compare/3,
 	  stat_sta/1, stat_cputime/1, stat_walltime/1,str_len/2,
-          term_psc/2, term_new/2, term_new_mod/3, term_type/2  %%, close_open_tables/0
+          term_psc/2, term_new/2, term_new_mod/3, term_type/2
 	  from machine.
 :- import calln/3,calln/4,calln/5,calln/6,calln/7,calln/8,calln/9,calln/10,calln/11,calln/12 from machine.
 
@@ -139,13 +141,12 @@
      from machine. 
 :- import numbervars/1 from num_vars.
 :- import calculate_singleton/3 from singlton.
-:- import concat_atom/2 from string.
+:- import concat_atom/2  from string.
 :- import file_read/2, file_read/3 from xsb_read.
 :- import file_write0/2, file_write/2, file_write_prolog/2, 
 	  file_write_quoted/2, file_write_canonical/2, file_nl/1
      from xsb_writ.
 :- import xsb_thread_self/1 from thread.
 :- import findall/3 from setof.
-
 
 /* --------------------- end of file standard.H ----------------------- */

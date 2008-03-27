@@ -39,6 +39,7 @@
               default_error_handler/1,
 	      default_sys_error_handler/1,
    default_sys_error_handler_nonmain/4,
+   permission_warning/5,
    ccall_error_handler/1,
               get_sys_error_description/2,
               get_sys_error_description/3,
@@ -53,7 +54,7 @@
           stat_flag/2, xsb_backtrace/1 from machine.
 
 :- import ','/2 from standard.
- :- import atom/1, callable/1, messageln/2, number/1, 
+   :- import atom/1, callable/1, messageln/2, number/1, warningln/1,
            throw/1,integer/1 from standard.
 :- import concat_atom/2, term_to_atom/2 from string.
 :- import xsb_flag/2 from curr_sym.
