@@ -325,6 +325,29 @@ inline Cell iso_ptoc_callable(CTXTdeclc int regnum,const char * PredString)
   return FALSE;
 }
 
+/* TLS: this one is designed to pass through Prolog register offsets
+   in PredString and arg -- that way ptocs for them need only be done
+   if theres an error */
+inline Cell iso_ptoc_callable_arg(CTXTdeclc int regnum,int PredString,int arg)
+{
+  /* reg is global array in register.h in the single-threaded engine
+   * and is defined as a thread-specific macro in context.h in the
+   * multi-threaded engine
+   */  
+  register Cell addr = cell(reg+regnum);
+
+  /* XSB_Deref and then check the type */
+  XSB_Deref(addr);
+
+  if ((isconstr(addr) && !isboxed(addr)) || isstring(addr) || islist(addr))
+    return addr;
+  else if (isref(addr))  xsb_instantiation_error(CTXTc ptoc_string(CTXTc PredString),
+						 ptoc_int(CTXTc arg));
+  else xsb_type_error(CTXTc "callable",addr,ptoc_string(CTXTc PredString),
+		      ptoc_int(CTXTc arg));
+  return FALSE;
+}
+
 inline void iso_check_var(CTXTdeclc int regnum,const char * PredString) {
   register Cell addr = cell(reg+regnum);
 

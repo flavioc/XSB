@@ -3916,7 +3916,8 @@ xsbBool dynamic_code_function( CTXTdecl )
     Cell addr;
     byte termType;
 
-    addr = iso_ptoc_callable(CTXTc 2,"assert");
+    //    addr = iso_ptoc_callable_arg(CTXTc 2, ptoc_string(CTXTc 4),ptoc_int(CTXTc 5));
+    addr = iso_ptoc_callable_arg(CTXTc 2, 4,5);
     psc = term_psc(addr);
     termType = get_type(psc);
     //    printf("here %d %d %d\n",addr,psc,termType);
@@ -3931,9 +3932,9 @@ xsbBool dynamic_code_function( CTXTdecl )
     }
     else if (termType == T_PRED) 
       xsb_permission_error(CTXTc "modufy","static",ptoc_tag(CTXTc 2),
-			   ptoc_string(CTXTc 3),ptoc_int(CTXTc 4));
+			   ptoc_string(CTXTc 4),ptoc_int(CTXTc 5));
     else 
-      xsb_type_error(CTXTc "callable",ptoc_tag(CTXTc 2),ptoc_string(CTXTc 3),ptoc_int(CTXTc 4));
+      xsb_type_error(CTXTc "callable",ptoc_tag(CTXTc 2),ptoc_string(CTXTc 4),ptoc_int(CTXTc 5));
   }
     break;
 

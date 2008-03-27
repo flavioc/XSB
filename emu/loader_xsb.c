@@ -921,11 +921,17 @@ static byte *loader1(CTXTdeclc FILE *fd, int exp)
       /* set data to point to module's psc */
       set_data(ptr->psc_ptr, cur_mod);
       break;
-    case T_DYNA:
+    case T_DYNA: {
+      char culprit[255];
+
       unload_seg(seg_first_inst);
-      xsb_abort("[LOADER] Trying to compile a dynamic predicate, %s/%d",
-		name, arity);
+
+      sprintf(culprit,"dynamic predicate %s/%d",name,arity);
+      xsb_permission_error(CTXTc "compile",culprit,0,"consult",1);
+	//      xsb_abort("[LOADER] Trying to compile a dynamic predicate, %s/%d",
+	//		name, arity);
       return NULL;
+    }
     default:
       unload_seg(seg_first_inst);
       xsb_abort("[LOADER] The predicate %s/%d cannot be loaded", name, arity);

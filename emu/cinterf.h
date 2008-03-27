@@ -213,6 +213,9 @@ DllExport extern void iso_check_var(CTXTdeclc int reg_num,const char *PredString
 DllExport extern char* call_conv ptoc_abs(reg_num);
 DllExport extern Cell iso_ptoc_callable(CTXTdeclc int reg_num,const char *PredString);
 						/* defined in builtin.c */
+DllExport extern Cell iso_ptoc_callable_arg(CTXTdeclc int reg_num,
+					    const int PredString, const int arg);
+						/* defined in builtin.c */
 DllExport extern prolog_float call_conv ptoc_float(CTXTdeclc reg_num);
 						/* defined in builtin.c */
 DllExport extern prolog_int call_conv ptoc_int(CTXTdeclc reg_num);	
