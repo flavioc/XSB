@@ -170,7 +170,7 @@ get_sys_error_description(error(representation_error(Flag),Msg), ExceptionDesc) 
 	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Representation (',Flag,')] ', Msg) .
 get_sys_error_description(error(resource_error(Flag),Msg), ExceptionDesc) :- 
 	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Resource (',Flag,')] ', Msg) .
-get_sys_error_description(error(syntvax_error,Msg), ExceptionDesc) :- 
+get_sys_error_description(error(syntax_error,Msg), ExceptionDesc) :- 
 	ExceptionDesc =   ('++Error[XSB/Runtime/P]: [Syntax] ', Msg) .
 get_sys_error_description(error(system_error,Msg), ExceptionDesc) :- 
 	ExceptionDesc =   ('++Error[XSB/Runtime/P]: [System] ', Msg) .
