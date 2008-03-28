@@ -44,6 +44,12 @@ warning(Message) :-
 	ttywritenl(('++Warning[XSB]: [Compiler] ', Module, ': ', Message), STDWARN).
 
 error(Message) :- 
+	misc_error(Message).
+
+/*
+TLS No need for this any more -- lets use XSBs error mechanism
+
+error(Message) :- 
 	( conget('error occurred', 1)
 	->  true
 	;   conset('error occurred', 1)
@@ -53,7 +59,7 @@ error(Message) :-
 	->  sys_exit(1)
 	;   true
 	).
-
+*/
 
 :- dynamic('_$global_compiler_options'(_)).
 

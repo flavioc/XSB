@@ -41,7 +41,18 @@ mc(Modname, Options) :- compile(Modname, Modname, Options, _).
 %% For better warnings, we need to know the currently compiled module
 :- dynamic(current_compiled_module(_)).
 
-compile(Modname, Basename, Extension,Options, ExportList) :-
+compile(Modname,Basename,Extensions,Options,ExportList):- 
+	stat_flag(CURRENT_INPUT, Str),
+	catch(compile_internal(Modname,Basename,Extensions,Options,ExportList),E,
+	      (handle_compile_error(Basename,Str),throw(E))).
+
+% perhaps reset compiler erors to 0 in handler.
+handle_compile_error(Basename,Str):- 	      
+	str_cat(Basename,XSB_OBJ_EXTENSION_ATOM,OFile),
+	sys_unlink(OFile,_), 
+	see(Str).
+
+compile_internal(Modname, Basename, Extension,Options, ExportList) :-
 	file_names(Basename, Extension,PFile, HFile, OFile, AFile, DFile,
 		   SpecFile, TIFile, TableFile, _OptFile),
 	setoptions(Options), initialize,
@@ -74,12 +85,13 @@ compile(Modname, Basename, Extension,Options, ExportList) :-
 	check_possible_hilog_conflict(SymTab),
 	dispose_symtab( SymTab ),
 	( option(compile_off) -> print_result(Module) ; true ),
-	(conget('error occurred', 1) ->
-	    sys_unlink(OFile,_), 
-	    message(('The file ', OFile, ' is removed')),
-	    abort_quietly
-	; true
-	), !,
+%	(conget('error occurred', 1) ->
+%	    sys_unlink(OFile,_), 
+%	    message(('The file ', OFile, ' is removed')),
+%	    abort_quietly
+%	; true
+%	), 
+	!,
 	%% If --quietload, don't print Compiling/compiled messages
 	stat_flag(BANNER_CTL,BannerCtl1),
 	(   KeepQuiet1 is BannerCtl1 mod QUIETLOAD, KeepQuiet1 =:= 0
@@ -108,7 +120,7 @@ file_names(Basename, Ext,PFile, HFile, OFile, AFile, DFile,
 initialize :-
 	conset('table #', 0),
 	conset('syntax errors', 0),
-	conset('error occurred', 0),
+%	conset('error occurred', 0),
 	conset(ti_all, 0), conset(ti_all_off, 0),
 	conset('EDB Dep #', 2),
 	prepare.   /* uses globalset here! */
@@ -117,14 +129,26 @@ abort_if_syntax_errors(Modname) :-
 	conget('syntax errors', N),
 	( N =\= 0, Modname \== user -> 
 	    %% Forget about syntax errors when compiling module user
-	    error(('Aborting compilation of module ', 
-		   Modname, ' due to ', N, ' syntax error(s).')), 
-	    abort_quietly
+	    syntax_error(('Aborting compilation of module ', 
+		   Modname, ' due to ', N, ' syntax error(s).'))
 	;   true
 	).
 
-abort_quietly :-
-	throw(error(misc_error,'Aborting...',[[]])).
+/*
+| abort_if_syntax_errors(Modname) :-
+| 	conget('syntax errors', N),
+| 	( N =\= 0, Modname \== user -> 
+| 	    %% Forget about syntax errors when compiling module user
+| 	    error(('Aborting compilation of module ', 
+| 		   Modname, ' due to ', N, ' syntax error(s).')), 
+| 	    abort_quietly
+| 	;   true
+| 	).
+
+| abort_quietly :-
+| 	throw(error(misc_error,'Aborting...',[[]])).
+
+*/
 
 /*============================================================*/
 /* table_process(+ModuleIn, -ModuleOut, +SFile)				*/
@@ -170,9 +194,9 @@ modeinfer(ModName, Module, SymTab) :-
 compile1(Modname, Module, SymTab, AFile, OFile, TIFile, IsModule) :-
       ( option(compile_off) ->		%  generate *.A file
 	  open(AFile,write,AStr),write_asmheader(AStr, Modname, SymTab, IsModule), close(AStr)
-      ; conget('error occurred', 1) ->
-	  error(('Aborting compilation of module ',Modname,' due to errors')),
-	  abort_quietly
+%      ; conget('error occurred', 1) ->
+%	  error(('Aborting compilation of module ',Modname,' due to errors')),
+%	  abort_quietly
       ; option(asm_dump) -> 
 	  open(AFile,write,AStr),
 	  write_asmheader(AStr,Modname,SymTab, IsModule), % generate .A header
@@ -229,17 +253,14 @@ compile_check_ok(Sym) :-
 	 ->	true
 	 ;	(standard_symbol(P, N, _)
 		 ->	(option(allow_redefinition)
-			 ->	warning(('Redefining the standard predicate: ', P, '/', N))
-			 ;	error(('Trying to redefine the standard predicate: ', P, '/', N)),
-				fail
+			 ->	permission_warning(redefine,'standard predicate',P/N,'',compile/1)
+		         ;      permission_error(redefine,'standard predicate',P/N,compile/1)
 			)
 		 ;	true
 		)
 	),
 	( sym_prop(im(Mod), Sym) ->
-		error(('Cannot redefine ', P, '/', N,
-		       ' (already declared imported from ', Mod, '!)')),
-		fail
+	    permission_error(redefine,'imported predicate',Mod:P/N,compile/1)
 	 ;	true
 	).
 
