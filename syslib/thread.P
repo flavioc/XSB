@@ -74,17 +74,17 @@ check_options_list_1([],GLSize,TCSize,ComplSize,PDLSize,Detached,[],Handler):- !
 	(var(Handler) -> Handler = '_$no_handler' ; true).
 check_options_list_1([Option|Rest],GLSize,TCSize,ComplSize,PDLSize,Detached,Alias,Handler):- !,
 	check_nonvar(Option,thread_create/3,3),
-	(Option @= glsize(_) ->  Option = glsize(N),set_thread_create_arg(N,GLSize,glsize), Alias = R
-          ; (Option @= tcsize(_) -> Option = tcpsize(N),set_thread_create_arg(N,TCSize,tcsize), Alias = R
-            ; (Option @= complsize(_) -> Option = complsize(N),set_thread_create_arg(N,ComplSize,complsize), Alias = R
-              ; (Option @= pdlsize(_) -> Option = pdlsize(N),set_thread_create_arg(N,PDLSize,pdlsize), Alias = R
-                ; (Option @= detached(_) -> 
-		    (Option = detached(Boolean),Boolean == true -> Detached = 1 ; Detached = 0),Alias = R
-                ; (Option @= on_exit(_) -> Option = on_exit(Handler) 
-		  ; (Option @= alias(_) -> 
-		        Option = alias(A),check_atom(A,thread_create/3,3),Alias = [A|R]
-	            ; 	domain_error(thread_option,Option,thread_create/3,3,'') ) ) ) ) ) ) ),
-       check_options_list_1(Rest,GLSize,TCSize,ComplSize,PDLSize,Detached,R,Handler).
+	(	Option @= glsize(_) -> Option = glsize(N),set_thread_create_arg(N,GLSize,glsize), Alias = R
+	;	Option @= tcsize(_) -> Option = tcpsize(N),set_thread_create_arg(N,TCSize,tcsize), Alias = R
+	;	Option @= complsize(_) -> Option = complsize(N),set_thread_create_arg(N,ComplSize,complsize), Alias = R
+	;	Option @= pdlsize(_) -> Option = pdlsize(N),set_thread_create_arg(N,PDLSize,pdlsize), Alias = R
+	;	Option @= detached(_) -> (Option = detached(Boolean),Boolean == true -> Detached = 1 ; Detached = 0),Alias = R
+	;	Option @= on_exit(_) -> Option = on_exit(Handler)
+	;	Option @= at_exit(_) -> Option = at_exit(Handler)	% for compatibility with SWI-Prolog and YAP
+	;	Option @= alias(_) -> Option = alias(A),check_atom(A,thread_create/3,3),Alias = [A|R]
+	; 	domain_error(thread_option,Option,thread_create/3,3,'')
+	),
+	check_options_list_1(Rest,GLSize,TCSize,ComplSize,PDLSize,Detached,R,Handler).
 check_options_list_1(Culprit,_GLSize,_TCSize,_ComplSize,_PDLSize,_Detached,_Alias,_Handler):- 
 	type_error(list,Culprit,thread_create/3,3).
 
