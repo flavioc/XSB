@@ -5276,9 +5276,9 @@ if test "$bits64" = "yes"; then
 fi
 
 #TLS comment this out if you don't want fast floats automatically w. 64 bits.
-if test "$machine64bit" = "yes"; then
- fast_floats=yes
-fi
+#if test "$machine64bit" = "yes"; then
+# fast_floats=yes
+#fi
 
 if test "${fast_floats}" = "yes" ; then
    cat >>confdefs.h <<\_ACEOF
