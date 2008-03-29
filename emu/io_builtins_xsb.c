@@ -798,6 +798,8 @@ struct vartype rc_vars[MAXVAR];
     /*printf("RC funstk expanded to %d\n",funstk_size);*/ \
   }
 
+#define ctop_addr(regnum, val)    ctop_int(CTXTc regnum, (prolog_int)val)
+
 int read_canonical(CTXTdecl)
 {
   FILE *filep;
@@ -817,7 +819,7 @@ int read_canonical(CTXTdecl)
     instr = NULL;
     SET_FILEPTR(filep, tempfp);
   }
-  ctop_int(CTXTc 3,read_canonical_term(CTXTc filep, instr, 1));
+  ctop_addr(CTXTc 3,read_canonical_term(CTXTc filep, instr, 1));
   return TRUE;
 }
 
@@ -852,7 +854,7 @@ inline void bld_boxedfloat_here(CTXTdeclc CPtr *h, CPtr addr, Float value) {
 #endif
 
 /* read canonical term, and return prev psc pointer, if valid */
-int read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_location_code)
+Integer read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_location_code)
 {
   int findall_chunk_index;
   int funtop = 0;
@@ -860,7 +862,8 @@ int read_canonical_term(CTXTdeclc FILE *filep, STRFILE *instr, int return_locati
   int cvarbot = MAXVAR-1;
   int prevchar, arity, i, size;
   CPtr h;
-  int j, op1, retpscptr;
+  int j, op1;
+  Integer retpscptr;
   Pair sym;
   Float float_temp;
   Psc headpsc, termpsc;

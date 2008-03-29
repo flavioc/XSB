@@ -42,7 +42,7 @@
 #define LOW_24_BITS_MASK 0xffffff
 #define LOW_16_BITS_MASK 0xffff
 
-#define INT_LOW_24_BITS(value) (((unsigned)(value)) >> 24)
+#define INT_LOW_24_BITS(value) (((UInteger)(value)) >> 24)
 
 
 #ifndef FAST_FLOATS
