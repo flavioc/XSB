@@ -270,14 +270,29 @@ extern unsigned long enc[], dec[];
 // It assumes that the double type is twice the size of the integer type on the target machine.
 //    It is an inline function that joins the two ints in a struct, unions this struct with a 
 //    Float variable, and returns this Float.
-extern inline Float make_float_from_ints(UInteger, UInteger);
+
+#ifdef BITS64
+extern inline Float make_float_from_ints(UInteger);
 
 // EXTRACT_FLOAT_FROM_16_24_24 works by first merging the three ints together into 
 //    two Integers (assuming high-order 16 bits are in the first, middle-24 bits in the 
 //    second, and low-24 bits in the third).
-#define EXTRACT_FLOAT_FROM_16_24_24(highInt, middleInt, lowInt)        \
+
+#define EXTRACT_FLOAT_FROM_16_24_24(highInt, middleInt, lowInt)	\
+  (make_float_from_ints(  (((((UInteger) highInt) & LOW_16_BITS_MASK) <<48) \
+			   | (((UInteger) middleInt & LOW_24_BITS_MASK) << 24)) \
+			      | ((((UInteger) lowInt & LOW_24_BITS_MASK)))))
+
+#else
+
+extern inline Float make_float_from_ints(UInteger, UInteger);
+
+#define EXTRACT_FLOAT_FROM_16_24_24(highInt, middleInt, lowInt)	\
       (make_float_from_ints(  (((((UInteger) highInt) & LOW_16_BITS_MASK) <<16) | (((UInteger) middleInt) >> 8)), \
                               ((((UInteger) middleInt)<<24) | (UInteger)lowInt)) )
+
+#endif   /* BITS64 */
+
 #define boxedfloat_val(dcell)                           \
     (                                                   \
      (Float)(    EXTRACT_FLOAT_FROM_16_24_24(           \
@@ -287,7 +302,7 @@ extern inline Float make_float_from_ints(UInteger, UInteger);
                  )                                      \
             )                                           \
     )
-#else 
+#else   /* FAST_FLOATS */
 //if FAST_FLOATS is defined, then boxedfloat_val should never get called. To satisfy the 
 //  compiler, boxedfloat_val has been turned into an alias for float_val, since everything that 
 //  would have been a boxedfloat should now be a float.

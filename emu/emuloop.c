@@ -302,18 +302,32 @@ static void *instr_addr_table[256];
 // declared in cell_xsb.h. They only exist if the FAST_FLOATS tag is undefined. Otherwise, they
 // are defined as Cell-based macros. See cell_xsb.h for details.
 #ifndef FAST_FLOATS
+
 inline void bld_boxedfloat(CTXTdeclc CPtr addr, Float value)
 {
     Float tempFloat = value;
     new_heap_functor(hreg,box_psc);
     bld_int(hreg,((ID_BOXED_FLOAT << BOX_ID_OFFSET ) | FLOAT_HIGH_16_BITS(tempFloat) ));
+    //    printf("high %x %x %x",FLOAT_HIGH_16_BITS(tempFloat),
+    //	   FLOAT_MIDDLE_24_BITS(tempFloat),FLOAT_LOW_24_BITS(tempFloat));
     hreg++;
     bld_int(hreg,FLOAT_MIDDLE_24_BITS(tempFloat)); hreg++;
     bld_int(hreg,FLOAT_LOW_24_BITS(tempFloat)); hreg++;
     cell(addr) = makecs(hreg-4);
 }
 
-//the below function assumes that the Float type will be exactally twice the size of the 
+#ifdef BITS64
+
+inline Float make_float_from_ints(UInteger high)
+{
+  FloatToIntsConv converter;
+  converter.int_vals.high = high;
+  return converter.float_val;
+}
+
+#else 
+
+//the function below assumes that the Float type will be exactally twice the size of the 
 //   UInteger type. See basictypes.h for the declaration of converter types.
 inline Float make_float_from_ints(UInteger high, UInteger low)
 {
@@ -321,7 +335,9 @@ inline Float make_float_from_ints(UInteger high, UInteger low)
   converter.int_vals.high = high;
   converter.int_vals.low = low;
   return converter.float_val;
-}
+  }
+
+#endif /* BITS64 */
 #else
 inline void bld_boxedfloat(CTXTdeclc CPtr addr, Float value) {
   bld_float(addr,value);
@@ -816,11 +832,30 @@ contcase:     /* the main loop */
     nunify_with_float_get(op1,cvtr.fltp);
   XSB_End_Instr()
 
+#ifdef BITS64
   XSB_Start_Instr(putdfloat,_putdfloat) /* PPR-D */
     register Cell op1;
     union {
       struct {
-	long int1,int2;
+	long int1;
+      } intp;
+      double fltp;
+    } cvtr;
+    Op1(get_xxr);
+    cvtr.intp.int1 = *(pw)(lpcreg+sizeof(Cell));
+    //    printf("putdfloat: %d %d %d %d\n",sizeof(long),sizeof(double),sizeof(Cell),sizeof(float));
+    ADVANCE_PC(size_xxxXX);
+    //    printf("putdfloat: %2.16f %x %p\n",cvtr.fltp,cvtr.intp.int1,cvtr.intp.int1);
+    bld_boxedfloat(CTXTc (CPtr)op1, (Float)cvtr.fltp);
+  XSB_End_Instr()
+
+#else
+  XSB_Start_Instr(putdfloat,_putdfloat) /* PPR-D */
+    register Cell op1;
+    union {
+      struct {
+	long int1;
+	long int2;
       } intp;
       double fltp;
     } cvtr;
@@ -828,10 +863,9 @@ contcase:     /* the main loop */
     cvtr.intp.int1 = *(pw)(lpcreg+sizeof(Cell));
     cvtr.intp.int2 = *(pw)(lpcreg+2*sizeof(Cell));
     ADVANCE_PC(size_xxxXX);
-    //    bld_float_tagged((CPtr)op1, fop2);
-    //    printf("putdfloat: %2.16f\n",cvtr.fltp);
     bld_boxedfloat(CTXTc (CPtr)op1, (Float)cvtr.fltp);
   XSB_End_Instr()
+#endif
 
   XSB_Start_Instr(putpvar,_putpvar) /* PVR */
     Def2ops
@@ -3268,8 +3302,9 @@ extern pthread_mutexattr_t attr_rec_gl ;
 	}
 	magic_num = read_magic(fd);
 	fclose(fd);
-	if (magic_num == 0x11121307 || magic_num == 0x11121305)
+	if (magic_num == 0x11121307 || magic_num == 0x11121305) {
 	  inst_begin_gl = loader(CTXTc startup_file,0);
+	}
 	else 
 	  xsb_initialization_exit("Incorrect startup file format");
 
