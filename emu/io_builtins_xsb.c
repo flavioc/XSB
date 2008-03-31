@@ -819,7 +819,7 @@ int read_canonical(CTXTdecl)
     instr = NULL;
     SET_FILEPTR(filep, tempfp);
   }
-  ctop_addr(CTXTc 3,read_canonical_term(CTXTc filep, instr, 1));
+  ctop_addr(3,read_canonical_term(CTXTc filep, instr, 1));
   return TRUE;
 }
 
