@@ -328,7 +328,7 @@ inline Cell iso_ptoc_callable(CTXTdeclc int regnum,const char * PredString)
 /* TLS: this one is designed to pass through Prolog register offsets
    in PredString and arg -- that way ptocs for them need only be done
    if theres an error */
-inline Cell iso_ptoc_callable_arg(CTXTdeclc int regnum,int PredString,int arg)
+inline Cell iso_ptoc_callable_arg(CTXTdeclc int regnum,const int PredString,const int arg)
 {
   /* reg is global array in register.h in the single-threaded engine
    * and is defined as a thread-specific macro in context.h in the
