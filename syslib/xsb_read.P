@@ -103,6 +103,7 @@ file_read(File, Answer, Variables) :-
 #ifndef MULTI_THREAD
 get_synerr_psc(Psc):- term_psc('_$synerr'(_), Psc).
 #else 
+:- import xsb_thread_self/1 from thread.
 get_synerr_psc(Psc):- 
 	xsb_thread_self(Thread),
 	(Thread == 0 -> 

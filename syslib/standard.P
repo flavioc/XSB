@@ -960,6 +960,8 @@ call(Goal) :-
    normal case.  Need call_c/1 in first condition -- otherwise trace
    is broken since call0 is apparently hidden from trace.  In second
    condition, tracing is done via goal_cut_trans/3. */
+directly_callable(Goal) :- directly_callable(Goal).  %inlined by compiler.
+
 call(Goal) :-
    ( directly_callable(Goal) -> 
        call_c(Goal) 

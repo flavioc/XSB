@@ -140,6 +140,7 @@ standard_symbol(debug_ctl, 2, debugger).
 standard_symbol(debugging, 0, debugger).
 standard_symbol(default_error_handler, 1, error_handler).	% Not ISO
 standard_symbol(delete_return, 2, tables).
+standard_symbol(directly_callable, 1, standard).
 standard_symbol(display, 1, standard).
 standard_symbol((dynamic), 1, assert).
 

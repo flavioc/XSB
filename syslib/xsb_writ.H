@@ -33,7 +33,8 @@
 
 	
 :- import '_$op'/3 from file_op.
-   :- import file_put/2,file_function/3 from file_io.
+:- import file_put/2 from file_io.
+:- import file_function/3 from machine.
 :- import integer/1 from standard.
 :- import term_psc/2, psc_arity/2, psc_name/2, term_arg/3, 
 	stat_flag/2,
