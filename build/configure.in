@@ -973,6 +973,12 @@ if test "$bits64" = "yes"; then
    MEMFLAG=" -m64 "
 fi
 
+if test "${machine64bit}" = "yes"; then
+   word_size="64"
+else
+   word_size="32"
+fi
+
 #TLS comment this out if you don't want fast floats automatically w. 64 bits.
 #if test "$machine64bit" = "yes"; then
 # fast_floats=yes	
@@ -1855,6 +1861,7 @@ AC_SUBST(site_prefix)
 AC_SUBST(xsb_release_date)
 AC_SUBST(xsb_full_version_name)
 AC_SUBST(engine_mode)
+AC_SUBST(word_size)
 
 AC_SUBST(ODBCSRC)
 AC_SUBST(ODBCOBJ)
