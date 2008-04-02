@@ -66,7 +66,7 @@ xsb_configuration(host_cpu,  '@host_cpu@').
 xsb_configuration(compile_mode, '@compile_mode@').
 xsb_configuration(scheduling_strategy, '(@xsb_scheduling_strategy@)').
 xsb_configuration(engine_mode, '@engine_mode@').
-xsb_configuration(engine_mode, '@word_size@').
+xsb_configuration(word_size, '@word_size@').
 
 xsb_configuration(major_version, '@xsb_major_version@').
 xsb_configuration(minor_version, '@xsb_minor_version@').
