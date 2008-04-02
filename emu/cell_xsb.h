@@ -218,8 +218,10 @@ extern unsigned long enc[], dec[];
 #define is_directly_callable(op2) (((isconstr(op2) && !isboxed(op2)) || isstring(op2)) \
 				   && op2 != (Cell) comma_psc		\
 				   && op2 != (Cell) colon_psc && op2 != (Cell) cut_psc \
-				   && op2 != (Cell) cond_psc \
-				   && op2 != (Cell) load_undef_psc)
+				   && op2 != (Cell) cond_psc )
+
+//  Saving, in the unlikely possibility that there is a problem with the new call
+//				   && op2 != (Cell) pflags[MYSIG_UNDEF+INT_HANDLERS_FLAGS_START])
 
 #define isstring(dcell) (cell_tag(dcell)==XSB_STRING)
 #define numequal(num1, num2) num1 == num2
