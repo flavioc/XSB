@@ -544,6 +544,9 @@ indexing will give the same behavior as using {\tt assert}.  Also, the
 current version of XSB only allows trie indexing for unit clauses.
 \end{itemize}
 
+If in doubt what indexing is being used for a predicate, a call to
+{\tt current\_index/2} can be made.
+
 {\bf Error Cases}
 \bi
 \item 	{\tt PredSpec} or {\tt IndexSpec} is a variable

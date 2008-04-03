@@ -152,6 +152,13 @@ specified.  A full listing can be obtained by typing {\tt
   64-bit compilation.  Type {\tt configure --help} to see them
   all. Also see the file~\verb'$XSB_DIR/INSTALL' for more details.
 
+\item[Word Size] XSB's configuration script checks whether the default
+  compilation mode of a platform is 32- or 64-bits, and will build a
+  version of XSB accoringly.  Some platforms, however, support both
+  32-bit and 64-bit compilation.  On such a platform, a user can
+  explicitly specify the type of compilation using the options {\tt
+    with-bits32} and {\tt with-bits64}.
+
 \item[XSB and Site-specific Information] Using the option {\tt
   --prefix=PREFIX} installs architecture-independent files in the
   directory {\tt PREFIX}, e.g. {\tt /usr/local}, which can be useful

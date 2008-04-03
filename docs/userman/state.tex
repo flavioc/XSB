@@ -614,30 +614,33 @@ module {\tt "usermod"} may be enumerated using:
 
     Here is how {\tt xsb\_configuration} might look like:
 
+{\small
 \begin{verbatim}
-    xsb_configuration(architecture, 'i686-pc-linux-gnu').
+    xsb_configuration(architecture, 'i386-apple-darwin8.9.1').
     %% configuration is usualy the same as architecture, but it can also
-    %% contain special tags, {\it e.g.}, i686-pc-linux-gnu-dbg, for a verion
+    %% contain special tags, {\it e.g.}, i386-apple-darwin8.9.1-dbg, for a verion
     %% built with debugging enabled.
-    xsb_configuration(configuration, 'i686-pc-linux-gnu-dbg').
-    xsb_configuration(host_os, 'linux-gnu').
-    xsb_configuration(os_version, '2.34').
-    xsb_configuration(os_type, 'linux-gnu').
-    xsb_configuration(host_vendor, 'pc').
-    xsb_configuration(host_cpu,  'i686').
+    xsb_configuration(configuration, 'i386-apple-darwin8.9.1-dbg').
+    xsb_configuration(host_os, 'darwin8.9.1').
+    xsb_configuration(os_version, '8.9.1').
+    xsb_configuration(os_type, 'darwin').
+    xsb_configuration(host_vendor, 'apple').
+    xsb_configuration(host_cpu,  'i386').
     xsb_configuration(compiler, 'gcc').
-    xsb_configuration(compiler_flags, '  -ansi -pedantic -Wall -g').
-    xsb_configuration(loader_flags, ' -lm -ldl -Wl,-export-dynamic').
+    xsb_configuration(compiler_flags, '-faltivec -fPOC -Wall -pipe -g').
+    xsb_configuration(loader_flags, '-g -lm ').
     xsb_configuration(compile_mode, 'debug').
+    %% The type of XSB engine configured.
+    xsb_configuration(scheduling_strategy, '(local)').
+    xsb_configuration(engine_mode, 'slg-wam').
+    xsb_configuration(word_size, '32').
     %% The following is XSB release information
-    xsb_configuration(major_version, '1').
-    xsb_configuration(minor_version, '9').
-    xsb_configuration(beta_version, '3').
-    xsb_configuration(version, '1.9-b3').
-    xsb_configuration(codename, 'Code Breaker').
+    xsb_configuration(major_version, '3').
+    xsb_configuration(minor_version, '1').
+    xsb_configuration(beta_version, '').
+    xsb_configuration(version, '3.1').
+    xsb_configuration(codename, 'Incognito').
     xsb_configuration(release_date, date(1998, 10, 17)).
-    %% XSB query evaluation directive
-    xsb_configuration(scheduling_strategy, '(batched)').
     %% Support for other languages
     xsb_configuration(perl_support, 'yes').v
     xsb_configuration(perl_archlib, '/usr/lib/perl5/i386-linux/5.00404').
@@ -671,6 +674,7 @@ module {\tt "usermod"} may be enumerated using:
     /* Where user's arch-specific libraries are found by default. */
     xsb_configuration(user_config_libdir, UserConfigLibdir) :- ...
 \end{verbatim}
+}
 
 \standarditem{xsb\_flag(?Flag\_Name, ?Value)}{xsb\_flag/2}
     Succeeds iff the current value of the XSB flag {\tt Flag\_Name} is 
