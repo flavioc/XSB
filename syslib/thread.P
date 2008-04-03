@@ -352,6 +352,7 @@ thread_run0(Goal) :-
 	call(Goal),
 	internal_thread_exit(THREAD_SUCCEEDED).
 
+/* called by xsb_thread_run() in thread_xsb.c */
 '_$thread_run'( Goal ) :-
 	(catch( thread_run0(Goal), Ball, handle_thread_error(Ball))
 	 ;
