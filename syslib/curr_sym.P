@@ -602,7 +602,16 @@ make_set_tail([Val|Vals],[Val,','|SetTail]) :- make_set_tail(Vals,SetTail).
 
 %% fix for 64-bit compilation?
 iso_flag(bounded,true).
-iso_flag(max_integer,Maxint) :- Maxint is 14 * 16'08000000 + 16'0fffffff.
+
+% TLS: dont understand why we dont just say 7fffffff.
+%iso_flag(old_max_integer,Maxint) :- Maxint is 14 * 16'08000000 + 16'0fffffff.
+% Also, in 64-bits, we dont seem to get full wordsize.  We have 7 followed by 13 fs rather than by 15?
+iso_flag(max_integer,Maxint):- 
+	xsb_configuration(word_size,Size),
+	(Size == '64' -> 
+	    Maxint is 16'7fffffffffffff
+	;   Maxint is 16'7fffffff).
+%'
 iso_flag(min_integer,Minint) :- iso_flag(max_integer,Maxint), Minint is -Maxint - 1.
 iso_flag(max_arity,255).
 iso_flag(integer_rounding_function,toward_zero).
