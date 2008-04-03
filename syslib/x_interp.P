@@ -60,7 +60,9 @@ interpreter :-
 	xsb_thread_self(T),
 	retractall('$$exception_ball'(T,_)),
 	x_interp_repeat,
-	catch(interpreter_readloop([]),Ball,default_error_handler(Ball)),
+	stat_flag(CURRENT_INPUT, Str),
+	catch(interpreter_readloop([]),Ball,(see(Str),file_write(STDMSG,'Caught it'),
+	                                     default_error_handler(Ball))),
 	fail.
 
 %% dummy arg to circumvent string flaw with module system, for catch
@@ -365,7 +367,9 @@ version_message :-
 	file_getbuf_atom(Handle, 500, Str, _),
 	file_close(Handle),
 	%% Print the banner
-	fmt_write(STDMSG, Str, GC_string),
+%	fmt_write(STDMSG, Str, GC_string),
+%	fmt_write(STDMSG, Str,[]),
+	file_write(STDMSG,Str),
 	file_nl(STDMSG).
 
 /* === utilities ======================================================= */
