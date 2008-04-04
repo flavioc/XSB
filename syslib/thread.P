@@ -286,10 +286,8 @@ thread_signal_1(Id,Message):-
 thread_enable_cancel :-
 	thread_request( THREAD_ENABLE_CANCEL, _, _, _, _, _, _, _, _ ).
 	
-/* until used somehow...
 thread_disable_cancel :-
 	thread_request( THREAD_DISABLE_CANCEL, _, _, _, _, _, _, _, _ ).
-*/
 
 /*---------------*/
 
