@@ -921,14 +921,21 @@ format_predicates_end(texinfo,_OS).
 # "Each predicate is an item in an itemized list.".
 %% ---------------------------------------------------------------------------
 
+% TLS: 08/04/05: changed edef stuf to get the xsbdoc manual to compile. 
+% TeX 3.141592 (Web2C 7.5.5) kpathsea version 3.5.5
+% texi2dvi (GNU Texinfo 4.7) 1.3
+% Dont know why this works, but it does on my Mac
 format_predicate_begin(texinfo,Type,PN,Indices,Opts,OS) :-
 	texinfo_escape_ats_etc_all_atoms(PN,F/A),
 	typetext(Type,Text,_Prefix,_Postfix),
 	(  member('-shorttoc', Opts)
 	-> true
-	;  format(OS,"@iftex~n@edef@temp{@noexpand@writetocentry{",[]),
-	   format(OS,"@realbackslash unnumbsubsubsecentry{",[]),
-	   format(OS,"~w (~w)}}}~n@temp~n@end iftex~n",[F/A,Type]) ),
+%	;  format(OS,"@iftex~n@edef@temp{@noexpand@writetocentry{",[]),
+%	   format(OS,"@realbackslash unnumbsubsubsecentry{",[]),
+%	   format(OS,"~w (~w)}}}~n@temp~n@end iftex~n",[F/A,Type]) ),
+	;  format(OS,"@iftex~n\\edef\\temp{\\noexpand\writetocentry{",[]),
+	   format(OS,"\\realbackslash unnumbsubsubsecentry{",[]),
+	   format(OS,"~w (~w)}}}~n\\temp~n@end iftex~n",[F/A,Type]) ),
 	(  ( member(Type,Indices); Indices=[all] ),
 	   typeindex(Type,Index,_,_,_)
 	-> unescape_ampersands(F,NF),

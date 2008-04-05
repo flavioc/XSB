@@ -295,9 +295,10 @@ autodoc(IFormat,InputFile,Idxs,Components,StartPage,PaperType,Opts) :-
 	retractall(refs_stream(_)),
 	close(OS),
 	retractall(main_name(_)),
-	(stream_property(IntroOs,type(_)) -> 
+	(nonvar(IntroOs),stream_property(IntroOs,type(_)) -> 
 	    close(IntroOs)
 	  ; true),
+	  writeln(here3),
 	read_file_reset,
 	message('}'),
 	ttyflush,!.
@@ -942,6 +943,7 @@ doc_description(Desc,_P,Idxs,OS,Format,Opts) :-
 	rewrite_docstring_opts(Format,Idxs,Opts,Desc,RDesc),
 	format_description(Format,RDesc,OS).
 
+
 %% ---------------------------------------------------------------------------
 %% Information access...
 %% ---------------------------------------------------------------------------
@@ -1204,7 +1206,7 @@ eliminate_separators(_Verb, NString) -->
 	"begin",
 	open,
 	"verbatim",
-	close,
+	autodoc_close,
 	{ append("@begin{verbatim}",NStringEnd,NString) },
 	eliminate_separators(verb, NStringEnd).
 eliminate_separators(_Verb, NString) -->
@@ -1212,7 +1214,7 @@ eliminate_separators(_Verb, NString) -->
 	"end",
 	open,
 	"verbatim",
-	close,
+	autodoc_close,
 	{ append("@end{verbatim}",NStringEnd,NString) },
 	eliminate_separators(noverb, NStringEnd).
 eliminate_separators(Verb,[X|T]) --> 
@@ -1296,7 +1298,7 @@ writemath(_,_).
 command_body(_Format,_Idxs,'{') -->
 	open.
 command_body(_Format,_Idxs,'}') -->
-	close.
+	autodoc_close.
 command_body(_Format,_Idxs,'@') -->
 	start.
 command_body(_Format,_Idxs,comment([])) -->
@@ -1334,14 +1336,14 @@ command_chars([]) -->
 
 command_args([Arg|RArgs]) -->
 	all_chars(Arg),
-	close,
+	autodoc_close,
 	spaces,
 	open,
 	!,
 	command_args(RArgs).
 command_args([Arg]) -->
 	all_chars(Arg),
-	close.
+	autodoc_close.
 
 all_chars([0'@,0'{|Cs]) -->
 	start,
@@ -1349,7 +1351,7 @@ all_chars([0'@,0'{|Cs]) -->
 	all_chars(Cs).
 all_chars([0'@,0'}|Cs]) -->
 	start,
-	close,
+	autodoc_close,
 	all_chars(Cs).
 all_chars([0'@,0'@|Cs]) -->
 	start,
@@ -1373,7 +1375,7 @@ command_char(X) --> [X], {X \== 0'@, X \== 0'{, X \== 0'}, X \== 0' ,
 
 start     --> [0'@].
 open      --> [0'{].
-close     --> [0'}].
+autodoc_close     --> [0'}].
 space     --> [0' ].
 tabchar   --> [0'\t].
 newline   --> [0'\n].
@@ -1429,6 +1431,7 @@ balanced_braces(N,[X|Rest]) -->
    # "Handles format-independent formatting, and passes on other commands 
       to the format-specific handler.".
 %% ---------------------------------------------------------------------------
+:- import console_writeln/1 from standard.
 
 handle_command(Struct,SP,Format,Idxs,Verb,NVerb,NL,NNL,Opts,NStr,NNStr) :-
 	try_command(Struct,SP,Format,Idxs,Verb,NVerb,NL,NNL,Opts,NStr,NNStr),
@@ -1492,7 +1495,8 @@ try_command(includedef(PredS),
             SP,Format,Idxs,Verb,Verb,_NL,NNL,Opts,NStr,Tail) :-
 %	trace,
 	parse_predname(Functor,Arity,PredS),
-            !,
+	telling(Old), 
+	!,
 	(  Functor \== 0,
 	   functor(Pattern,Functor,Arity),
 	   copy_term(Pattern,TmpPattern),
@@ -1503,7 +1507,7 @@ try_command(includedef(PredS),
 	   ( clause_read(Pattern,Body,_Ctr),
 %	     varnamesl2dict(Dict,ICiaoDict),
 %	     complete_dict(ICiaoDict,Clause,CiaoDict),
-	     telling(Old), tell(Tmp),
+	     tell(Tmp),
 	     pretty_print((Pattern :- Body)),
 	     fail
 	   ; true ),
@@ -1625,7 +1629,6 @@ string([]).
 string([H|T]):- integer(H),string(T).
 
 end_of_file.
-
 
 %% ---------------------------------------------------------------------------
 :- pred generate_info_dir_entry(Main,Opts) 
