@@ -1431,7 +1431,7 @@ balanced_braces(N,[X|Rest]) -->
    # "Handles format-independent formatting, and passes on other commands 
       to the format-specific handler.".
 %% ---------------------------------------------------------------------------
-:- import console_writeln/1 from standard.
+%:- import console_writeln/1 from standard.
 
 handle_command(Struct,SP,Format,Idxs,Verb,NVerb,NL,NNL,Opts,NStr,NNStr) :-
 	try_command(Struct,SP,Format,Idxs,Verb,NVerb,NL,NNL,Opts,NStr,NNStr),
@@ -1533,7 +1533,7 @@ try_command(cite(Ref),
 	refs_stream(CS),
 /*	format(CS,"\citation{~s}\n",[Ref]), */
 	atom_codes(Ratom,Ref),
-	write(CS,'\citation{'),write(CS,Ratom),writeln(CS,'}'),
+	write(CS,'\\citation{'),write(CS,Ratom),writeln(CS,'}'),
 	add_space_after_command(SP,RNewComm,NewComm,NNL),
 	append(NewComm,Tail,NStr).
 try_command(ImageCommand,
