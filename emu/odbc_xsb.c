@@ -540,7 +540,7 @@ void ODBCConnect(CTXTdecl)
     rc = SQLConnect(hdbc, server, SQL_NTS, uid, SQL_NTS, pwd, SQL_NTS);
     if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
       SQLFreeConnect(hdbc);
-      sprintf(errmsg, "Connection to server %s failed", server);
+      snprintf(errmsg,200, "Connection to server %s failed", server);
       ctop_int(CTXTc 6, 0);
       unify(CTXTc reg_term(CTXTc 7), makestring(string_find(errmsg,1)));
       return;
@@ -551,7 +551,7 @@ void ODBCConnect(CTXTdecl)
     rc = SQLDriverConnect(hdbc, NULL, connectIn, SQL_NTS, NULL, 0, NULL,SQL_DRIVER_NOPROMPT);
     if (rc != SQL_SUCCESS && rc != SQL_SUCCESS_WITH_INFO) {
       SQLFreeConnect(hdbc);
-      sprintf(errmsg,"Connection to driver failed: %s", connectIn);
+      snprintf(errmsg,200,"Connection to driver failed: %s", connectIn);
       ctop_int(CTXTc 6, 0);
       unify(CTXTc reg_term(CTXTc 7), makestring(string_find(errmsg,1)));
       return;
@@ -951,7 +951,7 @@ void SetBindVal(CTXTdecl)
     } else {
       if (!cur->BindTypes[j]) unify(CTXTc reg_term(CTXTc 5), GenErrorMsgBall("Bind variable cannot be free"));
       else {
-	sprintf(errmsg,"Unknown bind variable type: %d", cur->BindTypes[j]);
+	snprintf(errmsg,200,"Unknown bind variable type: %d", cur->BindTypes[j]);
 	unify(CTXTc reg_term(CTXTc 5), GenErrorMsgBall(errmsg));
       }
       return;
@@ -999,7 +999,7 @@ void SetBindVal(CTXTdecl)
   } else {
     if (!cur->BindTypes[j]) unify(CTXTc reg_term(CTXTc 5), GenErrorMsgBall("Bind variable cannot be free"));
     else {
-      sprintf(errmsg,"Unknown bind variable type: %d", cur->BindTypes[j]);
+      snprintf(errmsg,200,"Unknown bind variable type: %d", cur->BindTypes[j]);
       unify(CTXTc reg_term(CTXTc 5), GenErrorMsgBall(errmsg));
     }
     return;

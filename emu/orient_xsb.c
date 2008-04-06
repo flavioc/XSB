@@ -81,11 +81,11 @@ void set_xsbinfo_dir () {
   if (!fileinfo) {
     xsb_abort("No core memory to allocate stat structure.\n");
   }
-  sprintf(xsbinfo_dir_gl, "%s%c.xsb", user_home_gl, SLASH);
-  sprintf(old_xinitrc, "%s%c.xsbrc", user_home_gl, SLASH);
-  sprintf(new_xinitrc, "%s%cxsbrc", xsbinfo_dir_gl, SLASH);
-  sprintf(user_config_dir, "%s%cconfig", xsbinfo_dir_gl, SLASH);
-  sprintf(user_arch_dir, "%s%c%s", user_config_dir, SLASH, FULL_CONFIG_NAME);
+  snprintf(xsbinfo_dir_gl, MAXPATHLEN, "%s%c.xsb", user_home_gl, SLASH);
+  snprintf(old_xinitrc, MAXPATHLEN, "%s%c.xsbrc", user_home_gl, SLASH);
+  snprintf(new_xinitrc, MAXPATHLEN, "%s%cxsbrc", xsbinfo_dir_gl, SLASH);
+  snprintf(user_config_dir, MAXPATHLEN, "%s%cconfig", xsbinfo_dir_gl, SLASH);
+  snprintf(user_arch_dir, MAXPATHLEN, "%s%c%s", user_config_dir, SLASH, FULL_CONFIG_NAME);
 
   /* Create USER_HOME/.xsb directory, if it doesn't exist. */
   check_create_dir(xsbinfo_dir_gl);
@@ -160,7 +160,7 @@ char *xsb_executable_full_path(char *myname)
        || tolower(*(myname_augmented + strlen(myname) - 3)) != 'e'
        || tolower(*(myname_augmented + strlen(myname) - 2)) != 'x'
        || tolower(*(myname_augmented + strlen(myname) - 1)) != 'e' )
-    sprintf(myname_augmented, "%s.exe", myname);
+    snprintf(myname_augmented, MAXPATHLEN, "%s.exe", myname);
 #endif
 
 #ifdef WIN_NT
@@ -178,7 +178,7 @@ char *xsb_executable_full_path(char *myname)
     strcpy(executable_path_gl, myname_augmented);
   else {
     getcwd(current_dir_gl, MAXPATHLEN-1);
-    sprintf(executable_path_gl, "%s%c%s", current_dir_gl, SLASH, myname_augmented);
+    snprintf(executable_path_gl, MAXPATHLEN, "%s%c%s", current_dir_gl, SLASH, myname_augmented);
   }
 
   /* found executable by prepending cwd. Make sure we haven't found a directory named xsb */
@@ -202,7 +202,7 @@ char *xsb_executable_full_path(char *myname)
     /* Now `len' holds the length of the PATH component 
        we are currently looking at.
        `pathcounter' points to the end of this component. */
-    sprintf(executable_path_gl, "%s%c%s", pathcounter - len, SLASH, myname_augmented);
+    snprintf(executable_path_gl, MAXPATHLEN, "%s%c%s", pathcounter - len, SLASH, myname_augmented);
 
     /* restore the separator and addvance the pathcounter */
     *pathcounter = save;
@@ -271,7 +271,7 @@ void set_config_file(void) {
   /* The config file is in the lib directory at the same 
      level as the xsb executable. */
   xsb_config_file_gl = strip_names_from_path(executable_path_gl, 2);
-  sprintf(xsb_config_file_gl+strlen(xsb_config_file_gl),
+  snprintf(xsb_config_file_gl+strlen(xsb_config_file_gl),(MAXPATHLEN-strlen(xsb_config_file_gl)),
 	  "%clib%cxsb_configuration%s", SLASH, SLASH,XSB_SRC_EXTENSION_STRING);
 
   /* Perform sanity checks: xsb_config_file must be in install_dir/config

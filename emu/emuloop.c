@@ -3295,8 +3295,9 @@ extern pthread_mutexattr_t attr_rec_gl ;
 	fd = fopen(startup_file, "rb");
 
 	if (!fd) {
-	  char message[256];
-	  sprintf(message, "The startup file, %s, could not be found!",
+	  char message[MAXPATHLEN + 50];
+	  /* TLS: doing an snprintf here to avoid trouncing memory if XSB is called from C */
+	  snprintf(message, MAXPATHLEN + 50, "The startup file, %s, could not be found!",
 		  startup_file);
 	  xsb_initialization_exit(message); 
 	}

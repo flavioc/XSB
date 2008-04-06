@@ -107,7 +107,7 @@ DllExport void call_conv xsb_initialization_exit(char *description, ...)
   else {
     sprintf(xsb_get_init_error_type(),"init_error");
     va_start(args, description);
-    vsprintf(xsb_get_init_error_message(), description, args);
+    vsnprintf(xsb_get_init_error_message(), ERRTYPELEN, description, args);
     va_end(args);
     longjmp(ccall_init_env, XSB_ERROR);
   }
@@ -242,10 +242,10 @@ void call_conv xsb_domain_error(CTXTdeclc char *valid_domain,Cell culprit,
 {
   prolog_term ball_to_throw;
   int isnew;
-  Cell *tptr; char message[255];
+  Cell *tptr; char message[ERRMSGLEN];
   unsigned long ball_len = 10*sizeof(Cell);
 
-  sprintf(message,"in arg %d of predicate %s)",arg,predicate);
+  snprintf(message, ERRMSGLEN, "in arg %d of predicate %s)",arg,predicate);
 
   tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
 
@@ -296,7 +296,7 @@ void call_conv xsb_basic_evaluation_error(char *message,int type)
     bld_string(tptr,string_find("instantiation_error",1));
     tptr++;
 #ifdef MULTI_THREAD
-    sprintf(mtmessage,"[th %d] %s",tid,message);
+    snprintf(mtmessage,MAXBUFSIZE,"[th %d] %s",tid,message);
     bld_string(tptr,string_find(mtmessage,1));
 #else  
     bld_string(tptr,string_find(message,1));
@@ -308,7 +308,7 @@ void call_conv xsb_basic_evaluation_error(char *message,int type)
     bld_cs(tptr,(Cell) (tptr+3));
     tptr++;
 #ifdef MULTI_THREAD
-    sprintf(mtmessage,"[th %d] %s",tid,message);
+    snprintf(mtmessage,MAXBUFSIZE,"[th %d] %s",tid,message);
     bld_string(tptr,string_find(mtmessage,1));
 #else  
     bld_string(tptr,string_find(message,1));
@@ -330,7 +330,7 @@ DllExport void call_conv xsb_evaluation_error(int type,char *description, ...)
 
   va_start(args, description);
   strcpy(message, "++Error[XSB]: [Runtime/C] ");
-  vsprintf(message+strlen(message), description, args);
+  vsnprintf(message+strlen(message), (MAXBUFSIZE-strlen(message)), description, args);
   if (message[strlen(message)-1] == '\n') message[strlen(message)-1] = 0;
   va_end(args);
   xsb_basic_evaluation_error(message,type);
@@ -343,10 +343,10 @@ void call_conv xsb_existence_error(CTXTdeclc char *object,Cell culprit,
 {
   prolog_term ball_to_throw;
   int isnew;
-  Cell *tptr; char message[255];
+  Cell *tptr; char message[ERRMSGLEN];
   unsigned long ball_len = 10*sizeof(Cell);
 
-  sprintf(message,"in arg %d of predicate %s/%d)",arg,predicate,arity);
+  snprintf(message,ERRMSGLEN,"in arg %d of predicate %s/%d)",arg,predicate,arity);
 
   tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
 
@@ -378,10 +378,10 @@ void call_conv xsb_existence_error(CTXTdeclc char *object,Cell culprit,
 void call_conv xsb_instantiation_error(CTXTdeclc const char *predicate,int arg) {
   prolog_term ball_to_throw;
   int isnew;
-  Cell *tptr; char message[255];
+  Cell *tptr; char message[ERRMSGLEN];
   unsigned long ball_len = 10*sizeof(Cell);
 
-  sprintf(message," in arg %d of predicate %s",arg,predicate);
+  snprintf(message,ERRMSGLEN," in arg %d of predicate %s",arg,predicate);
   tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
 
   ball_to_throw = makecs(tptr);
@@ -403,10 +403,10 @@ void call_conv xsb_misc_error(CTXTdeclc char *inmsg,const char *predicate,int ar
 {
   prolog_term ball_to_throw;
   int isnew;
-  Cell *tptr; char message[255];
+  Cell *tptr; char message[ERRMSGLEN];
   unsigned long ball_len = 10*sizeof(Cell);
 
-  sprintf(message," in predicate %s/%d: %s",predicate,arity,inmsg);
+  snprintf(message,ERRMSGLEN," in predicate %s/%d: %s",predicate,arity,inmsg);
 
   tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
 
@@ -440,10 +440,10 @@ void call_conv xsb_permission_error(CTXTdeclc
 {
   prolog_term ball_to_throw;
   int isnew;
-  Cell *tptr; char message[255];
+  Cell *tptr; char message[ERRMSGLEN];
   unsigned long ball_len = 10*sizeof(Cell);
 
-  sprintf(message,"in predicate %s/%d)",predicate,arity);
+  snprintf(message,ERRMSGLEN,"in predicate %s/%d)",predicate,arity);
 
   tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
 
@@ -490,7 +490,7 @@ void call_conv xsb_resource_error(CTXTdeclc char *resource,
 {
   prolog_term ball_to_throw;
   int isnew;
-  Cell *tptr; char message[255];
+  Cell *tptr; char message[ERRMSGLEN];
   unsigned long ball_len = 10*sizeof(Cell);
 
   tptr = (Cell *) malloc(1000);
@@ -498,7 +498,7 @@ void call_conv xsb_resource_error(CTXTdeclc char *resource,
     xsb_exit(CTXTc "++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory");
   else free(tptr);
 
-  sprintf(message,"in predicate %s/%d)",predicate,arity);
+  snprintf(message,ERRMSGLEN,"in predicate %s/%d)",predicate,arity);
   XSB_StrSet(&MsgBuf,message);
   XSB_StrSet(&FlagBuf,resource);
 
@@ -533,9 +533,9 @@ void call_conv xsb_resource_error(CTXTdeclc char *resource,
 #ifdef MULTI_THREAD
 void call_conv xsb_memory_error(char *resource,char *message)
 {
-  char exit_message[255];
+  char exit_message[ERRMSGLEN];
 
-  sprintf(exit_message,
+  snprintf(exit_message,ERRMSGLEN,
 	  "++Unrecoverable Error[XSB/Runtime]: [Resource] Out of memory (%s)",
 	  message);
   exit_xsb(exit_message);
@@ -613,7 +613,7 @@ void call_conv xsb_syntax_error(CTXTdeclc char *message)
   bld_string(tptr,string_find("syntax_error",1));
   tptr++;
 #ifdef MULTI_THREAD
-  sprintf(mtmessage,"[th %d] %s",tid,message);
+  snprintf(mtmessage,MAXBUFSIZE,"[th %d] %s",tid,message);
   bld_string(tptr,string_find(mtmessage,1));
 #else  
   bld_string(tptr,string_find(message,1));
@@ -647,7 +647,7 @@ void call_conv xsb_table_error(CTXTdeclc char *message)
   bld_string(tptr,string_find("table_error",1));
   tptr++;
 #ifdef MULTI_THREAD
-  sprintf(mtmessage,"[th %d] %s",tid,message);
+  snprintf(mtmessage,MAXBUFSIZE,"[th %d] %s",tid,message);
   bld_string(tptr,string_find(mtmessage,1));
 #else  
   bld_string(tptr,string_find(message,1));
@@ -664,10 +664,10 @@ void call_conv xsb_type_error(CTXTdeclc char *valid_type,Cell culprit,
 {
   prolog_term ball_to_throw;
   int isnew;
-  Cell *tptr; char message[255];
+  Cell *tptr; char message[ERRMSGLEN];
   unsigned long ball_len = 10*sizeof(Cell);
 
-  sprintf(message,"in arg %d of predicate %s)",arg,predicate);
+  snprintf(message,ERRMSGLEN,"in arg %d of predicate %s)",arg,predicate);
 
   tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
 
@@ -715,7 +715,7 @@ void call_conv xsb_unrecoverable_error(CTXTdeclc char *message)
   bld_string(tptr,string_find("unrecoverable_error",1));
   tptr++;
 #ifdef MULTI_THREAD
-  sprintf(mtmessage,"[th %d] %s",tid,message);
+  snprintf(mtmessage,MAXBUFSIZE,"[th %d] %s",tid,message);
   bld_string(tptr,string_find(mtmessage,1));
 #else  
   bld_string(tptr,string_find(message,1));
@@ -753,7 +753,7 @@ void call_conv xsb_basic_abort(char *message)
   bld_string(tptr,string_find("misc_error",1));
   tptr++;
 #ifdef MULTI_THREAD
-  sprintf(mtmessage,"[th %d] %s",tid,message);
+  snprintf(mtmessage,MAXBUFSIZE,"[th %d] %s",tid,message);
   bld_string(tptr,string_find(mtmessage,1));
 #else  
   bld_string(tptr,string_find(message,1));
@@ -771,7 +771,7 @@ DllExport void call_conv xsb_abort(char *description, ...)
   va_start(args, description);
   //  strcpy(message, "++Error[XSB]: [Runtime/C] ");
   strcpy(message, " ");
-  vsprintf(message+strlen(message), description, args);
+  vsnprintf(message+strlen(message), (MAXBUFSIZE-strlen(message)), description, args);
   if (message[strlen(message)-1] == '\n') message[strlen(message)-1] = 0;
   va_end(args);
   xsb_basic_abort(message);
@@ -781,7 +781,7 @@ DllExport void call_conv abort_xsb(char * description)
 {
   char message[MAXBUFSIZE];
   strcpy(message, "++Error[XSB]: [Runtime/C] ");
-  sprintf(message+strlen(message), description);
+  snprintf(message+strlen(message), (MAXBUFSIZE-strlen(message)), description);
   if (message[strlen(message)-1] == '\n')
   {
     message[strlen(message)-1] = 0;
@@ -798,7 +798,7 @@ DllExport void call_conv xsb_bug(char *description, ...)
   va_start(args, description);
 
   strcpy(message, "++XSB bug: ");
-  vsprintf(message+strlen(message), description, args);
+  vsnprintf(message+strlen(message), (MAXBUFSIZE-strlen(message)), description, args);
   if (message[strlen(message)-1] != '\n')
     strcat(message, "\n");
 
@@ -810,7 +810,7 @@ DllExport void call_conv bug_xsb(char *description)
 {
   char message[MAXBUFSIZE];
   strcpy(message, "++XSB bug: ");
-  sprintf(message+strlen(message), description);
+  snprintf(message+strlen(message), (MAXBUFSIZE-strlen(message)), description);
   if (message[strlen(message)-1] != '\n')
     strcat(message, "\n");
 
@@ -973,22 +973,22 @@ DllExport void call_conv dbgmsg1_xsb(int log_level, char *description)
 void err_handle(CTXTdeclc int description, int arg, char *f,
 		int ar, char *expected, Cell found)
 {
-  char message[240];	/* Allow 3 lines of error reporting.	*/
+  char message[ERRMSGLEN];	/* Allow 3 lines of error reporting.	*/
   switch (description) {
   case RANGE:	/* I assume expected != NULL */
-    sprintf
-      (message,
+    snprintf
+      (message,ERRMSGLEN,
        "! %s error: in argument %d of %s/%d\n! %s expected, but %d found",
        err_msg_table[description], arg, f, 
        ar, expected, (int) int_val(found));
     break;
   case ZERO_DIVIDE:
-    sprintf(message,
+    snprintf(message,ERRMSGLEN,
 	    "! %s error in %s\n! %s expected, but %lx found",
 	    err_msg_table[description], f, expected, found);
     break;
   default:
-    sprintf(message, 
+    snprintf(message,ERRMSGLEN,
 	    "! %s error (not completely handled yet): %s",
 	    err_msg_table[description], expected);
     break;

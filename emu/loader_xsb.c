@@ -926,7 +926,7 @@ static byte *loader1(CTXTdeclc FILE *fd, int exp)
 
       unload_seg(seg_first_inst);
 
-      sprintf(culprit,"dynamic predicate %s/%d",name,arity);
+      snprintf(culprit,255,"dynamic predicate %s/%d",name,arity);
       xsb_permission_error(CTXTc "compile",culprit,0,"consult",1);
 	//      xsb_abort("[LOADER] Trying to compile a dynamic predicate, %s/%d",
 	//		name, arity);

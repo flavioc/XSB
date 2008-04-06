@@ -1233,7 +1233,7 @@ int builtin_call(CTXTdeclc byte number)
     Psc psc = (Psc)ptoc_addr(1);
     if ((get_type(psc) == T_PRED || get_type(psc) == T_DYNA) && get_env(psc) != T_IMPORTED) {
       char str[100];
-      sprintf(str,"[psc_prop/2] Cannot get property of predicate: %s/%d\n",
+      snprintf(str,100,"[psc_prop/2] Cannot get property of predicate: %s/%d\n",
 	      get_name(psc),get_arity(psc));
       xsb_warn(str);
       return FALSE;
