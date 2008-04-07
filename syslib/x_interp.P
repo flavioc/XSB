@@ -289,7 +289,6 @@ execute_messages_on_signale_queue:-
 	    fail
 	 ;  true),!.
 
-
 '_$attv_int'(Intlist, Call) :-
 % 	file_write(1, '.... in _$attv_int/2'), file_nl(1),
 % 	file_write(1, '.... interrupt chain is : '),
@@ -297,45 +296,6 @@ execute_messages_on_signale_queue:-
 	handle_interrupts(Intlist),
 %	file_write(1, '.... leaving _$attv_int/2'), file_nl(1),
 	call_c(Call).
-
-handle_interrupts([]) :- !.
-handle_interrupts([[Atts|Value]|Ints]) :-
-% 	file_write(1, '....  [Var|Value] = '),
-% 	file_write(1, [Var|Value]), file_nl(1),
-%	verify_attributes(Var, Value)
-%	write(Var),write(Value),nl,
-	general_verify_attributes(Atts,Value),
-	handle_interrupts(Ints).
-
-general_verify_attributes(Atts,Value) :-
-%	writeln(general_verify_attributes(Atts,Value)),
-	%get_attributes(Var,Atts),
-	%attv_unify(Var,Value),
- 	%file_write(1, '.... attv_unify(Var,Value) '),
- 	%file_write(1, [Var|Value]), file_nl(1),
-	call_attribute_handlers(Atts,Value).
-
-call_attribute_handlers([],_).
-call_attribute_handlers([Mod,Attr|Rest],Value) :-
-	(Mod = call_cleanup_mod -> 
-	    call(Attr)
-	 ; 
-  	    verify_attribute_handler(Mod,Attr,Value,Handler),
-  	    call(Handler)),
-	call_attribute_handlers(Rest,Value).	
-/*
-:- import existence_error/4 from error_handler.
-
-call_attribute_handlers([Mod,Attr|Rest],Value) :-
-	(Mod = call_cleanup_mod -> 
-	    call(Attr)
-	 ; 
-   	    (verify_attribute_handler(Mod,Attr,Value,Handler) -> 
-		call(Handler)
-	    ; existence_error(attribute_handler,attribute([Mod,Attr|Rest],Value),
-	                       call_attribute_handlers/2,1) ) ),
-	call_attribute_handlers(Rest,Value).	
-*/	
 
 
 /* === version message ================================================= */

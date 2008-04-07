@@ -81,6 +81,7 @@
 	'\=='/2,	'@<'/2,		'@>'/2,		'@=<'/2,
         '@>='/2,	';'/2,		','/2,		'->'/2,         '?='/2,
 	':'/2,		'_$cutto'/1,	'_$savecp'/1.	
+:- export handle_interrupts/1.
 %%:- export (thread_shared)/1, (thread_private)/1.
 
    :- export expand_atom/2.
@@ -124,7 +125,6 @@
 :- import  check_nonvar_list/3 from error_handler.
 :- import '_$load_undef'/1 from loader.
 
-
 :- import call0/1, conname/2,
           dynamic_code_function/5,
           expand_filename/2, gc_stuff/2,is_charlist/1,
@@ -133,7 +133,8 @@
 	  psc_name/2, psc_type/2, psc_set_shared/2,
 	  stat_set_flag/2, stat_flag/2, term_compare/3,
 	  stat_sta/1, stat_cputime/1, stat_walltime/1,str_len/2,
-          term_psc/2, term_new/2, term_new_mod/3, term_type/2
+          term_psc/2, term_new/2, term_new_mod/3, term_type/2,
+	  verify_attribute_handler/4
 	  from machine.
 :- import calln/3,calln/4,calln/5,calln/6,calln/7,calln/8,calln/9,calln/10,calln/11,calln/12 from machine.
 

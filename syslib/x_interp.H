@@ -37,7 +37,8 @@
 %% before XSB is fully bootstrapped.
 :- import abort/0, call/1, call_c/1, call_expose/1, catch/3, goal_cut_trans/3,
    atom_codes/2, seeing/1, telling/1, see/1, tell/1, seen/0, told/0,
-   gc_tables/1,gc_dynamic/1
+   gc_tables/1,gc_dynamic/1,
+   handle_interrupts/1
      from standard.
 :- import '$$exception_ball'/2 from standard.
 :- import close_open_tables/0,
@@ -56,7 +57,6 @@
 :- import  retractall/1 from assert.
 :- import call_xsb_hook/2, xsb_exit_hook/1 from xsb_hook.
 %:- import verify_attributes/2 from usermod.
-:- import verify_attribute_handler/4 from machine.
 
 :- import conset/2, conget/2 from gensym.
 

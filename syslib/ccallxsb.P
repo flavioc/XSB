@@ -41,11 +41,14 @@
 :- index(c_call_xsb_goal_cache/2,trie).
 :- index(cache_index/2,trie).
 
+%:- 	set_inthandler('_$attv_int'(_,_), MYSIG_ATTV).
+
 c_callloop_query_loop(Regs) :- 
 	catch(c_callloop_query_loop0(Regs),Ball,ccall_error_handler(Ball)).
 
 c_callloop_query_loop0(Regs) :-
 %	set_xsb_ready,
+ 	set_inthandler('_$attv_int'(_,_), MYSIG_ATTV),
 	repeat,
 	get_from_caller(Par,VarTerm,Command),
 	(\+integer(Command)
@@ -133,3 +136,13 @@ save_query_in_cache(Atom,Goal) :-
 	),
 	retract(last_cached_query_index(Idx)),
 	assert(last_cached_query_index(NextIdx)).
+
+
+'_$attv_int'(Intlist, Call) :-
+% 	file_write(1, '.... in _$attv_int/2'), file_nl(1),
+% 	file_write(1, '.... interrupt chain is : '),
+% 	file_write(1, Intlist), file_nl(1),
+	handle_interrupts(Intlist),
+%	file_write(1, '.... leaving _$attv_int/2'), file_nl(1),
+	call_c(Call).
+
