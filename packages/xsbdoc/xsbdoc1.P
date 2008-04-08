@@ -175,7 +175,7 @@ throw_load_dyn(File):-
 	load_dyn(File) -> true ; abort(('file not found ',File)).
 
 clear_the_decks:- 
-	retractall(user_library(_,_)),
+%%	retractall(user_library(_,_)),  % is no user_library/2, is user_library/1 in xsbdoc_term_proc
 	retractall(xsbdoc_bibfile(_)),
 	retractall(xsbdoc_component(_)),
 	retractall(xsbdoc_index(_)),
@@ -205,10 +205,8 @@ xsbdoc_version("1.0").
 get_components(Vals):- 
 	findall(Val,xsbdoc_component(Val),Vals).
 
-shell_list(List):- 
-	flatten(List,List1),
-	concat_atom(List1,Command),
-	shell(Command).
+shell_list(List) :-
+	shell(List).
 
 make_bibfiles(Main):- 
 	shell_list(['chmod 664 ',Main,'.texic']),
@@ -216,7 +214,8 @@ make_bibfiles(Main):-
 	shell('chmod 664 auto*.eps'),
 	findall(Bib,xsbdoc_bibfile(Bib),Bibs),
 	( Bibs \== [] -> 
-	    xsb_configuration(install_dir,Dir),
+	    xsb_configuration(install_dir,Dir0),
+	    fix_if_cygwin(Dir0,Dir),
 	    concat_atom([Dir,'/packages/xsbdoc/'],XSBDoc),
 	    concat_atom([Main,'.refs.aux'],MainRefsAux),
 	    writeln('*** ---------------------------------------------------'),
@@ -224,9 +223,9 @@ make_bibfiles(Main):-
 	    writeln('*** ---------------------------------------------------'),
       	    shell_list(['cat *.refs  > ',MainRefsAux]),
 	    open(MainRefsAux,append,MainStr),
-	    concat_atom(['\bibstyle{',XSBDoc,'lpdoc} '],C1),
+	    concat_atom(['\\bibstyle{',XSBDoc,'lpdoc} '],C1),
 	    writeln(MainStr,C1),
-	    concat_atom(['\bibdata{'|Bibs],C2),
+	    concat_atom(['\\bibdata{'|Bibs],C2),
 	    concat_atom([C2,'} '],C3),
 	    writeln(MainStr,C3),
 	    close(MainStr),
@@ -258,6 +257,13 @@ make_distclean:-
 :- comment(bug,"Have not tested out _doc files; that more than one
 		bibfile can be used; that image files are
 		appropriately read.").
+
+fix_if_cygwin(Dir0,Dir) :-
+	(configuration(architecture,i686-pc-cygwin),
+	 atom_codes(Dir0,[Dr,0':'|Rest])
+	 ->     atom_codes(Dir,[0'/',Dr|Rest])
+	 ;      Dir = Dir0
+        ).
 
 end_of_file.
 

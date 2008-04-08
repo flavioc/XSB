@@ -51,7 +51,7 @@ postproc_newlines(H,T):-
 postproc_newlines1([H],[H]):-!.
 postproc_newlines1([13|Tin],Tout):- !,
 	postproc_newlines1(Tin,Tout).
-postproc_newlines1([H|Tin],[H|Tout]):- 
+postproc_newlines1([H|Tin],[H|Tout]):- !,
 	postproc_newlines1(Tin,Tout).
 postproc_newlines1(Nonlist,Nonlist).   % for hide, etc.
 

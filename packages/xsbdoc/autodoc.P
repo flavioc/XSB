@@ -295,8 +295,8 @@ autodoc(IFormat,InputFile,Idxs,Components,StartPage,PaperType,Opts) :-
 	retractall(refs_stream(_)),
 	close(OS),
 	retractall(main_name(_)),
-	(nonvar(IntroOs),stream_property(IntroOs,type(_)) -> 
-	    close(IntroOs)
+	(nonvar(IntroOS),stream_property(IntroOS,type(_)) ->
+	    close(IntroOS)
 	  ; true),
 	  writeln(here3),
 	read_file_reset,
@@ -915,13 +915,14 @@ doc_properties(Prop,P,Idxs,OS,Format,Opts) :-
 doc_property(true,_P,_Idxs,_OS,_Format,_Opts) :-
 	!.
 doc_property(Prop,_P,_Idxs,OS,Format,Opts) :-
-	get_property_file(Prop,File),
+	functor(Prop,PP,AA),  % look only at predicate symbol, vars named to constants
+	functor(PropN,PP,AA),get_property_file(PropN,File),
+	!,
 	format_property(Format,Prop,File,"",[],Opts,OS).
 doc_property(Prop,P,_Idxs,OS,Format,Opts) :-
 	xsbdoc_warning(['unknown property ',Prop,' in assertion for ',P]),
 	ttyflush,
- 	format_property(Format,Prop,undefined,undefined,[],Opts,OS),
-	true.
+ 	format_property(Format,Prop,undefined,undefined,[],Opts,OS).
 
 get_property_file(Prop,''):- defines(Prop),!.
 get_property_file(Prop,File):- 
@@ -973,7 +974,7 @@ check_format(Format,texinfo,FormatSuffix) :-
 :- pred file_processing(RMain,FormatSuffix,
                 Name,NDName,M,I,Base,Dir,O,OS,CS,Opts) 
 
-# "Main file processing routine. Reads code and assertions, opens
+ # "Main file processing routine. Reads code and assertions, opens
    output files, etc. Also eliminates any assertions that come from
    the assertions package -- except when documenting the assertions
    package itself, of course.
@@ -1107,6 +1108,7 @@ get_comment(Id,single,_ErrorLevel,Format,Idxs,Opts,Content) :-
 	get_comment_field(Id,RContent),
 	!,
 	process_content(Format,Idxs,RContent,Opts,Content).
+
 get_comment(Id,multiple,_ErrorLevel,Format,Idxs,Opts,Contents) :-
    setof([Ctr,Content],
 	 Format^Idxs^Opts^process_comment_content(Ctr,Id,Format,
@@ -1495,7 +1497,6 @@ try_command(includedef(PredS),
             SP,Format,Idxs,Verb,Verb,_NL,NNL,Opts,NStr,Tail) :-
 %	trace,
 	parse_predname(Functor,Arity,PredS),
-	telling(Old), 
 	!,
 	(  Functor \== 0,
 	   functor(Pattern,Functor,Arity),
@@ -1504,10 +1505,10 @@ try_command(includedef(PredS),
 			     'in documentation string'],Opts),
 	   clause_read(TmpPattern,_,_)
 	-> open(autodocXXXXXX,write,Tmp),
+	   telling(Old), tell(Tmp),
 	   ( clause_read(Pattern,Body,_Ctr),
 %	     varnamesl2dict(Dict,ICiaoDict),
 %	     complete_dict(ICiaoDict,Clause,CiaoDict),
-	     tell(Tmp),
 	     pretty_print((Pattern :- Body)),
 	     fail
 	   ; true ),
@@ -1538,7 +1539,7 @@ try_command(cite(Ref),
 	append(NewComm,Tail,NStr).
 try_command(ImageCommand,
             SP,Format,Idxs,Verb,Verb,NL,NNL,Opts,NStr,Tail) :-
-	ImageCommand =.. [image,ImageFileS|Rest],
+	ImageCommand =.. [image,ImageFileS|Rest], !,
 	atom_codes(RelFile,ImageFileS),
 	concat_atom(['autofig',RelFile],NameRelFile),
 	atom_codes(NameRelFile,NameRelFileS),
@@ -1781,7 +1782,7 @@ doc_predicate(F/A,IsDecl,M,Base,Idxs,OS,Format,Opts):-
 	;  
 	   format_predicate_begin(Format,udreexp,F/A,Idxs,Opts,OS),
 	   atom_codes(UM,UMS),
-	   list_concat(["\n\Imported from @lib{", UMS,
+	   list_concat(["\n\\Imported from @lib{", UMS,
                "} (see the corresponding documentation for details)." ], Text),
 	   rewrite_docstring_opts(Format,Idxs,Opts,Text,RText),
            format_predicate_comment(Format,RText,OS),
