@@ -33,8 +33,7 @@ The @lib{assertions} module has many of the same goals of the CIAO
     @begin{verbatim}
     :- pred HeadPattern :: AssertionBody.
     @end{verbatim}
-
-where @tt{head_pattern(HeadPattern)} and @tt{AssertionBody} are both
+@noindent where @tt{head_pattern(HeadPattern)} and @tt{AssertionBody} are both
     true.  The idea is that each such declaration defines a
     @concept{usage} of a predicate -- a call pattern and an associated
     success pattern.  The exact syntax is described in documentation
@@ -79,7 +78,7 @@ where @tt{head_pattern(HeadPattern)} and @tt{AssertionBody} are both
 
    @end{itemize}
 
-   An example is of an assertion body occurs in the following predicate: 
+   An example of an assertion body occurs in the following predicate: 
 
    @begin{verbatim}
      :- pred foo(X,Y) :: 

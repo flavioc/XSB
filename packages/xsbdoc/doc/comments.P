@@ -75,8 +75,8 @@
      comment("Specifies the @index{author}(s) of the module or application. If
      present, the text in @var{AuthorText} will be placed in the
      corresponding chapter or front page. There can be more than one
-     of these declarations per module. In order for @concept{author
-     indexing} to work properly, please use one author declaration per
+     of these declarations per module. In order for @concept{author indexing}
+     to work properly, use one author declaration per
      author. If more explanation is needed (who did what when, etc.)
      use an acknowledgements or subtitle comment.
 
@@ -132,7 +132,7 @@
 
    :: [success_prop(docstring(CommentText)),
      comment("Provides the main comment text for the module or
-     application. Tthe
+     application. The
      text in @var{CommentText} will be used as the
      @index{introduction} or @index{main body} @cindex{module comment}
      of the corresponding chapter or manual. There should be at most
@@ -220,8 +220,8 @@
      explanation of the change. Several of these declarations can
      appear per module. When generating documentation automatically,
      the texts in the different @var{CommentText} fields typically
-     appear as items in an itemized list of changes. The
-     @concept{emacs CIAO mode} helps tracking version numbers by
+     appear as items in an itemized list of changes. The @concept{emacs CIAO mode}
+     helps tracking version numbers by
      prompting for version comments when files are saved. This mode
      requires version comments to appear in reverse chronological
      order (i.e., the topmost comment should be the most recent
@@ -253,8 +253,8 @@
 
 :- pred comment(doinclude,PredName) 
 
-:: [comment("As above, but allows the second argument of @tt{:-
-     comment(doinclude,...)} to be a list of predicate names.")].
+:: [comment("As above, but allows the second argument of @tt{:- comment(doinclude,...)}
+to be a list of predicate names.")].
 
 :- pred comment(hide,PredName) 
 
@@ -565,9 +565,9 @@ escapeseq --> "@{"
 
    @item{@tt{@@cite@{@em{keyword}@}}} @cindex{@@cite command}
    @em{keyword} is the identifier of a @index{bibliographic entry}.
-   Such entry is assumed to reside in on of a number of @apl{bibtex}
-   files (@index{.bib files}) @cindex{bibtex}. A reference in brackets
-   (@bf{[ ]}) is inserted in the text an the full reference is
+   Such entry is assumed to reside in one of a number of @apl{bibtex}
+   files (@index{.bib files})@cindex{bibtex}. A reference in brackets
+   (@bf{[ ]}) is inserted in the text and the full reference is
    included at the end, with all other references, in an appendix. For
    example, @tt{@@cite@{iso-prolog@}} will introduce a citation to a
    bibliographic entry whose keyword is @tt{iso-prolog}. The list of

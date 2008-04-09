@@ -4,7 +4,7 @@ XSB applications and modules.  Based originally on the Ciao system's
 @apl{lpdoc} @cite{ciao-man}, @apl{xsbdoc} generates a reference manual
 automatically from one or more XSB source files.  The target format of
 the documentation can be Postscript, HTML, PDF, or nicely formatted
-ASCII text.  @apl{xsbdoc} can be used to automatically generates a
+ASCII text.  @apl{xsbdoc} can be used to automatically generate a
 description of full applications, library modules, README files, etc.
 A fundamental advantage of using @apl{xsbdoc} to document programs is
 that it is much easier to maintain a true correspondence between the
@@ -28,7 +28,7 @@ Other parts of this document provide:
 embedded in @em{comments}.
 
 @item Documentation on the @em{assertions} that @apl{xsbdoc} uses
-(those defined in the @apl{XSB} @pred{assertions} library.
+(those defined in the @apl{XSB} @pred{assertions} library.)
 
 @end{itemize}
 
@@ -77,7 +77,7 @@ file may be documented as a @concept{library} or as an
  the @tt{.texi} file generated for it will contain information on the
 interface (e.g., the predicates exported and imported by the file,
 etc.).  In the second case, if it is an application, no 
- no description of the interface will be generated
+description of the interface will be generated
 
 If needed, @cindex{texinfo files} files written directly in
 @apl{texinfo} can also be used as input files for @apl{xsbdoc}. These
@@ -96,9 +96,9 @@ be useful), writing files in @apl{texinfo} directly is
 discouraged. This facility was added mainly to be able to reuse parts
 of manuals which were already written in @apl{texinfo}.  Note that if
 a stand-alone file needs to be written (i.e., a piece of documentation
-that is not associated to any @tt{.P} file) it can always be written
-as a ``dummy'' @tt{.P} file (i.e., one that is not used as code), but
-which contains machine readable comments).
+that is not associated to any @tt{.P} file), it can always be written
+as a ``dummy'' @tt{.P} file, i.e., one that is not used as code, but
+which contains machine readable comments.
 
 @subsection{Documenting Libraries and/or Applications}
 
@@ -116,7 +116,7 @@ If the manual is generated from a single main file (i.e., there are no
 component files) then a flat document containing no chapters will be
 generated.  If the manual is generated from a main file and one or
 more components, then the document will contain chapters. The comments
-in the main file will be used to generate the introduction, while each
+in the main file will be used to generate the introduction, and each
 of the component files will be used to generate a separate
 chapter. The contents of each chapter will be controlled by the
 contents of the corresponding component file.
@@ -405,8 +405,7 @@ including within the program text:
 
 @item @bf{Import/Export Information}. @apl{xsbdoc} uses information on
 exported and imported predicates in order to document the interface of
-a module.  Because some users consider the XSB module system is
-awkward to use while developing code, @apl{xsbdoc} also recognizes the
+a module.  @apl{xsbdoc} also recognizes the
 directives
 
 @begin{itemize} 
@@ -429,7 +428,7 @@ explicitly requesting it (see the documentation for the
 and provide the compiler with information regarding characteristics of
 the program. Typical assertions include standard compiler directives
 (such as @decl{dynamic/1}, @decl{op/3},
-@decl{use_variant_tabling/1}...), etc.  However, the @decl{pred/2}
+@decl{use_variant_tabling/1}, etc.)  However, the @decl{pred/2}
 assertion can also be used to declare global, call, and success types
 and modes (see @ref{The XSB Assertion Library}).
 
@@ -471,19 +470,19 @@ order to introduce such a part, a @tt{.pl} file with a declaration
 @tt{:- comment(filetype,part).}  should be inserted in the sequence of
 files that make up the @tt{COMPONENTS} variable of the @file{SETTINGS}
 file at each point in which a major part starts. The @tt{:-
-comment(title,""..."").}  declaration of this file will be used as the
-part title, and the @tt{:- comment(module,""..."").}  declaration text
+comment(title,"...").}  declaration of this file will be used as the
+part title, and the @tt{:- comment(module,"...").}  declaration text
 will be used as the introduction to the part.
 }
 
 @subsection{Separating the documentation from the source file}
 
 Sometimes it is convenient to include long introductory comments in a
-separate file from a source code file.  This can be by using the
+separate file from a source code file.  This can be done by using the
 @@include command. For example, the declaration:
 
 @begin{verbatim}
-:- comment(module,""@@include@{Intro.xsbdoc@}"").
+:- comment(module,"@@include@{Intro.xsbdoc@}").
 @end{verbatim}
 
 @noindent includes the contents of the file @tt{Intro.xsbdoc} as the
@@ -505,7 +504,7 @@ Comments}.
 
 @subsection{Writing comments to document version/patch changes}
 
-Version comments (@tt{:- comment(version(...), ""..."").}) can provide
+Version comments (@tt{:- comment(version(...), "...").}) can provide
 useful documentation on how a given library or application has been
 changed or has evolved.  Sometimes one would like to write version
 comments that are internal, i.e., not meant to appear in the
@@ -536,7 +535,7 @@ to be generated during installation.
 
 @apl{xsbdoc} allows manuals to be generated in several different
 formats.  Because these formats each have widely different
-requirements it is sometimes a little tricky to get things to work
+requirements, it is sometimes a little tricky to get things to work
 successfully for all formats. The following recommendations may help:
 
 @begin{itemize} 
@@ -593,12 +592,12 @@ commands) describing an application. This text can be included in a
 section of the main file documentation as described above:
 
 @begin{verbatim}
-:- comment(module,""
+:- comment(module,"
    ...
    @@section@{Installation instructions@}
    @@include@{INSTALL.xsbdoc@}
    ...
-   "").
+   ").
 @end{verbatim}
 
 @noindent At the same time, this text can be used to generate a nicely
@@ -606,8 +605,8 @@ formatted @tt{INSTALL} file in ascii.  To this end, an @tt{INSTALL.P}
 file as follows can be constructed:
 
 @begin{verbatim}
-:- comment(title,""Installation instructions"").
-:- comment(module,""@@include@{INSTALL.xsbdoc@}"").
+:- comment(title,"Installation instructions").
+:- comment(module,"@@include@{INSTALL.xsbdoc@}").
 @end{verbatim}
 
 Then, the ascii @tt{INSTALL} file can be generated by simply running

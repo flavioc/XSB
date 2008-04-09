@@ -119,7 +119,7 @@ texinfo_the_files(_Base).
 perform_generation_type(ascii,Main,List):- 
 	component_ascii([Main|List]),
 	shell_list(['mv -f ',Main,'.ascii ',Main,'.tempascii']),
-	add_spaces([List],Spacelist),
+	add_spaces(List,Spacelist),
 	shell_list(['cat ',Main,'.tempascii ',Spacelist,' > ',Main,'.ascii']).
 perform_generation_type(dvi,_,_).
 perform_generation_type(ps,Base,_):- 
@@ -155,7 +155,7 @@ xsbdoc_components(_,_,_).
 component_html([]).
 component_html([P|T]):- 
 	corrected_search_module(P,_Dir,Base,_Src,_Isl), 
-	shell_list(['csh texi2html -expandinfo -split_chapter -menu ',
+	shell_list(['sh texi2html -expandinfo -split_chapter -menu ',
 		    Base,'.texic']),
 	component_html(T).
 
@@ -206,7 +206,8 @@ get_components(Vals):-
 	findall(Val,xsbdoc_component(Val),Vals).
 
 shell_list(List) :-
-	shell(List).
+	concat_atom(List,AList), %shell doesn't use get_longstring, but parses list
+	shell(AList).
 
 make_bibfiles(Main):- 
 	shell_list(['chmod 664 ',Main,'.texic']),
@@ -238,6 +239,7 @@ make_bibfiles(Main):-
 
 make_distclean:- 
 	shell('rm -f *.aux *.blg *.cp *.cps *.fn *.fns *.gl *.gls *.ky *.kys'),
+	shell('rm -f *.co *.cos *.op *.ops'),
 	shell('rm -f *.log *.pd *.pds *.pg *.pgs *.refs *.texic *.toc '),
 	shell('rm -f *.tp *.tps *.vr *.vrs'),
 	shell('rm -f autodocXXXXXX *.tempascii').
@@ -259,7 +261,7 @@ make_distclean:-
 		appropriately read.").
 
 fix_if_cygwin(Dir0,Dir) :-
-	(configuration(architecture,i686-pc-cygwin),
+	(xsb_configuration(architecture,i686-pc-cygwin),
 	 atom_codes(Dir0,[Dr,0':'|Rest])
 	 ->     atom_codes(Dir,[0'/',Dr|Rest])
 	 ;      Dir = Dir0

@@ -75,12 +75,16 @@ clause_read(Head, Body, Ctr):-
 clause_read(1, Body, Ctr):- 
 	'_#clause'(directive(Body),Ctr).
 
-exports(F,A):- 
-	'_#clause'(directive(document_export(Es)),_Ctr),
+exports(F,A) :-		% preserve order
+	setof(e(Ctr,F,A),exports(F,A,Ctr),ALL),
+	member(e(_,F,A),ALL).
+
+exports(F,A,Ctr):- 
+	'_#clause'(directive(document_export(Es)),Ctr),
 	comma_member(T,Es),
 	T = F/ A.
-exports(F,A):- 
-	'_#clause'(directive(export(Es)),_Ctr),
+exports(F,A,Ctr):- 
+	'_#clause'(directive(export(Es)),Ctr),
 	comma_member(T,Es),
 	T = F/ A.
 
@@ -245,6 +249,7 @@ autodoc(IFormat,InputFile,Idxs,Components,StartPage,PaperType,Opts) :-
                         _I,_Base,Dir,O,OS,CitStr,Opts),
 	concat_atom([Dir,InputFile],MainIdx),
 	detect_filetypes(Opts,Components,FileType,FileLevel),
+	writeln(userout,detect_filetypes(InputFile,Opts,Components,FileType,FileLevel)),
 
 	document_front_matter(Format,FileType,FileLevel,Name,NDName,Dir,
 		      StartPage,PaperType,Idxs,Opts,
@@ -409,7 +414,7 @@ version_format( version(V*SV+P, Y/M/D, H:N*S+Z), V,SV,P,Y,M,D, H, N, S, Z).
    # "Generates the documentation for the interface of a module.".
 %% ---------------------------------------------------------------------------
 
-doc_interface(_,_,_FileLevel,FileType,_Base,_Name,
+doc_interface(File,_,_FileLevel,FileType,_Base,_Name,
              _Idxs,_NOS,_IntroOS,_Opts):-
         ( FileType = application; FileType = part ),
 	!.
@@ -445,7 +450,8 @@ doc_interface(File,Format,FileLevel,FileType,Base,Name,Idxs,
 
 	get_file_level_declarations(NDecls),
 
-        format_module_usage(Format,Name,RModuleType,Exports,
+	sort(Exports,SortedExports),
+        format_module_usage(Format,Name,RModuleType,SortedExports,
 	 	                UFiles,SysFiles,Ops,NDecls,Idxs,OS),
 %        optional_message("Documenting (new) declarations...",Opts),
 %	doc_decls(Name,NDecls,Base,Idxs,OS,Format,Opts),
@@ -1076,6 +1082,7 @@ detect_filetypes(Opts,Components,part,Level) :-
 %% Application - no interface, so no complication
 detect_filetypes(Opts,Components,application,Level) :-
 	member('-main',Opts),
+	\+exports(_,_),		% check no exports or document_exports!
 	!,
 	optional_message('File being documented as an application',Opts),
 	detect_filelevel(Opts,Components,Level).
