@@ -22,7 +22,7 @@
 
 :- export mutex_create/1, mutex_create/2, mutex_lock/1, mutex_unlock/1,
           mutex_trylock/1, mutex_destroy/1, with_mutex/2.
-:- export mutex_unlock_all, mutex_property/2.
+:- export mutex_unlock_all/0, mutex_property/2.
 
 :- export
 	message_queue_create/1, message_queue_create/2, message_queue_destroy/1,
