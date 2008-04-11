@@ -35,4 +35,4 @@ init_xsb_doc:-
 
 :- init_xsb_doc.
 
-?- import xsbdoc/2 from xsbdoc1.
+?- import xsbdoc/2, make_distclean/0 from xsbdoc1.
