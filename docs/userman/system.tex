@@ -1008,14 +1008,17 @@ Section~\ref{sec:TablePred:Deleting} for details.
 \section{Compiling, Consulting, and Loading} \label{Consulting}
 %====================================================
 Like other Prologs, XSB provides for both statically compiled code and
-dynamically asserted code.  Unlike some Prologs, however, there is no
-difference between compiled and consulted code.  Abstractly,
-``Compiling'' in XSB means creation of a file containing SLG-WAM
-byte-code; ``Consulting'' means loading such a byte-code file, (and
-perhaps creating the file itself, via compilation).  Compiled code may
-be more optimized than asserted code, but certain types of indexing,
-such as trie and star indexing are (currently) available only for
-dynamically asserted predicates (see {\tt index/2}).
+dynamically asserted code.  Static compiled code may be more optimized
+than asserted code, particularly for clauses that have large bodies,
+but certain types of indexing, such as trie and star indexing are
+(currently) available only for dynamically asserted predicates (see
+{\tt index/2}).
+
+Unlike some Prologs, however, there is no difference between compiled
+and consulted code: ``Compiling'' in XSB means creation of a file
+containing SLG-WAM byte-code; ``Consulting'' means loading such a
+byte-code file, after compiling it (if the source file was altered
+later than the object file).
 
 \index{\texttt{consult/[1,2]}}
 The standard predicate {\tt consult/[1,2]} is the most convenient
@@ -1060,7 +1063,7 @@ steps which are described in detail in the following paragraphs.
 	object file, compile the module using predicate {\tt
             compile/2} with the options specified.
 \item[Loading:] load the object code of the file into memory. 
-\item[Importing:] if the file is a module, import any the exported
+\item[Importing:] if the file is a module, import any exported
 	predicates of that module to {\tt usermod}.
 \item[Query Execution:] execute any queries that the file may contain.
 \end{description}
@@ -1215,21 +1218,24 @@ in more detail.
 \index{invoking the Compiler}\index{Compiler!invoking}
 %=====================================================
 
-The compiler is invoked directly at the interpreter level (or in a 
-program) through the Prolog predicates {\tt compile/[1,2]}.  
+In addition to invoking the compiler through {\tt consult/[1,2]}, the
+compiler can be invoked directly at the interpreter level (or in a
+program) through the Prolog predicates {\tt compile/[1,2]}. 
 
-\index{\texttt{compile/[1,2]}}
- {\tt compile/2} has the form: 
-\begin{center}{\tt	
-	compile(+Files, +OptionList)
-}
-\end{center}
-in which {\tt Files} is either an absolute or relative filename or a
-ground list of absolute or relative file names; and {\tt OptionList}
-is a ground list of compiler options.  {\tt compile/2} compiles all
-files specified, using the compiler options specified in {\tt
-OptionList} (see Section~\ref{sec:CompilerOptions} below for the
-precise details.)
+\begin{description}
+\repeatstandarditem{compile(+Files,+OptionList)}{compile/2}
+\standarditem{compile(+Files)}{compile/1}
+%
+{\tt compile/2} compiles all files specified, using the compiler
+options specified in {\tt OptionList} (see
+Section~\ref{sec:CompilerOptions} below for the precise details.)
+{\tt Files} is either an absolute or relative filename, or a ground
+list of absolute or relative file names; and {\tt OptionList} is a
+ground list of compiler options.  Since options can be set globally
+via the predicate {\tt set\_global\_compiler\_options/1}, each option
+in {\tt OptionsList} can optionally be prefixed by \verb|+| or
+\verb|-|, indicating that the option is to be turned on, or off,
+respectively.  (No prefix turns the option on.)
 
 \demo{$|$ ?- compile(Files).} 
 
@@ -1238,6 +1244,7 @@ is just a notational shorthand for the query:
 
 \demo{$|$ ?- compile(Files, []).}
 
+\comment{
 The standard predicates {\tt consult/[1,2]} call {\tt compile/1} (if
 necessary).  Error conditions for {\tt compile/[1,2]} are similar to
 those for {\tt consult/[1,2]}.
@@ -1249,21 +1256,22 @@ should be a proper Prolog list, i.e.\ a term of the form:
 \end{center}
 where $option_i$ is one of the options described in
 Section~\ref{sec:CompilerOptions}.
+}
 
-The source file name corresponding to a given module is obtained by 
-concatenating a directory prefix and the extension {\tt .P} (or other
-filenames, see Section~\ref{sec:filenames}) 
-to the module name.  The directory prefix must be in the
-dynamic loader path (see Section~\ref{LibPath}).
-Note that these directories are searched in a predetermined
-order (see Section~\ref{LibPath}), so if a module with the same name
-appears in more than one of the directories searched, the compiler 
-will compile the first one it encounters.  In such a case, the user can 
-override the search order by providing an absolute path name.
-
+For a given, {\tt File} to be compiled, the source file name
+corresponding to {\tt File} is obtained by concatenating a directory
+prefix and the extension {\tt .P}, {\tt .pl} or other filenames, see
+Section~\ref{sec:filenames} to {\tt File}.  The directory prefix must
+be in the dynamic loader path (see Section~\ref{LibPath}).  Note that
+these directories are searched in a predetermined order (see
+Section~\ref{LibPath}), so if a module with the same name appears in
+more than one of the directories searched, the compiler will compile
+the first one it encounters.  In such a case, the user can override
+the search order by providing an absolute path name.
+%
 If {\tt File} contains no extension, an attempt is made to compile the
-file {\tt File.P} (or other extensions) before trying compiling the
-file with name {\tt File}.
+file {\tt File.P}, {\tt File.pl}, or other extensions before trying
+compiling the file with name {\tt File}.
 
 We recommend use of the extension {\tt .P} for Prolog source file to
 avoid ambiguity.  Optionally, users can also provide a header file for
@@ -1281,13 +1289,13 @@ declarations alone.
 }
  
 The result of the compilation (an SLG-WAM object code file) is stored
-in a ($\langle$filename$\rangle$.xwam), but {\tt compile/[1,2]} does {\em
-not\/} load the object file it creates.  (The standard predicates {\tt
-consult/[1,2]} and {\tt reconsult/[1,2]} both recompile the source
-file, if needed, and load the object file into the system.)  The
-object file created is always written into the directory where the
-source file resides (the user must therefore have write permission
-in that directory).
+in a ($\langle$filename$\rangle$.xwam), but {\tt compile/[1,2]} does
+{\em not\/} load the object file it creates.  (The standard predicates
+{\tt consult/[1,2]} and {\tt reconsult/[1,2]} both load the object
+file into the system, after recompiling the source file if needed.)
+The object file created is always written into the directory where the
+source file resides: the user must therefore have write permission in
+that directory.
  
 If desired, when compiling a module (file), clauses and directives can be
 transformed as they are read.  This is indeed the case for definite clause
@@ -1302,6 +1310,50 @@ exist.  A header file (with extension {\tt .H}) {\em must} be present
 for a foreign language module (see the chapter {\it Foreign Language
 Interface} in Volume 2).
 
+{\bf Error Cases}
+In the cases below, {\tt File} refers to an element of {\tt Files} if
+{\tt Files} is a list and otherwise refers to {\tt Files} itself.
+\bi
+\item 	{\tt Files} is a variable, or a list containing a variable element.
+\bi
+\item 	{\tt instantiation\_error}.
+\ei
+\item  {\tt File} is a neither an atom nor a list of atoms.
+\bi
+\item 	{\tt type\_error(atom\_or\_list\_of\_atoms,File)}
+\ei
+\item  {\tt File} does not exist in the current set of
+  library directories 
+\bi
+\item 	{\tt existence\_error(file,File)}
+\ei
+%
+\item 	{\tt File} has an object code extension (e.g. {\tt .xwam})
+\bi
+\item 	{\tt permission\_error(compile,file,File)}
+\ei
+%
+\item {\tt File} has been loaded previously in the session {\em and}
+  there is more than one active thread.  
+\bi
+\item 	{\tt misc\_error}
+\ei
+\item 	{\tt OptionList} is a partial list or contains an option that is a variable
+\bi
+\item 	{\tt instantiation\_error}
+\ei
+\item 	{\tt OptionList} is neither a list nor a partial list
+\bi
+\item 	{\tt type\_error(list,OptionsList)}
+\ei
+\item {\tt OptionList} contains an option, {\tt Option} not described
+  in Section~\ref{sec:CompilerOptions} 
+\bi
+\item 	{\tt domain\_error(xsb\_compiler\_option,Option)}
+\ei
+\ei
+
+\end{description}
 
 \subsection{Compiler Options}\label{sec:CompilerOptions}
 \index{Compiler!options}\index{options!Compiler}
@@ -1329,27 +1381,22 @@ from a directive in the file to be compiled (see compiler directive
 
 The following options are currently recognized by the compiler:
 \begin{description}
-\item[{\tt optimize}]\index{\texttt{optimize}}
-	When specified, the compiler tries to optimize the object code.
-	In \version, this option optimizes predicate calls, among other
-	features, so execution may be considerably faster for recursive
-	loops.  However,
-	due to the nature of the optimizations, the user may not be able to
-	trace all calls to predicates in the program.  
-%%
-	\comment{TLS: can no longer assert to static code
-	Also the Prolog code
-	should be {\em static}.  In other words, the user is {\em not} allowed
-	to alter the entry point of these compiled predicates by asserting new
-	clauses.  }
-%%
-	As expected, the compilation phase will also be slightly
-	longer.  For these reasons, the use of the {\tt optimize} option may
-	not be suitable for the development phase, but is
-	recommended once the code has been debugged.
-
-
-\item[{\tt xpp\_on}]\index{\texttt{xpp\_on}}\index{GPP}
+\item[{\tt optimize}]\index{\texttt{optimize}} When specified, the
+  compiler tries to optimize the object code.  In \version, this
+  option optimizes predicate calls, among other features, so execution
+  may be considerably faster for recursive loops.  However, due to the
+  nature of the optimizations, the user may not be able to trace all
+  calls to predicates in the program.  As expected, the compilation
+  phase will also be slightly longer.  For these reasons, the use of
+  the {\tt optimize} option may not be suitable for the development
+  phase, but is recommended once the code has been debugged.
+%
+\item[{\tt singleton\_warnings\_off}] Does not print out any warnings
+  for singleton variables during compilation.  This option can be
+  useful for compiling XSB programs that have been generated by some
+  other program.
+%
+v\item[{\tt xpp\_on}]\index{\texttt{xpp\_on}}\index{GPP}
   Filter the program through a preprocessor  before sending it to the XSB 
   compiler. By default (and for the XSB code itself), XSB uses GPP, a
   preprocessor developed by Denis Auroux (auroux@math.polytechnique.fr)
@@ -1601,9 +1648,8 @@ The following options are currently recognized by the compiler:
 	printing out information about the progress of the compilation of each 
 	predicate.
 \item[{\tt profile}] This option is usually used when modifying the
-	XSB compiler.  When specified, the compiler prints out
-	information about the time spent in each phase of the
-	compilation process.
+  XSB compiler.  When specified, the compiler prints out information
+  about the time spent in certain phases of the compilation process.
 
 \item[{\tt asm\_dump, compile\_off}] Generates a textual representation of 
 	the SLG-WAM assembly code and writes it into the file {\tt module.A}
@@ -1618,9 +1664,6 @@ The following options are currently recognized by the compiler:
 		then using the {\tt -d module.xwam} command-line
 		option of the 
 		XSB emulator (see Section~\ref{sec:EmuOptions}).
-\item[{\tt singleton\_warnings\_off}] Does not print out any warnings
-	for singleton variables during compilation.  This option can
-	be useful for compiling generated programs.
 \item[{\tt index\_off}] When specified, the compiler does not generate indices
 	for the predicates compiled.  
 \end{description}
