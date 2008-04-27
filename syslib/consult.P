@@ -29,16 +29,39 @@
 #include "flag_defs_xsb.h"
 #include "extensions_xsb.h"
 
-compile(Path) :- compile(Path, []).	% compile with no options
+compile(Path) :- compile_opt_checked(Path, []).	% compile with no options
 
-compile(X, _) :-
+compile(Paths,Options):- 
+	check_nonvar(Options,compile/2,2),
+	check_compile_options(Options),
+	compile_opt_checked(Paths, Options).	
+
+compile_opt_checked(X, _) :-
 	var(X), !,
 	instantiation_error(compile/[1,2],1).
-compile([], _) :- !.
-compile([H|T], Options) :- !,
+compile_opt_checked([], _) :- !.
+compile_opt_checked([H|T], Options) :- !,
 	\+ (\+ (compile0(H,Options))),
-	compile(T, Options).
-compile(Path, Options) :- \+ (\+ (compile0(Path,Options))).
+	compile_opt_checked(T, Options).
+compile_opt_checked(Path, Options) :- \+ (\+ (compile0(Path,Options))).
+
+%------
+
+check_compile_options([]):- !.
+check_compile_options([H|T]):- !,
+	check_compile_option(H),
+	check_compile_options(T).
+check_compile_options(Option):- 
+	type_error(list,Option,compile/[1,2],2).
+
+check_compile_option(Option):- 
+	check_nonvar(Option,compile/[1,2],2),
+	(current_xsb_compiler_option(Option) -> 
+	    true 
+	 ;  domain_error(xsb_compiler_option,Option,compile/[1,2],2) ).
+	
+
+%------
 
 compile0(Path, Options) :-
 	atom(Path),
@@ -51,7 +74,12 @@ compile0(Path, Options) :-
 	    permission_error(compile,'file/module',Path,compile/[1,2])
 	).
 compile0(Path, _) :-
-	existence_error('file/module',Path,compile/[1,2],1).
+	(var(Path) -> 
+	    instantiation_error(compile/[1,2],1)
+	  ; (\+ atom(Path) -> 
+	        type_error(atom,Path,compile/[1,2],1)
+	      ; 
+	        existence_error('file/module',Path,compile/[1,2],1) ) ).
 
 compile_f(XSB_SRC_EXTENSION_ATOM_SANS_DOT, Base, Opts, ExList, Mod, _) :- !,
 	compile(Mod, Base, XSB_SRC_EXTENSION_ATOM, Opts, ExList).
@@ -700,7 +728,7 @@ do_assert_and_fail(Term,Dir) :-	% Now Term is the output of
 	fail.
 
 
-/* In set_retracted/7, Head is the predicate which has been transformed by
+/* In Set_retractedn/7, Head is the predicate which has been transformed by
    change_multifile_directive/3.  So p(_,_) may have been transformed to 
    p_file1(_,_). 
 

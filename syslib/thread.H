@@ -27,7 +27,6 @@
 	thread_create/1, thread_create/2,thread_create/3,
    thread_detach/1,thread_disable_cancel/0, thread_enable_cancel/0, 
 	thread_exit/1, internal_thread_exit/1,
-	thread_exit/0,
 	thread_join/2, thread_join/1,
 	thread_property/2,
 	thread_self/1,set_xsb_ready/0,
@@ -42,8 +41,6 @@
 :- export xsb_thread_cancel/1,
           xsb_thread_create/2,xsb_thread_create/3, 
           xsb_thread_detach/1,
-	  xsb_thread_exit/1,  
-          xsb_thread_exit/0,  % obsolescent
 	  xsb_thread_join/2, 
           xsb_thread_join/1,  % obsolescent
    xsb_thread_property/2,

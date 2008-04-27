@@ -128,8 +128,6 @@ thread_exit_handler(ExitTerm) :-
 	),
 	thread_request( XSB_THREAD_EXIT,THREAD_EXITED,_, _, _,_,_,_,_).
 
-%:- import writeln/1 from standard.
-
 internal_thread_exit(ExitCode) :- 
 	thread_request( XSB_CHECK_ALIASES_ON_EXIT,AliasedDetached,_,_,_,_,_,_,_),
 	(	AliasedDetached == 1 -> 
@@ -138,9 +136,6 @@ internal_thread_exit(ExitCode) :-
 	),
 %	  writeln(thread_exit),
 	thread_request( XSB_THREAD_EXIT, ExitCode,_, _, _,_,_,_,_).
-
-thread_exit :-
-	thread_exit([]).
 
 /*---------------*/
 
@@ -366,16 +361,16 @@ threads :-
 /* ==================================================================  */
 /* Routines used internally.                                           */
 
-thread_run0(Goal) :- 
-	thread_enable_cancel,
-	call(Goal),
-	internal_thread_exit(THREAD_SUCCEEDED).
-
 /* called by xsb_thread_run() in thread_xsb.c */
 '_$thread_run'( Goal ) :-
 	(	catch( thread_run0(Goal), Ball, handle_thread_error(Ball))
 	;	internal_thread_exit(THREAD_FAILED)
 	).
+
+thread_run0(Goal) :- 
+	thread_enable_cancel,
+	call(Goal),
+	internal_thread_exit(THREAD_SUCCEEDED).
 
 handle_thread_error(thread_exit(Term)) :- 
 	thread_exit_handler(Term),   
@@ -390,15 +385,40 @@ handle_thread_error(Ball) :-
 */
 
 thread_call(Goal, Handler) :-
+%	writeln(thread_call(Goal, Handler)),
 	catch(Goal,Ball,thread_call_handler(Ball,Handler)),
+	thread_request( XSB_SET_EXIT_STATUS, THREAD_SUCCEEDED, _, _, _, _, _, _ ,_),
 	call(Handler).
 thread_call(_Goal,Handler) :-
+	thread_request( XSB_SET_EXIT_STATUS, THREAD_FAILED, _, _, _, _, _, _ ,_),
 	call(Handler),
 	fail.
 
+%:- import writeln/1 from standard.
 thread_call_handler(Ball, Handler) :- 
+%	writeln(thread_call_handler(Ball, Handler)),
+	assert_status_ball(Ball),
 	call(Handler),
+	retract_status_ball,
 	throw(Ball).
+
+:- import get_backtrace/2 from error_handler.
+assert_status_ball(thread_exit(Term)):- 
+	thread_request( XSB_SET_EXIT_STATUS, THREAD_EXITED, _, _, _, _, _, _ ,_),
+	thread_self(Id),asserta('_$thread_exit_ball'(Id,exited(Term))).
+assert_status_ball(error(thread_cancel,Msg,BT)):- !,
+%	writeln(thread_cancel_reached),
+	thread_request( XSB_SET_EXIT_STATUS, THREAD_CANCELLED, _, _, _, _, _, _ ,_),
+	get_backtrace(BT,ReadBT),
+	thread_self(Id),
+	asserta('_$thread_exit_ball'(Id,cancelled(error(thread_cancel,Msg,ReadBT)))).
+assert_status_ball(error(Error,Msg,BT)):- 
+	thread_request( XSB_SET_EXIT_STATUS, THREAD_EXCEPTION, _, _, _, _, _, _ ,_),
+	get_backtrace(BT,ReadBT),thread_self(Id),
+	asserta('_$thread_exit_ball'(Id,exception(error(Error,Msg,ReadBT)))).
+
+retract_status_ball:- 
+	thread_self(Id),retractall('_$thread_exit_ball'(Id,_)).
 
 /* store thread flag predicate in THREAD_RUN flag */
 
@@ -424,9 +444,6 @@ xsb_thread_create(One,Two) :- thread_create(One,Two).
 xsb_thread_cancel(Id) :- thread_cancel(Id).
 
 xsb_thread_detach(ThreadId) :- thread_detach(ThreadId).
-
-xsb_thread_exit(ExitCode) :- thread_exit(ExitCode).
-xsb_thread_exit :- thread_exit.
 
 xsb_thread_join(Input, ExitCode) :- thread_join(Input, ExitCode).
 xsb_thread_join(Input) :- thread_join(Input).

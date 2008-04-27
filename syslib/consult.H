@@ -44,11 +44,11 @@
 	 load_dyn_file_loaded/2, load_dyn_pred_loaded/4, load_dyn_file/1.
 
 :- import check_one_thread/3,
-   domain_error/4, existence_error/4,instantiation_error/2, permission_error/4,
+   domain_error/4, existence_error/4,instantiation_error/2, permission_error/4,type_error/4,
    check_nonvar/3, check_atom/3 from error_handler.
 :- import asserta/1, (dynamic)/1, retractall/1, assert/1, retract/1, t_assert/2
      from assert.
-:- import warning/1, time_message/2 from auxlry.
+   :- import warning/1, time_message/2, current_xsb_compiler_option/1 from auxlry.
 :- import banner_control/1 from banner.
 :- import append/3, memberchk/2 from basics.
 :- import compile/5 from compile.
