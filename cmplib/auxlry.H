@@ -30,6 +30,7 @@
 	  freeze/1, melt/2, writetop/2, set_global_compiler_options/1,
               check_file_compiler_options/1,
 	  numbervars_cmplib/3.
+:- export current_xsb_compiler_option/1.
 
 :- import current_compiled_module/1 from compile.
 :- import load_dyn_module/1 from consult.

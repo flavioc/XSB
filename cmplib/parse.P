@@ -63,7 +63,8 @@ parse(Modname, PFile, HFile, Module) :-
 		 ;	Module0 = Module0	% init (lamp variable)
 		),
 		parse1(Modname,PFile,Module0)
-	 ;	error(('Cannot find the file ', PFile)), fail, Module0=Module0
+	    ;   existence_error('file/module',PFile,compile/1,1)
+%	 ;	error(('Cannot find the file ', PFile)), fail, Module0=Module0
 	),
 	conset(needs_restart, 0),  % clean up this var
 	retractall('_$multifile_retract'(_, Modname, _)),
@@ -241,23 +242,25 @@ parse_clauses(ModName, Module) :-
 	    )
 	).
 parse_clauses(M, _) :-	% Under normal conditions this clause is unreachable!
-	error(('Clauses of ', M, ' cannot be parsed.')).
+	syntax_error(('Clauses of ', M, ' cannot be parsed.')).
 
+:- import file_read/3 from xsb_read.
 my_read(Term, Vars) :-
-	stat_flag(CURRENT_INPUT, File), file_read_fapoe(File, Term, Vars).
+%	stat_flag(CURRENT_INPUT, File), file_read_fapoe(File, Term, Vars).
+	stat_flag(CURRENT_INPUT, File), file_read(File, Term, Vars).
 
 check_compilable_clause(Cl) :- var(Cl), !, 
-	error(('Clause cannot be compiled: ',Cl)),
+	syntax_error(('Clause expected, variable encountered: ',Cl)),
 	fail.
 check_compilable_clause(:-(D)) :- var(D), !, 
-	error(('Clause cannot be compiled: ',:-(D))),
+	syntax_error(('Directive is uninstantiated: ',:-(D))),
 	fail.
 check_compilable_clause(:-(H,B)) :- var(H), !, 
-	error(('Clause cannot be compiled: ',:-(H,B))),
+	syntax_error(('Clause with variable head encountered: ',:-(H,B))),
 	fail.
 check_compilable_clause(:-(H,B)) :-
         embedded_number(B), !, 
-	error(('Clause cannot be compiled: ',:-(H,B))),
+	syntax_error(('Literal expected in clause body, number encountered: ',:-(H,B))),
 	fail.
 check_compilable_clause([]) :- !.
 check_compilable_clause([Cl|Cls]) :- !,

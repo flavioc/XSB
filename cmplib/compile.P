@@ -42,15 +42,20 @@ mc(Modname, Options) :- compile(Modname, Modname, Options, _).
 :- dynamic(current_compiled_module(_)).
 
 compile(Modname,Basename,Extensions,Options,ExportList):- 
-	stat_flag(CURRENT_INPUT, Str),
+	stat_flag(CURRENT_INPUT, IStr),
+	stat_flag(CURRENT_OUTPUT, OStr),
 	catch(compile_internal(Modname,Basename,Extensions,Options,ExportList),E,
-	      (handle_compile_error(Basename,Str),throw(E))).
+	      (handle_compile_error(Basename,IStr,OStr),throw(E))).
 
-% perhaps reset compiler erors to 0 in handler.
-handle_compile_error(Basename,Str):- 	      
+:- import tell/1 from standard.
+% Close current stream (i.e. the file we were compiling) if it is not
+% equal to whatever the current stream was before we started compiling.
+handle_compile_error(Basename,IStr,OStr):- 	      
+	stat_flag(CURRENT_INPUT, CurStr),
+	(IStr \== CurStr -> close(CurStr) ; true),
 	str_cat(Basename,XSB_OBJ_EXTENSION_ATOM,OFile),
 	sys_unlink(OFile,_), 
-	see(Str).
+	see(IStr),tell(OStr).
 
 compile_internal(Modname, Basename, Extension,Options, ExportList) :-
 	file_names(Basename, Extension,PFile, HFile, OFile, AFile, DFile,

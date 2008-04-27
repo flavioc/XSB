@@ -121,6 +121,10 @@ check_file_compiler_options([H|T]):-
 
 unsuitable_for_file_options(ti_dump).
 
+% redefining for export
+current_xsb_compiler_option(Option):- 
+	current_option(Option).
+
 /* Old PSB genes */
 current_option(sysmod).
 current_option(optimize).

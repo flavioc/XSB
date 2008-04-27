@@ -51,7 +51,7 @@
      from standard.
 :- import retract/1, retractall/1, assert/1, (dynamic)/1 from assert.
 :- import '_$index'/3, mpa_to_skel/2 from file_op.
-:- import misc_error/1 from error_handler.
+   :- import existence_error/4,misc_error/1, syntax_error/1 from error_handler.
 
 :- import spawn_process/5, process_control/2 from shell.
 :- import xsb_configuration/2 from xsb_configuration.
