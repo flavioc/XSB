@@ -99,7 +99,6 @@ trace_this_enable_print_on_redo(call, 1).
 % call_c is eliminated, so what is called is traced.
 is_xpar_call(call_c, 1).
 
-trace_standard_predicate(compile,1).
 trace_standard_predicate(phrase,2).
 trace_this_noprint(dcg_body_nonvar,4).
 trace_this_noprint(reset_dcg_mode,0).
