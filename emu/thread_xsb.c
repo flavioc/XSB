@@ -1745,7 +1745,20 @@ case THREAD_ACCEPT_MESSAGE: {
 	  else ctop_int(CTXTc 5, 0);
 	  break;
 	}
-	  
+
+	  /* Used so that exit-status will be available to on-exit
+	     handler.  Status is set regardless of whether thread is
+	     detached -- if the thread is detached, thread entry will
+	     be reclaimed on exit. */
+	case XSB_SET_EXIT_STATUS: {
+
+	  rval = iso_ptoc_int(CTXTc 2, "thread_exit/1" ) ;
+          i = THREAD_ENTRY( th->tid ) ;
+	  th_vec[i].status = rval;
+	  rc = 0 ; /* keep compiler happy */
+	  break ;
+	}
+
 	default:
 	  rc = 0 ; /* Keep compiler happy */
 	  xsb_abort( "[THREAD] Invalid thread operation requested %d",request_num);

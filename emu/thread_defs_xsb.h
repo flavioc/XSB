@@ -94,6 +94,7 @@
 #define THREAD_UNLOCK_QUEUE             51
 #define XSB_FIRST_THREAD_PROPERTY       52
 #define XSB_NEXT_THREAD_PROPERTY        53
+#define XSB_SET_EXIT_STATUS             54
 
 #define MAX_THREADS		1024
 #define MAX_MQUEUES		1024
