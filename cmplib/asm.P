@@ -183,7 +183,7 @@ asm_text_size([], N, N, _, _).
 asm_text_size([label(T,X)|Rest], Lc, NewLc, HashSize, HashLabelTab) :-
 	!,
 	hash_insert((X,Lc), HashSize, HashLabelTab),
-	( T == pred -> X = (Sym,_), sym_propin(ep(Lc), Sym) ; true ),
+	( T == (pred) -> X = (Sym,_), sym_propin(ep(Lc), Sym) ; true ),
 	asm_text_size(Rest, Lc, NewLc, HashSize, HashLabelTab).
 asm_text_size([Inst|Rest], Lc, NLc, HashSize, HashLabelTab):-
 	asm_inst(Inst, Nbytes, _, _),	% get the size of the instruction
