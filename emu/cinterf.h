@@ -299,6 +299,9 @@ typedef char *vfile;
 
 extern char *vfile_open(/* vfile, func, func, func, func, func */);
 extern char *vfile_obj(/* vfile */);
+#ifndef HAVE_SNPRINTF
+extern int snprintf(char *buffer, size_t count, const char *fmt, ...);
+#endif
 
 /*======================================================================*/
 /* Routines to call xsb from C						*/

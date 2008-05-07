@@ -62,6 +62,7 @@
 #endif
 
 #include "debug_xsb.h"
+#include "cinterf.h"
  
 /* === stuff used from elsewhere ======================================	*/
 

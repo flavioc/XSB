@@ -45,6 +45,7 @@
 #include "memory_xsb.h"
 #include "register.h"
 #include "thread_xsb.h"
+#include "cinterf.h"
 
 extern Psc synint_proc(Psc, int);
 
