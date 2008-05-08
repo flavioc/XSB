@@ -56,7 +56,10 @@ check_compile_options(Option):-
 
 check_compile_option(Option):- 
 	check_nonvar(Option,compile/[1,2],2),
-	(current_xsb_compiler_option(Option) -> 
+	(Option @= +(_) ->  Option = +(Option_1) 
+          ; Option = -(_) -> Option = -(Option_1) 
+          ; Option = Option_1),
+	(current_xsb_compiler_option(Option_1) -> 
 	    true 
 	 ;  domain_error(xsb_compiler_option,Option,compile/[1,2],2) ).
 	
