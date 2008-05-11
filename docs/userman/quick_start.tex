@@ -32,7 +32,7 @@ use the following procedure.
   \verb'build', and \verb'etc'.
 
 \index{configuration}
-
+\index{installation into shared directories}
 \item Change directory to {\tt \$XSB\_DIR/build} and then run these commands:
   %%
   \begin{quote}
@@ -109,18 +109,20 @@ specified.  A full listing can be obtained by typing {\tt
 \item[Type of Machine.]  The configuration script automatically
   detects your machine and OS type, and builds XSB accordingly. On
   64-bit platforms, the default compilation of XSB will reflect the
-  default of gcc on that platform.  Moreover, you can build XSB for
-  different architectures while using the same tree and the same
-  installation directory provided, of course, that these machines are
-  sharing this directory, say using NFS or Samba. All you will have to
-  do is to login to a different machine with a different architecture
-  or OS type, and repeat the above sequence of commands.
+  default for the C compiler (e.g. gcc) on that platform.  Moreover,
+  you can build XSB for different architectures while using the same
+  tree and the same installation directory provided, of course, that
+  these machines are sharing this directory, say using NFS or
+  Samba. All you will have to do is to login to a different machine
+  with a different architecture or OS type, and repeat the above
+  sequence of commands -- or configure with different parameters.
   
-  The configuration files for different architectures reside in different
-  directories, and there is no danger of an architecture conflict.
-  Moreover, you can keep using the same {\tt ./bin/xsb} script regardless
-  of the architecture. It will detect your configuration and will use the
-  right files for the right architecture! 
+  The configuration files for different architectures reside in
+  different directories, and there is no danger of an architecture
+  conflict.  In fact, you can keep using the same {\tt ./bin/xsb}
+  script regardless of the architecture. It will detect your
+  configuration and will use the right files for the right
+  architecture!
 
   If XSB is being built on a machine running Windows in which Cygwin
   is installed, Cygwin and Windows are treated as separate operating
@@ -135,29 +137,30 @@ specified.  A full listing can be obtained by typing {\tt
   Section~\ref{quick:DOS} for more details.
 
 \index{cc} \index{gcc} \index{acc}  
-\item[Choice of the C Compiler and Other options] \label{cc} The {\tt
-  configure} script will attempt to use {\tt gcc}, if it is available.
-  Otherwise, it will revert to {\tt cc} or {\tt acc}.  Some versions
-  of {\tt gcc} are broken for particular platforms, in which case you
-  would have to give {\tt configure} an additional directive {\tt
-    --with-cc} (or {\tt --with-acc}).  If you must use some special
-  compiler, use {\tt --with-cc=your-own-compiler}.  You can also use
-  the {\tt --with-optimization} option to change the default C
-  compiler optimization level.  (or {\tt --disable-optimization} to
-  disable all compiler optimizations).  {\tt --enable-debug}, and
-  there are many other options.  Finally, the {\tt --with-bits64}
-  option forces compilation to use 64 bit mode on 64-bit machines that
-  default to 32 bit compilation; likewise, {\tt --with-bits32} forces
-  compilation to use 32 bit mode on 64-bit machines that default to
-  64-bit compilation.  Type {\tt configure --help} to see them
-  all. Also see the file~\verb'$XSB_DIR/INSTALL' for more details.
+\item[Choice of the C Compiler and compiler-related
+  options] \label{cc} On Unix systems, XSB is developed and tested
+  mainly using gcc.  Accordingly, the {\tt configure} script will
+  attempt to use {\tt gcc}, if it is available.  Otherwise, it will
+  revert to {\tt cc} or {\tt acc}.  Some versions of {\tt gcc} are
+  broken for particular platforms or {\tt gcc} may not have been
+  installed; in which case you would have to give {\tt configure} an
+  additional directive {\tt --with-cc} (or {\tt --with-acc}).  If you
+  must use some special compiler, use {\tt
+    --with-cc=your-own-compiler}.  You can also use the {\tt
+    --with-optimization} option to change the default C compiler
+  optimization level.  (or {\tt --disable-optimization} to disable all
+  compiler optimizations).  {\tt --enable-debug} is mainly a
+  devlopment option that allows XSB to be debugged using gdb -- there
+  are many other compiler-based options options.  Type {\tt configure
+    --help} to see them all. Also see the file~\verb'$XSB_DIR/INSTALL'
+  for more details.
 
 \item[Word Size] XSB's configuration script checks whether the default
   compilation mode of a platform is 32- or 64-bits, and will build a
   version of XSB accoringly.  Some platforms, however, support both
   32-bit and 64-bit compilation.  On such a platform, a user can
   explicitly specify the type of compilation using the options {\tt
-    with-bits32} and {\tt with-bits64}.
+    with-bits32} and {\tt with-bits64}.  
 
 \item[XSB and Site-specific Information] Using the option {\tt
   --prefix=PREFIX} installs architecture-independent files in the
@@ -168,15 +171,16 @@ specified.  A full listing can be obtained by typing {\tt
   for site-specific static and dynamic libraries, and for include
   files.
 
-\item[Multi-threading] Version 3.0 of XSB is the first version that
+\item[Multi-threading] Version 3.0 of XSB was the first version that
   supports multi-threading.  On some platforms, the multi-threaded
   engine is slightly slower than the single-threaded engine, mostly
   due to its need for concurrency control.  To obtain the benefits of
   multiple threads on a platform that supports either POSIX or Windows
   threads (i.e.  nearly all platforms) users must configure XSB with
-  the directive {\tt enable-mt}.  The multi-threaded engine works with
-  other configuration options, multi-threading can be compiled with
-  batched or local scheduling, with the ODBC or Interprolog
+  the directive {\tt enable-mt} (see Section~\ref{sec:mt-windows} for
+  instructions specific to Windows. The multi-threaded engine works
+  with other configuration options, multi-threading can be compiled
+  with batched or local scheduling, with the ODBC or Interprolog
   interfaces, and so on.
 
 %%$
@@ -274,32 +278,28 @@ the object files in {\tt syslib} and {\tt cmplib}.
 \paragraph*{XSB on 64-bit platforms}
 \index{64-bit architectures}
 %
-XSB has been tested on 64-bit Debian linux, and runs well there,
-overall.  However, there are a few minor details that have not been
-worked out at the time of release of \version{}~\footnote{64-bit XSB
-  was broken in a few recent releases, because the developers did not
-  have access to a 64-bit machine.  Access to a 64-bit machine is
-  recent at the time of release of \version{}.}.  When XSB is compiled
-in 64-bit mode, full floating point precision is not yet available as
-XSB uses 3 of the 64 bits for a tag.  Also, the sockets library may
-have problems in \version{}.  If any of these limitations prove a
-problem, please contact {\tt xsb-development@lists.sourceforge.net}.
+XSB has been fully tested on 64-bit Debian Linux, 64-bit and Mac OS X.
+However, the sockets library may have problems in \version{}.  If this
+limitation prove a problem, please contact {\tt
+  xsb-development@lists.sourceforge.net}~\footnote{64-bit XSB was
+  broken in a recent releases prior to Version 3.1 because for a time
+  the developers did not have access to a 64-bit machine.}.
 
 Typically, if the 64-bit system generates 32-bit code by default, XSB
 will run just as in 32-bit mode (including 64-bit floats).  64-bit
 compilation can be forced for XSB by configuring with the option {\tt
   --with-bits64}, and in a similar manner 32-bit compilation can be
-forced with the option {\tt --with-bits32}.  The latter option may be
-useful for linking XSB into an application that is not yet safe for 64
-bits.  Users who employ either option should be aware of issues that
-may arise when linking XSB to external C code.
+forced with the option {\tt --with-bits32}.  Users who employ either
+option should be aware of issues that may arise when linking XSB to
+external C code.  
 \bi
 \item When XSB calls C code the C file must have been compiled with
   the same memory option as XSB.  This is done automatically if the C
   file is compiled via a call from XSB's compiler, but must be handled
   by the user otherwise.  For instance, if XSB were configured {\tt
     --with-bits32} on a 64-bit machine defaulting to 64-bits, then C
-  files called by XSB require the {\tt -m32} option in {\tt gcc}.
+  files called by XSB require the {\tt -m32} option in {\tt gcc} (if
+  not compiled by XSB).
 \item The appropriate memory option must be used when embedding XSB
   into a C or Java process.  For instance, if a XSB is to be linked
   into a 32-bit application on a 64-bit platform defaulting to
@@ -406,9 +406,9 @@ Under Unix, XSB can be invoked by the command:
        \tt \$XSB\_DIR/bin/xsb
 \end{quote}
 %%$
-if you have installed XSB in your private directory.
-If XSB is installed in a shared directory ({\it e.g.}, \$SHARED\_XSB
-for the entire site (UNIX only), then you should use
+if you have installed XSB in your private directory.  If XSB is
+installed in a shared directory ({\it e.g.}, {\tt \$SHARED\_XSB} for
+the entire site (UNIX only), then you should use
 \begin{quote}
        \tt \$SHARED\_XSB/bin/xsb
 \end{quote}
@@ -436,23 +436,23 @@ If you invoke XSB via such a hard link, XSB will likely be confused and will
 not find its libraries.  That said, you {\bf can} create other scripts and
 call the above script from there.
 
-Most of the ``standard'' Prolog predicates are supported by XSB, 
-so those of you who consider yourselves champion entomologists, can try
-to test them for bugs now.  Details are in Chapter~\ref{standard}.
+ISO``standard'' Prolog predicates are supported by XSB, in addition to
+many other predicates: so those of you who consider yourselves
+champion entomologists, can try to test them for bugs now.  Details
+are in Chapter~\ref{standard}.
 
 
 \section{Compiling XSB programs}
 %===============================
 
-All source programs should be in files whose names have the 
-suffix {\tt .P}.  One of the ways to compile a program from a file in 
+One way to compile a program from a file, such as {\tt myfile.P} in
 the current directory and load it into memory, is to type the query:
 \begin{verbatim}
      [my_file].
 \end{verbatim}
-where \verb'my_file' is the name of the file, or preferably, the name
-of the module (obtained from the file name by deleting the suffix {\tt .P}).
-To find more about the module system of XSB see Section~\ref{Modules}.
+where \verb'my_file' is the name of the file.
+Chapter~\ref{chap:system} contains a full discussion of the compiling
+and consulting.
 
 If you are eccentric (or you don't know how to use an editor) you can also 
 compile and load predicates input directly from the terminal by using the
@@ -467,19 +467,14 @@ terminates the input stream.
 \section{Sample XSB Programs}
 %============================
 
-If for some reason you don't feel like writing your own XSB programs, 
-there are several sample XSB programs in the directory: 
-{\tt \$XSB\_DIR/examples}.  All contain source code.
+There are several sample XSB source programs in the directory: {\tt
+  \$XSB\_DIR/examples} illustrating a number of standard features, as
+well as a number of non-standardized or XSB-specific features
+including plain tabling, incremental tabling, tabling with negation,
+attributed variables, annotated programs, constraint handling rules,
+XSB embedded in a C program, XSB calling C functions, sockets, and
+various semantic web appliation
 
-The entry predicates of all the programs in that directory are given
-the names {\tt demo/0} (which prints out results) and {\tt go/0}
-(which does not print results).\footnote{
-  %%
-  This convention does not apply to the subdirectories of the examples
-  directory, which illustrate advanced features of XSB.
-  %%
-  }
-%%
 Hence, a sample session might look like
 (the actual times shown below may vary and some extra information is given
 using comments after the \% character):
@@ -488,8 +483,8 @@ using comments after the \% character):
  \begin{verbatim}
 my_favourite_prompt> cd $XSB_DIR/examples
 my_favourite_prompt> $XSB_DIR/bin/xsb
-XSB Version 2.0 (Gouden Carolus) of June 27, 1999
-[i586-pc-linux-gnu; mode: optimal; engine: slg-wam; scheduling: batched]
+XSB Version 3.1 (Incognito) of August 10, 2007
+[i386-apple-darwin8.9.1; mode: optimal; engine: slg-wam; scheduling: local; word size: 32]
 | ?- [queens].
 [queens loaded]
 

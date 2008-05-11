@@ -7,30 +7,34 @@ all functionality of ISO-Prolog, XSB includes the following features:
 \begin{itemize}
 %
 \item Evaluation of queries according to the Well-Founded Semantics
-  \cite{VGRS91} through full SLG resolution;
+  \cite{VGRS91} through full SLG resolution (tabling with negation).
+  XSB's tabling implementation supports incremental tabling, as well
+  as call and answer subsumption.
 %
-\item A fully multi-threaded evaluation mechanism with thread-shared
-  static code, and that allows dynamic code and tables to be
-  thread-shared or thread-private.
+\item A fully multi-threaded engine with thread-shared static code,
+  and that allows dynamic code and tables to be thread-shared or
+  thread-private.  This engine fully supports the draft ISO standard
+  for multi-threading~\cite{Prolog-MT-ISO}.
 %
 \item Constraint handling for tabled programs based on an engine-level
-  implementation of annotated variables and a package, {\tt clpqr} for
-  handling real constraints, and the addition of Constraint Handling
-  Rules \cite{};
+  implementation of annotated variables and various costraint
+  packages, including {\tt clpqr} for handling real constraints, and
+  {\tt bounds} a simple finite domain constraint library.
+%
+  \item A package for Constraint Handling Rules \cite{Fruh} which can be
+    used to implement user-written constraint libraries.
 % 
 \item A variety of indexing techniques for asserted code 
   including variable-depth indexing on several alternate arguments,
-  fixed-depth indexing on combined arguments, trie-indexing.  In
-  addition, both backtrackable and non-backtrackable updates to asserted
-  code are supported.
+  fixed-depth indexing on combined arguments, trie-indexing.
 %
 \item A set of mature packages, to extend XSB to evaluate
-  F-logic~\cite{KLW95} through the {\em FLORA} package, to model check
-  concurrent systems through the {\em XMC} system, to manage
-  ontologies through the {\em Cold Dead Fish} package, to support
-  literate programming through the {\tt xsbdoc} package, and to
-  support answer set programming through the {\tt XASP} package among
-  other features.
+  F-logic~\cite{KLW95} through the {\em FLORA-2} package (distributed
+  separately from XSB), to model check concurrent systems through the
+  {\em XMC} system, to manage ontologies through the {\em Cold Dead
+    Fish} package, to support literate programming through the {\tt
+    xsbdoc} package, and to support answer set programming through the
+  {\tt XASP} package among other features.
 %
 \item A number of interfaces to other software systems, such a C, Java,
   Perl, ODBC, SModels \cite{NiSi97}, and Oracle.
@@ -62,9 +66,10 @@ code;
   the GNU General Public Library License.
 \end{itemize}
  
-Though XSB can be used as a Prolog system\footnote{Many of the Prolog
-  components of XSB were originally based on PSB-Prolog~\cite{Xu90},
-  which itself is based on version 2.0 of SB-Prolog~\cite{Debr88}.},
+Though XSB can be used as a Prolog system,
+%\footnote{Many of the Prolog
+%  components of XSB were originally based on PSB-Prolog~\cite{Xu90},
+%  which itself is based on version 2.0 of SB-Prolog~\cite{Debr88}.},
 we avoid referring to XSB as such, because of the availability of SLG
 resolution and the handling of HiLog terms.  These facilities, while
 seemingly simple, significantly extend its capabilities beyond those
@@ -141,25 +146,30 @@ negation is discussed further in Chapter \ref{chap:TablingOverview}.
 \end{example}
 
 \index{multi-threading}
-\paragraph{Multi-threading} New to \version{} of XSB is a thorough
-revision of XSB to support multi-threading using POSIX or
-Windows-level threads.  Detached XSB threads can be created to execute
-specific tasks, and these threads will exit when the query succeeds
-(or fails) and all thread memory reclaimed.  While a thread's
+\paragraph{Multi-threading} From Version 3.0 onward, XSB has been thoroughly
+revised to support multi-threading using POSIX or Windows threads.
+Detached XSB threads can be created to execute specific tasks, and
+these threads will exit when the query succeeds (or fails, or throws
+an exception) and all thread memory reclaimed.  While a thread's
 execution state is, of course, private, it shares many resources with
 other threads, such as static code and I/O streams.  Dynamic code and
-tables are thread-private by default, but if a predicate is declared
-thread-shared, any dynamic code and tables for this predicate will be
-shared among threads.
+tables can be either thread-shared or thread-provate by default or by
+explicit declaration.
 
-We also note that tabled programs can be used with attributed
-variables, leading to constraint tabled programs (see Volume 2 of this
-manual for a discussion of the interfaces to attributed variables).
-
-\comment{TLS: constraint handling?}
+\paragraph{Constraint Support}
+\index{attributed variables}
+\index{Constraint Handling Rules}
+%
+XSB supports logic-based constraint handling at a low level through
+attributed variables and associated packages (e.g. {\tt setarg/3}.  In
+addition, constraints may be handled through Constraint Handling
+Rules.  Constraint logic programs that use attributed variables may be
+tabled; those that use Constraint Handling Rules may be efficiently
+tabled if the {\tt CHRd} package is used.  Constraint programming in
+XSB is mainly covered in Volume 2.
 
 \index{indexing!star-indexing}
-\paragraph{Indexing Methods} Data oriented applications may also
+\paragraph{Indexing Methods} Data oriented applications may
 require indices other than Prolog's first argument indexing.  XSB
 offers a variety of indexing techniques for asserted code.  Clauses
 can be indexed on a group of arguments or on alternative arguments.
@@ -168,7 +178,7 @@ specifies indexes on the (outer functor symbol of) the third argument
 {\em or} on a combination of (the outer function symbol of) the second
 and first arguments.  If data is expected to be structured within
 function symbols and is in unit clauses, the directive {\tt
-  index(p/4,trie)} constructs an indexing trie of the {\tt p/4}
+  i ndex(p/4,trie)} constructs an indexing trie of the {\tt p/4}
 clauses using a depth-first, left-to-right traversal through each
 clause.  Representing data in this way allows discrimination of
 information nested arbitrarily deep within clauses.  Advantages of
@@ -289,20 +299,15 @@ Programs.  These latter libraries are described in Volume 2 of this
 manual.
 
 \section{Using This Manual}
-It should be mentioned that we adopt some standard notational
-conventions, such as the name/arity convention for describing
-predicates and functors, {\tt +} to denote input arguments, {\tt -} to
-denote output arguments, {\tt ?} for arguments that may be either
-input or output and {\tt \#} for arguments that are both input and
-output (can be changed by the procedure).  See Section
-\ref{mode_declarations} for more details.  \index{notational
-  conventions} Error cases for predicates designate the first argument
-of a 2 or 3 argument error term, to allow use by error
-handlers~\footnote{We are approaching compatibility in the use of
-  ISO-errors for ISO predicates, but in \version, we aren't quite
-  there yet.}.  Also, the manual uses UNIX syntax for files and
-directories except when it specifically addresses other operating
-systems such as Windows.
+We adopt some standard notational conventions, such as the name/arity
+convention for describing predicates and functors, {\tt +} to denote
+input arguments, {\tt -} to denote output arguments, {\tt ?} for
+arguments that may be either input or output and {\tt \#} for
+arguments that are both input and output (can be changed by the
+procedure).  See Section \ref{mode_declarations} for more details.
+\index{notational conventions}.  Also, the manual uses UNIX syntax for
+files and directories except when it specifically addresses other
+operating systems such as Windows.
 
 Finally, we note that XSB is under continuous development, and this
 document ---intended to be the user manual--- reflects the current
@@ -312,9 +317,7 @@ XSB is also a research system and is to some degree experimental.
 When the research features of XSB --- tabling, HiLog, and Indexing
 Techniques --- are discussed in this manual, we also cite documents
 where they are fully explained.  All of these documents can be found
-via the world-wide web or anonymous ftp from {\tt
-$\{$www/ftp$\}$.cs.sunysb.edu}, the same host from which XSB can be
-obtained.
+without difficulty on the web.
 
 While some of \version\ is subject to change in future releases, we
 will try to be as upward-compatible as possible. We would also like to
