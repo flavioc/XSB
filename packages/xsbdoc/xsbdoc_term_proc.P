@@ -1,7 +1,8 @@
 
-:- export comma_append/3, comma_length/2, 
-	  comma_member/2, comma_memberchk_eq/2,
-	  comma_to_list/2,
+:- export
+%%	  comma_append/3, comma_length/2, 
+%%	  comma_member/2, comma_memberchk_eq/2,
+%%	  comma_to_list/2,
 	  corrected_search_module/5,
 	  get_atom_from_body/2, 
 	  messageln/1,
