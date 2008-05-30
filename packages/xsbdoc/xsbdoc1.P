@@ -206,7 +206,8 @@ get_components(Vals):-
 	findall(Val,xsbdoc_component(Val),Vals).
 
 shell_list(List) :-
-	concat_atom(List,AList), %shell doesn't use get_longstring, but parses list
+	flatten(List,List0),
+	concat_atom(List0,AList), %shell doesn't use get_longstring, but parses list
 	shell(AList).
 
 make_bibfiles(Main):- 
