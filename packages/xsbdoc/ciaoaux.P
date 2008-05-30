@@ -13,6 +13,7 @@
 :- import format/2 from format.
 :- import warning/1,messageln/2, message/2 from standard.
 :- import member/2 from basics.
+:- import concat_atom/2 from string.
 
 #include "flag_defs_xsb.h"
 #include "standard.h"
@@ -69,7 +70,11 @@ note_message(Format):-
 
 optional_message(Message,Opts):- 
 	member('-v',Opts),!,
-	writeln(Message).
+	(atomic(Message)
+	 ->	writeln(Message)
+	 ;	concat_atom(Message,MessageAtom),
+		writeln(MessageAtom)
+	).
 optional_message(_Message,_Opts).
 
 xsbdoc_warning(Message):- 
