@@ -1,11 +1,11 @@
 :- compiler_options([ciao_directives,spec_off]).
 
-:- export classify_import_files/4.
+%%:- export classify_import_files/4. % not defined?
 
 :- export   autodoc/7,
 	    clause_read/3,
-	    generate_description/3,
-	    generate_info_dir_entry/2,
+%	    generate_description/3,
+%	    generate_info_dir_entry/2,
 %	    generate_man_page/2,
 	    rewrite_docstring/4,
 	    detect_filetypes/4,
@@ -303,7 +303,6 @@ autodoc(IFormat,InputFile,Idxs,Components,StartPage,PaperType,Opts) :-
 	(nonvar(IntroOS),stream_property(IntroOS,type(_)) ->
 	    close(IntroOS)
 	  ; true),
-	  writeln(here3),
 	read_file_reset,
 	message('}'),
 	ttyflush,!.
@@ -372,7 +371,7 @@ do_get_last_version(Version,GVers,Dir,Opts) :-
 	%% version maintained in dir (computed relative to .pl file Dir!)
  	concat_atom([Dir,'/',VDir,'/','GlobalChangeLog'],ChangeLogFile),
 %	optional_message(
-%	   "Getting global version from ~w...",[ChangeLogFile],Opts),
+%	   ['Getting global version from ~w...',ChangeLogFile],Opts),
 	(  file_exists(ChangeLogFile),
 	   !,
 	   open(ChangeLogFile,read,CLFS),
@@ -414,7 +413,7 @@ version_format( version(V*SV+P, Y/M/D, H:N*S+Z), V,SV,P,Y,M,D, H, N, S, Z).
    # "Generates the documentation for the interface of a module.".
 %% ---------------------------------------------------------------------------
 
-doc_interface(File,_,_FileLevel,FileType,_Base,_Name,
+doc_interface(_File,_,_FileLevel,FileType,_Base,_Name,
              _Idxs,_NOS,_IntroOS,_Opts):-
         ( FileType = application; FileType = part ),
 	!.
@@ -434,7 +433,7 @@ doc_interface(File,Format,FileLevel,FileType,Base,Name,Idxs,
         get_comment(nodoc,multiple,ignore(_),_Format,_Idxs,Opts,NoDocS),
 	(NoDocS == [] -> 
 	    true
-	  ; optional_message('Not documenting'(NoDocS),Opts)),
+	  ; optional_message(['Not documenting: ',NoDocS],Opts)),
 
 	% Usage comment to override automatic one
 	get_comment(usage,single,ignore(_),Format,Idxs,Opts,Usage),
@@ -453,13 +452,13 @@ doc_interface(File,Format,FileLevel,FileType,Base,Name,Idxs,
 	sort(Exports,SortedExports),
         format_module_usage(Format,Name,RModuleType,SortedExports,
 	 	                UFiles,SysFiles,Ops,NDecls,Idxs,OS),
-%        optional_message("Documenting (new) declarations...",Opts),
+%        optional_message('Documenting (new) declarations...',Opts),
 %	doc_decls(Name,NDecls,Base,Idxs,OS,Format,Opts),
-%        optional_message("Documenting (new) mode definitions...",Opts),
+%        optional_message('Documenting (new) mode definitions...',Opts),
 %	doc_modes(Name,NModes,M,Base,Idxs,OS,Format,Opts),
-%        optional_message("Documenting exported predicates...",Opts),
+%        optional_message('Documenting exported predicates...',Opts),
 	doc_exports(Name,Exports,File,Idxs,OS,Format,Opts),
-%        optional_message("Documenting multifile predicates...",Opts),
+%        optional_message('Documenting multifile predicates...',Opts),
 %	doc_multifiles(Name,Multifiles,M,Base,Idxs,OS,Format,Opts),
 	optional_message('Documenting internal preds, etc. ...',Opts),
 	doc_internals(Name,Exports,Base,Idxs,OS,Format,Opts).
@@ -490,7 +489,7 @@ export_list(_ModuleType,Opts,AllExports) :-
 	findall(F/A,(defines(Goal),
 	             functor(Goal,F,A)),DupAllExports),
 	eliminate_duplicates(DupAllExports,AllExports),
-	optional_message('Documenting all defined predicates'(AllExports),
+	optional_message(['Documenting all defined predicates: ',AllExports],
 								Opts).
 
 %% ---------------------------------------------------------------------------
@@ -618,7 +617,7 @@ doc_predicates([P|Ps],IsDecl,File,Idxs,OS,Format,Opts) :-
 
 %% General case:
 doc_predicate(F/A,IsDecl,File,Idxs,OS,Format,Opts):-
-        optional_message(['Generating documentation for ',File,':',F/A],Opts),
+        optional_message(['Generating documentation for ',File,':',F,'/',A],Opts),
  	functor(Pred,F,A),
 	predicate_usages(Pred,IsDecl,Usages,_N,Multiple),
         predicate_level_comment(F/A,Format,Idxs,Opts,Comment,CommentHead),
@@ -1089,7 +1088,7 @@ detect_filetypes(Opts,Components,application,Level) :-
 %% Else, we need to infer the type
 detect_filetypes(Opts,Components,Type,Level) :-
 	(exports(_,_) -> Type = module ; Type = file),
-	optional_message('File being documented as a library'(Type),Opts),
+	optional_message(['File being documented as a library ',Type],Opts),
 	detect_filelevel(Opts,Components,Level).
 
 detect_filelevel(Opts,[],component) :-
@@ -1508,8 +1507,8 @@ try_command(includedef(PredS),
 	(  Functor \== 0,
 	   functor(Pattern,Functor,Arity),
 	   copy_term(Pattern,TmpPattern),
-	   optional_message(['-> Including code for ',Functor/Arity,
-			     'in documentation string'],Opts),
+	   optional_message(['-> Including code for ',Functor,'/',Arity,
+			     ' in documentation string'],Opts),
 	   clause_read(TmpPattern,_,_)
 	-> open(autodocXXXXXX,write,Tmp),
 	   telling(Old), tell(Tmp),
@@ -1562,7 +1561,7 @@ try_command(ImageCommand,
 %	EpsFile = <DIR>/<FILE>.eps
 
 	optional_message(['-> Including image ',EpsFile,
-			  'in documentation as NameEpsRelFile'],Opts),
+			  ' in documentation as', NameEpsRelFile],Opts),
 	concat_atom(['cp -f ', EpsFile, ' ', NameEpsRelFile],Command),
 	(  shell(Command)
 	-> true
@@ -1689,7 +1688,7 @@ detect_filetypes(Opts,Components,Type,Level) :-
 	-> true
 	;  error_message("unrecognized type in comment/filetype declaration")),
 	!,
-	optional_message('File being documented as a library'(Type),Opts),
+	optional_message(['File being documented as a library: ',Type],Opts),
 	detect_filelevel(Opts,Components,Level).
 
 filetype_usage_command(module, use_module).
@@ -1784,7 +1783,7 @@ doc_predicate(F/A,IsDecl,M,Base,Idxs,OS,Format,Opts):-
 	       list(PredList),
 	       member(F/A,PredList) ) )
 	-> %optional_message(
-	   %	"following reexport chain for ~w to ~w",[F/A,UM],Opts),
+	   %	['following reexport chain for ',F,'/',A,' to ',UM'],Opts),
 	   doc_predicate(F/A,IsDecl,UM,UBase,Idxs,OS,Format,Opts)
 	;  
 	   format_predicate_begin(Format,udreexp,F/A,Idxs,Opts,OS),
