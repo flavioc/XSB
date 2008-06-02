@@ -3931,7 +3931,7 @@ xsbBool dynamic_code_function( CTXTdecl )
       SYS_MUTEX_UNLOCK( MUTEX_DYNAMIC );
     }
     else if (termType == T_PRED) 
-      xsb_permission_error(CTXTc "modufy","static",ptoc_tag(CTXTc 2),
+      xsb_permission_error(CTXTc "modify","static",ptoc_tag(CTXTc 2),
 			   ptoc_string(CTXTc 4),ptoc_int(CTXTc 5));
     else 
       xsb_type_error(CTXTc "callable",ptoc_tag(CTXTc 2),ptoc_string(CTXTc 4),ptoc_int(CTXTc 5));
