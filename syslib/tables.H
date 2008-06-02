@@ -58,7 +58,7 @@
       (use_subsumptive_tabling)/1,
       (use_variant_tabling)/1.
 
-   :- export find_components/1, find_forward_dependencies/1, find_backward_dependencies/1,
+   :- export find_components/1, find_forward_dependencies/1, %%%find_backward_dependencies/1,
    find_answers/1.
 
 :- export '_$$get_returns'/3.
