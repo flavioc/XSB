@@ -107,18 +107,25 @@ void reset_leader( th_context *th )
 
 void reset_other_threads( th_context *th, th_context *ctxt, VariantSF sgf )
 {
-	th_context *next ;
+	th_context *tmp ;
 	VariantSF resetsgf ;
-	reset_thread( th, ctxt, sgf, &resetsgf );
-        while( ctxt != th )
-	{	next = find_context(ctxt->waiting_for_tid);
-                ctxt->deadlock_brk_leader = FALSE ;
-                ctxt->waiting_for_subgoal = resetsgf ;
-                ctxt->waiting_for_tid = xsb_thread_id ;
-                if( next != th )
-                        reset_thread( th, next, ctxt->waiting_for_subgoal,
-					&resetsgf );
-                ctxt = next ;
+
+	tmp = ctxt;
+	while( tmp != th )
+	{
+		tmp->tmp_next = find_context(tmp->waiting_for_tid) ;
+		tmp->waiting_for_tid = -1 ;
+		tmp = tmp->tmp_next ;
+	}
+
+	pthread_mutex_unlock( &completing_mut );
+	tmp = ctxt;
+        while( tmp != th )
+	{	reset_thread( th, tmp, sgf, &resetsgf );
+		sgf = tmp->waiting_for_subgoal;
+                tmp->waiting_for_subgoal = resetsgf ;
+                tmp->waiting_for_tid = xsb_thread_id ;
+		tmp = tmp->tmp_next;
 	}
 }
 

@@ -123,43 +123,38 @@ case IS_INCOMPLETE: {
 #ifdef SHARED_COMPL_TABLES
 /* This allows sharing of completed tables.  */
      table_is_shared = IsSharedSF(producerSF);
-     if( table_is_shared  )
+     if( table_is_shared && !is_completed(producerSF) && 
+         subg_tid(producerSF) != xsb_thread_id )
      {	pthread_mutex_lock(&completing_mut);
      	SYS_MUTEX_INCR( MUTEX_COMPL );
-     }
-     while( table_is_shared && !is_completed(producerSF) )
-     {
-	table_tid = subg_tid(producerSF) ;
-        /* if the thread owns the table, proceed */
-        if (table_tid == xsb_thread_id)
-                break ;
-        waiting_for_thread = find_context(table_tid) ;
-        if( would_deadlock( table_tid, xsb_thread_id ) )
-	{	/* code for leader */
+        while( table_is_shared && !is_completed(producerSF) )
+        {
+	   table_tid = subg_tid(producerSF) ;
+           waiting_for_thread = find_context(table_tid) ;
+           if( would_deadlock( table_tid, xsb_thread_id ) )
+	   {	/* code for leader */
                 reset_other_threads( th, waiting_for_thread, producerSF );
-                th->deadlock_brk_leader = TRUE ;
                 pthread_cond_broadcast(&completing_cond) ;
-		reset_leader( th ) ;
-                pthread_mutex_unlock(&completing_mut) ;
+		reset_leader( th ) ; /* this unlocks the completing_mut */
 		return TRUE ;
-	}
-	th->waiting_for_subgoal = producerSF ;
-        th->waiting_for_tid = table_tid ;
-        pthread_cond_wait(&completing_cond,&completing_mut) ;
-	SYS_MUTEX_INCR( MUTEX_COMPL );
-        if( th->reset_thread )
-        {       th->reset_thread = FALSE ;
+	   }
+	   th->waiting_for_subgoal = producerSF ;
+           th->waiting_for_tid = table_tid ;
+           pthread_cond_wait(&completing_cond,&completing_mut) ;
+	   SYS_MUTEX_INCR( MUTEX_COMPL );
+           if( th->reset_thread )
+           {	th->reset_thread = FALSE ;
 		th->waiting_for_subgoal = NULL ;
         	th->waiting_for_tid = -1 ;
                 pthread_mutex_unlock(&completing_mut) ;
                 /* restart the tabletry instruction */
 		return TRUE ;
+           }
         }
+        th->waiting_for_tid = -1 ;
+        th->waiting_for_subgoal = NULL ;
+     	pthread_mutex_unlock(&completing_mut) ;
      }
-     th->waiting_for_tid = -1 ;
-     th->waiting_for_subgoal = NULL ;
-     if( table_is_shared )
-     	pthread_mutex_unlock(&completing_mut);
 #endif
 
   if (is_completed(producerSF)) {
