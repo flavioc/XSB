@@ -315,11 +315,23 @@ static inline void CompleteSimplifyAndReclaim(CTXTdeclc CPtr cs_ptr)
       
   /* reclaim all answer lists, but the one for the leader */
   ComplStkFrame = next_compl_frame(cs_ptr);
+#ifdef SHARED_COMPL_TABLES
+  pthread_mutex_lock( &completing_mut );
+#endif
   while (ComplStkFrame >= openreg) {
     compl_subg = compl_subgoal_ptr(ComplStkFrame);
+#ifdef SHARED_COMPL_TABLES
+    pthread_cond_broadcast( &TIF_ComplCond(subg_tif_ptr(compl_subg)) );
+#endif
     reclaim_incomplete_table_structs(compl_subg);
     ComplStkFrame = next_compl_frame(ComplStkFrame);
   } /* while */
+#ifdef SHARED_COMPL_TABLES
+  /* wake up the threads waiting for the leader to! */
+  compl_subg = compl_subgoal_ptr(ComplStkFrame);
+  pthread_cond_broadcast( &TIF_ComplCond(subg_tif_ptr(compl_subg)) );
+  pthread_mutex_unlock( &completing_mut );
+#endif
 }
 
 static inline void SetupReturnFromLeader(CTXTdeclc CPtr orig_breg, CPtr cs_ptr, 

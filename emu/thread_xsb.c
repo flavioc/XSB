@@ -150,7 +150,7 @@ pthread_mutex_t th_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t pub_mq_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 pthread_mutex_t completing_mut;
-pthread_cond_t completing_cond;
+/*pthread_cond_t completing_cond;*/
 
 counter max_threads_sofar;
 
@@ -786,7 +786,7 @@ void init_system_mutexes( void )
 #endif
 
 	pthread_mutex_init( &completing_mut, &attr_std );
-	pthread_cond_init( &completing_cond, NULL );
+/*	pthread_cond_init( &completing_cond, NULL );*/
 }
 
 /*-------------------------------------------------------------------------*/

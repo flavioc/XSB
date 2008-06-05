@@ -170,11 +170,13 @@ XSB_Start_Instr(check_complete,_check_complete)
       FailIfAnswersFound((cc_tbreg == orig_breg ? 0 : cc_tbreg));
       
       CompleteSimplifyAndReclaim(CTXTc cs_ptr);
+/*
 #ifdef SHARED_COMPL_TABLES
     pthread_mutex_lock(&completing_mut);
     pthread_cond_broadcast(&completing_cond);
     pthread_mutex_unlock(&completing_mut);
 #endif
+*/
 
     /* TLS: not sure about condition: how could subg_answers be true
        and has_answer_code be false? */

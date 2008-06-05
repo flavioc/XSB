@@ -264,21 +264,15 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
            }
            th->waiting_for_subgoal = producer_sf ;
            th->waiting_for_tid = table_tid ;
-	   pthread_cond_wait(&completing_cond,&completing_mut) ;
+	   pthread_cond_wait(&TIF_ComplCond(tip),&completing_mut);
            SYS_MUTEX_INCR( MUTEX_COMPL );
-           if( th->reset_thread )
-           {       th->reset_thread = FALSE ;
-     		   th->waiting_for_tid = -1 ;
-     		   th->waiting_for_subgoal = NULL ;
-                   pthread_mutex_unlock(&completing_mut) ;
-                   /* restart the tabletry instruction */
-                   lpcreg = pcreg ;
-                   XSB_Next_Instr() ;
-           }
         }
+        /* The thread has been reset and we should restart a tabletry instr */
         th->waiting_for_tid = -1 ;
         th->waiting_for_subgoal = NULL ;
         pthread_mutex_unlock(&completing_mut);
+        lpcreg = pcreg ;
+        XSB_Next_Instr() ;
      } 
   }
 

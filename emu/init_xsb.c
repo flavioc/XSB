@@ -1113,7 +1113,6 @@ void init_thread_structures(CTXTdecl)
 
 #ifdef SHARED_COMPL_TABLES
   th->waiting_for_tid = -1 ;
-  th->reset_thread = FALSE;
 #endif
 #ifdef CONC_COMPL
   pthread_cond_init( &th->cond_var, NULL );

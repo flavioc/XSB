@@ -71,7 +71,6 @@ static void reset_thread( th_context *th, th_context *ctxt, VariantSF sgf,
 	{	subg_tid(sgf) = xsb_thread_id ;
 		return ;
 	}
-	ctxt->reset_thread = TRUE ;
 	sgf = bottom_leader(ctxt, sgf) ;
         *resetsgf = sgf ;
 	ReclaimDSandMarkReset(ctxt, sgf, xsb_thread_id);
@@ -101,7 +100,6 @@ void reset_leader( th_context *th )
 {
 	VariantSF resetsgf ;
 	reset_thread( th, th, compl_subgoal_ptr(openreg), &resetsgf );
-	th->reset_thread = FALSE ;
 }
 				
 

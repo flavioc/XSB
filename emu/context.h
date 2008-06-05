@@ -431,7 +431,6 @@ Cell _pflags[MAX_PRIVATE_FLAGS];
 int waiting_for_tid;
 struct th_context *tmp_next;
 struct subgoal_frame *	waiting_for_subgoal;
-int reset_thread ;
 #endif
 
 #ifdef CONC_COMPL
