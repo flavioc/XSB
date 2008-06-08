@@ -65,10 +65,12 @@ static void reset_thread( th_context *th, th_context *ctxt, VariantSF sgf,
 			  VariantSF *resetsgf )
 {
 	CPtr tbreg ;
-	/* if the subgoal has not yet been computed, the
-	   thread should not be reset */
-	if( subg_grabbed(sgf) )
-	{	subg_tid(sgf) = xsb_thread_id ;
+	/* if the subgoal is not being computed by this thread,
+           because meanwhile it has been grabbed by another thread, 
+           nothing should be done */
+	if( subg_tid(sgf) != ctxt->tid )
+	{	
+		*resetsgf = ctxt->waiting_for_subgoal;
 		return ;
 	}
 	sgf = bottom_leader(ctxt, sgf) ;

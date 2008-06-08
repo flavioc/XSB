@@ -239,8 +239,8 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
   grabbed = FALSE ;
   if (TABLE_IS_SHARED() && !IsNULL(producer_sf)) 
   {
-     if( !is_completed(producer_sf) && subg_tid(producer_sf) == xsb_thread_id
-                                    && subg_grabbed(producer_sf) )
+     if( !is_completed(producer_sf) && subg_grabbed(producer_sf) 
+				    && th->is_deadlock_leader )
      {
 	grabbed = TRUE;
         subg_grabbed(producer_sf) = FALSE ;
@@ -258,12 +258,14 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
            {       /* code for leader */
                    reset_other_threads( th, waiting_for_thread, producer_sf );
                    /* unlocks completing_mut asap */
+		   th->is_deadlock_leader = TRUE ;
 		   grabbed = TRUE;
                    subg_grabbed(producer_sf) = FALSE ;
 		   goto seq_table_try;
            }
            th->waiting_for_subgoal = producer_sf ;
            th->waiting_for_tid = table_tid ;
+	   th->is_deadlock_leader = FALSE ;
 	   pthread_cond_wait(&TIF_ComplCond(tip),&completing_mut);
            SYS_MUTEX_INCR( MUTEX_COMPL );
         }

@@ -1113,6 +1113,7 @@ void init_thread_structures(CTXTdecl)
 
 #ifdef SHARED_COMPL_TABLES
   th->waiting_for_tid = -1 ;
+  th->is_deadlock_leader = FALSE ;
 #endif
 #ifdef CONC_COMPL
   pthread_cond_init( &th->cond_var, NULL );
