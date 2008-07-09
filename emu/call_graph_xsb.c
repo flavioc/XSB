@@ -481,7 +481,7 @@ int create_call_list(CTXTdecl){
   Psc psc;
   CPtr oldhreg=NULL;
   
-  reg[3] = makelist(hreg);  // reg 3 first not-used, use reg in case of stack expanson
+  reg[4] = reg[3] = makelist(hreg);  // reg 3 first not-used, use regs in case of stack expanson
   new_heap_free(hreg);   // make heap consistent
   new_heap_free(hreg);
   while((call1 = dq(&affected)) != EMPTY){
@@ -494,8 +494,8 @@ int create_call_list(CTXTdecl){
     tif = (TIFptr) subgoal->tif_ptr;
     psc = TIF_PSC(tif);
     arity = get_arity(psc);
-    check_glstack_overflow(3,pcreg,2+arity*200); // don't know how much for build_subgoal_args...
-    oldhreg = hreg-2;
+    check_glstack_overflow(4,pcreg,2+arity*200); // don't know how much for build_subgoal_args...
+    oldhreg = clref_val(reg[4]);  // maybe updated by re-alloc
     if(arity>0){
       sreg = hreg;
       follow(oldhreg++) = makecs(sreg);
@@ -509,13 +509,14 @@ int create_call_list(CTXTdecl){
     }else{
       follow(oldhreg++) = makestring(get_name(psc));
     }
-    follow(oldhreg) = makelist(hreg);
+    reg[4] = follow(oldhreg) = makelist(hreg);
     new_heap_free(hreg);
     new_heap_free(hreg);
   }
-  if(count > 0)
+  if(count > 0) {
     follow(oldhreg) = makenil;
-  else
+    hreg -= 2;  /* take back the extra words allocated... */
+  } else
     reg[3] = makenil;
     
   //  printterm(stdout,call_list,100);
