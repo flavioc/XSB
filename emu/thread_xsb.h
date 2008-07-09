@@ -110,8 +110,8 @@ extern int max_threads_glc ;
 }
 #endif
 
-#define PROFILE_MUTEXES 1
-#ifdef PROFILE_MUTEXES
+//#define PROFILE_MUTEXES 1
+#ifdef NON_OPT_COMPILE
 
 #define SYS_MUTEX_LOCK( M )   {pthread_mutex_lock(MUTARRAY_MUTEX(M));	      \
                                MUTARRAY_OWNER(M) = xsb_thread_id;	      \
