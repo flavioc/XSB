@@ -363,7 +363,10 @@ threads :-
 
 /* called by xsb_thread_run() in thread_xsb.c */
 '_$thread_run'( Goal ) :-
-	(	catch( thread_run0(Goal), Ball, handle_thread_error(Ball))
+	(	catch( thread_run0(Goal), Ball, 
+	                   (handle_thread_error(Ball),
+			    thread_exception_handler(Ball)))
+
 	;	internal_thread_exit(THREAD_FAILED)
 	).
 
@@ -371,6 +374,17 @@ thread_run0(Goal) :-
 	thread_enable_cancel,
 	call(Goal),
 	internal_thread_exit(THREAD_SUCCEEDED).
+
+thread_exception_handler(ErrorTerm) :- 
+	thread_request( XSB_CHECK_ALIASES_ON_EXIT,AliasedDetached,Detached,_,_,_,_,_,_),
+	(	AliasedDetached == 1 -> 
+		remove_alias(_Alias,THREAD_ALIAS,Id) 
+	;	(	Detached == 0 -> 
+			thread_self(Id),asserta('_$thread_exit_ball'(Id,exception(ErrorTerm)))
+		;	true
+		)
+	),
+	thread_request( XSB_THREAD_EXIT,THREAD_EXCEPTION,_, _, _,_,_,_,_).
 
 handle_thread_error(thread_exit(Term)) :- 
 	thread_exit_handler(Term),   
