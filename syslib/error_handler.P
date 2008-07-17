@@ -45,6 +45,8 @@ default_error_handler(Error) :-
 	default_user_error_handler(Error),
 	close_open_tables,
 	!,fail.
+default_error_handler(Error) :-   /* Thread is not console */
+	default_user_error_handler(Error),!.
 default_error_handler(Error) :-
 	default_sys_error_handler(Error).
 
