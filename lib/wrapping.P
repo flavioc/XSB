@@ -107,8 +107,8 @@ process_from1(PredName,FuncName,ArgTypeList,NArgUseList,ArgUseList,RetType,Needs
 	out_setup_recursion([argtype(retval,RetType)|ArgTypeList],ArgumentCount),
 	write('   retval ='),
 	out_ccall(FuncName,ArgTypeList,ArgUseList,NeedsCTXT),
+	out_cleanup_recursion(ArgumentCount,FuncName),
 	out_all_postcall([argtype(retval,RetType)|ArgTypeList],ArgUseList),
-	out_cleanup_recursion(ArgumentCount),
 	out_functail(RetType),nl.
 
 process_from2(PredName,FuncName,ArgTypeList,NArgUseList,ArgUseList,_,NeedsCTXT) :-
@@ -118,26 +118,22 @@ process_from2(PredName,FuncName,ArgTypeList,NArgUseList,ArgUseList,_,NeedsCTXT) 
 	out_all_precall(ArgTypeList,ArgUseList,NArgUseList),
 	out_setup_recursion(ArgTypeList,ArgumentCount),
 	out_ccall(FuncName,ArgTypeList,ArgUseList,NeedsCTXT),
+	out_cleanup_recursion(ArgumentCount,FuncName),
 	out_all_postcall(ArgTypeList,ArgUseList),
-	out_cleanup_recursion(ArgumentCount),
 	out_functail,nl.
 
 
 out_setup_recursion(ArgTypeList,ArgumentCount) :-
 	length(ArgTypeList,ArgumentCount),
-	out_setup_recursion1(ArgumentCount).
-
-out_setup_recursion1(0) :- !.
-
-out_setup_recursion1(ArgumentCount) :-
 	write('   xsb_query_save(CTXTc '),
 	write(ArgumentCount),
 	write(');\n').
 
-out_cleanup_recursion(0) :- !.
+out_cleanup_recursion(_ArgumentCount,FuncName) :-
+	write('   if (xsb_query_restore(CTXT)) {  // restore regs to prepare for exit\n'),
+	fmt_write('      printf("Error finishing up %s',arg(FuncName)),
+	write('.\\n");\n      fflush(stdout);\n      return FALSE;\n   }\n').
 
-out_cleanup_recursion(_NonZeroArgumentCount) :-
-	write('   xsb_query_restore(CTXT);\n').
 
 %check_for_retval(ArgUseList,RVUse) :-
 %	select(arguse(retval,RVUse),ArgUseList,_), !.
