@@ -391,9 +391,10 @@ load(ModName) :-
 	->	compile(FileName_P),
 		load(ModName)
 	;   tilde_expand_filename(ModName,ExpandedModName),
-	    throw(error(existence_error(module,ExpandedModName),
-			['Module ', ExpandedModName,
-			 ' is not found in XSB library directories']))
+	    existence_error(module,ExpandedModName,load,1)
+%	    throw(error(existence_error(module,ExpandedModName),
+%			['Module ', ExpandedModName,
+%			 ' is not found in XSB library directories']))
 	).
 
 /*
