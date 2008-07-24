@@ -160,7 +160,7 @@ assert(Clause,AZL,Index):- assert(Clause,AZL,Index,'assert/1').
  
 % TLS: uglified the code by moving check_assert and cut_transform into
 % this predicate -- but it saves a few percent.
-assert(Clause, AZL, Index1,ErrPred) :-
+assert(Clause, AZL, Index1,_ErrPred) :-
 	( var(Clause) -> instantiation_error(Pred,1,nonvar) ; true),
 	('_$trie_asserted'(Clause) -> 
 	    t_assert_2(Clause,_Flag)
@@ -169,8 +169,11 @@ assert(Clause, AZL, Index1,ErrPred) :-
 	      check_assert_fact(Head, Pred), 
   	      ( check_body(Body) -> true ; type_error(callable,Body,Pred,1)),
               ('_$trie_asserted'(Head) -> 
-		    permission_error(assert_clause_with_body,trie_asserted_head,
-		                     Clause,ErrPred) ; true),
+		    warning(['Asserting clause with non-empty body for ',Head,
+		             ' which is trie-indexed. ',
+		            'Indexing for this predicate may not be efficient.']) ; true),
+%		    permission_error(assert_clause_with_body,trie_asserted_head,
+%		                     Clause,ErrPred) ; true),
 	     cut_transform(Clause,Nclause)
             ;	Clause = Head,Body = true,
   	        check_assert_fact(Head, Pred),
