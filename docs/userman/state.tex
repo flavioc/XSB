@@ -738,6 +738,12 @@ otherwise. This flag affects all threads in the process.
   write}-like predicates.  Default is 64.  This flag affects all
 threads in the process.  
 
+\item {\tt warning\_action} The action to take on warnings: the
+  default value {\tt print\_warning} prints a warning message to the
+  XSB {\tt STDWARN} stream when {\tt warning/1} is called; {\tt
+    silent\_warning} silently succeeds when {\tt warning/1} is called;
+  and {\tt error\_warning/1} throws a miscellaneous exception.
+
 \item {\tt thread\_glsize} In the multi-threaded engine, the initial
   size, in kbytes, of the global and local stack area of a newly
   created thread if no such option is explicitly passed.  By default

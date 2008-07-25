@@ -359,15 +359,13 @@ Any of these statuses except {\tt running} may be returned by {\tt
   thread\_join/2}.  In Prolog, the statuses of exited threads 
 provide much more information than C exit codes.  
 
-\comment{but C exit codes may conceivably be useful if XSB is called by one
-of the interfaces for C calling XSB~\footnote{The C calling XSB
-  interfaces are not yet supported in \version.}.  By default when no
-call to {\tt thread\_exit/1} has been made, an XSB thread that
-terminates normally will have an exit code of {\tt XSB\_SUCCESS} ({\tt
-  0}), a cancelled thread will have an exit code of {\tt 1} and a
-thread terminated with any other error will have an exit code of~{\tt
-  XSB\_ERROR} ({\tt 2}).
-}
+\comment{but C exit codes may conceivably be useful if XSB is called
+  by one of the interfaces for C calling XSB.  By default when no call
+  to {\tt thread\_exit/1} has been made, an XSB thread that terminates
+  normally will have an exit code of {\tt XSB\_SUCCESS} ({\tt 0}), a
+  cancelled thread will have an exit code of {\tt 1} and a thread
+  terminated with any other error will have an exit code of~{\tt
+    XSB\_ERROR} ({\tt 2}).  }
 %
 As with pthreads, XSB threads are created as joinable by default, but
 can be created as detached using an option in {\tt thread\_create/3}.
@@ -602,8 +600,8 @@ fooo\=foo\=foo\=foo\=fooooooooooooooooooooooooooooooo\=ooooooooooooo\=\kill
 \> \> socket\_bind($SockFD$, $XSBport$),\\
 \> \> socket\_listen($SockFD$,Q\_LENGTH),\\
 \> \> thread\_create( server\_loop($SockFD$), Id, [] ),\\
-\> \> assert( server\_id($Id$) ),\\
-\> \> thread\_join( $Id$ ).\\
+\> \> assert( server\_id($Iden$) ),\\
+\> \> thread\_join( $Iden$ ).\\
 \\
 \> server\_loop($SockFD$) :-\\
 \> \> socket\_accept($SockFD$, $SockClient$),\\
@@ -673,9 +671,9 @@ list\_of\_primes($I$, $F$, $List$, $Tail$) :-\\
 partition\_space($N$, $H$, $H_1$) :-\\
 \>        $H$ is $N//2$, $H_1$ is $H + 1$.\\
 \\
-worker( $Q$, $Id$, $I$, $F$, $List$, $Tail$) :-\\
+worker( $Q$, $Iden$, $I$, $F$, $List$, $Tail$) :-\\
 \>        list\_of\_primes( $I$, $F$, $List$, $Tail$),\\
-\>        thread\_send\_message( $Q$, primes($Id$,$List$,$Tail$) ).\\
+\>        thread\_send\_message( $Q$, primes($Iden$,$List$,$Tail$) ).\\
 \\
 master( $N$, $L$ )  :-\\
 \>        partition\_space( $N$, $H$, $H_1$),\\

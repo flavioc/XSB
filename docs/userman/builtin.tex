@@ -1,4 +1,4 @@
-\chapter{Standard Predicates} \label{standard}
+\chapter{Standard Predicates and Predicates of General Use} \label{standard}
 %=============================================
 
 This chapter describes standard predicates, which are always available
@@ -1634,10 +1634,10 @@ be useful to ensure that output goes to one of the other I/O streams.
 %
 These predicates output {\tt Message} to XSB's {\tt STDERR} stream,
 rather than to XSB's {\tt STDOUT} stream, as does {\tt write/1} and
-{\tt writeln/1}.  In addition, if {\tt Message} is a comma list, the
-elements in the comma list are output as if they were concatenated
-together.  Each of these predicates must be imported from the module
-{\tt standard}.
+{\tt writeln/1}.  In addition, if {\tt Message} is a list or comma
+list, the elements in the comma list are output as if they were
+concatenated together.  Each of these predicates must be imported from
+the module {\tt standard}.
 
 \ourrepeatmoditem{console\_write(?Message)}{standard}\index{\texttt{console\_write/1}}
 \ourmoditem{console\_writeln(?Message)}{standard}\index{\texttt{console\_writeln/1}}
@@ -1647,7 +1647,19 @@ As above, but writes to {\tt STDFDBK}, the console feedback stream.
 \ourrepeatmoditem{warning(?Message)}{standard}\index{\texttt{warning/1}}
 \ourmoditem{warningln(?Message)}{standard}\index{\texttt{warningln/1}}
 %
-As above, but writes to {\tt STDFWARN}, the standard warning stream.
+By default, these predicates output {\tt Message} to XSB's {\tt
+  STDWARN} stream, rather than to XSB's {\tt STDOUT} stream, as does
+{\tt write/1} and {\tt writeln/1}.  In addition, if {\tt Message} is a
+list or comma list, the elements in the comma list are output as if
+they were concatenated together.  Each of these predicates must be
+imported from the module {\tt standard}.
+
+The default behavior for warnings can be altered by setting the value
+of the XSB flag {\tt warning\_action} to either {\tt silent\_warning}
+which performs no action when {\tt warning/1} is called. or {\tt
+  error\_warning} which throws a miscellaneous exception when {\tt
+  warning/1} is called.  The default behavior can be restored by
+setting {\tt warning\_action} to {\tt print\_warning}.
 
 \ourrepeatmoditem{message(?Message)}{standard}\index{\texttt{message/1}}
 \ourmoditem{messageln(?Message)}{standard}\index{\texttt{messageln/1}}

@@ -2807,27 +2807,27 @@ CDF (Figure~\ref{fig:flogic-cdf}).
 \end{figure}
 %-----------------------------------------------------------------------------------
 %
-From comparing the two figures, (or
-the formal semantics of FLORA-2 and CDF) it can be seen that the
-FLORA-2 schema operator {\tt ::/2} corresponds to an {\tt isa/2}
-relation between two classes, while the object operator {\tt :/2}
-corresponds to an {\tt isa/2} relation between an object and a class.
-Other relations for classes and objects have a rather different syntax
-in FLORA-2 than in CDF.  First note that in FLORA-2, the molecule {\tt
-institution[name => string, address => string]} corresponds to two
-simpler molecules {\tt institution[name => string]} and {\tt
-institution[address => string]}.  Each of these latter molecules can
-be translated into 2 CDF facts, an {\tt allAttr\_ext/3} fact to denote
-the typing and a {\tt maxAttr/4} fact to denote the cardinality.  The
-FLORA-2 operator {\tt =>>} indicates a non-functional schema
-dependency and can be translated using an {\tt allAttr\_ext/3} fact
-alone.  At the object level, the operators {\tt ->} and {\tt ->>} are
-each handled by a {\tt hasAttr\_ext} fact for the appropriate object:
-information that the dependency is functional in a {\tt -> } relation
-is handled by the CDF schema and does not need to be repeated.  Also
-note that the FLORA-2 {\tt @} operator, which is used to handle the
-non-binary (i.e. parameterized) attribute {\tt affil} for a person is
-reflected by the CDF product class.
+From comparing the two figures, (or the formal semantics of FLORA-2
+and CDF) it can be seen that the FLORA-2 schema operator {\tt ::/2}
+corresponds to an {\tt isa/2} relation between two classes, while the
+object operator {\tt :/2} corresponds to an {\tt isa/2} relation
+between an object and a class.  Other relations for classes and
+objects have a rather different syntax in FLORA-2 than in CDF.  First
+note that in FLORA-2, the molecule {\tt institution[name => string,
+    address => string]} corresponds to two simpler molecules {\tt
+  institution[name => string]} and {\tt institution[address =>
+    string]}.  Each of these latter molecules can be translated into 2
+CDF facts, an {\tt allAttr\_ext/3} fact to denote the typing and a
+{\tt maxAttr/4} fact to denote the cardinality.  The FLORA-2 operator
+{\tt =>>} indicates a non-functional schema dependency and can be
+translated using an {\tt allAttr\_ext/3} fact alone.  At the object
+level, the operators {\tt ->} and {\tt ->>} are each handled by a {\tt
+  hasAttr\_ext} fact for the appropriate object: information that the
+dependency is functional in a {\tt -> } relation is handled by the CDF
+schema and does not need to be repeated.  Also note that the FLORA-2
+{\tt @} operator, which is used to handle the non-binary
+(i.e. parameterized) attribute {\tt affil} for a person is reflected
+by the CDF product class.
 
 FLORA-2 syntax is more succinct for this example than CDF syntax for
 three reasons: the use of F-Logic molecules in FLORA-2, the use of
@@ -2861,15 +2861,20 @@ maxAttr\_ext(cid(heteroMale,ex),rid(hasPrimaryLover,Ex),cid(woman,ex)).
 
 \noindent
 The above differences, however, are relatively minor compared to the
-main differences between the systems.  CDF supports consistency and
-entailment checking for Type-1 ontologies which FLORA-2 does not
-support; FLORA-2 however has support for non-monotonic inheritance
-which is not supported in CDF (nor in description logics).  By and
-large a determined programmer could obtain most of the benefits of
-FLORA-2 using a combination of CDF and XSB, while a determined FLORA-2
-programmer could obtain most of the benefits of CDF within FLORA-2
-(perhaps even by translating monotonic FLORA-2 knowledge bases to
-class expressions and calling the CDF theorem prover).
+main differences between the systems.  At a semantic level, CDF
+supports consistency and entailment checking for Type-1 ontologies
+which FLORA-2 does not support; FLORA-2 however has support for
+non-monotonic inheritance which is not supported in CDF (nor in
+description logics).  By and large a determined programmer could
+obtain most of the benefits of FLORA-2 using a combination of CDF and
+XSB, while a determined FLORA-2 programmer could obtain most of the
+benefits of CDF within FLORA-2 (perhaps even by translating monotonic
+FLORA-2 knowledge bases to class expressions and calling the CDF
+theorem prover).  From a practical point of view, however, if you want
+a powerful and sophisticated system for object-oriented programming,
+FLORA-2 is your best bet.  On the other hand, if you want to extend
+Prolog programs to query and manage knowledge in an ontoloty, CDF is
+your best bet.
 
 %-----------------------------------------------------------------------------------
 \begin{figure}[htb]
