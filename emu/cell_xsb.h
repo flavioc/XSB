@@ -215,10 +215,11 @@ extern unsigned long enc[], dec[];
 
 #define iscallable(op2) ((isconstr(op2) && !isboxed(op2)) || isstring(op2) || islist(op2))
 
-#define is_directly_callable(op2) (((isconstr(op2) && !isboxed(op2)) || isstring(op2)) \
-				   && op2 != (Cell) comma_psc		\
-				   && op2 != (Cell) colon_psc && op2 != (Cell) cut_psc \
-				   && op2 != (Cell) cond_psc )
+/* TLS: this can be made mre efficient, but I want to get the problem with the cut_psc fixed */
+#define is_directly_callable(op2) ((isconstr(op2) && !isboxed(op2)) 	\
+				   && get_str_psc(op2) != comma_psc	\
+				   && get_str_psc(op2) != colon_psc && get_str_psc(op2) != cut_psc \
+				    && get_str_psc(op2) != cond_psc )
 
 //  Saving, in the unlikely possibility that there is a problem with the new call
 //				   && op2 != (Cell) pflags[MYSIG_UNDEF+INT_HANDLERS_FLAGS_START])

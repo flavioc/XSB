@@ -2925,9 +2925,12 @@ argument positions.
     case CALLABLE_TEST:
       jump_cond_fail(iscallable(op2));
       break;
-    case DIRECTLY_CALLABLE_TEST:
-      jump_cond_fail(is_directly_callable(op2));
+    case DIRECTLY_CALLABLE_TEST: {
+      //      printf("op2: %x, %x %x cut_psc %x %x\n",op2,cs_val(op2),get_str_psc(op2),cut_psc,cut_string);
+      if (isstring(op2)) jump_cond_fail((char *) cs_val(op2) != cut_string);
+      else jump_cond_fail(is_directly_callable(op2));
       break;
+    }
     case IS_LIST_TEST:
       jump_cond_fail(is_proper_list(op2));
       break;

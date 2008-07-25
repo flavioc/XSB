@@ -1442,11 +1442,12 @@ void init_symbols(CTXTdecl)
 
   true_psc = make_code_psc_rec("true", 0, standard_psc);
   true_string = get_name(true_psc);
+  cut_string = string_find("!",1);
 
   load_undef_psc = make_code_psc_rec("_$load_undef", 1, loader_psc);
   comma_psc = make_code_psc_rec(",", 2, standard_psc);
   colon_psc = make_code_psc_rec(":", 2, standard_psc);
-  cut_psc = make_code_psc_rec(":", 0, standard_psc);
+  cut_psc = make_code_psc_rec("!", 0, standard_psc);
   cond_psc = make_code_psc_rec("->", 2, standard_psc);
 
   ccall_mod_psc = pair_psc(insert_module(0,"ccallxsb"));

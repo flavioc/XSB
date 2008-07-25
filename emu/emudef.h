@@ -93,7 +93,7 @@ byte *current_inst;
  */ 
 byte *inst_begin_gl;
 
-char *nil_string, *true_string;
+char *nil_string, *true_string, *cut_string;
 
 Pair list_pscPair;
 
