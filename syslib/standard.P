@@ -976,7 +976,6 @@ call(Goal) :-
    ( directly_callable(Goal) -> 
        call_c(Goal) 
      ; callable(Goal) ->
-	writeln(Goal),
 	'_$savecp'(C), goal_cut_trans(Goal, Trans_Goal, C),call0(Trans_Goal) 
      ; var(Goal) ->
 	instantiation_error(call/1,1,bound) 
