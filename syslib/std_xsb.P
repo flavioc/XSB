@@ -429,7 +429,7 @@ standard_symbol(('_$cutto'), 1, standard).	% Not ISO
 standard_symbol(('_$savecp'), 1, standard).	% Not ISO
 
 standard_symbol((('\+')), 1, standard).
-standard_symbol('!', 0, inline).
+standard_symbol('!', 0, standard).
 standard_symbol(('=:='), 2, standard).
 standard_symbol(('=\='), 2, standard).
 standard_symbol(('<'), 2, standard).
