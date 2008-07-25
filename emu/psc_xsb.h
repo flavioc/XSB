@@ -174,6 +174,7 @@ extern Psc cut_psc;
 extern Psc load_undef_psc;
 extern char *nil_string;
 extern char *true_string;
+extern char *cut_string;
 extern Pair list_pscPair;
 extern char *list_dot_string;
 
