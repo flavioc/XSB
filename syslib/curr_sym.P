@@ -25,6 +25,10 @@
 
 :- compiler_options([xpp_on,sysmod,optimize]).
 
+/* TLS: because of a 64-bit number used below, compilation may give the error:
+   Overflow in radix notation, returning float
+*/
+
 #include "standard.h"
 #include "flag_defs_xsb.h"
 #include "heap_defs_xsb.h"
@@ -543,7 +547,6 @@ psc_properties(PSC, Property) :-
 	( standard_symbol(Functor, Arity, _) -> Property = xsb_standard_predicate ).
 		 % Unfortunately this doesn''t take the Module into account.
 
-
 /* ===== module_property/2 ============================================ */
 
 %   module_property(?Module, ?Property)
@@ -625,7 +628,6 @@ iso_flag(double_quotes,codes).
 %iso_flag(double_quotes,{chars,codes,atom}).
 % TLS: shd. add
 %iso_flag(unknown,{error,warning,fail})
-
 
 /* ===== xsb_flag/2 ========================================== */
 
@@ -751,6 +753,13 @@ xsb_flag(max_queue_terms, Max) :-
 xsb_flag(shared_predicates,Bool):- 
 	stat_flag(PRIVSHAR_DEFAULT,B),
 	(B == 0 -> Bool = false ; Bool = true).
+xsb_flag(warning_action,Action):- 
+	stat_flag(WARNING_ACTION,A),
+	(A == PRINT_WARNING -> 
+	    Action = print_warning
+	  ; (A == SILENT_WARNING -> 
+	      Action = silent_warning
+	     ; A == ERROR_WARNING,Action = error_warning) ).
 
 set_xsb_flag(Type,Val):- 
 	check_nonvar(Type,set_xsb_flag/2,1),
@@ -841,7 +850,7 @@ set_xsb_flag_1(table_gc_action, Action) :- !,
 	    stat_set_flag(TABLE_GC_ACTION, ABOLISH_TABLES_TRANSITIVELY)
 	 ;  (Action = abolish_tables_singly -> 
 	       stat_set_flag(TABLE_GC_ACTION, ABOLISH_TABLES_SINGLY)
-	     ; domain_error([abolish_tables_transitively,
+	     ; domain_error([abolish_tables_transitively,', ',
 	                     abolish_tables_singly],Action,set_xsb_flag/2,2,
 			     'table_gc_action clause') ) ).
 set_xsb_flag_1(thread_pdlsize, Size) :-!,
@@ -859,6 +868,13 @@ set_xsb_flag_1(max_queue_terms, Num) :- !,
 	(integer(Num) -> 
 	    stat_set_flag(MAX_QUEUE_TERMS, Num)
 	;   type_error(integer,Num,set_xsb_flag/2,2) ).
+set_xsb_flag_1(warning_action,Action):- !,
+	(Action == print_warning ->  A = PRINT_WARNING
+	  ; (Action == silent_warning ->  A = SILENT_WARNING
+	     ; (Action == error_warning ->  A = ERROR_WARNING
+	        ; domain_error([print_warning,', ',silent_warning,', ',error_warning],
+	                        Action,set_xsb_flag/2,2,'warning_action clause') ) ) ),
+	 stat_set_flag(WARNING_ACTION,A).
 set_xsb_flag_1(Type, _) :-  
 	domain_error(xsb_flag,Type,set_xsb_flag/2,2).
 

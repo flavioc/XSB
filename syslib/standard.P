@@ -976,6 +976,7 @@ call(Goal) :-
    ( directly_callable(Goal) -> 
        call_c(Goal) 
      ; callable(Goal) ->
+	writeln(Goal),
 	'_$savecp'(C), goal_cut_trans(Goal, Trans_Goal, C),call0(Trans_Goal) 
      ; var(Goal) ->
 	instantiation_error(call/1,1,bound) 
@@ -1009,6 +1010,7 @@ tcall(X) :- call0(X).
 %  TLS: Calling retuires_cut_transforming1/1 at top level because goal_cut_trans/3
 %  has already checke for var.
 goal_cut_trans(Goal,TGoal,Cutpoint) :-
+%	writeln(goal_cut_trans(Goal,TGoal,Cutpoint)),
 	(requires_cut_transforming1(Goal) ->
 	goal_cut_transform(Goal,TGoal,Cutpoint) ; TGoal = Goal ).
 
@@ -1422,8 +1424,13 @@ error_writeln(X):-
 
 %  warning/1
 warning(Message) :- 
-	message('++Warning[XSB]: [Runtime/P] ', STDWARN),
-	messageln(Message, STDWARN).
+	stat_flag(WARNING_ACTION,Flag),
+	(Flag == PRINT_WARNING -> 
+	    message('++Warning[XSB]: [Runtime/P] ', STDWARN),
+	    messageln(Message, STDWARN)
+	 ;  (Flag == SILENT_WARNING -> 
+	       true
+	     ; misc_error(Message) ) ).
 
 %  warning/1
 warningln(Message) :- 
