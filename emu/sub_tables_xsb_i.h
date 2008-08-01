@@ -181,7 +181,7 @@ inline static  void subsumptive_call_search(CTXTdeclc TabledCallInfo *callStruct
 #ifndef MULTI_THREAD
   NumSubOps_CallCheckInsert++;
 #else
-#ifndef NON_OPT_COMPILE
+#ifdef NON_OPT_COMPILE
   NumSubOps_CallCheckInsert++;
 #endif
 #endif
@@ -412,7 +412,7 @@ TSTNptr subsumptive_answer_search(CTXTdeclc SubProdSF sf, int nTerms,
 
   TSTNptr root, tstn;
 
-#ifdef MULTI_THREAD
+#ifndef MULTI_THREAD
   NumSubOps_AnswerCheckInsert++;
 #else
 #ifdef NON_OPT_COMPILE

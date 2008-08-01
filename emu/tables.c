@@ -531,7 +531,14 @@ ALNptr table_identify_relevant_answers(CTXTdeclc SubProdSF prodSF, SubConsSF con
   //  printf("\n"); printAnswerTemplate(stderr,templ,size);
   ts = conssf_timestamp(consSF);
   tstRoot = (TSTNptr)subg_ans_root_ptr(prodSF);
+#ifndef MULTI_THREAD
   NumSubOps_IdentifyRelevantAnswers++;
+#else
+#ifdef NON_OPT_COMPILE
+  NumSubOps_IdentifyRelevantAnswers++;
+#endif
+#endif
+
   answers = tst_collect_relevant_answers(CTXTc tstRoot,ts,size,templ);
   conssf_timestamp(consSF) = TSTN_TimeStamp(tstRoot);
   if ( IsNonNULL(answers) )
