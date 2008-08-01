@@ -2773,7 +2773,7 @@ void thread_free_dyn_blks(CTXTdecl) {
 
 void release_private_dynamic_resources(CTXTdecl) {
   thread_free_private_delcfs(CTXT);
-  thread_free_dyn_blks(CTXT);
+  //  thread_free_dyn_blks(CTXT);
 }
 
 #endif
@@ -2941,14 +2941,16 @@ static void retract_clause(CTXTdeclc ClRef Clause, Psc psc ) {
 #ifdef MULTI_THREAD
   if (flags[NUM_THREADS] == 1 || !get_shared(psc))
 #endif
+
     if (pflags[CLAUSE_GARBAGE_COLLECT] == 1 && !dyntabled_incomplete(CTXTc psc)
-	&& ((CPtr) tcpstack.high - top_of_cpstack) < 10000) {
+    	&& ((CPtr) tcpstack.high - top_of_cpstack) < 10000) {
       if (!mark_cpstack_retract(CTXTc Clause) && determine_if_safe_to_delete(Clause)) {
 	really_delete_clause(CTXTc Clause);
 	really_deleted = 1;
-      }
-      unmark_cpstack_retract(CTXT);
-  }
+	  }
+	  unmark_cpstack_retract(CTXT);
+	}
+
   if (!really_deleted) {
     // retracting only if unifying -- dont worry abt. NULL return for d_to_p 
     prref = dynpredep_to_prref(CTXTc get_ep(psc));
@@ -3937,6 +3939,25 @@ xsbBool dynamic_code_function( CTXTdecl )
       xsb_type_error(CTXTc "callable",ptoc_tag(CTXTc 2),ptoc_string(CTXTc 4),ptoc_int(CTXTc 5));
   }
     break;
+
+  case GET_DYNAMIC_PRED_EP: {
+    Psc psc;
+    Cell addr;
+    byte termType;
+
+      addr = iso_ptoc_callable_arg(CTXTc 2, 5,6);
+      psc = term_psc(addr);
+      termType = get_type(psc);
+      if ( termType == T_DYNA ) {		
+	ctop_int(CTXTc 3,(Integer)psc);
+	ctop_int(CTXTc 4,(Integer)get_ep(CTXTc psc));
+      }
+      else if (termType == T_PRED) 
+	xsb_permission_error(CTXTc "modify","static",ptoc_tag(CTXTc 2),
+			   ptoc_string(CTXTc 4),ptoc_int(CTXTc 5));
+      else return FALSE;
+      break;
+  }
 
   default: 
     break;
