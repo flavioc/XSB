@@ -38,6 +38,7 @@
 #define NEXT_TRIE_PROPERTY                     15
 #define TRIE_DROP                              16
 #define CONVERT_TO_DYNA                        17
+#define GET_DYNAMIC_PRED_EP                    18
 
 #define DONT_EXPAND_HASHES                      1
 #define EXPAND_HASHES                           0
