@@ -662,6 +662,11 @@ int gc_heap(CTXTdeclc int arity, int ifStringGC)
 #endif
     }
 
+    if (top_of_localstk < hreg) {
+      fprintf(stderr,"stack clobbered: no space for gc_heap\n"); 
+      xsb_exit(CTXTc "stack clobbered");
+    }
+
     gc_strings = ifStringGC; /* default */
     if (!gc_strings) gc_strings = should_gc_strings();
     marked = mark_heap(CTXTc arity, &marked_dregs);
