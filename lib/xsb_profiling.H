@@ -24,9 +24,12 @@
 
 :- export profile_call/1.
 
+:- export profile_mode_init/0, profile_mode_call/1, profile_mode_dump/0.
+
 :- import parsort/4 from machine.
 :- import psc_name/2 from machine. 
 :- import psc_arity/2 from machine.
+:- import term_psc/2, term_new/2, psc_arity/2 from machine.
 
 :- import call/1 from standard.
 :- import cputime/1 from standard.
@@ -38,7 +41,15 @@
 :- import writeln/1 from standard.
 :- import catch/3 from standard.
 :- import throw/1 from standard.
+:- import call_c/1, (index)/2, arg/3, writeln/2, write/2 from standard.
 
 :- import write_term/2 from write_term.
 
 :- import findall/3 from setof.
+:- import sort/2 from setof.
+
+:- import gensym/2, conset/2, conget/2, coninc/1 from gensym.
+
+:- import (dynamic)/1, retractall/1, assert/1 from assert.
+
+:- import ground/1, member/2 from basics.

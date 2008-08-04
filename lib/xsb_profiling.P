@@ -123,3 +123,45 @@ dump_profile([p(PSC,MPSC,Cnt)|STuples],Total,OPSC,OMPSC,OCnt,ACnt) :-
 		dump_profile(STuples,Total,PSC,MPSC,Cnt,NACnt)
 	).
 
+
+:- dynamic modes_called/2.
+:- index(modes_called/2,trie).
+
+profile_mode_init :-
+	retractall(modes_called(_,_)).
+
+profile_mode_call(Term) :-
+	term_psc(Term,PSC),
+	term_new(PSC,ModeTerm),
+	psc_arity(PSC,Arity),
+	gen_mode_term(Arity,Term,ModeTerm),
+	(modes_called(ModeTerm,Ctr)
+	 ->	coninc(Ctr)
+	 ;	gensym('_mctr',Ctr),
+		conset(Ctr,1),
+		assert(modes_called(ModeTerm,Ctr))
+	),
+	call_c(Term).
+
+profile_mode_dump :-
+	findall(mc(T,C),modes_called(T,C),MCs),
+	sort(MCs,SMCs),
+	(member(mc(T,C),SMCs),
+	 conget(C,Cnt),
+	 write(userout,T),write(userout,': '),writeln(userout,Cnt),
+	 fail
+	 ;
+	 true
+	).
+
+gen_mode_term(Arity,Term,ModeTerm) :-
+	(Arity =< 0
+	 ->	true
+	 ;	arg(Arity,Term,Arg),
+		(ground(Arg)
+		 ->	arg(Arity,ModeTerm,b)
+		 ;	arg(Arity,ModeTerm,f)
+		),
+		Arity1 is Arity-1,
+		gen_mode_term(Arity1,Term,ModeTerm)
+	).
