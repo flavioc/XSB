@@ -2367,6 +2367,39 @@ wants it.  I haven't figured out how to get this scheduling on some
 machines, so if you want profiling to work somewhere it doesn't, maybe
 you can help figure out how to get appropriate scheduling.
 
+The profiling module also provides some support for determining the
+modes in which a predicate is called.  This can be used to determine
+whether indexing is appropriately declared for important dynamic
+predicates.  This is a primitive facility, but has been found useful.
+
+\begin{description}
+\ourmoditem{profile\_mode\_call(+Goal)}{xsb\_profiling}\index{profile\_mode\_call/1}
+
+Calls the goal {\tt Goal} and constructs a table of the modes in which
+the predicate is called and the number of times it is called in that
+mode.  Modes are simply ``b'' for ground and ``f'' for variable.
+Counts are kept in a table with entries of the form {\tt
+Pred(Md1,Md2,..,Mdn)} where Pred is the name of the called predicate
+and the Mdi are either 'f' or 'b', indicating free or bound for the
+corresponding argument.  The table can be printed using {\tt
+profile\_mode\_dump/0} and can be cleared using {\tt profile\_mode\_init/0}.
+\end{description}
+
+\begin{description}
+\ourmoditem{profile\_mode\_dump}{xsb\_profiling}\index{profile\_mode\_dump/0}
+
+Prints out the counts of calls in particular modes as accumulated using \\
+{\tt profile\_mode\_call(+Goal)}.
+\end{description}
+
+\begin{description}
+\ourmoditem{profile\_mode\_init}{xsb\_profiling}\index{profile\_mode\_init/0}
+
+Clears the table that accumulates counts of calls in particular modes
+(done by\\ {\tt profile\_mode\_call(+Goal)}.
+\end{description}
+
+
 %----------------------------------------------------------------------
 \comment{
 %TLS: finally took this out...
