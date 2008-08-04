@@ -94,6 +94,10 @@ compile_popt11(call(Sym,A),[putpbreg(R),deallocate,proceed_gc|PilRest],
 	compile_popt1([putpbreg(R),deallocate,proceed|PilRest],OptPilRest).
 compile_popt11(jump(L), [label(T,L)|PRest], [label(T,L)|OptPRest]) :-
 	compile_popt1(PRest,OptPRest).
+compile_popt11(jump(L), [label(T0,L0),label(T,L)|PRest], [label(T0,L0),label(T,L)|OptPRest]) :-
+	compile_popt1(PRest,OptPRest).
+
+
 % Dead-code elimination
 compile_popt11(jump(Addr), [Instr|PRest], OptCode) :-
 	( Instr = label(_,_) ->
