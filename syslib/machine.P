@@ -239,8 +239,11 @@ db_get_prref(_PSC,_PrRef) :- '_$builtin'(DB_GET_PRREF).
 db_abolish0(_Prref,_PSC) :- '_$builtin'(DB_ABOLISH0).
 db_reclaim0(_Clause,_Type) :- '_$builtin'(DB_RECLAIM0).
 
-dynamic_code_function(Switch,One,Two,Three,Four):- 
-	dynamic_code_function(Switch,One,Two,Three,Four).
+
+:- export dynamic_code_function/6.
+dynamic_code_function(_Switch,_One,_Two,_Three,_Four,_Five):- '_$builtin'(DYNAMIC_CODE_FUNCTION).
+
+dynamic_code_function(_Switch,_One,_Two,_Three,_Four):- '_$builtin'(DYNAMIC_CODE_FUNCTION).
 
 table_inspection_function(_Switch,_One,_Two,_Three,_Four):- 
 	'_$builtin'(TABLE_INSPECTION_FUNCTION).
@@ -438,7 +441,7 @@ del_attr(Var,Mod) :-
 :- dynamic verify_attribute_handler(_,_,_,_).
 install_verify_attribute_handler(Mod,Attr,Value,Handler) :-
       ( retract(verify_attribute_handler(Mod,_,_,_)) ->
-              write('Warning: replacing previous verify_attribute_handler for module '),write(Mod),writeln('.')
+	  warning((' replacing previous verify_attribute_handler for module ',Mod))
       ;
               true
       ),
@@ -449,20 +452,7 @@ install_verify_attribute_handler(Mod,Attr,Value,Handler) :-
 :- dynamic attribute_portray_hook(_,_,_).
 install_attribute_portray_hook(Mod,Attr,Handler) :-
       ( retract(attribute_portray_hook(Mod,_,_)) ->
-              write('Warning: replacing previous attribute_portray_hook for module '),
-	      write(Mod),writeln('.')
-      ;
-              true
-      ),
-      assert(attribute_portray_hook(Mod,Attr,Handler)).
-
-%---------------
-
-:- dynamic attribute_portray_hook(_,_,_).
-install_attribute_portray_hook(Mod,Attr,Handler) :-
-      ( retract(attribute_portray_hook(Mod,_,_)) ->
-              write('Warning: replacing previous attribute_portray_hook for module '),
-	      write(Mod),writeln('.')
+	  warning((' replacing previous attribute_portray_hook for module ',Mod))
       ;
               true
       ),
@@ -473,8 +463,7 @@ install_attribute_portray_hook(Mod,Attr,Handler) :-
 :- dynamic constraint_portray_hook(_,_,_,_).
 install_constraint_portray_hook(Mod,Vars,Names,Handler) :-
       ( retract(constraint_portray_hook(Mod,_,_,_)) ->
-              write('Warning: replacing previous constraint_portray_hook for module '),
-	      write(Mod),writeln('.')
+	  warning((' replacing previous constraint_portray_hook for module ',Mod))
       ;
               true
       ),
