@@ -519,10 +519,11 @@ parse_directive(import(from(X, Mod)), _QrList,SymTab,_ModName) :- !,
 	 ;	parse_comma_list(X, SymTab, [im(Mod)], (import)),
 		sym_insert(Mod, 0, [module], SymTab, _)
 	).
-parse_directive(use_module(Mod,X), _QrList,SymTab,_ModName) :- !,
-	(var(Mod)
+parse_directive(use_module(ModIm,X), _QrList,SymTab,_ModName) :- !,
+	(var(ModIm)
 	 ->	error(('Module cannot be a variable. Importing: ',X))
-	 ;	parse_list(X, SymTab, [im(Mod)], (import)),
+	 ;	(ModIm = library(Mod1) -> Mod = Mod1 ; Mod = ModIm),
+	        parse_list(X, SymTab, [im(Mod)], (import)),
 		sym_insert(Mod, 0, [module], SymTab, _)
 	).
 parse_directive(document_import(from(X, Mod)), _QrList,SymTab,_ModName) :- !,

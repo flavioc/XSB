@@ -34,6 +34,7 @@
 
 message(Message) :- ttywritenl(Message, STDMSG).
 
+:- import warning/2 from standard.
 warning(Message) :-
 	(current_compiled_module(Module)
 	 ->	true
@@ -41,7 +42,8 @@ warning(Message) :-
 	 ->	true
 	 ;	Module = '**Unknown**'
 	),
-	ttywritenl(('++Warning[XSB]: [Compiler] ', Module, ': ', Message), STDWARN).
+%	ttywritenl(('++Warning[XSB]: [Compiler] ', Module, ': ', Message), STDWARN).
+	warning([Module,' : ',Message],'Compiler').
 
 error(Message) :- 
 	misc_error(Message).
