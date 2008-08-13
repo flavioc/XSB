@@ -1421,20 +1421,22 @@ error_write(X):-
 error_writeln(X):- 
 	messageln(X,STDERR).
 
-%  warning/1
 warning(Message) :- 
+	warning(Message,'Runtime/P').
+
+warningln(Message) :- 
+	warning(Message,'Runtime/P').
+
+%Runtime/P
+warning(Message,Type) :- 
 	stat_flag(WARNING_ACTION,Flag),
 	(Flag == PRINT_WARNING -> 
-	    message('++Warning[XSB]: [Runtime/P] ', STDWARN),
+	    message(['++Warning[XSB]: [',Type,'] '], STDWARN),
 	    messageln(Message, STDWARN)
 	 ;  (Flag == SILENT_WARNING -> 
 	       true
 	     ; misc_error(Message) ) ).
 
-%  warning/1
-warningln(Message) :- 
-	message('++Warning[XSB]: [Runtime/P] ', STDWARN),
-	messageln(Message, STDWARN).
 
 %  message/1
 message(X) :- message(X, STDMSG).
