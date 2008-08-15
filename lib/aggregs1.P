@@ -508,6 +508,7 @@ alt_filterPOA(Call,Var,PO,Abstract,CallAbs) :- alt_filterPOAA1(Call,Var,PO,Abstr
 alt_filterPOA(Call,Var,PO,Abstract,CallAbs) :- alt_filterPOAA1(Call,Var,PO,Abstract,CallAbs).
 :- table alt_filterPOAA1/5.
 :- use_variant_tabling alt_filterPOAA1(_,_,_,_,_).
+:- import term_set_arg/4 from machine.
 :- import more_general_than/2,abstract/3,abstract_call/2 from usermod.
 alt_filterPOAA1(Call,Var,_PO,_Abstract,_CallAbs) :- 
 	'_$savecp'(Breg),
@@ -516,11 +517,17 @@ alt_filterPOAA1(Call,Var,_PO,_Abstract,_CallAbs) :-
 	call(Call,VarTmp),
 %	call(CallAbs,VarTmp,Out),
 	abstract_call(VarTmp,Out),
-	Oskel = ret(Out),
+%	term_set_arg(CallAbs, 1, VarTmp, 0),
+%	term_set_arg(CallAbs, 2, Out, 0),
+%	call_c(CallAbs),
 %	writeln(oskel(Oskel,VarTmp,Out)),
+	Oskel = ret(Out),
 	((get_returns(Cs,Oskel,Leaf),
 	    (Ovar==VarTmp
 	    ->  true
+%	     ;   term_set_arg(PO, 1, Ovar, 0),
+%	         term_set_arg(PO, 2, VarTmp, 0),
+%	         call_c(PO)))
 %            ;   call(PO,Ovar,VarTmp)))
 	     ;   more_general_than(Ovar,VarTmp)))
 	 ->	fail
@@ -649,7 +656,7 @@ table_once(Call) :-
 /*
 ** A built-in used in the implementation of aggregates.                   
 ** Takes: Breg (where the choice point was saved), 
-**    	  Arity of the skeleton term to return.
+**    	  Arity of the skeleton term to return. (TLS: this does not seem to be used)
 ** Returns: Subgoal skeleton, Ptr to a subgoal structure.
 **          Subgoal skeleton is of the form ret(X,Y,Z), where X,Y,Z are
 **    	    all the free variables in the subgoal.
