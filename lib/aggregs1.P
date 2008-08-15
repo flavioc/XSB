@@ -503,6 +503,51 @@ filterPOAA1(Call,Var,PO,Abstract,CallAbs) :-
 %, writeln(success(Call,Var)).
 
 %--------------------------------------------------------------
+:- export alt_filterPOA/5.
+alt_filterPOA(Call,Var,PO,Abstract,CallAbs) :- alt_filterPOAA1(Call,Var,PO,Abstract,CallAbs), fail.
+alt_filterPOA(Call,Var,PO,Abstract,CallAbs) :- alt_filterPOAA1(Call,Var,PO,Abstract,CallAbs).
+:- table alt_filterPOAA1/5.
+:- use_variant_tabling alt_filterPOAA1(_,_,_,_,_).
+:- import more_general_than/2,abstract/3,abstract_call/2 from usermod.
+alt_filterPOAA1(Call,Var,_PO,_Abstract,_CallAbs) :- 
+	'_$savecp'(Breg),
+	breg_retskel(Breg,4,Skel,Cs),
+	copy_term(p(Call,Var,Skel),p(Call,Ovar,Oskel)),
+	call(Call,VarTmp),
+%	call(CallAbs,VarTmp,Out),
+	abstract_call(VarTmp,Out),
+	Oskel = ret(Out),
+%	writeln(oskel(Oskel,VarTmp,Out)),
+	((get_returns(Cs,Oskel,Leaf),
+	    (Ovar==VarTmp
+	    ->  true
+%            ;   call(PO,Ovar,VarTmp)))
+	     ;   more_general_than(Ovar,VarTmp)))
+	 ->	fail
+	 ;	findall(p(Cs,Ovar,Leaf),
+			 (get_returns(Cs,Oskel,Leaf), 
+%			  writeln(get_returns(Cs,Oskel,Leaf)), 
+%			  writeln(call(PO,VarTmp,Ovar)),
+			  more_general_than(VarTmp,Ovar)
+%			  call(PO,VarTmp,Ovar)
+			  ),
+			 Rets),
+		 sort(Rets,Rets1),
+%		 writeln(Rets1),
+		 filterOutCalls(Rets1,Calls),
+%		 writeln(call(Abstract,Calls,VarTmp,Var)),
+%		 call(Abstract,Calls,VarTmp,Var),
+		 abstract(Calls,VarTmp,Var),
+%		 writeln(aftercall(Abstract,Calls,VarTmp,Var)),
+		 ( member(p(Cs,Ovar,Leaf),Rets1),
+%		   delete_return(Cs,Leaf),
+		   fail
+		  ;
+		   true )
+	).
+%, writeln(success(Call,Var)).
+
+%--------------------------------------------------------------
 :- export shared_filterPOA/5.
 shared_filterPOA(Call,Var,PO,Abstract,CallAbs) :- shared_filterPOA1(Call,Var,PO,Abstract,CallAbs), fail.
 shared_filterPOA(Call,Var,PO,Abstract,CallAbs) :- shared_filterPOA1(Call,Var,PO,Abstract,CallAbs).
