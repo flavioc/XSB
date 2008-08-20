@@ -502,13 +502,24 @@ xsbBool glstack_realloc(CTXTdeclc int new_size, int arity)
 
   initialize_glstack(heap_top + heap_offset,ls_top+local_offset);
 
+  /* TLS: below, the condition should not need to be commented out.
+     If the heap expands, there should be no pointers from heap into
+     the local stack, so we shouldnt need to traverse the heap.
+     However, call subumption code actually copies the substitution
+     factor from the CPS to heap (I dont know why, but see the comment
+     after the call to subsumptive_call_search() in slginsts_xsb_i.h),
+     so that substitution factor pointers may point from the heap to
+     local stack.  Therefore the pointer update causes the heap-ls
+     pointers to be harmless at glstack expansion.
+  */
+
   /* Update the Heap links */
-  if (heap_offset != 0) {
+  //  if (heap_offset != 0) {
     for (cell_ptr = (CPtr *)(heap_top + heap_offset);
 	 cell_ptr-- > (CPtr *)new_heap_bot;
 	 )
       { reallocate_heap_or_ls_pointer(cell_ptr) ; }
-  }
+    //  }
 
   /* Update the pointers in the Local Stack */
   for (cell_ptr = (CPtr *)(ls_top + local_offset);

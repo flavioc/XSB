@@ -273,6 +273,7 @@ void total_stat(CTXTdeclc double elapstime) {
     printf("\n");
   }
 
+#if !defined(MULTI_THREAD) || defined(NON_OPT_COMPILE)
   printf("Tabling Operations\n");
   printf("  %lu subsumptive call check/insert ops: %lu producers, %lu variants,\n"
 	 "  %lu properly subsumed (%lu table entries), %lu used completed table.\n"
@@ -299,6 +300,7 @@ void total_stat(CTXTdeclc double elapstime) {
 	   dl_count, dl_space_alloc, dl_space_used);
     printf("\n");
   }
+#endif
 
 #ifdef GC
   printf("\n");
@@ -506,6 +508,7 @@ void total_stat(CTXTdeclc double elapstime) {
    So omitted below.
 */
 
+#if !defined(MULTI_THREAD) || defined(NON_OPT_COMPILE)
   printf("Tabling Operations (shared and all private tables)\n");
   printf("  %lu subsumptive call check/insert ops: %lu producers, %lu variants,\n"
 	 "  %lu properly subsumed (%lu table entries), %lu used completed table.\n"
@@ -532,6 +535,8 @@ void total_stat(CTXTdeclc double elapstime) {
 	   dl_count, dl_space_alloc, dl_space_used);
     printf("\n");
   }
+
+#endif
 
 #ifdef SHARED_COMPL_TABLES
   printf("%lu thread suspensions have occured\n\n", num_suspends );
