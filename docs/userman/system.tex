@@ -1249,22 +1249,15 @@ the desired behavior, the user may add to the file a declaration
 {\tt :- multifile Predicate\_List .} \\
 \end{center}
 where {\tt Predicate\_List} is a list of predicates in {\em
-functor/arity\/} form.  The effect of this declaration is to delete
+  functor/arity\/} form.  The effect of this declaration is to delete
 {\em only\/} those clauses of {\tt predicate/arity} that were defined
-in the file itself.  Issues to remember when using {\tt multifile} in
-XSB \version{} are:
-%
-\begin{itemize}
-\item If a predicate {\tt p/n} is to be defined in more than one file,
-{\tt p/n} must be declared as multifile in each file in which it is
-defined. 
-%
-\item The {\tt multifile} declaration should be trusted only for
-static code.  Multifile declarations are not supported for code that
-is dynamically loaded (via {\tt load\_dyn/[1,2]} or {\tt
-load\_dync/[1,2]}).
-%
-\end{itemize}
+in the file itself.  {\em If a predicate $P$ is to be treated as
+  multifile, the {\tt multifile/1} directive for $P$ must appear in
+  all files that contain clause definitions for $P$.}  If $P$ is
+dynamic, this means that the multifile declaration for $P$ must appear
+in files defining $P$ whether they are compiled and consulted, or
+dynamically loaded via {\tt load\_dyn/[1,2]} or {\tt
+  load\_dync/[1,2]}.
 
 \section{The Compiler} \label{the_compiler} \index{Compiler}
 %========================================================
