@@ -23,7 +23,6 @@
 ** 
 */
 
-
 :- compiler_options([sysmod, xpp_on]).
 #include "flag_defs_xsb.h"
 #include "standard.h"
@@ -295,7 +294,6 @@ embedded_number((A->B)) :- !,
 change_multifile_directive(':-'(multifile(PredSpecs)), ModName, []) :-
 	!,
 	change_PAList(PredSpecs, ModName).
-
 change_multifile_directive(':-'(H, B), ModName, ':-'(NewH, B)) :-
 	functor(H, apply, A), 
 	!,
@@ -306,7 +304,6 @@ change_multifile_directive(':-'(H, B), ModName, ':-'(NewH, B)) :-
 	H =.. [_|Args],
 	get_p_mod(apply, ModName, P_Mod),
 	NewH =..[P_Mod|Args].
-
 change_multifile_directive(ApplyFact, ModName, NewFact) :-
 	functor(ApplyFact, apply, A),
 	!,
@@ -317,29 +314,26 @@ change_multifile_directive(ApplyFact, ModName, NewFact) :-
 	ApplyFact =.. [_|Args],
 	get_p_mod(apply, ModName, P_Mod),
 	NewFact =..[P_Mod|Args].
-
 change_multifile_directive(':-'(index(P/A, Arg, Size)), ModName, 
 			   ':-'(index(P_Mod/A, Arg, Size))) :-
 	functor(Term, P, A),
 	'_$multifile2'(Term, ModName, _), !,
 	get_p_mod(P, ModName, P_Mod).
-
 change_multifile_directive(':-'(index(P/A, Arg)), ModName, 
 			   ':-'(index(P_Mod/A, Arg))) :-
 	functor(Term, P, A),
 	'_$multifile2'(Term, ModName, _), !,
 	get_p_mod(P, ModName, P_Mod).
-
 change_multifile_directive(':-'(index(PAs)), ModName, ':-'(index(NewPAs))) :-
 	!,
 	change_index(PAs, ModName, NewPAs).
-
+change_multifile_directive(':-'(dynamic(PAs)), ModName, ':-'(dynamic(NewPAs))) :-
+	!,
+	change_dynamic(PAs, ModName, NewPAs).
 change_multifile_directive(':-'(H, B), ModName, ':-'(NewH, B)) :-
 	'_$multifile2'(H, ModName, NewH), !.
-
 change_multifile_directive(Fact, ModName, NewFact) :-
 	'_$multifile2'(Fact, ModName, NewFact), !.
-
 change_multifile_directive(Clause, _, Clause).
 
 change_PAList((PA,PAs), ModName) :-
@@ -375,6 +369,35 @@ change_index((Pred, Preds), ModName, (NewPred, NewPreds)) :- !,
 	change_index(Preds, ModName, NewPreds).
 
 change_index(P/A-Arg, ModName, P_Mod/A-Arg) :-
+	functor(Term, P, A),
+	('_$multifile2'(Term, ModName, _)
+	 ->	get_p_mod(P, ModName, P_Mod)
+	 ;	P_Mod = P			% unchanged
+	).
+
+%-------------------------------------------------------------------------
+% change_dynamic(+Preds, +ModName, -NewPreds)
+%	Changes the dynamic declaration like p/3 to p_file/3 (here p/3 is a multifile
+%	predicate).  If the predicate is not a multifile predicate, then 
+%	the dynamic declaration will not be changed.
+%-------------------------------------------------------------------------
+
+/** DSW: Trying to fix multifile and dynamic, so that multifile causes
+dynamic to be declared for the transformed predicate-names.  Works OK
+in one order multifile,dynamic, but not in the other with dynamic
+first.  The difficulty is that multifile doesn't use the symbol table
+to store its info, but used asserted clauses, so it doesn't pass info
+around in same way, so it's hard to get access to information about
+other symbols.  So first, pass symtab around with multifile
+processing, and then later, to improve compiler org, see how to put
+multifile info into the symbol table.  ***/
+
+change_dynamic((Pred, Preds), ModName, (NewPred, NewPreds)) :- !,
+	change_dynamic(Pred, ModName, NewPred),
+	change_dynamic(Preds, ModName, NewPreds).
+
+change_dynamic(PA, ModName, P_Mod/A) :-
+	mpa_to_skel(PA,Term),
 	functor(Term, P, A),
 	('_$multifile2'(Term, ModName, _)
 	 ->	get_p_mod(P, ModName, P_Mod)
@@ -443,7 +466,7 @@ parse_clause(Cl, module(SymTab,_DcList,ClList,QrList),ModName) :-
 	(Cl = (':-'(H, B))
 	 ->	parse_preddef_chk_dyn(H, B, ClList, QrList, SymTab)
 	 ; Cl = (':-'(Directive))
-	 ->	transform_directive(Directive,PDirective),
+	 ->	transform_directive(Directive,ModName,PDirective),
 		parse_directive(PDirective,QrList,SymTab,ModName)
 	 ; Cl = ('?-'(Q))
 	 ->	parse_query(Q,QrList,SymTab)
@@ -451,41 +474,46 @@ parse_clause(Cl, module(SymTab,_DcList,ClList,QrList),ModName) :-
 	).
 
 /*======================================================================*/
-/* transform_directive(+Directive, -TDirective)                  	*/
+/* transform_directive(+Directive, +ModName, -TDirective)                  	*/
 /*======================================================================*/
 
-transform_directive(table(as(Args,Options)),table(as(TArgs,Options))) :- !,
-	transform_slash_to_skel(Args,TArgs).
-transform_directive(table(Args),table(TArgs)) :- !,
-	transform_slash_to_skel(Args,TArgs).
-transform_directive(index(Args),index(TArgs)) :- !,
-	transform_slash_to_skel(Args,TArgs).
-transform_directive(index(Spec,X),index(Skel,X)) :- !,
+transform_directive(table(as(Args,Options)),ModName,table(as(TArgs,Options))) :- !,
+	transform_slash_to_skel(Args,ModName,TArgs).
+transform_directive(table(Args),ModName,table(TArgs)) :- !,
+	transform_slash_to_skel(Args,ModName,TArgs).
+transform_directive(index(Args),ModName,index(TArgs)) :- !,
+	transform_slash_to_skel(Args,ModName,TArgs).
+transform_directive(index(Spec,X),_ModName,index(Skel,X)) :- !,
 %	mpa_to_skel(Spec,Skel,transform_directive/2), !.
 	mpa_to_skel(Spec,Skel).
-transform_directive(index(Spec,X,Y),index(Skel,X,Y)) :- !,
+transform_directive(index(Spec,X,Y),_ModName,index(Skel,X,Y)) :- !,
 %	mpa_to_skel(Spec,Skel,transform_directive/2), !.
 	mpa_to_skel(Spec,Skel).
-transform_directive(dynamic(as(Args,Options)),dynamic(as(TArgs,Options))) :- !,
-	transform_slash_to_skel(Args,TArgs).
-transform_directive(dynamic(Args),dynamic(TArgs)) :- !,
-	transform_slash_to_skel(Args,TArgs).
-transform_directive(use_incremental_dynamic(Args),use_incremental_dynamic(TArgs)) :- !,
-	transform_slash_to_skel(Args,TArgs).
-transform_directive(use_incremental_tabling(Args),use_incremental_tabling(TArgs)) :- !,
-	transform_slash_to_skel(Args,TArgs).
-transform_directive(use_opaque_tabling(Args),use_opaque_tabling(TArgs)) :- !,
-	transform_slash_to_skel(Args,TArgs).
-transform_directive(Directive,Directive).
+transform_directive(dynamic(as(Args,Options)),ModName,dynamic(as(TArgs,Options))) :- !,
+	transform_slash_to_skel(Args,ModName,TArgs).
+transform_directive(dynamic(Args),ModName,dynamic(TArgs)) :- !,
+	transform_slash_to_skel(Args,ModName,TArgs).
+transform_directive(use_incremental_dynamic(Args),ModName,use_incremental_dynamic(TArgs)) :- !,
+	transform_slash_to_skel(Args,ModName,TArgs).
+transform_directive(use_incremental_tabling(Args),ModName,use_incremental_tabling(TArgs)) :- !,
+	transform_slash_to_skel(Args,ModName,TArgs).
+transform_directive(use_opaque_tabling(Args),ModName,use_opaque_tabling(TArgs)) :- !,
+	transform_slash_to_skel(Args,ModName,TArgs).
+transform_directive(Directive,_ModName,Directive).
 
-transform_slash_to_skel((A1,A2),(T1,T2)) :-
+transform_slash_to_skel((A1,A2),ModName,(T1,T2)) :-
 	nonvar(A1), !,
-	transform_slash_to_skel(A1,T1),
-	transform_slash_to_skel(A2,T2).
-transform_slash_to_skel(Spec,Skel) :-
+	transform_slash_to_skel(A1,ModName,T1),
+	transform_slash_to_skel(A2,ModName,T2).
+transform_slash_to_skel(Spec,ModName,Skel) :-
 %	mpa_to_skel(Spec,Skel,transform_directive/2).
-	mpa_to_skel(Spec,Skel).
-
+	mpa_to_skel(Spec,Skel),
+	('_$multifile2'(Skel0,ModName,_)
+	 ->	functor(Skel0,P,A),
+		get_p_mod(P,ModName,P_Mod),
+		functor(Skel,P_Mod,A)
+	 ;	Skel = Skel0
+	).
 
 /*======================================================================*/
 /* parse_directive(+Directive, #Symbol_Table,ModName)			*/
@@ -678,7 +706,6 @@ parse_dynamic_options(Option,_PredCList,_QrList,_SymTab,_ModName) :- !,
 /* This code is also used in cp_opt.P, so make sure any changes here    */
 /* dont break cp_opt/2							*/
 /*======================================================================*/
-
 parse_preddef_chk_dyn(H, B, List, QrList, SymTab) :-
 	functor(H, F, A),
 	sym_insert(F, A, [defined], SymTab, PredSym),
