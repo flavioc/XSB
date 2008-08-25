@@ -45,6 +45,7 @@
 
 % hide only this call, trace embedded calls
 hide_this_show(call_expose,1).
+hide_this_show(':',2).
 hide_this_show(',',2).
 hide_this_show(';',2).
 hide_this_show('->',2).
