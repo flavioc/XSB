@@ -218,7 +218,6 @@ make_gpp_options(' -P -m -nostdinc -curdirinclast ').
 /*======================================================================*/
 /* parse_clauses(+ModName, #module(#SymTab,#DcList,#ClList,#QrList))	*/
 /*======================================================================*/
-
 parse_clauses(ModName, Module) :-
 	my_read(Clause, VariableList),
 	singleton_check(Clause, VariableList),
@@ -228,17 +227,17 @@ parse_clauses(ModName, Module) :-
 	(Expanded_Clause == end_of_file
 	 ->	true
 	 ;	!,
-	    parse_clause(Expanded_Clause, Module,ModName),
-	    %% stop parsing clauses, if needs_restart parsing
-	    (conget(needs_restart, 1) 
-	    -> (ModName = user
-	       ->  warning('Module "user" cannot be preprocessed')
-	       ;   ModName = xsb_configuration
-	       ->  warning('Module "xsb_configuration" cannot be preprocessed')
-	       ;   true
-	       )
-	    ; parse_clauses(ModName, Module)
-	    )
+		parse_clause(Expanded_Clause, Module,ModName),
+		%% stop parsing clauses, if needs_restart parsing
+		(conget(needs_restart, 1) 
+		 ->	(ModName = user
+			 ->	warning('Module "user" cannot be preprocessed')
+			 ;	ModName = xsb_configuration
+			 ->	warning('Module "xsb_configuration" cannot be preprocessed')
+			 ;	true
+			)
+		 ;	parse_clauses(ModName, Module)
+		)
 	).
 parse_clauses(M, _) :-	% Under normal conditions this clause is unreachable!
 	syntax_error(('Clauses of ', M, ' cannot be parsed.')).
@@ -507,7 +506,7 @@ transform_slash_to_skel((A1,A2),ModName,(T1,T2)) :-
 	transform_slash_to_skel(A2,ModName,T2).
 transform_slash_to_skel(Spec,ModName,Skel) :-
 %	mpa_to_skel(Spec,Skel,transform_directive/2).
-	mpa_to_skel(Spec,Skel),
+	mpa_to_skel(Spec,Skel0),
 	('_$multifile2'(Skel0,ModName,_)
 	 ->	functor(Skel0,P,A),
 		get_p_mod(P,ModName,P_Mod),
