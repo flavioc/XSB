@@ -2212,12 +2212,15 @@ byte * trie_get_calls(CTXTdecl)
    CPtr old_cptop;
 #endif
 #endif
-
    call_term = ptoc_tag(CTXTc 1);
    if ((psc_ptr = term_psc(call_term)) != NULL) {
      tip_ptr = get_tip(CTXTc psc_ptr);
      if (tip_ptr == NULL) {
-       if (!get_incr(psc_ptr)) 
+       /* TLS: added the !get_tabled() to handle cases where the
+	  predicate has been tabled but a tip has not yet been created
+	  (e.g clauses for a dynamic tabled predicate have not yet
+	  been defined */
+       if (!get_incr(psc_ptr) && !get_tabled(psc_ptr))
 	 xsb_abort("get_calls/3 called with non-tabled predicate: %s/%d",
 		   get_name(psc_ptr),get_arity(psc_ptr));
        return (byte *)&fail_inst;
