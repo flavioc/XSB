@@ -954,7 +954,6 @@ use_opaque_tabling(Ps) :-
 			/*  LOGIC and CONTROL  */
 			/***********************/
 
-/*
 call(Goal) :- 
 	( callable(Goal) ->
 		'_$savecp'(C), 
@@ -964,7 +963,6 @@ call(Goal) :-
 	        instantiation_error(call/1,1,bound)
 	; type_error(callable,Goal,call/1,1)
 	).
-*/
 
 /* TLS: 02/08 -- use of directly_callable saves *lots* of time for
    normal case.  Need call_c/1 in first condition -- otherwise trace
@@ -972,6 +970,7 @@ call(Goal) :-
    condition, tracing is done via goal_cut_trans/3. */
 directly_callable(Goal) :- directly_callable(Goal).  %inlined by compiler.
 
+/*
 call(Goal) :-
    ( directly_callable(Goal) -> 
        call_c(Goal) 
@@ -980,7 +979,7 @@ call(Goal) :-
      ; var(Goal) ->
 	instantiation_error(call/1,1,bound) 
      ;  type_error(callable,Goal,call/1,1) ).
-
+*/
 % call/n for n>1, adds outer arguments to end of goal arguments and calls
 % that predicate (in same module as G).
 % This dingles arguments so it can use a single builtin CALLN from machine.
