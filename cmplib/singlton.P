@@ -52,7 +52,7 @@ singleton_check(Clause, VariableList) :-
 		% only underscores as variables), where VariableList is
 		% variable and no singleton test is needed.
 'singleton check'(Clause, VariableList) :-
-	singleton_warnings(Clause, VariableList),
+	once(singleton_warnings(Clause, VariableList)),
 	fail.	% Undo numbervars' side-effects and reclaim all space used.
 'singleton check'(_, _).
 
