@@ -1564,7 +1564,7 @@ void ODBCConnectOption(CTXTdecl)
 
 //extern xsbBool glstack_realloc(CTXTc int,int);
 
-Cell build_codes_list(CTXTdeclc char *charptr) {
+Cell build_codes_list(CTXTdeclc byte *charptr) {
   int len = strlen(charptr);
 
   if (len == 0) {
