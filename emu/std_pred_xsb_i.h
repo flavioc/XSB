@@ -1,4 +1,4 @@
-/* File:      std_pred_xsb_i.h
+/*      std_pred_xsb_i.h
 ** Author(s): Kostis F. Sagonas
 ** Modified by Swift 
 ** Contact:   xsb-contact@cs.sunysb.edu
@@ -172,6 +172,8 @@ inline static xsbBool univ_builtin(CTXTdecl)
   term = ptoc_tag(CTXTc 1);
   list = ptoc_tag(CTXTc 2);
   if (isnonvar(term)) {	/* Usage is deconstruction of terms */
+    if (!isref(list) && !islist(list))
+      xsb_type_error(CTXTc "list",list,"=../2",2);  /* f(a) =.. 3. */
     new_list = makelist(hreg);
     if (isatomic(term) || isboxedinteger(term)) { follow(hreg++) = term; top = hreg++; }
     else if (isconstr(term) && (arity = (get_arity(get_str_psc(term))))) {
@@ -240,10 +242,13 @@ inline static xsbBool univ_builtin(CTXTdecl)
 	    } else {
 	      hreg = hreg-1;	/* restore hreg */
 	      if (arity > MAX_ARITY)
-		xsb_abort("[In =..] Attempt to construct a functor with arity %d > %d",
-			  arity, MAX_ARITY);
-	      else xsb_type_error(CTXTc "list",list,"=../2",2);  /* X =.. [foo|Y]. */
-	      return FALSE;
+		xsb_representation_error(CTXTc "Greater than MAX_ARITY","=../2",2);
+	      else {
+		if (isnonvar(list)) 
+		  xsb_type_error(CTXTc "list",list,"=../2",2);  /* X =.. [foo|Y]. */
+		else xsb_instantiation_error(CTXTc "=../2",2);
+		return FALSE;
+	      }
 	    }
 	  }
 	} return TRUE;
@@ -254,14 +259,16 @@ inline static xsbBool univ_builtin(CTXTdecl)
       }
       else
 	{
-	  xsb_type_error(CTXTc "list",list,"=../2",2);  /* X =.. X =.. [2,a,b]. */
+	  if (isnonvar(cell(head))) 
+	    xsb_type_error(CTXTc "atomic",cell(head),"=../2",2);  /* X =.. X =.. [2,a,b]. */
+	  else xsb_instantiation_error(CTXTc "=../2",2);
 	  return(FALSE);
 	}
-    }
+    } /* List is a list */
     if (isnonvar(list))
 	  xsb_type_error(CTXTc "list",list,"=../2",2);  /* X =.. a */
     else xsb_instantiation_error(CTXTc "=../2",2);
-  }
+  } /* usage is construction; term is known to be a variable */
   return TRUE;
 }
 
