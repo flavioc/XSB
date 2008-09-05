@@ -1645,9 +1645,9 @@ the module {\tt standard}.
 As above, but writes to {\tt STDFDBK}, the console feedback stream.
 
 \ourrepeatmoditem{warning(?Message)}{standard}\index{\texttt{warning/1}}
-\ourmoditem{warningln(?Message)}{standard}\index{\texttt{warningln/1}}
+%\ourmoditem{warningln(?Message)}{standard}\index{\texttt{warningln/1}}
 %
-By default, these predicates output {\tt Message} to XSB's {\tt
+By default, this predicate outputs {\tt Message} to XSB's {\tt
   STDWARN} stream, rather than to XSB's {\tt STDOUT} stream, as does
 {\tt write/1} and {\tt writeln/1}.  In addition, if {\tt Message} is a
 list or comma list, the elements in the comma list are output as if
@@ -1658,8 +1658,9 @@ The default behavior for warnings can be altered by setting the value
 of the XSB flag {\tt warning\_action} to either {\tt silent\_warning}
 which performs no action when {\tt warning/1} is called. or {\tt
   error\_warning} which throws a miscellaneous exception when {\tt
-  warning/1} is called.  The default behavior can be restored by
-setting {\tt warning\_action} to {\tt print\_warning}.
+  warning/1} is called (WARNING: this includes compiler warnings).
+The default behavior can be restored by setting {\tt warning\_action}
+to {\tt print\_warning}.
 
 \ourrepeatmoditem{message(?Message)}{standard}\index{\texttt{message/1}}
 \ourmoditem{messageln(?Message)}{standard}\index{\texttt{messageln/1}}
@@ -3190,71 +3191,81 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
     due to the fact that {\tt apply/1} is a Prolog term, while 
     {\tt apply/2} is a proper HiLog term.
 
-\ournewitem{?Term =.. [?Functor |?ArgList]}{ISO}\index{\texttt{=../2}} 
-    Succeeds when {\tt Term} is any (Prolog or) HiLog term, {\tt Functor} is 
-    its Prolog functor and {\tt ArgList} is the list of its arguments. 
-    The use of {\tt =../2} (pronounced {\em univ}) although convenient, 
-    can nearly always be avoided.
-    Whenever efficiency is critical, it is advisable to use the
-    predicates {\tt functor/3} and {\tt arg/3}, since {\tt =../2} is 
-    implemented by calls to these predicates.  The behaviour of 
-    {\tt =../2} is as follows:
+\ournewitem{?Term =.. ?List}{ISO}\index{\texttt{=../2}} 
+%
+Given proper instantition of the arguments, {\tt =../2} (pronounced
+{\em univ}) succeeds when (1) {\tt Term} unifies with a compound
+Prolog or HiLog term and {\tt List} unifies with a list whose head is
+the functor of {\tt Term} and whose tail is a list of the arguments of
+{\tt Term}; or (2) when {\tt Term} unifies with an atomic term and
+{\tt List} unifies with a list whose only element is {\tt Term}.  More
+precisely,
     \begin{itemize}
-    \item If initially {\tt Term} is uninstantiated, then the list in the 
-          second argument of {\tt =../2} must be instantiated either to a
-          {\em proper list} (list of determinate length) whose head is an 
-          atom, or to a list of length 1 whose head is a number.
-    \item If the arguments of {\tt =../2} are both uninstantiated, or if 
-          either of them is not what is expected, {\tt =../2} aborts, 
-          producing an appropriate error message.
+    \item If initially {\tt Term} is uninstantiated, then {\tt List}
+      must be instantiated either to a {\em proper list} (list of
+      determinate length) whose head is an atom, or to a list of
+      length 1 whose head is a number.
+    \item If the arguments of {\tt =../2} are both uninstantiated, or
+      if either of them is not what is expected, {\tt =../2} throws
+      the appropriate error message.
     \end{itemize}
 
     Examples:
     {\footnotesize
      \begin{verbatim}
-                   | ?- X - 1 =.. L.
-                   X = _595692
-                   L = [-,_595692,1]
+           | ?- X - 1 =.. L.
+           X = _h112
+           L = [-,_h112,1]
 
-                   | ?- p(a,b,c) =.. L.
-                   L = [p,a,b,c]
+           | ?- p(a,b,c) =.. L.
+           L = [p,a,b,c]
 
-                   | ?- h(a,b,c) =.. L.
-                   L = [apply,h,a,b,c]
+           | ?- h(a,b,c) =.. L.
+           L = [apply,h,a,b,c]
 
-                   | ?- map(p)(a,b) =.. L.
-                   L = [apply,map(p),a,b]
+           | ?- map(p)(a,b) =.. L.
+           L = [apply,map(p),a,b]
 
-                   | ?- T =.. [foo].
-                   T = foo
+           | ?- T =.. [foo].
+           T = foo
 
-                   | ?- T =.. [3|X].
-                   T = 3
-                   X = []
+           | ?- T =.. [apply,X,a,b].
+           T = apply(X,a,b)
 
-                   | ?- T =.. [apply,X,a,b].
-                   T = apply(X,a,b)
+           | ?- T =.. [1,2].
+           ++Error[XSB/Runtime/P]: [Type (1 in place of atomic)] in arg 2 of predicate =../2
 
-                   | ?- T =.. [1,2].
-                   ++Error: Wrong type(s) in argument 2 of =../2
-                   Aborting...
+           | ?- T =.. [a+b,2].
+           ++Error[XSB/Runtime/P]: [Type (a + b in place of atomic)] in arg 2 of predicate =../2
 
-                   | ?- T =.. [a+b,2].
-                   ++Error: Wrong type(s) in argument 2 of =../2
-                   Aborting..
-
-                   | ?- X =.. [foo|Y].
-                   ++Error: Argument 2 of =../2 is not a proper list
-                   Aborting...
+           | ?- X =.. [foo|Y].
+           ++Error[XSB/Runtime/P]: [Instantiation]  in arg 2 of predicate =../2
      \end{verbatim}}
 
+% Not ISO compliant in that X =.. [] should give domain error -- not
+% a big deal 
 {\bf Error Cases}
-     \begin{description}
-     \item[{\tt instantiation\_error}]
-	Argument 2 of {\tt =../2} is not a proper list.
-     \item[{\tt domain\_error(atom\_or\_number,Functor)}]
-	{\tt Functor} is not an atom or number.
-     \end{description}
+\begin{itemize}
+\item {\tt Term} is a variable and {\tt List} is a variable, a partial list,
+  or a list whose head is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item {\tt List} is neither a variable nor a non-empty list
+\bi
+\item {\tt type\_error(list, H)}
+\ei
+\item {\tt List} is a list whose head {\tt H} is neither an atom nor a
+  variable, and whose tail is not the empty list 
+\bi
+\item {\tt type\_error(atomic, H)}
+\ei
+\item {\tt Term} is a variable and the tail of {\tt List} has a length
+  greater than XSB's maximum arity for terms (256) 
+\bi
+\item {\tt representation\_error(max\_arity)}
+\ei
+\ei
 
 %in the following line I used a very ``dirty'' LaTeX hack! -- Kostis.
 
