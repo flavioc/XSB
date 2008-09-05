@@ -472,6 +472,37 @@ void call_conv xsb_permission_error(CTXTdeclc
 
 }
 
+/*****************/
+void call_conv xsb_representation_error(CTXTdeclc char *inmsg,const char *predicate,int arity)
+{
+  prolog_term ball_to_throw;
+  int isnew;
+  Cell *tptr; char message[ERRMSGLEN];
+  unsigned long ball_len = 10*sizeof(Cell);
+
+  snprintf(message,ERRMSGLEN,"in arg %d of predicate %s",arity,predicate);
+
+  tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
+
+  ball_to_throw = makecs(tptr);
+  bld_functor(tptr, pair_psc(insert("error",3,
+				    (Psc)flags[CURRENT_MODULE],&isnew)));
+  tptr++;
+  bld_cs(tptr,(Cell) (tptr+3));
+  tptr++;
+  bld_string(tptr,string_find(message,1));
+  tptr++;
+  bld_copy(tptr,build_xsb_backtrace(CTXT));
+  tptr++;
+  bld_functor(tptr, pair_psc(insert("representation_error",1,
+                                    (Psc)flags[CURRENT_MODULE],&isnew)));
+  tptr++;
+  bld_string(tptr,string_find(inmsg,1));
+
+  xsb_throw_internal(CTXTc ball_to_throw,ball_len);
+
+}
+
 /**************/
 
 #define MsgBuf (*tsgSBuff1)
@@ -667,7 +698,7 @@ void call_conv xsb_type_error(CTXTdeclc char *valid_type,Cell culprit,
   Cell *tptr; char message[ERRMSGLEN];
   unsigned long ball_len = 10*sizeof(Cell);
 
-  snprintf(message,ERRMSGLEN,"in arg %d of predicate %s)",arg,predicate);
+  snprintf(message,ERRMSGLEN,"in arg %d of predicate %s",arg,predicate);
 
   tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
 
