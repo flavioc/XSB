@@ -60,7 +60,7 @@ ccall_error_handler(Error) :-
 	default_ccall_error_handler(Error),
 	fail.
 
-/* Below, representation errors (usually mallocs returning null ptrs)
+/* Below, resource errors (usually mallocs returning null ptrs)
  * are handled seperately, by writing out message in C.  
  * Also, as a stab at error handling in the MT engine, we only print
  * out backtrace for the console thread; we keep the error message
@@ -172,7 +172,7 @@ get_sys_error_description(error(permission_error(Op,Obj_type,Culprit),Msg),
 	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Permission (Operation) ',
 		     Op,' on ',Obj_type,': ',Culprit,'] ', Msg) ).
 get_sys_error_description(error(representation_error(Flag),Msg), ExceptionDesc) :- 
-	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Representation (',Flag,')] ', Msg) .
+	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Representation (',Flag,' )] ', Msg) .
 get_sys_error_description(error(resource_error(Flag),Msg), ExceptionDesc) :- 
 	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Resource (',Flag,')] ', Msg) .
 get_sys_error_description(error(syntax_error,Msg), ExceptionDesc) :- 
