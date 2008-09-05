@@ -395,11 +395,20 @@ change_dynamic((Pred, Preds), ModName, (NewPred, NewPreds)) :- !,
 	change_dynamic(Pred, ModName, NewPred),
 	change_dynamic(Preds, ModName, NewPreds).
 
+:- import console_writeln/1 from standard.
+/* TLS: 8/08 taking multifile dynamics out for now, until they are rewritten */
 change_dynamic(PA, ModName, P_Mod/A) :-
 	mpa_to_skel(PA,Term),
 	functor(Term, P, A),
 	('_$multifile2'(Term, ModName, _)
-	 ->	get_p_mod(P, ModName, P_Mod)
+	 ->   warning(['Multifile declaration ignored on dynamic predicate ',P/A,
+	         ' in file ',ModName]),	      
+	      retractall('_$multifile'(P/A)),
+	      retractall('_$multifile1'(P/A)),
+	      retractall('_$multifile2'(Term,_,_)),
+	      retractall('_$multifile_retract'(Term,_,_)),
+	      P_Mod = P			% unchanged
+	 %->	get_p_mod(P, ModName, P_Mod)
 	 ;	P_Mod = P			% unchanged
 	).
 
