@@ -28,7 +28,7 @@
 /* NOTE: This file BETTER be always compiled with the "sysmod" option.	*/
 /*----------------------------------------------------------------------*/
 
-:- compiler_options([sysmod,xpp_on]).
+:- compiler_options([sysmod,optimize,xpp_on]).
 
 #include "builtin.h"
 #include "celltags_xsb.h"
