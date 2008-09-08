@@ -3950,7 +3950,7 @@ xsbBool dynamic_code_function( CTXTdecl )
       termType = get_type(psc);
       if ( termType == T_DYNA ) {		
 	ctop_int(CTXTc 3,(Integer)psc);
-	ctop_int(CTXTc 4,(Integer)get_ep(CTXTc psc));
+	ctop_int(CTXTc 4,(Integer)get_ep(psc));
       }
       else if (termType == T_PRED) 
 	xsb_permission_error(CTXTc "modify","static",ptoc_tag(CTXTc 2),
