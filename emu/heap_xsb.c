@@ -615,7 +615,7 @@ int gc_heap(CTXTdeclc int arity, int ifStringGC)
   int  rnum_in_reg_array = (reg_arrayptr-reg_array)+1;
   DECL_GC_PROFILE;
 
-  //  printf("start gc: e:%p,h:%p,hf:%p\n",ereg,hreg,hfreg);
+  //  printf("start gc(%ld): e:%p,h:%p,hf:%p\n",(long)(cpu_time()*1000),ereg,hreg,hfreg);
   INIT_GC_PROFILE;
   if (pflags[GARBAGE_COLLECT] != NO_GC) {
     num_gc++ ;
@@ -679,7 +679,7 @@ int gc_heap(CTXTdeclc int arity, int ifStringGC)
     }
 
     gc_strings = ifStringGC; /* default */
-    if (!gc_strings) gc_strings = should_gc_strings();
+    gc_strings = should_gc_strings();  // collect strings for any reason?
     marked = mark_heap(CTXTc arity, &marked_dregs);
     
     end_marktime = cpu_time();
@@ -867,7 +867,7 @@ int gc_heap(CTXTdeclc int arity, int ifStringGC)
   GC_PROFILE_POST_REPORT;
   
 #endif /* GC */
-  //  printf("   end gc, hf:%p,h:%p, space=%d\n",hfreg,hreg,(pb)top_of_localstk - (pb)top_of_heap);
+  //  printf("   end gc(%ld), hf:%p,h:%p, space=%d\n",(long)(cpu_time()*1000),hfreg,hreg,(pb)top_of_localstk - (pb)top_of_heap);
 
   return(TRUE);
 

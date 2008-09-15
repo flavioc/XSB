@@ -83,7 +83,7 @@
 #include "call_graph_xsb.h" /* incremental evaluation */
 #include "cinterf.h"
 
-//FILE *logfile;
+// FILE *logfile;
 /*
  * Variable ans_var_pos_reg is a pointer to substitution factor of an
  * answer in the heap.  It is used and set in function
@@ -2519,7 +2519,7 @@ argument positions.
     ADVANCE_PC(size_xxxX);
     cpreg = lpcreg;
     psc = (Psc)op1;
-    //    fprintf(logfile,"call %s/%d (h:%p,e:%p,pc:%p,b:%p,hs:%lx)\n",get_name(psc),get_arity(psc),hreg,ereg,lpcreg,breg,top_of_localstk-hreg);
+    //    if (flags[PIL_TRACE]) fprintf(logfile,"%ld:call %s/%d (h:%p,e:%p,pc:%p,b:%p,hs:%lx)\n",(long)(cpu_time() * 1000),get_name(psc),get_arity(psc),hreg,ereg,lpcreg,breg,top_of_localstk-hreg);
 #ifdef CP_DEBUG
     pscreg = psc;
 #endif
@@ -2728,7 +2728,7 @@ argument positions.
 #ifdef CP_DEBUG
     pscreg = psc;
 #endif
-    //    printf("exec %s/%d (h:%p,e:%p,pc:%p,b:%p,hs:%lx)\n",get_name(psc),get_arity(psc),hreg,ereg,lpcreg,breg,top_of_localstk-hreg);
+    //    if (flags[PIL_TRACE]) fprintf(logfile,"%ld:exec %s/%d (h:%p,e:%p,pc:%p,b:%p,hs:%lx)\n",(long)(cpu_time()*1000),get_name(psc),get_arity(psc),hreg,ereg,lpcreg,breg,top_of_localstk-hreg);
     call_sub(psc);
   XSB_End_Instr()
 
