@@ -518,6 +518,7 @@ load_dyn1(Rfname,Dir) :-
 :- dynamic load_dyn_pred_loaded(_,_,_,_).
 :- dynamic load_dyn_file(_).
 :- dynamic load_dyn_module(_).
+:- dynamic load_dyn_apply(_).  %arities of apply already seen
 
 init_for_load(Filename,Mod) :-
 	conset(needs_restart, 0), conset(xpp_on, 0), % Cleanup before XPP
@@ -528,63 +529,21 @@ init_for_load(Filename,Mod) :-
 	retractall(load_dyn_retracted(_,_,_,_,_)),
 	assert(load_dyn_file(Filename)),
 	retractall(load_dyn_pred_loaded(Filename,_,_,_)),
-	assert(load_dyn_module(Mod)).
+	assert(load_dyn_module(Mod)),
+	retractall(load_dyn_apply(_)).
 
 cleanup_for_load :-
 	conset(needs_restart, 0), conset(xpp_on, 0), % Cleanup after XPP
 	retractall(load_dyn_trie_retracted(_)),
 	retractall(load_dyn_retracted(_,_,_,_,_)),
 	retractall(load_dyn_file(_)),
-	load_dyn_module(ModName),
-	multifile_query(ModName),
-	multifile_apply(ModName),
 	retractall(load_dyn_module(_)),
-	retractall('_$multifile'(_)),
-	retractall('_$multifile2'(_,_,_)).
+	retractall(load_dyn_apply(_)).
 
-
-%-------------------------------------------------------------------------
-% multifile_apply(ModName, Module) adds a query
-%	:- multifile([apply/A, apply(_,_), apply_file1(_,_)]).
-% to the source program for each
-%	'_$apply_arity'(A)
-% where file1 is the ModName.
-%-------------------------------------------------------------------------
-multifile_apply(ModName) :-
-	(retract('_$apply_arity'(A)) 
-	->	get_p_mod(apply, ModName, P_Mod),
-		functor(TT1, apply, A),
-		TT1 =.. [apply|Args],
-		TT2 =.. [P_Mod|Args],
-		multifile([apply/A, TT1, TT2]),
-		multifile_apply(ModName)
-	;	true
-        ).
-	
-%-------------------------------------------------------------------------
-% multifile_query(ModName) adds a query
-%       :- multifile([P/A, P(_,_), P_file1(_,_)]).
-% to the source program for each
-%       '_$multifile1'(P/A)
-% where file1 is the ModName.
-%-------------------------------------------------------------------------
-multifile_query(ModName) :-
-	(retract('_$multifile1'(P/A)) 
-	->	get_p_mod(P, ModName, P_Mod),
-		functor(TT1, P, A),
-		TT1 =.. [P|Args],
-		TT2 =.. [P_Mod|Args],
-		multifile([P/A, TT1, TT2]),
-		multifile_query(ModName)
-	;	true).
- 
- 
 %% This version is used for load_dyn1 only!
 read_and_assert(Dir) :-
 	read(Term1),
-	expand_term(Term1,Term2),
-	load_dyn_module(ModName),
-	change_multifile_directive(Term2, ModName, Term),
+	expand_term(Term1,Term),
 	(Term == end_of_file
 	 ->	!, fail
 	 ;	do_assert_and_fail(Term,Dir)
@@ -648,10 +607,7 @@ load_dync1(Rfname,Dir) :-
 
 %% This version is used for load_dync1 only!
 read_and_assert(IPort,Dir) :-
-	file_read_canonical(IPort,Term0,Opsc),	% Opsc: Old(Previous) psc
-%	expand_term(Term0,Term1),	% should we do this?
-	load_dyn_module(ModName),
-	change_multifile_directive(Term0, ModName, Term),
+	file_read_canonical(IPort,Term,Opsc),	% Opsc: Old(Previous) psc
 	(Opsc =\= 0,\+'_$trie_asserted'(Term)
 	 ->	load_dyn_retracted(Opsc,Prref,NArity,Index,Hashsize),
 		assert_code_to_buff(Term),
@@ -668,15 +624,8 @@ read_and_assert(_IPort,_Dir) :- conget(needs_restart,1), !.
 read_and_assert(IPort,Dir) :- read_and_assert(IPort,Dir).
 
 
-/* In change_multifile_directive(TermIn, ModName, TermOut), TermOut may be 
-   bound to [] (when TermIn is a multifile directive like :- multifile p/2, 
-   q/3).  So we have to add the following line for do_assert_and_fail/2.
-*/
-
-do_assert_and_fail([],_) :- !, fail.
-
-do_assert_and_fail(Term,Dir) :-	% Now Term is the output of
-				% change_multifile_directive(TermIn,_,Term)
+do_assert_and_fail([],_) :- !, fail.  %% ?? maybe holdover from previous multifile processing?
+do_assert_and_fail(Term,Dir) :-	
 	(Term = (:-Cmd)
 	 ->	proc_directive(Cmd),fail
 	 ;	true
@@ -689,11 +638,26 @@ do_assert_and_fail(Term,Dir) :-	% Now Term is the output of
 	 ->	warning('Cannot assert to builtin'(Head)),fail
 	 ;	true
 	),
-	('_$multifile2'(Origin_Head, _, Head)
-	 ->	conpsc(Origin_Head, OPsc), conpsc(Head, Psc)
-	 ;	conpsc(Head, Psc), OPsc = Psc
+	('_$multifile'(Head)
+	 ->	(functor(Head,apply,AArity)
+		 ->	(load_dyn_apply(AArity)
+			 ->	true
+			 ;	proc_multifile(Head),
+				assert(load_dyn_apply(AArity))
+			)
+		 ;	true
+		),			
+		multifile_cvt_head(Head,MHead),
+		conpsc(MHead,Psc), conpsc(Head,OPsc)
+	 ; functor(Head,apply,AArity)  % an apply that has not been declared mf
+	 ->	proc_multifile(Head),
+		assert(load_dyn_apply(AArity)),
+		multifile_cvt_head(Head,MHead),
+		conpsc(MHead,Psc), conpsc(Head,OPsc)
+	 ;	MHead = Head,
+		conpsc(Head,OPsc), Psc = OPsc
 	),
-	('_$trie_asserted'(Head) 
+	('_$trie_asserted'(MHead) 
 	->  (Term = (_ :- _)
 	    ->  warning('Asserting a nonfact into a trie, ignored'(Term)),
 		fail
@@ -701,38 +665,40 @@ do_assert_and_fail(Term,Dir) :-	% Now Term is the output of
 	    ),
 	    (load_dyn_trie_retracted(OPsc) 
 	    ->  true
-	    ;   psc_arity(Psc,Arity),
-		psc_name(Psc,Name),
-		functor(Gen,Name,Arity),
+	    ;   term_new(Psc,Gen),
 		retractall(Gen),
 		asserta(load_dyn_trie_retracted(OPsc))
 	    ),
-	    t_assert(Term, _Flag)
+	    t_assert(MHead, _Flag)
 	;
 	    (load_dyn_retracted(OPsc,Prref,NArity,Index,Hashsize)
 	    ->	true
-	    ;	psc_arity(Psc,Arity),
-		psc_name(Psc,Name),
-		functor(Gen,Name,Arity),
+	    ;	term_new(Psc,Gen),
 		retractall(Gen),
-		set_retracted(Head,Arity,OPsc,Psc,Prref,Index,Hashsize),
+		psc_arity(Psc,Arity),
+		set_retracted(MHead,Arity,OPsc,Psc,Prref,Index,Hashsize),
 		NArity is Arity+1
 	    ),
 	    (Term = (_ :- Body)
-	    ->	Head =.. Hlist,
+	    ->	MHead =.. Hlist,
 		append(Hlist,[Cutpoint],Nhlist),
 		Nhead =.. Nhlist,
 		goal_cut_trans(Body,Nbody,Cutpoint),
 		(assert_code_to_buff((Nhead:-Nbody)),fail;true)
-	    ;	(assert_code_to_buff(Term),fail;true)
+	    ;	(assert_code_to_buff(MHead),fail;true)
 	    ),
-	    assert_buff_to_clref(Head,NArity,Prref,Dir,Index,Hashsize)
+	    assert_buff_to_clref(MHead,NArity,Prref,Dir,Index,Hashsize)
 	),
 	fail.
 
+multifile_cvt_head(Head,MHead) :-
+	Head =.. [Pred|Args],
+	load_dyn_module(ModName),
+	get_p_mod(Pred,ModName,LinkPred),
+	MHead =.. [LinkPred|Args].
 
-/* In Set_retractedn/7, Head is the predicate which has been transformed by
-   change_multifile_directive/3.  So p(_,_) may have been transformed to 
+/* In set_retracted/7, Head is the predicate which has been transformed by
+   multifile processing.  So p(_,_) may have been transformed to 
    p_file1(_,_). 
 
    OPsc is the Original Psc (e.g. for p(_,_)), while Psc is the actually
@@ -770,11 +736,14 @@ proc_directive(import(from(X, Mod))) :- !,
 proc_directive(index(X)) :- !,
 	proc_index(X).
 proc_directive(index(Ps,Arg,Size)) :- !,
-	index(Ps,Arg,Size).
+	multifile_cvt(Ps,Skel),
+	index(Skel,Arg,Size).
 proc_directive(index(Ps,trie)) :- !,
-	index(Ps,trie).
+	multifile_cvt(Ps,Skel),
+	index(Skel,trie).
 proc_directive(index(Ps,Arg)) :- !,
-	index(Ps,Arg,0).
+	multifile_cvt(Ps,Skel),
+	index(Skel,Arg,0).
 proc_directive(mode(_X)) :- !,
 	warning('mode directive ignored.').
 proc_directive(parallel(_X)) :- !,
@@ -789,38 +758,55 @@ proc_directive(thread_private(Preds)) :- !,
 	thread_private(Preds).
 proc_directive(op(P,T,S)) :- !, op(P,T,S).
 proc_directive(hilog(X)) :- !, add_hilog_symbol(X).
-%proc_directive(multifile(P/A)) :- !,
-%	functor(Term,P,A),
-%	conpsc(Term,Psc),
-%	psc_arity(Psc,Arity),
-%	set_retracted(Term,Arity,Psc,_,_,_).
-
-proc_directive(compiler_options(L)) :-
-	!,
+proc_directive(multifile(Specs)) :- !,
+	proc_multifile(Specs).
+proc_directive(compiler_options(L)) :- !,
 	(memberchk(xpp_on,L), conget(xpp_on, 0) 
 	->  conset(needs_restart,1), conset(xpp_on, 1)
 	;   true
 	).
-
 proc_directive(Cmd) :-
-	call(Cmd)
+	(call(Cmd)
 	 ->	true
 	 ;	warning('Command failed.')
-	.
+	).
+
+multifile_cvt(Ps,Skel) :-
+	mpa_to_skel(Ps,Skel0),
+	('_$multifile'(Skel0)
+	 ->	load_dyn_module(Mod),
+		functor(Skel0,Pred,Arity),
+		get_p_mod(Pred,Mod,P_Mod),
+		functor(Skel,P_Mod,Arity)
+	 ;	Skel = Skel0
+	).
 
 proc_index((Pred, Preds)) :- !,
 	proc_index(Pred),
 	proc_index(Preds).
 proc_index(Pname/Arity-Arg) :- !,
-	index(Pname/Arity, Arg, 0).
+	multifile_cvt(Pname/Arity,Skel),
+	index(Skel, Arg, 0).
 proc_index(Pname/Arity) :- 
-	index(Pname/Arity, 1, 0).
+	multifile_cvt(Pname/Arity,Skel),
+	index(Skel, 1, 0).
 
 proc_table((Pred, Preds)) :- !,
 	proc_table(Pred),
 	proc_table(Preds).
 proc_table(Pname/Arity) :- 
 	table(Pname/Arity).
+
+proc_multifile((Spec1,Spec2)) :- !,
+	proc_multifile(Spec1),
+	proc_multifile(Spec2).
+proc_multifile(Spec) :-
+	mpa_to_skel(Spec,Spec1),
+	functor(Spec1,Pred,Arity),
+	load_dyn_module(ModName),
+	get_p_mod(Pred,ModName,LinkPred),
+	functor(LinkSkel,LinkPred,Arity),
+	multifile([Pred/Arity,ModName,LinkSkel]).
 
 thread_shared((Pred, Preds)) :- !,
 	thread_shared(Pred),

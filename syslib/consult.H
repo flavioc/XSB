@@ -63,18 +63,17 @@
 :- import add_hilog_symbol/1 from hilogsym.
 :- import libpath/1 from loader.
 :- import code_load/3, code_call/3, file_read_canonical/3,
-  expand_filename/2, unload_seg/1, 
+	  expand_filename/2, unload_seg/1, 
 	  assert_code_to_buff/1, assert_buff_to_clref/6,
-	  conpsc/2, psc_type/2, psc_name/2, slash/1, psc_arity/2, 
+	  conpsc/2, psc_type/2, slash/1, psc_arity/2, 
 	  existing_file_extension/2, almost_search_module/5, db_get_prref/2,
-          term_psc/2, psc_set_shared/2, psc_set_private/2, stat_flag/2
+	  term_psc/2, psc_set_shared/2, psc_set_private/2, stat_flag/2,
+	  term_new/2
      from machine.
-:- import get_p_mod/3, change_multifile_directive/3, open_or_xpp_file/2,
-	  '_$multifile'/1, '_$multifile1'/1,
-	  '_$multifile2'/3, '_$apply_arity'/1
+:- import get_p_mod/3, open_or_xpp_file/2
      from parse.
- :- import rm/1, sys_link/3, sys_filecopy/3, process_control/2 from shell.
-:- import (multifile)/1 from standard.
+:- import rm/1, sys_link/3, sys_filecopy/3, process_control/2 from shell.
+:- import (multifile)/1, '_$multifile'/1 from standard.
 :- import abort/1, call/1, file_exists/1, atom/1, repeat/0,
 	  seeing/1, see/1, seen/0, call/1, goal_cut_trans/3,
 	  expand_term/2, read/1, op/3, (table)/1, (index)/3, (index)/2,

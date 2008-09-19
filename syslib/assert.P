@@ -151,21 +151,44 @@ assertzi(Clause,Index) :- assert(Clause,1,Index).
 % Safeguard.
 assert(Clause,AZL,Index):- assert(Clause,AZL,Index,'assert/1').
 
+/* DSW: inserted this check to transform clauses for multifile predicates.
+Does result in double breakdown of Clause, which could be optimized by
+changing assert0/4 to take already separated Head and Body. */
+
+assert(Clause,AZL,Index1,ErrPred) :-
+	(Clause = (Head:-Body)
+	 ->	true
+	 ;	Head = Clause, Body = true
+	),
+	('_$multifile'(Head)
+	 ->	Head =.. [Pred|Args],
+		get_p_mod(Pred,usermod,LinkPred),
+		LHead =.. [LinkPred|Args],
+		(clause(Head,LHead)
+		 ->	true
+		 ;	functor(Head,Pred,Arity),
+			functor(NHead,Pred,Arity),
+			NHead =.. [Pred|GArgs],
+			LBody =.. [LinkPred|GArgs],
+			assert0((NHead:-LBody),1,1,'assert/1')
+		),
+		assert0((LHead:-Body),AZL,Index1,ErrPred)
+	 ;	assert0(Clause,AZL,Index1,ErrPred)
+	).
+
 /* TLS - arranged this code so that check for trie_asserted is done
    first, and a minimal amount of checks are done afterwards.  This
    sped up the time for trie_asserts significantly.  trie asserts did
    *not* properly check for :-/2 before -- now they do. */
 
-:- import dynamic_code_function/5 from machine.
- 
 % TLS: uglified the code by moving check_assert and cut_transform into
 % this predicate -- but it saves a few percent.
-assert(Clause, AZL, Index1,_ErrPred) :-
+assert0(Clause, AZL, Index1,_ErrPred) :-
 	( var(Clause) -> instantiation_error(Pred,1,nonvar) ; true),
 	('_$trie_asserted'(Clause) -> 
 	    t_assert_2(Clause,_Flag)
 	  ; 
-	  (Clause = (Head:-_) ->
+	  (Clause = (Head:-Body) ->
 	      check_assert_fact(Head, Pred), 
   	      ( check_body(Body) -> true ; type_error(callable,Body,Pred,1)),
               ('_$trie_asserted'(Head) -> 
@@ -408,13 +431,13 @@ get_dynamic_pred_ep(Head,CallingPred,PredEP,PSC) :-
 /*	op/3, where redefining a 'builtin' operator, deletes them ALL.	*/
 /*======================================================================*/
 
-retract(Rule) :-	% changed for multifile predicates (2/24/98)
+retract(Rule) :-	% changed for multifile predicates (9/2008)
 	(Rule = (Head :- Body)
 	 ->	true
 	 ;	Head = Rule, Body = true
 	),
 	call_xsb_hook(xsb_retract_hook(_),[Head,Body],all),
-	(nonvar(Head), '_$multifile_retract'(Head, _, _)
+	(nonvar(Head), '_$multifile'(Head)
 	 % argument 1 fo retract/1 must be instantiated
 	 ->	do_multifile_retract(Head, Body)
      ;		%check_retract(Head, retract/1),
@@ -433,16 +456,16 @@ retract(Rule) :-	% changed for multifile predicates (2/24/98)
 /* TLS: retract_fact is significantly faster than retract -- I'll try
    to integrate some of its savings with retract at some point, but
    keeping it around for now. */
-retract_fact(Head) :-	% changed for multifile predicates (2/24/98)
+retract_fact(Head) :-	% changed for multifile predicates (9/2008)
 	dynamic_code_function(GET_DYNAMIC_PRED_EP,Head,PSC,PredEP,retract_fact,1), 
 	call_xsb_hook(xsb_retract_hook(_),[Head,true],all),
-	('_$multifile_retract'(Head, _, _) -> 
+	('_$multifile'(Head) -> 
 	    do_multifile_retract(Head, true)
 	  ; 
 	    db_retract_fact(Head,PredEP,PSC) ).
 
 do_multifile_retract(Head, Body) :-
-	'_$multifile_retract'(Head, _, New_Head),
+	clause(Head,New_Head),
 	check_retract(New_Head, multifile_retract/1),
 	(get_dynamic_pred_ep(New_Head,'retract/1',PredEP,PSC)
 	 ->	db_retract(New_Head, Body, PredEP, PSC)
@@ -460,13 +483,13 @@ retract0(Rule) :-	% original retract/1, is used in standard.P
 
 retractall(Fact) :-
 	call_xsb_hook(xsb_retract_hook(_),[Fact,true],all),
-	(nonvar(Fact), '_$multifile_retract'(Fact, _, _)
+	(nonvar(Fact), '_$multifile'(Fact)
 	 ->	do_multifile_retractall(Fact)
 	 ;	retractall0(Fact)
 	).
 
 do_multifile_retractall(Fact) :-
-	'_$multifile_retract'(Fact, _, New_Fact),
+	clause(Fact,New_Fact),
 	retractall0(New_Fact),
 	fail.
 do_multifile_retractall(_).

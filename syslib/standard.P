@@ -1489,19 +1489,27 @@ call_expose(Goal) :-
 		)
 	).
 
+:- dynamic '_$multifile'/1.	% true of multifile skeletons
 
 multifile([P/A, _T1, T2]) :-	% T1 is not used
 	functor(TT1, P, A),	% TT1 is in usermod
 	TT1 =.. [_|Args],
 	T2 =.. [_|Args],	% T2 still belongs to the original module
-	(retract0(:-(TT1, T2)),fail; true),
-	% Here the original retract (retract0/1) must be used, because
-	% '_$multifile_retract'(TT1,_,TT2) is true and retract/1 will change
-	% TT1 to TT2.
-	term_psc(TT1,PSC),
-	psc_set_shared(PSC,1),
-	assertz(:-(TT1, T2)).
- 
+	(clause(TT1, T2)
+	 ->	true
+	 ;	term_psc(TT1,PSC),
+		psc_set_shared(PSC,1),
+		assert0(:-(TT1, T2),1,0,(multifile)) % to NOT do multifile transform!
+	),
+	('_$multifile'(TT1)
+	 ->	true
+	 ;	assert0('_$multifile'(TT1),1,1,(multifile)),
+		('_$index'(P/A,Inds,HSize),Inds =\= 0
+		 ->	add_index(T2,Inds,HSize),
+			add_index(TT1,0,0)
+		 ;	true
+		)
+	).
 
 % import(+from(Symbols, Module))
 %

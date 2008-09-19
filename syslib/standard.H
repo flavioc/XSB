@@ -100,11 +100,11 @@
    warningln/1,  % obsolete
    abort/1,	abort/0,
 	set_timer/1,
-	(import)/1,	(multifile)/1.
-	  :- export cleanup_handler/2.
+   (import)/1,	(multifile)/1, '_$multifile'/1.
+:- export cleanup_handler/2.
 
 
-:- import (dynamic)/1, asserta/1 from assert.
+:- import (dynamic)/1, asserta/1, assert0/4 from assert.
 :- import member/2,append/3 from basics.
 :- import consult/1, reconsult/1 from consult.
 :- import predicate_property/2 from curr_sym.
@@ -113,11 +113,11 @@
 :- import file_open/3, file_open/4, file_close/2, file_get/2, file_put/2,
   check_stream_or_alias/4, check_open_stream_or_alias/5, add_aliases/4,
   fd2iostream/3      from file_io.
-:- import add_ops/3, op_priority/1, op_specifier/1, add_index/3, 
+:- import add_ops/3, op_priority/1, op_specifier/1, add_index/3, '_$index'/3,
   add_trie_index/1, add_table/1, add_incr_table/1, add_incr_dynamic/1, add_opaque/1 /* incremental */
      from file_op.
 :- import '_$hilog_symbol'/1, add_hilog_symbol/1 from hilogsym.
-:- import retract0/1, assertz/1, clause/2, retractall/1 from assert.
+:- import clause/2, retractall/1 from assert.
 :- import domain_error/4, domain_error/5, check_atom/3, check_nonvar/3,check_var/3, 
 	  check_ground/3,
    type_error/4, permission_error/4, 
