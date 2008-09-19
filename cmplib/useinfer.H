@@ -33,6 +33,4 @@
 :- import sym_propin/2, sym_prop/2, sym_insert/5, sym_scan/3,
 	  extract_symlist/3, sym_env/2, sym_name/3
     from symtab.
-:- import '_$multifile'/1, '_$multifile2'/3 from parse.
-:- import retractall/1, clause/2 from assert.
 

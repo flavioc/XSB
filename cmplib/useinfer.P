@@ -69,8 +69,8 @@ useinfer(Module, IsModule, ExportList) :-
 	  infer_export_fill(SymTab, SymTab, ClList, (local)),
 	  infer_fillunused(SymTab)
 	),
-	retractall('_$multifile'(_)),
-	retractall('_$multifile2'(_,_,_)),
+%%	retractall('_$multifile'(_)),
+%%	retractall('_$multifile2'(_,_,_)),
 	get_sym_names(ExSymList, ExportList).
 
 /*
@@ -104,7 +104,7 @@ infer_export_fill(RestTab, SymTab, ClList, Domain) :-
 	sym_env(Sym, Dom),
 	( nonvar(Dom) -> true
 	; sym_prop(pred, Sym) ->
-		((clause('_$multifile'(P/A), _), sym_name(Sym, P, A))
+		(sym_prop((multifile),Sym)
                  ->     Dom = global
                         % multifile predicates are assumed global
 		; member(pred(Sym,_,_), ClList) -> Dom = Domain
@@ -166,6 +166,8 @@ infer_usage_of_symbol(Sym, InList, OutList, Module,Ps_or_real) :-
 			(Ps_or_real == real -> 
 				sym_propin(im(Mod), Sym)
 			 ; 	true)
+		  ; sym_prop((multifile),Sym) ->
+			  true	% cop-out, maybe should recurse through modded clauses
 		  ; sym_name(Sym, P, A),
 		    sym_propin(undef, Sym),
 		    warning(('Undefined predicate ', P, '/', A))

@@ -25,7 +25,7 @@
 
 
 :- export parse/4, get_symtab/2, parse_preddef/4.
-:- export get_p_mod/3, change_multifile_directive/3, 
+:- export get_p_mod/3, %%change_multifile_directive/3, 
 	xpp_process_file/3, open_or_xpp_file/2, xpp_include_dir/1,
 	xpp_program/1, xpp_options/1,
 	'_$multifile'/1, '_$multifile1'/1,
@@ -46,10 +46,10 @@
      from symtab.
 :- import functor/3, seen/0, file_exists/1, '=..'/2, atom/1, integer/1, 
 	  op/3, (index)/3, (index)/2, real/1, see/1, expand_term/2, (=..)/2,
-	  '\='/2, name/2, seeing/1, is_most_general_term/1, number/1
+	  '\='/2, seeing/1, is_most_general_term/1, number/1, atom_codes/2
      from standard.
-:- import retract/1, retractall/1, assert/1, (dynamic)/1 from assert.
-:- import '_$index'/3, mpa_to_skel/2 from file_op.
+:- import retractall/1, (dynamic)/1 from assert.
+:- import mpa_to_skel/2 from file_op.
    :- import existence_error/4,misc_error/1, syntax_error/1 from error_handler.
 
 :- import spawn_process/5, process_control/2 from shell.

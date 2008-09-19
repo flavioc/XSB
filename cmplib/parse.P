@@ -34,19 +34,16 @@
 /*======================================================================*/
 
 %-----------------------------------------------------------------------
-:- dynamic '_$multifile'(_).
-:- dynamic '_$multifile1'(_).
-:- dynamic '_$multifile2'(_,_,_).
-:- dynamic '_$apply_arity'(_).
-:- dynamic '_$multifile_retract'(_,_,_).
+%:- dynamic '_$multifile'(_).
+%:- dynamic '_$multifile1'(_).
+%:- dynamic '_$multifile2'(_,_,_).
+%:- dynamic '_$apply_arity'(_).
+%:- dynamic '_$multifile_retract'(_,_,_).
 
 :- dynamic xpp_include_dir(_).
 :- dynamic xpp_options(_).
 :- dynamic xpp_program(_).
 
-% '_$multifile'/1 and '_$multifile2'/3 will be retractd in useinfer/3.
-% '_$multifile1'/1 and '_$apply_arity'/1 will be retracted in parse/4
-% '_$multifile_retract'/3 will be retracted in parse/4.
 %-----------------------------------------------------------------------
 
 parse(Modname, PFile, HFile, Module) :-
@@ -66,7 +63,6 @@ parse(Modname, PFile, HFile, Module) :-
 %	 ;	error(('Cannot find the file ', PFile)), fail, Module0=Module0
 	),
 	conset(needs_restart, 0),  % clean up this var
-	retractall('_$multifile_retract'(_, Modname, _)),
 	module_close(Module0,Module), !.
 
 set_symbol_hash_table_size(FileSize,module(sym_tab(_,_,HashTab),_,_,_)) :-
@@ -103,12 +99,6 @@ parse1(Modname, File, Module) :-
 	    %% and reset xpp_on
 	    conset(xpp_on,0),
 	    conset(xpp_dump,0)
-	),
-	multifile_query(Modname, Module),
-	('_$apply_arity'(_)
-	 ->	assert('_$multifile'(apply/0)),
-		multifile_apply(Modname, Module)
-         ;	true
 	),
 	seen,
 	see(OldFile).
@@ -222,8 +212,7 @@ parse_clauses(ModName, Module) :-
 	my_read(Clause, VariableList),
 	singleton_check(Clause, VariableList),
 	check_compilable_clause(Clause),
-	expand_term(Clause, Expanded_Clause0),
-	change_multifile_directive(Expanded_Clause0, ModName, Expanded_Clause),
+	expand_term(Clause, Expanded_Clause),
 	(Expanded_Clause == end_of_file
 	 ->	true
 	 ;	!,
@@ -284,184 +273,22 @@ embedded_number((A->B)) :- !,
 	).
 
 %-------------------------------------------------------------------------
+% get_p_mod(+P, +ModName, +P_Mod)
+%	Given a predicate name P and a module/file name ModName, returns
+%	a new predicate name P_Mod.
+%-------------------------------------------------------------------------
+get_p_mod(P, ModName, P_Mod) :-
+	atom_codes(P,PChars), 
+	atom_codes(ModName, ModNameChars),
+	append(PChars, [0'_|ModNameChars], P_ModChars),  % ' for pp
+	atom_codes(P_Mod, P_ModChars).
+
+%-------------------------------------------------------------------------
 % Note: The VariableList is not used in the rule parse_clause/3 for the 
 %	queries like
 %  :- (retract(p(_,_):-p_file1(_,_)); true), assertz(:-(p(X,Y),p_file1(X,Y)))).
 %	So, we DO NOT consider it in the transformation.
 %-------------------------------------------------------------------------
-
-change_multifile_directive(':-'(multifile(PredSpecs)), ModName, []) :-
-	!,
-	change_PAList(PredSpecs, ModName).
-change_multifile_directive(':-'(H, B), ModName, ':-'(NewH, B)) :-
-	functor(H, apply, A), 
-	!,
-	('_$apply_arity'(A)
-	 ->	true
-	 ;	assert('_$apply_arity'(A))
-        ),
-	H =.. [_|Args],
-	get_p_mod(apply, ModName, P_Mod),
-	NewH =..[P_Mod|Args].
-change_multifile_directive(ApplyFact, ModName, NewFact) :-
-	functor(ApplyFact, apply, A),
-	!,
-	('_$apply_arity'(A)
-	 ->	true
-	 ;	assert('_$apply_arity'(A))
-	),
-	ApplyFact =.. [_|Args],
-	get_p_mod(apply, ModName, P_Mod),
-	NewFact =..[P_Mod|Args].
-change_multifile_directive(':-'(index(P/A, Arg, Size)), ModName, 
-			   ':-'(index(P_Mod/A, Arg, Size))) :-
-	functor(Term, P, A),
-	'_$multifile2'(Term, ModName, _), !,
-	get_p_mod(P, ModName, P_Mod).
-change_multifile_directive(':-'(index(P/A, Arg)), ModName, 
-			   ':-'(index(P_Mod/A, Arg))) :-
-	functor(Term, P, A),
-	'_$multifile2'(Term, ModName, _), !,
-	get_p_mod(P, ModName, P_Mod).
-change_multifile_directive(':-'(index(PAs)), ModName, ':-'(index(NewPAs))) :-
-	!,
-	change_index(PAs, ModName, NewPAs).
-change_multifile_directive(':-'(dynamic(PAs)), ModName, ':-'(dynamic(NewPAs))) :-
-	!,
-	change_dynamic(PAs, ModName, NewPAs).
-change_multifile_directive(':-'(H, B), ModName, ':-'(NewH, B)) :-
-	'_$multifile2'(H, ModName, NewH), !.
-change_multifile_directive(Fact, ModName, NewFact) :-
-	'_$multifile2'(Fact, ModName, NewFact), !.
-change_multifile_directive(Clause, _, Clause).
-
-change_PAList((PA,PAs), ModName) :-
-	change_PAList(PA, ModName),
-	change_PAList(PAs, ModName).
-change_PAList(P/A, ModName) :-
-	get_p_mod(P, ModName, P_Mod),
-	functor(Pred, P, A),
-	('_$index'(Pred, _, _)
-	 ->	warning(('Index directive/query on ', P, '/', A, ' is omitted. It cannot be declared before the directive '':- multifile ', P, '/', A, ''' !'))
-	 ;	true
-	),
-	functor(TT1, P, A),
-	TT1 =.. [P|Args],
-	TT2 =.. [P_Mod|Args],
-	assert('_$multifile'(P/A)),
-	assert('_$multifile1'(P/A)),
-	assert('_$multifile2'(TT1, ModName, TT2)),
-	% '_$multifile_retract'/3 is kept after the program is load_dyned,
-	% so retract the old one
-	retractall('_$multifile_retract'(TT1, ModName, TT2)), % for retract
-	assert('_$multifile_retract'(TT1, ModName, TT2)). % for retract
-
-
-%-------------------------------------------------------------------------
-% change_index(+Preds, +ModName, -NewPreds)
-%	Changes the index like p/3-2 to p_file/3-2 (here p/3 is a multifile
-%	predicate).  If the predicate is not a multifile predicate, then 
-%	the index will not be changed.
-%-------------------------------------------------------------------------
-change_index((Pred, Preds), ModName, (NewPred, NewPreds)) :- !,
-	change_index(Pred, ModName, NewPred),
-	change_index(Preds, ModName, NewPreds).
-
-change_index(P/A-Arg, ModName, P_Mod/A-Arg) :-
-	functor(Term, P, A),
-	('_$multifile2'(Term, ModName, _)
-	 ->	get_p_mod(P, ModName, P_Mod)
-	 ;	P_Mod = P			% unchanged
-	).
-
-%-------------------------------------------------------------------------
-% change_dynamic(+Preds, +ModName, -NewPreds)
-%	Changes the dynamic declaration like p/3 to p_file/3 (here p/3 is a multifile
-%	predicate).  If the predicate is not a multifile predicate, then 
-%	the dynamic declaration will not be changed.
-%-------------------------------------------------------------------------
-
-/** DSW: Trying to fix multifile and dynamic, so that multifile causes
-dynamic to be declared for the transformed predicate-names.  Works OK
-in one order multifile,dynamic, but not in the other with dynamic
-first.  The difficulty is that multifile doesn't use the symbol table
-to store its info, but used asserted clauses, so it doesn't pass info
-around in same way, so it's hard to get access to information about
-other symbols.  So first, pass symtab around with multifile
-processing, and then later, to improve compiler org, see how to put
-multifile info into the symbol table.  ***/
-
-change_dynamic((Pred, Preds), ModName, (NewPred, NewPreds)) :- !,
-	change_dynamic(Pred, ModName, NewPred),
-	change_dynamic(Preds, ModName, NewPreds).
-
-:- import console_writeln/1 from standard.
-/* TLS: 8/08 taking multifile dynamics out for now, until they are rewritten */
-change_dynamic(PA, ModName, P_Mod/A) :-
-	mpa_to_skel(PA,Term),
-	functor(Term, P, A),
-	('_$multifile2'(Term, ModName, _)
-	 ->   warning(['Multifile declaration ignored on dynamic predicate ',P/A,
-	         ' in file ',ModName]),	      
-	      retractall('_$multifile'(P/A)),
-	      retractall('_$multifile1'(P/A)),
-	      retractall('_$multifile2'(Term,_,_)),
-	      retractall('_$multifile_retract'(Term,_,_)),
-	      P_Mod = P			% unchanged
-	 %->	get_p_mod(P, ModName, P_Mod)
-	 ;	P_Mod = P			% unchanged
-	).
-
-%-------------------------------------------------------------------------
-% get_p_mode(+P, +ModName, +P_Mod)
-%	Given a predicate name P and a module/file name ModName, returns
-%	a new predicate name P_Mod.
-%-------------------------------------------------------------------------
-get_p_mod(P, ModName, P_Mod) :-
-	name(P,PChars), 
-	name(ModName, ModNameChars),
-	append(PChars, [0'_|ModNameChars], P_ModChars),  % ' for pp
-	name(P_Mod, P_ModChars).
-
-
-%-------------------------------------------------------------------------
-% multifile_apply(ModName, Module) adds a query
-%	:- multifile([apply/A, apply(_,_), apply_file1(_,_)]).
-% to the source program for each
-%	'_$apply_arity'(A)
-% where file1 is the ModName.
-%-------------------------------------------------------------------------
-multifile_apply(ModName, Module) :-
-	(retract('_$apply_arity'(A)) 
-	->	get_p_mod(apply, ModName, P_Mod),
-		functor(TT1, apply, A),
-		TT1 =.. [apply|Args],
-		TT2 =.. [P_Mod|Args],
-		Clause = (:-multifile([apply/A, TT1, TT2])),
-		parse_clause(Clause, Module,ModName),
-		multifile_apply(ModName, Module)
-	;	true).
-
-
-%-------------------------------------------------------------------------
-% multifile_query(ModName, Module) adds a query
-%	:- multifile([P/A, P(_,_), P_file1(_,_)]).
-% to the source program for each
-%	'_$multifile1'(P/A)
-% where file1 is the ModName.
-%-------------------------------------------------------------------------
-multifile_query(ModName, Module) :-
-	(retract('_$multifile1'(P/A)) 
-	->	get_p_mod(P, ModName, P_Mod),
-		functor(TT1, P, A),
-		TT1 =.. [P|Args],
-		TT2 =.. [P_Mod|Args],
-		Clause = (:-multifile([P/A, TT1, TT2])),
-		parse_clause(Clause, Module,ModName),
-		multifile_query(ModName, Module)
-	;	true).
-
-
 /*======================================================================*/
 /* parse_clause(+Clause,						*/
 /*		#module(#SymTab,#DcList,#ClList,#QrList),ModName)	*/
@@ -472,54 +299,62 @@ parse_clause([Cl|Cls], Module,ModName) :- !,
 	parse_clause(Cls, Module,ModName).
 parse_clause(Cl, module(SymTab,_DcList,ClList,QrList),ModName) :-
 	(Cl = (':-'(H, B))
-	 ->	parse_preddef_chk_dyn(H, B, ClList, QrList, SymTab)
+	 ->	parse_preddef_chk_dyn(H, B, ClList, QrList, ModName, SymTab)
 	 ; Cl = (':-'(Directive))
-	 ->	transform_directive(Directive,ModName,PDirective),
+	 ->	transform_directive(Directive,ModName,SymTab,PDirective),
 		parse_directive(PDirective,QrList,SymTab,ModName)
 	 ; Cl = ('?-'(Q))
 	 ->	parse_query(Q,QrList,SymTab)
-	 ;	parse_preddef_chk_dyn(Cl, true, ClList, QrList, SymTab)
+	 ;	parse_preddef_chk_dyn(Cl, true, ClList, QrList, ModName, SymTab)
 	).
 
 /*======================================================================*/
-/* transform_directive(+Directive, +ModName, -TDirective)                  	*/
+/* transform_directive(+Directive, +ModName, +SymTab, -TDirective)	*/
 /*======================================================================*/
 
-transform_directive(table(as(Args,Options)),ModName,table(as(TArgs,Options))) :- !,
-	transform_slash_to_skel(Args,ModName,TArgs).
-transform_directive(table(Args),ModName,table(TArgs)) :- !,
-	transform_slash_to_skel(Args,ModName,TArgs).
-transform_directive(index(Args),ModName,index(TArgs)) :- !,
-	transform_slash_to_skel(Args,ModName,TArgs).
-transform_directive(index(Spec,X),_ModName,index(Skel,X)) :- !,
-%	mpa_to_skel(Spec,Skel,transform_directive/2), !.
-	mpa_to_skel(Spec,Skel).
-transform_directive(index(Spec,X,Y),_ModName,index(Skel,X,Y)) :- !,
-%	mpa_to_skel(Spec,Skel,transform_directive/2), !.
-	mpa_to_skel(Spec,Skel).
-transform_directive(dynamic(as(Args,Options)),ModName,dynamic(as(TArgs,Options))) :- !,
-	transform_slash_to_skel(Args,ModName,TArgs).
-transform_directive(dynamic(Args),ModName,dynamic(TArgs)) :- !,
-	transform_slash_to_skel(Args,ModName,TArgs).
-transform_directive(use_incremental_dynamic(Args),ModName,use_incremental_dynamic(TArgs)) :- !,
-	transform_slash_to_skel(Args,ModName,TArgs).
-transform_directive(use_incremental_tabling(Args),ModName,use_incremental_tabling(TArgs)) :- !,
-	transform_slash_to_skel(Args,ModName,TArgs).
-transform_directive(use_opaque_tabling(Args),ModName,use_opaque_tabling(TArgs)) :- !,
-	transform_slash_to_skel(Args,ModName,TArgs).
-transform_directive(Directive,_ModName,Directive).
+transform_directive(table(as(Args,Options)),_ModName,_SymTab,table(as(TArgs,Options))) :- !,
+	mpa_to_skel_cl(Args,TArgs).
+transform_directive(table(Args),_ModName,_SymTab,table(TArgs)) :- !,
+	mpa_to_skel_cl(Args,TArgs).
+transform_directive(index(P/A-I),_ModName,_SymTab,index(P/A-I)) :- !.  % just pass thru
+transform_directive(index(Args),ModName,SymTab,index(TArgs)) :- !,
+	transform_slash_to_skel(Args,ModName,SymTab,TArgs).
+transform_directive(index(Spec,X),ModName,SymTab,index(Skel,X)) :- !,
+	transform_slash_to_skel(Spec,ModName,SymTab,Skel).
+transform_directive(index(Spec,X,Y),ModName,SymTab,index(Skel,X,Y)) :- !,
+	transform_slash_to_skel(Spec,ModName,SymTab,Skel).
+transform_directive(dynamic(as(Args,Options)),ModName,SymTab,dynamic(as(TArgs,Options))) :- !,
+	transform_slash_to_skel(Args,ModName,SymTab,TArgs).
+transform_directive(dynamic(Args),ModName,SymTab,dynamic(TArgs)) :- !,
+	transform_slash_to_skel(Args,ModName,SymTab,TArgs).
+transform_directive(multifile(Args),_ModName,_SymTab,multifile(TArgs)) :- !,
+	mpa_to_skel_cl(Args,TArgs).
+transform_directive(use_incremental_dynamic(Args),_ModName,_SymTab,use_incremental_dynamic(TArgs)) :- !,
+	mpa_to_skel_cl(Args,TArgs).
+transform_directive(use_incremental_tabling(Args),_ModName,_SymTab,use_incremental_tabling(TArgs)) :- !,
+	mpa_to_skel_cl(Args,TArgs).
+transform_directive(use_opaque_tabling(Args),_ModName,_SymTab,use_opaque_tabling(TArgs)) :- !,
+	mpa_to_skel_cl(Args,TArgs).
+transform_directive(Directive,_ModName,_SymTab,Directive).
 
-transform_slash_to_skel((A1,A2),ModName,(T1,T2)) :-
+mpa_to_skel_cl((A1,A2),(T1,T2)) :-
 	nonvar(A1), !,
-	transform_slash_to_skel(A1,ModName,T1),
-	transform_slash_to_skel(A2,ModName,T2).
-transform_slash_to_skel(Spec,ModName,Skel) :-
-%	mpa_to_skel(Spec,Skel,transform_directive/2).
+	mpa_to_skel_cl(A1,T1),
+	mpa_to_skel_cl(A2,T2).
+mpa_to_skel_cl(A,T) :-
+	mpa_to_skel(A,T).
+
+transform_slash_to_skel((A1,A2),ModName,SymTab,(T1,T2)) :-
+	nonvar(A1), !,
+	transform_slash_to_skel(A1,ModName,SymTab,T1),
+	transform_slash_to_skel(A2,ModName,SymTab,T2).
+transform_slash_to_skel(Spec,ModName,SymTab,Skel) :-
 	mpa_to_skel(Spec,Skel0),
-	('_$multifile2'(Skel0,ModName,_)
-	 ->	functor(Skel0,P,A),
-		get_p_mod(P,ModName,P_Mod),
-		functor(Skel,P_Mod,A)
+	functor(Skel0,Pred,Arity),
+	sym_insert(Pred,Arity,[],SymTab,Sym),
+	(sym_prop((multifile),Sym)
+	 ->	get_p_mod(Pred,ModName,P_Mod),
+		functor(Skel,P_Mod,Arity)
 	 ;	Skel = Skel0
 	).
 
@@ -652,6 +487,8 @@ parse_directive(dynamic(as(PredCList,Options)),QrList,SymTab,ModName) :- !,
 parse_directive(dynamic(Skels),QrList,SymTab,_ModName) :- !,
 	parse_comma_list_dyn(Skels, SymTab),
 	parse_query(dynamic(Skels), QrList, SymTab).
+parse_directive(multifile(Skels),QrList,SymTab,ModName) :- !,
+	parse_multifile(Skels,QrList,SymTab,ModName).
 parse_directive(use_incremental_dynamic(Skels),QrList,SymTab,_ModName) :- !,
 	parse_comma_list_dyn(Skels, SymTab),
 	parse_query(use_incremental_dynamic(Skels), QrList, SymTab).
@@ -708,15 +545,50 @@ parse_dynamic_options(Option,_PredCList,_QrList,_SymTab,_ModName) :- !,
 	error((Option,' is an illegal option for the dynamic directive')).
 
 
+parse_multifile((Skel1,Skel2),QrList,SymTab,ModName) :- !,
+	parse_multifile(Skel1,QrList,SymTab,ModName),
+	parse_multifile(Skel2,QrList,SymTab,ModName).
+parse_multifile(Skel,QrList,SymTab,ModName) :-
+	functor(Skel,Pred,Arity),
+	sym_insert(Pred,Arity,[(multifile)],SymTab,Sym),
+	(sym_prop((dynamic),Sym)
+	 ->	SymPar = [(dynamic)], DPar = dyn
+	 ;	sym_propin((dynamic),Sym),
+		SymPar = [], DPar = unk
+	),
+	get_p_mod(Pred,ModName,LinkPred),
+	functor(LinkSkel,LinkPred,Arity),
+	sym_insert(LinkPred,Arity,SymPar,SymTab,_LinkSym),
+	parse_query(multifile([Pred/Arity,ModName,LinkSkel]),QrList,SymTab).
+
+
 /*======================================================================*/
 /* process regular clauses --- collect them in List			*/
 /*	ListType : tylist, dclist, cllist				*/
 /* This code is also used in cp_opt.P, so make sure any changes here    */
 /* dont break cp_opt/2							*/
 /*======================================================================*/
-parse_preddef_chk_dyn(H, B, List, QrList, SymTab) :-
-	functor(H, F, A),
-	sym_insert(F, A, [defined], SymTab, PredSym),
+parse_preddef_chk_dyn(H0, B, List, QrList, ModName, SymTab) :-
+	functor(H0, F0, A),
+	sym_insert(F0, A, [defined], SymTab, PredSym0),
+	(F0 == apply
+	 ->	(sym_prop((multifile),PredSym0)
+		 ->	true
+		 ;	sym_propin((multifile),PredSym0),
+			get_p_mod(apply,ModName,P_Mod),
+			functor(TT2,P_Mod,A),
+			parse_query(multifile([apply/A,_,TT2]),QrList,SymTab)
+		)
+	 ;	true
+	),
+	(sym_prop((multifile),PredSym0)
+	 ->	get_p_mod(F0,ModName,F),
+		H0 =.. [F0|Args],
+		H =.. [F|Args],
+		sym_insert(F,A,[],SymTab,PredSym)
+	 ;	H = H0, F = F0, PredSym = PredSym0
+	),
+%%	sym_propin(defined,PredSym),
 	(sym_prop((dynamic),PredSym)
 	 ->	(sym_prop(has_dynamic_clauses,PredSym)
 		 ->	true
@@ -728,11 +600,11 @@ parse_preddef_chk_dyn(H, B, List, QrList, SymTab) :-
 			sym_insert(assertz,1,im(Mod2),SymTab,_),
 			sym_propin([has_dynamic_clauses],PredSym),
 			functor(GenH,F,A),
-			parse_preddef('_$main',(retractall(GenH),fail),QrList,SymTab)
+			parse_query(retractall(GenH),QrList,SymTab)
 		),
 		(B == true
-		 ->	parse_preddef('_$main',(assertz(H),fail),QrList,SymTab)
-		 ;	parse_preddef('_$main',(assertz((H:-B)),fail),QrList,SymTab)
+		 ->	parse_query(assertz(H),QrList,SymTab)
+		 ;	parse_query(assertz((H:-B)),QrList,SymTab)
 		)
 	 ;      parse_preddef_sym(H, B, List, PredSym, SymTab)
 	).
