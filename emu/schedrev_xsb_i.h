@@ -47,19 +47,17 @@
 
 static CPtr sched_answers(CTXTdeclc VariantSF producer_sf, CPtr *last_consumer)
 {
-
   CPtr first_sched_cons, last_sched_cons, consumer_cpf;
-
 
 #ifdef PROFILE
   subinst_table[SCHED_ANSWERS][1]++;
 #endif	
-  xsb_dbgmsg((LOG_COMPLETION,"scheduling answers for %x\n",
-	      subg_cp_ptr(producer_sf)));
   first_sched_cons = last_sched_cons = NULL;
   consumer_cpf = subg_asf_list_ptr(producer_sf);
+  //  printf(" scheduling answers for ");
+  //  print_subgoal(CTXTc stddbg, producer_sf);printf("first CCP %x\n",consumer_cpf);
 
-  /**** The producer has answers and consuming calls ****/  
+    /**** The producer has answers and consuming calls ****/  
   if ( has_answers(producer_sf) && IsNonNULL(consumer_cpf) 
        && !subg_is_reclaimed(producer_sf)) {
     /**** Check each consumer for unresolved answers ****/
@@ -83,8 +81,9 @@ static CPtr sched_answers(CTXTdeclc VariantSF producer_sf, CPtr *last_consumer)
 	  ScheduleConsumer(consumer_cpf,first_sched_cons,last_sched_cons);
 	consumer_cpf = nlcp_prevlookup(consumer_cpf);
       }
-    else
+    else {
       while ( IsNonNULL(consumer_cpf) ) {
+	//      printf("  CCP %x\n",consumer_cpf);
 #ifdef CONC_COMPL
 	if( int_val(nlcp_tid(consumer_cpf)) != xsb_thread_id )
 		;
@@ -97,7 +96,7 @@ static CPtr sched_answers(CTXTdeclc VariantSF producer_sf, CPtr *last_consumer)
 	  }
 	consumer_cpf = nlcp_prevlookup(consumer_cpf);
       }
-
+    }
     if( last_consumer )
       *last_consumer = last_sched_cons;
     if( last_sched_cons ) {
@@ -163,6 +162,18 @@ static CPtr find_fixpoint(CTXTdeclc CPtr leader_csf, CPtr producer_cpf)
     	tmp_sched = sched_answers(CTXTc currSubg, &last_cons) ;
     if (tmp_sched) {
 #else
+
+      /* TLS Sept 08.  Made this change to ensure that a non-leader
+	 GCP that has been turned into a CCP will point back to the
+	 leader if it is not otherwise scheduled.  It replaces the
+	 change made on Nov 05 at the end of check_complete in
+	 complete_xsb_i.h.  I have fond hopes that this change is
+	 finally correct. */
+
+#ifdef  LOCAL_EVAL
+      tcp_prevbreg(subg_asf_list_ptr(currSubg)) = breg;
+#endif
+
     if ((tmp_sched = sched_answers(CTXTc currSubg, &last_cons))) {
 #endif
       if (prev_sched) { /* if there is a prev subgoal scheduled */

@@ -46,6 +46,8 @@ extern CPtr sreg;	/* current build or unify field */
 extern byte *cpreg;	/* return point register        */
 extern byte *pcreg;	/* program counter              */
 
+// #define CP_DEBUG 1
+
 #ifdef CP_DEBUG
 extern Psc pscreg;
 #endif

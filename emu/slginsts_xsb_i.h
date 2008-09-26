@@ -960,8 +960,13 @@ XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc)
 	 *  the CPF to a check_complete instr.
 	 *
 	 */
+	//	printf("performing early completion for: ");
+	//	print_subgoal(CTXTc stddbg, producer_sf);
+	//	printf("(breg: %x pcpf %x\n",breg,producer_cpf);alt_print_cp(CTXT);
+
 	perform_early_completion(producer_sf, producer_cpf);
 #if defined(LOCAL_EVAL)
+	//	if (tcp_pcreg(producer_cpf) != (byte *) &answer_return_inst) 
 	  breg = producer_cpf;
 #endif
       }

@@ -34,6 +34,8 @@
 
 /* --- type definitions ----------------------------------------------- */
 
+// #define CP_DEBUG 1
+
 typedef struct choice_point {
     byte *next_clause;	/* the entry of next choice */
 #ifdef SLG_GC

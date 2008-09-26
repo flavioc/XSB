@@ -32,6 +32,7 @@
    ------------------ */
 Cell reg[MAX_REGS];
 
+//#define CP_DEBUG 1
 
 /* Special Registers
    ----------------- */
