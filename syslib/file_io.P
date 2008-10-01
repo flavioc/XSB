@@ -383,6 +383,8 @@ check_stream_or_alias(S_or_A,Predicate,Arg,Stream) :-
 '_$alias'(userout,1).
 '_$alias'(user_out,1).
 '_$alias'(user_output,1).
+%'_$alias'(usererr,2).
+%'_$alias'(user_error,2).
 '_$alias'(In,Out):-  '_$alias_dynamic'(In,STREAM_ALIAS,Out).
 
 :- import (index)/2 from standard.
