@@ -240,7 +240,6 @@ triehandle_for_storage(StorageName,Handle,Snapshot) :-
 	storage_builtin(GET_STORAGE_HANDLE,StorageName,Handle,Snapshot,_).
 
 
-%% This one seems no longer used. Check!!!
 mark_storage_changed_bt(StorageName) :-
 	storage_builtin(MARK_STORAGE_CHANGED,StorageName,_,_,_).
 
