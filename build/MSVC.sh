@@ -19,6 +19,6 @@ makedepend -w2000 -f ../build/.makedepend.tmp -o.obj -p@@@ -Y -- -I$configdir --
 	| grep -v "cannot find include" | grep -v "not in"
 
 # Convert Unix Makefile dependencies to NMAKE format, add ^M at the end
-cat ../build/.makedepend.tmp | sed  -f ../build/MSVC.sed | unix2dos --unix2dos > ../build/MSVC.dep
+cat ../build/.makedepend.tmp | sed  -f ../build/MSVC.sed | unix2dos > ../build/MSVC.dep
 
 
