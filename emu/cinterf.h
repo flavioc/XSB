@@ -152,6 +152,7 @@ extern "C" {
 **  		both file and obj are opaque pointers of type char*
 */
 
+#include <stdlib.h>
 #include "basicdefs.h"
 #include "basictypes.h"
 
