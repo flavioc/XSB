@@ -457,7 +457,7 @@ current_stream_or_alias(S_or_A,Stream):-
  	      is_valid_stream(S_or_A)
  	    ; (var(S_or_A) -> 
 	         for(Stream,0,MAX_OPEN_FILES),
-	         is_valid_stream(Stream)
+	         is_valid_stream(Stream),S_or_A = Stream
 	       ; domain_error(stream_or_alias_or_variable,Stream,
 	                             current_stream_or_alias/1,1) ) ) ).
 
