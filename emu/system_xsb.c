@@ -288,18 +288,22 @@ xsbBool sys_system(CTXTdeclc int callno)
     init_process_table();
 
     if (callno == SPAWN_PROCESS)
-      callname = "SPAWN_PROCESS";
+      callname = "spawn_process/5";
     else
-      callname = "SHELL";
+      callname = "shell/[1,2,5]";
 
     cmdspec_term = reg_term(CTXTc 2);
     if (islist(cmdspec_term))
       params_are_in_a_list = TRUE;
     else if (isstring(cmdspec_term))
       shell_cmd = string_val(cmdspec_term);
-    else
-      xsb_abort("[%s] Arg 1 must be an atom or a list [command, arg, ...]",
-		callname);
+    else if (isref(cmdspec_term))
+      xsb_instantiation_error(CTXTc callname,1);
+    else    
+      xsb_type_error(CTXTc "atom or list e.g. [command, arg, ...]",cmdspec_term,callname,1);
+    
+    // xsb_abort("[%s] Arg 1 must be an atom or a list [command, arg, ...]",
+    // callname);
 
     /* the user can indicate that he doesn't want either of the streams created
        by putting an atom in the corresponding argument position */
@@ -323,7 +327,8 @@ xsbBool sys_system(CTXTdeclc int callno)
     }
 
     if (!isref(reg_term(CTXTc 6)))
-      xsb_abort("[%s] Arg 5 (process id) must be a variable", callname);
+      xsb_type_error(CTXTc "variable (to return process id)",reg_term(CTXTc 6),callname,5);
+    //      xsb_abort("[%s] Arg 5 (process id) must be a variable", callname);
 
     if (params_are_in_a_list) {
       /* fill in the params[] array */
