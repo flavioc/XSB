@@ -57,6 +57,12 @@ shell_to_list(Cmd, List,ErrCode) :-
 	shell(Cmd, none, Output, none, ErrCode),
  	file_to_list(Output,List).
 
+:- export shell_to_list/4.
+shell_to_list(Cmd, OList,EList,ErrCode) :- 
+	shell(Cmd, none, Ostr, Estr, ErrCode),
+ 	file_to_list(Ostr,OList),
+ 	file_to_list(Estr,EList).
+
 exec(Cmd) :- sys_system(EXEC,Cmd,_,_,_,_,_).
 
 /* Process table is a list [process(Pid,To,From,Stderr,Cmdline), ...]

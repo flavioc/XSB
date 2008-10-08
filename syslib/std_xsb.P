@@ -318,6 +318,7 @@ standard_symbol(shell, 1, shell).
 standard_symbol(shell, 2, shell).
 standard_symbol(shell, 5, shell).
 standard_symbol(shell_to_list, 3, shell).
+standard_symbol(shell_to_list, 4, shell).
 standard_symbol(sk_not, 1, tables).
 standard_symbol(sleep, 1, shell).
 standard_symbol(skip, 1, standard).  	 	% TLS do we need this one?
