@@ -37,7 +37,6 @@
 
 :- dynamic xpp_include_dir(_).
 :- dynamic xpp_options(_).
-:- dynamic xpp_program(_).
 
 %-----------------------------------------------------------------------
 
@@ -130,10 +129,7 @@ open_or_xpp_file(File, XPP_process) :-
 %% This can then be used, for example, to bind this port to XSB standard 
 %% output (stat_set_flag(CURRENT_OUTPUT,port)
 xpp_process_file(FileName, XPP_process, IOportFromProc) :-
-	(xpp_program(XPP_command)
-	 ->	true
-	;   make_gpp_command(XPP_command,FileName)
-	),
+	make_gpp_command(XPP_command,FileName),
 	((integer(FileName) ; var(FileName))
 	-> fmt_write_string(FullXPP_command,'%s',arg(XPP_command)),
 	    InputStream = FileName
@@ -161,7 +157,7 @@ xpp_process_file(FileName, XPP_process, IOportFromProc) :-
 #ifdef DEBUG_GPP
 	message('[Preprocessing done]'),
 #endif
-	retractall(xpp_program(_)).
+	true.
 
 
 make_gpp_command(GPP_command,FileName) :-
