@@ -1081,10 +1081,10 @@ xsbBool xsb_thread_request( CTXTdecl )
 	      th_vec[i].status = rval;
 	    }
 	  }
+	  mem_dealloc(th,sizeof(th_context),THREAD_SPACE) ;
 	  pthread_mutex_unlock( &th_mutex );
 	  if( i == -1 )
 		xsb_abort("[THREAD] Couldn't find thread in thread table!") ;
-	  mem_dealloc(th,sizeof(th_context),THREAD_SPACE) ;
 	  flags[NUM_THREADS]-- ;
 	  //	  printf("thread is exiting\n");
 	  pthread_exit((void *) rval ) ;
