@@ -128,6 +128,8 @@ open(File,Mode,Stream) :- 'open aux'(File,Mode,0,Stream).
 	stat_set_flag(CURRENT_OUTPUT, STDOUT).
 'open aux'(user_output,write,_,STDOUT):-!,  % ISO
 	stat_set_flag(CURRENT_OUTPUT, STDOUT).
+'open aux'(user_error,write,_,STDERR):-!,  % PROTO-ISO
+	stat_set_flag(CURRENT_OUTPUT, STDERR).
 'open aux'(pipe(FileDescr),Mode,_,Stream):- !,
 	file_translate(Mode,M),
 	fd2iostream(FileDescr,M,Stream),
@@ -195,6 +197,7 @@ close(user_in) :- !.
 close(user_out) :- !.
 close(user_input) :- !.
 close(user_output) :- !.
+close(user_error) :- !.
 close(S_or_A) :- 
 	check_stream_or_alias(S_or_A,close/1,1,Str),
 	file_close(Str,NOFORCE_FILE_CLOSE).
@@ -209,6 +212,7 @@ close(user_in,_) :- !.
 close(user_out,_) :- !.
 close(user_input,_) :- !.
 close(user_output,_) :- !.
+close(user_error,_) :- !.
 close(S_or_A,Options) :- 
 	check_stream_or_alias(S_or_A,close/1,1,Str),
 	examine_close_options(Options,Action),
