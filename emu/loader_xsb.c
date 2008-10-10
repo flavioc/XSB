@@ -38,6 +38,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef WIN_NT
+#include <direct.h>
+#else
+#include <unistd.h>
+#endif
+
 #include "auxlry.h"
 #include "context.h"
 #include "psc_xsb.h"
@@ -56,6 +62,7 @@
 #include "register.h"
 #include "varstring_xsb.h"
 #include "thread_xsb.h"
+#include "choice.h"
 
 #ifdef FOREIGN
 #include "dynload.h"
@@ -320,6 +327,9 @@ inline static pindex new_index_seg(int no_cells)
 {
   pindex new_i = (pindex)mem_alloc(SIZE_IDX_HDR + sizeof(Cell) * no_cells,COMPILED_SPACE ) ;
  
+  //  printf("Allocated index seg: %p-%p(%x)\n",new_i,(pb)new_i+SIZE_IDX_HDR + sizeof(Cell) * no_cells,
+  //	 SIZE_IDX_HDR + sizeof(Cell) * no_cells);
+
   /* initialize fields of new index segment header */
   i_next(new_i) = 0 ;
   i_size(new_i) = SIZE_IDX_HDR + sizeof(Cell) * no_cells ;
@@ -822,8 +832,51 @@ static void new_tdispblk(CTXTdeclc TIFptr *instr_ptr, Psc psc) {
 
 #endif
 
+/* return true if there is an program address in the stack that points
+   into code in a segment. */
+static int address_in_seg(pb code_addr, pseg seg) {
+  pindex i1 ;
+
+  i1 = seg_index(seg) ;
+  while (i1) {
+    if (code_addr >= (pb)i1 && code_addr <= (pb)i1+i_size(i1)) {
+      //      printf("index-addr: %p:%p-%p(%x)\n",code_addr,i1,code_addr+i_size(i1),i_size(i1));
+      return TRUE;
+    }
+    i1 = i_next(i1) ;
+  }
+  if (code_addr >= (pb)seg_hdr(seg) && code_addr <= (pb)(seg_hdr(seg))+seg_size(seg)) {
+    //    printf("seg-addr: %p:%p-%p\n",code_addr,seg_hdr(seg), seg_hdr(seg)+seg_size(seg));
+    return TRUE;
+  }
+  return FALSE;
+}
+
+static int seg_address_in_stack(CTXTdeclc pseg seg) {
+  CPtr tmp_ereg = ereg;
+  byte *tmp_cpreg = cpreg;
+  CPtr tmp_breg = breg;
+  byte instruction;
+
+  if (address_in_seg(pcreg,seg)) return TRUE;
+
+  instruction = *(tmp_cpreg-2*sizeof(Cell));
+  while (tmp_cpreg && (instruction == call || instruction == trymeorelse)) {
+    if (address_in_seg(tmp_cpreg,seg)) return TRUE;
+    tmp_cpreg = *((byte **)tmp_ereg-1);
+    tmp_ereg = *(CPtr *)tmp_ereg;
+    instruction = *(tmp_cpreg-2*sizeof(Cell));
+  }
+  while (tmp_breg && tmp_breg != cp_prevbreg(tmp_breg)) {
+    if (address_in_seg(cp_pcreg(tmp_breg),seg)) return TRUE;
+    tmp_breg = cp_prevbreg(tmp_breg);
+  }
+  return FALSE;
+}
+
+
 /************************************************************************/
-static byte *loader1(CTXTdeclc FILE *fd, int exp)
+static byte *loader1(CTXTdeclc FILE *fd, char *filename, int exp)
 {
   char name[FOREIGN_NAMELEN], arity;
   byte name_len;
@@ -904,6 +957,25 @@ static byte *loader1(CTXTdeclc FILE *fd, int exp)
 	  printf("Cannot reload catch/3: ignored\n");
        	  unload_seg((pseg)seg_first_inst); /* unload version just loaded */
 	} else {
+	  if (seg_address_in_stack(CTXTc (pseg)get_ep(ptr->psc_ptr))) {
+	    char message[255];
+	    snprintf(message,255,
+		     "ERROR: When redefining %s/%d from file %s, freed code is still needed.",
+		     get_name(ptr->psc_ptr),get_arity(ptr->psc_ptr),filename);
+	    xsb_exit(CTXTc message);
+	  }
+	  if (0) {  /* for debugging: condition on flag someday, to make it easier to invoke? */
+	    /* maybe better to keep filename that defined the predicate and always give 
+	       warning if it changes */
+	    fprintf(stdout,"..redefining: %s:%s/%d from file: ",
+		    get_name(cur_mod),get_name(ptr->psc_ptr),get_arity(ptr->psc_ptr)
+		    );
+	    if (filename[0] == '.' && (filename[1]=='/' || filename[1]=='\\')) {
+	      char dir[200]; char *res;
+	      res = getcwd(dir,199);
+	      fprintf(stdout,"%s%s\n",dir,filename+1);
+	    } else fprintf(stdout,"%s\n",filename);
+	  }
 	  unload_seg((pseg)get_ep(ptr->psc_ptr));
 	  set_ep(ptr->psc_ptr, (pb)seg_first_inst);
 	  if (xsb_profiling_enabled)
@@ -1000,7 +1072,13 @@ byte *loader(CTXTdeclc char *file, int exp)
 
   fd = fopen(file, "rb"); /* "b" needed for DOS. -smd */
   if (!fd) return NULL;
-  if (flags[HITRACE]) xsb_mesg("\n     ...... loading file %s", file);
+  if (flags[HITRACE]) {
+    if (file[0] == '.') {
+      char dir[200]; char *res;
+      res = getcwd(dir,199);
+      xsb_mesg("\n  ...... loading file %s%s", dir,file+1);
+    } else xsb_mesg("\n  ...... loading file %s", file);
+  }
   magic_num = read_magic(fd);
 
   if (magic_num == 0x11121304 || magic_num == 0x11121305) {
@@ -1015,7 +1093,7 @@ byte *loader(CTXTdeclc char *file, int exp)
   }
 
   if (magic_num == 0x11121307 || magic_num == 0x11121305)
-    first_inst = loader1(CTXTc fd,exp);
+    first_inst = loader1(CTXTc fd,file,exp);
   else if (magic_num == 0x11121308 || magic_num == 0x11121309) {
 #ifdef FOREIGN
     first_inst = loader_foreign(file, fd, exp);
