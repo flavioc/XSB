@@ -17,7 +17,7 @@ as described in the next subsection.
 
 
 \begin{description}
-\ourmoditem{add\_xsb\_hook(+HookSpec)}{xsb\_hook} \index{\texttt{add\_xsb\_hook/1}} 
+\ourmoditem{add\_xsb\_hook(+HookSpec)}{add\_xsb\_hook/1}{xsb\_hook}
 
 This predicate registers a hook; it must be imported from {\tt xsb\_hook}.
 {\tt HookSpec} has the following format:
@@ -55,7 +55,7 @@ The predicate that defines the hook type must be imported from {\tt
 %%
 or {\tt add\_xsb\_hook/1} will issue an error.
 
-\ourmoditem{remove\_xsb\_hook(+HookSpec)}{xsb\_hook} \index{\texttt{remove\_xsb\_hook/1}}
+\ourmoditem{remove\_xsb\_hook(+HookSpec)}{remove\_xsb\_hook/1}{xsb\_hook}
 
 Unregisters the specified XSB hook; imported from {\tt xsb\_hook}. For
 instance,
@@ -75,7 +75,7 @@ The following predicates define the hook types supported by XSB. They must
 be imported from {\tt xsb\_hook}.
 
 \begin{description}
-\ourmoditem{xsb\_exit\_hook(\_)}{xsb\_hook} \index{\texttt{xsb\_exit\_hook/1}}
+\ourmoditem{xsb\_exit\_hook(\_)}{xsb\_exit\_hook/1}{xsb\_hook} 
 
 These hooks are called just before XSB exits. You can register as many
 hooks as you want and all of them will be called on exit (but the order of
@@ -88,8 +88,8 @@ as such:
 %%
 
 
-\ourmoditem{xsb\_assert\_hook(\_)}{xsb\_hook} \index{\texttt{xsb\_assert\_hook/1}}
-
+\ourmoditem{xsb\_assert\_hook(\_)}{xsb\_assert\_hook/1}{xsb\_hook} 
+%
 These hooks are called whenever the program asserts a clause. An assert
 hook must be a unary predicate, which expects the clause
 being asserted as a parameter. For instance,
@@ -102,8 +102,8 @@ registers {\tt my\_assert\_hook/1} as an assert hook. One can register
 several assert hooks and all of them will be called (but the order is not
 guaranteed).
 
-\ourmoditem{xsb\_retract\_hook(\_)}{xsb\_hook} \index{\texttt{xsb\_retract\_hook/1}}
-
+\ourmoditem{xsb\_retract\_hook(\_)}{xsb\_retract\_hook/1}{xsb\_hook} 
+%
 These hooks are called whenever the program retracts a clause. A retract
 hook must be a unary predicate, which expects as a parameter a list of the
 form {\tt [Head,Body]}, which represent the head and the body parts of the

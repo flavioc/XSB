@@ -16,7 +16,11 @@ tabled evaluation.
 
 To turn on tracing, use {\tt trace/0}.  To turn tracing off, use {\tt
 notrace/0}.  
-\index{\texttt{notrace/0}}
+\begin{description}
+\repeatstandarditem{notrace}{notrace/0}
+\standarditem{notrace}{notrace/0}
+\end{description}
+%
 When tracing is on, the system will print a message each time a
 predicate is:
 \begin{enumerate} \index{debugger!ports}
@@ -199,7 +203,7 @@ Other standard predicates that are useful in debugging are:
 XSB also provides a facility for low-level tracing of execution.  This
 can be activated by invoking the emulator with the {\tt -T} option
 (see Section~\ref{sec:EmuOptions}), or through the predicate {\tt
-  trace/0}.  \index{\texttt{\$trace/0}} It causes trace information to
+  trace/0}.  \stdrefindex{\$trace/0} It causes trace information to
 be printed out at every call (including those to system trap
 handlers).  The volume of such trace information can very become large
 very quickly, so this method of tracing is not recommended in general.

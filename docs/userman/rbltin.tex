@@ -74,7 +74,7 @@ of issuing an {\sf ``Undefined predicate''} error message.
 
 \begin{description}
 %
-\ournewitem{asserta(+Clause)}{ISO}\index{\texttt{asserta/1}}
+\isoitem{asserta(+Clause)}{ISO}{asserta/1}
 %
 If the index specification for the predicate is not {\tt trie}, this
 predicate adds a dynamic clause, {\tt Clause}, to the database {\em
@@ -110,7 +110,7 @@ containing this operator requires an extra set of parentheses: {\tt
 %
 \ei
 
-\ournewitem{assertz(+Clause)}{ISO}\index{\texttt{assertz/1}} 
+\isoitem{assertz(+Clause)}{assertz/1}
 %
 If the index specification for the predicate is not {\tt trie}, this
 predicate adds a dynamic clause, {\tt Clause}, to the database {\em
@@ -124,7 +124,7 @@ Note that because of the precedence of {\tt :-/2}, asserting a clause
 containing this operator requires an extra set of parentheses: {\tt
   assert((Head :- Body))}.
 
-\standarditem{assert(+Clause)}{assert/1}
+\isoitem{assert(+Clause)}{assert/1}
 %
 If the index specification for the predicate is not {\tt trie}, this
 predicate adds a dynamic clause, {\tt Clause}, to the database {\em
@@ -166,7 +166,7 @@ asserted as the last one in the predicate and the better register
 allocation will be used.  {\tt Index} indicates the argument(s) on
 which to index.
 
-\ournewitem{retract(+Clause)}{ISO}\index{\texttt{retract/1}} 
+\isoitem{retract(+Clause)}{ISO}{retract/1}
 %
 Removes through backtracking all clauses in the database that match
 with {\tt Clause}.  {\tt Clause} must be of one of the forms: {\tt
@@ -224,15 +224,17 @@ and always succeeds.  The term {\tt Head} is not further instantiated
 by this call.  Conditions for space reclamation and error cases are as
 with {\tt retract/1}.
 
-\ournewitem{abolish(+PredSpec)}{ISO}\index{\texttt{abolish/1}} Removes all
-information about the specified predicate. {\tt PredSpec} is of the
-form {\tt Pred/Arity}.  Everything about the abolished predicate is
-completely forgotten by the system (including the {\tt dynamic or
-  static} property, whether the predicate is tabled, and whether the
-predicate is thread-shared or thread-private)~\footnote{For
-  compatibility with older Prologs, there is also an {\tt abolish/2}
-  which takes {\tt Pred} and {\tt Arity} as its two arguments.}.  Any
-completed tables for the predicate are also removed.
+\isoitem{abolish(+PredSpec)}{abolish/1} 
+%
+Removes all information about the specified predicate. {\tt PredSpec}
+is of the form {\tt Pred/Arity}.  Everything about the abolished
+predicate is completely forgotten by the system (including the {\tt
+  dynamic or static} property, whether the predicate is tabled, and
+whether the predicate is thread-shared or
+thread-private)~\footnote{For compatibility with older Prologs, there
+  is also an {\tt abolish/2} which takes {\tt Pred} and {\tt Arity} as
+  its two arguments.}.  Any completed tables for the predicate are
+also removed.
 
 It is an error to abolish a predicate when there is more than 1 active
 thread, regardless of whether the predicate is thread-private or
@@ -290,7 +292,7 @@ safe to use.
 %
 \ei
 
-\ournewitem{clause(+Head,?Body)}{ISO}\index{\texttt{clause/2}}
+\isoitem{clause(+Head,?Body)}{clause/2}
 %
 Returns through backtracking all dynamic clauses in the database whose
 head matches {\tt Head} and Body matches {\tt Body}.  For facts the
@@ -579,7 +581,7 @@ If in doubt what indexing is being used for a predicate, a call to
 \ei
 \ei
 
-\standarditem{dynamic(+PredSpec)}{dynamic/1}\label{dynamic/1}
+\isoitem{dynamic(+PredSpec)}{dynamic/1}\label{dynamic/1}
 %
 In XSB, {\tt PredSpec} may be a predicate indicator, a callable term,
 or a comma-list or list of predicate indicators or callable terms.
@@ -790,7 +792,7 @@ backward compatibility, {\tt 0} and {\tt 1} are also allowed.}:
 \ei
 \ei
 
-\ourmoditem{load\_dync(+FileName,+Dir)}{consult}\index{\texttt{load\_dync/2}}\label{load_dync/2}
+\standarditem{load\_dync(+FileName,+Dir)}{load\_dync/2} \label{load_dync/2}
     Acts as {\tt load\_dyn/2}, but assumes that facts are in
     ``canonical'' format.  {\tt Dir} is ignored for trie-asserted
     code, but otherwise indicates whether {\tt assertz} or {\tt
@@ -858,7 +860,7 @@ consulted.  Otherwise
 {\tt load\_dync(FileName,a)}.
 
 \item If {\tt Action} is instantiated to {\tt consult}, {\tt FileName}
-is consulted.
+is consulted (action is the same as {\tt ensure\_loaded/1}).
 
 \ei
 
@@ -880,8 +882,8 @@ is consulted.
 %
 \ei
 
-\ourmoditem{cvt\_canonical(+FileName1,+FileName2)}{consult}
-\index{\texttt{cvt\_canonical/2}}
+\ourmoditem{cvt\_canonical(+FileName1,+FileName2)}{cvt\_canonical/2}{consult}
+%
     Converts a file from standard term format to ``canonical'' format.
     The input file name is {\tt FileName1}; the converted file is put in
     {\tt FileName2}.  This predicate can be used to convert a file in

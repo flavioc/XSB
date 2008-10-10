@@ -144,7 +144,7 @@ These programs include the important class of \emph{Datalog} programs.
 
 %--------------------------------------------------------------------
 Predicates can be declared tabled in a variety of ways.  A common form
-is the compiler directive\index{\texttt{table/1}}
+is the compiler directive \stdrefindex{table/1}
 \[
 	\verb|:- table | p_1/n_1, \ldots, p_k/n_k.
 \]
@@ -274,9 +274,9 @@ directive, any dynamic predicate can be tabled.
 Other tabling declarations are also provided.  Often it is tedious to
 decide which predicates must be tabled.  To address this, XSB can
 automatically table predicates in files.  The declaration {\tt
-  auto\_table}\index{\texttt{auto\_table}} chooses predicates to table
+  auto\_table}\index{declarations!\texttt{auto\_table}} chooses predicates to table
 to assist in termination, while {\tt
-  suppl\_table}\index{\texttt{suppl\_table}} chooses predicates to
+  suppl\_table}\index{declarations!\texttt{suppl\_table}} chooses predicates to
 table to optimize data-oriented queries.  Both are explained in
 \refsec{sec:CompilerOptions}.~\footnote{The reader may have noted that
   {\tt table/1}, is referred to as a \emph{directive}, while {\tt
@@ -458,9 +458,9 @@ subsumption-based tabling can be made the default by giving XSB the
 More versatile constructs are provided by XSB so that the tabling
 method can be selected on a \emph{per predicate} basis.  Use of either
 directive
-\texttt{use\_variant\_tabling/1}\index{\texttt{use\_variant\_tabling/1}}
+\texttt{use\_variant\_tabling/1}\index{declarations!\texttt{use\_variant\_tabling/1}}
 or
-\texttt{use\_subsumptive\_tabling/1},\index{\texttt{use\_subsumptive\_tabling/1}}
+\texttt{use\_subsumptive\_tabling/1},\index{declarations!\texttt{use\_subsumptive\_tabling/1}}
 described in \refsec{sec:TablePred:Decl&Mod}, ensures that a tabled
 predicate is evaluated using the desired strategy regardless of the
 default tabling strategy.
@@ -939,7 +939,7 @@ may produce behavior unexpected by the user.
 
 
 \paragraph*{{\tt tnot/1} vs. \not }
-\index{\texttt{tnot/1}}
+\predrefindex{tnot/1}
 \index{\texttt{$\backslash$+/1}}
 
 Subject to some semantic restrictions, an XSB programmer can intermix
@@ -1357,8 +1357,8 @@ checker for description logics has also been created \cite{Swif04}.
 \section{Tabled Aggregation} \label{sec:table-aggregation}
 \index{tabling!aggregation}
 \index{tabling!answer subsumption}
-\index{\texttt{filterReduce/4}}
-\index{\texttt{filterPO/4}}
+\predrefindex{filterReduce/4}
+\predrefindex{filterPO/4}
 
 The following shortest path predicate is a modification of the {\tt
 path/2} predicate of Section \ref{sec:def}:

@@ -441,10 +441,11 @@ subexpression can be of the same precedence as the main operator.
 
 An atom named {\tt Name} can be declared as an operator of type {\tt
 Type} and precedence {\tt Precedence} by the command;
-\index{\texttt{op/3}}
-\begin{verbatim}
-                    :- op(Precedence, Type, Name).
-\end{verbatim}
+
+\begin{description}
+\isoitem{op(+Precedence,+Type,+Name)}{op/3}
+\end{description}
+%
 The same command can be used to redefine one of the predefined XSB
 operators (obtainable via {\tt current\_op/3}).  However, it is not
 allowed to alter the definition of the comma ({\tt ','}) operator.  An

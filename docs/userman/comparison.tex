@@ -66,11 +66,10 @@ For example, here is a list of terms sorted in increasing standard order:
 The basic predicates for unification and comparison of arbitrary terms are:
 \begin{description}
 
-\ournewitem{X = Y}{ISO}\index{\texttt{=/2}} 
+\standarditem{X = Y}{=/2}
     Unifies {\tt X} and {\tt Y} without occur check.
 
-\ournewitem{unify\_with\_occurs\_check(One,Two)}{ISO} 
-\index{\texttt{unify\_with\_occurs\_check/2}}
+\standarditem{unify\_with\_occurs\_check(One,Two)}{unify\_with\_occurs\_check/2}
 %
 Unifies {\tt One} and {\tt Two} using an occur check, and failing if
 {\tt One} is a proper subterm of {\tt Two} or if {\tt Two} is a proper
@@ -95,8 +94,8 @@ subterm of {\tt One}.
                 yes
   \end{verbatim}}
 
-\ournewitem{T1 == T2}{ISO}
-\index{\texttt{==/2}}
+\standarditem{T1 == T2}{==/2}
+%
     Tests if the terms currently instantiating {\tt T1} and {\tt T2}
     are literally identical (in particular, variables in equivalent positions
     in the two terms must be identical).
@@ -113,14 +112,15 @@ subterm of {\tt One}.
     \noindent
     succeeds because the first goal unifies the two variables.
 
-\ournewitem{X $\backslash$\,= Y}{ISO}\index{\texttt{$\backslash$=/2}}
+\ournewitem{X $\backslash$\,= Y}{ISO}\index{$\backslash$\texttt{=/2}}
+\index[pred]{$\backslash$\texttt{=/2}}
     Succeeds if~{\tt X} and~{\tt Y} are not unifiable,
     fails if~{\tt X} and~{\tt Y} are unifiable.
     It is thus equivalent to {\tt $\backslash$+}\/{\tt (X = Y)}.
 
-\ournewitem{T1 {$\backslash$==} T2}{ISO}
-\index{\texttt{$\backslash$==/2}}
-    Tests if the terms currently instantiating {\tt T1} and {\tt T2}
+\ournewitem{T1 {$\backslash$==} T2}{ISO} \index{$\backslash$\texttt{==/2}} 
+\index[pred]{$\backslash$\texttt{==/2}}
+    Succeeds if the terms currently instantiating {\tt T1} and {\tt T2}
     are not literally identical.
 
 \standarditem{Term1 ?= Term2}{?=/2}
@@ -130,8 +130,7 @@ compared safely, i.e. whether the result of {\tt Term1 = Term2} can
 change due to further instantiation of either term. It is defined as
 by {\tt ?=(A,B) :- (A==B ; A \= B), !.} 
 
-\ourmoditem{unifiable(X, Y, -Unifier)}{constraintLib}
-\index{\texttt{unifiable/3}}
+\ourmoditem{unifiable(X, Y, -Unifier)}{unifiable/3}{constraintLib}
 %
 If {\tt X} and {\tt Y} can unify, succeeds unifying {\tt Unifier} with
 a list of terms of the form {\tt Var = Value} representing a most
@@ -141,25 +140,19 @@ variables. Associated hooks are not executed~\footnote{In \version ,
   {\tt unifiable/3} is written as a Prolog predicate and so is slower
   than many of the predicates in this section.}.
 
-% TLS: for some reason index statements for these @ comparison operators don't work.
-\ournewitem{T1 @$<$ T2}{ISO}
-\index{@/2}
+\standarditem{T1 @$<$ T2}{"@$<$/2}
     Succeeds if term {\tt T1} is before term {\tt T2} in the standard order.
 
-\ournewitem{T1 @$>$ T2}{ISO}
-\index{\verb|@>/2|}
+\standarditem{T1 @$>$ T2}{"@$>$/2}
     Succeeds if term {\tt T1} is after term {\tt T2} in the standard order.
 
-\ournewitem{T1 @$=<$ T2}{ISO}
-\index{@$=</2$}
+\standarditem{T1 @$=<$ T2}{"@$=</2$}
     Succeeds if term {\tt T1} is not after term {\tt T2} in the standard order.
 
-\ournewitem{T1 @$>=$ T2}{ISO}
-\index{@$>=/2$}
+\standarditem{T1 @$>=$ T2}{"@$>=/2$}
     Succeeds if term {\tt T1} is not before term {\tt T2} in the standard order.
 
-\ouritem{T1 @$=$ T2}
-\index{@$=/2$}
+\standarditem{T1 @$=$ T2}{"@$=/2$}
     Succeeds if {\tt T1} and {\tt T2} are identical variables, or if
     the main structure symbols of {\tt T1} and {\tt T2} are identical.
 
@@ -174,13 +167,13 @@ variables. Associated hooks are not executed~\footnote{In \version ,
     Thus {\tt compare(=, T1, T2)} is equivalent to {\tt T1==T2}.
     Predicate {\tt compare/3} has no associated error conditions.
 
-\ourmoditem{ground(+X)}{basics}\index{\texttt{ground/1}}
+\ourmoditem{ground(+X)}{ground/1}{basics}
     Succeeds if {\tt X} is currently instantiated to a term that is 
     completely bound (has no uninstantiated variables in it); 
     otherwise it fails.  Predicate {\tt ground/1} has no associated 
     error conditions.
 
-\ourmoditem{subsumes(?Term1, +Term2)}{subsumes}\index{\texttt{subsumes/2}}
+\ourmoditem{subsumes(?Term1, +Term2)}{subsumes/2}{subsumes}
 %\predindex{subsumes/2~(L)}
     Term subsumption is a sort of one-way unification.  Term {\tt Term1}
     and {\tt Term2} unify if they have a common instance, and unification
@@ -192,8 +185,7 @@ variables. Associated hooks are not executed~\footnote{In \version ,
     not work as described if {\tt Term1} and {\tt Term2} share common
     variables.
 
-\ourmoditem{subsumes\_chk(+Term1, +Term2)}{subsumes}
-\index{\texttt{subsumes\_chk/2}}
+\ourmoditem{subsumes\_chk(+Term1, +Term2)}{subsumes\_chk/2}{subsumes}
 %\predindex{subsumes\_chk/2~(L)}
     The {\tt subsumes\_chk/2} predicate is true when {\tt Term1} subsumes 
     {\tt Term2}; that is, when {\tt Term2} is already an instance of
@@ -213,7 +205,7 @@ variables. Associated hooks are not executed~\footnote{In \version ,
             Y = _595624
      \end{verbatim}}
 
-\ourmoditem{variant(?Term1, ?Term2)}{subsumes}\index{\texttt{variant/2}}
+\ourmoditem{variant(?Term1, ?Term2)}{variant/2}{subsumes}
 %\predindex{variant/2~(L)}
     This predicate is true when {\tt Term1} and {\tt Term2} are 
     alphabetic variants.  That is, you could imagine that {\tt variant/2}
@@ -293,9 +285,8 @@ collection, or other reasons.
      form \verb'Key-Value'.  
 \end{description}
 
-\ourmoditem{parsort(+L1, +SortSpec, +ElimDupl, ?L2)}{machine}
-\index{\texttt{parsort/4}}
-
+\ourmoditem{parsort(+L1, +SortSpec, +ElimDupl, ?L2)}{parsort/4}{machine}
+%
     {\tt parsort/4} is a very general sorting routine.  The list {\tt
     L1} may consist of elements of any form.  {\tt SortSpec} is the
     atom {\tt asc}, the atom {\tt desc}, or a list of terms of the

@@ -87,7 +87,7 @@ In this section we informally describe the translation of DCG rules
 into normal rules in XSB.  Each grammar rule is translated into a
 Prolog clause as it is consulted or compiled.  This is accomplished
 through a general mechanism of defining the hook predicate {\tt
-term\_expansion/2}, \index{\texttt{term\_expansion/2}} by means of which
+term\_expansion/2}, \stdrefindex{term\_expansion/2} by means of which
 a user can specify any desired transformation to be done as clauses
 are read by the reader of XSB's parser.  This DCG term expansion is as
 follows:
@@ -263,7 +263,7 @@ tabled, the need to copy sequences into or out of a table can lead to
 behavior quadratic in the length of the input sequence (See Section
 \ref{sec:TablingPitfalls}).  As an alternative, XSB allows a mode of
 DCGs that defines {\tt 'C'/3} as a call to a Datalog predicate {\tt
-word/3} \index{\texttt{word/3}}:
+word/3} \stdrefindex{word/3}:
 
 \stuff{\> \> 'C'(Pos,Token,Next\_pos):- word(Pos,Token,Next\_pos).}
 
@@ -376,19 +376,19 @@ The library predicates of XSB that support DCGs are the following:
     {\tt Term1} is not of the proper form, or {\tt Term2} does not unify with
     its clausal form, predicate {\tt expand\_term/2} simply fails.
 
-    Users may override the standard transformations performed by predicate
-    {\tt expand\_term/2} by defining their own compile-time transformations.
-    This can be done by defining clauses for the predicate
-    {\tt term\_expansion/2}\index{\texttt{term\_expansion/2}}.
-    When a term {\tt Term1} is read in when a file is being compiled or 
-    consulted, {\tt expand\_term/2} calls {\tt term\_expansion/2} first;
-    if the expansion succeeds, the transformed term so obtained is used and 
-    the standard grammar rule expansion is not tried; otherwise, if 
-    {\tt Term1} is a grammar rule, then it is expanded using {\tt dcg/2}; 
-    otherwise, {\tt Term1} is used as is.  Note that predicate {\tt
-    term\_expansion/2} must be defined in the XSB's default read-in
-    module ({\tt usermod}) and should be loaded there before the compilation
-    begins.
+    Users may override the standard transformations performed by
+    predicate {\tt expand\_term/2} by defining their own compile-time
+    transformations.  This can be done by defining clauses for the
+    predicate {\tt term\_expansion/2}\stdrefindex{term\_expansion/2},
+    When a term {\tt Term1} is read in when a file is being compiled
+    or consulted, {\tt expand\_term/2} calls {\tt term\_expansion/2}
+    first; if the expansion succeeds, the transformed term so obtained
+    is used and the standard grammar rule expansion is not tried;
+    otherwise, if {\tt Term1} is a grammar rule, then it is expanded
+    using {\tt dcg/2}; otherwise, {\tt Term1} is used as is.  Note
+    that predicate {\tt term\_expansion/2} must be defined in the
+    XSB's default read-in module ({\tt usermod}) and should be loaded
+    there before the compilation begins.
 
 \standarditem{'C'(?L1, ?Terminal, ?L2)}{`C'/3}
 This predicate generally is of no concern to the user.  Rather it is used 
@@ -418,17 +418,17 @@ described in Section \ref{sec:dcg_tabling}.
 \noindent
 implicitly changing the DCG mode from list to datalog.
 
-\ourmoditem{tphrase\_set\_string\_keeping\_tables(+List)}{dcg}\index{\texttt{tphrase\_set\_string\_keeping\_tables/1}}
+\ourmoditem{tphrase\_set\_string\_keeping\_tables(+List)}{tphrase\_set\_string\_keeping\_tables/1}{dcg}
 This predicate is the same as {\tt tphrase\_set\_string}, except
 it does not abolish any tables.  When using this predicate, the
 user is responsible for explicitly abolishing the necessary tables.
 
-\ourmoditem{tphrase\_set\_string\_auto\_abolish(+List)}{dcg}\index{\texttt{tphrase\_set\_string\_auto\_abolish/1}}
+\ourmoditem{tphrase\_set\_string\_auto\_abolish(+List)}{tphrase\_set\_string\_auto\_abolish/1}{dcg}
 This predicate is the same as {\tt tphrase\_set\_string}, except
 it abolishes tables that have been indicated as dcg-supported tables
 by a previous call to {\tt set\_dcg\_supported\_table/1}.
 
-\ourmoditem{set\_dcg\_supported\_table(+TabSkel)}{dcg}\index{\texttt{set\_dcg\_supported\_table/1}}
+\ourmoditem{set\_dcg\_supported\_table(+TabSkel)}{set\_dcg\_supported\_table/1}{dcg}
 This predicate is used to indicate to the DCG subsystem that a
 particular tabled predicate is part of a DCG grammar, and thus the
 contents of its table depends on the string being parsed.  {\tt
@@ -437,8 +437,7 @@ tphrase\_set\_string\_auto\_abolish/1} is called, all tables that have
 been indicated as DCG-supported by a call to this predicate will be
 abolished.
 
-\ourmoditem{dcg(+DCG\_Rule, ?Prolog\_Clause)}{dcg}
-\index{\texttt{dcg/2}}
+\ourmoditem{dcg(+DCG\_Rule, ?Prolog\_Clause)}{dcg/2}{dcg}
     Succeeds iff the DCG rule {\tt DCG\_Rule} translates to the Prolog
     clause {\tt Prolog\_Clause}.  At the time of call, {\tt DCG\_Rule}
     must be bound to a term whose principal functor is {\tt '-->'/2}
@@ -488,7 +487,7 @@ SICStus Prolog and C-Prolog). The most important of these differences are:
       However, to obtain the standard expansion provided by the other Prolog
       systems, the user can simply execute:
       
-      \index{\texttt{set\_dcg\_style/1}}
+      \stdrefindex{set\_dcg\_style/1}
       \stuff{
         \>\> set\_dcg\_style(standard).
       }

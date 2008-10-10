@@ -227,7 +227,7 @@ a file using {\tt consult} and such.)
 
 \begin{description}
 
-\ournewitem{open(+SourceSink,+Mode,-Stream)}{ISO}\index{\texttt{open/3}}
+\isoitem{open(+SourceSink,+Mode,-Stream)}{open/3}
 %
 {\tt open/1} creates a stream for the source or sink designated in
 {\tt SourceSink}, and binds {\tt Stream} to a structure representing
@@ -292,7 +292,7 @@ the desired mode
 \ei
 \ei
 
-\ournewitem{open(+File,+Mode,-Stream,+Options)}{ISO}\index{\texttt{open/4}}
+\isoitem{open(+File,+Mode,-Stream,+Options)}{open/4}
 %
 {\tt open/4} behaves as does {\tt open/3}, but allows a list of
 options to be given.  The current options are a subset of ISO options
@@ -333,7 +333,7 @@ depends on the stream class.  The ISO option {\tt eof\_action(Action)}
 currently has no effect on file streams.  If these options are
 encountered in {\tt Options}, a warning is issued to {\tt STDWARN}.
 
-\ournewitem{close(+Stream\_or\_alias,+OptionsList)}{ISO}\index{\texttt{close/2}}
+\isoitem{close(+Stream\_or\_alias,+OptionsList)}{close/2}
 %
 {\tt close/2} closes the stream or alias {\tt Stream\_or\_alias}.
 {\tt OptionsList} allows the user to declare whether a permission
@@ -378,12 +378,12 @@ option.
 \ei
 \ei
 
-\ournewitem{close(+Stream\_or\_alias)}{ISO}\index{\texttt{close/1}}
+\isoitem{close(+Stream\_or\_alias)}{close/1}
 %
 {\tt close/1} closes the stream or alias {\tt Stream\_or\_alias}.\\
 Behaves as {\tt close(Stream\_or\_alias,[force(false)])}.
 
-\ournewitem{set\_input(+Stream\_or\_alias)}{ISO}\index{\texttt{set\_input/1}}
+\isoitem{set\_input(+Stream\_or\_alias)}{set\_input/1}
     Makes file {\tt Stream\_or\_alias} the current input stream. 
 
 {\bf Error Cases}
@@ -403,7 +403,7 @@ Behaves as {\tt close(Stream\_or\_alias,[force(false)])}.
 \ei
 \ei
 
-\ournewitem{set\_output(+Stream\_or\_alias)}{ISO}\index{\texttt{set\_output/1}}
+\isoitem{set\_output(+Stream\_or\_alias)}{set\_output/1}
     Makes file {\tt Stream\_or\_alias} the current output stream. 
 
 {\bf Error Cases}
@@ -423,8 +423,7 @@ Behaves as {\tt close(Stream\_or\_alias,[force(false)])}.
 \ei
 \ei
 
-\ournewitem{stream\_property(?Stream,?Property)}{ISO}
-\index{\texttt{stream\_property/2}}
+\isoitem{stream\_property(?Stream,?Property)}{stream\_property/2}
 %
 This predicate backtracks through the various stream properties that
 unify with {\tt Property} for the stream {\tt Stream}.  Currently,
@@ -477,8 +476,7 @@ is {\tt console}, {\tt eof\_code} if the stream class is {\tt file},
 and {\tt error} is the stream class is {\tt pipe} or {\tt atom}.
 \end{itemize}
 
-\ournewitem{flush\_output(+Stream\_or\_alias)}{ISO}
-\index{\texttt{flush\_output/1}}
+\isoitem{flush\_output(+Stream\_or\_alias)}{flush\_output/1}
 %
 Any buffered data in {\tt Stream\_or\_alias}  gets flushed.  If
 {\tt Stream} is not buffered (i.e. if it is of class {\tt
@@ -505,13 +503,11 @@ atom}), no action is taken.
 \ei
 \ei
 
-\ournewitem{flush\_output}{ISO}
-\index{\texttt{flush\_output/0}}
+\isoitem{flush\_output}{flush\_output/0}
 %
 Any buffered data in the current output stream gets flushed.
 
-\ournewitem{set\_stream\_position(+Stream\_or\_alias,+Position)}{ISO}
-\index{\texttt{set\_stream\_position/2}}
+\isoitem{set\_stream\_position(+Stream\_or\_alias,+Position)}{set\_stream\_position/2}
 %
 If the stream associated with {\tt Stream\_or\_alias} is
 repositionable (i.e. is a file or atom), sets the stream position
@@ -545,8 +541,7 @@ placed from the origin.
 \ei
 \ei
 
-\ournewitem{at\_end\_of\_stream(+Stream\_or\_alias)}{ISO}
-\index{\texttt{at\_end\_of\_stream/1}}
+\isoitem{at\_end\_of\_stream(+Stream\_or\_alias)}{at\_end\_of\_stream/1}
 %
 Succeeds if {\tt Stream\_or\_alias} has position at or past the end of
 stream.
@@ -569,8 +564,7 @@ stream.
 \ei
 %
 
-\ournewitem{at\_end\_of\_stream}{ISO}
-\index{\texttt{at\_end\_of\_stream/0}}
+\isoitem{at\_end\_of\_stream}{at\_end\_of\_stream/0}
 %
 Acts as {\tt at\_end\_of\_stream/1} but using the current input
 stream.
@@ -582,7 +576,7 @@ stream.
 \begin{description}
 
 \standarditem{file\_reopen(+FileName,+Mode,+Stream,-RetCode)}{file\_reopen/3}
-%\index{\texttt{file\_reopen/1}}
+%
     Takes an existing I/O stream, closes it, then opens it and
     attaches it to a file. This can be used to redirect I/O from any of the
     standard streams to a file. For instance, 
@@ -596,17 +590,9 @@ stream.
     On success, {\tt RetCode} is 0; on error, the return code is negative.
 
 %-----------------------------------------------------------------------------
-\comment{
-% will be superceded by stream_property.
-%\ournewitem{file\_pos(+Stream, -Position)}{file\_io}
-%\index{\texttt{file\_pos/2}}
-%    Unifies {\tt Position} with the position inside the file indicated by
-%    {\tt IOport}.
-}
-%-----------------------------------------------------------------------------
 
 \standarditem{file\_clone(+SrcStream,?DestStream,-RetCode)}{file\_clone/3}
-\index{\texttt{file\_clone/1}}
+%
 This is yet another way to redirect I/O. It is a Prolog interface to
 the C {\tt dup} and {\tt dup2} system calls. If {\tt DestStream} is a
 variable, then this call creates a new XSB I/O stream that is a clone
@@ -639,8 +625,7 @@ On success, {\tt RetCode} is 0; on error, the return code is negative.
 
 %-----------------------------------------------------------------------------
 
-\ourmoditem{file\_truncate(+Stream, +Length, -Return)}{file\_io}
-\index{\texttt{file\_truncate/3}}
+\ourmoditem{file\_truncate(+Stream, +Length, -Return)}{file\_truncate/3}{file\_io}
     The regular file  referenced by the Stream{\tt Stream}
     is chopped to have the size of {\tt Length} bytes. Upon successful
     completion {\tt Return} is set to zero.
@@ -804,10 +789,10 @@ file).
 \subsection{Character I/O}
 \begin{description}
 
-\ournewitem{nl}{ISO}\index{\texttt{nl/0}}
+\isoitem{nl}{nl/0}
 A new line character is sent to the current output stream.
 
-\ournewitem{nl(+Stream\_or\_alias)}{ISO}\index{\texttt{nl/1}}
+\isoitem{nl(+Stream\_or\_alias)}{nl/1}
 A new line character is sent to the designated output stream.
 
 {\bf Error Cases}
@@ -829,8 +814,7 @@ A new line character is sent to the designated output stream.
 %-----------------------------
 % Gets
 
-\ournewitem{get\_char(+Stream\_or\_alias,?Char)}{ISO}
-\index{\texttt{get\_char/2}}
+\isoitem{get\_char(+Stream\_or\_alias,?Char)}{get\_char/2}
    Unifies {\tt Char} with the next ASCII character from {\tt
    Stream\_or\_alias}, advancing the position of the stream.  {\tt
    Char} is unified with -1 if an end of file condition is detected.
@@ -855,8 +839,7 @@ A new line character is sent to the designated output stream.
 \ei
 \ei
 
-\ournewitem{get\_char(?Char)}{ISO}
-\index{\texttt{get\_char/1}}
+\isoitem{get\_char(?Char)}{get\_char/1}
 %
 Behaves as {\tt get\_char/2}, but reads from the current input stream.
 
@@ -868,8 +851,8 @@ Behaves as {\tt get\_char/2}, but reads from the current input stream.
 \ei
 \ei
 
-\ournewitem{get\_code(+Stream\_or\_alias,?Code)}{ISO}
-\index{\texttt{get\_code/2}}
+\isoitem{get\_code(+Stream\_or\_alias,?Code)}{get\_code/2}
+%
    {\tt Code} unifies with the ASCII code of the next character from
    {\tt Stream\_or\_alias}.  The position of the stream is advanced.
 
@@ -893,8 +876,8 @@ Behaves as {\tt get\_char/2}, but reads from the current input stream.
 \ei
 \ei
 
-\ournewitem{get\_code(?Code)}{ISO}
-\index{\texttt{get\_code/1}}
+\isoitem{get\_code(?Code)}{get\_code/1}
+%
 Behaves as {\tt get\_code/2}, but reads from the current input stream.
 
 {\bf Error Cases}
@@ -922,8 +905,8 @@ than, e.g. {\tt get\_code/1}.
 %------------------------------------
 % Peeks
 
-\ournewitem{peek\_char(+Stream\_or\_alias,?Char)}{ISO} 
-\index{\texttt{peek\_char/2}}
+\isoitem{peek\_char(+Stream\_or\_alias,?Char)}{peek\_char/2}
+%
 {\tt Char} is the next ASCII character from {\tt Stream\_or\_alias}.
 The position in {\tt Stream\_or\_alias} is unchanged.  {\tt Char} is
 unified with -1 if an end of file condition is detected.
@@ -948,8 +931,8 @@ unified with -1 if an end of file condition is detected.
 \ei
 \ei
 
-\ournewitem{peek\_char(?Char)}{ISO} 
-\index{\texttt{peek\_char/1}}
+\isoitem{peek\_char(?Char)}{peek\_char/1}
+%
 {\tt Char} is the next ASCII character from the current input stream.
 The position in the current input stream is unchanged.  {\tt Char} is
 unified with -1 if an end of file condition is detected.
@@ -962,8 +945,8 @@ unified with -1 if an end of file condition is detected.
 \ei
 \ei
 
-\ournewitem{peek\_code(+Stream\_or\_alias,?Code)}{ISO} 
-\index{\texttt{peek\_code/2}}
+\isoitem{peek\_code(+Stream\_or\_alias,?Code)}{peek\_code/2}
+%
 {\tt Code} is the next ASCII coder from {\tt Stream\_or\_alias}.
 The position in {\tt Stream\_or\_alias} is unchanged.  {\tt Code} is
 unified with -1 if an end of file condition is detected.
@@ -988,8 +971,8 @@ unified with -1 if an end of file condition is detected.
 \ei
 \ei
 
-\ournewitem{peek\_code(?Code)}{ISO} 
-\index{\texttt{peek\_code/1}}
+\isoitem{peek\_code(?Code)}{peek\_code/1}
+%
 Behaves as {\tt peek\_code/1}, but the current input stream is used.
 
 {\bf Error Cases}
@@ -1004,8 +987,8 @@ Behaves as {\tt peek\_code/1}, but the current input stream is used.
 % Puts
 %----------------------------------------------
 
-\ournewitem{put\_char(+Stream,+Char)}{ISO}
-\index{\texttt{put\_char/2}}
+\isoitem{put\_char(+Stream,+Char)}{put\_char/2}
+%
 Puts the ASCII character {\tt Char} to {\tt Stream\_or\_alias}.
 
 {\bf Error Cases}
@@ -1028,8 +1011,8 @@ Puts the ASCII character {\tt Char} to {\tt Stream\_or\_alias}.
 \ei
 \ei
 
-\ournewitem{put\_char(+Char)}{ISO}
-\index{\texttt{put\_char/1}}
+\isoitem{put\_char(+Char)}{put\_char/1}
+%
 Puts the ASCII code of the character {\tt Char} to the current output
 stream.
 
@@ -1041,8 +1024,8 @@ stream.
 \ei
 \ei
 
-\ournewitem{put\_code(+Stream,+Code)}{ISO}
-\index{\texttt{put\_code/2}}
+\isoitem{put\_code(+Stream,+Code)}{put\_code/2}
+%
 Puts the ASCII code of the character {\tt Char} to {\tt
 Stream\_or\_alias}.
 
@@ -1067,8 +1050,8 @@ Stream\_or\_alias}.
 \ei
 
 
-\ournewitem{put\_code(+Code)}{ISO}
-\index{\texttt{put\_code/1}}
+\isoitem{put\_code(+Code)}{put\_code/1}
+%
 Puts the ASCII code {\tt Code} to the current output stream.
 {\bf Error Cases}
 \bi
@@ -1100,12 +1083,12 @@ Puts the ASCII code {\tt Code} to the current output stream.
 \ei
 \ei
 
-\ournewrepeatitem{get\_byte/1}{ISO}\index{get\_byte/1}
-\ournewrepeatitem{get\_byte/2}{ISO}\index{get\_byte/2}
-\ournewrepeatitem{put\_byte/1}{ISO}\index{peek\_byte/1}
-\ournewrepeatitem{put\_byte/2}{ISO}\index{peek\_byte/2}
-\ournewrepeatitem{put\_byte/1}{ISO}\index{put\_byte/1}
-\ournewitem{put\_byte/2}{ISO}\index{put\_byte/2}
+\isorepeatitem{get\_byte/1}{get\_byte/1}
+\isorepeatitem{get\_byte/2}{get\_byte/2}
+\isorepeatitem{put\_byte/1}{peek\_byte/1}
+\isorepeatitem{put\_byte/2}{peek\_byte/2}
+\isorepeatitem{put\_byte/1}{put\_byte/1}
+\isoitem{put\_byte/2}{put\_byte/2}
 %
 In XSB, these predicates are simply aliases for the associated {\tt
   xxx\_code} predicates and behave accordingly.  This is safe to do
@@ -1117,7 +1100,7 @@ codes, which are themselves single bytes.
 %---------------------------------------------------------------------------------------------------------
 \subsection{Term I/O}
 \begin{description}
-\ournewitem{read(?Term)}{ISO}\index{\texttt{read/1}}
+\isoitem{read(?Term)}{read/1}
     A HiLog term is read from the current or designated input stream,
     and unified with {\tt Term} according to the operator declarations
     in force.  (See Section~\ref{TermSyntax} for the definition and
@@ -1144,7 +1127,7 @@ file indicator.
 
 %--------
 
-\ournewitem{read(+Stream\_or\_alias, ?Term)}{ISO}\index{\texttt{read/2}}
+\isoitem{read(+Stream\_or\_alias, ?Term)}{read/2}
 	{\tt read/2} has the same behavior as {\tt read/1} but the
 	input stream is explicitly designated by {\tt
 	Stream\_or\_alias}.
@@ -1178,8 +1161,7 @@ in canonical form.
 %handle syntax errors or their behavior when encountering an end of
 %file indicator.
 
-\ournewitem{read\_canonical(+Stream\_or\_alias),-Term)}{ISO} 
-\index{\texttt{read\_canonical/2}} 
+\standarditem{read\_canonical(+Stream\_or\_alias),-Term)}{read\_canonical/2}
 Behaves as {\tt read\_canonical/1}, but reads from {\tt Stream\_or\_alias}.
 
 {\bf Error Cases}
@@ -1197,8 +1179,9 @@ Behaves as {\tt read\_canonical/1}, but reads from {\tt Stream\_or\_alias}.
 \item 	{\tt existence\_error(stream,Stream\_or\_alias)}
 \ei
 \ei
+
 %--------
-\standarditem{read\_term(?Term,?OptionsList)}{read\_term/2}
+\isoitem{read\_term(?Term,?OptionsList)}{read\_term/2}
 %
 A term is read from the current input stream as in {\tt read/1}; but
 {\tt OptionsList} is a (possibly empty) list of {\em read options}
@@ -1234,8 +1217,7 @@ string used to denote the variable in the input stream.
 
 %--------
 
-\ournewitem{read\_term(+Stream\_or\_alias, ?Term,?OptionsList)}{ISO}
-\index{\texttt{read\_term/3}}
+\isoitem{read\_term(+Stream\_or\_alias, ?Term,?OptionsList)}{read\_term/3}
 %
 {\tt read\_term/3} has the same behavior as {\tt read\_term/2} but
 the input stream is explicitly designated using the first argument.
@@ -1257,8 +1239,7 @@ additional errors that may arise in stream checking.
 \ei
 \ei
 
-\ournewitem{write\_term(?Term,+Options)}{ISO}
-\index{\texttt{write\_term/2}}
+\isoitem{write\_term(?Term,+Options)}{write\_term/2}
 %
 Outputs {\tt +Term} to the current output stream.
 {\tt Stream} ({\tt write\_term/3}) according to the list of write
@@ -1368,8 +1349,7 @@ nor a write option.
 \compatability In \version{}, {\tt write\_term/[2,3]} do not properly
 handle operators.
 
-\ournewitem{write\_term(+Stream\_or\_alias,?Term,+Options)}{ISO}
-\index{\texttt{write\_term/3}}
+\isoitem{write\_term(+Stream\_or\_alias,?Term,+Options)}{write\_term/3}
 % 
 Behaves as {\tt write\_term/2}, but writes to {\tt Stream\_or\_alias}.
 
@@ -1390,7 +1370,7 @@ additions.
 \ei
 \ei
 
-\ournewitem{write(?Term)}{ISO}\index{\texttt{write/1}}
+\isoitem{write(?Term)}{write/1}
 % 
 Semantically, {\tt write/1} behaves as if {\tt write\_term/1} were
 invoked using {\tt quoted(false)}, {\tt ignore\_ops(false)}, and {\tt
@@ -1425,7 +1405,7 @@ generated by {\tt numbervars/[1,3]} specially: it writes {\tt 'A'} if
 {\tt 'A1'} if {\tt N}=26, etc.  \verb|'$VAR'(-1)| is written as the
 anonymous variable \verb|'_'|.
 
-\ournewitem{write(+Stream\_or\_alias, ?Term)}{ISO}\index{\texttt{write/2}}
+\isoitem{write(+Stream\_or\_alias, ?Term)}{write/2}
 	{\tt write/2} has the same behavior as {\tt write/1} but the
 	output stream is explicitly designated using the first argument.
 
@@ -1446,7 +1426,7 @@ additional errors that may arise in stream checking.
 \ei
 \ei
 
-\ournewitem{writeq(?Term)}{ISO}\index{\texttt{writeq/1}}
+\isoitem{writeq(?Term)}{writeq/1}
 %
 Acts as {\tt write\_term/1} when defined with the options {\tt
   quoted(true)}, {\tt numbervers(true)}, and {\tt ignore\_ops(false)}.
@@ -1457,8 +1437,8 @@ also treats terms of the form \verb|'\VAR'(N)| specially, writing {\tt
 operator definitions.  {\tt writeq/1} always succeeds without
 producing an error.
 
-\ournewitem{writeq(+Stream\_or\_alias, ?Term)}{ISO}
-\index{\texttt{writeq/2}}
+\isoitem{writeq(+Stream\_or\_alias, ?Term)}{writeq/2}
+%
 	{\tt writeq/2} has the same behavior as {\tt writeq/1} but the
 	output stream is explicitly designated using the first argument.
 
@@ -1479,7 +1459,7 @@ producing an error.
 \ei
 
 \index{canonical format}
-\ournewitem{write\_canonical(?Term)}{ISO}\index{\texttt{write\_canonical/1}}
+\isoitem{write\_canonical(?Term)}{write\_canonical/1}
 %
 This predicate is provided so that the HiLog term {\tt Term}, if
 written to a file, can be read back using {\tt read\_canonical/[1,2]}
@@ -1513,8 +1493,8 @@ little likelihood that they will not be in effect by any Prolog
 reader.  We therefore deviate from the ISO standard definition of
 canonical in these cases.
 
-\ournewitem{write\_canonical(+Stream\_or\_alias, ?Term)}{ISO}
-\index{\texttt{write\_canonical/2}}
+\isoitem{write\_canonical(+Stream\_or\_alias, ?Term)}{write\_canonical/2}
+%
 {\tt write\_canonical/2} has the same behavior as {\tt
 write\_canonical/1} but the output stream is explicitly designated
 using the first argument.
@@ -1550,39 +1530,41 @@ using the first argument.
     always succeeds without producing an error. After returning from a call 
     to this predicate, the current output stream remains unchanged.
 
-\ournewitem{write\_prolog(?Term)}{HiLog}\index{\texttt{write\_prolog/1}}
-    This predicate acts as does {\tt write/1} except that any HiLog
-    term {\tt Term} is written as a Prolog term.  {\tt
-    write\_prolog/1} outputs {\tt Term} according to the operator
-    declarations in force.  Because of this, it differs from {\tt
-    write\_canonical/1} described above, despite the fact that both
-    predicates write HiLog terms as Prolog terms.
+\ourrepeatstandarditem{write\_prolog(?Term)}{write\_prolog/1}{HiLog}
+\ourstandarditem{write\_prolog(+Stream\_or\_alias,?Term)}{write\_prolog/1}{HiLog}
+%
+   {\tt write\_prolog/1} acts as {\tt write/1} except that any proper
+   HiLog term {\tt Term} is written using Prolog syntax -- i.e. as a
+   term whose outer functor is apply.  {\tt write\_prolog/1} outputs
+   {\tt Term} according to the operator declarations in force.
+   Because of this, it differs from {\tt write\_canonical/1} described
+   above, despite the fact that both predicates write HiLog terms as
+   Prolog terms.
 
-\ournewitem{write\_prolog(+Stream\_or\_alias,?Term)}{HiLog}
-\index{\texttt{write\_prolog/2}}
-	{\tt write\_prolog/2} has the same behavior as {\tt
-	write\_prolog/1} but the output stream is explicitly
-	designated using the first argument.
+   {\tt write\_prolog/2} has the same behavior as {\tt
+     write\_prolog/1} but the output stream is explicitly designated
+   using the first argument.  Error Cases for {\tt write\_prolog/2}
+   are the same as for {\tt write/2}.
 
-{\bf Error Cases} are the same as {\tt write\_term/2} but with these
-additions.
-\bi
-\item 	{\tt Stream\_or\_alias} is a variable
-\bi
-\item {\tt instantiation\_error}
-\ei
-\item 	{\tt Stream\_or\_alias} is neither a variable nor a stream term nor an alias.
-\bi
-\item 	{\tt domain\_error(stream\_or\_alias,Stream\_or\_alias)}
-\ei
-\item 	{\tt Stream\_or\_alias} is not associated with an open output stream
-\bi
-\item 	{\tt existence\_error(stream,Stream\_or\_alias)}
-\ei
-\ei
+    Examples:
+    {\footnotesize
+     \begin{verbatim}
+                | ?- write_prolog(X(a,1+2)).
+                apply(_h120,a,1 + 2)
 
-\ourmoditem{numbervars(+Term, +FirstN, ?LastN)}{num\_vars}
-\index{\texttt{numbervars/3}}
+                yes
+                | ?- write(X(a,1+2)).
+                _h120(a,1 + 2)
+
+                yes
+                | ?- write_canonical(X(a,1+2)).
+                apply(_h120,a,+(1,2))
+
+                yes
+     \end{verbatim}}
+
+
+\ourmoditem{numbervars(+Term, +FirstN, ?LastN)}{numbervars/3}{num\_vars}
 %\predindex{numbervars/3~(L)}
     This predicate provides a mechanism for grounding a (HiLog) term
     so that it may be analyzed.  Each variable in the (HiLog) term
@@ -1595,7 +1577,7 @@ additions.
     has the value {\tt LastN-1}.
 % $ for prettyprinter....
 
-\ourmoditem{numbervars(+Term)}{num\_vars}\index{\texttt{numbervars/1}}
+\ourmoditem{numbervars(+Term)}{numbervars/1}{num\_vars}
 %\predindex{numbervars/1~(L)}
     This predicate is defined as:
     \begin{center}
@@ -1603,8 +1585,7 @@ additions.
     \end{center}
     It is included solely for convenience.
 
-\ourmoditem{unnumbervars(+Term, +FirstN, ?Copy)}{num\_vars}
-\index{\texttt{unnumbervars/3}}
+\ourmoditem{unnumbervars(+Term, +FirstN, ?Copy)}{unnumbervars/3}{num\_vars}
 %\predindex{unnumbervars/3~(B)}
     This predicate is a partial inverse of predicate {\tt
     numbervars/3}.  It creates a copy of Term in which all subterms of
@@ -1629,8 +1610,8 @@ be useful to ensure that output goes to one of the other I/O streams.
 
 \begin{description}
 
-\ourrepeatmoditem{error\_write(?Message)}{standard}\index{\texttt{error\_write/1}}
-\ourmoditem{error\_writeln(?Message)}{standard}\index{\texttt{error\_writeln/1}}
+\ourrepeatmoditem{error\_write(?Message)}{error\_write/1}{standard}
+\ourmoditem{error\_writeln(?Message)}{error\_writeln/1}{standard}
 %
 These predicates output {\tt Message} to XSB's {\tt STDERR} stream,
 rather than to XSB's {\tt STDOUT} stream, as does {\tt write/1} and
@@ -1639,13 +1620,13 @@ list, the elements in the comma list are output as if they were
 concatenated together.  Each of these predicates must be imported from
 the module {\tt standard}.
 
-\ourrepeatmoditem{console\_write(?Message)}{standard}\index{\texttt{console\_write/1}}
-\ourmoditem{console\_writeln(?Message)}{standard}\index{\texttt{console\_writeln/1}}
+\ourrepeatmoditem{console\_write(?Message)}{console\_write/1}{standard}
+\ourmoditem{console\_writeln(?Message)}{console\_writeln/1}{standard}
 %
 As above, but writes to {\tt STDFDBK}, the console feedback stream.
 
-\ourrepeatmoditem{warning(?Message)}{standard}\index{\texttt{warning/1}}
-%\ourmoditem{warningln(?Message)}{standard}\index{\texttt{warningln/1}}
+\ourmoditem{warning(?Message)}{warning/1}{standard}
+%\ourmoditem{warningln(?Message)}{warningln/1}{standard}
 %
 By default, this predicate outputs {\tt Message} to XSB's {\tt
   STDWARN} stream, rather than to XSB's {\tt STDOUT} stream, as does
@@ -1662,8 +1643,8 @@ which performs no action when {\tt warning/1} is called. or {\tt
 The default behavior can be restored by setting {\tt warning\_action}
 to {\tt print\_warning}.
 
-\ourrepeatmoditem{message(?Message)}{standard}\index{\texttt{message/1}}
-\ourmoditem{messageln(?Message)}{standard}\index{\texttt{messageln/1}}
+\ourrepeatmoditem{message(?Message)}{message/1}{standard}
+\ourmoditem{messageln(?Message)}{messageln/1}{standard}
 %
 As above, but writes to {\tt STDMSG} the standard stream for messages.
 
@@ -1908,10 +1889,8 @@ Like {\tt file\_read\_line\_atom/1} but reads from {\tt Stream\_or\_alias}.
 \ei
 \ei
 
-\ourrepeatmoditem{file\_write\_line(+String, +Offset)}{file\_io}
-\ourmoditem{file\_write\_line(+Stream\_or\_alias, +String, +Offset)}{file\_io}
-\index{\texttt{file\_write\_line/2}}
-\index{\texttt{file\_write\_line/3}}
+\ourrepeatmoditem{file\_write\_line(+String, +Offset)}{file\_write\_line/2}{file\_io}
+\ourmoditem{file\_write\_line(+Stream\_or\_alias, +String, +Offset)}{file\_write\_line/3}{file\_io}
 %
 These predicates write {\tt String} beginning with character {\tt
   Offset} to the current output stream. {\tt String} can be an atom or
@@ -1941,23 +1920,9 @@ if {\tt String} is an atom.
 \ei
 \ei
 
-
-
-%----------------------------------------------------------------------------------------------
-\comment{ TLS: isn't this file_getbuf_list?
-%\ournewitem{file\_getbuf(+Stream\_or\_alias, +BytesRequested, -String, -BytesRead)}{file\_io}
-\index{\texttt{file\_getbuf/4}}
-Read {\tt BytesRequested} bytes from file represented by {\tt
-Stream\_or\_alias} (which must already be open for reading) into
-variable {\tt String}. This is analogous to {\tt fread} in C.  This
-predicate always succeeds. It does not distinguish between a file
-error and end of file.  You can determine if either of these
-conditions has happened by verifying that $\tt BytesRead <
-BytesRequested$.
-}
 %----------------------------------------------------------------------------------------------
 
-\ourmoditem{file\_getbuf\_list(+Stream\_or\_alias, +BytesRequested, -CharList, -BytesRead)}{file\_io} \index{\texttt{file\_getbuf\_list/4}}
+\ourmoditem{file\_getbuf\_list(+Stream\_or\_alias, +BytesRequested, -CharList, -BytesRead)}{file\_getbuf\_list/4}{file\_io} 
 Read {\tt BytesRequested} bytes from file represented by {\tt
 Stream\_or\_alias} (which must already be open for reading) into
 variable {\tt String} as a list of character codes. This is analogous
@@ -1966,15 +1931,14 @@ distinguish between a file error and end of file.  You can determine
 if either of these conditions has happened by verifying that $\tt
 BytesRead < BytesRequested$.
 
-\ourmoditem{file\_getbuf\_list(+BytesRequested, -String, -BytesRead)}{file\_io}
-\index{\texttt{file\_getbuf\_list/3}}
-
+\ourmoditem{file\_getbuf\_list(+BytesRequested, -String, -BytesRead)}{file\_getbuf\_list/3}{file\_io}
+%
 Like \verb|file_getbuf_list/3|, but reads from the currently open input stream
 ({\it i.e.}, with {\tt see/1}).
 
 
-\ourmoditem{file\_getbuf\_atom(+Stream\_or\_alias, +BytesRequested, -String, -BytesRead)}{file\_io}
-\index{\texttt{file\_file\_getbuf\_atom/4}}
+\ourmoditem{file\_getbuf\_atom(+Stream\_or\_alias, +BytesRequested, -String, -BytesRead)}{file\_file\_getbuf\_atom/4}{file\_io}
+
 Read {\tt BytesRequested} bytes from file represented by {\tt
 Stream\_or\_alias} (which must already be open for reading) into
 variable {\tt String}. This is analogous to {\tt fread} in C.  This
@@ -2003,12 +1967,12 @@ read\_getbuf\_list} or another predicate in this case.
 \ei
 \ei
 
-\ourmoditem{file\_getbuf\_atom(+BytesRequested, -String, -BytesRead)}{file\_io}
-\index{\texttt{file\_getbuf\_atom/3}}
+\ourmoditem{file\_getbuf\_atom(+BytesRequested, -String, -BytesRead)}{file\_getbuf\_atom/3}{file\_io}
+%
 Like \verb|file_getbuf_atom/4|, but reads from the currently open input stream.
 
-\ourmoditem{file\_putbuf(+Stream\_or\_alias, +BytesRequested, +String, +Offset, -BytesWritten)}{file\_io}
-\index{\texttt{file\_putbuf/5}}
+\ourmoditem{file\_putbuf(+Stream\_or\_alias, +BytesRequested, +String, +Offset, -BytesWritten)}{file\_putbuf/5}{file\_io}
+
 Write {\tt BytesRequested} bytes into file represented by I/O port
 {\tt Stream\_or\_alias} (which must already be open for writing) from
 variable {\tt String} at position {\tt Offset}. This is analogous to C
@@ -2031,8 +1995,8 @@ ASCII characters.
 \ei
 \ei
 
-\ourmoditem{file\_putbuf(+BytesRequested, +String, +Offset, -BytesWritten)}{file\_io}
-\index{\texttt{file\_putbuf/4}}
+\ourmoditem{file\_putbuf(+BytesRequested, +String, +Offset, -BytesWritten)}{file\_putbuf/4}{file\_io}
+%
 Like \verb|file_putbuf/3|, but output goes to the currently open output stream.
 
 
@@ -2075,62 +2039,102 @@ control, along with interprocess communication.
 
 \begin{description}
 
-\standarditem{shell(+SystemCall)}{shell/1}
-    Calls the operating system with the atom {\tt SystemCall} as argument.
-    It succeeds if {\tt SystemCall} is executed successfully, otherwise it
-    fails.  As a notational convenience, the user can supply {\tt SystemCall} 
-    in the form of a list (something currently not possible for {\tt shell/2}).
+\standarditem{shell(+SystemCall)}{shell/1} 
+%
+Calls the operating system with the atom {\tt SystemCall} as argument,
+using the {\tt libc} function {\tt system()}.  The predicate succeeds
+if {\tt SystemCall} is executed successfully, otherwise it fails.  As
+a notational convenience, the user can also supply {\tt SystemCall}
+either as a list.  In this case, elements of the list will be
+concatenated together to form the system call.
 
     For example, the call:
 
     \demo{{\tt $|$ ?- shell('echo \$HOME').}}
 
     \noindent
-    will output in the current output stream of \ourprolog\ the name of
-    the user's home directory; while the call:
+    will output in the current output stream of XSB the name of the
+    user's home directory; while the call:
 
     \demo{{\tt $|$ ?- File = 'test.c', shell(['cc -c ', File]).}}
 
     \noindent
     will call the C compiler to compile the file {\tt test.c}.
 
-    Note that in UNIX systems, since {\tt shell/1} is executed by
-    forking off a shell process, it cannot be used, for example, to
-    change the working directory of the interpreter.  For that reason
-    the standard predicate {\tt cd/1} described below should be used.
+    Note that in UNIX systems, since {\tt system()} (and {\tt
+      shell/1}) executes by forking off a shell process.  Thus it
+    cannot be used, for example, to change the working directory of
+    the program.  For that reason the standard predicate {\tt cd/1}
+    described below should be used.
 
-%    {\em Note to DOS users.} \index{DOS}  The {\tt shell/1} command works
-%    for DOS through the underlying GNU djgpp mechanism used to stream \ourprolog.
+{\bf Error Cases}
+\bi
+\item  {\tt SystemCall} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item {\tt SystemCall} is neither an atom nor a list
+\bi
+\item {\tt type\_error(atom\_or\_list,SystemCall)}
+\ei
+\ei
 
 \standarditem{shell(+SystemCall, -Result)}{shell/2}
-    Calls the operating system with the atom {\tt SystemCall} as argument
-    and returns the result of the call in {\tt Result}.  In comparison with
-    {\tt shell/1} this predicate always succeeds, even if the {\tt SystemCall} 
-    cannot be successfully executed.
+%
+Calls the operating system with the atom {\tt SystemCall} as argument,
+using the {\tt libc} function {\tt system()}.  As a notational
+convenience, the user can also supply {\tt SystemCall} as a list.  In
+in this case, elements of the list will be concatenated together to
+form the system call.  {\tt shell/2} always succeeds instantiating
+{\tt Result} to the exit code of {\tt system()}.  Thus {\tt Result}
+will be 0 if {\t SystemCall} executed properly, and non-0 otherwise:
+the specific return values of {\tt system()} may be platform-dependent.
 
-\standarditem{shell\_to\_list(+SystemCall,-Output,-Result)}{shell\_to\_list/3}
-Calls the operating system with the atom {\tt SystemCall} as argument
-returns the result of the call in {\tt Result}, and the output of {\tt
-  SystemCall} tokenized to {\tt Output}.  {\tt Output} is a list of
-lists: each element of the outer list corresponds to a line of output
-from {\tt SystemCall}, while each element of an inner list corresponds
-to a token in that line.  {\tt shell\_to\_list/3} is thus a sort of
-Prolog analog of the shell command \verb|`SystemCall`|.
+{\bf Error Cases}
+\bi
+\item  {\tt SystemCall} is a variable
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item {\tt SystemCall} is neither an atom nor a list
+\bi
+\item {\tt type\_error(atom\_or\_list,SystemCall)}
+\ei
+\item {\tt Result} is not a variable
+\bi
+\item {\tt type\_error(variable,Result)}
+\ei
+\ei
 
-In comparison with {\tt shell/1} this predicate always succeeds, even
-if the {\tt SystemCall} cannot be successfully executed.
 
-Example:
+\repeatstandarditem{shell\_to\_list(+SystemCall,-StdOut,-ErrOut,-Result)}{shell\_to\_list/4}
+\standarditem{shell\_to\_list(+SystemCall,-StdOut,-Result)}{shell\_to\_list/3}
+%
+Behaves as {\tt shell/2} in its 1st and 4th arguments, and like {\tt
+  shell/2} always suceeds.  Both {\tt StdOut} and {\tt ErrOut} are
+lists of lists: each element of the outer list corresponds to a line
+of output from {\tt SystemCall}, while each element of an inner list
+corresponds to a token in that line.  {\tt shell\_to\_list/3} is thus
+a sort of Prolog analog of the shell command \verb|`SystemCall`|.
+
+Examples:
 \begin{verbatim}
-shell_to_list(sw_vers,F,G).
+  ?- shell_to_list(sw_vers,Stdout,Ret).
 
-F = [[ProductName:,Mac,OS,X],[ProductVersion:,10.4.9],[BuildVersion:,8P2137]]
-G = 0
+  Stdout = [[ProductName:,Mac,OS,X],[ProductVersion:,10.4.9],[BuildVersion:,8P2137]]
+  Ret = 0
+
+  ?- shell_to_lists('gcc -c nofile.c',StdOut,StdErr,Ret).
+
+  Stdout = []
+  StdErr = [[i686-apple-darwin8-gcc-4.0.1:,nofile.c:,No,such,file,or,directory]]
+  Ret = 256
 \end{verbatim}
 
-\ourmoditem{datime(?Date)}{standard}
-\index{\texttt{datime/1}}
+Error cases are as with {\tt shell/2}
 
+\ourmoditem{datime(?Date)}{datime/1}{standard}
+%
 Unifies {\tt Date} to the current date, returned as a Prolog term,
 suitable for term comparison.  Note that {\tt datime/1} must be
 explicitly imported from the module {\tt standard}.
@@ -2278,7 +2282,7 @@ future release \footnote{We also note that the ISO Prolog evaluable
   in \version .}.
 
 \begin{description}
-\standarditem{is(?Result,+Expression)}{is/2}
+\isoitem{is(?Result,+Expression)}{is/2}
 {\tt is(Result,Expression)} is true iff the result of evaluating {\tt
 Expression} as a sequence of evaluable functors unifies with {\tt
 Result}.  As mentioned in Section~\ref{inline_predicates}, {\tt is/2}
@@ -2289,27 +2293,27 @@ will not be visible during a trace of program execution.
 \subsection{Evaluable Functors for Arithmetic Expressions} \label{sec:arith-eval}
 
 \begin{description}
-\ournewitem{+(+Expr1,+Expr2)}{Evaluable Functor}\index{\texttt{+/2}} 
+\ourstandarditem{+(+Expr1,+Expr2)}{+/2}{Evaluable Functor (ISO)}
 If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2} evaluates
 to {\tt Number2}, returns {\tt Number1 + Number2}, performing any
 necessary type conversions.
 
-\ournewitem{-(+Expr1,+Expr2)}{Evaluable Functor}\index{\texttt{-/2}} 
+\ourstandarditem{-(+Expr1,+Expr2)}{-/2}{Evaluable Functor (ISO)}
 If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2} evaluates
 to {\tt Number2}, returns {\tt Number1 - Number2}, performing any
 necessary type conversions.
 
-\ournewitem{*(+Expr1,+Expr2)}{Evaluable Functor}\index{\texttt{*/2}} 
+\ourstandarditem{*(+Expr1,+Expr2)}{*/2}{Evaluable Functor (ISO)}
 If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2} evaluates
 to {\tt Number2}, returns {\tt Number1 * Number2} (i.e. multiplies
 them), performing any necessary type conversions.
 
-\ournewitem{/(+Expr1,Expr2)}{Evaluable Functor}\index{\texttt{'/'/2}}
+\ourstandarditem{/(+Expr1,Expr2)}{'/'/2}{Evaluable Functor (ISO)}
 If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2} evaluates
 to {\tt Number2}, returns {\tt Number1 / Number2} (i.e. divides
 them), performing any necessary type conversions.
 
-\ournewitem{//(+Expr1,Expr2)}{Evaluable Functor}\index{\texttt{'//'/2}}
+\ourstandarditem{//(+Expr1,Expr2)}{'//'/2}{Evaluable Functor (ISO)}
 If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2} evaluates
 to {\tt Number2}, returns {\tt Number1 // Number2} (i.e. integer
 division), performing any necessary type conversions, and rounding to
@@ -2335,61 +2339,74 @@ division), performing any necessary type conversions, and rounding to
                 yes
   \end{verbatim}}
 
-\ournewitem{-(+Expr1)}{Evaluable Functor}\index{\texttt{-/1}} If {\tt
-+Expr} evaluates to {\tt Number}, returns {\tt -Number1},
-performing any necessary type conversions.
+\ourstandarditem{-(+Expr1)}{-/1}{Evaluable Functor (ISO)}
+%
+ If {\tt +Expr} evaluates to {\tt Number}, returns {\tt -Number1},
+ performing any necessary type conversions.
 
-\ournewitem{'$\wedge$'(+Expr1,+Expr2)}{Evaluable Functor}
-\index{\texttt{'/\'/2}} If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2}
+\ourstandarditem{'$\wedge$'(+Expr1,+Expr2)}{'$\wedge$'/2}{Evaluable Functor (ISO)}
+%
+ If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2}
 evaluates to {\tt Number2}, returns the bitwise conjunction of {\tt
 Number1} and {\tt Number2}.
 
-\ournewitem{'$\vee$'(+Expr1,+Expr2)}{Evaluable Functor}
-\index{\texttt{'\/'/2}} If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2}
-evaluates to {\tt Number2}, returns the bitwise disjunction {\tt
-Number1} and {\tt Number2}.
+\ourstandarditem{'$\vee$'(+Expr1,+Expr2)}{'$\vee$'/2}{Evaluable Functor (ISO)}
 
-\ournewitem{'>>'(+Expr1,+Expr2)}{Evaluable Functor}
-\index{\texttt{'>>'/2}} If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2}
-evaluates to {\tt Number2}, returns the logical shift right of 
-{\tt Number1}, {\tt Number2} places.
+%
+If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2} evaluates
+to {\tt Number2}, returns the bitwise disjunction {\tt Number1} and
+{\tt Number2}.
 
-\ournewitem{'<<'(+Expr1,+Expr2)}{Evaluable Functor}
-\index{\texttt{'>>'/2}} If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2}
+\ourstandarditem{'>>'(+Expr1,+Expr2)}{'>>'/2}{Evaluable Functor (ISO)}
+%
+If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2} evaluates
+to {\tt Number2}, returns the logical shift right of {\tt Number1},
+{\tt Number2} places.
+
+\ourstandarditem{'<<'(+Expr1,+Expr2)}{'<<'/2}{Evaluable Functor (ISO)}
+%
+If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2}
 evaluates to {\tt Number2}, returns the logical shift left of 
 {\tt Number1}, {\tt Number2} places.
 
-\ournewitem{'><'(+Expr1,+Expr2)}{Evaluable Functor}
-\index{\texttt{'><'/2}} If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2}
+\ourstandarditem{'><'(+Expr1,+Expr2)}{'><'/2}{Evaluable Functor (ISO)}
+%
+If {\tt +Expr1} evaluates to {\tt Number1}, and {\tt Expr2}
 evaluates to {\tt Number2}, returns the bitwise exclusive or of 
 {\tt Number1} and {\tt Number2}.
 
-\ournewitem{min(+Expr1,+Expr2)}{Evaluable Functor}
-\index{\texttt{min/2}} If {\tt +Expr1} evaluates to {\tt Number1}, and
+\ourstandarditem{min(+Expr1,+Expr2)}{min/2}{Evaluable Functor (ISO)}
+%
+If {\tt +Expr1} evaluates to {\tt Number1}, and
 {\tt Expr2} evaluates to {\tt Number2}, returns the minimum of the
 two.
 
-\ournewitem{max(+Expr1,+Expr2)}{Evaluable Functor}
-\index{\texttt{max/2}} If {\tt +Expr1} evaluates to {\tt Number1}, and
+\ourstandarditem{max(+Expr1,+Expr2)}{max/2}{Evaluable Functor (ISO)}
+%
+If {\tt +Expr1} evaluates to {\tt Number1}, and
 {\tt Expr2} evaluates to {\tt Number2}, returns the maximum of the
 two.
 
-\ournewitem{ceiling(+Expr)}{Evaluable Functor}\index{\texttt{ceiling/1}}
+\ourstandarditem{ceiling(+Expr)}{ceiling/1}{Evaluable Functor (ISO)}
+%
 If {\tt +Expr} evaluates to {\tt Number}, {\tt ceiling(Number)}
 returns the integer ceiling of {\tt Number} if {\tt Number} is a
 float, and {\tt Number} itself if {\tt Number} is an integer.
 
-\ournewitem{float(+Expr)}{Evaluable Functor}\index{\texttt{float/1}} If
-{\tt +Expr} evaluates to {\tt Number}, {\tt float(Number)} converts 
-{\tt Number} to a float if {\tt Number} is an integer, and returns {\tt
-Number} itself if {\tt Number} is a float.
+\ourstandarditem{float(+Expr)}{float/1}{Evaluable Functor (ISO)}
+%
+If {\tt +Expr} evaluates to {\tt Number}, {\tt float(Number)} converts
+{\tt Number} to a float if {\tt Number} is an integer, and returns
+{\tt Number} itself if {\tt Number} is a float.
 
-\ournewitem{floor(+Expr)}{Evaluable Functor}\index{\texttt{floor/1}} If
-{\tt +Expr} evaluates to {\tt Number}, {\tt floor(Number)} returns the
-integer floor of {\tt Number} if {\tt Number} is a float, and {\tt
-Number} itself if {\tt Number} is an integer.
+\ourstandarditem{floor(+Expr)}{floor/1}{Evaluable Functor (ISO)}
+%
+If {\tt +Expr} evaluates to {\tt Number}, {\tt floor(Number)} returns
+the integer floor of {\tt Number} if {\tt Number} is a float, and {\tt
+  Number} itself if {\tt Number} is an integer.
 
-\ournewitem{mod(+Expr1,+Expr2)}{Evaluable Functor}\index{\texttt{mod/2}}
+\ourstandarditem{mod(+Expr1,+Expr2)}{mod/2}{Evaluable Functor (ISO)}
+%
 If {\tt +Expr1} evaluates to {\tt Number1} and {\tt Expr2} evaluates
 to {\tt Number2} where {\tt Number2} is not 0, {\tt
 mod(Number1,Number2)} returns
@@ -2397,7 +2414,8 @@ mod(Number1,Number2)} returns
 	Number1 - (\lfloor (Number1 / Number2) \rfloor) \times Number2)
 \]
 
-\ournewitem{rem(+Expr1,+Expr2)}{Evaluable Functor}\index{\texttt{rem/2}}
+\ourstandarditem{rem(+Expr1,+Expr2)}{rem/2}{Evaluable Functor (ISO)}
+%
 If {\tt +Expr1} evaluates to {\tt Number1} and {\tt Expr2} evaluates
 to {\tt Number2} where {\tt Number2} is not 0, {\tt
 rem(Number1,Number2)} returns
@@ -2430,38 +2448,41 @@ rem(Number1,Number2)} returns
                 yes
   \end{verbatim}}
 
-\ournewitem{round(+Expr)}{Evaluable Functor}\index{\texttt{round/1}} If
-{\tt +Expr} evaluates to {\tt Number}, {\tt round(Number)} returns the
-nearest integer to {\tt Number} if {\tt Number} is a float, and {\tt
-Number} itself if {\tt Number} is an integer.
+\ourstandarditem{round(+Expr)}{round/1}{Evaluable Functor (ISO)}
+%
+If {\tt +Expr} evaluates to {\tt Number}, {\tt round(Number)} returns
+the nearest integer to {\tt Number} if {\tt Number} is a float, and
+{\tt Number} itself if {\tt Number} is an integer.
 
-\ournewitem{'**'(+Expr1,+Expr2)}{Evaluable Functor} \index{\texttt{**/2}} 
+\ourstandarditem{'**'(+Expr1,+Expr2)}{**/2}{Evaluable Functor (ISO)}
 %
 If {\tt Expr1} and {\tt Expr2} both evaluate to numbers, the infix
 function {\tt **/2} raises {\tt Expr1} to the {\tt Expr2} power.  If
 {\tt Expr1} and {\tt Expr2} both evaluate to integers, an integer is
 returned; otherwise a float is returned.
 
-\ournewitem{sqrt(+Expr)}{Evaluable Functor}\index{\texttt{sqrt/1}}
+\ourstandarditem{sqrt(+Expr)}{sqrt/1}{Evaluable Functor (ISO)}
+%
 If {\tt +Expr} evaluates to {\tt Number}, {\tt sqrt(Number)}
 returns the square root of {\tt Number}.
 
-\ournewitem{truncate(+Expr)}{Evaluable Functor}
-\index{\texttt{truncate/1}} If {\tt +Expr} evaluates to {\tt Number}, {\tt
-truncate(Number)} truncates {\tt Number} if {\tt Number} is a float,
-and returns {\tt Number} itself if {\tt Number} is an integer.
+\ourstandarditem{truncate(+Expr)}{truncate/1}{Evaluable Functor (ISO)}
+%
+If {\tt +Expr} evaluates to {\tt Number}, {\tt truncate(Number)}
+truncates {\tt Number} if {\tt Number} is a float, and returns {\tt
+  Number} itself if {\tt Number} is an integer.
 
-\ournewitem{sign(+Expr)}{Evaluable Functor}\index{\texttt{sign/1}} 
+\ourstandarditem{sign(+Expr)}{sign/1}{Evaluable Functor (ISO)}
 %
 If {\tt +Expr} evaluates to {\tt Number}, {\tt sign(Number)} returns
 {\tt 1} if {\tt Number} is greater than 0, {\tt 0} if {\tt Number} is
 equal to 0, and {\tt -1} if {\tt Number} is less than 0.
 
-\ournewitem{pi}{Evaluable Functor}\index{\texttt{pi/0}} 
+\ourstandarditem{pi}{pi/0}{Evaluable Functor (ISO)}
 % 
 Evaluates to $\pi$ within an arithemetic expression.
 
-\ournewitem{e}{Evaluable Functor}\index{\texttt{e/0}} 
+\ourstandarditem{e}{e/0}{Evaluable Functor (ISO)}
 % 
 Evaluates to $e$, the base of the natural logarithm, within an
 arithemetic expression.
@@ -2469,9 +2490,9 @@ arithemetic expression.
 \end{description}
 
 \subsubsection{Mathematical Functions from {\tt math.h}}
-\index{\texttt{cos/1}} \index{\texttt{sin/1}} \index{\texttt{tan/1}}
-\index{\texttt{acos/1}} \index{\texttt{asin/1}} \index{\texttt{atan/1}}
-\index{\texttt{log/1}} \index{\texttt{log10/1}}
+\stdrefindex{cos/1} \stdrefindex{sin/1} \stdrefindex{tan/1}
+\stdrefindex{acos/1} \stdrefindex{asin/1} \stdrefindex{atan/1}
+\stdrefindex{log/1} \stdrefindex{log10/1}
 
 XSB also allows as evaluable functors, many of the functions from the
 C library {\tt math.h}.  Functions included in XSB \version{} are {\tt
@@ -2484,15 +2505,14 @@ These predicates are standard and often self-explanatory, so they are
 described only briefly.
 \begin{description}
 
-\ournewitem{true}{ISO}\index{\texttt{true/0}} 
-%\predindex{true/0~(I)}
+\isoitem{true}{true/0}
     Always succeeds.
 
 \standarditem{otherwise}{otherwise/0}
 %\predindex{otherwise/0~(B)}
     Same as {\tt true/0}.
 
-\ournewitem{fail}{ISO}\index{\texttt{fail/0}}
+\isoitem{fail}{fail/0}
 %\predindex{fail/0~(I)}
     Always fails.
 
@@ -2503,7 +2523,7 @@ described only briefly.
 \index{control}
 
 \begin{description}
-\ournewitem{\cut}{ISO}~<\index{\texttt{"!/0}}  \index{cut} 
+\isoitem{\cut}{"!/0}  \index{cut} 
     Cut (discard) all choice points made since the parent goal
     started execution.
     Cuts across tabled predicates are not valid.  The compiler checks for
@@ -2513,12 +2533,14 @@ described only briefly.
     Further discussion of conditions allowing cuts and of their actions 
     can be found in Section~\ref{tabling_env}.
 
-\ournewitem{$\backslash$+ +P}{ISO}\index{$\backslash$\texttt{+/1}} If
-the goal {\tt P} has a solution, fails, otherwise it succeeds.
+%\isoitem{$\backslash$+ +P}{\verb|\+/2|}
+\ournewitem{$\backslash$+ +P}{ISO}\index{$\backslash$\texttt{+/1}}\index[pred]{$\backslash$\texttt{+/1}} 
+%
+If the goal {\tt P} has a solution, fails, otherwise it succeeds.
 Equivalently, it is true iff {\tt call(P)} (see
 Section~\ref{meta_predicates}) is false. Argument {\tt P} must be
 ground for sound negation as failure, although no runtime checks are
-made.  
+made.
 
 {\bf Error Cases}
     \begin{description}
@@ -2528,7 +2550,7 @@ made.
 	{\tt P} is not callable.
     \end{description}
 
-\ourrepeatitem{fail\_if(+P)}\index{\texttt{fail\_if/1}} 
+\repeatstandarditem{fail\_if(+P)}{fail\_if/1}
 \standarditem{not +P}{not/1}
 %
 Like {\tt $\backslash$+/1} and provided for compatibility with legacy
@@ -2541,7 +2563,7 @@ portability.
 All error cases are the same as {\tt call/1} (see
 Section~\ref{meta_predicates}).
 
-\ournewitem{tnot(+P)}{Tabling}\index{\texttt{tnot/1}}\label{tnot/1}
+\ourstandarditem{tnot(+P)}{tnot/1}{Tabling} \label{tnot/1}
     The semantics of {\tt tnot/1} allows for correct execution of
     programs with according to the well-founded semantics.  {\tt P}
     must be a tabled predicate, 
@@ -2557,17 +2579,22 @@ Section~\ref{meta_predicates}).
     functionality of {\tt tnot/1}.
 
 {\bf Error Cases}
-    \begin{description}
-    \item[{\tt instantiation\_error}]
-	{\tt P} is not ground (floundering occurs).
-    \item[{\tt type\_error(callable,P)}]
-	{\tt P} is not callable.
-    \item[{\tt table\_error}]
-	{\tt P} is not a call to a tabled predicate.
-    \end{description}
+\begin{itemize}
+\item	{\tt P} is not ground (floundering occurs)
+\bi
+    \item {\tt instantiation\_error}
+\ei
+\item	{\tt P} is not callable
+\bi
+     \item {\tt type\_error(callable,P)}
+\ei
+\item {\tt P} is not a call to a tabled predicate
+\bi
+     \item{\tt table\_error}
+\ei
+\end{itemize}
 
-
-    \ournewitem{sk\_not(+P)}{Tabling}\index{\texttt{sk\_not/1}} 
+\ourstandarditem{sk\_not(+P)}{sk\_not/1}{Tabling} 
 %% 
 If {\tt +P} is a tabled predicate, {\tt sk\_not/1} acts as {\tt
   tnot/1} but permits variables in its subgoal argument~\footnote{{\tt
@@ -2592,6 +2619,18 @@ If {\tt +P} is a non-tabled predicate {\tt sk\_not/1} ensures that
   sk\_not/1} can be used with non-tabled predicates as well,
 regardless of whether {\tt +P} is ground or not.
 
+{\bf Error Cases}
+\begin{itemize}
+\item	{\tt P} is not instantiated
+\bi
+    \item {\tt instantiation\_error}
+\ei
+\item	{\tt P} is not callable
+\bi
+     \item {\tt type\_error(callable,P)}
+\ei
+\end{itemize}
+
 \ournewitem{P -> Q ; R}{ISO}\index{\texttt{->/2}} 
     Analogous to if {\tt P} then {\tt Q} else {\tt R}, i.e.\ defined as 
     if by
@@ -2611,7 +2650,7 @@ regardless of whether {\tt +P} is ground or not.
 	{\tt P -> Q ; fail.}
 	\end{center}
 
-\ournewitem{repeat}{ISO}  \index{\texttt{repeat/2}}
+\standarditem{repeat}{repeat/0}
     Generates an infinite sequence of choice points (in other words it 
     provides a very convenient way of executing a loop). It is defined 
     by the clauses:
@@ -2624,7 +2663,7 @@ regardless of whether {\tt +P} is ground or not.
     \end{minipage}
     \end{center}
 
-\ourmoditem{between(+L,+U,B)}{basics}\index{\texttt{between/3}} 
+\ourmoditem{between(+L,+U,B)}{between/3}{basics}
 %
 For {\tt L} and {\tt U} integers, with {\tt L} less than or equal to
 {\tt U}, successive calls to {\tt between/3} unify {\tt B} with all
@@ -2655,7 +2694,7 @@ which provide special operations on HiLog terms.  For a full
 discussion of Prolog and HiLog terms see Section~\ref{TermSyntax}.
 
 \begin{description}
-\ournewitem{var(?X)}{ISO}\index{\texttt{var/1}} 
+\isoitem{var(?X)}{var/1}
     Succeeds if {\tt X} is currently uninstantiated (i.e.\ is still a 
     variable); otherwise it fails.  
 
@@ -2680,12 +2719,12 @@ discussion of Prolog and HiLog terms see Section~\ref{TermSyntax}.
      \end{verbatim}}
 
 
-\ournewitem{nonvar(?X)}{ISO}\index{\texttt{nonvar/1}} 
+\isoitem{nonvar(?X)}{nonvar/1}
     Succeeds if {\tt X} is currently instantiated to a non-variable term;
     otherwise it fails. This has exactly the opposite behaviour of 
     {\tt var/1}\@.
 
-\ournewitem{atom(?X)}{ISO}\index{\texttt{atom/1}} 
+\isoitem{atom(?X)}{atom/1}
     Succeeds only if the {\tt X} is currently instantiated to an atom, that
     is to a Prolog or HiLog non-numeric constant.
 
@@ -2708,11 +2747,11 @@ discussion of Prolog and HiLog terms see Section~\ref{TermSyntax}.
                 yes
      \end{verbatim}}
 
-\ournewitem{integer(?X)}{ISO}\index{\texttt{integer/1}}
+\isoitem{integer(?X)}{integer/1}
     Succeeds if {\tt X} is currently instantiated to an integer; 
     otherwise it fails. 
 
-\ournewitem{float(?X)}{ISO}\index{\texttt{float/1}} 
+\isoitem{float(?X)}{ISO}{float/1}
     Same as {\tt real/1}. Succeeds if {\tt X} is currently instantiated 
     to a floating point number; otherwise it fails.  
 	
@@ -2722,11 +2761,11 @@ Succeeds if {\tt X} is currently instantiated to a floating point
 number; otherwise it fails. This predicate is included for
 compatibility with earlier versions of XSB.
 
-\ournewitem{number(?X)}{ISO}\index{\texttt{number/1}} 
+\isoitem{number(?X)}{number/1}
     Succeeds if {\tt X} is currently instantiated to either an integer or 
     a floating point number (real); otherwise it fails.
 
-\ournewitem{atomic(?X)}{ISO}\index{\texttt{atomic/1}} 
+\isoitem{atomic(?X)}{atomic/1}
     Succeeds if {\tt X} is currently instantiated to an atom or a number;
     otherwise it fails.
 
@@ -2751,7 +2790,7 @@ compatibility with earlier versions of XSB.
                 no
      \end{verbatim}}
 
-\ournewitem{compound(?X)}{ISO}\index{\texttt{compound/1}} 
+\isoitem{compound(?X)}{compound/1}
     Succeeds if {\tt X} is currently instantiated to a compound term (with 
     arity greater that zero), i.e.\ to a non-variable term that is not atomic;
     otherwise it fails.
@@ -2777,7 +2816,7 @@ compatibility with earlier versions of XSB.
 
 \standarditem{structure(?X)}{structure/1}
     Same as {\tt compound/1}\@. Its existence is only for compatibility 
-    with SB-Prolog version 3.1.
+    with previous versions.
 
 \standarditem{is\_list(?X)}{is\_list/1}
     Succeeds if {\tt X} is a {\em proper list}. In other words if it is 
@@ -2856,8 +2895,10 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
                 no
      \end{verbatim}}
 
-\ournewitem{proper\_hilog(?X)}{HiLog}\index{\texttt{proper\_hilog/1}}
-    Succeeds if {\tt X} is a proper HiLog term; otherwise it fails.
+\ourstandarditem{proper\_hilog(?X)}{proper\_hilog/1}{HiLog}
+%
+   Succeeds if {\tt X} is a proper HiLog term -- i.e. a HiLog term
+   that is not a Prolog term; otherwise the predicate fails.
 
     Examples:
     (In this example and the rest of the examples of this section we assume
@@ -2882,7 +2923,7 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
                 yes
      \end{verbatim}}
 
-\ournewitem{functor(?Term, ?Functor, ?Arity)}{ISO}\index{\texttt{functor/3}}
+\isoitem{functor(?Term, ?Functor, ?Arity)}{functor/3}
     Succeeds if the {\em functor} of the Prolog term {\tt Term} is 
     {\tt Functor} and the {\em arity} (number of arguments) of {\tt Term} is
     {\tt Arity}\@.  {\tt Functor} can be used in either the following two 
@@ -2978,8 +3019,8 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
                 Aborting...
      \end{verbatim}}
 
-\ournewitem{hilog\_functor(?Term, ?F, ?Arity)}{HiLog}
-\index{\texttt{hilog\_functor/3}}
+\ourstandarditem{hilog\_functor(?Term, ?F, ?Arity)}{hilog\_functor/3}{HiLog}
+%
     The XSB standard predicate {\tt hilog\_functor/3} succeeds 
     \begin{itemize}
     \item when {\tt Term} is a Prolog term and the principal function 
@@ -3070,14 +3111,15 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
                T = apply(a+b,_595820,_595824,_595828)
      \end{verbatim}}
 
-\ournewitem{arg(+Index, +Term, ?Argument)}{ISO}\index{\texttt{arg/3}} Unifies
-        {\tt Argument} with the ${\tt Index}^{th}$ argument of {\tt
-          Term}\@, where the index is taken to start at $1$.  In
-        accordance with ISO semantics, {\tt Index} must be
-        instantiated to a non-negative integer, and {\tt Term} to a
-        compound term, otherwise an error is thrown as described
-        below.  If {\tt Index} is {\tt 0} or a number greater than the
-        arity of {\tt Term}, the predicate quietly fails.    
+\isoitem{arg(+Index, +Term, ?Argument)}{arg/3} 
+%
+  Unifies {\tt Argument} with the ${\tt Index}^{th}$ argument of {\tt
+    Term}\@, where the index is taken to start at $1$.  In accordance
+  with ISO semantics, {\tt Index} must be instantiated to a
+  non-negative integer, and {\tt Term} to a compound term, otherwise
+  an error is thrown as described below.  If {\tt Index} is {\tt 0} or
+  a number greater than the arity of {\tt Term}, the predicate quietly
+  fails.
 
     Examples:
     {\footnotesize
@@ -3142,7 +3184,7 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
     Unifies {\tt Argument} with the ${\tt Index}^{th}$ argument of {\tt Term}
     if {\tt Index} $>$ 0, or with the functor of {\tt Term} if {\tt Index} = 0.
 
-\ournewitem{hilog\_arg(+Index, +Term, ?Argument)}{HiLog}\index{\texttt{hilog\_arg/3}}
+\ourstandarditem{hilog\_arg(+Index, +Term, ?Argument)}{hilog\_arg/3}{HiLog}
     If {\tt Term} is a Prolog term, it has the same behaviour as {\tt arg/3},
     but if {\tt Term} is a proper HiLog term, {\tt hilog\_arg/3} unifies 
     {\tt Argument} with the 
@@ -3191,7 +3233,7 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
     due to the fact that {\tt apply/1} is a Prolog term, while 
     {\tt apply/2} is a proper HiLog term.
 
-\ournewitem{?Term =.. ?List}{ISO}\index{\texttt{=../2}} 
+\isoitem{?Term =.. ?List}{=../2}
 %
 Given proper instantition of the arguments, {\tt =../2} (pronounced
 {\em univ}) succeeds when (1) {\tt Term} unifies with a compound
@@ -3269,7 +3311,7 @@ precisely,
 
 %in the following line I used a very ``dirty'' LaTeX hack! -- Kostis.
 
-\ournewitem{?Term \^{ }=.. [?F |?ArgList]}{HiLog}\index{\texttt{\^{ }=../2}} 
+\standarditem{?Term \^{ }=.. [?F |?ArgList]}{\^{ }=../2}{HiLog}
     When {\tt Term} is a Prolog term, this predicate behaves exactly like
     the Prolog {\tt =../2}. However when {\tt Term} is a proper HiLog term, 
     {\tt \verb|^|=../2} 
@@ -3320,7 +3362,7 @@ precisely,
 	Argument 2 of {\tt \verb|^|=../2} is not a proper list.
      \end{description}
 
-\ournewitem{copy\_term(+Term, -Copy)}{ISO}\index{\texttt{copy\_term/2}}
+\isoitem{copy\_term(+Term, -Copy)}{copy\_term/2}
     Makes a {\tt Copy} of {\tt Term} in which all variables have been
     replaced by brand new variables which occur nowhere else. It can
     be very handy when writing (meta-)interpreters for logic-based
@@ -3425,7 +3467,7 @@ precisely,
 	character list representation is not implemented yet).
      \end{description}
 
-\ournewitem{atom\_codes(?Atom, ?CharCodeList)}{ISO}\index{\texttt{atom\_codes/2}} 
+\isoitem{atom\_codes(?Atom, ?CharCodeList)}{atom\_codes/2}
     The standard predicate {\tt atom\_codes/2} performs the conversion 
     between an atom and its character list representation. 
     If {\tt Atom} is supplied (and is an atom), {\tt CharList} 
@@ -3493,21 +3535,20 @@ precisely,
 	{\tt CharList} is not a list of ASCII characters.
     \end{description}
 
-\ournewitem{atom\_chars(?Number, ?CharAtomList)}{ISO}
-\index{\texttt{atom\_chars/2}} 
+\isoitem{atom\_chars(?Number, ?CharAtomList)}{atom\_chars/2}
     Like \verb|atom_codes/2|, but the list returned (or input) is a list of
     characters \emph{as atoms} rather than ASCII codes. For instance, 
     \verb|atom_chars(abc,X)| binds {\tt X} to the list {\tt [a,b,c]}
     instead of {\tt [97,98,99]}.
 
-\ournewitem{char\_code(?Character, ?Code)}{ISO}\index{\texttt{char\_code/2}} 
+\isoitem{char\_code(?Character, ?Code)}{char\_code/2}
 %
 The standard predicate {\tt char\_code/2} is true if {\tt Code} is the
 current code for {\tt Character}.  In XSB it is defined as {\tt
   atom\_codes(Character,[Code])}.
 
-\ournewitem{number\_codes(?Number, ?CharCodeList)}{ISO}
-\index{\texttt{number\_codes/2}} 
+\isoitem{number\_codes(?Number, ?CharCodeList)}{number\_codes/2}
+%
     The standard predicate {\tt number\_codes/2} performs the conversion 
     between a number and its character list representation. 
     If {\tt Number} is supplied (and is a number), {\tt CharList} is
@@ -3555,8 +3596,8 @@ current code for {\tt Character}.  In XSB it is defined as {\tt
 	{\tt CharList} is not a list of ASCII characters.
     \end{description}
 
-\ournewitem{number\_chars(?Number, ?CharAtomList)}{ISO}
-\index{\texttt{number\_chars/2}} 
+\isoitem{number\_chars(?Number, ?CharAtomList)}{number\_chars/2}
+%
     Like \verb|number_codes/2|, but the list returned (or input) is a list of
     characters \emph{as atoms} rather than ASCII codes. For instance, 
     \verb|number_chars(123,X)| binds {\tt X} to the list {\tt ['1','2','3']}
@@ -3570,7 +3611,7 @@ current code for {\tt Character}.  In XSB it is defined as {\tt
     instead of {\tt ['1','2','3']}, and \verb|number_digits(123.45,X)|
     binds {\tt X} to {\tt [1,.,2,3,4,5,0,0,e,+,0,2]}.
 
-\ournewitem{atom\_length(+Atom1,?Length)}{ISO}\index{\texttt{atom\_length/2}}
+\isoitem{atom\_length(+Atom1,?Length)}{atom\_length/2}
 %
 This standard predicate succeeds if {\tt Length} unifies with the
 length of (the name of) {\tt Atom}.
@@ -3600,7 +3641,7 @@ L = 9
 \end{itemize}
 z,\end{itemize}
 
-\ourisousageitem{atom\_concat(Atom1,Atom2,Atom3)}\index{\texttt{atom\_concat/3}}
+\ourisousageitem{atom\_concat(Atom1,Atom2,Atom3)}{atom\_concat/3}
 \ourusage{atom\_concat(?Atom,?Atom,+Atom)}
 \ourusage{atom\_concat(+Atom,+Atom,-Atom)}
 %
@@ -3649,8 +3690,7 @@ produce {\tt hello world}.
 \end{itemize}
 \end{itemize}
 
-\ournewitem{sub\_atom(+Atom,?LeftLength,?CenterLength,?RightLength,?CenterAtom}{ISO}
-\index{\texttt{sub\_atom/5 }}
+\isoitem{sub\_atom(+Atom,?LeftLength,?CenterLength,?RightLength,?CenterAtom}{sub\_atom/5 }
 %
 Succeeds if {\tt Atom} can be broken into three pieces: A left atom of
 length {\tt LeftLength}, a center atom {\tt CenterAtom} of length {\tt
@@ -3765,8 +3805,7 @@ CA = r;
 \ei
 \ei
 
-\ourmoditem{term\_to\_atom(+Term,-Atom,+Options)}{string}
-\index{\texttt{term\_to\_atom/3 }}
+\ourmoditem{term\_to\_atom(+Term,-Atom,+Options)}{term\_to\_atom/3}{string}
 %
 Converts {\tt +Term} to an atomic form according to a list of write
 options, {\tt Options}, that are similar to those used by {\tt
@@ -3850,8 +3889,7 @@ F = f(a,1,_h0,'.'('3cpio','.'(d(3),'.'(Foo,[]))))
 yes
 \end{verbatim}}
 
-\ourmoditem{term\_to\_atom(+Term,-Atom)}{string}
-\index{\texttt{term\_to\_atom/2 }}
+\ourmoditem{term\_to\_atom(+Term,-Atom)}{term\_to\_atom/2}{string}
 %
 This predicate converts an arbitrary Prolog term {\tt Term} into an
 atom, putting the result in {\tt Atom}.  It is defined using the
@@ -3859,16 +3897,14 @@ default options for {\tt term\_to\_atom/3}, e.g. {\tt
 ignore\_ops(canonical)}, {\tt quoted(false)}, and {\tt
 numbervars(false)}.
 
-\ourmoditem{term\_to\_codes(+Term,-CodeList,+OptionList)}{string}
-\index{\texttt{term\_to\_codes/3 }}
+\ourmoditem{term\_to\_codes(+Term,-CodeList,+OptionList)}{term\_to\_codes/3 }{string}
 %
 This predicate is used in the definition of {\tt term\_to\_atom/3} but
 only converts a term into a list of ASCII codes, and does not intern
 the list as an atom.  Allowed values for {\tt OptionList} and error
 cases are the same as in {\tt term\_to\_atm/3}.
 
-\ourmoditem{term\_to\_codes(+Term,-CodeList)}{string}
-\index{\texttt{term\_to\_codes/2 }}
+\ourmoditem{term\_to\_codes(+Term,-CodeList)}{term\_to\_codes/2}{string}
 %
 This predicate converts a term to a list of ASCII codes.  It is
 defined using the default options for {\tt term\_to\_atom/3},
@@ -3914,9 +3950,9 @@ solutions, for example to find the maximum or minimum of the set of
 solutions.  XSB uses tabling and HiLog to provide a general and
 powerful aggregation facility as discussed in Section
 \ref{tabling_aggregate_predicates}.
-v
+
 \begin{description}
-\ournewitem{setof(?Template, +Goal, ?Set)}{ISO}\index{\texttt{setof/3}}
+\isoitem{setof(?Template, +Goal, ?Set)}{setof/3}
     This predicate may be read as ``{\tt Set} is the set of all instances 
     of {\tt Template} such that {\tt Goal} is provable''.
     If~{\tt Goal} is not provable, {\tt setof/3} fails.
@@ -3978,8 +4014,9 @@ upon backtracking, a second solution is produced:
     L = [black,green]
 \end{verbatim}
 
-\ournewitem{bagof(?Template, +Goal, ?Bag)}{ISO} \index{\texttt{bagof/3}} This
-predicate has the same semantics as {\tt setof/3} except that the
+\isoitem{bagof(?Template, +Goal, ?Bag)}{bagof/3}
+%
+This predicate has the same semantics as {\tt setof/3} except that the
 third argument returns an unsorted list that may contain duplicates.
 
 Error Cases are the same as predicate {\tt call/1} (see
@@ -4017,7 +4054,7 @@ upon backtracking, a second solution is produced:
 \end{verbatim}
 
 
-\ournewitem{findall(?Template, +Goal, ?List)}{ISO} \index{\texttt{findall/3}}
+\isoitem{findall(?Template, +Goal, ?List)}{findall/3}
 Similar to predicate {\tt bagof/3}, except that variables in {\tt
   Goal} that do not occur in {\tt Template} are treated as
 existential, and alternative lists are not returned for different
@@ -4042,9 +4079,8 @@ For the predicate {\tt p/3} in the example for {\tt setof/3}, the goal \\
     F = [red,green,blue,black,black]
 \end{verbatim}
 
-\ournewitem{tfindall(?Template, +Goal, ?List)}{Tabling}
-\index{\texttt{tfindall/3}}
-%\predindex{tfindall/3~(L)}
+\ourstandarditem{tfindall(?Template, +Goal, ?List)}{tfindall/3}{Tabling}
+%
 \label{tfindall/3}
 
     {\em Note: {\tt tfindall/3} may be deprecated in current versions.
@@ -4113,9 +4149,8 @@ For the predicate {\tt p/3} in the example for {\tt setof/3}, the goal \\
 	Upon execution {\tt Goal} is not a subgoal of a tabled predicate.
     \end{description}
 
-\ournewitem{tbagof(?X, +Goal, ?List) / tsetof(?X, +Goal, ?List)}{Tabling}
-\index{\texttt{tsetof/3}}
-\index{\texttt{tbagof/3}}
+\ourrepeatstandarditem{tsetof(?X, +Goal, ?List)}{tsetof/3}{Tabling}
+\ourstandarditem{tbagof(?X, +Goal, ?List)}{tbagof/3}{Tabling}
 
     {\em Note: {\tt tbagof/3} and {\tt tsetof/3} may be deprecated in
     current versions.  Please use the predicates described in
@@ -4126,11 +4161,11 @@ tabled versions of {\tt bagof/3} and {\tt setof/3} in a similar manner
 to the way in which {\tt tfindall/3} provides a tabled version of {\tt
 findall/3}.
 
-\ouritem{X \^\ Goal} %\index{$\wedge/2$|bold}
-    The system recognises this as meaning there exists an {\tt X} such
-    that {\tt Goal} is true, and treats it as equivalent to {\tt call(Goal)}.
-    The use of this explicit existential quantifier outside predicates
-    {\tt setof/3} and {\tt bagof/3} constructs is superfluous.
+\isoitem{X \^\ Goal}{\^\ /2}
+%
+Within {\tt setof/3}, {\tt bagof/3} and the like, the {\tt \^\ /2}
+operator means there exists an {\tt X} such that {\tt Goal} is true.
+
 \end{description}
 
 \subsection{Tabling Aggregate Predicates}\label{tabling_aggregate_predicates}
@@ -4187,10 +4222,9 @@ predicate \verb|bagReduce/4|.
 
 \begin{description}
 
-\ournewitem{bagReduce(?SetPred,?Arg,+Op,+Id)}{HiLog,Tabling}
-\ournewitem{filterReduce(?SetPred,?Arg,+Op,+Id)}{Tabling}
-\index{\texttt{bagReduce/4}} 
-\index{\texttt{filterReduce/4}} 
+\ourrepeatstandarditem{bagReduce(?SetPred,?Arg,+Op,+Id)}{bagReduce/4}{HiLog,Tabling}
+\ourstandarditem{filterReduce(?SetPred,?Arg,+Op,+Id)}{filterReduce/4}{Tabling}
+%
 {\tt SetPred} must be a HiLog set specification, i.e., a unary HiLog
 predicate.  {\tt Op} must be a Hilog operation, i.e., a 3-ary HiLog
 predicate that defines an associative operator.  The predicate must
@@ -4210,10 +4244,9 @@ addition, {\tt filterReduce/4} aggregates solutions to {\tt Pred}
 using a variance rather than unification.  An example of the use of
 {\tt filterReduce/4} is given in Chapter \ref{chap:TablingOverview}.
 
-\ournewitem{bagPO(?SetPred,?Arg,+Order)}{HiLog,Tabling}
-\ournewitem{filterPO(?SetPred,?Arg,+Order)}{Tabling}
-\index{\texttt{bagPO/3}}
-\index{\texttt{filterPO/3}}
+\ourrepeatstandarditem{bagPO(?SetPred,?Arg,+Order)}{bagPO/3}{HiLog,Tabling}
+\ourstandarditem{filterPO(?SetPred,?Arg,+Order)}{filterPO/3}{Tabling}
+%
     {\tt SetPred} must be a HiLog set specification, i.e., a unary
     HiLog predicate.  {\tt Order} must be a binary Hilog relation that
     defines a partial order.  {\tt bagPO} returns nondeterministically
@@ -4229,9 +4262,8 @@ using a variance rather than unification.  An example of the use of
 it does not depend on HiLog, so that {\tt filterPO/3} will be more
 robust especially when XSB's module system is used.
 
-\ournewitem{filterPO(\#Pred,+Order)}{Tabling} 
-\index{\texttt{filterPO/2}} 
-
+\ourstandarditem{filterPO(\#Pred,+Order)}{filterPO/2}{Tabling} 
+%
 {\tt filterPO(\#Pred,+Order)} succeds only for a solution $Pred\theta$
 of {\tt Pred} for which there is no solution $Pred\eta$ to {\tt Pred}
 such that {\tt Order($Pred\eta$,$Pred\theta$)}.
@@ -4257,8 +4289,8 @@ the query
 \end{center}
 will succeed only with the binding {\em X = 1,Y = 1}.
 
-\ournewitem{bagMax(?SetPred,?Arg)}{HiLog,Tabling}
-\index{\texttt{bagMax/2}}
+\ourstandarditem{bagMax(?SetPred,?Arg)}{bagMax/2}{HiLog,Tabling}
+%
     {\tt SetPred} must be a HiLog set specification, i.e., a unary
     HiLog predicate.  {\tt bagMax} returns with {\tt Arg} bound to the
     maximum element (under the Prolog term ordering) of the set {\tt
@@ -4289,9 +4321,8 @@ This definition would work, but it is slightly less efficient than the
 previous definition since it is known that {\tt bagMax} is
 deterministic.
 
-\ournewitem{bagMin(?SetPred,?Arg)}{HiLog,Tabling}
-\index{\texttt{bagMin/2}}
-
+\ourstandarditem{bagMin(?SetPred,?Arg)}{bagMin/2}{HiLog,Tabling}
+%
     {\tt SetPred} must be a HiLog set specification, i.e., a unary
     HiLog predicate.  {\tt bagMin} returns with {\tt Arg} bound to the
     minimum element (under the Prolog term ordering) of the set {\tt
@@ -4311,8 +4342,8 @@ bagMin(Call,Var) :- bagReduce(Call,Var,minimum,zz(zz)).
 \end{verbatim}
     (where structures are the largest elements in the term ordering.)
 
-\ournewitem{bagSum(?SetPred,?Arg)}{HiLog,Tabling}
-\index{\texttt{bagSum/2}}
+\ourstandarditem{bagSum(?SetPred,?Arg)}{bagSum/2}{HiLog,Tabling}
+%
     {\tt SetPred} must be a HiLog set specification, i.e., a unary
     HiLog predicate.  {\tt bagSum} returns with {\tt Arg} bound to the sum
     of the elements of the set {\tt SetPred}.  To use this predicate, it
@@ -4330,8 +4361,8 @@ sum(X,Y,Z) :- Z is X+Y.
 bagSum(Call,Var) :- bagReduce(Call,Var,sum,0).
 \end{verbatim}
 
-\ourstandarditem{bagCount(?SetPred,?Arg)}{bagCount}{HiLog,Tabling}
-\index{\texttt{bagCount/2}}
+\ourstandarditem{bagCount(?SetPred,?Arg)}{bagCount/2}{HiLog,Tabling}
+%
     {\tt SetPred} must be a HiLog set specification, i.e., a unary
     HiLog predicate.  {\tt bagCount} returns with {\tt Arg} bound to the
     count (i.e., number) of elements of the set {\tt SetPred}.  To use
@@ -4349,8 +4380,8 @@ successor(X,_Y,Z) :- Z is X+1.
 bagCount(Call,Var) :- bagReduce(Call,Var,successor,0).
 \end{verbatim}
 
-\ournewitem{bagAvg(?SetPred,?Arg)}{HiLog,Tabling}
-\index{\texttt{bagAvg/2}}
+\ourstandarditem{bagAvg(?SetPred,?Arg)}{bagAvg/2}{HiLog,Tabling}
+%
     {\tt SetPred} must be a HiLog set specification, i.e., a unary
     HiLog predicate.  {\tt bagAvg} returns with {\tt Arg} bound to the
     average (i.e., mean) of elements of the set {\tt SetPred}.  To use
@@ -4376,8 +4407,8 @@ bagAvg(Call,Avg) :-
 
 \section{Meta-Predicates} \label{meta_predicates}
 \begin{description}
-\ournewitem{call(\#X)}{ISO}\index{\texttt{call/1}} 
-%\predindex{call/1~(P)}
+\isoitem{call(\#X)}{call/1}
+%
     If {\tt X} is a non-variable term in the program text, then it is 
     executed exactly as if {\tt X} appeared in the program text instead 
     of {\tt call(X)},
@@ -4414,7 +4445,7 @@ bagAvg(Call,Avg) :-
     programming practice.  The use of a top level variable subgoal
     elicits a warning from the compiler.
 
-\ourmoditem{call(Goal,Arg,...)}{standard}\index{\texttt{call/[2,10]}}
+\isoitem{call(Goal,Arg,...)}{call/[2,10]}
 %
 {\tt call(Goal,Arg)} where {\tt Goal} is an N-ary callable term first
 constructs a new N+1-ary term {\tt NewGoal} with the same functor and
@@ -4435,8 +4466,8 @@ While meta calls are generally fast in XSB, the extra term
 manipulation of {\tt call/[2-10]} makes it somewhat slower than {\tt
   call/1}.
 
-\ournewitem{once(\#X)}{ISO}
-\index{\texttt{once/1}} 
+\isoitem{once(\#X)}{once/1}
+%
     {\tt once/1} is defined as {\tt once(X):- call(X),!.}  {\tt
     once/1} should be used with care in tabled programs.  The compiler
     can not determine whether a tabled predicate is called in the
@@ -4446,7 +4477,7 @@ manipulation of {\tt call/[2-10]} makes it somewhat slower than {\tt
 
     Error cases are the same as {\tt call/1}.
 
-\standarditem{table\_once(\#X)}{table\_once/1}
+\ourstandarditem{table\_once(\#X)}{table\_once/1}{Tabling}
     {\tt table\_once/1} is a weaker form of {\tt once/1}, suitable for
     situations in which a single solution is desired for a
     subcomputation that may involve a call to a tabled predicate.  {\tt
@@ -4455,7 +4486,7 @@ manipulation of {\tt call/[2-10]} makes it somewhat slower than {\tt
     over'' the subcomputation started by the subgoal {\tt Pred},
     thereby ensuring the correct evaluation of tabled subgoals.
 
-\standarditem{call\_cleanup(\#Goal,\#Handler)}{call\_cleanup/2}
+\isoitem{call\_cleanup(\#Goal,\#Handler)}{call\_cleanup/2}
 %
 {\tt call\_cleanup(Goal, Cleanup)} calls {\tt Goal} just as if it were
 called via {\tt call/1}, but it is ensures that {\tt Handler} will be

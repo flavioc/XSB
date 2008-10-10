@@ -1,6 +1,6 @@
 \documentclass[11pt]{report}
 
-\usepackage{epsf,epsfig,subfigure,latexsym,makeidx,latexsym,xspace,amssymb}
+\usepackage{epsf,epsfig,subfigure,latexsym,makeidx,latexsym,xspace,amssymb,index}
 
 \usepackage[colorlinks]{hyperref}
 
@@ -38,20 +38,40 @@
 \newcommand{\demo}[1]{\hspace*{1.5cm}{\tt #1}}
 \newcommand{\desc}[1]{\item[{\tt #1}]\hspace*{1mm}\newline}
 \newcommand{\desce}[1]{\item[{\tt #1}]}
-\newcommand{\ourrepeatitem}[1]{\item[{\mbox{\tt #1}}]\ \\ \vspace*{-.35in}}
-\newcommand{\ournewrepeatitem}[2]{\item[{\mbox{\tt #1}}]\hspace*{\fill}{\mbox{\sf #2}}\ \\ \vspace*{-.35in}}
+
+\newcommand{\stdrefindex}[1]{\index{\texttt{#1}} \index[pred]{\texttt{#1}}}
+\newcommand{\predrefindex}[1]{\index{\texttt{#1}}}
+
+% use isoitem for standard predicates that are iso
+\newcommand{\isoitem}[2]{\item[{\mbox{\tt #1}}] \index[pred]{\texttt{#2}} \index{\texttt{#2}} \hspace*{\fill}{\mbox{\sf ISO}}\ \\}
+\newcommand{\isorepeatitem}[2]{\item[{\mbox{\tt #1}}] \index[pred]{\texttt{#2}} \index{\texttt{#2}} \hspace*{\fill}{\mbox{\sf ISO}}\ \\ \vspace*{-.25in}}
+
+% use (repeat) standard item for standard predicates that are not ISO, and don't have any special category
+\newcommand{\standarditem}[2]{\item[{\mbox{\tt #1}}] \index[pred]{\texttt{#2}} \index{\texttt{#2}}\ \\}
+\newcommand{\repeatstandarditem}[2]{\item[{\mbox{\tt #1}}] \index[pred]{\texttt{#2}} \index{\texttt{#2}}\ \\ \vspace*{-.25in}}
+
+% use (repeat) standard item for standard predicates that are not ISO, and do have a special category
+\newcommand{\ourstandarditem}[3]{\item[{\mbox{\tt #1}}] \index[pred]{\texttt{#2}} \index{\texttt{#2}} \hspace*{\fill}{\mbox{\sf #3}}\ \\}
+\newcommand{\ourrepeatstandarditem}[3]{\item[{\mbox{\tt #1}}] \index[pred]{\texttt{#2}} \index{\texttt{#2}} \hspace*{\fill}{\mbox{\sf #3}}\ \\ \vspace*{-.25in}}
+
+% use our(repeat)item in libraries etc. where the module is understood
 \newcommand{\ouritem}[1]{\item[{\mbox{\tt #1}}] \ \\}
-\newcommand{\standarditem}[2]{\item[{\mbox{\tt #1}}] \index{standard predicates!#2} \index{\texttt{#2}}\ \\}
-\newcommand{\repeatstandarditem}[2]{\item[{\mbox{\tt #1}}] \index{standard predicates!#2} \index{\texttt{#2}}\ \\ \vspace*{-.25in}}
-\newcommand{\ourstandarditem}[3]{\item[{\mbox{\tt #1}}] \index{standard predicates!#2} \index{\texttt{#2}} \hspace*{\fill}{\mbox{\sf #2}}\ \\}
+\newcommand{\ourrepeatitem}[1]{\item[{\mbox{\tt #1}}]\ \\ \vspace*{-.35in}}
+
+% mosly obsolete, and only used in a couple of cases
+\newcommand{\ournewrepeatitem}[2]{\item[{\mbox{\tt #1}}]\hspace*{\fill}{\mbox{\sf #2}}\ \\ \vspace*{-.35in}}
 \newcommand{\ournewitem}[2]{\item[{\mbox{\tt #1}}]\hspace*{\fill}{\mbox{\sf #2}}\ \\}
-\newcommand{\ourmoditem}[2]{\item[{\mbox{\tt #1}}]\hspace*{\fill}{\mbox{\sf module:} {\tt #2}}\ \\}
+
+%\newcommand{\ourmoditem}[2]{\item[{\mbox{\tt #1}}]\hspace*{\fill}{\mbox{\sf module:} {\tt #2}}\ \\}
+\newcommand{\ourmoditem}[3]{\item[{\mbox{\tt #1}}] \index{\texttt{#2}}\hspace*{\fill}{\mbox{\sf module:} {\tt #3}}\ \\}
+\newcommand{\ourrepeatmoditem}[3]{\item[{\mbox{\tt #1}}]\index{\texttt{#2}}\hspace*{\fill}{\mbox{\sf module:} {\tt #3}}\ \\ \vspace*{-.35in}}
+
 \newcommand{\ournewmoditem}[2]{\item[{\mbox{\tt #1}}]\hspace*{\fill}{\sf #2}
                    {\mbox{\sf module: }{\tt #2}}\ \\}
-\newcommand{\ourrepeatmoditem}[2]{\item[{\mbox{\tt #1}}]\hspace*{\fill}{\mbox{\sf module:} {\tt #2}}\ \\ \vspace*{-.35in}}
 
 \newcommand{\ourusageitem}[1]{\item[{\mbox{\tt #1}}]\ \\ \vspace*{-.25in}}
-\newcommand{\ourisousageitem}[1]{\item[{\mbox{\tt #1}}]\hspace*{\fill}{\mbox{\sf ISO}}\ \\ \vspace*{-.25in}}
+
+\newcommand{\ourisousageitem}[2]{\item[{\mbox{\tt #1}}] \index[pred]{\texttt{#2}} \index{\texttt{#2}} \hspace*{\fill}{\mbox{\sf ISO}}\ \\ \vspace*{-.25in}}
 \newcommand{\ourusage}[1]{\begin{itemize} 
 	                               \item {\bf Usage:} {\tt #1} 
 	                               \end{itemize}}
@@ -124,9 +144,10 @@
 
 
 %------------------------------------------------------------
-\input{predindex.sty}
-\makepredindex
+%\input{predindex.sty}
+%\makepredindex
 \makeindex
+\newindex{pred}{prdx}{pnd}{Index of Predicates Standard in XSB}
 %------------------------------------------------------------
 
 \begin{document}
@@ -198,5 +219,6 @@
 \bibliography{manual}
 
 \printindex
+\printindex[pred]
 
 \end{document}

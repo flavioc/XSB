@@ -187,7 +187,7 @@ paramount.
 
 \begin{description}
 %
-\ourmoditem{trie\_create(-TrieId,+OptionList)}{intern}\index{\texttt{trie\_create/2}}
+\ourmoditem{trie\_create(-TrieId,+OptionList)}{trie\_create/2}{intern}
 %
 {\tt OptionList} allows optional parameters in the configuration of a
 trie to indicate its type and whether an alias should be used.  In the
@@ -250,8 +250,7 @@ present version of
 \ei
 \ei
 
-\ourmoditem{trie\_insert(+TrieIdOrAlias,Term)}{intern}
-\index{\texttt{trie\_insert/2}} 
+\ourmoditem{trie\_insert(+TrieIdOrAlias,Term)}{trie\_insert/2}{intern}
 %
 Inserts {\tt Term} into the trie denoted by {\tt TrieIdOrAlias}.  If
 {\tt TrieIdOrAlias} denotes an associative trie, {\tt Term} must be of
@@ -285,8 +284,7 @@ predicate fails.
 \ei
 %
 
-\ourmoditem{trie\_unify(+TrieIdOrAlias,Term)}{intern}
-\index{\texttt{trie\_unify/2}} 
+\ourmoditem{trie\_unify(+TrieIdOrAlias,Term)}{trie\_unify/2}{intern}
 %
 Unifies {\tt Term} with a term in the trie denoted by {\tt
   TrieIdOrAlias}.  If {\tt TrieIdOrAlias} denotes a general trie,
@@ -316,8 +314,7 @@ the form {\tt pair(Key,Value)} where {\tt Key} is ground.
 \ei
 \ei
 
-\ourmoditem{trie\_delete(+TrieIdOrAlias,Term)}{intern}
-\index{\texttt{trie\_delete/2}}
+\ourmoditem{trie\_delete(+TrieIdOrAlias,Term)}{trie\_delete/2}{intern}
 %
 Deletes a term unifying with {\tt Term} from the trie denoted by {\tt
   TrieIdOrAlias}.  {\tt TrieIdOrAlias} denotes a general trie, all
@@ -349,8 +346,7 @@ preicate fails.
 \ei
 \ei
 %
-\ourmoditem{trie\_truncate(+TrieIdOrAlias)}{intern}
-\index{\texttt{trie\_truncate/1}}
+\ourmoditem{trie\_truncate(+TrieIdOrAlias)}{trie\_truncate/1}{intern}
 %
 Removes all terms from {\tt TrieIdOrAlias}, but does not change any of
 its properties (e.g. the type of the trie or its aliases).  
@@ -367,8 +363,7 @@ its properties (e.g. the type of the trie or its aliases).
 \ei
 \ei
 
-\ourmoditem{trie\_drop(+TrieIdOrAlias)}{intern}
-\index{\texttt{trie\_drop/1}}
+\ourmoditem{trie\_drop(+TrieIdOrAlias)}{trie\_drop/1}{intern}
 %
 Drops {\tt TrieIdOrAlias}.  {\tt trie\_drop/1} not only removes all
 terms from {\tt TrieIdOrAlias}, but also removes information about its
@@ -386,8 +381,7 @@ type and any aliases the trie may have.
 \ei
 \ei
 
-\ourmoditem{trie\_bulk\_insert(+TrieIdOrAlias,+Generator)}{intern}
-\index{\texttt{trie\_bulk\_insert/2}}
+\ourmoditem{trie\_bulk\_insert(+TrieIdOrAlias,+Generator)}{trie\_bulk\_insert/2}{intern}
 % 
 Used to insert multiple terms into the trie denoted by {\tt
   TrieIdOrAlias}.  {\tt Generator} must be a callable term.  Upon
@@ -443,8 +437,7 @@ will add $N^3$ terms to {\tt Trie}.
 \ei
 \ei
 
-\ourmoditem{trie\_bulk\_delete(+TrieIdOrAlias,Term)}{intern}
-\index{\texttt{trie\_bulk\_delete/2}}
+\ourmoditem{trie\_bulk\_delete(+TrieIdOrAlias,Term)}{trie\_bulk\_delete/2}{intern}
 % 
 Deletes all terms that unify with {\tt Term} from {\tt TrieIdOrAlias}.
 If {\tt TrieIdOrAlias} denotes an associative trie, the key of the key
@@ -470,8 +463,7 @@ will delete the $N^2$ terms that unify with {\tt p(1,\_,\_)} from {\tt TrieIdOrA
 \ei
 \ei
 
-\ourmoditem{trie\_bulk\_unify(+TrieIdOrAlias,\#Term,-List)}{intern}
-\index{\texttt{trie\_bulk\_unify/3}}
+\ourmoditem{trie\_bulk\_unify(+TrieIdOrAlias,\#Term,-List)}{trie\_bulk\_unify/3}{intern}
 % 
 Returns in {\tt List} all terms in {\tt TrieIdOrAlias} that unify with
 {\tt Term}.  If {\tt TrieIdOrAlias} denotes an associative trie, the
@@ -508,8 +500,7 @@ will return the the $N^3 - N^2$ terms still in {\tt TrieIdOrAlias}.
 \ei
 \ei
 
-\ourmoditem{trie\_property(?TrieOrAlias,?Property)}{intern}
-\index{\texttt{trie\_property/2}} 
+\ourmoditem{trie\_property(?TrieOrAlias,?Property)}{trie\_property/2}{intern}
 %
 If {\tt TrieOrAlias} is instantiated, unifies {\tt Property} with
 current properties of the trie; if {\tt TrieOrAlias} is a variable,

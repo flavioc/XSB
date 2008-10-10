@@ -137,8 +137,7 @@ a predicate \code{p} and arity \code{n}, represented as
 \begin{description}
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-\ournewitem{table\ \ +P$_1$/N$_1$, \ldots, +P$_k$/N$_k$.}{Tabling}
-\index{\texttt{table/1}}
+\ourstandarditem{table\ \ +P$_1$/N$_1$, \ldots, +P$_k$/N$_k$.}{table/1}{Tabling}
 %
 Used as a compiler declaration, it indicates that each predicate
 denoted by the predicate indicator \code{P$_i$/N$_i$} is to be
@@ -148,23 +147,25 @@ ensures that any clauses asserted for {\tt P$_i$/N$_i$} use tabling.
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-\ournewitem{use\_subsumptive\_tabling\ \ +PredSpec$_1$, \ldots, +PredSpec$_k$.}{Tabling}
-\index{\texttt{use\_subsumptive\_tabling/1}}
+\ourstandarditem{use\_subsumptive\_tabling\ \ +PredSpec$_1$, \ldots, +PredSpec$_k$.}{use\_subsumptive\_tabling/1}{Tabling}
+
 %
 Declares each \emph{tabled predicate} denoted by \code{PredSpec$_i$}
 to use call-subsumption, thus overriding the system default of call
-variance.  The tabling strategy can be changed at will through the
-invocation of this and the following predicate.  Note, however, that
-the table for the predicate must be empty at the time of the change.
+variance~\footnote{If XSB is called with the {\tt -S} option the
+  default will be to use call subsumption}.  The tabling strategy can
+be changed at will through the invocation of this and the following
+predicate.  Note, however, that the table for the predicate must be
+empty at the time of the change.
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-\ournewitem{use\_variant\_tabling\ \ +PredSpec$_1$, \ldots, +PredSpec$_k$.}{Tabling}
-\index{\texttt{use\_variant\_tabling/1}}
+\ourstandarditem{use\_variant\_tabling\ \ +PredSpec$_1$, \ldots, +PredSpec$_k$.}{use\_variant\_tabling/1}{Tabling}
 %
 Declares each \emph{tabled predicate} denoted by \code{PredSpec$_i$}
-to use call-variance, thus overriding the current system default.  The
-same comments apply as for {\tt use\_subsumptive\_tabling/1}.
+to use call-variance, thus overriding the system default if XSB is
+called with the {\tt -S} option.  The same comments apply as for {\tt
+  use\_subsumptive\_tabling/1}.
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 \end{description}
@@ -253,8 +254,8 @@ the subgoal \code{q(X,Y)}\@.
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-\ournewitem{get\_call(+CallTerm,-TableEntryHandle,-ReturnTemplate)}{Tabling}
-\index{\texttt{get\_call/3}}
+\ourstandarditem{get\_call(+CallTerm,-TableEntryHandle,-ReturnTemplate)}{get\_call/3}{Tabling}
+
 %
 If call variance is used for the predicate corresponding to {\tt
   CallTerm}, then this predicate searches the table for an entry whose
@@ -352,8 +353,7 @@ no
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-\ournewitem{get\_calls(\#CallTerm,-TableEntryHandle,-ReturnSkeleton)}{Tabling}
-\index{\texttt{get\_calls/3}}
+\ourstandarditem{get\_calls(\#CallTerm,-TableEntryHandle,-ReturnSkeleton)}{get\_calls/3}{Tabling}
 %
 Identifies through backtracking each subgoal in the table which
 unifies with \code{CallTerm}.  For those that do, the handle to the
@@ -460,8 +460,7 @@ no
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-\ournewitem{get\_calls\_for\_table(+PredSpec,?Call)}{Tabling}
-\index{\texttt{get\_calls\_for\_table/2}}
+\ourstandarditem{get\_calls\_for\_table(+PredSpec,?Call)}{get\_calls\_for\_table/2}{Tabling}
 %
 Identifies through backtracking all the subgoals whose predicate is
 that of \code{PredSpec} and which unify with \code{Call}.
@@ -540,8 +539,7 @@ only skeletal information is used from the first argument.
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-\ournewitem{get\_returns(+TableEntryHandle,\#ReturnSkeleton)}{Tabling}
-\index{\texttt{get\_returns/2}}
+\ourstandarditem{get\_returns(+TableEntryHandle,\#ReturnSkeleton)}{get\_returns/2}{Tabling}
 %
 Backtracks through the answers for the subgoal whose table entry is
 referenced through the first argument, \code{TableEntryHandle}, and
@@ -624,16 +622,14 @@ no
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-\ournewitem{get\_returns(+TableEntryHandle,\#ReturnSkeleton,-ReturnHandle)}{Tabling}
-\index{\texttt{get\_returns/3}}
+\ourstandarditem{get\_returns(+TableEntryHandle,\#ReturnSkeleton,-ReturnHandle)}{get\_returns/3}{Tabling}
 %
 Functions identically to \code{get\_returns/2}, but also obtains a
 handle to the return given in the second argument.
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-\ournewitem{get\_returns\_for\_call(+CallTerm,?AnswerTerm)}{Tabling}
-\index{\texttt{get\_returns\_for\_call/2}}
+\ourstandarditem{get\_returns\_for\_call(+CallTerm,?AnswerTerm)}{get\_returns\_for\_call/2}{Tabling}
 %
 Succeeds through backtracking for each answer of the subgoal
 \code{CallTerm} which unifies with \code{AnswerTerm}.  Fails if
@@ -721,8 +717,7 @@ no
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-\ournewitem{get\_residual(\#CallTerm,?DelayList)}{Tabling}
-\index{\texttt{get\_residual/2}}
+\ourstandarditem{get\_residual(\#CallTerm,?DelayList)}{get\_residual/2}{Tabling}
 %
 Backtracks through the answer set of each \emph{completed} subgoal in
 the table which unifies with \code{CallTerm}.  With each successful
@@ -790,12 +785,9 @@ useful when extensions of the well-founded model are desired.
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-\standarditem{table\_state(+CallTerm,?PredType,?CallType,?AnsSetStatus)}{table\_state/1}
+\ourrepeatstandarditem{table\_state(+CallTerm,?PredType,?CallType,?AnsSetStatus)}{table\_state/1}{Tabling}
 
-\vspace{-5ex}
-
-\ournewitem{table\_state(+TableEntryHandle,?PredType,?CallType,?AnsSetStatus)}{Tabling}
-\index{\texttt{table\_state/4}}
+\ourstandarditem{table\_state(+TableEntryHandle,?PredType,?CallType,?AnsSetStatus)}{table\_state/4}{Tabling}
 %
 Succeeds whenever \code{CallTerm} is a subgoal in the table, or
 \code{TableEntryHandle} is a valid reference to a table entry, and its
@@ -850,23 +842,23 @@ called at that moment.
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 \comment{
-\ournewitem{table\_state(+CallTerm,?State)}{Tabling}
-\index{\texttt{table\_state/2}}
+%\ournewitem{table\_state(+CallTerm,?State)}{Tabling}
+%\index{\texttt{table\_state/2}}
 %
-Functions similarly to, and is superseded by, \code{table\_state/4}.
-The value of \code{State} may be one of the following atoms with the
-given meaning.
+%Functions similarly to, and is superseded by, \code{table\_state/4}.
+%The value of \code{State} may be one of the following atoms with the
+%given meaning.
 %
-\begin{description}
-\item[{\tt not\_yet\_called}] iff the predicate corresponding to
-Call has been declared tabled, but there is no table entry for call.
-\item[{\tt complete}] iff the table entry for {\tt Call} contains
-all solutions.
-\item[{\tt incomplete}] iff the table entry for {\tt Call} may not contain
-all solutions.
-\item[{\tt undef}] iff the predicate corresponding to {\tt Call} 
-has not been declared tabled.
-\end{description}
+%\begin{description}
+%\item[{\tt not\_yet\_called}] iff the predicate corresponding to
+%Call has been declared tabled, but there is no table entry for call.
+%\item[{\tt complete}] iff the table entry for {\tt Call} contains
+%all solutions.
+%\item[{\tt incomplete}] iff the table entry for {\tt Call} may not contain
+%all solutions.
+%\item[{\tt undef}] iff the predicate corresponding to {\tt Call} 
+%has not been declared tabled.
+%\end{description}
 
 | Exceptions:
 |     \begin{description}
@@ -1013,8 +1005,7 @@ system error handler) when the interpreter level is resumed.
 
 \begin{description}
 
-\ournewitem{abolish\_table\_pred(+Pred)}{Tabling}
-\index{\texttt{abolish\_table\_pred/1}}
+\ourstandarditem{abolish\_table\_pred(+Pred)}{abolish\_table\_pred/1}{Tabling}
 %
 Invalidates all tabled subgoals for the predicate denoted by the
 predicate or term indicator \code{Pred}.  If any subgoal for {\tt
@@ -1073,8 +1064,7 @@ is the same as in the sequential engine.
 %
 \ei
 
-\ournewitem{abolish\_table\_pred(+CallTerm,+Options)}{Tabling}
-\index{\texttt{abolish\_table\_pred/2}}
+\ourstandarditem{abolish\_table\_pred(+CallTerm,+Options)}{abolish\_table\_pred/2}{Tabling}
 %
 Behaves as {abolish\_table\_pred/1}, but allows the default {\tt
   table\_gc\_action} to be over-ridden with a flag, which can be either 
@@ -1099,8 +1089,7 @@ Behaves as {abolish\_table\_pred/1}, but allows the default {\tt
 \ei
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-\ournewitem{abolish\_table\_call(+CallTerm)}{Tabling}
-\index{\texttt{abolish\_table\_call/1}}
+\ourstandarditem{abolish\_table\_call(+CallTerm)}{abolish\_table\_call/1}{Tabling}
 %
 Invalidates all entries from the table for the any subgoals that unify
 with {\tt CallTerm}.  If a subgoal $S$ unifying with {\tt CallTerm}
@@ -1151,8 +1140,7 @@ thread-private.
 \ei
 %
 
-\ournewitem{abolish\_table\_call(+CallTerm,+Options)}{Tabling}
-\index{\texttt{abolish\_table\_call/2}}
+\ourstandarditem{abolish\_table\_call(+CallTerm,+Options)}{abolish\_table\_call/2}{Tabling}
 %
 Behaves as {abolish\_table\_call/1}, but allows the default {\tt
   table\_gc\_action} to be over-ridden with a flag, which can be either 
@@ -1180,8 +1168,7 @@ Behaves as {abolish\_table\_call/1}, but allows the default {\tt
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-\ournewitem{abolish\_all\_tables}{Tabling}
-\index{\texttt{abolish\_all\_tables/0}}
+\ourstandarditem{abolish\_all\_tables}{abolish\_all\_tables/0}{Tabling}
 %
 In the single-threaded engine, removes all tables presently in the
 system and frees all the memory held by XSB for these structures.
@@ -1219,8 +1206,7 @@ $A$ is thread-private or thread-shared.
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-\ournewitem{abolish\_all\_private\_tables}{Tabling}
-\index{\texttt{abolish\_all\_private\_tables/0}}
+\ourstandarditem{abolish\_all\_private\_tables}{abolish\_all\_private\_tables/0}{Tabling}
 %
 In the multi-threaded engine, removes all tables private to the thread
 and frees all the memory held by XSB for these structures, including
@@ -1251,8 +1237,7 @@ active in the current execution environment.
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-\ournewitem{abolish\_all\_shared\_tables}{Tabling}
-\index{\texttt{abolish\_all\_shared\_tables/0}}
+\ourstandarditem{abolish\_all\_shared\_tables}{abolish\_all\_shared\_tables/0}{Tabling}
 %
 In the multi-threaded engine, removes all tables private to the thread
 and frees all the memory held by XSB for these structures, including
@@ -1287,46 +1272,45 @@ are abolished, but private tables for the main thread are unaffected.
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 \comment{
-\ournewitem{abolish\_tables(+OptionsList)}{Tabling}
-\index{\texttt{abolish\_tables/1}}
+% \ournewitem{abolish\_tables(+OptionsList)}{Tabling}
+% \index{\texttt{abolish\_tables/1}}
 
-Removes tables as specified by options in {\tt OptionsList}, which is
-a list of terms of the form:
+% Removes tables as specified by options in {\tt OptionsList}, which is
+% a list of terms of the form:
 
-\begin{itemize}
+% \begin{itemize}
 
-\item {\tt private} In the multi-threaded engine, this option
-  abolishes all tables private to the calling thread.  In the
-  sequential engine, this option abolishes all tables.
+% \item {\tt private} In the multi-threaded engine, this option
+%   abolishes all tables private to the calling thread.  In the
+%   sequential engine, this option abolishes all tables.
 
-\item {\tt shared} In the multi-threaded engine, this option abolishes
-  all thread-shared tables.  Space reclamation for thread-shared
-  tables may not be performed until there is a single active thread.
-  In the sequential engine, this option has no effect.
+% \item {\tt shared} In the multi-threaded engine, this option abolishes
+%   all thread-shared tables.  Space reclamation for thread-shared
+%   tables may not be performed until there is a single active thread.
+%   In the sequential engine, this option has no effect.
 
-\item {\tt module(+Module)} Abolishes all tables in a given module,
-  whether they are shared or private.  If {\tt Module} is set to {\tt
-    usermod}, all tables not explicitly placed into a module are
-  abolished.
+% \item {\tt module(+Module)} Abolishes all tables in a given module,
+%   whether they are shared or private.  If {\tt Module} is set to {\tt
+%     usermod}, all tables not explicitly placed into a module are
+%   abolished.
 
-\item {\tt pred(+PredSpecifier)} Abolishes the tabled predicate
-  referred to by {\tt PredSpecifier}, regardless of whether it is
-  shared or private.  
+% \item {\tt pred(+PredSpecifier)} Abolishes the tabled predicate
+%   referred to by {\tt PredSpecifier}, regardless of whether it is
+%   shared or private.  
 
-\end{itemize}
+% \end{itemize}
 
-When {\tt OptionsList} contains several options, the options are taken
-to be disjunctive in that any table that is covered by at least one of
-the options will be abolished.  For instance
-\begin{verbatim}
-    abolish_tables([private,module(cdf),predicate(f/2)])
-\end{verbatim}
-abolishes all tables that are private {\em or} in the module {\tt cdf}
-{\em or} have been created by calls to the predicate {\tt f/2}.
+% When {\tt OptionsList} contains several options, the options are taken
+% to be disjunctive in that any table that is covered by at least one of
+% the options will be abolished.  For instance
+% \begin{verbatim}
+%     abolish_tables([private,module(cdf),predicate(f/2)])
+% \end{verbatim}
+% abolishes all tables that are private {\em or} in the module {\tt cdf}
+% {\em or} have been created by calls to the predicate {\tt f/2}.
 }
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-\ournewitem{abolish\_module\_tables(+Module)}{Tabling}
-\index{\texttt{abolish\_module\_tables/1}}
+\ourstandarditem{abolish\_module\_tables(+Module)}{abolish\_module\_tables/1}{Tabling}
 %
 Given a module name (or the default module, {\tt usermod}), this
 predicate abolishes all tables for each tabled predicate in {\tt
@@ -1335,28 +1319,9 @@ predicate abolishes all tables for each tabled predicate in {\tt
 predicate.
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-\comment{
-\ournewitem{abolish\_private\_tables}{Tabling}
-\index{\texttt{abolish\_private\_tables/0}}
-%
-Abolishes all private tables for the calling thread.  This predicate
-is defined only in the multi-threaded configuration.
-}
-% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-\comment{
-\ournewitem{abolish\_shared\_tables}{Tabling}
-\index{\texttt{abolish\_shared\_tables/0}}
-%
-Abolishes all shared tables for the calling thread.  This predicate is
-defined only in the multi-threaded configuration.  If called when more
-than 1 thread is active, the tables will be removed immediately, but
-space reclamation will be deferred until a single thread is active.
-}
-% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-\ournewitem{gc\_tables(-Number)}{Tabling}
+\ourstandarditem{gc\_tables(-Number)}{gc\_tables/1}{Tabling}
 \index{garbage collection!tables}
-\index{\texttt{gc\_tables/1}}
 %
 When a tabled subgoal or predicate is abolished, reclamation of its
 space may be postponed if the subgoal or predicate has an answer that
@@ -1386,8 +1351,7 @@ garbage collection.
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-\ournewitem{delete\_return(+TableEntryHandle,+ReturnHandle)}{Tabling}
-\index{\texttt{delete\_returns/2}}
+\ourstandarditem{delete\_return(+TableEntryHandle,+ReturnHandle)}{delete\_returns/2}{Tabling}
 %
 Removes the answer indicated by \code{ReturnHandle} from the table
 entry referenced by \code{TableEntryHandle}.  The value of each
@@ -1404,9 +1368,8 @@ implementation and semantic perspective.
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-\ournewitem{invalidate\_tables\_for(+DynamicPredGoal,+Mode)}{Tabling}
-\index{\texttt{invalidate\_tables\_for/2}}
-
+\ourstandarditem{invalidate\_tables\_for(+DynamicPredGoal,+Mode)}{invalidate\_tables\_for/2}{Tabling}
+%
 This predicate supports invalidation of tables.  Tables may become
 invalid if dynamic predicates on which they depend change, due to
 asserts or retracts.  By default XSB does not change or delete tables
@@ -1458,23 +1421,21 @@ automatically invoke \\ {\tt invalidate\_tables\_for} whenever {\tt
 
 \comment{
 
+%\ournewitem{table\_prop(?Pred\_indicator,+Type,?Old\_val,+New\_val)}{Tabling}
+%\index{\texttt{table\_prop/4}}
+%This predicate is described together with the following one.
 
-\ournewitem{table\_prop(?Pred\_indicator,+Type,?Old\_val,+New\_val)}{Tabling}
-\index{\texttt{table\_prop/4}}
-This predicate is described together with the following one.
-
-
-\ournewitem{table\_prop(?Pred\_indicator,+Type,-Value)}{Tabling}\index{\texttt{table\_prop/3}}
-This predicate is used either to provide information about a table
-property, or to reset one of properties to a particular value.  These
-values can also be set by the table declarations in the source code.
-{\tt table\_prop} provides a method for doing so without having to
-recompile code.
-
-In previous versions {\tt table\_prop} was used to reset hash sizes for
-calls and returns.  It is not used in \version, but is maintained since
-in future versions {\tt table\_prop} may be used for other table
-properties such as subgoal subsumption.
+%\ournewitem{table\_prop(?Pred\_indicator,+Type,-Value)}{Tabling}\index{\texttt{table\_prop/3}}
+%This predicate is used either to provide information about a table
+%property, or to reset one of properties to a particular value.  These
+%values can also be set by the table declarations in the source code.
+%{\tt table\_prop} provides a method for doing so without having to
+%recompile code.
+%
+%In previous versions {\tt table\_prop} was used to reset hash sizes for
+%calls and returns.  It is not used in \version, but is maintained since
+%in future versions {\tt table\_prop} may be used for other table
+%properties such as subgoal subsumption.
 
 }
 

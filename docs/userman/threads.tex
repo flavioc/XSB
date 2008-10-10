@@ -1077,23 +1077,20 @@ throws an exception $E$, the continuation will be the handler for $E$.
 \ei
 \ei
 
-\ourmoditem{thread\_disable\_cancel/0}{thread}
-\index{\texttt{thread\_disable\_cancel/0}}
+\ourmoditem{thread\_disable\_cancel}{thread\_disable\_cancel/0}{thread}
 % 
 Disables the calling thread from being cancelled, so that it can be
 ensured that critical operations can run to completion.  This
 predicate always succeeds.
 
-\ourmoditem{thread\_enable\_cancel/0}{thread}
-\index{\texttt{thread\_enable\_cancel/0}}
+\ourmoditem{thread\_enable\_cancel}{thread\_enable\_cancel/0}{thread}
 % 
 Enables the calling thread to be cancelled.  By default, threads may
 be cancelled, so this predicate needs to be called if {\tt
   thread\_disable\_cancel/0} has been previously called.  This
 predicate always succeeds.
 
-\standarditem{thread\_yield}
-{thread\_yield/0}
+\standarditem{thread\_yield}{thread\_yield/0}
 % 
 Make the calling thread ready to be run {\em after} other threads of
 the same priority.  This predicate relies on the real-time extensions
@@ -1176,8 +1173,8 @@ before resuming.
 
 %----------
 
-\ourmoditem{usleep(+Microseconds)}{thread}
-\index{\texttt{usleep/1}}
+\ourmoditem{usleep(+Microseconds)}{usleep/1}{thread}
+
 %
 Causes the calling thread to sleep approximately {\tt Microseconds}
 before resuming.

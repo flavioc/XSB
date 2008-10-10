@@ -44,7 +44,7 @@ mean the following:
 
 \begin{description}
 
-\ournewitem{current\_input(?Stream)}{ISO}\index{\texttt{current\_input/1}}
+\isoitem{current\_input(?Stream)}{current\_input/1}
     Succeeds iff stream {\tt Stream} is the current input stream, or 
     procedurally unifies {\tt Stream} with the current input stream.
 
@@ -61,7 +61,8 @@ mean the following:
 %In XSB {\tt current\_input/1} does not throw an error if {\tt Stream}
 %is not a current input stream, but quietly fails instead.
 
-\ournewitem{current\_output(?Stream)}{ISO}\index{\texttt{current\_output/1}}
+\isoitem{current\_output(?Stream)}{ISO}{current\_output/1}
+%
     Succeeds iff stream {\tt Stream} is the current output stream, or 
     procedurally unifies {\tt Stream} with the current output stream.
 
@@ -78,8 +79,7 @@ mean the following:
 In XSB {\tt current\_input/1} does not throw an error if {\tt Stream}
 is not a current input stream, but quietly fails instead.
 
-\ournewitem{current\_prolog\_flag(?Flag\_Name, ?Value)}{ISO}
-\index{\texttt{current\_prolog\_flag/2}}
+\isoitem{current\_prolog\_flag(?Flag\_Name, ?Value)}{current\_prolog\_flag/2}
 %
 {\tt current\_prolog\_flag/2} allows the user to examine both dynamic
 aspects of XSB along with certain non-changeable ISO flags.  Calls to
@@ -100,8 +100,7 @@ strings as lists of character codes, so that the value of the flag
 {\tt double\_quotes} is always {\tt codes}, and this flag is not
 settable.
 
-\ournewitem{set\_prolog\_flag(?Flag\_Name, ?Value)}{ISO}
-\index{\texttt{set\_prolog\_flag/2}}
+\isoitem{set\_prolog\_flag(?Flag\_Name, ?Value)}{set\_prolog\_flag/2}
 %
 {\tt set\_prolog\_flag/2} allows the user to change settable prolog
 flags.  Currently the only settable flag is the {\tt unknown} flag.
@@ -119,8 +118,7 @@ causes calls to undefined predicates to throw an existence error.
 \ei
 \ei
 
-\ournewitem{current\_predicate(?Predicate\_Indicator)}{ISO}
-\index{\texttt{current\_predicate/1}}
+\isoitem{current\_predicate(?Predicate\_Indicator)}{current\_predicate/1}
 %
 {\tt current\_predicate/1} can be used to backtrack through indicators
 for loaded user or system predicates.  If {\tt Predicate\_Indicator}
@@ -846,8 +844,8 @@ Changes one of the dynamic XSB settings described for {\tt
     \>   \>	| ?- hilog\_symbol(X).
     }
 
-\ournewitem{current\_op(?Precedence, ?Specifier, ?Name)}{ISO}
-\index{\texttt{current\_op/3}}
+\isoitem{current\_op(?Precedence, ?Specifier, ?Name)}{current\_op/3}
+%
     This predicate is used to examine the set of operators currently
     in force.  It succeeds when the atom {\tt Name} is currently an
     operator of type {\tt Specifier} and precedence {\tt Precedence}.  None
@@ -934,11 +932,12 @@ specifier of the types above.
     the tables were created during the computation for which the break was
     entered.
 
-\ournewitem{halt}{ISO}\index{\texttt{halt/0}}
+\isoitem{halt}{ISO}{halt/0}
+%
     Exits the XSB session regardless of the break level.  On exiting
     the system cpu and elapsed time information is displayed.
 
-\ournewitem{halt(Code)}{ISO}\index{\texttt{halt/1}}
+\isoitem{halt(Code)}{ISO}{halt/1}
 %
 Exits the XSB session regardless of the break level, sending the
 integer {\tt Code} to the parent process.  Normally {\tt 0} is
@@ -971,7 +970,7 @@ used to report various degrees of abnormality.
         \>   \>     Yes master >
     }
 
-\ourmoditem{trimcore}{machine}\index{\texttt{trimcore/0}}
+\ourmoditem{trimcore}{trimcore/0}{machine}
 %
 A call to {\tt trimcore/0} reallocates an XSB thread's execution
 stacks (and some tabling stacks) to their initial allocation size, the
