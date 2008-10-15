@@ -90,6 +90,8 @@ sum_profile([p(_,_,Cnt)|STuples],Sum0,Sum) :-
 dump_profile([],Total,OPSC,OMPSC,OCnt,ACnt) :-
 	(OPSC =:= 0
 	 ->	OPName = 'Unknown', OPArity = ('?')
+	 ; OPSC =:= 1
+	 ->	OPName = 'Garbage Collecting', OPArity = ('')
 	 ;	psc_name(OPSC,OPName),psc_arity(OPSC,OPArity)
 	),
 	Percent is (OCnt*200+Total) // (2*Total),
@@ -105,6 +107,9 @@ dump_profile([],Total,OPSC,OMPSC,OCnt,ACnt) :-
 dump_profile([p(PSC,MPSC,Cnt)|STuples],Total,OPSC,OMPSC,OCnt,ACnt) :-
 	(OPSC =:= 0
 	 ->	OPName = 'Unknown', OPArity = ('?')
+
+	 ; OPSC =:= 1
+	 ->	OPName = 'Garbage Collecting', OPArity = ('')
 	 ;	psc_name(OPSC,OPName),psc_arity(OPSC,OPArity)
 	),
 	Percent is (OCnt*200+Total) // (2*Total),
