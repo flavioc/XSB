@@ -1,5 +1,6 @@
 :- compiler_options([spec_off]).
 
+:- op(1150, xfx, (<=)).
 :- [altCDF].
 :- [cdftp_meta].
 :- [cdftp_cdfsc].
