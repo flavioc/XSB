@@ -602,6 +602,7 @@ xsbBool glstack_realloc(CTXTdeclc int new_size, int arity)
 /*======================================================================*/
 /* The main routine that performs garbage collection.                   */
 /*======================================================================*/
+int garbage_collecting = 0;
 
 int gc_heap(CTXTdeclc int arity, int ifStringGC)
 {
@@ -614,6 +615,7 @@ int gc_heap(CTXTdeclc int arity, int ifStringGC)
   int  start_heap_size;
   int  rnum_in_reg_array = (reg_arrayptr-reg_array)+1;
   DECL_GC_PROFILE;
+  garbage_collecting = 1;  // flag for profiling that we are gc-ing
 
   //  printf("start gc(%ld): e:%p,h:%p,hf:%p\n",(long)(cpu_time()*1000),ereg,hreg,hfreg);
   INIT_GC_PROFILE;
@@ -865,6 +867,7 @@ int gc_heap(CTXTdeclc int arity, int ifStringGC)
 #endif /* ndef NO_STRING_GC */
 
   GC_PROFILE_POST_REPORT;
+  garbage_collecting = 0;
   
 #endif /* GC */
   //  printf("   end gc(%ld), hf:%p,h:%p, space=%d\n",(long)(cpu_time()*1000),hfreg,hreg,(pb)top_of_localstk - (pb)top_of_heap);

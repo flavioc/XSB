@@ -372,7 +372,6 @@ extern int is_proper_list(Cell term);
 extern int is_most_general_term(Cell term);
 
 extern void log_prog_ctr(byte *);
-extern long prof_flag;
 
 #ifdef DEBUG_VM
 extern void debug_inst(CTXTdeclc byte *, CPtr);

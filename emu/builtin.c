@@ -150,6 +150,7 @@ extern xsbBool startInterruptThread(SOCKET intSocket);
 long if_profiling = 0;
 long profile_thread_started = 0;
 static long prof_unk_count = 0;
+long prof_gc_count = 0;
 static long prof_total = 0;
 
 static long total_prog_segments = 0;
@@ -3136,14 +3137,20 @@ void retrieve_prof_table(CTXTdecl) { /* r2: +NodePtr, r3: -p(PSC,ModPSC,Cnt), r4
     bld_oint(pscptrloc,(Integer)(apsc));
     bld_oint(modpscptrloc,(Integer)(apsc->data));
     ctop_int(CTXTc 4,i+1);
+  } else if (i == psc_profile_count_num) {
+    follow(hreg++) = makeint(prof_gc_count);
+    bld_int(pscptrloc,1);
+    bld_int(modpscptrloc,0);
+    ctop_int(CTXTc 4,i+1);
   } else {
     follow(hreg++) = makeint(prof_unk_count);
     bld_int(pscptrloc,0);
     bld_int(modpscptrloc,0);
+    ctop_int(CTXTc 4,0);
     psc_profile_count_num = 0; // clear table
     prof_total = 0;
     prof_unk_count = 0;
-    ctop_int(CTXTc 4,0);
+    prof_gc_count = 0;
   }
 }
 
