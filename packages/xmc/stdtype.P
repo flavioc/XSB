@@ -21,6 +21,7 @@
 ** $Id$
 ** 
 */
+:- op(1100, fx, datatype).
 
 :- import type/2 from typecheck.
 
