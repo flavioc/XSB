@@ -1,3 +1,5 @@
+:- op( 900, fy, neg ).
+
 :- module(animals).
 animal(A) :- mammal(A).
 animal(A) :- bird(A).

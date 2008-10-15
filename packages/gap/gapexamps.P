@@ -1,6 +1,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% Sample Programs
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+:- op(1200,xfx,<-).
+:- op(1000,xfy,and).
+:- op(1000,xfy,or).
 
 % ex. ?- meta(sp(a,X):[min,T]).
 sp(X,Y) : [min,D1] <- sp(X,Z): [min,D2], edge(Z,Y,D), D1 is D2 + D.

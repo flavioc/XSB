@@ -1,3 +1,4 @@
+:- op( 500, fx, '?' ).
 
 non_terminal( Symbol ) :-
 	\+ terminal( Symbol, _ ).
