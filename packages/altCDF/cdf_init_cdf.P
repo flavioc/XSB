@@ -31,7 +31,10 @@
     make_cdf_dirty/1,
     cdf_use_cache/0, cdf_dont_use_cache/0,
     transform_intensional_rules/4,
-    set_chk_index/0.
+    set_chk_index/0,
+    load_cdf_init_cdf/0.
+
+load_cdf_init_cdf.  % to allow altCDF to force loading of this module.
 
 #include "./cdf_definitions.h"
 
