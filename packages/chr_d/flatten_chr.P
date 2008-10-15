@@ -4,6 +4,8 @@
 :- import lookup_eq/3,pairup/3,translate/3 from pairlist.
 :- import delete_ith/4 from listutil.
 
+:- op(1150,fx,constraints).
+
 :- debug_ctl(hide,[read_chr/2,
 		   split_clauses/6,
 		   get_constr_terms/4,
