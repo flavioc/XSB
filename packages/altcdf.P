@@ -28,12 +28,13 @@
 %% some packages use it.
 
 :- import bootstrap_package/2 from packaging.
+:- import load_cdf_init_cdf/0 from cdf_init_cdf.
 
 init_cdf:- 
 	bootstrap_package(['altCDF',cdftp,doc],'altCDF'),
 	[cdf_checks],
-	[cdf_init_cdf],
-	[cdf_io],
+	load_cdf_init_cdf,	%	[cdf_init_cdf],  %% should not consult a module
+%%	[cdf_io],  %% should not consult a module
 	[cdf_init].
 
 :- init_cdf.
