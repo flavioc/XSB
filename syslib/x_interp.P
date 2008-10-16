@@ -50,26 +50,29 @@ interpreter :-
         prompt('',[],'_$more_prompt'(_)),
         prompt(' ? ',[],'_$debug_prompt'(_)),
         fail.
-% TLS: changed following clause so that after cmd_goal CURRENT_INPUT
-% is set to whatever it had been set to before (interpreter_cmd_goal
-% does not always close).
-interpreter :-
-	stat_flag(CURRENT_INPUT, Str),
-	(  xsb_thread_self(T),
-  	   retractall('$$exception_ball'(T,_)),
-	   catch(interpreter_cmd_goal([]),Ball,default_error_handler(Ball)),
-	   fail
-         ; stat_set_flag(CURRENT_INPUT,Str) ),
-	 fail.
 interpreter :-
 	xsb_thread_self(T),
 	retractall('$$exception_ball'(T,_)),
+	catch(interpreter_cmd_goal([]),Ball,default_error_handler(Ball)),
+	fail.
+interpreter :-
+	xsb_thread_self(T),
+	retractall('$$exception_ball'(T,_)),
+	get_base_io(Str),
 	x_interp_repeat,
-	stat_flag(CURRENT_INPUT, Str),
-%	file_write(STDMSG,stat_flag(CURRENT_INPUT, Str)),
 	catch(interpreter_readloop([]),Ball,(see(Str), %%file_write(STDMSG,'Caught it'),
 	                                     default_error_handler(Ball))),
 	fail.
+
+:- import get_stdin/2 from push_io.
+
+% TLS: if cmd_line_argument, then get whatever stream had been there
+% before.  Otherwise, just get current input.
+get_base_io(Str):- 
+	(get_stdin(cmd_line_argument,Stream) -> 
+%	  file_write(STDMSG,input_streams(cmd_line_argument,Stream)),
+          Stream = [Str|_]
+        ; stat_flag(CURRENT_INPUT,Str)).
 
 %% dummy arg to circumvent string flaw with module system, for catch
 interpreter_cmd_goal(_) :-
