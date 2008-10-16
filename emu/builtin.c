@@ -1582,7 +1582,8 @@ int builtin_call(CTXTdeclc byte number)
 	  psc = get_str_psc(goal);
 	}
       } else {
-	modpsc = get_data(psc);
+	if (isstring(get_data(psc))) modpsc = global_mod;
+	else modpsc = get_data(psc);
       }
       if (isstring(goal)) {
 	for (i = 1; i <= k; i++) {
@@ -1759,7 +1760,8 @@ int builtin_call(CTXTdeclc byte number)
 
   case PSC_DATA:  {	/* R1: +PSC; R2: -int */
     Psc psc = (Psc)ptoc_addr(1);
-    ctop_int(CTXTc 2, (Integer)get_data(psc));
+    if (isstring(get_data(psc))) ctop_string(CTXTc 2, string_val(get_data(psc)));
+    else ctop_int(CTXTc 2, (Integer)get_data(psc));
     break;
   }
 

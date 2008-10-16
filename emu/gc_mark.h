@@ -972,6 +972,10 @@ void mark_atom_and_code_strings(CTXTdecl) {
 	   pair_ptr = pair_next(pair_ptr)) {
 	char *string = get_name(pair_psc(pair_ptr));
 	mark_string(string,"usermod atom");
+	if (get_type(pair_psc(pair_ptr)) == T_PRED && isstring(get_data(pair_psc(pair_ptr)))) {
+	  string = string_val((get_data((pair_psc(pair_ptr)))));
+	  mark_string(string,"filename");
+	}
 	if (get_type(pair_psc(pair_ptr)) == T_DYNA) {
 	  //	  printf("mark dc for usermod:%s/%d\n",string,get_arity(pair_psc(pair_ptr)));
 	  prref = dynpredep_to_prref(CTXTc get_ep(pair_psc(pair_ptr))); // fix for multi-threading to handle dispatch for privates 

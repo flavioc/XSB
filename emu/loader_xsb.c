@@ -79,6 +79,7 @@ extern int xsb_profiling_enabled;
 extern void add_prog_seg(Psc, byte *, long);
 extern void remove_prog_seg(byte *);
 extern void delete_predicate_table(CTXTdeclc TIFptr);
+extern char *expand_filename(char *filename);
 
 /* === macros =========================================================	*/
 
@@ -938,6 +939,9 @@ static byte *loader1(CTXTdeclc FILE *fd, char *filename, int exp)
 	if (xsb_profiling_enabled)
 	  add_prog_seg(ptr->psc_ptr, (pb)seg_first_inst, text_bytes);
       }
+      if (get_data(ptr->psc_ptr) == global_mod) {
+	set_data(ptr->psc_ptr,(struct psc_rec *)makestring(filename)); // filename already interned
+      }
       instruct_tip = get_tip_or_tdisp(ptr->psc_ptr);
       if (instruct_tip != NULL) {
 #ifdef MULTI_THREAD
@@ -953,34 +957,24 @@ static byte *loader1(CTXTdeclc FILE *fd, char *filename, int exp)
       if (strcmp(name, "_$main")!=0) {
 	if (xsb_profiling_enabled)
 	  remove_prog_seg((pb)get_ep(ptr->psc_ptr));
-	if (strcmp(get_name(cur_mod),"standard")==0 && strcmp(name,"catch")==0 && arity==3) {
-	  printf("Cannot reload catch/3: ignored\n");
-       	  unload_seg((pseg)seg_first_inst); /* unload version just loaded */
-	} else {
-	  if (seg_address_in_stack(CTXTc (pseg)get_ep(ptr->psc_ptr))) {
-	    char message[255];
-	    snprintf(message,255,
-		     "ERROR: When redefining %s/%d from file %s, freed code is still needed.",
-		     get_name(ptr->psc_ptr),get_arity(ptr->psc_ptr),filename);
-	    xsb_exit(CTXTc message);
-	  }
-	  if (0) {  /* for debugging: condition on flag someday, to make it easier to invoke? */
-	    /* maybe better to keep filename that defined the predicate and always give 
-	       warning if it changes */
-	    fprintf(stdout,"..redefining: %s:%s/%d from file: ",
-		    get_name(cur_mod),get_name(ptr->psc_ptr),get_arity(ptr->psc_ptr)
-		    );
-	    if (filename[0] == '.' && (filename[1]=='/' || filename[1]=='\\')) {
-	      char dir[200]; char *res;
-	      res = getcwd(dir,199);
-	      fprintf(stdout,"%s%s\n",dir,filename+1);
-	    } else fprintf(stdout,"%s\n",filename);
-	  }
-	  unload_seg((pseg)get_ep(ptr->psc_ptr));
-	  set_ep(ptr->psc_ptr, (pb)seg_first_inst);
-	  if (xsb_profiling_enabled)
-	    add_prog_seg(ptr->psc_ptr, (pb)seg_first_inst, text_bytes);
+	if (seg_address_in_stack(CTXTc (pseg)get_ep(ptr->psc_ptr))) {
+	  char message[255];
+	  snprintf(message,255,
+		   "ERROR: When redefining %s/%d from file %s, freed code is still needed.",
+		   get_name(ptr->psc_ptr),get_arity(ptr->psc_ptr),filename);
+	  xsb_exit(CTXTc message);
 	}
+	if (isstring(get_data(ptr->psc_ptr)) &&
+	    strcmp(string_val(get_data(ptr->psc_ptr)),filename)) {
+	  xsb_warn("Redefining: %s/%d from file %s; Previously defined from file %s",
+		   get_name(ptr->psc_ptr),get_arity(ptr->psc_ptr),
+		   filename, string_val(get_data(ptr->psc_ptr)));
+	  set_data(ptr->psc_ptr,(struct psc_rec *)makestring(string_find(filename,1)));
+	}
+	unload_seg((pseg)get_ep(ptr->psc_ptr));
+	set_ep(ptr->psc_ptr, (pb)seg_first_inst);
+	if (xsb_profiling_enabled)
+	  add_prog_seg(ptr->psc_ptr, (pb)seg_first_inst, text_bytes);
       }
       instruct_tip = get_tip_or_tdisp(ptr->psc_ptr);
       if (instruct_tip != NULL) {
@@ -991,8 +985,10 @@ static byte *loader1(CTXTdeclc FILE *fd, char *filename, int exp)
 #endif
 	  *instruct_tip = New_TIF(CTXTc (ptr->psc_ptr));
       }
-      /* set data to point to module's psc */
-      set_data(ptr->psc_ptr, cur_mod);
+      /* set data to point to module's psc, if not */
+      if (!isstring(get_data(ptr->psc_ptr))) {
+	set_data(ptr->psc_ptr, cur_mod);
+      }
       break;
     case T_DYNA: {
       char culprit[255];
@@ -1092,16 +1088,18 @@ byte *loader(CTXTdeclc char *file, int exp)
     }
   }
 
-  if (magic_num == 0x11121307 || magic_num == 0x11121305)
-    first_inst = loader1(CTXTc fd,file,exp);
-  else if (magic_num == 0x11121308 || magic_num == 0x11121309) {
+  if (magic_num == 0x11121307 || magic_num == 0x11121305) {
+    char *efilename = expand_filename(file);
+    char *filename = string_find(efilename,1);
+    mem_dealloc(efilename,MAXPATHLEN,OTHER_SPACE);
+    first_inst = loader1(CTXTc fd,filename,exp);
+  } else if (magic_num == 0x11121308 || magic_num == 0x11121309) {
 #ifdef FOREIGN
     first_inst = loader_foreign(file, fd, exp);
 #else
     xsb_abort("Loading a foreign file: %s", file);
 #endif
-  }
-  else {
+  } else {
     xsb_abort("File: %s does not have proper byte code format...\n%s",
 	      file, "\t Please remove it and then recompile");
     first_inst = NULL;
