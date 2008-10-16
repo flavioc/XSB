@@ -203,10 +203,13 @@ get_backtrace_list([],[]).
 get_backtrace_list([Psc|Pscs],[Mod:Name/Arity|Preds]) :-
 	(Psc =:= 0
 	 ->	Mod = (?), Name = (?), Arity = (?)
-	 ;	psc_data(Psc,ModPsc),
-		(ModPsc =:= 0
-		 ->	Mod = usermod % 0 also means usermod
-		 ;	psc_name(ModPsc,Mod)
+	 ;	psc_data(Psc,ModPscOrFile),
+		(integer(ModPscOrFile)
+		 ->	(ModPscOrFile =:= 0
+			 ->	Mod = usermod % 0 also means usermod
+			 ;	psc_name(ModPscOrFile,Mod)
+			)
+		 ;	Mod = usermod
 		),
 		psc_name(Psc,Name),
 		psc_arity(Psc,Arity)
@@ -218,10 +221,13 @@ get_mod_pred_arity_list([], []).
 get_mod_pred_arity_list([Psc|Pscs], [ModPred|ModPreds]) :-
 	(Psc =:= 0
 	 ->	ModPred = '... unknown/?'
-	 ;	psc_data(Psc,ModPsc),
-		(ModPsc =:= 0
-		 ->	ModName = usermod % 0 also means usermod
-		 ;	psc_name(ModPsc,ModName)
+	 ;	psc_data(Psc,ModPscOrFile),
+		(integer(ModPscOrFile)
+		 ->	(ModPscOrFile =:= 0
+			 ->	ModName = usermod % 0 also means usermod
+			 ;	psc_name(ModPscOrFile,ModName)
+			)
+		 ;	ModName = usermod
 		),
 		psc_name(Psc,Name),
 		psc_arity(Psc,Arity),
@@ -250,10 +256,13 @@ print_mod_pred_arity_list([]).
 print_mod_pred_arity_list([Psc|Pscs]) :-
 	(Psc =:= 0
 	 ->	messageln('... unknown/?',STDERR)
-	 ;	psc_data(Psc,ModPsc),
-		(ModPsc =\= 0
-		 ->	psc_name(ModPsc,ModName)
-		 ;	ModName = unknown
+	 ;	psc_data(Psc,ModPscOrFile),
+		(integer(ModPscOrFile)
+		 ->	(ModPscOrFile =\= 0
+			 ->	psc_name(ModPscOrFile,ModName)
+			 ;	ModName = unknown
+			)
+		 ;	ModName = usermod
 		),
 		psc_name(Psc,Name),
 		psc_arity(Psc,Arity),
