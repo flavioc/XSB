@@ -26,6 +26,10 @@
 
 :- dynamic input_streams/2.
 
+:- export get_stdin/2.
+
+get_stdin(Stack,Stream):- input_streams(Stack,Stream).
+
 /* 
    push_stdin/2 acts like see/1 except that it is used in low-level situations
    where see/1 can't be used (i.e., at the level of file_read/write).
