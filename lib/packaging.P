@@ -22,6 +22,7 @@
 ** 
 */
 
+:- compiler_options([sysmod,optimize]).
 
 :- dynamic package_configuration/2.
 :- import package_configuration/2 from usermod.

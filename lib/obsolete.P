@@ -22,7 +22,7 @@
 ** 
 */
 
-
+:- compiler_options([sysmod]).
 
 %% Insert this in obsolete predicates.
 obsolete(Msg1, Msg2) :-
