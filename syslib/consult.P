@@ -438,7 +438,10 @@ load_dyn(File,DirIn) :-
 load_dyn_nocheck(File,DirIn) :-
 	load_dyn_convert(DirIn,Dir,load_dyn),
 	get_fname(File,SExt,Base,Mod),
-	load_dyn0(SExt,Base,Mod,Dir).
+	(SExt == XSB_OBJ_EXTENSION_ATOM_SANS_DOT
+	 ->	existence_error('Prolog file/module',Base,load_dyn/[1,2],1)
+	 ;	load_dyn0(SExt,Base,Mod,Dir)
+	).
 
 load_dyn_convert(a,0,_):- !.
 load_dyn_convert(z,1,_):- !.
