@@ -1113,14 +1113,22 @@ void mark_findall_strings(CTXTdecl) {
 }
 
 /* Copies a term from another thread's stack
- * Source thread hreg is used to make do_copy_term work properly
+ * NOTE THAT ALL REFERENCES to th are to the newly created thread, rather than the callng thread.
  */
 #ifdef MULTI_THREAD
 Cell copy_term_from_thread( th_context *th, th_context *from, Cell arg1 )
 {
+  long size ;
   CPtr hptr ;
   Cell to ;
 
+  init_findall_trail(th) ;
+  size = term_size(from, arg1) ;
+  //  printf("size %d from %x to %x\n",size,from,th);
+  findall_untrail(th) ;
+  //  thread_check_glstack_overflow(th, 1, size*sizeof(Cell)) ;
+  check_glstack_overflow(1,pcreg, size*sizeof(Cell)) ;
+  
   hptr = hreg ;
 
   init_findall_trail(th) ;
