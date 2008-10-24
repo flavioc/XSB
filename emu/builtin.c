@@ -149,9 +149,9 @@ extern xsbBool startInterruptThread(SOCKET intSocket);
 
 long if_profiling = 0;
 long profile_thread_started = 0;
-static long prof_unk_count = 0;
 long prof_gc_count = 0;
-static long prof_total = 0;
+long prof_int_count = 0;
+static long prof_unk_count = 0;
 
 static long total_prog_segments = 0;
 static long prof_table_length = 0;
@@ -3052,12 +3052,11 @@ void log_prog_ctr(CTXTdeclc byte *lpcreg) {
   ubi_btNodePtr uNodePtr;
 
   uNodePtr = ubi_sptLocate(RootPtr, &lpcreg, ubi_trLE);
-  prof_total++;
-  if (uNodePtr == NULL) prof_unk_count++;
+  if (uNodePtr == NULL) prof_unk_count += prof_int_count;
   else if (lpcreg <= uNodePtr->code_end) {
-    uNodePtr->i_count++;
-  }
-  else prof_unk_count++;
+    uNodePtr->i_count += prof_int_count;
+  } else prof_unk_count += prof_int_count;
+  prof_int_count = 0;
 }
 
 #define prof_tab_incr 10000
@@ -3150,7 +3149,6 @@ void retrieve_prof_table(CTXTdecl) { /* r2: +NodePtr, r3: -p(PSC,ModPSC,Cnt), r4
     bld_int(modpscptrloc,0);
     ctop_int(CTXTc 4,0);
     psc_profile_count_num = 0; // clear table
-    prof_total = 0;
     prof_unk_count = 0;
     prof_gc_count = 0;
   }

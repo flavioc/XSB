@@ -845,10 +845,10 @@ xsbBool startInterruptThread(SOCKET intSocket)
 
 extern long if_profiling;
 extern long prof_gc_count;
+extern long prof_int_count;
 extern int garbage_collecting;
 
 void setProfileBit(void *place_holder) {
-  long unhandled = 0;
 #ifdef MULTI_THREAD
   th_context *th = find_context(xsb_thread_self());
 #endif
@@ -857,10 +857,7 @@ void setProfileBit(void *place_holder) {
       if (garbage_collecting) {
 	prof_gc_count++;
       } else {
-	if (asynint_val & PROFINT_MARK) {
-	  unhandled++;
-	  if (!(unhandled % 500)) printf("Unhandled profile ints: %ld\n",unhandled);
-	}
+	prof_int_count++;
 	asynint_val |= PROFINT_MARK;
       }
     }
