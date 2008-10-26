@@ -747,6 +747,7 @@ correct calls to these predicates will give a miscellaneous error.
 
 \begin{description}
 
+\index{aliases!threads}
 \standarditem{thread\_create(+Goal,ThreadId,+OptionsList)}{thread\_create/3}
 %
 When called from thread $T$, this predicate creates a new XSB thread
@@ -1212,6 +1213,7 @@ As described previously, each thread is created with a private message
 queue that is readable only by itself.  The following predicates are
 used to communicate using private and public message queues.
 %
+\index{aliases!message queues}
 \begin{description}
 \standarditem{message\_queue\_create(-Queue,+Options)}
 {message\_queue\_create/2}
@@ -1461,6 +1463,7 @@ mutex has been successfully unlocked.
 %
 \ei
 
+\index{aliases!mutexes}
 \standarditem{mutex\_create(?Mutex)}
 {mutex\_create/1}
 %

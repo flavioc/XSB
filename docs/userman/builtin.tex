@@ -99,6 +99,7 @@ differ from the ISO standard.
 
 %--------------------------------------------------------------------------------------------------
 \section{Input and Output}
+\index{streams}
 
 XSB's I/O is based on ISO-style streams, although it also supports
 older DEC-10 style file handling.  The use of streams provides a
@@ -122,19 +123,23 @@ standard error stream is the same as the standard output stream, but
 it can be redirected either by UNIX shell-style I/O redirection or by
 the predicates {\tt file\_reopen/4} and {\tt file\_clone/3}.
 Similarly there is the standard warning stream (to which all system
-warnings are written), the standard debugging stream (to which
-debugging information is written), and the standard feedback stream
-(for interpreter prompts, yes/no answers, etc).  All of these streams
-are aliased by default to standard output, and can be redirected by
-the predicates the predicates {\tt file\_reopen/4} and {\tt
-file\_clone/3}.
+warnings are written), the standard message stream, the standard
+debugging stream (to which debugging information is written), and the
+standard feedback stream (for interpreter prompts, yes/no answers,
+etc).  All of these streams are aliased by default to standard output,
+and can be redirected by the predicates the predicates {\tt
+  file\_reopen/4} and {\tt file\_clone/3}.
 
+\index{aliases!streams}
 Streams may also be aliased: the default input and output streams can
-be denoted by {\tt user\_in} and {\tt user\_out} and they refer to the
-process'es standard input and standard output streams \footnote{For
-backwards compatibility, the default input stream can also be aliased
-by {\tt user} or {\tt userin}, and the default output stream by {\tt
-user} or {\tt userout}.}.
+be denoted by {\tt user\_input} and {\tt user\_output} and they refer
+to the standard input and standard output streams of the
+process \footnote{For backwards compatibility, the default input
+  stream can also be aliased by {\tt user} or {\tt userin}, and the
+  default output stream by {\tt user} or {\tt userout}.}.  Similarly,
+XSB's error, warning and message streams user the aliases {\tt
+  user\_error}, {\tt user\_warning} and {\tt user\_message}
+respectively (cf. Section~\ref{}).
 
 Streams are distinguished by their {\tt class} -- whether they are
 file or atom, etc.; as well as by various properties.  These
