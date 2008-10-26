@@ -105,8 +105,6 @@ told :-    stat_flag(CURRENT_OUTPUT, Str),
 % Opening and Closing
 %----------------------------------------------------------------------------------------------------
 
-% TLS considering user, userin, userout, user_in and user_out as aliases.
-
 open(File,Mode,Stream) :- 'open aux'(File,Mode,0,Stream).
 
 'open aux'(File,_,_,_):-
@@ -130,6 +128,10 @@ open(File,Mode,Stream) :- 'open aux'(File,Mode,0,Stream).
 	stat_set_flag(CURRENT_OUTPUT, STDOUT).
 'open aux'(user_error,write,_,STDERR):-!,  % PROTO-ISO
 	stat_set_flag(CURRENT_OUTPUT, STDERR).
+'open aux'(user_warning,write,_,STDWARN):-!,
+	stat_set_flag(CURRENT_OUTPUT, STDWARN).
+'open aux'(user_message,write,_,STDMSG):-!, 
+	stat_set_flag(CURRENT_OUTPUT, STDMSG).
 'open aux'(pipe(FileDescr),Mode,_,Stream):- !,
 	file_translate(Mode,M),
 	fd2iostream(FileDescr,M,Stream),
@@ -198,6 +200,8 @@ close(user_out) :- !.
 close(user_input) :- !.
 close(user_output) :- !.
 close(user_error) :- !.
+close(user_warning) :- !.
+close(user_message) :- !.
 close(S_or_A) :- 
 	check_stream_or_alias(S_or_A,close/1,1,Str),
 	file_close(Str,NOFORCE_FILE_CLOSE).

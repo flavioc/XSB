@@ -377,14 +377,16 @@ check_stream_or_alias(S_or_A,Predicate,Arg,Stream) :-
 	         instantiation_error(Predicate,Arg)
 	         ;  domain_error(stream_or_alias,S_or_A,Predicate,Arg) ) ) ).
 
+'_$alias'(user_input,STDIN).
+'_$alias'(user_output,STDOUT).
+'_$alias'(user_error,STDERR).
+'_$alias'(user_warning,STDWARN).
+'_$alias'(user_message,STDMSG).
+'_$alias'(userout,STDOUT).
 '_$alias'(userin,STDIN).
 '_$alias'(user_in,STDIN).
-'_$alias'(user_input,STDIN).
-'_$alias'(userout,STDOUT).
 '_$alias'(user_out,STDOUT).
-'_$alias'(user_output,STDOUT).
 %'_$alias'(usererr,2).
-'_$alias'(user_error,STDERR).
 '_$alias'(In,Out):-  '_$alias_dynamic'(In,STREAM_ALIAS,Out).
 
 :- import (index)/2 from standard.

@@ -367,8 +367,8 @@ add_opaque(Spec) :-
 /*======================================================================*/
 /* mpa_to_skel(+MPAorSkel,-Skel) converts M:P/A or P/A to Skel 		*/
 /*======================================================================*/
-% TLS: added some checking here, as I think silently failing cfan be dangerous.
 
+% TLS: added some checking here, as I think silently failing can be dangerous.
 mpa_to_skel(Mod:P/A,Skel) :-
 	atom(Mod),atom(P),integer(A),!,
 	psc_insert(P,A,PSC,Mod),
