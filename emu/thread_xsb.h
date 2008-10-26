@@ -49,6 +49,8 @@ typedef pthread_t pthread_t_p;
 #define PTHREAD_CANCEL(a) pthread_cancel(a);
 #endif
 
+/* Lower 20 bytes of thread are entry, others are incarnation 
+   TLS: problems with INC_MASK_RIGHT and 64-bits? */
 #define INC_MASK_RIGHT			0x3ff
 #define INC_SHIFT			20
 #define INC_MASK			(INC_MASK_RIGHT<<INC_SHIFT)
@@ -83,8 +85,29 @@ extern MutexFrame sys_mut[MAX_SYS_MUTEXES];
 #define MUTARRAY_NUMLOCKS(i) sys_mut[(i)].num_locks
 #define MUTARRAY_OWNER(i) sys_mut[(i)].owner
 
+typedef struct XSB_Message_Queue {
+  pthread_mutex_t              mq_mutex;
+  pthread_cond_t               mq_has_free_cells;
+  pthread_cond_t               mq_has_messages;
+  MQ_Cell_Ptr                  first_message;
+  MQ_Cell_Ptr                  last_message;
+  int                          size;		/* number of messages in the queue */
+  int                          max_size;
+  unsigned int	               n_threads: 16;   /* number of threads waiting */
+  unsigned int                 initted: 1;      /* check to see if mutexes/condvars must be set */
+  unsigned int		       deleted: 1;	/* true if is to be deleted */
+  unsigned int 		       incarn : 12 ;    /* used to generate diff ids for public mqs */
+  int id ;
+  int mutex_owner;
+  struct XSB_Message_Queue     *next_entry,	/* either next free slot or next thread */
+			       *prev_entry ;	/* only valid for slots used for threads */
+} XSB_MQ;
+typedef XSB_MQ *XSB_MQ_Ptr;
+
 extern void print_mutex_use(void);
 extern void release_held_mutexes(CTXTdecl);
+extern void init_message_queue(XSB_MQ_Ptr, int);
+extern XSB_MQ_Ptr  mq_table;
 
 extern pthread_mutexattr_t attr_rec_gl ;
 extern pthread_mutex_t completing_mut;
