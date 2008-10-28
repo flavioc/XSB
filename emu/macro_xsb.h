@@ -40,7 +40,7 @@
  *                   ===========================
  *
  *    These records are used to hold pointers to abolished call and
- *    answer tries for table garbage collection.  These are effective
+ *    answer tries for table garbage collection.  These are effectively
  *    a union type, as they can hold deleted subgoals as well as
  *    deleted predicates.
  */     
@@ -222,7 +222,7 @@ extern int assert_code_to_buff_p(prolog_term);
 /*===========================================================================*/
 
 /*             
- * 		     Deleted Clause Frames`
+ * 		     Deleted Clause Frames
  *                   ===========================
  *
  *    These records are used to hold pointers to abolished dynamic
@@ -495,8 +495,6 @@ struct ascc_edge {
 
 #define DELAYED		-1
 
-/*----------------------------------------------------------------------*/
-
 struct completion_stack_frame {
   VariantSF subgoal_ptr;
   int     _level_num;
@@ -583,8 +581,6 @@ struct completion_stack_frame {
 /*----------------------------------------------------------------------*/
 
 #include "slgdelay.h"
-
-/*----------------------------------------------------------------------*/
 
 enum SubgoalFrameType {
   SHARED_VARIANT_PRODUCER_SFT        = 0x06,   /* binary 0110 */

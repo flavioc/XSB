@@ -242,10 +242,11 @@ static void init_thread_table(void)
 
 static void init_mq_table(void)
 {
-  int i, status ;
+  int i, status;
 
   pthread_mutexattr_init( &attr_errorcheck_gl ) ;
-  if( pthread_mutexattr_settype( &attr_errorcheck_gl,PTHREAD_MUTEX_ERRORCHECK_NP ) != 0 )
+  status = pthread_mutexattr_settype( &attr_errorcheck_gl,PTHREAD_MUTEX_ERRORCHECK_NP );
+  if ( status )
     xsb_initialization_exit("Error (%s) initializing errorcheck mutex attr -- exiting\n",
 			    strerror(status));
 
@@ -329,8 +330,10 @@ void init_message_queue(XSB_MQ_Ptr xsb_mq, int declared_size) {
     status = pthread_mutex_init(&xsb_mq->mq_mutex, &attr_errorcheck_gl ) ;
     if (status) printf("Error queue initialization: queue %d\n",xsb_mq-mq_table);
 #else
-    pthread_mutex_init(&xsb_mq->mq_mutex, NULL ) ;
+    status = pthread_mutex_init(&xsb_mq->mq_mutex, NULL ) ;
+    if (status) printf("Error queue initialization: queue %d\n",xsb_mq-mq_table);
 #endif
+
     pthread_cond_init( &xsb_mq->mq_has_free_cells, NULL );
     pthread_cond_init( &xsb_mq->mq_has_messages, NULL );
     xsb_mq->initted = TRUE;
