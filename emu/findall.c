@@ -524,6 +524,7 @@ static int findall_copy_template_to_chunk(CTXTdeclc Cell from, CPtr to, CPtr *h)
 		findall_trail(CTXTc pfirstel,(Cell)pfirstel);
 		*to = (Cell)to ;
 		*pfirstel = makelist((CPtr)to);
+		size += 2;
 	      }
 	    else
 	      {
