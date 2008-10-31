@@ -240,6 +240,8 @@ static void init_thread_table(void)
    queues need a free list initialization.
 */
 
+#define PUBLIC_MESSAGE_QUEUE(mqid)  (THREAD_ENTRY(mqid) >= 2*max_threads_glc)
+
 static void init_mq_table(void)
 {
   int i, status;
@@ -1392,7 +1394,7 @@ xsbBool xsb_thread_request( CTXTdecl )
 	    pthread_mutex_unlock( &th_mutex ) ;
 	  } else {
 	    bld_int(reg+2,i);
-	    xsb_permission_error(CTXTc "thread_interruptt","invalid_thread",
+	    xsb_permission_error(CTXTc "thread_interrupt","invalid_thread",
 				   reg[2],"xsb_thread_interrupt",1); 
 	  }
 	  break;
@@ -1650,7 +1652,11 @@ case THREAD_ACCEPT_MESSAGE: {
    {
      int mq_id;
      mq_id = ptoc_int(CTXTc 2);
-     
+
+     if (!PUBLIC_MESSAGE_QUEUE(mq_id)) 
+       xsb_permission_error(CTXTc "destroy","private_signal_or_message_queue",
+			    reg[2],"message_queue_destroy",1); 
+
      //     printf("destroying message queue %d\n",mq_id);
      destroy_message_queue( CTXTc mq_id ) ;
      
