@@ -1266,11 +1266,11 @@ number of terms in the queue, and for aliases of the queue.
 \ei
 \ei
 
-\standarditem{message\_queue\_detroy(+Queue\_or\_Alias,\#Message)}
+\standarditem{message\_queue\_detroy(+Queue\_or\_Alias)}
 {message\_queue\_destroy/1}
 %
-Destroys a message queue with alias or id {\tt Queue\_or\_alias}, as
-created by {\tt message\_queue\_create/[1,2]}.
+Destroys a public message queue with alias or id {\tt
+  Queue\_or\_alias}, as created by {\tt message\_queue\_create/[1,2]}.
 %  It is not allowed to
 %de- stroy the queue of a thread. 
 If any threads are currently waiting on {\tt Queue\_or\_Alias} to read
@@ -1288,6 +1288,16 @@ error.
 \item 	{\tt Queue\_or\_Alias} is not a queue id or alias
 \bi
 \item 	{\tt domain\_error(queue\_or\_alias,Queue\_or\_Alias)}
+\ei
+\item {\tt Queue\_or\_Alias} denotes a private message queue or signal
+  queue rather than a public message queue
+\bi
+\item {\tt permission\_error(destroy,private\_signal\_or\_message\_queue,Queue\_or\_Alias)}
+\ei
+\item {\tt Queue\_or\_alias} is not the queue name or alias of a
+  public message queue.
+\bi
+\item {\tt existence\_error(message\_queue, Queue\_or\_Alias)}
 \ei
 \ei
 %
