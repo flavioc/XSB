@@ -1116,10 +1116,11 @@ void init_thread_structures(CTXTdecl)
   th->is_deadlock_leader = FALSE ;
 #endif
 #ifdef CONC_COMPL
-  pthread_cond_init( &th->cond_var, NULL );
   th->completing = FALSE;
   th->last_ans = 1;
+  pthread_cond_init( &th->cond_var, NULL );
 #endif
+  th->cond_var_ptr = NULL;
 }
 
 void cleanup_thread_structures(CTXTdecl)

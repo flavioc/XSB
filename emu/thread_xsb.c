@@ -1060,7 +1060,7 @@ int wait_on_queue( th_context *th, XSB_MQ_Ptr q, op_type send )
 	/* check for thread interrupt */
        	if( asynint_val & THREADINT_MARK )
         {
-	  //	  printf("warning! Thread signal\n");
+	  //	  	  printf("warning! Thread signal\n");
 	  pthread_mutex_unlock( &q->mq_mutex ) ;
 	  return TRUE ;
 	}
@@ -1380,13 +1380,15 @@ xsbBool xsb_thread_request( CTXTdecl )
 	    if( ctxt_ptr )
 	    {   if( ctxt_ptr->enable_cancel )
 	    	{	ctxt_ptr->_asynint_val |= THREADINT_MARK;
-	    		pthread_kill( th_vec[THREAD_ENTRY(i)].tid, SIGABRT );
-#ifdef WIN_NT
+		  //	    		pthread_kill( th_vec[THREAD_ENTRY(i)].tid, SIGABRT );
+		  //#ifdef WIN_NT
 			{	pthread_cond_t *pcond = ctxt_ptr->cond_var_ptr;
-				if( pcond != NULL )
-					pthread_cond_broadcast( pcond ) ;
+			  if( pcond != NULL ) {
+			    //			    printf("broadcasting on %p\n",pcond);
+			    pthread_cond_broadcast( pcond ) ;
+			  }
 			}
-#endif
+			//#endif
 	    	}
 		else
 			ctxt_ptr->to_be_cancelled = TRUE ;
@@ -1670,11 +1672,47 @@ case THREAD_ACCEPT_MESSAGE: {
 	  break ;
 
 	case XSB_USLEEP: {
+
+	  struct timespec   ts;
+	  struct timeval    tp;
+	  int naptime_s, naptime_n, rc;
+	  pthread_cond_t      cond  = PTHREAD_COND_INITIALIZER;
+	  pthread_mutex_t     mutex = PTHREAD_MUTEX_INITIALIZER;
+	  pthread_mutex_lock(&mutex);
+
+	  //	  checkResults("gettimeofday()\n", rc);
+	  naptime_n = iso_ptoc_int_arg(CTXTc 2,"thread_sleep/1",1);
+
+	  naptime_s = naptime_n/1000;
+	  naptime_n = naptime_n%1000;
+	  /* Convert from timeval to timespec */
+	  rc =  gettimeofday(&tp, NULL);
+
+	  ts.tv_sec = tp.tv_sec;
+	  ts.tv_sec += naptime_s;
+	  ts.tv_nsec = tp.tv_usec * 1000;
+	  ts.tv_nsec += naptime_n*1000000;
+
+	  // to broadcase for signal/cancel
+	  th->cond_var_ptr = &cond;
+	  //	  cond_var = &cond ;
+	  //	  rc = pthread_cond_timedwait(&cond,&mutex);
+	  //	  if (rc != ETIMEDOUT)
+
+	  rc = pthread_cond_timedwait(&cond,&mutex,&ts);
+	  if (rc && rc != ETIMEDOUT)
+	    printf("Error in pthread_cond_timedwait in thread_sleep/1 %s\n",strerror(rc));
+	  /*
 #ifdef WIN_NT
 	  Sleep(floor(iso_ptoc_int_arg(CTXTc 2,"usleep/1",1) / 1000));
 #else
 	  usleep(iso_ptoc_int_arg(CTXTc 2,"usleep/1",1));
 #endif
+	  */
+	  pthread_mutex_destroy(&mutex);
+	  pthread_cond_destroy(&cond);
+	  th->cond_var_ptr = NULL;
+
 	  break;
 	}
 
