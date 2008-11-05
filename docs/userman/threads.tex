@@ -1003,15 +1003,28 @@ like any other error.  However, the default behavior is for {\tt
   Thread\_or\_Alias} to exit with an exit ball indicating that it has been
 cancelled.  
 
-Cancelled threads usually exit very shortly after the {\tt
-  thread\_cancel/1} predicate is called.  In particular, a thread may
-be cancelled when it is waiting for a message on a queue.  However, a
-thread can enter a state in which cancellation cannot occur via
-executing the predicate: {\tt thread\_disable\_cancel/0}.  If {\tt ?-
-  thread\_cancel(T)} is called for a thread {\tt T} for which
-cancelling has been disabled, {\tt T} will be cancelled immediately
-after {\tt T} re-enables cancellation through calling the predicate
-{\tt thread\_enable\_cancel/0}.
+As noted above, an executing thread that is cancelled will exit very
+shortly after the {\tt thread\_cancel/1} predicate is called.  Blocked
+threads, however, are not always guarenteed to exit when cancelled.
+Currently a blocked thread may be cancelled
+%
+\begin{itemize}
+%
+\item when it is waiting to read or write a message on a queue
+%
+\item when it is executing {\tt thread\_sleep/1}
+%
+\end{itemize}
+%
+On the other hand, a blocked thread may not be cancelled while it is
+waiting to read from a stream or waiting for a mutex.
+
+During critical operations a thread may want to prevent itself from
+being cancelled.  This can be done by If {\tt ?- thread\_cancel(T)} is
+called for a thread {\tt T} for which cancelling has been disabled,
+{\tt T} will be cancelled immediately after {\tt T} re-enables
+cancellation through calling the predicate {\tt
+  thread\_enable\_cancel/0}.
 
 The main XSB thread cannot be cancelled; apart from that any thread
 can cancel any other thread.
@@ -1051,6 +1064,13 @@ interrupt is handled while {\tt ThreadOrAlias} is executing a goal
 with continuation $C$, all solutions for {\tt Goal} will be obtained,
 and the failure continuation of {\tt Goal} will be $C$.  If {\tt Goal}
 throws an exception $E$, the continuation will be the handler for $E$.
+
+For blocked threads, signalling works much like cancellation
+(described above), and a blocked thread will handle a signal whenever
+it can be cancelled.  However, the thread does not return to the
+blocking operation {\em after} the signal -- rather it will execute
+the signal and then execute the continuation to be taken after the
+blocking operation.
 
 {\bf Error Cases}
 \bi
@@ -1154,11 +1174,13 @@ clear_thread_table.
 \ei
 \ei
 
-\standarditem{thread\_sleep(+Seconds)}
+\standarditem{thread\_sleep(+MilliSeconds)}
 {thread\_sleep/1}
 %
-Causes the calling thread to sleep approximately {\tt Seconds}
-before resuming.
+Causes the calling thread to sleep approximately {\tt MilliSeconds}
+before resuming.  A thread may be cancelled while sleeping.  However,
+a sleeping thread that is signalled will execute the signalled goal
+and resume execution {\em without} returning to sleep.
 
 {\bf Error Cases}
 \bi
@@ -1174,8 +1196,8 @@ before resuming.
 
 %----------
 
+\comment{
 \ourmoditem{usleep(+Microseconds)}{usleep/1}{thread}
-
 %
 Causes the calling thread to sleep approximately {\tt Microseconds}
 before resuming.
@@ -1191,6 +1213,8 @@ before resuming.
 \item 	{\tt type\_error(integer, Microseconds)}.
 \ei
 \ei
+}
+
 % 
 \end{description}
 

@@ -3396,35 +3396,167 @@ precisely,
 
 \begin{description}
 
-\standarditem{name(?Constant, ?CharList)}{name/2}
-    The standard predicate {\tt name/2} performs the conversion 
-    between a constant and its character list representation. 
-    If {\tt Constant} is supplied (and is any atom or number), {\tt CharList} 
+\isoitem{atom\_codes(?Atom, ?CharCodeList)}{atom\_codes/2}
+    The standard predicate {\tt atom\_codes/2} performs the conversion 
+    between an atom and its character list representation. 
+    If {\tt Atom} is supplied (and is an atom), {\tt CharList} 
     is unified with a list of ASCII codes representing the {\em ``name''} 
-    of the constant.  In that case, {\tt CharList} is exactly the list of 
+    of that atom.  In that case, {\tt CharList} is exactly the list of 
     ASCII character codes that appear in the printed representation of 
-    {\tt Constant}\@.  If on the other hand {\tt Constant} is a variable, 
+    {\tt Atom}.  If on the other hand {\tt Atom} is a variable, 
     then {\tt CharList} must be a proper list of ASCII character codes. 
-    In that case, {\tt name/2} will convert a list of ASCII characters 
-    that can represent a number to a number rather than to a character string.
-    As a consequence of this, there are some atoms (for example \verb|'18'|)
-    which cannot be constructed by using {\tt name/2}\@. 
-    If conversion to an atom is preferred in these cases, the 
-    standard predicate {\tt atom\_codes/2} should be used instead. The 
-    syntax for numbers that is accepted by {\tt name/2} is exactly the one 
-    which {\tt read/1} accepts.  Predicate {\tt name/2} is provided for 
-    backwards compatibility.  It is advisable that new programs use
-    the predicates {\tt atom\_codes/2} and {\tt number\_codes/2} described
-    below.
+    In that case, {\tt Atom} is instantiated to an atom containing
+    exactly those characters, even if the characters look like the
+    printed representation of a number.
 
-    In \version\ predicate {\tt name/2} is not yet implemented for 
-    converting from a real number to its character list representation, 
-    and if the representation of a real is provided as {\tt CharList}, 
-    it will be converted to an atom.
+    Examples:
+    {\footnotesize
+     \begin{verbatim}
+                   | ?- atom_codes('Foo', L).
+                   L = [70,111,111]
 
-    If both of the arguments of {\tt name/2} are uninstantiated or 
-    {\tt CharList} is not a proper list of ASCII characters, {\tt name/2} 
-    will abort and an error message will be sent to the standard error stream.
+                   | ?- atom_codes([], L).
+                   L = [91,93]
+
+                   | ?- atom_codes(X, [102,111,111]).
+                   X = foo
+ 
+                   | ?- atom_codes(X, []).
+                   X = ''
+
+                   | ?- atom_codes(X, "Foo").
+                   X = 'Foo'
+
+                   | ?- atom_codes(X, [52,51,49]).
+                   X = '431'
+
+                   | ?- atom_codes(X, [52,51,49]), integer(X).
+                   no
+
+                   | ?- atom_codes(X, [52,Y,49]).
+                   ++Error[XSB/Runtime/P]: [Instantiation]  in arg 2 of predicate atom_codes/2
+                   Forward Continuation...
+
+                   | ?- atom_codes(431, L).
+                   ++Error[XSB/Runtime/P]: [Type (431 in place of atom)] in arg 1 of predicate 
+                   atom_codes/2
+                   Forward Continuation...
+
+                   | ?- atom_codes(X, [52,300,49]).
+                   [Representation (300 is not character code)] in arg 2 of predicate 
+                   atom_codes/2
+                   Forward Continuation...
+     \end{verbatim}}
+
+{\bf Error Cases}
+\begin{itemize}
+\item {\tt Atom} is a variable and {\tt CharCodeList} is a partial
+  list or a list with an element which is a variable
+\begin{itemize}
+\item {\tt instantiation\_error}
+\end{itemize}
+\item {\tt Atom} is neither a variable nor an atom 
+\bi
+\item {\tt type\_error(atom, Atom)}
+\ei
+\item {\tt Atom} is a variable and {\tt CharCodeList} is neither a
+  list nor a partial list 
+\bi
+\item {\tt type\_error(list, CharCodeList)}
+\ei
+\item {\tt Atom} is a variable and an element {\tt E} of {\tt CharCodeList} is neither a
+variable nor a character code
+\bi
+\item {\tt representation\_error(character\_code, E)}
+\ei
+\end{itemize}
+
+\isoitem{number\_codes(?Number, ?CharCodeList)}{number\_codes/2}
+%
+    The standard predicate {\tt number\_codes/2} performs the conversion 
+    between a number and its character list representation. 
+    If {\tt Number} is supplied (and is a number), {\tt CharList} is
+    unified with a list of ASCII codes comprising the printed representation
+    of that {\tt Number}.  If on the other hand {\tt Number} is a variable, 
+    then {\tt CharList} must be a proper list of ASCII character codes that
+    corresponds to the correct syntax of a number (either integer or float)
+    In that case, {\tt Number} is instantiated to that number, otherwise
+    {\tt number\_codes/2} will simply fail.
+
+    Examples:
+    {\footnotesize
+     \begin{verbatim}
+                   | ?- number_codes(123, L).
+                   L = [49,50,51];
+
+                   | ?- number_codes(N, [49,50,51]), integer(N).
+                   N = 123
+
+                   | ?- number_codes(31.4e+10, L).
+                   L = [51,46,49,51,57,57,57,55,69,43,49,48]
+
+                   | ?- number_codes(N, "314e+8").
+                   N = 3.14e+10
+
+                   | ?- number_codes(foo, L).
+                   ++Error[XSB/Runtime/P]: [Type (foo in place of
+                     number)] in arg 1 of predicate 
+                   number_codes
+                   Forward Continuation...
+     \end{verbatim}}
+
+{\bf Error Cases}
+\begin{itemize}
+\item {\tt Number} is a variable and {\tt CharCodeList} is a partial
+  list or a list with an element which is a variable
+\begin{itemize}
+\item {\tt instantiation\_error}
+\end{itemize}
+\item {\tt Number} is neither a variable nor a number
+\bi
+\item {\tt type\_error(number, Number)}
+\ei
+\item {\tt Number} is a variable and {\tt CharCodeList} is neither a
+  list nor a partial list 
+\bi
+\item {\tt type\_error(list, CharCodeList)}
+\ei
+\item {\tt Number} is a variable and an element {\tt E} of {\tt CharCodeList} is neither a
+variable nor a character code
+\bi
+\item {\tt representation\_error(character\_code, E)}
+\ei
+\end{itemize}
+
+\standarditem{name(?Constant, ?CharList)}{name/2}
+%
+The standard predicate {\tt name/2} performs the conversion between a
+constant and its character list representation.  If {\tt Constant} is
+supplied (and is any atom or number), {\tt CharList} is unified with a
+list of ASCII codes representing the {\em ``name''} of the constant.
+In that case, {\tt CharList} is exactly the list of ASCII character
+codes that appear in the printed representation of {\tt Constant}\@.
+If on the other hand {\tt Constant} is a variable, then {\tt CharList}
+must be a proper list of ASCII character codes.  In that case, {\tt
+  name/2} will convert a list of ASCII characters that can represent a
+number to a number rather than to a character string.  As a
+consequence of this, there are some atoms (for example \verb|'18'|)
+which cannot be constructed by using {\tt name/2}\@.  If conversion to
+an atom is preferred in these cases, the standard predicate {\tt
+  atom\_codes/2} should be used instead. The syntax for numbers that
+is accepted by {\tt name/2} is exactly the one which {\tt read/1}
+accepts.  
+
+%Predicate {\tt name/2} is provided for backwards
+%compatibility.  It is advisable that new programs use the predicates
+%{\tt atom\_codes/2} and {\tt number\_codes/2} described below.
+%In \version\ predicate {\tt name/2} is not yet implemented for
+%converting from a real number to its character list representation,
+%%and if the representation of a real is provided as {\tt CharList}, it
+%will be converted to an atom.  If both of the arguments of {\tt
+%  name/2} are uninstantiated or {\tt CharList} is not a proper list of
+%ASCII characters, {\tt name/2} will abort and an error message will be
+%sent to the standard error stream.
 
     Examples:
     {\footnotesize
@@ -3454,159 +3586,100 @@ precisely,
                    X = -213
 
                    | ?- name(3.14, L).
-                   ++Error: Predicate name/2 for reals is not implemented yet
+                   ++Error[XSB/Runtime/P]: [Miscellaneous] Predicate name/2 for reals is not implemented yet
                    Aborting...
      \end{verbatim}}
 
-{\bf Error Cases}
-     \begin{description}
-     \item[{\tt instantiation\_error}]
-	Both arguments are uninstantiated, or argument 2 of {\tt name/2} 
-	contains a variable or is not a proper list.
-     \item[{\tt domain\_error(atom\_or\_number\_or\_variable,Constant)}]
-	{\tt Constant} is not a variable, an atom or a number.
-     \item[{\tt domain\_error(list\_of\_character,CharList}]
-	{\tt CharList} is not a list of ASCII characters.
-     \item[{\tt system\_error}]
-	{\tt Constant} is a real number (conversion from a real to its 
-	character list representation is not implemented yet).
-     \end{description}
+\begin{itemize}
+\item {\tt Constant} is a variable and {\tt CharCodeList} is a partial
+  list or a list with an element which is a variable
+\begin{itemize}
+\item {\tt instantiation\_error}
+\end{itemize}
+\item {\tt Constant} is neither a variable nor atomic
+\bi
+\item {\tt type\_error(atomic, Constant)}
+\ei
+\item {\tt Constant} is a variable and {\tt CharCodeList} is neither a
+  list nor a partial list 
+\bi
+\item {\tt type\_error(list, CharCodeList)}
+\ei
+\item {\tt Constant} is a variable and an element {\tt E} of {\tt
+  CharCodeList} is neither a variable nor a character code 
+\bi
+\item {\tt representation\_error(character\_code, E)}
+\ei
+\end{itemize}
 
-\isoitem{atom\_codes(?Atom, ?CharCodeList)}{atom\_codes/2}
-    The standard predicate {\tt atom\_codes/2} performs the conversion 
-    between an atom and its character list representation. 
-    If {\tt Atom} is supplied (and is an atom), {\tt CharList} 
-    is unified with a list of ASCII codes representing the {\em ``name''} 
-    of that atom.  In that case, {\tt CharList} is exactly the list of 
-    ASCII character codes that appear in the printed representation of 
-    {\tt Atom}.  If on the other hand {\tt Atom} is a variable, 
-    then {\tt CharList} must be a proper list of ASCII character codes. 
-    In that case, {\tt Atom} is instantiated to an atom containing
-    exactly those characters, even if the characters look like the
-    printed representation of a number.
-
-    If both of the arguments of {\tt atom\_codes/2} are uninstantiated or
-    {\tt CharList} is not a proper list of ASCII characters, {\tt
-    atom\_codes/2} aborts, and an error message will be sent to
-    the standard error stream.
-
-    Examples:
-    {\footnotesize
-     \begin{verbatim}
-                   | ?- atom_codes('Foo', L).
-                   L = [70,111,111]
-
-                   | ?- atom_codes([], L).
-                   L = [91,93]
-
-                   | ?- atom_codes(X, [102,111,111]).
-                   X = foo
- 
-                   | ?- atom_codes(X, []).
-                   X = ''
-
-                   | ?- atom_codes(X, "Foo").
-                   X = 'Foo'
-
-                   | ?- atom_codes(X, [52,51,49]).
-                   X = '431'
-
-                   | ?- atom_codes(X, [52,51,49]), integer(X).
-                   no
-
-                   | ?- atom_codes(X, [52,Y,49]).
-                   ! Instantiation error in argument 2 of atom_codes/2
-                   ! Aborting...
-
-                   | ?- atom_codes(431, L).
-                   ! Type error: in argument 1 of atom_codes/2
-                   ! atom expected, but something else found
-                   ! Aborting...
-
-                   | ?- atom_codes(X, [52,300,49]).
-                   ! Range error: in argument 2 of atom_codes/2
-                   ! ASCII code expected, but 300 found
-                   ! Aborting...
-     \end{verbatim}}
-
-{\bf Error Cases}
-    \begin{description}
-    \item[{\tt instantiation\_error}]
-	Both arguments are uninstantiated, or argument 2
-	is not a proper list, or it contains a variable.
-    \item[{\tt domain\_error(atom\_or\_variable,Atom)}]
-	{\tt Atom} is not a variable or an atom.
-    \item[{\tt domain\_error(listof\_character,CharList)}]
-	{\tt CharList} is not a list of ASCII characters.
-    \end{description}
-
-\isoitem{atom\_chars(?Number, ?CharAtomList)}{atom\_chars/2}
+\isoitem{atom\_chars(?Number, ?CharList)}{atom\_chars/2}
     Like \verb|atom_codes/2|, but the list returned (or input) is a list of
     characters \emph{as atoms} rather than ASCII codes. For instance, 
     \verb|atom_chars(abc,X)| binds {\tt X} to the list {\tt [a,b,c]}
-    instead of {\tt [97,98,99]}.
-
-\isoitem{char\_code(?Character, ?Code)}{char\_code/2}
-%
-The standard predicate {\tt char\_code/2} is true if {\tt Code} is the
-current code for {\tt Character}.  In XSB it is defined as {\tt
-  atom\_codes(Character,[Code])}.
-
-\isoitem{number\_codes(?Number, ?CharCodeList)}{number\_codes/2}
-%
-    The standard predicate {\tt number\_codes/2} performs the conversion 
-    between a number and its character list representation. 
-    If {\tt Number} is supplied (and is a number), {\tt CharList} is
-    unified with a list of ASCII codes comprising the printed representation
-    of that {\tt Number}.  If on the other hand {\tt Number} is a variable, 
-    then {\tt CharList} must be a proper list of ASCII character codes that
-    corresponds to the correct syntax of a number (either integer or float)
-    In that case, {\tt Number} is instantiated to that number, otherwise
-    {\tt number\_codes/2} will simply fail.
-
-    If both of the arguments of {\tt number\_codes/2} are uninstantiated or
-    {\tt CharList} is not a proper list of ASCII characters, {\tt
-    number\_codes/2} aborts, and an error message will be sent to
-    the standard error stream.
-
-    Examples:
-    {\footnotesize
-     \begin{verbatim}
-                   | ?- number_codes(123, L).
-                   L = [49,50,51];
-
-                   | ?- number_codes(N, [49,50,51]), integer(N).
-                   N = 123
-
-                   | ?- number_codes(31.4e+10, L).
-                   L = [51,46,49,51,57,57,57,55,69,43,49,48]
-
-                   | ?- number_codes(N, "314e+8").
-                   N = 3.14e+10
-
-                   | ?- number_codes(foo, L).
-                   ! Type error: in argument 1 of number_codes/2
-                   ! number expected, but something else found
-                   ! Aborting...
-     \end{verbatim}}
+    Instead of {\tt [97,98,99]}.
 
 {\bf Error Cases}
-    \begin{description}
-    \item[{\tt instantiation\_error}]
-	Both arguments are uninstantiated, or argument 2
-	is not a proper list, or it contains a variable.
-    \item[{\tt domain\_error(atom\_or\_variable,Number)}]
-	{\tt Number} is not a variable or a number.
-    \item[{\tt domain\_error(listof\_character,CharList)}]
-	{\tt CharList} is not a list of ASCII characters.
-    \end{description}
+\begin{itemize}
+\item {\tt Atom} is a variable and {\tt CharList} is a partial
+  list or a list with an element which is a variable
+\begin{itemize}
+\item {\tt instantiation\_error}
+\end{itemize}
+\item {\tt Atom} is neither a variable nor an atom 
+\bi
+\item {\tt type\_error(atom, Atom)}
+\ei
+\item {\tt Atom} is a variable and {\tt CharList} is neither a
+  list nor a partial list 
+\bi
+\item {\tt type\_error(list, CharList)}
+\ei
+\item An element {\tt E} of {\tt CharList} is not a single-character
+atom
+\bi
+\item {\tt type\_error(character, E)}
+\ei
+\item {\tt Atom} is a variable and an element {\tt E} of {\tt
+  CharCodeList} is not a single-character atom
+\bi
+\item {\tt representation\_error(character, E)}
+\ei
+\end{itemize}
 
-\isoitem{number\_chars(?Number, ?CharAtomList)}{number\_chars/2}
+\isoitem{number\_chars(?Number, ?CharList)}{number\_chars/2}
 %
     Like \verb|number_codes/2|, but the list returned (or input) is a list of
     characters \emph{as atoms} rather than ASCII codes. For instance, 
     \verb|number_chars(123,X)| binds {\tt X} to the list {\tt ['1','2','3']}
     instead of {\tt [49,50,51]}.
+
+{\bf Error Cases}
+\begin{itemize}
+\item {\tt Number} is a variable and {\tt CharList} is a partial
+  list or a list with an element which is a variable
+\begin{itemize}
+\item {\tt instantiation\_error}
+\end{itemize}
+\item {\tt Number} is neither a variable nor a number
+\bi
+\item {\tt type\_error(number, Number)}
+\ei
+\item {\tt Number} is a variable and {\tt CharList} is neither a
+  list nor a partial list 
+\bi
+\item {\tt type\_error(list, CharList)}
+\ei
+\item An element {\tt E} of {\tt CharList} is not a single-character
+atom
+\bi
+\item {\tt type\_error(character, E)}
+\ei
+\item {\tt CharList} is a list of single-character atoms but is not
+  parsable as a number (by XSB)
+\bi
+\item {\tt syntax\_error(CharList)}
+\ei
+\end{itemize}
 
 \standarditem{number\_digits(?Number, ?DigitList)}{number\_digits/2}
     Like \verb|number_codes/2|, but the list returned (or input) is a list of
@@ -3615,6 +3688,14 @@ current code for {\tt Character}.  In XSB it is defined as {\tt
     \verb|number_digits(123,X)| binds {\tt X} to the list {\tt [1,2,3]}
     instead of {\tt ['1','2','3']}, and \verb|number_digits(123.45,X)|
     binds {\tt X} to {\tt [1,.,2,3,4,5,0,0,e,+,0,2]}.
+
+Error cases are the same as {\tt number\_chars/2}.
+
+\isoitem{char\_code(?Character, ?Code)}{char\_code/2}
+%
+The standard predicate {\tt char\_code/2} is true if {\tt Code} is the
+current code for {\tt Character}.  In XSB it is defined as {\tt
+  atom\_codes(Character,[Code])}.
 
 \isoitem{atom\_length(+Atom1,?Length)}{atom\_length/2}
 %
@@ -3644,7 +3725,7 @@ L = 9
 \begin{itemize}      
 \item   {\tt type\_error(integer,Length)}
 \end{itemize}
-z,\end{itemize}
+\end{itemize}
 
 \ourisousageitem{atom\_concat(Atom1,Atom2,Atom3)}{atom\_concat/3}
 \ourusage{atom\_concat(?Atom,?Atom,+Atom)}
