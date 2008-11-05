@@ -811,9 +811,8 @@ static xsbBool load_syms(FILE *fd, int psc_count, int count, Psc cur_mod, int ex
 static void new_tdispblk(CTXTdeclc TIFptr *instr_ptr, Psc psc) {
   struct TDispBlk_t *tdispblk;
 
-  if (!(tdispblk = (struct TDispBlk_t *) 
-	mem_calloc(sizeof(struct TDispBlk_t)+max_threads_glc*sizeof(Cell),1,COMPILED_SPACE)))
-    xsb_exit(CTXTc "No space for table dispatch block");  /* never deallocated */
+  tdispblk = (struct TDispBlk_t *) 
+    mem_calloc(sizeof(struct TDispBlk_t)+max_threads_glc*sizeof(Cell),1,COMPILED_SPACE);
   
   SYS_MUTEX_LOCK( MUTEX_TABLE );
 

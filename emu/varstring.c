@@ -136,14 +136,7 @@ static void vs_init(VarString *vstr, int increment)
   if (increment < 1)
     increment = DEFAULT_VARSTR_INCREMENT;
 
-  if (NULL == (vstr->string = (char *)mem_calloc(1, increment,OTHER_SPACE))) {
-#ifdef DEBUG_VARSTRING
-    fprintf(stderr, "Cannot allocate memory for a variable-length string\n");
-    return;
-#else
-    xsb_abort("Cannot allocate memory for a variable-length string");
-#endif
-  }
+  vstr->string = (char *)mem_calloc(1, increment,OTHER_SPACE);
 
   vstr->increment   = increment;
   vstr->size        = increment;

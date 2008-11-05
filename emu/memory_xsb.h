@@ -150,6 +150,7 @@ extern long pspacesize[NUM_CATS_SPACE];
 extern void *mem_alloc(unsigned long, int);
 extern void *mem_alloc_nocheck(unsigned long, int);
 extern void *mem_calloc(unsigned long, unsigned long, int);
+extern void *mem_calloc_nocheck(unsigned long, unsigned long, int);
 extern void *mem_realloc(void *, unsigned long, unsigned long, int);
 extern void *mem_realloc_nocheck(void *, unsigned long, unsigned long, int);
 extern void mem_dealloc(void *, unsigned long, int);

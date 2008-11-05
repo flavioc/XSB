@@ -263,9 +263,7 @@ static int readmsg(SOCKET sock_handle, char **msg_buff, unsigned long *msg_len)
 
   /* the space allocated here for msg_buff is released in the
      "SOCKET_RECV" case of xsb_socket_request */
-  if ((*msg_buff=(char *)mem_calloc(msglen,sizeof(char),OTHER_SPACE))==NULL) {
-    xsb_abort("[SOCKET_RECV] Cannot allocate memory for the message buffer");
-  }
+  *msg_buff=(char *)mem_calloc(msglen,sizeof(char),OTHER_SPACE);
 
   actual_len = (long)recvfrom(sock_handle,*msg_buff,msglen,0,NULL,0);
   if (SOCKET_OP_FAILED(actual_len)) return SOCK_READMSG_FAILED;
@@ -399,9 +397,6 @@ static int socket_send(CTXTdeclc int *rc, int timeout) {
 
   /* We use the first XSB_MSG_HEADER_LENGTH bytes for the message size. */
   message_buffer = mem_calloc(full_msg_len, sizeof(char),LEAK_SPACE);
-  if (message_buffer == NULL) {
-    xsb_abort("[SOCKET_SEND] Cannot allocate memory for the message buffer");
-  }
 
   network_encoded_len = (unsigned int) htonl((unsigned long int) msg_body_len); 
   memcpy((void*)(message_buffer), (void *)&network_encoded_len, XSB_MSG_HEADER_LENGTH);

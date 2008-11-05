@@ -111,7 +111,7 @@ void perproc_stat(void)
  * time of 'time_start'.
  */
 
-static char *pspace_cat[NUM_CATS_SPACE] =
+char *pspace_cat[NUM_CATS_SPACE] =
   {"atom        ","string      ","asserted    ","compiled    ",
    "foreign     ","table       ","findall     ","profile     ",
    "mt-private  ","buffer      ","gc temp     ","hash        ",

@@ -769,7 +769,7 @@ int mark_heap(CTXTdeclc int arity, int *marked_dregs)
 #ifdef INDIRECTION_SLIDE
     /* space for keeping pointers to live data */
     slide_buf_size = (unsigned long) ((hreg+1-(CPtr)glstack.low)*0.2);
-    slide_buf = (CPtr *) mem_calloc(slide_buf_size+1, sizeof(CPtr),GC_SPACE);
+    slide_buf = (CPtr *) mem_calloc_nocheck(slide_buf_size+1, sizeof(CPtr),GC_SPACE);
     if (!slide_buf)
       xsb_exit(CTXTc "Not enough space to allocate slide_buf");
     slide_top=0;
@@ -786,14 +786,14 @@ int mark_heap(CTXTdeclc int arity, int *marked_dregs)
 #endif
   
 #ifdef SLG_GC
-  cp_marks = (char *)mem_calloc(cp_bot - cp_top + 1,1,GC_SPACE);
-  tr_marks = (char *)mem_calloc(tr_top - tr_bot + 1,1,GC_SPACE);
+  cp_marks = (char *)mem_calloc_nocheck(cp_bot - cp_top + 1,1,GC_SPACE);
+  tr_marks = (char *)mem_calloc_nocheck(tr_top - tr_bot + 1,1,GC_SPACE);
   if ((! cp_marks) || (! tr_marks))
     xsb_exit(CTXTc "Not enough core to perform garbage collection chaining phase");
 #endif  
   heap_marks_size = heap_top - heap_bot + 2 + avail_dreg_marks;
-  heap_marks = (char * )mem_calloc(heap_marks_size,1,GC_SPACE);
-  ls_marks   = (char * )mem_calloc(ls_bot - ls_top + 1,1,GC_SPACE);
+  heap_marks = (char * )mem_calloc_nocheck(heap_marks_size,1,GC_SPACE);
+  ls_marks   = (char * )mem_calloc_nocheck(ls_bot - ls_top + 1,1,GC_SPACE);
   if ((! heap_marks) || (! ls_marks))
     xsb_exit(CTXTc "Not enough core to perform garbage collection marking phase");
   

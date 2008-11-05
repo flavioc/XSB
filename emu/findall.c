@@ -65,6 +65,7 @@ extern void findall_free(CTXTdeclc int);
 extern int get_more_chunk(CTXTdecl);
 extern void findall_copy_to_heap(CTXTdeclc Cell, CPtr, CPtr *);
 extern int findall_init_c(CTXTdecl);
+static void findall_untrail(CTXTdecl);
 
 #define MAX_FINDALLS  250
 /* make MAX_FINDALLS larger if you want */
@@ -73,13 +74,33 @@ extern int findall_init_c(CTXTdecl);
 
 #include "ptoc_tag_xsb_i.h"
 
+/* This attempt to recover by freeing allocated chunks doesn't help
+        much, since memory is fragmented, so essentially stacks can no
+        longer be expanded, at least on the mallocs I've tested.  */
+void release_and_throw_error(CTXTdeclc char *mem_call) {
+  int i = 0;
+  findall_untrail(CTXT);
+  while (i < MAX_FINDALLS && (findall_solutions+i) != current_findall) i++;
+  if (i < MAX_FINDALLS) {
+    findall_free(CTXTc i);
+    (findall_solutions + i)->size = i+1 ;
+    if ((findall_solutions+i)->first_chunk != NULL) {
+      mem_dealloc((findall_solutions+i)->first_chunk,
+		  FINDALL_CHUNCK_SIZE * sizeof(Cell),FINDALL_SPACE);
+      (findall_solutions+i)->first_chunk = NULL;
+    }
+  }
+  xsb_memory_error("memory [findall]",mem_call); // throw error
+}
+
 /* malloc a new chunck and link it in in the current findall */
 int get_more_chunk(CTXTdecl)
 { CPtr newchunk ;
 
   /* calloc so string gc marking doesn't look at uninitted cells */
-  if (!(newchunk = (CPtr)mem_calloc(FINDALL_CHUNCK_SIZE, sizeof(Cell),FINDALL_SPACE)))
-    xsb_exit(CTXTc "get_more_chunk failed");
+  if (!(newchunk = (CPtr)mem_calloc_nocheck(FINDALL_CHUNCK_SIZE, sizeof(Cell),FINDALL_SPACE))) {
+    release_and_throw_error(CTXTc "mem_calloc()");
+  }
 
   *newchunk = 0 ;
   *(current_findall->current_chunk) = (Cell)newchunk ;
@@ -126,8 +147,7 @@ int findall_init_c(CTXTdecl)
   p = findall_solutions + thisfree ;
 
   if (p->first_chunk == NULL) {
-    if (!(w = (CPtr)mem_calloc(FINDALL_CHUNCK_SIZE,sizeof(Cell),FINDALL_SPACE)))
-      xsb_abort("[FINDALL] Not enough memory");
+    w = (CPtr)mem_calloc(FINDALL_CHUNCK_SIZE,sizeof(Cell),FINDALL_SPACE);
   } else w = p->first_chunk;  /* already a first chunk, so use it */
   *w = 0 ;
   p->first_chunk = p->current_chunk = w ;
@@ -179,7 +199,7 @@ void findall_clean(CTXTdecl)
 	for (i = 0 ; i < MAX_FINDALLS ; i++) {
 	  if (p->tail != 0) findall_free(CTXTc i) ;
 	  (findall_solutions + i)->size = i+1 ;
-	  if ((findall_solutions+1)->first_chunk != NULL) {
+	  if ((findall_solutions+i)->first_chunk != NULL) {
 	    /* and free every first block as well */
 	    mem_dealloc((findall_solutions+i)->first_chunk,
 			FINDALL_CHUNCK_SIZE * sizeof(Cell),FINDALL_SPACE);
@@ -416,8 +436,8 @@ static int findall_trail(CTXTdeclc CPtr p, Cell val)
   
   if (trail_left == 0)
     {
-      if (!(new_tr_chunk = (f_tr_chunk *)mem_alloc(sizeof(f_tr_chunk),FINDALL_SPACE)))
-	xsb_exit(CTXTc "findall_trail failed");
+      if (!(new_tr_chunk = (f_tr_chunk *)mem_alloc_nocheck(sizeof(f_tr_chunk),FINDALL_SPACE)))
+	release_and_throw_error(CTXTc "mem_alloc()");
       cur_tr_top = new_tr_chunk->tr ;
       cur_tr_limit = new_tr_chunk->tr+F_TR_NUM ;
       new_tr_chunk->previous = cur_tr_chunk ;

@@ -101,6 +101,8 @@ struct memcount_t {
   int num_mem_deallocs;
 };
 
+extern char *pspace_cat[];
+
 #ifdef NON_OPT_COMPILE
 struct memcount_t memcount_gl = {0,0,0};
 
@@ -152,7 +154,9 @@ void *mem_alloc(unsigned long size, int category)
 #endif
 
     if (ptr == NULL && size > 0) {
-      xsb_memory_error("memory","mem_alloc()");
+      char msgstring[40];
+      sprintf(msgstring,"memory [%s]",pspace_cat[category]);
+      xsb_memory_error(msgstring,"mem_alloc()");
     }
     return ptr;
 }
@@ -189,7 +193,6 @@ void *mem_alloc_nocheck(unsigned long size, int category)
 
 
 /* === calloc permanent memory ============================================= */
-
 void *mem_calloc(unsigned long size, unsigned long occs, int category)
 {
     byte * ptr;
@@ -215,8 +218,38 @@ void *mem_calloc(unsigned long size, unsigned long occs, int category)
     SYS_MUTEX_UNLOCK_NOERROR(MUTEX_MEM);
 #endif
     if (ptr == NULL && size > 0 && occs > 0) {
-      xsb_memory_error("memory","mem_calloc()");
+      char msgstring[40];
+      sprintf(msgstring,"memory [%s]",pspace_cat[category]);
+      xsb_memory_error(msgstring,"mem_calloc()");
     }
+    return ptr;
+}
+
+/* same as mem_calloc except return NULL on failure instead of throwing error */
+void *mem_calloc_nocheck(unsigned long size, unsigned long occs, int category)
+{
+    byte * ptr;
+    unsigned long length = (size*occs+7) & ~0x7;
+
+#ifdef NON_OPT_COMPILE
+    //    printf("Callocing size %d occs %d category %d\n",size,occs,category);
+    memcount_gl.num_mem_allocs++;
+    SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
+    pspacesize[category] += length;
+#else
+#ifndef MULTI_THREAD
+    pspacesize[category] += length;
+#endif
+#endif
+
+    ptr = (byte *) calloc(size,occs);
+#if defined(GENERAL_TAGGING)
+    //    printf("mem_calloc %x %x\n",ptr,ptr+length);
+    extend_enc_dec_as_nec(ptr,ptr+length);
+#endif
+#ifdef NON_OPT_COMPILE
+    SYS_MUTEX_UNLOCK_NOERROR(MUTEX_MEM);
+#endif
     return ptr;
 }
 
@@ -245,7 +278,9 @@ void *mem_realloc(void *addr, unsigned long oldsize, unsigned long newsize, int 
     SYS_MUTEX_UNLOCK_NOERROR(MUTEX_MEM);
 #endif
     if (addr == NULL && newsize > 0) {
-      xsb_memory_error("memory","mem_realloc()");
+      char msgstring[40];
+      sprintf(msgstring,"memory [%s]",pspace_cat[category]);
+      xsb_memory_error(msgstring,"mem_realloc()");
     }
     return addr;
 }
