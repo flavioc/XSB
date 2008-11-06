@@ -129,7 +129,7 @@
 
 :- import call0/1, conname/2,
           dynamic_code_function/5,
-          expand_filename/2, gc_stuff/2,is_charlist/1,
+          expand_filename/2, gc_stuff/2,
           machine_file_exists/1, 
 	  psc_arity/2, psc_import/3, psc_insert/4,
 	  psc_name/2, psc_type/2, psc_set_shared/2,

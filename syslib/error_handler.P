@@ -171,14 +171,19 @@ get_sys_error_description(error(permission_error(Op,Obj_type,Culprit),Msg),
 		 ; 
 	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Permission (Operation) ',
 		     Op,' on ',Obj_type,': ',Culprit,'] ', Msg) ).
-get_sys_error_description(error(representation_error(Flag),Msg), ExceptionDesc) :- 
-	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Representation (',Flag,' )] ', Msg) .
+get_sys_error_description(error(representation_error(RepType,Culprit),Msg), ExceptionDesc) :- 
+	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Representation (',Culprit,
+	                 ' is not ',RepType,')] ', Msg) .
 get_sys_error_description(error(resource_error(Flag),Msg), ExceptionDesc) :- 
 	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Resource (',Flag,')] ', Msg) .
+% TLS using syntax_error_1/1 to avoid module system confusion.
+get_sys_error_description(error(syntax_error_1(Culprit),Msg), ExceptionDesc) :- 
+	ExceptionDesc =   ('++Error[XSB/Runtime/P]: [Syntax] (', Culprit1,') ',Msg),
+	(Culprit = [_H|_T] -> term_to_atom(Culprit,Culprit1) ; Culprit1 = Culprit).
 get_sys_error_description(error(syntax_error,Msg), ExceptionDesc) :- 
 	ExceptionDesc =   ('++Error[XSB/Runtime/P]: [Syntax] ', Msg) .
 get_sys_error_description(error(system_error,Msg), ExceptionDesc) :- 
-	ExceptionDesc =   ('++Error[XSB/Runtime/P]: [System] ', Msg) .
+	ExceptionDesc =   ('++Error[XSB/Runtime/P]: [System] ', Msg).
 get_sys_error_description(error(table_error,Msg), ExceptionDesc) :-
 	ExceptionDesc = ('++Error[XSB/Runtime/P]: [Table] ',Msg).
 get_sys_error_description(error(thread_cancel,Id), ExceptionDesc) :- 

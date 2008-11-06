@@ -663,35 +663,30 @@ number_chars(T, L) :- number_chars(T, L).
 number_codes(T, L) :- number_codes(T, L).
 number_digits(T, L) :- number_digits(T, L).
 
-/* TLS: using C builtin is_charlist/1 */
+/* The idea when Type is free is to try to turn it into a number if
+    you can -- otherwise try to turn it into an atom.  All the
+    checking is done in C. */
 name(T, L) :-
 	term_type(T, Type),
 	( Type =:= XSB_FREE -> 
-		( var(L) -> instantiation_error(name/2,'1 or 2',bound)
-		; ( is_charlist(L) -> 
-			( int_fromlist(L, T) -> true ; atom_codes(T, L) )
-		  ; domain_error(asciiList,L,name/2,2)
-		  )
-		)
-	; Type =:= XSB_INT -> int_name(T, [], L)	% integer
-	; Type =:= XSB_FLOAT -> real_name(T, [], L)	% real
+	    catch(number_codes(T,L),_E,atom_codes(T,L))
+%		( var(L) -> instantiation_error(name/2,'1 or 2',bound)
+%   
+%		; ( is_charlist(L) -> 
+%			( int_fromlist(L, T) -> true ; atom_codes(T, L) )
+%		    ; atom_codes(T,L) 
+%		  ; domain_error(asciiList,L,name/2,2)
+%		  )
+%		)
+%	; Type =:= XSB_INT -> int_name(T, [], L)	% integer
+	; Type =:= XSB_INT -> number_codes(T, L)	% integer
+	; Type =:= XSB_FLOAT ->  number_codes(T,L)
 	; Type =:= XSB_STRING -> atom_codes(T, L)
 	; type_error(atomic,T,name/2,1)
 	).
 
-/* TLS: using C builtin is_charlist/1
-| ascii_list([]).
-| ascii_list([H|T]) :- ascii_check(H), ascii_list(T).	%was l_ascii_list
-| 
-| ascii_check(N) :- 
-| 	var(N), !, instantiation_error(name/2,2,ground).
-| ascii_check(N) :- 
-| 	( integer(N) -> N >= 0, N =< 255
-| 	; domain_error(asciiInteger,N,name/2,2)
-| 	).
-*/
-
-int_fromlist([45,H|Rest], I) :-	% It can start with a minus but 
+/*
+ int_fromlist([45,H|Rest], I) :-	% It can start with a minus but 
 	!,			% it shouldn''t be empty. 
 	'can be integer'([H|Rest], 0, Pos),
 	I is - Pos.
@@ -703,20 +698,43 @@ int_fromlist([H|T], I) :- 	% It shouldn''t be empty.
 	H >= 48, H =< 57,
 	I is (SoFar*10) + (H-48),
 	'can be integer'(T, I, NewI).
+*/
 
-int_name(N, L1, L2) :- 
-	( N < 0 -> NewN is -N, L2 = [45|RestL2]		% '-' = 45
-	; NewN = N, RestL2 = L2
-	),
-	l_intname(NewN, L1, RestL2).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/* TLS: using C builtin is_charlist/1, and type checking in atom_codes
+| int_name(N, L1, L2) :- 
+| 	( N < 0 -> NewN is -N, L2 = [45|RestL2]		% '-' = 45
+| 	; NewN = N, RestL2 = L2
+| 	),
+| 	l_intname(NewN, L1, RestL2).
 
-l_intname(N, L1, L2) :- 
-	N<10, D is N+48, L2=[D|L1].
-l_intname(N, L1, L2) :- 
-	N>=10, M is N//10, D is N-M*10+48, l_intname(M, [D|L1], L2).
+| l_intname(N, L1, L2) :- 
+| 	N<10, D is N+48, L2=[D|L1].
+| l_intname(N, L1, L2) :- 
+| 	N>=10, M is N//10, D is N-M*10+48, l_intname(M, [D|L1], L2).
 
-real_name(_R, _L1, _L2) :-
-	abort('Predicate name/2 for reals is not implemented yet').
+| real_name(_R, _L1, _L2) :-
+| 	abort('Predicate name/2 for reals is not implemented yet').
+
+|           ( var(L) -> instantiation_error(name/2,'1 or 2',bound)
+|		; ( is_charlist(L) -> 
+|			( int_fromlist(L, T) -> true ; atom_codes(T, L) )
+|		  ; domain_error(asciiList,L,name/2,2)
+|		  )
+|		)
+
+| ascii_list([]).
+| ascii_list([H|T]) :- ascii_check(H), ascii_list(T).	%was l_ascii_list
+| 
+| ascii_check(N) :- 
+| 	var(N), !, instantiation_error(name/2,2,ground).
+| ascii_check(N) :- 
+| 	( integer(N) -> N >= 0, N =< 255
+| 	; domain_error(asciiInteger,N,name/2,2)
+| 	).
+
+*/
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % ISO
 atom_concat(One,Two,Three):- 
