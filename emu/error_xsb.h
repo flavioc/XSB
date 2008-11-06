@@ -144,9 +144,11 @@ DllExport extern void call_conv xsb_instantiation_error(CTXTdeclc const char *, 
 DllExport extern void call_conv xsb_misc_error(CTXTdeclc char*,const char*,int) ; 
 DllExport extern void call_conv xsb_permission_error(CTXTdeclc char *,char *,Cell,const char *,int) ;
 DllExport extern void call_conv xsb_resource_error(CTXTdeclc char *,const char *, int) ;
-DllExport extern void call_conv xsb_representation_error(CTXTdeclc char*,const char*,int) ; 
+DllExport extern void call_conv xsb_representation_error(CTXTdeclc char*,Cell, const char*,int) ; 
 DllExport extern void call_conv xsb_resource_error_nopred(CTXTdeclc char *,char *) ;
 DllExport extern void call_conv xsb_syntax_error(CTXTdeclc char *) ;
+DllExport extern void call_conv xsb_syntax_error_non_compile(CTXTdeclc Cell,
+							     const char *,int) ;
 DllExport extern void call_conv xsb_table_error(CTXTdeclc char *) ;
 DllExport extern void call_conv xsb_type_error(CTXTdeclc char *,Cell , const char *,int) ;
 

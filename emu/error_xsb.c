@@ -473,7 +473,7 @@ void call_conv xsb_permission_error(CTXTdeclc
 }
 
 /*****************/
-void call_conv xsb_representation_error(CTXTdeclc char *inmsg,const char *predicate,int arity)
+void call_conv xsb_representation_error(CTXTdeclc char *inmsg,Cell culprit,const char *predicate,int arity)
 {
   prolog_term ball_to_throw;
   int isnew;
@@ -494,10 +494,13 @@ void call_conv xsb_representation_error(CTXTdeclc char *inmsg,const char *predic
   tptr++;
   bld_copy(tptr,build_xsb_backtrace(CTXT));
   tptr++;
-  bld_functor(tptr, pair_psc(insert("representation_error",1,
+  bld_functor(tptr, pair_psc(insert("representation_error",2,
                                     (Psc)flags[CURRENT_MODULE],&isnew)));
   tptr++;
   bld_string(tptr,string_find(inmsg,1));
+  tptr++;
+  if (culprit == (Cell)NULL) bld_int(tptr,0); 
+  else bld_ref(tptr,culprit);
 
   xsb_throw_internal(CTXTc ball_to_throw,ball_len);
 
@@ -624,6 +627,7 @@ void call_conv xsb_resource_error_nopred(CTXTdeclc char *resource,char *message)
 
 /**************/
 
+/* This includes minimal info -- for use in C portions of compiler */
 void call_conv xsb_syntax_error(CTXTdeclc char *message) 
 {
   prolog_term ball_to_throw;
@@ -655,6 +659,40 @@ void call_conv xsb_syntax_error(CTXTdeclc char *message)
 }			       
 
 /**************/
+
+/* This includes predicate, argument, and culprit -- for use in
+   non-compiler predicates */
+void call_conv xsb_syntax_error_non_compile(CTXTdeclc Cell culprit, 
+					const char *predicate,int arg) 
+{
+  prolog_term ball_to_throw;
+  int isnew;
+  Cell *tptr; char message[ERRMSGLEN];
+  unsigned long ball_len = 10*sizeof(Cell);
+
+  snprintf(message,ERRMSGLEN,"in arg %d of predicate %s",arg,predicate);
+
+  tptr =   (Cell *) mem_alloc(ball_len,LEAK_SPACE);
+
+  ball_to_throw = makecs(tptr);
+  bld_functor(tptr, pair_psc(insert("error",3,
+				    (Psc)flags[CURRENT_MODULE],&isnew)));
+  tptr++;
+  bld_cs(tptr,(Cell) (tptr+3));
+  tptr++;
+  bld_string(tptr,string_find(message,1));
+  tptr++;
+  bld_copy(tptr,build_xsb_backtrace(CTXT));
+  tptr++;
+  bld_functor(tptr, pair_psc(insert("syntax_error_1",1,
+				    (Psc)flags[CURRENT_MODULE],&isnew)));
+  tptr++;
+  if (culprit == (Cell)NULL) bld_int(tptr,0); 
+  else bld_ref(tptr,culprit);
+
+  xsb_throw_internal(CTXTc ball_to_throw, ball_len);
+
+}/**************/
 
 void call_conv xsb_table_error(CTXTdeclc char *message) 
 {
