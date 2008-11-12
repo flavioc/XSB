@@ -874,6 +874,16 @@ static int seg_address_in_stack(CTXTdeclc pseg seg) {
   return FALSE;
 }
 
+char *generated_prefix = "_$";
+int has_generated_prefix(char *name) {
+  int i = 0;
+  while (generated_prefix[i] != '\0') {
+    if (name[i] != generated_prefix[i]) return 0;
+    i++;
+  }
+  return 1;
+}
+
 
 /************************************************************************/
 static byte *loader1(CTXTdeclc FILE *fd, char *filename, int exp)
@@ -963,7 +973,8 @@ static byte *loader1(CTXTdeclc FILE *fd, char *filename, int exp)
 		   get_name(ptr->psc_ptr),get_arity(ptr->psc_ptr),filename);
 	  xsb_exit(CTXTc message);
 	}
-	if (isstring(get_data(ptr->psc_ptr)) &&
+	if (isstring(get_data(ptr->psc_ptr)) && 
+	    !has_generated_prefix(name) &&
 #if defined(WIN_NT) || defined(CYGWIN)
 	    stricmp(string_val(get_data(ptr->psc_ptr)),filename)) {
 #else
