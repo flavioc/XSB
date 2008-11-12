@@ -34,7 +34,7 @@
 %%:- import set_xsb_ready/0 from thread.
 :- import set_inthandler/2 from loader.
 :- import call_c/1, call_expose/1, (index)/2, catch/3,
-   goal_cut_trans/3, handle_interrupts/1, repeat/0, (=..)/2  from standard.
+   call_goal_cut_trans/3, handle_interrupts/1, repeat/0, (=..)/2  from standard.
 :- import (dynamic)/1, assert/1, retract/1, retractall/1 from assert.
 :- import file_write/2, file_nl/1 from xsb_writ.
 :- import file_read/3 from xsb_read.

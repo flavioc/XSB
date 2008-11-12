@@ -197,7 +197,7 @@ call_query(_) :-
 %% hidden version of call
 '_$call'(Y) :- 
 	'_$savecp'(C), 
-	goal_cut_trans(Y,X,C),
+	call_goal_cut_trans(Y,X,C),
 	call_expose(X).
 
 %% first argument is an open ended list

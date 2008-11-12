@@ -983,7 +983,7 @@ use_opaque_tabling(Ps) :-
 call(Goal) :- 
 	( callable(Goal) ->
 		'_$savecp'(C), 
-		goal_cut_trans(Goal, Trans_Goal, C), 
+		call_goal_cut_trans(Goal, Trans_Goal, C), 
 		call0(Trans_Goal)
 	; var(Goal) -> 
 	        instantiation_error(call/1,1,bound)
@@ -1001,7 +1001,7 @@ call(Goal) :-
    ( directly_callable(Goal) -> 
        call_c(Goal) 
      ; callable(Goal) ->
-	'_$savecp'(C), goal_cut_trans(Goal, Trans_Goal, C),call0(Trans_Goal) 
+	'_$savecp'(C), call_goal_cut_trans(Goal, Trans_Goal, C),call0(Trans_Goal) 
      ; var(Goal) ->
 	instantiation_error(call/1,1,bound) 
      ;  type_error(callable,Goal,call/1,1) ).
@@ -1031,7 +1031,7 @@ call_c(X) :- call0(X).
 tcall(X) :- call0(X).
 
 %  transforms a goal to turn its cuts (!) into '_$cutto's.
-%  TLS: Calling retuires_cut_transforming1/1 at top level because goal_cut_trans/3
+%  TLS: Calling requires_cut_transforming1/1 at top level because goal_cut_trans/3
 %  has already checke for var.
 goal_cut_trans(Goal,TGoal,Cutpoint) :-
 %	writeln(goal_cut_trans(Goal,TGoal,Cutpoint)),
@@ -1083,6 +1083,60 @@ goal_cut_transform1((A->B),(Na->Nb),Cutpoint) :-
 	goal_cut_transform(A,Na,Condcutpoint),
 	goal_cut_transform(B,Nb,Cutpoint).
 
+/* call_goal_cut_trans is used for called goals (and not for bodies of
+asserted clauses).  It transforms ';' into ';;', which is defined the
+same, but keeps called ;'s from causing retract to think there's a
+pending assert-body in the CP stack and refuste to gc. */
+call_goal_cut_trans(Goal,TGoal,Cutpoint) :-
+	(requires_call_cut_transforming1(Goal)
+	 ->	call_goal_cut_transform(Goal,TGoal,Cutpoint)
+	 ;	TGoal = Goal
+	).
+
+requires_call_cut_transforming(X) :-
+	(var(X)
+	 ->	true
+	 ;	requires_call_cut_transforming1(X)
+	).
+
+requires_call_cut_transforming1([_|_]).
+requires_call_cut_transforming1('!').
+requires_call_cut_transforming1('_$load_undef'(_)).
+requires_call_cut_transforming1((A,B)) :-
+	(requires_call_cut_transforming(A)
+	 ->	true
+	 ;	requires_call_cut_transforming(B)
+	).
+requires_call_cut_transforming1((A->B)) :-
+	(requires_call_cut_transforming(A)
+	 ->	true
+	 ;	requires_call_cut_transforming(B)
+	).
+requires_call_cut_transforming1((_A;_B)).  % to change ; to ;;
+
+call_goal_cut_transform(Goal,TGoal,Cutpoint) :-
+	(var(Goal)
+	 ->	TGoal = call(Goal)
+	 ; call_goal_cut_transform1(Goal,TGoal,Cutpoint)
+	 ->	true
+	 ;	TGoal = Goal
+	).
+
+call_goal_cut_transform1([X|Y],Z,_) :- hack_consult([X|Y],Z).	% a HACK!
+call_goal_cut_transform1(!,'_$cutto'(Cutpoint),Cutpoint).
+call_goal_cut_transform1('_$load_undef'(X),Y,_) :-
+	(atom(X) -> conname(X,Y1),Y=Y1 ; Y=X).
+call_goal_cut_transform1((A,B),(Na,Nb),Cutpoint) :-
+	call_goal_cut_transform(A,Na,Cutpoint),
+	call_goal_cut_transform(B,Nb,Cutpoint).
+call_goal_cut_transform1((A;B),';;'(Na,Nb),Cutpoint) :-
+	call_goal_cut_transform(A,Na,Cutpoint),
+	call_goal_cut_transform(B,Nb,Cutpoint).
+call_goal_cut_transform1((A->B),(Na->Nb),Cutpoint) :-
+	'_$savecp'(Condcutpoint),
+	call_goal_cut_transform(A,Na,Condcutpoint),
+	call_goal_cut_transform(B,Nb,Cutpoint).
+
 hack_consult([-X],reconsult(X)) :- !.
 hack_consult([X],consult(X)) :- !.
 hack_consult([-X|Y],(reconsult(X),Z)) :- !,hack_consult(Y,Z).
@@ -1096,6 +1150,9 @@ goal_cut_untrans((A,B),(Na,Nb)) :- !,
 	goal_cut_untrans(A,Na),
 	goal_cut_untrans(B,Nb).
 goal_cut_untrans((A;B),(Na;Nb)) :- !,
+	goal_cut_untrans(A,Na),
+	goal_cut_untrans(B,Nb).
+goal_cut_untrans(';;'(A,B),(Na;Nb)) :- !,
 	goal_cut_untrans(A,Na),
 	goal_cut_untrans(B,Nb).
 goal_cut_untrans((A->B),(Na->Nb)) :- !,
@@ -1117,14 +1174,22 @@ do_once(_Breg) :-
 	
 repeat :- true; repeat.
 
-(A,B) :- call_c(A), call_c(B).	% must have no cuts
+(A,B) :- call_c(A), call_c(B).
 
 (A->B;C) :- !,
 	(call_c(A) -> call_c(B) ; call_c(C)).
-
 (A;_B) :- 
 	call_c(A).
 (_A;B) :- 
+	call_c(B).
+
+%% ';' for in calls, to separate from ';' in asserted goal bodies (for
+%%	retract gc)
+';;'((A->B),C) :- !,
+	(call_c(A) -> call_c(B) ; call_c(C)).
+';;'(A,_B) :- 
+	call_c(A).
+';;'(_A,B) :- 
 	call_c(B).
 
 (A->B) :- call_c(A) -> call_c(B).

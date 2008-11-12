@@ -94,7 +94,7 @@ call_and_get(Call,VarTerm,Command) :-
 % hidden version of call
 '_$call'(Y) :- 
 	'_$savecp'(C), 
-	goal_cut_trans(Y,X,C),
+	call_goal_cut_trans(Y,X,C),
 	call_expose(X).
 
 %% MK: added this clause. Reduces time to call XSB by x3.
