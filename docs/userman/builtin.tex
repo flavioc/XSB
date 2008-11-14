@@ -2082,6 +2082,11 @@ concatenated together to form the system call.
 \bi
 \item {\tt type\_error(atom\_or\_list,SystemCall)}
 \ei
+\item {\tt SystemCall} is longer than the maximum command legth
+  allowed by {\tt shell/1}
+\bi
+\item {\tt resource\_error(memory)}
+\ei
 \ei
 
 \standarditem{shell(+SystemCall, -Result)}{shell/2}
@@ -2108,6 +2113,11 @@ the specific return values of {\tt system()} may be platform-dependent.
 \item {\tt Result} is not a variable
 \bi
 \item {\tt type\_error(variable,Result)}
+\ei
+\item {\tt SystemCall} is longer than the maximum command legth
+  allowed by {\tt shell/2}
+\bi
+\item {\tt resource\_error(memory)}
 \ei
 \ei
 
