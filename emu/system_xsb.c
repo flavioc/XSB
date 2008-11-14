@@ -68,11 +68,11 @@
 
 #define MAX_CMD_LEN 8192
 
-static int xsb_spawn (char *prog, char *arg[], int callno,
+static int xsb_spawn (CTXTdeclc char *prog, char *arg[], int callno,
 		      int pipe1[], int pipe2[], int pipe3[],
 		      FILE *toprocess_fptr, FILE *fromprocess_fptr,
 		      FILE *fromproc_stderr_fptr);
-static void concat_array(char *array[], char *separator,
+static void concat_array(CTXTdeclc char *array[], char *separator,
 			 char *result_str, int maxsize);
 static int get_free_process_cell(void);
 static void init_process_table(void);
@@ -373,7 +373,7 @@ xsbBool sys_system(CTXTdeclc int callno)
     }
 
     /* params[0] is the progname */
-    pid_or_status = xsb_spawn(params[0], params, callno,
+    pid_or_status = xsb_spawn(CTXTc params[0], params, callno,
 			      (toproc_needed ? pipe_to_proc : NULL),
 			      (fromproc_needed ? pipe_from_proc : NULL),
 			      (fromstderr_needed ? pipe_from_stderr : NULL),
@@ -408,7 +408,7 @@ xsbBool sys_system(CTXTdeclc int callno)
     xsb_process_table.process[tbl_pos].to_stream = toproc_stream;
     xsb_process_table.process[tbl_pos].from_stream = fromproc_stream;
     xsb_process_table.process[tbl_pos].stderr_stream = fromproc_stderr_stream;
-    concat_array(params, " ",
+    concat_array(CTXTc params, " ",
 		 xsb_process_table.process[tbl_pos].cmdline,MAX_CMD_LEN);
     
     SYS_MUTEX_UNLOCK( MUTEX_SYS_SYSTEM );
@@ -563,8 +563,11 @@ xsbBool sys_system(CTXTdeclc int callno)
    ARGV must be a NULL-terminated array of strings.
    Also pass it two arrays of strings: PIPE_TO_PROC[2] and PIPE_FROM_PROC[2].
    These are going to be the arrays of fds for the communication pipes 
+
+   This function is protected from being called by more than one
+   thread at a time by a mutex: the context is passed in for error handling.
 */
-static int xsb_spawn (char *progname, char *argv[], int callno,
+static int xsb_spawn (CTXTdeclc char *progname, char *argv[], int callno,
 		      int pipe_to_proc[],
 		      int pipe_from_proc[],int pipe_from_stderr[],
 		      FILE *toprocess_fptr, FILE *fromprocess_fptr,
@@ -720,7 +723,7 @@ static int xsb_spawn (char *progname, char *argv[], int callno,
     }
   } else { /* SHELL command */
     /* no separator */
-    concat_array(argv, "", shell_command, MAX_CMD_LEN);
+    concat_array(CTXTc argv, "", shell_command, MAX_CMD_LEN);
     pid = system(shell_command);
   }
 
@@ -748,7 +751,7 @@ static int xsb_spawn (char *progname, char *argv[], int callno,
 }
 
 /* array is a NULL terminated array of strings. Concat it and return string */
-static void concat_array(char *array[], char *separator,
+static void concat_array(CTXTdeclc char *array[], char *separator,
 			 char *result_str, int maxsize)
 {
   int space_left = maxsize-1, separator_size = strlen(separator);
