@@ -1113,7 +1113,7 @@ void delete_trie(CTXTdeclc BTNptr iroot) {
 	  }
 	}
       } else
-	printf("null node");
+	fprintf(stddbg,"null node");
       break;
     }
   }
@@ -2635,7 +2635,7 @@ int find_answers_for_subgoal(CTXTdeclc VariantSF subgoal) {
 	  }
 	}
       } else
-	printf("null node");
+	fprintf(stddbg,"null node");
       break;
     }
   }
