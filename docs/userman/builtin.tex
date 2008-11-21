@@ -131,15 +131,21 @@ and can be redirected by the predicates the predicates {\tt
   file\_reopen/4} and {\tt file\_clone/3}.
 
 \index{aliases!streams}
+\index{aliases!streams!user\_input}
+\index{aliases!streams!user\_output}
+\index{aliases!streams!user\_error}
+\index{aliases!streams!user\_warning}
+\index{aliases!streams!user\_message}
+
 Streams may also be aliased: the default input and output streams can
 be denoted by {\tt user\_input} and {\tt user\_output} and they refer
 to the standard input and standard output streams of the
 process \footnote{For backwards compatibility, the default input
   stream can also be aliased by {\tt user} or {\tt userin}, and the
   default output stream by {\tt user} or {\tt userout}.}.  Similarly,
-XSB's error, warning and message streams user the aliases {\tt
+XSB's error, warning and message streams uses the aliases {\tt
   user\_error}, {\tt user\_warning} and {\tt user\_message}
-respectively (cf. Section~\ref{}).
+respectively.
 
 Streams are distinguished by their {\tt class} -- whether they are
 file or atom, etc.; as well as by various properties.  These

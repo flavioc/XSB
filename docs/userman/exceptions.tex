@@ -13,25 +13,26 @@ XSB to examine its choice point stack until it finds a {\em catcher}
 that unifies with $T$.  This catcher then calls a {\em handler}.  If
 no explicit catcher for $T$ exists, a default handler is invoked,
 which usually results in an abort, and returns execution to the
-top-level of the interpreter.
+top-level of the interpreter, or to the calling C function.
 
 More precisely, a handler is set up when {\tt
-catch(Goal,Catcher,Handler)} is called.  At this point a continuation
-is saved (i.e. a Prolog choice point), and {\tt Goal} is called.  If
-no exceptions are encountered, answers for {\tt Goal} are obtained as
-usual.  Within the execution of {\tt Goal}, an exception can be
-signaled by a call to {\tt throw(Error)}.  This predicate searches
-for an ancestor of the current environment called by {\tt catch/3} and
-whose catcher (second argument) unifies with {\tt Error}.  If such an
-ancestor is found, program execution reverts to the ancestor and all
-intervening choice points are removed.  The ancestor's handler (third
-argument) is called and the exception is thereby handled.  On the
-other hand, if no ancestor was called using {\tt catch/3} the system
-checks whether a clause with head {\tt
-default\_user\_error\_handler(Term)} has been asserted, such that {\tt
-Term} unifies with {\tt Error}.  If so, this handler is executed.  If
-not, XSB's default system error handler in invoked an error message is
-output and execution returns to the top level of the interpreter.
+  catch(Goal,Catcher,Handler)} is called.  At this point a
+continuation is saved (i.e. a Prolog choice point), and {\tt Goal} is
+called.  If no exceptions are encountered, answers for {\tt Goal} are
+obtained as usual.  Within the execution of {\tt Goal}, an exception
+can be signaled by a call to {\tt throw(Error)}, or by a predicate in
+the {\tt error\_handler} module that calls {\tt throw/1}.  {\tt
+  throw/1} searches for an ancestor of the current environment called
+by {\tt catch/3} and whose catcher (second argument) unifies with {\tt
+  Error}.  If such an ancestor is found, program execution reverts to
+the ancestor and all intervening choice points are removed.  The
+catcher's handler (third argument) is called and the exception is
+thereby handled.  On the other hand, if no ancestor was called using
+{\tt catch/3} the system checks whether a clause with head {\tt
+  default\_user\_error\_handler(Term)} has been asserted, such that
+{\tt Term} unifies with {\tt Error}.  If so, this handler is executed.
+If not, XSB's default system error handler in invoked an error message
+is output and execution returns to the top level of the interpreter.
 
 The following, somewhat fanciful example, helps clarify these
 concepts~\footnote{Code for this example can be found in {\tt
@@ -131,33 +132,42 @@ entered, the predicate {\tt type\_error/3} is called.  {\tt
   type\_error/3} is an XSB mechanism to throw an ISO-style type error
 from Prolog.  Such an error is known to the default system error
 handler which prints out a message along with a {\em backtrace} that
-indicates the calling context in which the error arose (see
-Section~\ref{sec:backtrace}).  Alternately, in the second case, when
-{\tt -1} is entered, the error term {\tt mydiv1(error2(-1))} is thrown,
-which is caught within {\tt userdiv/2} and handled by {\tt
-  handleUserdiv/2}.  Finally, when {\tt 0} is entered for the
-denominator, an error term of the form {\tt
+indicates the calling context in which the error arose (this behavior
+can be controlled: see Section~\ref{sec:backtrace}).  Alternately, in
+the second case, when {\tt -1} is entered, the error term {\tt
+  mydiv1(error2(-1))} is thrown, which is caught within {\tt
+  userdiv/2} and handled by {\tt handleUserdiv/2}.  Finally, when {\tt
+  0} is entered for the denominator, an error term of the form {\tt
   error(zerodivision,userdiv/1)} is thrown, and that this term does
 not unify with the second argument of the {\tt catch/3} literal in the
 body of {\tt userdiv/1}, or with a known ISO error.  The error is
 instead caught by XSB's default system error handler which prints an
 uncaught exception message and aborts to the top level of the
-interpreter.  
+interpreter.
 
-XSB's default system error handler recognizes certain error formats
-(see Section \ref{sec:iso-errors}), and handles the rest as uncaught
-exceptions, and takes actions that are often appropriate.  On the
-other hand, there may be times when an application would like special
-default handling: perhaps the application calls XSB from C, so that
-aborts are not practical.  Alternately, perhaps XSB is being called
-from a graphical user interface via Interprolog~\cite{Cale01} or some
-other interface, and in addition to a special abort handling, one
-would like to display an error window.  In these cases it is
-convenient to make use of the dynamic predicate {\tt
-  default\_user\_error\_handler/1}.  {\tt
+XSB has two default system error handlers: one used when XSB is called
+as a stand-alone process, and another when XSB is embedded in a
+process.  Each recognizes certain error formats (see Section
+\ref{sec:iso-errors}), and handles the rest as uncaught exceptions.
+However, there may be times when an application requires special
+default handling: perhaps the application calls XSB from through a
+socket, so that aborts are not practical.  Alternately, perhaps XSB is
+being called from a graphical user interface via
+Interprolog~\cite{Cale01} or some other interface, and in addition to
+a special abort handling, one would like to display an error window.
+In these cases it is convenient to make use of the dynamic predicate
+{\tt default\_user\_error\_handler/1}.  {\tt
   default\_user\_error\_handler/1} is called immediately before the
 default system error handler, and after it is ascertained that no
 catcher for an error term is available via a {\tt catch/3} ancestor.
+It is important to note that the system error handlers catch errors
+only in the main thread, and do not affect errors thrown by goals
+executed by {\tt thread\_create/[2,3]}.  Error terms thrown by goals
+executed by non-detached threads are stored internally, and can be
+obtained by {\tt thread\_join/2}.  Error terms thrown by detached
+threads are lost when the thread exits, so that any error handling for
+a detached thread should be performed within the thread itself.  See
+Chapter~\ref{chap:threads} for further information.
 
 Accordingly, suppose the following clause is asserted into {\tt
 usermod}:
@@ -182,6 +192,16 @@ Prolog cut in that they remove choice points that lie between a call
 to {\tt throw/1} and the matching {\tt catch/3} that serves as its
 ancestor.  However, if this process encounters a choice point for an
 incomplete table, execution is aborted to the top user level.
+
+The predicate {\tt call\_cleanup/2}
+(cf. Section~\ref{meta_predicates}) can be used with {\tt catch/3},
+since {\tt call\_cleanup(Goal,Cleanup)} executes {\tt Cleanup}
+whenever computation of {\tt Goal} is completed, whether because {\tt
+  Goal} has thrown an exception, has failed, or has succeeded with its
+last answer.  {\tt call\_cleanup/2} can thus be used to release
+resources created by {\tt Goal} (such as streams, mutexes, database
+cursors, etc.).  However, if {\tt Goal} throws an exception, {\tt
+  call\_cleanup/2} will re-throw the exception after executing cleanup.
 
 \section{Representations of ISO Errors} \label{sec:iso-errors}
 \index{ISO!errors}
@@ -235,7 +255,10 @@ argument is instantiated to the representation of a backtrace.
   resource error (e.g. too many files are opened), and {\tt Flag} is
   the type of resource error encountered.
 %
-\item[error(syntax\_error,Msg)] is the format of an ISO syntax error.
+\item[error(syntax\_error,Msg)] and {\tt
+  error(syntax\_error(Culprit),Msg)} are alternate formats of an ISO
+  syntax error, where {\tt Culprit} is used for a
+  syntactically-incorrect sequence of tokens.
 %
 \item[error(system\_error(Flag),Msg)] is the format of an ISO system error,
   and {\tt Flag} is the type of system error encountered.
@@ -263,14 +286,14 @@ errors.
 %
 \end{description}
 
-In \version{} of XSB, errors for ISO predicates are not always ISO
-compliant.  First, when XSB determines it is out of available memory,
-recovering from such an error may be difficult at best.  Accordingly
-the computation is aborted in the sequential engine, or XSB exits in
-the multi-threaded engine.  Second, errors in XSB code sometimes arise
-as miscellaneous errors rather than as a designated ISO-error type.
-We are, however, in the process of reclassifying errors to their ISO
-types.
+In \version{} of XSB, errors for ISO predicates usually, but not not
+always ISO-compliant.  First, when XSB determines it is out of
+available memory, recovering from such an error may be difficult at
+best.  Accordingly the computation is aborted in the sequential
+engine, or XSB exits in the multi-threaded engine.  Second, errors in
+XSB code sometimes arise as miscellaneous errors rather than as a
+designated ISO-error type.  We are, however, in the process of
+reclassifying errors to their ISO types.
 
 When XSB generates a memory exception, it prints out a backtrace and
 exits.  This should be caused only by a bug in XSB or included code.
@@ -291,31 +314,35 @@ XSB provides a variety of predicates that throw errors~\footnote{C
   Volume 2, Chapter 3 {\em Foreign Language Interface}.}. Those likely
 to be of interest to users are:
 \begin{description}
-\isoitem{throw(+ErrorTerm)}
+\isoitem{throw(+ErrorTerm)}{\tt throw/1}
 %
 Throws the error {\tt ErrorTerm}.  Execution traverses up the choice
 point stack until a goal of the form {\tt catch(Goal,Term,Handler)} is
 found such that {\tt Term} unifies with {\tt ErrorTerm}.  In this
-case, {\tt Handler} is called.  If no catcher is found, the system
-looks for a clause of {\tt default\_user\_error\_handler(Term)} such
-that {\tt Term} unifies with {\tt ErrorTerm}.  Finally, if no such
-clause is found the default system error handler is called.  {\tt
-  throw/1} is most useful in conjunction with specialized handlers for
-new types of errors not already supported in XSB.
+case, {\tt Handler} is called.  If no catcher is found in the main
+thread, the system looks for a clause of {\tt
+  default\_user\_error\_handler(Term)} such that {\tt Term} unifies
+with {\tt ErrorTerm} --- if no such clause is found the default system
+error handler is called.  In a non-main joinable thread, the error
+term is stored internally and the thread exits; in a detached thread,
+the thread exits with no action taken.  {\tt throw/1} is most useful
+in conjunction with specialized handlers for new types of errors not
+already supported in XSB.
 %
 \ourmoditem{domain\_error(+Valid\_type,-Culprit,+Predicate,+Arg)}{domain\_error/4}{error\_handler}
 %
-Throws a domain error.  Using the default system error handler, an
-example (with {\tt backtrace\_on\_error} set to off) is {\small
+Throws a domain error.  Using the default system error handler (with
+{\tt backtrace\_on\_error} set to off) an example is {\small
 \begin{verbatim}
 domain_error(posInt,-1,checkPosInt/3,3).
-++Error[XSB/Runtime/P]: [Domain (-1 not in domain posInt)] in arg 3 of predicate checkPosInt/3
+++Error[XSB/Runtime/P]: [Domain (-1 not in domain posInt)] in arg 3 of predicate 
+checkPosInt/3
 \end{verbatim} }
 %
 \ourmoditem{evaluation\_error(+Flag,+Predicate,+Arg)}{evaluation\_error/3}{error\_handler}
 %
-Throws an evaluation error.  Using the default system error handler, an
-example (with {\tt backtrace\_on\_error} set to off) is {\small
+Throws an evaluation error.  Using the default system error handler
+(with {\tt backtrace\_on\_error} set to off) an example is {\small
 \begin{verbatim}
 evaluation_error(zero_divisor,unidiv/1,2).
 ++Error[XSB/Runtime/P]: [Evaluation (zero_divisor)] in arg 2 of predicate unidiv/2
@@ -324,11 +351,12 @@ evaluation_error(zero_divisor,unidiv/1,2).
 \ourmoditem{existence\_error(+Object\_type,?Culprit,+Predicate,+Arg)}{existence\_error/4}{error\_handler}
 %
 Throws an existence error.  Using the default system error
-handler, an example (with {\tt backtrace\_on\_error} set to off) is 
+handler (with {\tt backtrace\_on\_error} set to off) an example is 
 {\small 
 \begin{verbatim}
 existence_error(file,'myfile.P','load_intensional_rules/2',2).
-++Error[XSB/Runtime/P]: [Existence (No file myfile.P exists)]  in arg 2 of predicate load_intensional_rules/2
+++Error[XSB/Runtime/P]: [Existence (No file myfile.P exists)]  in arg 2 of predicate 
+load_intensional_rules/2
 \end{verbatim}
 }
 %
@@ -365,8 +393,8 @@ representation_error(max_arity,assert/1,1).
 %
 \ourmoditem{resource\_error(+Flag,+Predicate)}{resource\_error/3}{error\_handler}
 %
-Throws a resource error.  Using the default system error handler, an
-example (with {\tt backtrace\_on\_error} set to off) is {\small
+Throws a resource error.  Using the default system error handler
+(with {\tt backtrace\_on\_error} set to off) and example is {\small
 \begin{verbatim}
 resource_error(open_files,open/3)
 ++Error[XSB/Runtime/P]: [Resource (open_files)] in predicate open/3
@@ -392,7 +420,7 @@ above are not applicable, and the type of error is not of interest for
 structured error handling.  Such situations occur can occur for
 instance in debugging, during program development, or in small-special
 purpose programs.  Note that this {\tt misc\_error/2} replaces the
-obsolescent {\tt abort/1} and {\tt abort/2}.
+obsolescent XSB predicates {\tt abort/1} and {\tt abort/2}.
 %
 \end{description}
 %
@@ -415,6 +443,10 @@ obsolescent {\tt abort/1} and {\tt abort/2}.
 %    before aborting.
 
 \subsection{Predicates to Handle Errors}~\label{sec:catch}
+%
+For best results, output for handling errors should be sent to XSB's
+standard error stream using the alias {\tt user\_error} or one of the
+predicates described below.
 
 \begin{description}
 \isoitem{catch(?Goal,?CatchTerm,+Handler)}{catch/3}
@@ -505,12 +537,13 @@ of streams in XSB is subject to change.}.
 
 \ourmoditem{check\_one\_thread(+Operation,+Object\_Type,+Predicate)}{check\_one\_thread/3}{error\_handler}
 %
-In the Multi-Threaded Engine, checks that there is only one active
-thread: if not, a miscellaneous error is thrown indicating that {\tt
-  Operation} is not permitted on {\tt ObjectType} as called by {\tt
-  Predicate}, when more than one thread is active.  This check
-provides a convenient way to allow inclusion of certain operations
-that are difficult to make thread-safe by other means.
+In the multi-threaded engine, {\tt check\_one\_thread/3} checks that
+there is only one active thread: if not, a miscellaneous error is
+thrown indicating that {\tt Operation} is not permitted on {\tt
+  ObjectType} as called by {\tt Predicate}, when more than one thread
+is active.  This check provides a convenient way to allow inclusion of
+certain operations that are difficult to make thread-safe by other
+means.
 
 In the single-threaded engine this predicate always succeeds.
 
@@ -558,5 +591,5 @@ list can be manipulated as desired by error handling routines.
 \ourmoditem{print\_backtrace(+Backtrace)}{print\_backtrace/1}{error\_handler}
 %
  This predicate, which is used by XSB's default error handler, prints
- a backtrace structure to {\tt STDMSG}.
+ a backtrace structure to XSB's standard error stream.
 \end{description}
