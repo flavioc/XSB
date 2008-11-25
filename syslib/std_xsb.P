@@ -217,6 +217,7 @@ standard_symbol(is, 2, standard).
 standard_symbol(is_attv, 1, standard).
 standard_symbol(is_list, 1, standard).
 standard_symbol(is_most_general_term, 1, standard).
+standard_symbol(is_number_atom, 1, standard).
 standard_symbol(is_charlist, 2, machine).
 standard_symbol(is_charlist, 1, machine).
 standard_symbol(is_absolute_filename, 1, machine).

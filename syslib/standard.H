@@ -54,7 +54,7 @@
 	(use_incremental_tabling)/1,    (use_incremental_dynamic)/1, 
 	(use_opaque_tabling)/1, /* incremental */
 	integer/1,	is/2,		is_attv/1,	is_list/1,
-	is_most_general_term/1,		
+	   is_most_general_term/1,	is_number_atom/1,
 	listing/0,	listing/1,	name/2,		nl/0, nl/1,
 	nofileerrors/0, nonvar/1,	(not)/1,	number/1,
 	number_chars/2, number_codes/2, number_digits/2,
