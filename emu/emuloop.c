@@ -370,6 +370,7 @@ extern Pair build_call(CTXTdeclc Psc);
 
 extern int is_proper_list(Cell term);
 extern int is_most_general_term(Cell term);
+extern int is_number_atom(Cell term);
 
 extern void log_prog_ctr(byte *);
 
@@ -2942,6 +2943,9 @@ argument positions.
       break;
     case NONVAR_TEST:
       jump_cond_fail(isnonvar(op2) && !isattv(op2));
+      break;
+    case IS_NUMBER_ATOM_TEST:
+      jump_cond_fail(is_number_atom(op2));
       break;
     default: 
       xsb_error("Undefined jumpcof condition");

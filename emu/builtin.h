@@ -232,6 +232,7 @@
 #define NUMBER_CODES		212
 #define IS_CHARLIST		213
 #define NUMBER_DIGITS		214
+#define IS_NUMBER_ATOM		215
 
 #define SORT			220
 #define KEYSORT			221
@@ -298,6 +299,7 @@
 #define VAR_TEST		11
 #define NONVAR_TEST		12
 #define DIRECTLY_CALLABLE_TEST  13
+#define IS_NUMBER_ATOM_TEST	14
 
 #define PLUS_FUNCT 1
 #define MINUS_FUNCT 2
