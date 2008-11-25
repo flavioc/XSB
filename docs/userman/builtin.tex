@@ -2893,6 +2893,18 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
                 no
      \end{verbatim}}
 
+\standarditem{is\_number\_atom(?X)}{is\_number\_atom/1}
+
+    Succeeds if {\tt X} is an atom (not a numeric atom) which can be
+    converted to a numeric atom (integer or float) and fails
+    otherwise.  In particular, if {\tt is\_numeric\_atom(X) succeeds,
+    then
+    {\footnotesize
+     \begin{verbatim}
+                | ?- atom_codes(X,Codes),number_codes(N,Codes).
+     \end{verbatim}}
+    will succeed.
+
 \standarditem{callable(?X)}{callable/1}
     Succeeds if {\tt X} is currently instantiated to a term that standard
     predicate {\tt call/1} could take as an argument and not give an 
