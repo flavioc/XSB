@@ -198,6 +198,7 @@ inline_builtin(is_attv, 1, IS_ATTV). % similar to is_list
 inline_builtin(is_most_general_term, 1, IS_MOST_GENERAL_TERM).
 inline_builtin(ground, 1, GROUND).
 inline_builtin(is_charlist, 2, IS_CHARLIST).
+inline_builtin(is_number_atom, 1, IS_NUMBER_ATOM).
 
 inline_builtin(functor, 3, FUNCTOR).
 inline_builtin(arg, 3, ARG).
@@ -248,6 +249,7 @@ inline_jumpcof_cond(is_most_general_term, 1, IS_MOST_GENERAL_TERM_TEST).
 inline_jumpcof_cond(is_attv, 1, IS_ATTV_TEST).
 inline_jumpcof_cond(var, 1, VAR_TEST).
 inline_jumpcof_cond(nonvar, 1, NONVAR_TEST).
+inline_jumpcof_cond(is_number_atom, 1, IS_NUMBER_ATOM_TEST).
 
 /*======================================================================*/
 /* builtin functions							*/
