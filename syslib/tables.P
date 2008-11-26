@@ -158,7 +158,6 @@ tnot(Subgoal) :-
 	; abort(['Illegal (untabled?) subgoal to ''t not''/1: ',Subgoal])
 	).
 
-
 t_not(Subgoal,PredType,PTCP) :-
 	get_producer_call(Subgoal,ProducerSF,AnswerTmplt),
 	is_incomplete(ProducerSF,PTCP),
@@ -167,7 +166,6 @@ t_not(Subgoal,PredType,PTCP) :-
 	  ;  fail_if(trie_get_return(ProducerSF,AnswerTmplt)),
 	     lrd_success(ProducerSF,Subgoal)
 	 ).
-
 
 %% skolemized tnot.  Variables temporarily changed to ground and tnot 
 %% call is made.  Should give existential semantics to nonground negative
@@ -485,11 +483,11 @@ abolish_table_call_internal(Call,Action) :-
 	get_calls(Call,Handle,_Template),
 	table_state(Handle,PredType,_CallType,AnsSetStatus),
 	(   AnsSetStatus == undefined
-	->  throw(error(table_error(abolishing_undefined_call)))
+	->  table_error(['abolishing undefined tabled call ',Call])
 	;   AnsSetStatus == incomplete
-	->  throw(error(table_error(abolishing_incomplete_call)))
+	->  table_error(['abolishing incomplete tabled call ',Call])
 	;   PredType == subsumptive
-	->  throw(error(table_error(abolishing_subsumptive_call)))
+	->  table_error(['abolishing subsumptive tabled call ',Call])
 	;   abolish_table_call_bi(Handle,Action)
 	),
 	fail.

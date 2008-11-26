@@ -73,8 +73,7 @@
      from assert.
 :- import (=..)/2, abort/1, call/1, functor/3, is_attv/1, tcall/1
      from standard.
-:- import throw/1 from standard.
-:- import domain_error/5, check_nonvar/3, type_error/4 from error_handler.
+   :- import domain_error/5, check_nonvar/3, type_error/4, table_error/1 from error_handler.
 
 :- import abolish_table_info/0, delete_attributes/1, table_inspection_function/5,
    term_psc/2, term_new/2 from machine.
