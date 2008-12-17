@@ -986,7 +986,7 @@ call(Goal) :-
 	( callable(Goal) ->
 		'_$savecp'(C), 
 		call_goal_cut_trans(Goal, Trans_Goal, C), 
-		call0(Trans_Goal)
+		call_c(Trans_Goal)
 	; var(Goal) -> 
 	        instantiation_error(call/1,1,bound)
 	; type_error(callable,Goal,call/1,1)
@@ -1662,7 +1662,7 @@ catch(Goal,_Catcher,_Handler) :-
 	get_breg(BregBefore),
         '$$set_scope_marker',  % should not be called in any other place but immediately
                                % before call because it remembers the pcreg
-	call(Goal),
+	call_expose(Goal),
 %	get_breg(B1),write(before_cob(B1)),
         '$$clean_up_block'(BregBefore). % if no choicepoints in call(Goal) cleans up one
 %        '$$clean_up_block'. % if no choicepoints in call(Goal) cleans up one
@@ -1676,11 +1676,10 @@ catch(_Goal,Catcher,Handler) :-
             retractall('$$exception_ball'(T,_)),
 %%	    close_open_tables,  %% leave to catcher... 
 %%            writeln(calling(Handler)),
-            call(Handler)
+            call_expose(Handler)  %not quite right, see after failure even if skipping
         ;
             '$$unwind_stack'  % unwind_stack xsb_exits if no catcher was found
         ).
-
 
 throw(Ball) :-
 	xsb_thread_self(T),
