@@ -287,9 +287,12 @@ static inline CPtr ProcessSuspensionFrames(CTXTdeclc CPtr cc_tbreg_in,
   return cc_tbreg;
 }
 
+#include "tst_utils.h"
+
 static inline void CompleteSimplifyAndReclaim(CTXTdeclc CPtr cs_ptr)
 {
   VariantSF compl_subg;
+  SubConsSF pCons;
   CPtr ComplStkFrame = cs_ptr; 
 
   /* mark all SCC as completed and do simplification also, reclaim
@@ -298,12 +301,30 @@ static inline void CompleteSimplifyAndReclaim(CTXTdeclc CPtr cs_ptr)
   while (ComplStkFrame >= openreg) {
     compl_subg = compl_subgoal_ptr(ComplStkFrame);
     mark_as_completed(compl_subg); 
+    if (ProducerSubsumesSubgoals(compl_subg)) {
+      //      fprintf(stddbg, "Producer:\n  ");
+      //      sfPrintGoal(CTXTc stddbg, (VariantSF)compl_subg, YES);
+      //      fprintf(stddbg, "\nConsumers:\n");
+      for ( pCons = subg_consumers(compl_subg);  IsNonNULL(pCons);
+   	    pCons = conssf_consumers(pCons) ) {
+	//	fprintf(stddbg, "  ");
+	//	sfPrintGoal(CTXTc stddbg, (VariantSF)pCons, YES);
+	//	fprintf(stddbg,": fails %d, nde %p\n",subgoal_fails(pCons),subg_nde_list(pCons));
+	//	printAnswerList(CTXTc stddbg, subg_ans_list_ptr(pCons));
+	//	fprintf(stddbg,"deleted %x, unique %x\n",
+	//		IsDeletedNode(ALN_Answer(subg_ans_list_ptr(pCons))),
+		  //		ALN_Next(subg_ans_list_ptr(pCons)));
+	if (subsumed_neg_simplif_possible(pCons)) {
+	  //	  printf("initiating simpl from compl "),print_subgoal(stddbg,pCons);printf("\n");
+	  simplify_neg_fails(CTXTc (VariantSF) pCons);
+	}
+      }
+    }
     if (neg_simplif_possible(compl_subg)) {
       SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
       simplify_neg_fails(CTXTc compl_subg);
       SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
     }
-
     ComplStkFrame = next_compl_frame(ComplStkFrame);
   } /* while */
   

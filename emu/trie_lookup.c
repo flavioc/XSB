@@ -659,10 +659,14 @@ static void sub_trie_lookup_error(CTXTdeclc char *string) {
  * encountered.
  */
 
+/* TLS??? */
+#ifndef MULTI_THREAD
+extern int AnsVarCtr;
+#endif
+
 typedef enum Search_Strategy_Mode {
   MATCH_SYMBOL_EXACTLY, MATCH_WITH_TRIEVAR
 } SearchMode;
-
 
 void *iter_sub_trie_lookup(CTXTdeclc void *trieNode, TriePathType *pathType) {
 
@@ -699,6 +703,9 @@ void *iter_sub_trie_lookup(CTXTdeclc void *trieNode, TriePathType *pathType) {
   variant_path = YES;
   search_mode = MATCH_SYMBOL_EXACTLY;
 
+  //  printf("in iter_sub_trie_lookup\n");
+  //  printSymbolStack(CTXTc stddbg, "  TermStack", tstTermStack);
+  
   /* Major loop of the algorithm
      --------------------------- */
  While_TermStack_NotEmpty:
@@ -707,6 +714,7 @@ void *iter_sub_trie_lookup(CTXTdeclc void *trieNode, TriePathType *pathType) {
     TermStack_Pop(subterm);
     TermStackLog_PushFrame;
     XSB_Deref(subterm);
+    //    printf("   ");printterm(stddbg,subterm,25);printf(" %x\n",subterm);
     switch(cell_tag(subterm)) {
       
     /* SUBTERM IS A CONSTANT
@@ -843,6 +851,7 @@ void *iter_sub_trie_lookup(CTXTdeclc void *trieNode, TriePathType *pathType) {
        *  the possibility of a variant.)
        */
       if (search_mode == MATCH_SYMBOL_EXACTLY) {
+	//	printf("subterm is var\n");
 	if ( IsNonNULL(pCurrentBTN) && IsHashHeader(pCurrentBTN) )
 	  pCurrentBTN = variableChain =
 	    BTHT_BucketArray((BTHTptr)pCurrentBTN)[TRIEVAR_BUCKET];
@@ -850,6 +859,7 @@ void *iter_sub_trie_lookup(CTXTdeclc void *trieNode, TriePathType *pathType) {
 	  variableChain = pCurrentBTN;
 
 	if ( ! PrologVar_IsMarked(subterm) ) {
+	  AnsVarCtr++;
 	  /*
 	   *  The subterm is a call variable that has not yet been seen
 	   *  (and hence is not tagged).  Therefore, it can only be paired

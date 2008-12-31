@@ -1135,8 +1135,8 @@ int unwind_stack(CTXTdecl)
    /* now find the corresponding breg */
    b = breg;
    while (cp_ereg(b) <= e) {
-     if (IS_TABLE_INSTRUC(*cp_pcreg(b))) 
-       tmp_compl_frm = subg_compl_stack_ptr(tcp_subgoal_ptr(b));
+     //     if (IS_TABLE_INSTRUC(*cp_pcreg(b))) 
+       //       tmp_compl_frm = subg_compl_stack_ptr(tcp_subgoal_ptr(b));
      b = cp_prevbreg(b);
    }
    if (IS_TABLE_INSTRUC(*cp_pcreg(b))) 

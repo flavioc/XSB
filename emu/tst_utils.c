@@ -68,6 +68,8 @@ DynamicStack  tstSymbolStack;
 DynamicStack  tstTrail;
 #endif
 
+DynamicStack simplGoalStack;
+DynamicStack simplAnsStack;
 
 void tstInitDataStructs(CTXTdecl) {
 
@@ -80,6 +82,10 @@ void tstInitDataStructs(CTXTdecl) {
   DynStk_Init(&tstSymbolStack, 0 /*TST_SYMBOLSTACK_INITSIZE*/, Cell,
 	      "Trie-Symbol Stack");
   DynStk_Init(&tstTrail, 0 /*TST_TRAIL_INITSIZE*/, CPtr, "TST Trail");
+
+  DynStk_Init(&simplGoalStack, 0 /*TST_TRAIL_INITSIZE*/, Cell, "simplGoalStack");
+  DynStk_Init(&simplAnsStack, 0 /*TST_TRAIL_INITSIZE*/, Cell, "simplAnsStack");
+
   initSubsumptiveLookup(CTXT);
   initCollectRelevantAnswers(CTXT);
 }
@@ -318,7 +324,7 @@ void printTriePath(CTXTdeclc FILE *fp, BTNptr pLeaf, xsbBool printLeafAddr) {
   if ( printLeafAddr )
     fprintf(fp, "Leaf %p: ", pLeaf);
 
-  if ( IsEscapeNode(pLeaf) ) {
+  if  (IsEscapeNode(pLeaf) ) {
     pRoot = BTN_Parent(pLeaf);
     if ( IsNonNULL(pRoot) )
       printTrieSymbol(fp, BTN_Symbol(pRoot));
@@ -465,5 +471,18 @@ void printTriePathType(CTXTdeclc FILE *fp, TriePathType type, BTNptr leaf) {
   default:
     fprintf(fp,"What kind of path? (%d)\n", type);
     break;
+  }
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+void printSymbolStack(CTXTdeclc FILE *fp, char * name, DynamicStack stack) {
+  CPtr curFrame;		
+  
+  curFrame = DynStk_Top(stack);
+  curFrame = (CPtr) ((char *) curFrame - DynStk_FrameSize(stack));
+  while ((void *)curFrame >= DynStk_Base(stack)) {
+    printf("%s: ",name);printTrieSymbol(fp, *curFrame);fprintf(fp,"\n");
+    curFrame = (CPtr) ((char *) curFrame - DynStk_FrameSize(stack));
   }
 }

@@ -59,6 +59,10 @@ case SLG_NOT: {
 
 /*----------------------------------------------------------------------*/
 
+/* This case is obsolescent.  Leaving it around for a while just in
+   case there's a problem with well-founded call subsumption, but
+   let's hope it can be removed */
+
 case LRD_SUCCESS: {
 
 #ifdef DEBUG_ASSERTIONS

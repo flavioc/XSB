@@ -182,6 +182,11 @@ BTNptr subsumptive_bt_search(CTXTdeclc BTNptr btRoot, int nTerms, CPtr termVecto
  * information is needed when the term set is inserted.
  */
 
+/* TLS??? */
+#ifndef MULTI_THREAD
+extern int AnsVarCtr;
+#endif
+
 TSTNptr subsumptive_tst_search(CTXTdeclc TSTNptr tstRoot, int nTerms, CPtr termVector,
 			       xsbBool maintainTSI, xsbBool *isNew) {
 
@@ -195,14 +200,14 @@ TSTNptr subsumptive_tst_search(CTXTdeclc TSTNptr tstRoot, int nTerms, CPtr termV
 #endif
 
 #ifdef DEBUG_VERBOSE
-  if (LOG_INTERN <= cur_log_level) {
+ {
     int i;
-    xsb_dbgmsg((LOG_INTERN, 
-	       "Entered subsumptive_tst_search() with the following terms:"));
+    fprintf(stddbg,"------------------------------------------------------------\n");
+    fprintf(stddbg,"Entered subsumptive_tst_search() with the following terms:");
     for (i = 0; i < nTerms; i++) {
-      xsb_dbgmsg((LOG_INTERN,"\t"));
-      dbg_printterm(LOG_INTERN,stddbg, (Cell)(termVector - i),25);
-      xsb_dbgmsg((LOG_INTERN,"\n"));
+      fprintf(stddbg,"\t");
+      printterm(stddbg, (Cell)(termVector - i),25);
+      fprintf(stddbg,"\n");
     }
   }
 #endif
@@ -211,7 +216,9 @@ TSTNptr subsumptive_tst_search(CTXTdeclc TSTNptr tstRoot, int nTerms, CPtr termV
     Trail_ResetTOS;
     TermStack_ResetTOS;
     TermStack_PushHighToLowVector(termVector,nTerms);
+    //    printSymbolStack(CTXTc stddbg, "TermStack [sts]", tstTermStack);
     if ( IsEmptyTrie(tstRoot) ) {
+      //      printf("empty trie %d\n", AnsVarCtr);
       tstn = tst_insert(CTXTc tstRoot,tstRoot,NO_INSERT_SYMBOL,maintainTSI);
       *isNew = TRUE;
     }
@@ -227,7 +234,21 @@ TSTNptr subsumptive_tst_search(CTXTdeclc TSTNptr tstRoot, int nTerms, CPtr termV
       else
 	*isNew = FALSE;
     }
-    Trail_Unwind_All;
+
+#ifdef DEBUG_VERBOSE
+ {
+    int i;
+    fprintf(stddbg,"after insert:");
+    for (i = 0; i < nTerms; i++) {
+      fprintf(stddbg,"\t");
+      printterm(stddbg, (Cell)(termVector - i),25);
+      fprintf(stddbg,"\n");
+    }
+  }
+#endif
+
+ /* TLS: needs comment */
+    //    Trail_Unwind_All;
   }
   else
     tstn = tst_escape_search(CTXTc tstRoot,isNew);

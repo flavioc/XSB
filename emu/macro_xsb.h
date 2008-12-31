@@ -625,13 +625,13 @@ typedef struct subgoal_frame {
   BTNptr ans_root_ptr;	  /* Root of the return trie */
   ALNptr ans_list_ptr;	  /* Pointer to the list of returns in the ret trie (pre-compl)*/
   ALNptr ans_list_tail;	  /* pointer to the tail of the answer list (pre-compl) */
+  PNDE nde_list;	  /* pointer to a list of negative DEs */
   void *next_subgoal;	  
   void *prev_subgoal;
   CPtr  cp_ptr;		  /* Pointer to the Generator CP (pre-compl)*/
   CPtr asf_list_ptr;	  /* Pointer to list of (CP) active subgoal frames (pre-compl) */
   CPtr compl_stack_ptr;	  /* Pointer to subgoal's completion stack frame (pre-compl) */
   CPtr compl_suspens_ptr; /* SLGWAM: CP stack ptr (pre-compl)  */
-  PNDE nde_list;	  /* pointer to a list of negative DEs */
   DelTFptr deltf_ptr;     /* pointer to deltf (post-compl) */
 #ifdef MULTI_THREAD
   int tid;		  /* Thread id of the generator thread for this sg */
@@ -719,6 +719,7 @@ typedef struct SubsumedConsumerSubgoalFrame {
 			      are collected into the answer list */
   ALNptr ans_list_ptr;	   /* Pointer to the list of returns in the ret trie */
   ALNptr ans_list_tail;	   /* Pointer to the tail of the answer list */
+  PNDE nde_list;	  /* pointer to a list of negative DEs */
   TimeStamp ts;		   /* Time stamp to use during next answer ident */
   SubConsSF consumers;	   /* Chain link for properly subsumed subgoals */
 } subsumptive_consumer_sf;
@@ -967,6 +968,13 @@ void tstCreateTSIs(struct th_context *,TSTNptr);
 
 #define neg_simplif_possible(SUBG_PTR)	\
 	((subgoal_fails(SUBG_PTR)) && (subg_nde_list(SUBG_PTR) != NULL))
+
+#define subsumed_subgoal_fails(SUBG_PTR) \
+  (IsSubConsSF(SUBG_PTR) && IsDeletedNode(ALN_Answer(subg_ans_list_ptr(SUBG_PTR))) && \
+   !ALN_Next(subg_ans_list_ptr(SUBG_PTR)))
+
+#define subsumed_neg_simplif_possible(SUBG_PTR) \
+  ((subsumed_subgoal_fails(SUBG_PTR)) && (subg_nde_list(SUBG_PTR) != NULL))
 
 /*----------------------------------------------------------------------*/
 

@@ -59,6 +59,7 @@
 #ifndef MULTI_THREAD
 extern DynamicStack tstTermStack;
 #endif
+
 #define TST_TERMSTACK_INITSIZE    25
 
 #define TermStack_Top		((CPtr)DynStk_Top(tstTermStack))
@@ -327,14 +328,17 @@ extern DynamicStack tstTrail;
 								\
    TermStack_Pop(subterm);					\
    XSB_Deref(subterm);						\
+   /*   fprintf(stddbg,"ProcessNext ");printterm(stddbg,subterm,25);fprintf(stddbg,"\n"); */\
    switch ( cell_tag(subterm) ) {				\
    case XSB_REF:						\
    case XSB_REF1:						\
+     /*     fprintf(stddbg,"  ProcessNext: variable VE %p\n",VarEnumerator);*/ \
      if ( ! IsStandardizedVariable(subterm) ) {			\
        StandardizeVariable(subterm, StdVarNum);			\
        Trail_Push(subterm);					\
        Symbol = EncodeNewTrieVar(StdVarNum);			\
        StdVarNum++;						\
+       /*fprintf(stddbg,"  ProcessNext: standardized variable %p %p\n",subterm,symbol);*/ \
      }								\
      else							\
        Symbol = EncodeTrieVar(IndexOfStdVar(subterm));		\

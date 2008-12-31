@@ -407,71 +407,50 @@ void table_call_search_incr(CTXTdeclc TabledCallInfo *call_info,
  * Assumes that private/shared switch for SMs has been set.
  */
 
+/* TLS???*/
+#ifndef MULTI_THREAD
+extern int AnsVarCtr;
+#endif
+
 BTNptr table_answer_search(CTXTdeclc VariantSF producer, int size, int attv_num,
 			   CPtr templ, xsbBool *is_new) {
 
   void *answer;
+  xsbBool wasFound = TRUE;
 
   if ( IsSubsumptiveProducer(producer) ) {
+
+    //    AnsVarCtr = 0;
+    ans_var_pos_reg = hreg++;	/* Leave a cell for functor ret/n (needed in subsumption?) */
     answer =
-      subsumptive_answer_search(CTXTc (SubProdSF)producer,size,templ,is_new);
-    if ( *is_new ) {
+      subsumptive_answer_search(CTXTc (SubProdSF)producer,size,templ,&wasFound);
+    wasFound = !wasFound;
+    if ( !wasFound ) {
       ALNptr newALN;
       New_Private_ALN(newALN,answer,NULL);
       SF_AppendNewAnswer(producer,newALN);
     }
-    /*
-     * Conditional answers could result via dependence upon variant
-     * subgoals which produce/consume conditional answers.
-     */
-    if ( IsNonNULL(delayreg) ) {
-      fprintf(stdwarn, "\n++Warning: Derivation of conditional answer for "
-	               "subsumptive subgoal ");
-      sfPrintGoal(stdwarn, producer, NO);
-      fprintf(stdwarn, "\n");
-      if ( *is_new ) {
-	fprintf(stderr, "++Error: The answer is new: ");
-	printTriePath(stderr, answer, NO);
-	fprintf(stderr, "\n");
-	xsb_abort("Unsupported table operation: conditional-answer insertion");
-      }
-      else {
-	fprintf(stdwarn, "++Warning: Answer is subsumed by: ");
-	printTriePath(stdwarn, answer, NO);
-	fprintf(stdwarn, "\n++Warning: Answer is rejected as redundant.  "
-		         "Continuing...\n");
-      }
-    }
+    //      fprintf(stddbg, "The answer is new: ");printTriePath(stderr, answer, NO);
+    do_delay_stuff(CTXTc (NODEptr)answer, producer, wasFound);
+
+    undo_answer_bindings(CTXT);
+    Trail_Unwind_All;
+
+      *is_new = ! wasFound;
   }
   else {  /* Variant Producer */
     /*
      * We want to save the substitution factor of the answer in the
      * heap, so we have to change variant_answer_search().
      */
-    xsbBool wasFound = TRUE;
     
-#ifndef IGNORE_DELAYVAR
     ans_var_pos_reg = hreg++;	/* Leave a cell for functor ret/n */
-#endif /* IGNORE_DELAYVAR */
 
     answer = variant_answer_search(CTXTc size,attv_num,templ,producer,&wasFound);
 
-#ifdef DEBUG_DELAYVAR
-#ifndef IGNORE_DELAYVAR
-    fprintf(stddbg, ">>>> ans_var_pos_reg = ");
-    if (isinteger(cell(ans_var_pos_reg)))
-      fprintf(stddbg, "\"ret\"\n");
-    else 
-      fprintf(stddbg, "%s/%d\n", get_name((Psc)(cell(ans_var_pos_reg))),
-	      get_arity((Psc)(cell(ans_var_pos_reg))));
-#endif /* IGNORE_DELAYVAR */
-#endif /* DEBUG_DELAYVAR */
-
     do_delay_stuff(CTXTc (NODEptr)answer, producer, wasFound);
 
-#ifndef IGNORE_DELAYVAR
     undo_answer_bindings(CTXT);
-#endif /* IGNORE_DELAYVAR */
 
     *is_new = ! wasFound;
   }
@@ -853,6 +832,28 @@ inline TIFptr New_TIF(CTXTdeclc Psc pPSC) {
    tif_list.last = pTIF;						
 #endif
    return pTIF;
+}
+
+/* Need to add ALN to SF, and pointer to leaf of call trie.  */
+VariantSF tnotNewSubConsSF(CTXTdeclc BTNptr Leaf,TIFptr TableInfo,VariantSF producer) {	
+								
+   void *pNewSF;						
+								
+   SM_AllocateStruct(smConsSF,pNewSF);				
+   pNewSF = memset(pNewSF,0,sizeof(subsumptive_consumer_sf));	
+   subg_sf_type(pNewSF) = SUBSUMED_CONSUMER_SFT;		
+   subg_tif_ptr(pNewSF) = TableInfo;				
+   subg_leaf_ptr(pNewSF) = Leaf;				
+   CallTrieLeaf_SetSF(Leaf,pNewSF);				
+   conssf_producer(pNewSF) = (SubProdSF)producer;		
+   //   if ( ! producerSubsumesSubgoals(producer) )			
+   //     tstCreateTSIs_handle((TSTNptr)subg_ans_root_ptr(producer));		
+   subg_ans_list_ptr(pNewSF) = empty_return_handle(pNewSF);		
+   //   conssf_timestamp(pNewSF) = CONSUMER_SF_INITIAL_TS;		
+   conssf_timestamp(pNewSF) = 0;		
+   conssf_consumers(pNewSF) = subg_consumers(producer);		
+   subg_consumers(producer) = (SubConsSF)pNewSF;		
+   return pNewSF;					
 }
 
 /*=========================================================================*/

@@ -174,7 +174,7 @@ static long term_stacksize = DEFAULT_ARRAYSIZ;
 static BasicTrieNode dummy_ans_node = {{0,1,0,0},NULL,NULL,NULL,0};
 
 #ifndef MULTI_THREAD
-static int AnsVarCtr;
+int AnsVarCtr;
 #endif
 
 /*----------------------------------------------------------------------*/
@@ -908,7 +908,7 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
   Paren = subg_ans_root_ptr(subgoal_ptr);
   GNodePtrPtr = &BTN_Child(Paren);
 
-  /* Documentation rewritten by~< TLS: 
+  /* Documentation rewritten by TLS: 
    * To properly generate instructions for attributed variables, you
    * need to know which attributed variables are identical to those in
    * the call, and which represent new bindings to attributed or vanilla
@@ -1210,6 +1210,7 @@ BTNptr delay_chk_insert(CTXTdeclc int arity, CPtr cptr, CPtr *hook)
     int ctr, attv_ctr;
     BTNptr Paren, *GNodePtrPtr;
  
+    VarEnumerator_trail_top = (CPtr *)(& VarEnumerator_trail[0]) - 1;
 #ifdef DEBUG_DELAYVAR
     xsb_dbgmsg((LOG_DEBUG,">>>> start delay_chk_insert()"));
 #endif
@@ -1223,7 +1224,7 @@ BTNptr delay_chk_insert(CTXTdeclc int arity, CPtr cptr, CPtr *hook)
     ctr = AnsVarCtr;
 
 #ifdef DEBUG_DELAYVAR
-    xsb_dbgmsg((LOG_DEBUG,">>>> [D1] AnsVarCtr = %d", AnsVarCtr));
+    printf(">>>> [D1] AnsVarCtr = %d ", AnsVarCtr);printf("\n");
 #endif
 
     for (i = 0; i<arity; i++) {
@@ -1235,9 +1236,9 @@ BTNptr delay_chk_insert(CTXTdeclc int arity, CPtr cptr, CPtr *hook)
        * following line.
        */
       xtemp1 = (CPtr) (cptr + i);
-      xsb_dbgmsg((LOG_BD, "arg[%d] =  %x ",i, xtemp1));
+      //      fprintf(stddbg, "  delay_chk_insert arg[%d] =  %x ",i, xtemp1);
       XSB_CptrDeref(xtemp1);
-      dbg_printterm(LOG_BD,stddbg,(unsigned int)xtemp1,25);
+      //      printterm(stddbg,(unsigned int)xtemp1,25);fprintf(stddbg,"\n");
       xsb_dbgmsg((LOG_BD, "\n"));
       tag = cell_tag(xtemp1);
       switch (tag) {
@@ -1248,6 +1249,7 @@ BTNptr delay_chk_insert(CTXTdeclc int arity, CPtr cptr, CPtr *hook)
           one_node_chk_ins(flag,EncodeNewTrieVar(ctr),
 			   DELAY_TRIE_TT);
           ctr++;
+	  //	  fprintf(stddbg,"  standardized ");printterm(stddbg,(unsigned int)xtemp1,25);fprintf(stddbg,"\n");
         }
         else {
           one_node_chk_ins(flag,

@@ -184,10 +184,21 @@ struct pos_neg_de_list {
     ((ANS == NULL) ? (is_completed(SUBG) && subgoal_fails(SUBG))	\
     		   : (is_unconditional_answer(ANS)))
 
+
+/*
 #define is_failing_delay_element(SUBG, ANS)				\
     ((ANS == NULL) ? (is_completed(SUBG) && has_answer_code(SUBG) &&	\
 		      subgoal_unconditionally_succeeds(SUBG))		\
 		   : (IsDeletedNode(ANS)))
+
+#define is_failing_delay_element(SUBG, ANS)				\
+  ((ANS == NULL) ?							\
+   ((IsSubConsSF(SUBG)) ?						\
+    (printf("found subsumptive consumer\n"))				\
+    : (is_completed(SUBG) && has_answer_code(SUBG) &&			\
+       subgoal_unconditionally_succeeds(SUBG))				\
+    : (IsDeletedNode(ANS))) )
+*/
 
 /*
  * mark_conditional_answer(ANS, SUBG, NEW_DL) will add a new delay list,
@@ -249,13 +260,14 @@ extern xsbBool neg_delay;
    refactored.  Therefore, the CTXT-style declarations cannot yet be
    used. */
 
-extern xsbBool answer_is_junk(CPtr);
 #ifndef MULTI_THREAD
+extern xsbBool answer_is_junk(CPtr);
 extern void abolish_wfs_space(void);
 extern void simplify_neg_fails(VariantSF);
 extern void do_delay_stuff(NODEptr, VariantSF, xsbBool);
 #else
 struct th_context;
+extern xsbBool answer_is_junk(struct th_context *,CPtr);
 extern void abolish_wfs_space(struct th_context *);
 extern void abolish_private_wfs_space(struct th_context *);
 extern void simplify_neg_fails(struct th_context *, VariantSF);

@@ -65,6 +65,7 @@ typedef struct subgoal_frame *VariantSF;
 
 #ifndef MULTI_THREAD
 extern void print_delay_list(FILE *, CPtr);
+extern void print_delay_element(FILE *, Cell);
 #else
 extern void print_delay_list(struct th_context * ,FILE *, CPtr);
 #endif
@@ -108,9 +109,12 @@ extern void print_delay_list(struct th_context * ,FILE *, CPtr);
    if (LOG_LEVEL <= cur_log_level)                    \
       printAnswerTemplate(FP,PAT,S)
 extern void print_completion_stack(void);
-extern void print_subgoal(FILE *, VariantSF);
 extern void printterm(FILE *, Cell, int);
 #else
+
+#ifndef MULTI_THREAD
+extern void print_subgoal(FILE *, VariantSF);
+#endif 
 
 #define xsb_dbgmsg(a)
 #define dbg_print_subgoal(L,F,S)

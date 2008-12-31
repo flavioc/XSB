@@ -4137,9 +4137,65 @@ int table_inspection_function( CTXTdecl ) {
     return find_pred_backward_dependencies(CTXTc get_tip(CTXTc term_psc(ptoc_tag(CTXTc 2))));
   }
 
+/********************************************************************
+The following builtin serves as an analog to SLG_NOT for call
+subsumption when we do not have a producer for the negated subgoal
+Subgoal.  Because there is no direct connection between a consumer for
+Subgoal (which is ground) and its answer, we either start here with
+the answer leaf pointer as produced by get_returns/3, or with a null
+leaf pointer (e.g. in case the function is invoked by delaying after
+is_incomplete).
+
+Obtaining the leaf pointer should probably be moved into this
+function, but for now we start with an indication of whether a return
+has been found, and handle our cases separately.  In addition, we may
+not have a consumer subgoal frame if Subgoal is subsumed by Producer
+and Producer is completed (the call subsumption algorithm does not
+create a subgoal frame in this case).  So we have to handle that
+situation also.  For now, if we don't have a consumer SF, I add
+tnot(Producer) to the delay list -- although creating a new consumer
+SF so that we can add tnot(Consumer) might be better.
+*********************************************************************/
+
+case CALL_SUBS_SLG_NOT: {
+
+  VariantSF producerSF, consumerSF;
+  BTNptr answerLeaf;
+  int hasReturn;
+
+  producerSF = (VariantSF) ptoc_int(CTXTc 2);
+  hasReturn =  ptoc_int(CTXTc 4);
+  consumerSF = (VariantSF) ptoc_int(CTXTc 5);
+
+  if (hasReturn) {
+    answerLeaf = (BTNptr) ptoc_int(CTXTc 3);
+    /* Return with unconditional answer: fail */
+    if ( is_unconditional_answer(answerLeaf) ) {
+      //      fprintf(stddbg,"failing : ");print_subgoal(stddbg,consumerSF),printf("\n");
+      return FALSE;
+    }
+    else {
+    /* Return with conditional answer: propagate delay */
+      //      fprintf(stddbg,"delaying (w) : ");print_subgoal(stddbg,consumerSF),printf("\n");
+      if (IsNonNULL(consumerSF)) delay_negatively(consumerSF)
+      else delay_negatively(producerSF);
+      return TRUE;
+    }
+  } else { /* has no return: we havent resumed to delay */
+    if   (is_completed(producerSF) || neg_delay == FALSE) {
+      //      fprintf(stddbg,"succeeding: ");print_subgoal(stddbg,consumerSF),printf("\n");
+      return TRUE;
+    }
+    else { /* has no return: but function was invoked for delaying */
+      //     fprintf(stddbg,"delaying (wo): ");print_subgoal(stddbg,consumerSF),printf("\n");
+      if (IsNonNULL(consumerSF)) delay_negatively(consumerSF)
+	else delay_negatively(producerSF);
+      return TRUE;
+    }
   }
-  return 0;
 }
 
-
+  }
+  return TRUE;
+}
 

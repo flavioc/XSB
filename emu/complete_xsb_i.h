@@ -187,6 +187,7 @@ XSB_Start_Instr(check_complete,_check_complete)
 	/* schedule return of answers from trie code */
 	SetupReturnFromLeader(CTXTc orig_breg, cs_ptr, subgoal);
 	lpcreg = (byte *) subg_ans_root_ptr(subgoal);
+	//	printf("finished completion");
 	XSB_Next_Instr();
       } else {  /* There are no answers to return */
 	reclaim_incomplete_table_structs(subgoal);

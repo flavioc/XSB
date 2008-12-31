@@ -90,7 +90,7 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_no_cp_numcon,_trie_no_cp_numcon)
 	TRIE_R_LOCK();
-	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_no_cp_numcon:"));
+//        fprintf(stddbg, "trie_no_cp_numcon\n");
 	NodePtr = (BTNptr) lpcreg;
 	unify_with_trie_numcon;
 	reg_arrayptr--;
@@ -161,7 +161,7 @@ XSB_Start_Instr(trie_try_numcon,_trie_try_numcon)
 	CPtr old_cptop;
 #endif
 	TRIE_R_LOCK();
-	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_try_numcon"));
+//	fprintf(stddbg, "trie_try_numcon\n");
 	NodePtr = (BTNptr) lpcreg;
 	save_find_locx(ereg);
 	tbreg = top_of_cpstack;
@@ -183,7 +183,7 @@ XSB_End_Instr()
 XSB_Start_Instr(trie_retry_numcon,_trie_retry_numcon) 
 	CPtr tbreg;
 	TRIE_R_LOCK();
-	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_retry_numcon"));
+//	fprintf(stddbg, "trie_retry_numcon\n");
 	NodePtr = (BTNptr) lpcreg;
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
@@ -196,7 +196,7 @@ XSB_End_Instr()
 XSB_Start_Instr(trie_trust_numcon,_trie_trust_numcon) 
 	CPtr tbreg;
 	TRIE_R_LOCK();
-	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_trust_numcon"));
+//	fprintf(stddbg, "trie_trust_numcon\n");
 	NodePtr = (BTNptr) lpcreg;
 	tbreg = breg;
 	restore_regs_and_vars(tbreg, CP_SIZE);
@@ -274,7 +274,7 @@ XSB_End_Instr()
 
 XSB_Start_Instr(trie_no_cp_var,_trie_no_cp_var)
 	TRIE_R_LOCK();
-	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_no_cp_var"));
+//        fprintf(stddbg,"trie_no_cp_var\n");
 	NodePtr = (BTNptr) lpcreg;
 	num_vars_in_var_regs = DecodeTrieVar(opatom);
         xsb_dbgmsg((LOG_TRIE_INSTR, "symbol number is %d\n",num_vars_in_var_regs));
@@ -298,7 +298,7 @@ XSB_Start_Instr(trie_try_var,_trie_try_var)
 	CPtr old_cptop;
 #endif
 	TRIE_R_LOCK();
-	xsb_dbgmsg((LOG_TRIE_INSTR, "trie_try_var"));
+//        fprintf(stddbg, "trie_try_var\n");
 	NodePtr = (BTNptr) lpcreg;
 	save_find_locx(ereg);
 	tbreg = top_of_cpstack;
@@ -421,7 +421,8 @@ XSB_Start_Instr(trie_no_cp_val,_trie_no_cp_val)
   xsb_dbgmsg((LOG_TRIE_INSTR, "trie_no_cp_val"));
   NodePtr = (BTNptr) lpcreg;
 {
-  Cell cell2deref;							
+  Cell cell2deref;		
+  //  printf("*reg_arrayptr %p\n",*reg_arrayptr);
   XSB_Deref(*reg_arrayptr);    						
   if (isref(*reg_arrayptr)) {		                 // case a 
     cell2deref = (Cell)var_regs[(int)int_val(opatom)];			

@@ -143,6 +143,7 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
 
   int incrflag = 0; /* for incremental evaluation */
 
+  gdb_dummy();
 #ifdef SHARED_COMPL_TABLES
   byte * inst_addr = lpcreg;
   int table_tid ;
@@ -868,7 +869,7 @@ XSB_Start_Instr(new_answer_dealloc,_new_answer_dealloc)
    * try to add this answer; it is a redundant one anyway...
    */
   if ((subgoal_space_has_been_reclaimed(producer_sf,producer_csf)) ||
-      (IsNonNULL(delayreg) && answer_is_junk(delayreg))) {
+      (IsNonNULL(delayreg) && answer_is_junk(CTXTc delayreg))) {
     Fail1;
     XSB_Next_Instr();
   }

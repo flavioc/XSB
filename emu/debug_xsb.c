@@ -553,7 +553,7 @@ void print_subgoal(CTXTdeclc FILE *fp, VariantSF subg)
 
 /*----------------------------------------------------------------------*/
 
-static void print_delay_element(CTXTdeclc FILE *fp, Cell del_elem)
+void print_delay_element(CTXTdeclc FILE *fp, Cell del_elem)
 {
   Psc  psc = 0;
   CPtr cptr;
