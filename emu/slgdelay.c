@@ -955,19 +955,21 @@ void *simpl_variant_trie_lookup(CTXTdeclc void *trieRoot, int nTerms, CPtr termV
 
 /* assume term copied is not a var */
 void answerStack_copyTerm(CTXTdecl) {
-  Cell symbol;
+  Cell symbol = (Cell) NULL;
   int i;
 
   SimplStack_Pop(simplAnsStack,symbol);
   //  printf("working on AS: ");printTrieSymbol(stddbg, symbol);fprintf(stddbg,"\n");
-  SymbolStack_Push(symbol);
-  if (IsTrieFunctor(symbol))   
-    for (i = 0 ; i < get_arity(DecodeTrieFunctor(symbol)) ; i++) {
+  if (symbol != (Cell) NULL) {
+    SymbolStack_Push(symbol);
+    if (IsTrieFunctor(symbol))   
+      for (i = 0 ; i < get_arity(DecodeTrieFunctor(symbol)) ; i++) {
+	answerStack_copyTerm(CTXT);
+      }
+    else if (IsTrieList(symbol)) {
+      answerStack_copyTerm(CTXT);
       answerStack_copyTerm(CTXT);
     }
-  else if (IsTrieList(symbol)) {
-      answerStack_copyTerm(CTXT);
-      answerStack_copyTerm(CTXT);
   }
 }
 
@@ -994,7 +996,7 @@ void answerStack_copyTermPtr(CTXTdeclc CPtr symbolPtr) {
 }
 
 void construct_ground_term(CTXTdeclc BTNptr as_leaf,VariantSF subgoal) {
-  Cell symbol;
+  Cell symbol = (Cell) NULL;
   int maxvar = -1;
   CPtr aliasArray[NUM_TRIEVARS];
   int i;
@@ -1012,6 +1014,7 @@ void construct_ground_term(CTXTdeclc BTNptr as_leaf,VariantSF subgoal) {
 
   SymbolStack_ResetTOS;
   while (!DynStk_IsEmpty(simplGoalStack)) {
+    // TLS: should probably check for null sumbol after pop?
     SimplStack_Pop(simplGoalStack,symbol);
     //    printf("working on GS: ");printTrieSymbol(stddbg, symbol);fprintf(stddbg,"\n");
     if (IsTrieVar(symbol)) {
@@ -1114,8 +1117,8 @@ static void handle_unsupported_answer_subst(CTXTdeclc NODEptr as_leaf)
 
   ASI unsup_asi = Delay(as_leaf);
   VariantSF unsup_subgoal = asi_subgoal(unsup_asi);
-  VariantSF subsumed_subgoal;
-  BTNptr subgoal_leaf;
+  VariantSF subsumed_subgoal = NULL;
+  BTNptr subgoal_leaf = NULL;
 
   //  fprintf(stddbg,"in handle unsupp: ");
   //  fprintf(stddbg, ">>>> the subgoal is: "); print_subgoal(stddbg, unsup_subgoal); fprintf(stddbg, " >>> the answer is: ");

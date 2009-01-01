@@ -2862,7 +2862,11 @@ void abolish_table_call_transitive(CTXTdeclc VariantSF subgoal) {
 
 /* Took check for incomplete out -- its been done in tables.P.
 However, we now need to check the default setting (settable in
-xsb_flag) as well as an option set by the options list, if any. */
+xsb_flag) as well as an option set by the options list, if any. 
+
+Currently, calls can be abolished only for call-variance -- hence
+has_conditional_answer() can be used here without problem.
+*/
 void abolish_table_call(CTXTdeclc VariantSF subgoal, int invocation_flag) {
   if (has_conditional_answer(subgoal) 
       && (invocation_flag != ABOLISH_TABLES_TRANSITIVELY 
@@ -2922,6 +2926,7 @@ void print_done_tif_stack(CTXTdecl) {
 
 //----------------------------------------------------------------------
 
+/* TLS: this doesn't yet work correctly for WF call subsumption */
 static void find_subgoals_and_answers_for_pred(CTXTdeclc TIFptr tif) {
 
   VariantSF pSF;
@@ -3713,6 +3718,7 @@ void release_all_tabling_resources(CTXTdecl) {
   TrieHT_FreeAllocatedBuckets(smTableBTHT);
   SM_ReleaseResources(smTableBTHT);
   SM_ReleaseResources(smTSTN);
+  //    SM_ReleaseResources(*private_smTSTN);
   TrieHT_FreeAllocatedBuckets(smTSTHT);
   SM_ReleaseResources(smTSTHT);
   SM_ReleaseResources(smTSIN);
@@ -3721,6 +3727,24 @@ void release_all_tabling_resources(CTXTdecl) {
   SM_ReleaseResources(smProdSF);
   SM_ReleaseResources(smConsSF);
   SM_ReleaseResources(smASI);
+
+  /* In mt engine, also release private resources */
+#ifdef MULTI_THREAD
+    thread_free_private_deltfs(CTXT);
+    SM_ReleaseResources(*private_smTableBTN);
+    TrieHT_FreeAllocatedBuckets(*private_smTableBTHT);
+    SM_ReleaseResources(*private_smTableBTHT);
+    //    SM_ReleaseResources(*private_smTSTN);
+    TrieHT_FreeAllocatedBuckets(*private_smTSTHT);
+    SM_ReleaseResources(*private_smTSTHT);
+    //    SM_ReleaseResources(*private_smTSIN);
+    SM_ReleaseResources(*private_smALN);
+    SM_ReleaseResources(*private_smVarSF);
+    //    SM_ReleaseResources(*private_smProdSF);
+    //    SM_ReleaseResources(*private_smConsSF);
+    SM_ReleaseResources(*private_smASI);
+#endif
+
 }
 
 /* TLS: Unlike the other abolishes, "all" aborts if it detects the
@@ -3759,7 +3783,7 @@ inline
 void abolish_table_info(CTXTdecl)
 {
   TIFptr pTIF;
-
+  
   check_for_incomplete_tables("abolish_all_shared_tables/0");
 
   if (flags[NUM_THREADS] == 1) {
@@ -3775,11 +3799,11 @@ void abolish_table_info(CTXTdecl)
   }
 
 #ifdef MULTI_THREAD
-  for ( pTIF = private_tif_list.first; IsNonNULL(pTIF)
-	  ; pTIF = TIF_NextTIF(pTIF) ) {
-    TIF_CallTrie(pTIF) = NULL;
-    TIF_Subgoals(pTIF) = NULL;
-  }
+    for ( pTIF = private_tif_list.first; IsNonNULL(pTIF)
+  	  ; pTIF = TIF_NextTIF(pTIF) ) {
+      TIF_CallTrie(pTIF) = NULL;
+      TIF_Subgoals(pTIF) = NULL;
+    }
 #endif
 
   reset_freeze_registers;
@@ -3787,6 +3811,7 @@ void abolish_table_info(CTXTdecl)
   hashtable1_destroy_all(0);  /* free all incr hashtables in use */
   release_all_tabling_resources(CTXT);
   abolish_wfs_space(CTXT); 
+
 }
 
 /*
