@@ -532,11 +532,6 @@ inline static  void update_timestamps(TSTNptr tstLeaf, TSTNptr tstRoot,
  * 'maintainTSI' -- these need to be maintained during insertion.
  */
 
-/* TLS??? */
-#ifndef MULTI_THREAD
-extern int AnsVarCtr;
-#endif
-
 TSTNptr tst_insert(CTXTdeclc TSTNptr tstRoot, TSTNptr lastMatch, Cell firstSymbol,
 		   xsbBool maintainTSI) {
 

@@ -339,6 +339,8 @@ typedef struct Call_Check_Insert_Results {
 /*-- exported trie functions ------------------------------------------*/
 
 #ifndef MULTI_THREAD
+extern int AnsVarCtr;
+
 extern BTNptr   newBasicTrie(Cell,int);
 extern byte *	trie_get_calls(void);
 extern Cell	get_lastnode_cs_retskel(Cell);

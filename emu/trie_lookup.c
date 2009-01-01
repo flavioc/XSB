@@ -659,11 +659,6 @@ static void sub_trie_lookup_error(CTXTdeclc char *string) {
  * encountered.
  */
 
-/* TLS??? */
-#ifndef MULTI_THREAD
-extern int AnsVarCtr;
-#endif
-
 typedef enum Search_Strategy_Mode {
   MATCH_SYMBOL_EXACTLY, MATCH_WITH_TRIEVAR
 } SearchMode;

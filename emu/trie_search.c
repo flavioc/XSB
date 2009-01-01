@@ -182,11 +182,6 @@ BTNptr subsumptive_bt_search(CTXTdeclc BTNptr btRoot, int nTerms, CPtr termVecto
  * information is needed when the term set is inserted.
  */
 
-/* TLS??? */
-#ifndef MULTI_THREAD
-extern int AnsVarCtr;
-#endif
-
 TSTNptr subsumptive_tst_search(CTXTdeclc TSTNptr tstRoot, int nTerms, CPtr termVector,
 			       xsbBool maintainTSI, xsbBool *isNew) {
 

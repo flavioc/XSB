@@ -383,16 +383,6 @@ void table_call_search_incr(CTXTdeclc TabledCallInfo *call_info,
 
 
 
-
-
-
-
-
-
-
-
-
-
 /*=========================================================================*/
 
 /*
@@ -406,11 +396,6 @@ void table_call_search_incr(CTXTdeclc TabledCallInfo *call_info,
  * elements arranged from high to low memory.
  * Assumes that private/shared switch for SMs has been set.
  */
-
-/* TLS???*/
-#ifndef MULTI_THREAD
-extern int AnsVarCtr;
-#endif
 
 BTNptr table_answer_search(CTXTdeclc VariantSF producer, int size, int attv_num,
 			   CPtr templ, xsbBool *is_new) {

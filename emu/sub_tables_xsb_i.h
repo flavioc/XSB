@@ -406,11 +406,6 @@ inline static  void *newAnswerSet(CTXTdeclc int n, TSTNptr Parent) {
  * answer into the set, and indicate to the caller whether it is new.
  */
 
-/* TLS???*/
-#ifndef MULTI_THREAD
-extern int AnsVarCtr;
-#endif
-
 inline static
 TSTNptr subsumptive_answer_search(CTXTdeclc SubProdSF sf, int nTerms,
 				  CPtr answerVector, xsbBool *isNew) {
