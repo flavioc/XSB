@@ -58,7 +58,12 @@ fix it or to assist you to bypass it.
       though we will try to amend this restriction in future versions of
       XSB.
 %
-\item Subsumption-based tabled predicates may not be \emph{delayed}.
+\item Tabled predicates that use call-subsumption may not table
+  attributed variables, and may not use answer subsumption or
+  incremental completion.
+
+\comment{
+Subsumption-based tabled predicates may not be \emph{delayed}.
       \index{tabling!call subsumption-based!interaction with negation}
       Consequently,
       \begin{itemize}
@@ -71,6 +76,8 @@ fix it or to assist you to bypass it.
       \end{itemize}
       Violations of either of these conditions raise an exception and
       abort the computation.
+}
+
 %
 \end{itemize}
 

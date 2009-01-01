@@ -369,17 +369,23 @@ answer $A'$ already present in $\cA$\@.
 Notice that subsumption-based tabling permits greater reuse of
 computed results, thus avoiding even more program resolution, and
 thereby can lead to time and space performances superior to
-variant-based tabling.  However, there is a downside to this paradigm.
-First of all, subsumptively tabled predicates do not interact well
-with certain Prolog constructs with which variant-tabled predicates
-can (see Example~\ref{example:sub-fail} below).  Further, in the
-current implementation of subsumption-based tabling, subsumptive
-predicates may not take part in negative computations which result in
-the \emph{delay} \index{tabling!call subsumption-based!interaction with
-  negation} of a literal containing a subsumptive subgoal (see
-\refsec{sec:CurrentRestrictions}).  This requires subcomputations in
-which subsumptive predicates take part to be LRD-stratified (see
-Section~\ref{sec:lrd}).
+variant-based tabling.  In addition, beginning with Version 3.2,
+call-subsumption based tabling fully supports well-founded negation
+under the default local scheduling strategy.  However, there are
+downsides to this paradigm.  First of all, subsumptively tabled
+predicates do not interact well with certain Prolog constructs with
+which variant-tabled predicates can (see
+Example~\ref{example:sub-fail} below).  Second, call subsumption does
+not yet support tabled attributed variables or answer subsumption.
+
+%Further, in the
+%current implementation of subsumption-based tabling, subsumptive
+%predicates may not take part in negative computations which result in
+%the \emph{delay} \index{tabling!call subsumption-based!interaction with
+%  negation} of a literal containing a subsumptive subgoal (see
+%\refsec{sec:CurrentRestrictions}).  This requires subcomputations in
+%which subsumptive predicates take part to be LRD-stratified (see
+%Section~\ref{sec:lrd}).
 
 \begin{example}
 The terms $T_1$: {\tt p(f(Y),X,1)} and $T_2$:~{\tt p(f(Z),U,1)} are
@@ -1416,7 +1422,7 @@ that neither {\tt sp/3} nor {\tt shorter\_path/3} need be tabled.  Now
 try the query {\tt shorter\_path(1,5,C)}.
 \end{exercise}
 
-{\tt filterReduce1((?Pred,+Binary\_operator,+Identity,Value)}, forms a
+{\tt filterReduce1(?Pred,+Binary\_operator,+Identity,Value)}, forms a
 new predicate out of {\tt Pred} and {\tt Value} to get a new predicate
 to call.  {\tt Binary\_Operator} must define a binary function in
 which the first two arguments determine the third.  {\tt Id} must be

@@ -2895,11 +2895,10 @@ as arguments, or if {\tt X} is an atom. (It fails if X is a cons node.)
 
 \standarditem{is\_number\_atom(?X)}{is\_number\_atom/1}
 
-    Succeeds if {\tt X} is an atom (not a numeric atom) which can be
-    converted to a numeric atom (integer or float) and fails
-    otherwise.  In particular, if {\tt is\_numeric\_atom(X) succeeds,
-    then
-    {\footnotesize
+    Succeeds if {\tt X} is an atom (e.g. {\tt '123'}) (as opposed to a
+    number {\tt 123}) which can be converted to a numeric atom
+    (integer or float) and fails otherwise.  In particular, if {\tt
+      is\_number\_atom(X)} succeeds, then {\footnotesize
      \begin{verbatim}
                 | ?- atom_codes(X,Codes),number_codes(N,Codes).
      \end{verbatim}}
