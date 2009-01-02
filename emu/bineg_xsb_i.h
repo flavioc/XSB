@@ -26,9 +26,11 @@
 /* special debug includes */
 #include "debugs/debug_delay.h"
 
-/*----------------------------------------------------------------------*/
-/* Contains builtin predicates for SLG negation (and tfindall/3).	*/
-/*----------------------------------------------------------------------*/
+/*----------------------------------------------------------------------
+Contains builtin predicates for SLG negation (and tfindall/3) using
+call-variance.  Well-founded negation with call-subsumption is handled
+by CALL_SUBS_SLG_NOT, curently in tr_utils.c
+----------------------------------------------------------------------*/
 
 case SLG_NOT: {
 
@@ -49,7 +51,7 @@ case SLG_NOT: {
   if ( has_no_answers(sf) &&
        (is_completed(sf) || neg_delay == FALSE) )
     return TRUE;
-  if ( has_unconditional_answers(sf) )
+  if ( varsf_has_unconditional_answers(sf) )
     return FALSE;
   else {
     delay_negatively(sf);

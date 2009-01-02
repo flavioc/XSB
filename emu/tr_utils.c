@@ -84,7 +84,7 @@ extern void print_subgoal(CTXTdeclc FILE *, VariantSF);
 /* various utility predicates and macros */
 /*----------------------------------------------------------------------*/
 
-xsbBool has_unconditional_answers(VariantSF subg)
+xsbBool varsf_has_unconditional_answers(VariantSF subg)
 {
   ALNptr node_ptr = subg_answers(subg);
  
@@ -108,7 +108,7 @@ xsbBool has_unconditional_answers(VariantSF subg)
   return FALSE;
 }
 
-xsbBool has_conditional_answer(VariantSF subg)
+xsbBool varsf_has_conditional_answer(VariantSF subg)
 {
 
   ALNptr node_ptr = subg_answers(subg);
@@ -879,11 +879,20 @@ static BTNptr get_prev_sibl(BTNptr node)
 /* 
  * TLS: since this deallocates from SMs, make sure
  * trie_allocation_type is set before using.
+ *
+ * In addition, it now works for call subsumption, so need to set the
+ * structure manager to use (smBTN vs smTSTN)
  */
-void delete_branch(CTXTdeclc BTNptr lowest_node_in_branch, BTNptr *hook) {
+void delete_branch(CTXTdeclc BTNptr lowest_node_in_branch, BTNptr *hook,int eval_method) {
 
   int num_left_in_hash;
   BTNptr prev, parent_ptr, *y1, *z;
+  Structure_Manager *smNODEptr;
+
+  if (eval_method == VARIANT_EVAL_METHOD)
+    smNODEptr = smBTN;
+  else 
+    smNODEptr = &smTSTN;
 
   while ( IsNonNULL(lowest_node_in_branch) && 
 	  ( Contains_NOCP_Instr(lowest_node_in_branch) ||
@@ -907,7 +916,7 @@ void delete_branch(CTXTdeclc BTNptr lowest_node_in_branch, BTNptr *hook) {
 	 * the same chain.  Therefore we cannot delete the parent, and so
 	 * we're done.
 	 */
-	SM_DeallocateStruct(*smBTN,lowest_node_in_branch);
+	SM_DeallocateStruct(*smNODEptr,lowest_node_in_branch);
 	return;
       }
       else
@@ -917,7 +926,7 @@ void delete_branch(CTXTdeclc BTNptr lowest_node_in_branch, BTNptr *hook) {
      *  Remove this node and continue.
      */
     //    printf("deleting %x\n",lowest_node_in_branch->symbol);
-    SM_DeallocateStruct(*smBTN,lowest_node_in_branch);
+    SM_DeallocateStruct(*smNODEptr,lowest_node_in_branch);
     lowest_node_in_branch = parent_ptr;
   }
 
@@ -945,7 +954,7 @@ void delete_branch(CTXTdeclc BTNptr lowest_node_in_branch, BTNptr *hook) {
 	BTN_Instr(prev) -= 2; /* retry -> trust ; try -> nocp */
     }
     //    printf("deleting %x\n",lowest_node_in_branch->symbol);
-    SM_DeallocateStruct(*smBTN,lowest_node_in_branch);
+    SM_DeallocateStruct(*smNODEptr,lowest_node_in_branch);
   }
 }
 
@@ -1145,7 +1154,7 @@ void delete_trie(CTXTdeclc BTNptr iroot) {
  * MUTEX_DELAY.  But I'm not sure that other parts of this function
  * are thread-safe.
  */
-void delete_return(CTXTdeclc BTNptr l, VariantSF sg_frame) 
+void delete_return(CTXTdeclc BTNptr l, VariantSF sg_frame,int eval_method) 
 {
   ALNptr a, n, next;
   NLChoice c;
@@ -1175,7 +1184,7 @@ void delete_return(CTXTdeclc BTNptr l, VariantSF sg_frame)
   if (is_completed(sg_frame)) {
     safe_delete_branch(l);
   } else {
-    delete_branch(CTXTc l,&subg_ans_root_ptr(sg_frame));
+    delete_branch(CTXTc l,&subg_ans_root_ptr(sg_frame),eval_method);
     n = subg_ans_list_ptr(sg_frame);
     /* Find previous sibling -pvr */
     while (ALN_Answer(ALN_Next(n)) != l) {
@@ -1587,11 +1596,11 @@ void private_trie_unintern(CTXTdecl)
   switch_to_trie_assert;
 
   if (disposalType == NO_CPS_CHECK)     
-    delete_branch(CTXTc Leaf, trie_root_addr);
+    delete_branch(CTXTc Leaf, trie_root_addr,VARIANT_EVAL_METHOD);
   else {
     if (!interned_trie_cps_check(CTXTc *trie_root_addr)) {
       //          printf(" really deleting branch \n");
-      delete_branch(CTXTc Leaf, trie_root_addr);
+      delete_branch(CTXTc Leaf, trie_root_addr,VARIANT_EVAL_METHOD);
     }
     else {
       //           printf(" safely deleting branch\n");
@@ -1615,7 +1624,7 @@ void shas_trie_unintern(CTXTdecl)
   SPLIT_TRIE_ID(Trie_id,index,type);
   switch_to_shared_trie_assert(&(shared_itrie_array[index].trie_mutex));;
 
-  delete_branch(CTXTc Leaf, &(shared_itrie_array[index].root));
+  delete_branch(CTXTc Leaf, &(shared_itrie_array[index].root),VARIANT_EVAL_METHOD);
   switch_from_shared_trie_assert(&(shared_itrie_array[index].trie_mutex));
 }
 #endif
@@ -1938,7 +1947,7 @@ static void insertLeaf(IGRptr r, BTNptr leafn)
 }
 
 /*
-  This feature does not yet support shared tries.
+  This feature does not yet support shared tries or call subsumption.
  */
 void reclaim_uninterned_nr(CTXTdeclc long rootidx)
 {
@@ -1961,7 +1970,7 @@ void reclaim_uninterned_nr(CTXTdeclc long rootidx)
     switch_to_trie_assert;
     if(IsDeletedNode(leaf)) {
       //      SYS_MUTEX_LOCK(MUTEX_TRIE);
-      delete_branch(CTXTc leaf, &(itrie_array[rootidx].root));
+      delete_branch(CTXTc leaf, &(itrie_array[rootidx].root),VARIANT_EVAL_METHOD);
       //      SYS_MUTEX_UNLOCK(MUTEX_TRIE);
     } else {
       /* This is allowed:
@@ -2791,18 +2800,18 @@ void abolish_table_call_single(CTXTdeclc VariantSF subgoal) {
 
     SET_TRIE_ALLOCATION_TYPE_SF(subgoal); // set smBTN to private/shared
     if (action == CAN_RECLAIM) {
-      delete_branch(CTXTc subgoal->leaf_ptr, &tif->call_trie); /* delete call */
+      delete_branch(CTXTc subgoal->leaf_ptr, &tif->call_trie,VARIANT_EVAL_METHOD); /* delete call */
       delete_variant_sf_and_answers(CTXTc subgoal, TRUE); // (warn if cond)
     }
     else {
       //      fprintf(stderr,"Delaying abolish of call in use for: %s/%d\n",
       //      get_name(psc),get_arity(psc));
 #ifndef MULTI_THREAD
-      delete_branch(CTXTc subgoal->leaf_ptr, &tif->call_trie); /* delete call */
+      delete_branch(CTXTc subgoal->leaf_ptr, &tif->call_trie,VARIANT_EVAL_METHOD); /* delete call */
       check_insert_private_deltf_subgoal(CTXTc subgoal,TRUE);
 #else
       if (!get_shared(psc)) {
-	delete_branch(CTXTc subgoal->leaf_ptr, &tif->call_trie); /* delete call */
+	delete_branch(CTXTc subgoal->leaf_ptr, &tif->call_trie,VARIANT_EVAL_METHOD); /* delete call */
 	check_insert_private_deltf_subgoal(CTXTc subgoal,TRUE);
       }
       else {
@@ -2839,13 +2848,13 @@ void abolish_table_call_transitive(CTXTdeclc VariantSF subgoal) {
       tif = subg_tif_ptr(subgoal);
       if (action == CAN_RECLAIM && !GC_MARKED_SUBGOAL(subgoal) ) {
 	//	printf("really abolishing\n");
-	delete_branch(CTXTc subgoal->leaf_ptr, &tif->call_trie); /* delete call */
+	delete_branch(CTXTc subgoal->leaf_ptr, &tif->call_trie,VARIANT_EVAL_METHOD); /* delete call */
 	delete_variant_sf_and_answers(CTXTc subgoal,FALSE); // delete answers (dont warn if cond)
       }
       else {
 	//	printf("Mark %x GC %x\n",subgoal->visited,GC_MARKED_SUBGOAL(subgoal));
 	if (!get_shared(psc)) {
-	  delete_branch(CTXTc subgoal->leaf_ptr, &tif->call_trie); /* delete call */
+	  delete_branch(CTXTc subgoal->leaf_ptr, &tif->call_trie,VARIANT_EVAL_METHOD); /* delete call */
 	  check_insert_private_deltf_subgoal(CTXTc subgoal,FALSE);
 	}
 #ifdef MULTI_THREAD
@@ -2865,10 +2874,10 @@ However, we now need to check the default setting (settable in
 xsb_flag) as well as an option set by the options list, if any. 
 
 Currently, calls can be abolished only for call-variance -- hence
-has_conditional_answer() can be used here without problem.
+the use of varsf_has_conditional_answer()
 */
 void abolish_table_call(CTXTdeclc VariantSF subgoal, int invocation_flag) {
-  if (has_conditional_answer(subgoal) 
+  if (varsf_has_conditional_answer(subgoal) 
       && (invocation_flag != ABOLISH_TABLES_TRANSITIVELY 
 	  || (invocation_flag == ABOLISH_TABLES_DEFAULT 
 	      && flags[TABLE_GC_ACTION] == ABOLISH_TABLES_TRANSITIVELY))) {
@@ -2935,7 +2944,7 @@ static void find_subgoals_and_answers_for_pred(CTXTdeclc TIFptr tif) {
   if ( IsNULL(pSF) )   return;
 
   while (pSF) {
-    if (has_conditional_answer(pSF)) {
+    if (varsf_has_conditional_answer(pSF)) {
       push_done_subgoal_node(CTXTc pSF);
       find_answers_for_subgoal(CTXTc pSF);
 	} 
@@ -3659,10 +3668,11 @@ void abolish_all_private_tables(CTXTdecl) {
 
 extern struct TDispBlkHdr_t tdispblkhdr; // defined in loader
 
-/* TLS: mutex may not be needed here, as we're freeing private
-   resources.  This function handles the case when one thread creates
-   a private tif, exits, its xsb_thread_id is reused, and the new
-   thread creates a private tif for the same table.  */
+/* This function handles the case when one thread creates a private
+   tif, exits, its xsb_thread_id is reused, and the new thread creates
+   a private tif for the same table.  Mutex may not be needed here, as
+   we're freeing private resources (nobody except the current thread
+   will access &(tdispblk->Thread0))[xsb_thread_entry]) */
 
 void thread_free_private_tifs(CTXTdecl) {
   struct TDispBlk_t *tdispblk;
@@ -4163,23 +4173,24 @@ int table_inspection_function( CTXTdecl ) {
   }
 
 /********************************************************************
-The following builtin serves as an analog to SLG_NOT for call
-subsumption when we do not have a producer for the negated subgoal
-Subgoal.  Because there is no direct connection between a consumer for
-Subgoal (which is ground) and its answer, we either start here with
-the answer leaf pointer as produced by get_returns/3, or with a null
-leaf pointer (e.g. in case the function is invoked by delaying after
-is_incomplete).
 
-Obtaining the leaf pointer should probably be moved into this
-function, but for now we start with an indication of whether a return
-has been found, and handle our cases separately.  In addition, we may
-not have a consumer subgoal frame if Subgoal is subsumed by Producer
-and Producer is completed (the call subsumption algorithm does not
-create a subgoal frame in this case).  So we have to handle that
-situation also.  For now, if we don't have a consumer SF, I add
-tnot(Producer) to the delay list -- although creating a new consumer
-SF so that we can add tnot(Consumer) might be better.
+The following builtin serves as an analog to SLG_NOT for call
+subsumption when we the negated subgoal Subgoal is not a producer.
+Because there is no direct connection between a consumer for Subgoal
+(which is ground) and its answer, we either start here with the answer
+leaf pointer as produced by get_returns/3, or with a null leaf pointer
+(e.g. in case the function is invoked by delaying after
+is_incomplete).  Obtaining the leaf pointer should probably be moved
+into this function, but for now we start with an indication of whether
+a return has been found, and handle our cases separately.  
+
+A separate case is that we may not have a consumer subgoal frame if
+Subgoal is subsumed by Producer and Producer is completed (the call
+subsumption algorithm does not create a subgoal frame in this case).
+So we have to handle that situation also.  For now, if we don't have a
+consumer SF, I add tnot(Producer) to the delay list -- although
+creating a new consumer SF so that we can add tnot(Consumer) might be
+better.
 *********************************************************************/
 
 case CALL_SUBS_SLG_NOT: {

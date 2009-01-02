@@ -74,16 +74,16 @@ extern void construct_answer_template(CTXTdeclc Cell, SubProdSF, Cell[]);
 extern void breg_retskel(CTXTdecl);
 extern void delete_predicate_table(CTXTdeclc TIFptr,xsbBool);
 extern void reclaim_del_ret_list(CTXTdeclc VariantSF);
-extern void delete_return(CTXTdeclc BTNptr, VariantSF);
+extern void delete_return(CTXTdeclc BTNptr, VariantSF,int);
 extern void init_private_trie_table(CTXTdecl);
-extern void delete_branch(CTXTdeclc BTNptr, BTNptr *);
+extern void delete_branch(CTXTdeclc BTNptr, BTNptr *,int);
 extern void safe_delete_branch(BTNptr);
 extern void undelete_branch(BTNptr);
 extern void reclaim_uninterned_nr(CTXTdeclc long rootidx);
 extern void delete_trie(CTXTdeclc BTNptr);
 extern xsbBool is_completed_table(TIFptr);
 
-extern xsbBool has_unconditional_answers(VariantSF);
+extern xsbBool varsf_has_unconditional_answers(VariantSF);
 extern void    first_trie_property(CTXTdecl);
 extern void    next_trie_property(CTXTdecl);
 

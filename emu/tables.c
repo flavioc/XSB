@@ -629,17 +629,14 @@ void table_complete_entry(CTXTdeclc VariantSF producerSF) {
 	propagate_no_change(pc); /* defined in call_graph_xsb.c */
       }else
 	nq(&changed,producerSF->callnode);
-      
-      
     
       producerSF->callnode->prev_call=NULL;
-    
     	
       if ( has_answers(producerSF) ) {
 	pALN = pc->aln;
 	while(IsNonNULL(pALN)) {
 	  if(IsDeletedNode(ALN_Answer(pALN)))
-	    delete_branch(CTXTc ALN_Answer(pALN),&subg_ans_root_ptr(producerSF));
+	    delete_branch(CTXTc ALN_Answer(pALN),&subg_ans_root_ptr(producerSF),VARIANT_EVAL_METHOD);
 	  pALN = ALN_Next(pALN);
 	}
       }else{
@@ -650,13 +647,9 @@ void table_complete_entry(CTXTdeclc VariantSF producerSF) {
 	producerSF->ans_root_ptr=NULL; 
       }
       deallocatecall(pc);
-      
-      
+            
     }else /* newly added calls */
       nq(&changed,producerSF->callnode);
-    
-
-  
     
     if ( has_answers(producerSF) ) {
       pALN = pRealAnsList = subg_answers(producerSF);

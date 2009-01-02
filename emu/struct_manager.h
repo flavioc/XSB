@@ -251,8 +251,8 @@ typedef struct Structure_Manager *SMptr;
 
 
 #define SM_AllocateFree(SM,pNewStruct)				\
-   pNewStruct = SM_FreeList(SM);				\
-   SM_FreeList(SM) = SMFL_NextFreeStruct(SM_FreeList(SM))
+  pNewStruct = SM_FreeList(SM);					\
+  SM_FreeList(SM) = SMFL_NextFreeStruct(SM_FreeList(SM))
 
 #define SM_AllocateFromBlock(SM,pNewStruct)			\
    pNewStruct = SM_NextStruct(SM);				\

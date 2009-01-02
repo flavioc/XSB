@@ -2480,17 +2480,19 @@ case WRITE_OUT_PROFILE:
   */
 #endif
     leaf = ptoc_addr(regReturnNode);
-    SET_TRIE_ALLOCATION_TYPE_SF(sf); /* set to private/shared SM */
-    if ( ! smIsValidStructRef(*smBTN,leaf) )
-      xsb_abort("Invalid Return Handle\n\t Argument %d of %s/%d",
-		regReturnNode, BuiltinName(TRIE_DELETE_RETURN), Arity);
 
-    if ( (! smIsAllocatedStruct(*smBTN,leaf)) ||
-	 (subg_ans_root_ptr(sf) != get_trie_root(leaf)) ||
-	 (! IsLeafNode(leaf)) )
-      return FALSE;
-
-    delete_return(CTXTc leaf,sf);
+    if (IsVariantSF(sf)) {
+	SET_TRIE_ALLOCATION_TYPE_SF(sf); /* set to private/shared SM */
+	if ( ! smIsValidStructRef(*smBTN,leaf) )
+	  xsb_abort("Invalid Return Handle\n\t Argument %d of %s/%d",
+		    regReturnNode, BuiltinName(TRIE_DELETE_RETURN), Arity);
+	if ( (! smIsAllocatedStruct(*smBTN,leaf)) ||
+	     (subg_ans_root_ptr(sf) != get_trie_root(leaf)) ||
+	     (! IsLeafNode(leaf)) )
+	  return FALSE;
+	delete_return(CTXTc leaf,sf,VARIANT_EVAL_METHOD);
+      }
+      else delete_return(CTXTc leaf,sf,SUBSUMPTIVE_EVAL_METHOD);
     break;
   }
 

@@ -1757,6 +1757,10 @@ void variant_call_search(CTXTdeclc TabledCallInfo *call_info,
 
 /*----------------------------------------------------------------------*/
 
+/* TLS: this should be used only for subsumptive tables.  And even so,
+   I think it could probably be replaced by some other deletion
+   routine in tr_utils.c (?) */
+
 static void remove_calls_and_returns(CTXTdeclc VariantSF CallStrPtr)
 {
   ALNptr pALN;
@@ -1765,13 +1769,12 @@ static void remove_calls_and_returns(CTXTdeclc VariantSF CallStrPtr)
      --------------------- */
   SET_TRIE_ALLOCATION_TYPE_SF(CallStrPtr);
   delete_branch(CTXTc subg_leaf_ptr(CallStrPtr),
-		&TIF_CallTrie(subg_tif_ptr(CallStrPtr)));
+		&TIF_CallTrie(subg_tif_ptr(CallStrPtr)),VARIANT_EVAL_METHOD);
 
   /* Delete its answers
      ------------------ */
-  for ( pALN = subg_answers(CallStrPtr);  IsNonNULL(pALN);
-	pALN = ALN_Next(pALN) )
-    delete_branch(CTXTc ALN_Answer(pALN), &subg_ans_root_ptr(CallStrPtr));
+  for ( pALN = subg_answers(CallStrPtr);  IsNonNULL(pALN); pALN = ALN_Next(pALN) )
+    delete_branch(CTXTc ALN_Answer(pALN), &subg_ans_root_ptr(CallStrPtr),SUBSUMPTIVE_EVAL_METHOD);
 
   /* Delete the table entry
      ---------------------- */
@@ -1797,7 +1800,7 @@ void remove_incomplete_tries(CTXTdeclc CPtr bottom_parameter)
       if (IsVariantSF(CallStrPtr)) {
 	SET_TRIE_ALLOCATION_TYPE_SF(CallStrPtr); // set smBTN to private/shared
 	tif = subg_tif_ptr(CallStrPtr);
-	delete_branch(CTXTc CallStrPtr->leaf_ptr, &tif->call_trie); /* delete call */
+	delete_branch(CTXTc CallStrPtr->leaf_ptr, &tif->call_trie,VARIANT_EVAL_METHOD); /* delete call */
 	delete_variant_sf_and_answers(CTXTc CallStrPtr,FALSE); // delete answers + subgoal
       } else remove_calls_and_returns(CTXTc CallStrPtr);
     }

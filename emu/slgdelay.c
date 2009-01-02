@@ -1137,8 +1137,13 @@ static void handle_unsupported_answer_subst(CTXTdeclc NODEptr as_leaf)
 	subsumed_subgoal = (VariantSF) Child(subgoal_leaf);
   }
 
-  SET_TRIE_ALLOCATION_TYPE_SF(unsup_subgoal);
-  delete_branch(CTXTc as_leaf, &subg_ans_root_ptr(unsup_subgoal));
+  if (IsSubProdSF(unsup_subgoal)) 
+    delete_branch(CTXTc as_leaf, &subg_ans_root_ptr(unsup_subgoal),SUBSUMPTIVE_EVAL_METHOD);
+  else {
+    SET_TRIE_ALLOCATION_TYPE_SF(unsup_subgoal);
+    delete_branch(CTXTc as_leaf, &subg_ans_root_ptr(unsup_subgoal),VARIANT_EVAL_METHOD);
+  }
+
   simplify_pos_unsupported(CTXTc as_leaf);
   if (is_completed(unsup_subgoal)) {
     if (subgoal_fails(unsup_subgoal)) {
@@ -1538,6 +1543,7 @@ void force_answer_true(CTXTdeclc NODEptr as_leaf)
   }
 }
 
+/* This function is not used much, and does not handle call subsumption */ 
 void force_answer_false(CTXTdeclc NODEptr as_leaf)
 {
   ASI asi = Delay(as_leaf);
@@ -1548,7 +1554,7 @@ void force_answer_false(CTXTdeclc NODEptr as_leaf)
     subgoal = asi_subgoal(asi);
     release_all_dls(CTXTc asi);
     SET_TRIE_ALLOCATION_TYPE_SF(subgoal);
-    delete_branch(CTXTc as_leaf, &subg_ans_root_ptr(subgoal));
+    delete_branch(CTXTc as_leaf, &subg_ans_root_ptr(subgoal),VARIANT_EVAL_METHOD);
     simplify_pos_unsupported(CTXTc as_leaf);
     mark_subgoal_failed(subgoal);
     simplify_neg_fails(CTXTc subgoal);
