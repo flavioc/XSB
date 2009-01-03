@@ -22,6 +22,7 @@
 ** 
 */
 
+#include "dynamic_stack.h"
 
 /* Debugging Routines
    ------------------ */
@@ -39,3 +40,4 @@ extern void printAnswerList(FILE *, ALNptr);
 
 extern void printTabledCall(FILE *, TabledCallInfo);
 extern void printTriePathType(FILE *, TriePathType, BTNptr);
+extern void printSymbolStack(FILE *, char* , DynamicStack);

@@ -49,7 +49,8 @@
 #include "thread_xsb.h"
 #include "tr_utils.h"
 #include "debug_xsb.h"
-#include "tst_utils.h"
+#include "dynamic_stack.h"
+#include "tst_aux.h"
 
 static void simplify_neg_succeeds(CTXTdeclc VariantSF);
 extern void simplify_pos_unsupported(CTXTdeclc NODEptr);
@@ -324,10 +325,145 @@ unsigned long unused_pnde_space_private(CTXTdecl)
 #endif
 
 /* * * * * * * * * * * * * * * * * * * * ** * * * * * * * * * * * * *
+ * Proto-simplification routines for new answer:
+
+ * when a new answer is about to be added, for each element DE in its
+ * delay list, a check is made that DE is neither successful nor
+ * failed in the current interpretation.  The checks thus perform an
+ * analog of simplification.
+ * 
+ * For positive DEs we have a pointer to an answer, which is either
+ * deleted, unconditional or conditional.  For negative DEs we have a
+ * pointer to a subgoal frame.  Determining whether the subgoal is
+ * succeeded or failed is simple for variant SFs and producer SFs (for
+ * call subsumption), but for consumer SFs in call subsumption we need
+ * to check whether the answer is in the trie for the subsuming
+ * subgoal -- an operation performed by get_answer_for_subgoal()
+
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+/* simplified trie-lookup using variance for use in
+   get_answer_for_subgoal() and simpl_variant_trie_lookup(). */
+void *simpl_var_trie_lookup(CTXTdeclc void *branchRoot, xsbBool *wasFound,
+		      Cell *failedSymbol) {
+
+  BTNptr parent;	/* Last node containing a matched symbol */
+
+  Cell symbol = 0;	/* Trie representation of current heap symbol,
+			   used for matching/inserting into a TSTN */
+
+  int std_var_num;	/* Next available TrieVar index; for
+  			   standardizing variables when interned.
+  			   This is needed for handling non-linear
+  			   variables in construct_ground_term() */
+
+  parent = branchRoot;
+  std_var_num = Trail_NumBindings;
+  while ( ! TermStack_IsEmpty ) {
+								
+    TermStack_Pop(symbol);	
+    {
+      BTNptr chain;
+      int chain_length;
+      if ( IsHashHeader(BTN_Child(parent)) ) {
+	BTHTptr ht = BTN_GetHashHdr(parent);
+	chain = *CalculateBucketForSymbol(ht,symbol);
+      }
+      else
+	chain = BTN_Child(parent);
+      SearchChainForSymbol(chain,symbol,chain_length);
+      if ( IsNonNULL(chain) )
+	parent = chain;
+      else {
+	*wasFound = FALSE;
+	*failedSymbol = symbol;
+	return NULL;
+      }
+    }
+  }
+  *wasFound = TRUE;
+  return parent;
+}
+
+#define SimplStack_Pop(Stack,Symbol) {		\
+   CPtr curFrame;				\
+   DynStk_Pop(Stack,curFrame);		\
+   if (curFrame != NULL) Symbol = *curFrame;	\
+}
+
+#define SimplStack_Push(Stack,Symbol) {		\
+   CPtr nextFrame;				\
+   DynStk_Push(Stack,nextFrame);		\
+   *nextFrame = Symbol;				\
+ }
+
+#define SimplStack_PushPathRoot(Stack,Leaf,Root) { 	\
+    BTNptr btn = Leaf;					\
+    while ( ! IsTrieRoot(btn) ) {			\
+      /*      printTrieNode(stddbg,btn);	*/	\
+      SimplStack_Push(Stack,BTN_Symbol(btn));		\
+    btn = BTN_Parent(btn);			\
+   }						\
+   Root = (void *)btn;				\
+ }
+
+NODEptr get_answer_for_subgoal(CTXTdeclc SubConsSF consumerSF) {
+  BTNptr trieNode = NULL;
+  xsbBool wasFound;
+  Cell symbol;
+
+  TermStack_ResetTOS;
+  SimplStack_PushPathRoot(tstTermStack,
+			  subg_leaf_ptr(consumerSF),TIF_CallTrie(subg_tif_ptr(consumerSF)));
+
+  trieNode = simpl_var_trie_lookup(CTXTc TIF_CallTrie(subg_tif_ptr(consumerSF)),
+				   &wasFound,&symbol);
+  return trieNode;
+}
+
+/* * * * * * * * * * 
+ * Checks whether a delay element that is about to be interned was
+ * simplifiable (simplifications were already initiated for this DE).
+ * More specifically, negative delay elements were simplifiable if their
+ * subgoal failed (was completed without any answers), while positive
+ * delay elements are simplifiable if their answer substitution became
+ * unconditional.
+ * * * * * * * * * */
+
+xsbBool was_simplifiable(CTXTdeclc VariantSF subgoal, NODEptr ANS) {
+  NODEptr AnsLeaf;
+
+  if (ANS == NULL) { /* negative delay element */
+    if (IsSubConsSF(subgoal)) {
+      AnsLeaf = get_answer_for_subgoal(CTXTc (SubConsSF) subgoal);
+      return (is_completed(conssf_producer(subgoal)) 
+	      && (IsNULL(AnsLeaf) || IsDeletedNode(AnsLeaf)));
+    } else /* TLS: not 100% SURE subgoal_fails handles deleted nodes */
+      return (is_completed(subgoal) && subgoal_fails(subgoal));
+  }
+  else return is_unconditional_answer(ANS);
+}
+
+xsbBool is_failing_delay_element(CTXTdeclc VariantSF subgoal, NODEptr ANS) {
+  NODEptr AnsLeaf;
+
+  if (ANS == NULL) {  /* negative delay element */
+    if (IsSubConsSF(subgoal)) {
+      AnsLeaf = get_answer_for_subgoal(CTXTc (SubConsSF) subgoal);
+      return (IsNonNULL(AnsLeaf) && is_unconditional_answer(AnsLeaf));
+    } else 
+      return (is_completed(subgoal) && has_answer_code(subgoal) 
+	      && subgoal_unconditionally_succeeds(subgoal));
+  }
+  else /* positive delay element: no difference between subsumption and variance */
+    return IsDeletedNode(ANS);
+}
+
+/* * * * * * * * * * * * * * * * * * * * ** * * * * * * * * * * * * *
  * Assign one entry for delay_elem in the current DE (Delay Element)
  * block.  A new block will be allocated if necessary.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-  
+
 static DE intern_delay_element(CTXTdeclc Cell delay_elem)
 {
   DE de;
@@ -363,7 +499,7 @@ static DE intern_delay_element(CTXTdeclc Cell delay_elem)
     arity = get_arity((Psc) get_str_psc(cell(cptr + 3)));
   }
 
-  if (!was_simplifiable(subgoal, ans_subst)) {
+  if (!was_simplifiable(CTXTc subgoal, ans_subst)) {
     new_entry(de,
 	      released_des_gl,
 	      next_free_de_gl,
@@ -429,7 +565,7 @@ static DE intern_delay_element_private(CTXTdeclc Cell delay_elem)
     arity = get_arity((Psc) get_str_psc(cell(cptr + 3)));
   }
 
-  if (!was_simplifiable(subgoal, ans_subst)) {
+  if (!was_simplifiable(CTXTc subgoal, ans_subst)) {
     new_entry(de,
 	      private_released_des,
 	      private_next_free_de,
@@ -745,110 +881,6 @@ void do_delay_stuff(CTXTdeclc NODEptr as_leaf, VariantSF subgoal, xsbBool sf_exi
 
 /*----------------------------------------------------------------------*/
 
-#include "dynamic_stack.h"
-#include "tst_aux.h"
-extern void printSymbolStack(FILE *, char* , DynamicStack);
-
-extern DynamicStack simplGoalStack;
-extern DynamicStack simplAnsStack;
-//extern DynamicStack simplTermStack;
-
-void *simpl_var_trie_lookup(CTXTdeclc void *branchRoot, xsbBool *wasFound,
-		      Cell *failedSymbol) {
-
-  BTNptr parent;	/* Last node containing a matched symbol */
-
-  Cell symbol = 0;	/* Trie representation of current heap symbol,
-			   used for matching/inserting into a TSTN */
-
-  int std_var_num;	/* Next available TrieVar index; for standardizing
-			   variables when interned */
-
-  parent = branchRoot;
-  std_var_num = Trail_NumBindings;
-  while ( ! TermStack_IsEmpty ) {
-								
-    TermStack_Pop(symbol);	
-    //   printf("checking ");printTrieSymbol(stddbg,symbol); printf("\n");
-    {
-      BTNptr chain;
-      int chain_length;
-      if ( IsHashHeader(BTN_Child(parent)) ) {
-	BTHTptr ht = BTN_GetHashHdr(parent);
-	chain = *CalculateBucketForSymbol(ht,symbol);
-      }
-      else
-	chain = BTN_Child(parent);
-      SearchChainForSymbol(chain,symbol,chain_length);
-      if ( IsNonNULL(chain) )
-	parent = chain;
-      else {
-	*wasFound = FALSE;
-	*failedSymbol = symbol;
-	return NULL;
-      }
-    }
-  }
-  *wasFound = TRUE;
-  return parent;
-}
-
-
-#define SimplStack_Pop(Stack,Symbol) {		\
-   CPtr curFrame;				\
-   DynStk_Pop(Stack,curFrame);		\
-   if (curFrame != NULL) Symbol = *curFrame;	\
-}
-
-#define SimplStack_Push(Stack,Symbol) {		\
-   CPtr nextFrame;				\
-   DynStk_Push(Stack,nextFrame);		\
-   *nextFrame = Symbol;				\
- }
-
-#define SimplStack_PushPathRoot(Stack,Leaf,Root) { 	\
-    BTNptr btn = Leaf;					\
-    while ( ! IsTrieRoot(btn) ) {			\
-      /*      printTrieNode(stddbg,btn);	*/	\
-      SimplStack_Push(Stack,BTN_Symbol(btn));		\
-    btn = BTN_Parent(btn);			\
-   }						\
-   Root = (void *)btn;				\
- }
-
-
-NODEptr get_answer_for_subgoal(CTXTdeclc SubConsSF consumerSF) {
-  BTNptr trieNode = NULL;
-  xsbBool wasFound;
-  Cell symbol;
-
-  TermStack_ResetTOS;
-  SimplStack_PushPathRoot(tstTermStack,
-			  subg_leaf_ptr(consumerSF),TIF_CallTrie(subg_tif_ptr(consumerSF)));
-
-  trieNode = simpl_var_trie_lookup(CTXTc TIF_CallTrie(subg_tif_ptr(consumerSF)),&wasFound,&symbol);
-
-  return trieNode;
-}
-
-xsbBool is_failing_delay_element(CTXTdeclc VariantSF subgoal, NODEptr ANS) {
-  NODEptr AnsLeaf;
-
-  if (ANS == NULL) {
-    if (IsSubConsSF(subgoal)) {
-      AnsLeaf = get_answer_for_subgoal(CTXTc (SubConsSF) subgoal);
-      //      fprintf(stddbg,"found subsumptive consumer %p %p completed %d nonnull %d uncond %d\n",subgoal,
-      //	     get_answer_for_subgoal((SubConsSF) subgoal),
-      //     is_completed(conssf_producer(subgoal)),
-      //	     IsNonNULL(AnsLeaf),is_unconditional_answer(AnsLeaf));
-      return (IsNonNULL(AnsLeaf) && is_unconditional_answer(AnsLeaf));
-    } else 
-      return (is_completed(subgoal) && has_answer_code(subgoal) 
-	      && subgoal_unconditionally_succeeds(subgoal));
-  }
-  else return IsDeletedNode(ANS);
-}
-
 xsbBool answer_is_junk(CTXTdeclc CPtr dlist)	  /* assumes that dlist != NULL */
 {
     CPtr    cptr;
@@ -930,14 +962,27 @@ static xsbBool remove_dl_from_dl_list(CTXTdeclc DL dl, ASI asi)
 }
 
 /*******************************************************************
- * When a DL becomes empty (after remove_de_from_dl()), the answer
- * substitution which uses this DL becomes unconditional.  Further
- * simplification operations go on ...
- * Should be called with MUTEX_DELAY already locked -- e.g. by do_delay_stuff()
+
+ * Simplification and call subsumption.  When simplifying for
+ * call-subsumption a special approach is made to account for
+ * simplifying negative subgoals that depend on positive answers.  The
+ * issue is that there is not a PDE from an answer to consuming
+ * subgoal frames -- only to producing.  Accordingly, if the
+ * simplified answer is ground and belongs to a predicate that is
+ * tabled with call subsumption, we have to go to the call trie and
+ * determine whether there is a consuming subgoal frame associated
+ * with that answer.  In order to do this we have to bind the answer
+ * to the substitution factor of the call in construct_ground_term().
+ * 
+ * This check is done both in handle_empty_dl_creation() and in
+ * handle_unsupported_answer_subst()
+
  *******************************************************************/
 
-/* How to deal with Non-linear terms? */
+extern DynamicStack simplGoalStack;
+extern DynamicStack simplAnsStack;
 
+/* differs from get_answer_for_subgoal in that its pushing a vector, rather than a trie path */
 void *simpl_variant_trie_lookup(CTXTdeclc void *trieRoot, int nTerms, CPtr termVector,
 			  Cell varArray[]) {
 
@@ -1019,15 +1064,10 @@ void construct_ground_term(CTXTdeclc BTNptr as_leaf,VariantSF subgoal) {
     //    printf("working on GS: ");printTrieSymbol(stddbg, symbol);fprintf(stddbg,"\n");
     if (IsTrieVar(symbol)) {
       if (DecodeTrieVar(symbol) <= maxvar) {
-	//	printf("aliased variable %p ",DecodeTrieVar(symbol));
 	answerStack_copyTermPtr(CTXTc aliasArray[DecodeTrieVar(symbol)]);
       } 
       else { 
 	maxvar++;
-	//	printf("pushing: ");
-	//	printTrieSymbol(stddbg, *(CPtr) (DynStk_Top(simplAnsStack)
-	//				 - DynStk_FrameSize(simplAnsStack)));
-	//	fprintf(stddbg,"\n");
 	aliasArray[maxvar] = DynStk_Top(simplAnsStack) 
 					 - DynStk_FrameSize(simplAnsStack);
 	answerStack_copyTerm(CTXT);
@@ -1047,6 +1087,13 @@ int is_ground_answer(NODEptr as_leaf) {
   }
   return 1;
 }
+
+/*******************************************************************
+ * When a DL becomes empty (after remove_de_from_dl()), the answer
+ * substitution which uses this DL becomes unconditional.  Further
+ * simplification operations go on ...
+ * Should be called with MUTEX_DELAY already locked -- e.g. by do_delay_stuff()
+ *******************************************************************/
 
 static void handle_empty_dl_creation(CTXTdeclc DL dl)
 {
@@ -1081,6 +1128,8 @@ static void handle_empty_dl_creation(CTXTdeclc DL dl)
      */
     simplify_pos_unconditional(CTXTc as_leaf);
 
+    /* Perform simplify_neg_succeeds() for consumer sfs (producers and
+       variants done below) */
     if (IsSubProdSF(subgoal) && is_ground_answer(as_leaf)) {
       construct_ground_term(CTXTc as_leaf,subgoal);
       BTNptr leaf;
@@ -1105,7 +1154,6 @@ static void handle_empty_dl_creation(CTXTdeclc DL dl)
   }
 }
 
-
 /*******************************************************************
  * Run further simplifications when an answer substitution leaf,
  * as_leaf, has no supported conditional answers.  This happens when
@@ -1125,6 +1173,9 @@ static void handle_unsupported_answer_subst(CTXTdeclc NODEptr as_leaf)
   //  printTriePath(CTXTc stddbg, as_leaf, FALSE); fprintf(stddbg,"\n");
   //  printf("dl list %p\n",asi_dl_list(Delay(as_leaf)));
 
+  /* For call subsumption, we need to split the lookup (which must be
+     done before delete_branch) from the simplification itself (which
+     must be done after delete_branch). */
   if (IsSubProdSF(unsup_subgoal) && is_ground_answer(as_leaf)) {
     construct_ground_term(CTXTc as_leaf,unsup_subgoal);
     Cell callVars[NUM_TRIEVARS];
@@ -1137,6 +1188,7 @@ static void handle_unsupported_answer_subst(CTXTdeclc NODEptr as_leaf)
 	subsumed_subgoal = (VariantSF) Child(subgoal_leaf);
   }
 
+  /* must do delete branch before simplifying -- otherwise checks will be thrown off */
   if (IsSubProdSF(unsup_subgoal)) 
     delete_branch(CTXTc as_leaf, &subg_ans_root_ptr(unsup_subgoal),SUBSUMPTIVE_EVAL_METHOD);
   else {
@@ -1150,12 +1202,12 @@ static void handle_unsupported_answer_subst(CTXTdeclc NODEptr as_leaf)
       simplify_neg_fails(CTXTc unsup_subgoal);
     }
 
-    if ( IsSubProdSF(unsup_subgoal) && IsNonNULL(subgoal_leaf) && subsumed_subgoal != unsup_subgoal) {
-      //      printf("  in handle unsupp: simplifying ");print_subgoal(stddbg,subsumed_subgoal),printf("\n");
+    /* Perform simplify_neg_fails() for consumer sfs */
+    if ( IsSubProdSF(unsup_subgoal) && IsNonNULL(subgoal_leaf) 
+	 && subsumed_subgoal != unsup_subgoal) {
       simplify_neg_fails(CTXTc subsumed_subgoal);
     }
   }    
-  //  delete_branch(CTXTc as_leaf, &subg_ans_root_ptr(unsup_subgoal));
 #ifdef MULTI_THREAD
   if (IsPrivateSF(asi_subgoal(unsup_asi))) 
     SM_DeallocateStruct(*private_smASI,unsup_asi)
@@ -1321,10 +1373,6 @@ static void simplify_neg_succeeds(CTXTdeclc VariantSF subgoal)
     used_as_leaf = dl_asl(dl);
     //    printf("checking ");printTriePath(CTXTc stddbg, used_as_leaf, FALSE); fprintf(stddbg,"\n");
     tmp_dl = dl;
-    //    while (tmp_dl) {
-      //      printf("   dl %p\n",tmp_dl);
-    //tmp_dl = dl_next(tmp_dl);
-    //    }
     if (IsValidNode(used_as_leaf) && (used_asi = Delay(used_as_leaf)) != NULL) {
       de = dl_de_list(dl); /* to release all DEs in dl */
       while (de) {

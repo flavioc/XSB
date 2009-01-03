@@ -287,8 +287,6 @@ static inline CPtr ProcessSuspensionFrames(CTXTdeclc CPtr cc_tbreg_in,
   return cc_tbreg;
 }
 
-#include "tst_utils.h"
-
 static inline void CompleteSimplifyAndReclaim(CTXTdeclc CPtr cs_ptr)
 {
   VariantSF compl_subg;

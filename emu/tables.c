@@ -391,11 +391,22 @@ void table_call_search_incr(CTXTdeclc TabledCallInfo *call_info,
  */
 
 
-/*
+/**********************************************************************
+
  * Template is a pointer to the first term in the vector, with the
  * elements arranged from high to low memory.
  * Assumes that private/shared switch for SMs has been set.
- */
+ * 
+ * TLS 12/08.  Now that we may copy delay lists into the table for
+ * call subsumption, all untrailing must be done after
+ * do_delay_stuff(), rather than within subsumptive_answer_search().
+ * Unfortunately, subsumptive_answer_search() uses a different
+ * untrailing mechanism than either variant_answer_search() or
+ * do_delay_stuff().  As a result, for call subsumption bindings have
+ * to be removed through undo_answer_bindings() for do_delay_stuff()
+ * and through Trail_Unwind_All (for subsumptive_answer_search()
+
+ ***********************************************************************/
 
 BTNptr table_answer_search(CTXTdeclc VariantSF producer, int size, int attv_num,
 			   CPtr templ, xsbBool *is_new) {
@@ -568,7 +579,7 @@ void table_complete_entry(CTXTdeclc VariantSF producerSF) {
 
 #ifndef MULTI_THREAD
   if (flags[TRACE_STA])
-    compute_maximum_tablespace_stats(CTXT);
+    compute_maximum_tabvlespace_stats(CTXT);
 #endif
 
   /* Reclaim Auxiliary Structures from the TST
@@ -812,7 +823,8 @@ inline TIFptr New_TIF(CTXTdeclc Psc pPSC) {
    return pTIF;
 }
 
-/* Need to add ALN to SF, and pointer to leaf of call trie.  */
+/* Need to add ALN to SF, and pointer to leaf of call trie.
+   not yet used (01/09)  */
 VariantSF tnotNewSubConsSF(CTXTdeclc BTNptr Leaf,TIFptr TableInfo,VariantSF producer) {	
 								
    void *pNewSF;						

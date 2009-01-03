@@ -172,32 +172,18 @@ struct pos_neg_de_list {
   (!Child(ANS) || ((word) (Child(ANS)) & UNCONDITIONAL_MARK))
 
 /*
- * Checks whether a delay element that is about to be interned was
- * simplifiable (simplifications were already initiated for this DE).
- * More specifically, negative delay elements were simplifiable if their
- * subgoal failed (was completed without any answers), while positive
- * delay elements are simplifiable if their answer substitution became
- * unconditional.
- */
+Checking for these two conditionis was made more difficult when WFS
+for call subsumption was introduced.  Accordingly they both were moved
+to functions in slgdelay.c
 
 #define was_simplifiable(SUBG, ANS)					\
     ((ANS == NULL) ? (is_completed(SUBG) && subgoal_fails(SUBG))	\
     		   : (is_unconditional_answer(ANS)))
 
-
-/*
 #define is_failing_delay_element(SUBG, ANS)				\
     ((ANS == NULL) ? (is_completed(SUBG) && has_answer_code(SUBG) &&	\
 		      subgoal_unconditionally_succeeds(SUBG))		\
 		   : (IsDeletedNode(ANS)))
-
-#define is_failing_delay_element(SUBG, ANS)				\
-  ((ANS == NULL) ?							\
-   ((IsSubConsSF(SUBG)) ?						\
-    (printf("found subsumptive consumer\n"))				\
-    : (is_completed(SUBG) && has_answer_code(SUBG) &&			\
-       subgoal_unconditionally_succeeds(SUBG))				\
-    : (IsDeletedNode(ANS))) )
 */
 
 /*
