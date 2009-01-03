@@ -579,7 +579,7 @@ void table_complete_entry(CTXTdeclc VariantSF producerSF) {
 
 #ifndef MULTI_THREAD
   if (flags[TRACE_STA])
-    compute_maximum_tabvlespace_stats(CTXT);
+    compute_maximum_tablespace_stats(CTXT);
 #endif
 
   /* Reclaim Auxiliary Structures from the TST

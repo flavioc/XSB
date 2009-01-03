@@ -322,13 +322,15 @@ extern DynamicStack tstTrail;
  *			=====================
  */
 
+/* Messy for now - until I'm sure that attributed variables are working correctly */
+
 #define ProcessNextSubtermFromTrieStacks(Symbol,StdVarNum) {	\
 								\
    Cell subterm;						\
 								\
    TermStack_Pop(subterm);					\
    XSB_Deref(subterm);						\
-   /*   fprintf(stddbg,"ProcessNext ");printterm(stddbg,subterm,25);fprintf(stddbg,"\n"); */\
+   /*   fprintf(stddbg,"ProcessNext ");printterm(stddbg,subterm,25);fprintf(stddbg,"\n"); */ \
    switch ( cell_tag(subterm) ) {				\
    case XSB_REF:						\
    case XSB_REF1:						\
@@ -338,7 +340,7 @@ extern DynamicStack tstTrail;
        Trail_Push(subterm);					\
        Symbol = EncodeNewTrieVar(StdVarNum);			\
        StdVarNum++;						\
-       /*fprintf(stddbg,"  ProcessNext: standardized variable %p %p\n",subterm,symbol);*/ \
+       /*       fprintf(stddbg,"  Var: standardized variable %p %p %d\n",subterm,*(CPtr) subterm,StdVarNum); */	\
      }								\
      else							\
        Symbol = EncodeTrieVar(IndexOfStdVar(subterm));		\
@@ -346,20 +348,35 @@ extern DynamicStack tstTrail;
    case XSB_STRING:						\
    case XSB_INT:						\
    case XSB_FLOAT:						\
+     /*     printf("found constant ");printterm(stddbg,subterm,25);fprintf(stddbg,"\n");*/ \
      Symbol = EncodeTrieConstant(subterm);			\
      break;							\
    case XSB_STRUCT:						\
+     /*     printf("found struct ");printterm(stddbg,subterm,25);fprintf(stddbg,"\n"); */ \
      Symbol = EncodeTrieFunctor(subterm);			\
      TermStack_PushFunctorArgs(subterm);			\
      break;							\
    case XSB_LIST:						\
+     /*     printf("found list ");printterm(stddbg,subterm,25);fprintf(stddbg,"\n"); */	\
      Symbol = EncodeTrieList(subterm);				\
      TermStack_PushListArgs(subterm);				\
      break;							\
    case XSB_ATTV:						\
-     xsb_table_error(CTXTc                                      \
-        "Attributed variables not yet implemented in answers for subsumptive tables.");	\
-      break;                                                    \
+     /*     xsb_table_error(CTXTc					\
+	    "Attributed variables not yet implemented in answers for subsumptive tables.");*/ \
+     if ( ! IsStandardizedVariable(subterm) ) {			\
+       /*       fprintf(stddbg,"  Attv Standardizing %p %p",subterm,clref_val(subterm));printterm(stddbg,subterm,25);fprintf(stddbg,"\n"); */ \
+       StandardizeVariable(clref_val(subterm), StdVarNum);		\
+       /*       fprintf(stddbg,"  Attv Standardized (VE) %p (Num)%d (subterm) %x (@subterm) %p clref %p @clref%x\n",VarEnumerator,StdVarNum,subterm,*(CPtr) subterm,clref_val(subterm),*clref_val(subterm)); */	\
+       Trail_Push(clref_val(subterm));				\
+       Symbol = EncodeNewTrieAttv(StdVarNum);			\
+       StdVarNum++;						\
+       /*       fprintf(stddbg,"  Attv attribute %p",clref_val(subterm)+1);printterm(stddbg,*(clref_val(subterm)+1),25);fprintf(stddbg,"\n"); */ \
+       TermStack_Push(*(clref_val(subterm)+1));				\
+     }								\
+     else							\
+       Symbol = EncodeTrieVar(IndexOfStdVar(subterm));		\
+     break;							\
    default:							\
      Symbol = 0;  /* avoid "uninitialized" compiler warning */	\
      TrieError_UnknownSubtermTag(subterm);			\
