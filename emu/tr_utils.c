@@ -1122,7 +1122,7 @@ void delete_trie(CTXTdeclc BTNptr iroot) {
 	  }
 	}
       } else
-	fprintf(stddbg,"null node");
+	fprintf(stdwarn,"null node encountered in delete_trie\n");
       break;
     }
   }
@@ -2591,61 +2591,65 @@ int find_answers_for_subgoal(CTXTdeclc VariantSF subgoal) {
   }
 
   delete_trie_op[0] = 0;
-  delete_trie_node[0] = subg_ans_root_ptr(subgoal);
-  while (trie_op_top >= 0) {
-    switch (delete_trie_op[trie_op_top--]) {
-    case DT_DS:
-      root = delete_trie_node[trie_node_top--];
-      break;
-    case DT_HT:
-      trie_hh_top--;
-      break;
-    case DT_NODE:
-      root = delete_trie_node[trie_node_top--];
-      if ( IsNonNULL(root) ) {
-	if ( IsHashHeader(root) ) {
-	  BTHTptr hhdr;
-	  BTNptr *base, *cur;
-	  hhdr = (BTHTptr)root;
-	  base = BTHT_BucketArray(hhdr);
-	  push_delete_trie_hh(hhdr);
-	  for ( cur = base; cur < base + BTHT_NumBuckets(hhdr); cur++ ) {
-	    if (IsNonNULL(*cur)) {
-	      push_delete_trie_node(*cur,DT_NODE);
+  if (subg_ans_root_ptr(subgoal)) {
+    delete_trie_node[0] = subg_ans_root_ptr(subgoal);
+    while (trie_op_top >= 0) {
+      switch (delete_trie_op[trie_op_top--]) {
+      case DT_DS:
+	root = delete_trie_node[trie_node_top--];
+	break;
+      case DT_HT:
+	trie_hh_top--;
+	break;
+      case DT_NODE:
+	root = delete_trie_node[trie_node_top--];
+	if ( IsNonNULL(root) ) {
+	  if ( IsHashHeader(root) ) {
+	    BTHTptr hhdr;
+	    BTNptr *base, *cur;
+	    hhdr = (BTHTptr)root;
+	    base = BTHT_BucketArray(hhdr);
+	    push_delete_trie_hh(hhdr);
+	    for ( cur = base; cur < base + BTHT_NumBuckets(hhdr); cur++ ) {
+	      if (IsNonNULL(*cur)) {
+		push_delete_trie_node(*cur,DT_NODE);
+	      }
 	    }
 	  }
-	}
-	else {
-	  sib  = BTN_Sibling(root);
-	  chil = BTN_Child(root);      
-	  if (IsLeafNode(root)) {
+	  else {
+	    sib  = BTN_Sibling(root);
+	    chil = BTN_Child(root);      
+	    if (IsLeafNode(root)) {
             // 12-05-07 
             // put one more condition for an answer leaf to be added: it must not be visited before
             // It might be visited before in find_single_backward_dependencies
             // minhdt - Do we need this change???
             // if ((is_conditional_answer(root)) && (!VISITED_ANSWER(root))){
-            if (is_conditional_answer(root)){
-	      push_answer_node(root);
-	      num_leaves++;
+	      if (is_conditional_answer(root)){
+		push_answer_node(root);
+		num_leaves++;
+	      }
+	      push_delete_trie_node(root,DT_DS);
+	      if (IsNonNULL(sib)) {
+		push_delete_trie_node(sib,DT_NODE);
+	      }
 	    }
-	    push_delete_trie_node(root,DT_DS);
-	    if (IsNonNULL(sib)) {
-	      push_delete_trie_node(sib,DT_NODE);
+	    else {
+	      push_delete_trie_node(root,DT_DS);
+	      if (IsNonNULL(sib)) {
+		push_delete_trie_node(sib,DT_NODE);
+	      }
+	      if (IsNonNULL(chil)) {
+		push_delete_trie_node(chil,DT_NODE);
+	      }
 	    }
 	  }
-	  else {
-	    push_delete_trie_node(root,DT_DS);
-	    if (IsNonNULL(sib)) {
-	      push_delete_trie_node(sib,DT_NODE);
-	    }
-	    if (IsNonNULL(chil)) {
-	      push_delete_trie_node(chil,DT_NODE);
-	    }
-	  }
+	} else {
+	  fprintf(stdwarn,"null node encountered in find_answers_for_subgoal ");
+	  print_subgoal(CTXTc stdwarn,subgoal); fprintf(stdwarn,"\n");
+	  break;
 	}
-      } else
-	fprintf(stddbg,"null node");
-      break;
+      }
     }
   }
   mem_dealloc(delete_trie_op,trie_op_size,TABLE_SPACE); delete_trie_op = NULL;
