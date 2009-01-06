@@ -142,6 +142,7 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
   TIFptr tip;
 
   int incrflag = 0; /* for incremental evaluation */
+  VariantSF parent_table_sf=NULL; /* used for creating call graph */
 
   gdb_dummy();
 #ifdef SHARED_COMPL_TABLES
@@ -158,7 +159,6 @@ XSB_Start_Instr(tabletrysingle,_tabletrysingle)
 #endif
 
   /* incremental evaluation */
-  VariantSF parent_table_sf=NULL; /* used for creating call graph */
   old_call=NULL;
 
   xwammode = 1;
