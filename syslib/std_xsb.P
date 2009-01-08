@@ -400,6 +400,7 @@ standard_symbol(tsetof, 3, setof).
 standard_symbol(ttywrite, 1, standard).
 standard_symbol(ttywritenl, 1, standard).
 
+standard_symbol(undefined,0,tables).
 standard_symbol(unify_with_occurs_check, 2, machine).  % ISO
 standard_symbol(unix, 1, unix).	       	   % obsolete
 standard_symbol(unix, 2, unix).	       	   % obsolete
