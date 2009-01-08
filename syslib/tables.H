@@ -55,6 +55,7 @@
       trie_retract/1,
       trie_retract_nr/1,
       trie_retract_all/1,
+      undefined/0,
       (use_subsumptive_tabling)/1,
       (use_variant_tabling)/1.
 

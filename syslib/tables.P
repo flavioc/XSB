@@ -284,6 +284,9 @@ tunnumcall(GGoal) :-
 	unnumbervars(GGoal,VGoal),
 	call(VGoal).
 
+% we've got true and fail -- why not this?
+:- table undefined/0.
+undefined:- tnot(undefined).
 
 /*----------------------------------------------------------------------*/
 /* Predicates to retrieve information out of tables.                    */
