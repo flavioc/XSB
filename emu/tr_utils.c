@@ -2882,7 +2882,7 @@ the use of varsf_has_conditional_answer()
 */
 void abolish_table_call(CTXTdeclc VariantSF subgoal, int invocation_flag) {
   if (varsf_has_conditional_answer(subgoal) 
-      && (invocation_flag != ABOLISH_TABLES_TRANSITIVELY 
+      && (invocation_flag == ABOLISH_TABLES_TRANSITIVELY 
 	  || (invocation_flag == ABOLISH_TABLES_DEFAULT 
 	      && flags[TABLE_GC_ACTION] == ABOLISH_TABLES_TRANSITIVELY))) {
       abolish_table_call_transitive(CTXTc subgoal);
