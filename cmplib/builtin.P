@@ -177,7 +177,7 @@ inline_builtin(get_delay_lists, 2, GET_DELAY_LISTS).
 inline_builtin(get_lastnode_cs_retskel, 4, GET_LASTNODE_CS_RETSKEL).
 % inline_builtin(breg_retskel, 4, BREG_RETSKEL).
 
-inline_builtin(abolish_table_info, 0, ABOLISH_TABLE_INFO).
+inline_builtin(abolish_table_info, 0, ABOLISH_ALL_TABLES).
 inline_builtin(abolish_table_predicate, 1, ABOLISH_TABLE_PREDICATE).
 inline_builtin(trie_delete_return, 2, TRIE_DELETE_RETURN).
 

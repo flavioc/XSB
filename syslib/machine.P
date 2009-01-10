@@ -219,7 +219,7 @@ file_function(Function, A, B) :-
 	file_function(Function, A, B).
 slash(Slash) :- slash(Slash).
 
-abolish_table_info :- abolish_table_info.
+abolish_table_info :- '_$builtin'(ABOLISH_ALL_TABLES).
 zero_out_profile :- '_$builtin'(ZERO_OUT_PROFILE).
 write_out_profile :- '_$builtin'(WRITE_OUT_PROFILE).
 assert_code_to_buff(Clause) :- assert_code_to_buff(Clause).
