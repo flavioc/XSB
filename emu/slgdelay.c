@@ -756,14 +756,12 @@ static void record_de_usage_private(CTXTdeclc DL dl)
 #endif
 
 /*
- * For predicates using call variance, do_delay_stuff() is called in
- * table_answer_search(), immediately after variant_answer_search(),
- * regardless of whether the answer is new (conditional answer
- * handling is not implemented for predicates using call subsumption),
- * Here, `as_leaf' is the leaf node of the answer trie (the
- * return value of variant_answer_search), `subgoal' is the subgoal
- * frame of the current call, and `sf_exists' tells whether the
- * non-conditional part of this answer is new or not. 
+ * do_delay_stuff() is called in table_answer_search(), immediately
+ * after <variant/subsumptive>_answer_search(), regardless of whether
+ * the answer is new.  Here, `as_leaf' is the leaf node of the answer
+ * trie (the return value of variant_answer_search), `subgoal' is the
+ * subgoal frame of the current call, and `sf_exists' tells whether
+ * the non-conditional part of this answer is new or not.
  *
  * At call time, `delayreg' is the delay register of the _current_
  * execution state.  If delayreg is not NULL, then it means this
@@ -805,6 +803,7 @@ void do_delay_stuff_shared(CTXTdeclc NODEptr as_leaf, VariantSF subgoal, xsbBool
       if (!sf_exists || is_conditional_answer(as_leaf)) {
         if ((dl = intern_delay_list(CTXTc delayreg)) != NULL) {
 	  mark_conditional_answer(as_leaf, subgoal, dl, smASI);
+	  //	  printf("marked conditional ans as_leaf %p asi %p\n",as_leaf,asi);
 	  record_de_usage(dl);
         }
       }
@@ -1168,7 +1167,6 @@ static void handle_unsupported_answer_subst(CTXTdeclc NODEptr as_leaf)
   VariantSF subsumed_subgoal = NULL;
   BTNptr subgoal_leaf = NULL;
 
-  //  fprintf(stddbg,"in handle unsupp: ");
   //  fprintf(stddbg, ">>>> the subgoal is: "); print_subgoal(stddbg, unsup_subgoal); fprintf(stddbg, " >>> the answer is: ");
   //  printTriePath(CTXTc stddbg, as_leaf, FALSE); fprintf(stddbg,"\n");
   //  printf("dl list %p\n",asi_dl_list(Delay(as_leaf)));
@@ -1620,27 +1618,6 @@ void print_pdes(PNDE firstPNDE)
     }
 }
 #endif
-
-/* Temporary and probably incorrect
-void simplify_neg_succeeds_for_subsumed_subgoals(NODEptr asi_leaf) {
-  ASI asi = (ASI) Child(asi_leaf);
-  SubConsSF pCons;
-
-  if (IsSubsumptiveProducer(asi_subgoal(asi))) {
-    printf("producer aln_ans: %p",ALN_Answer(subg_ans_list_ptr(asi_subgoal(asi))));
-    for ( pCons = subg_consumers(asi_subgoal(asi));  IsNonNULL(pCons);
-   	    pCons = conssf_consumers(pCons) ) {
-	  printf("  checking ");print_subgoal(stddbg,pCons),printf("\n");
-	  if (subg_ans_list_ptr(pCons)) {
-	    printf("    has ans list... %p %p\n",asi_leaf,ALN_Answer(subg_ans_list_ptr(pCons)));
-	    if (ALN_Answer(subg_ans_list_ptr(pCons)) == asi_leaf) {
-	      printf("    discovered match for ");print_subgoal(stddbg,pCons),printf("\n");
-	    }
-	  }
-      }
-  }
-}
-*/
 
 /*---------------------- end of file slgdelay.c ------------------------*/
 

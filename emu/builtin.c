@@ -1031,7 +1031,7 @@ void init_builtin_table(void)
   set_builtin_table(FILE_FUNCTION, "file_function");
   set_builtin_table(SLASH_BUILTIN, "slash");
 
-  set_builtin_table(ABOLISH_TABLE_INFO, "abolish_table_info");
+  set_builtin_table(ABOLISH_ALL_TABLES, "abolish_all_tables");
   set_builtin_table(ABOLISH_MODULE_TABLES, "abolish_module_tables");
   set_builtin_table(ZERO_OUT_PROFILE, "zero_out_profile");
   set_builtin_table(WRITE_OUT_PROFILE, "write_out_profile");
@@ -2150,9 +2150,8 @@ int builtin_call(CTXTdeclc byte number)
 #endif
     break;
 
-    /* Abolish_all_tables */
-  case ABOLISH_TABLE_INFO:
-    abolish_table_info(CTXT);
+  case ABOLISH_ALL_TABLES:
+    abolish_all_tables(CTXT);
     break;
 
   case ZERO_OUT_PROFILE:

@@ -472,7 +472,7 @@ void delete_delay_trie(CTXTdeclc BTNptr root) {
   BTNptr rnod;
   //  BTNptr *Bkp; 
   //  BTHTptr ht;
-  
+  //  printf(" in delete delay trie\n");
   BTNptr *freeing_stack = NULL;
   int freeing_stack_size = 0;
 
@@ -503,6 +503,7 @@ void delete_delay_trie(CTXTdeclc BTNptr root) {
     }
   } /* free answer trie */
   mem_dealloc(freeing_stack,freeing_stack_size*sizeof(BTNptr),TABLE_SPACE);
+  //  printf("leaving delete delay trie\n");
 }
 
 /* TLS: unlike release_all_dls() in slgdelay.c which is used for
@@ -647,7 +648,9 @@ void delete_variant_sf_and_answers(CTXTdeclc VariantSF pSF, xsbBool should_warn)
   FreeProducerSF(pSF);
   TRIE_W_UNLOCK();
   mem_dealloc(freeing_stack,freeing_stack_size*sizeof(BTNptr),TABLE_SPACE);
-}
+  //  printf("leaving delete_variant\n");
+  }
+
 
 /* Incremental recomputation seems to be implemented only for
    abolishing predicates, but not subgoals */
@@ -655,6 +658,8 @@ void delete_variant_sf_and_answers(CTXTdeclc VariantSF pSF, xsbBool should_warn)
 extern void hashtable1_destroy(void *, int);
 
  static void delete_variant_table(CTXTdeclc BTNptr x, int incr, xsbBool should_warn) {
+
+   //   printf("in delete variant table\n");
 
   int node_stk_top = 0, call_nodes_top = 0;
   BTNptr node, rnod, *Bkp; 
@@ -884,6 +889,7 @@ static BTNptr get_prev_sibl(BTNptr node)
  * structure manager to use (smBTN vs smTSTN)
  */
 void delete_branch(CTXTdeclc BTNptr lowest_node_in_branch, BTNptr *hook,int eval_method) {
+  //  printf("in delete branch\n");
 
   int num_left_in_hash;
   BTNptr prev, parent_ptr, *y1, *z;
@@ -1053,7 +1059,7 @@ void undelete_branch(BTNptr lowest_node_in_branch) {
    otherwise, need to set smBTN and smBTHT to private/shared */
 
 void delete_trie(CTXTdeclc BTNptr iroot) {
-
+  //  printf("in delete trie\n");
   BTNptr root, sib, chil;  
   int trie_op_top = 0;
   int trie_node_top = 0;
@@ -1245,7 +1251,7 @@ void delete_return(CTXTdeclc BTNptr l, VariantSF sg_frame,int eval_method)
 
 void  reclaim_del_ret_list(CTXTdeclc VariantSF sg_frame) {
   ALNptr x,y;
-  
+
   x = compl_del_ret_list(subg_compl_stack_ptr(sg_frame));
   
   while (x != NULL) {
@@ -1636,6 +1642,9 @@ void shas_trie_unintern(CTXTdecl)
  * something with.  
  */
 
+#define CAN_RECLAIM 0
+#define CANT_RECLAIM 1
+
 #define is_trie_instruction(cp_inst) \
  ((int) cp_inst >= 0x5c && (int) cp_inst < 0x80) \
 	   || ((int) cp_inst >= 0x90 && (int) cp_inst < 0x94) 
@@ -1644,14 +1653,12 @@ int interned_trie_cps_check(CTXTdeclc BTNptr root)
 {
   CPtr cp_top1,cp_bot1 ;
   byte cp_inst;
-  int found_interned;
   BTNptr pLeaf, trieNode;
 
   cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
 
   cp_top1 = breg ;				 
-  found_interned = 0;
-  while ( cp_top1 < cp_bot1 && !(found_interned)) {
+  while ( cp_top1 < cp_bot1 ) {
     cp_inst = *(byte *)*cp_top1;
     // Want trie insts, but will need to distinguish from
     // asserted and interned tries
@@ -1667,13 +1674,13 @@ int interned_trie_cps_check(CTXTdeclc BTNptr root)
 	}
 	if (pLeaf == root) {
 	  //	  printf(" found root!\n");
-	  found_interned = 1;
+	  return CANT_RECLAIM;
 	}
       }
     }
     cp_top1 = cp_prevtop(cp_top1);
   }
-  return found_interned;
+  return CAN_RECLAIM;
 }
 
 
@@ -2047,11 +2054,13 @@ void trie_undispose(CTXTdeclc long rootIdx, BTNptr leafn)
 
 /*----------------------------------------------------------------------*/
 /* 
- * When a table is abolished, various checks must be made before its
- * space can be reclaimed.  First, the table must be completed, and
- * second it must be ensured that there are not any trie choice points
- * for the table in the choice point stack.  Third, if the table is
- * shared, a check must be made that there is a single active thread.
+
+ * When a table T is abolished, various checks must be made before its
+ * space can be reclaimed.  T must be completed, and it must be
+ * ensured that there are not any trie choice points for T in the
+ * choice point stack.  In addition, the heap delay list must be
+ * checked for pointers to T.  And finally, a check must be made that
+ * there is a single active thread in order to reclaim shared tables.
  *
  * In the case of abolish_all_tables, if there are any incomplete
  * tables, or if there are trie nodes for completed tables on the
@@ -2063,16 +2072,17 @@ void trie_undispose(CTXTdeclc long rootIdx, BTNptr leafn)
  * is set up so that P can later be reclaimed upon a call to
  * gc_tables/1.  The same action is also taken if P is shared and
  * there is more than one active thread.  Note that if we have to
- * create a DelTF for them, even private tables will not be gc'd until
- * we're down to a single thread, so its best to call the abolishes
- * when we dont have any more backtracking points.
+ * create a DelTF for them, shared tables will not be gc'd until we're
+ * down to a single thread, so its best to call these abolishes when
+ * we dont have any more backtracking points.
  *
- * Later, on a call to gc_tables/1 (which works only if there is a
- * single active thread), the choice point stacks may be traversed to
- * mark those DelTF frames corresponding to tables with trie CPs in
- * the CP stack.  Once this is done, the chain of DelTF frames is
- * traversed to reclaim tables for those unmarked DelTF frames (and
- * free the frames) as well as to unmark the marked DelTF frames.
+ * Later, on a call to gc_tables/1 (which affects shared tables only
+ * if there is a single active thread), the choice point stacks may be
+ * traversed to mark those DelTF frames corresponding to tables with
+ * trie CPs in the CP stack.  Once this is done, the chain of DelTF
+ * frames is traversed to reclaim tables for those unmarked DelTF
+ * frames (and free the frames) as well as to unmark the marked DelTF
+ * frames.
  * 
  * Note that all of these require SLG_GC to be defined as we need to
  * properly traverse the CPS.  So, probably we should take out SLG_GC.
@@ -2345,6 +2355,37 @@ void check_insert_private_deltf_subgoal(CTXTdeclc VariantSF subgoal,xsbBool Warn
 
 /* - - - - - - - - - - */
 
+/* used for transitive abolishes */
+void inline mark_delaylist_tabled_preds(CTXTdeclc CPtr dlist) {
+  Cell tmp_cell;
+  VariantSF subgoal;
+
+  //  if (dlist != NULL) {
+  //    printf("checking list ");print_delay_list(CTXTc stddbg, dlist);
+    while (islist(dlist)) {
+      dlist = clref_val(dlist);
+      // printf("\n checking element "); print_delay_element(CTXTc stddbg, cell(dlist));
+      tmp_cell = cell((CPtr)cs_val(cell(dlist)) + 1);
+      subgoal = (VariantSF) addr_val(tmp_cell);
+      //      printf(" mark subgoal ");print_subgoal(stddbg, subgoal);
+      gc_mark_tif(subg_tif_ptr(subgoal));
+      dlist = (CPtr)cell(dlist+1);
+    }
+  }
+
+void inline unmark_delaylist_tabled_preds(CTXTdeclc CPtr dlist) {
+  Cell tmp_cell;
+  VariantSF subgoal;
+
+  while (islist(dlist)) {
+    dlist = clref_val(dlist);
+    tmp_cell = cell((CPtr)cs_val(cell(dlist)) + 1);
+    subgoal = (VariantSF) addr_val(tmp_cell);
+    gc_unmark_tif(subg_tif_ptr(subgoal));
+    dlist = (CPtr)cell(dlist+1);
+  }
+}
+
 void mark_cp_tabled_preds(CTXTdecl)
 {
   CPtr cp_top1,cp_bot1 ;
@@ -2363,9 +2404,10 @@ void mark_cp_tabled_preds(CTXTdecl)
       trieNode = TrieNodeFromCP(cp_top1);
       if (IsInAnswerTrie(trieNode)) {
 	tif = get_tif_for_answer_trie_cp(CTXTc trieNode);
-	cps_check_mark_tif(tif);
+       gc_mark_tif(tif);
       }
     }
+    mark_delaylist_tabled_preds(CTXTc cp_pdreg(cp_top1));
     cp_top1 = cp_prevtop(cp_top1);
   }
 }
@@ -2388,9 +2430,10 @@ void unmark_cp_tabled_preds(CTXTdecl)
       trieNode = TrieNodeFromCP(cp_top1);
       if (IsInAnswerTrie(trieNode)) {
 	tif = get_tif_for_answer_trie_cp(CTXTc trieNode);
-	cps_check_unmark_tif(tif);
+	gc_unmark_tif(tif);
       }
     }
+    unmark_delaylist_tabled_preds(CTXTc cp_pdreg(cp_top1));
     cp_top1 = cp_prevtop(cp_top1);
   }
 }
@@ -2399,25 +2442,20 @@ void unmark_cp_tabled_preds(CTXTdecl)
 /* abolish_table_call() and supporting code */
 /*------------------------------------------------------------------*/
 
-#define CAN_RECLAIM 0
-#define CANT_RECLAIM 1
-
 /* Used when deleting a single subgoal
    Recurse through CP stack looking for trie nodes that match PSC.
-   Returns 1 if found a psc match, 0 if safe to delete now.
 */
-int abolish_table_call_cps_check(CTXTdeclc VariantSF subgoal) 
-{
+int abolish_table_call_cps_check(CTXTdeclc VariantSF subgoal) {
   CPtr cp_top1,cp_bot1 ;
   byte cp_inst;
-  int found_subgoal_match;
   BTNptr trieNode;
+  CPtr dlist;
+  Cell tmp_cell;
 
   cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
 
   cp_top1 = breg ;				 
-  found_subgoal_match = CAN_RECLAIM;
-  while ( cp_top1 < cp_bot1 && (found_subgoal_match == CAN_RECLAIM)) {
+  while ( cp_top1 < cp_bot1 ) {
     cp_inst = *(byte *)*cp_top1;
     // Want trie insts, but will need to distinguish from
     // asserted and interned tries
@@ -2425,20 +2463,59 @@ int abolish_table_call_cps_check(CTXTdeclc VariantSF subgoal)
       // Below we want basic_answer_trie_tt, ts_answer_trie_tt
       trieNode = TrieNodeFromCP(cp_top1);
       if (IsInAnswerTrie(trieNode)) {
-	if (subgoal == 
-	    get_subgoal_frame_for_answer_trie_cp(CTXTc trieNode)) {
-	  found_subgoal_match = CANT_RECLAIM;
-	}
+	if (subgoal == get_subgoal_frame_for_answer_trie_cp(CTXTc trieNode)) 
+	  return CANT_RECLAIM;
       }
     }
+    /* now check the delay list for the call */
+    dlist = cp_pdreg(cp_top1);
+    while (islist(dlist)) {
+      dlist = clref_val(dlist);
+      // printf("\n checking element "); print_delay_element(CTXTc stddbg, cell(dlist));
+      tmp_cell = cell((CPtr)cs_val(cell(dlist)) + 1);
+      if (subgoal == (VariantSF) addr_val(tmp_cell)) 
+	return CANT_RECLAIM;
+      dlist = (CPtr)cell(dlist+1);
+      }
     cp_top1 = cp_prevtop(cp_top1);
   }
-  return found_subgoal_match;
+  return CAN_RECLAIM;
+}
+
+/* used for transitive abolishes */
+void inline mark_delaylist_tabled_subgoals(CTXTdeclc CPtr dlist) {
+  Cell tmp_cell;
+  VariantSF subgoal;
+
+  //  if (dlist != NULL) {
+  //    printf("checking list ");print_delay_list(CTXTc stddbg, dlist);
+    while (islist(dlist)) {
+      dlist = clref_val(dlist);
+      // printf("\n checking element "); print_delay_element(CTXTc stddbg, cell(dlist));
+      tmp_cell = cell((CPtr)cs_val(cell(dlist)) + 1);
+      subgoal = (VariantSF) addr_val(tmp_cell);
+      //      printf(" mark subgoal ");print_subgoal(stddbg, subgoal);
+      GC_MARK_SUBGOAL(subgoal);
+      dlist = (CPtr)cell(dlist+1);
+    }
+  }
+
+void inline unmark_delaylist_tabled_subgoals(CTXTdeclc CPtr dlist) {
+  Cell tmp_cell;
+  VariantSF subgoal;
+
+  while (islist(dlist)) {
+    dlist = clref_val(dlist);
+    tmp_cell = cell((CPtr)cs_val(cell(dlist)) + 1);
+    subgoal = (VariantSF) addr_val(tmp_cell);
+    //    printf(" unmark subgoal ");print_subgoal(stddbg, subgoal);
+    GC_UNMARK_SUBGOAL(subgoal);
+    dlist = (CPtr)cell(dlist+1);
+  }
 }
 
 /* Mark and unmark are used when deleting a set of depending subgoals */
-void mark_cp_tabled_subgoals(CTXTdecl)
-{
+void mark_cp_tabled_subgoals(CTXTdecl) {
   CPtr cp_top1,cp_bot1 ;
   byte cp_inst;
   VariantSF subgoal;
@@ -2462,6 +2539,7 @@ void mark_cp_tabled_subgoals(CTXTdecl)
 	GC_MARK_SUBGOAL(subgoal);
       }
     }
+    mark_delaylist_tabled_subgoals(CTXTc cp_pdreg(cp_top1));
     cp_top1 = cp_prevtop(cp_top1);
   }
 }
@@ -2487,6 +2565,7 @@ void unmark_cp_tabled_subgoals(CTXTdecl)
 	GC_UNMARK_SUBGOAL(subgoal);
       }
     }
+    unmark_delaylist_tabled_subgoals(CTXTc cp_pdreg(cp_top1));
     cp_top1 = cp_prevtop(cp_top1);
   }
 }
@@ -2795,6 +2874,7 @@ void abolish_table_call_single(CTXTdeclc VariantSF subgoal) {
     Psc psc;
     int action;
 
+    //    printf("in abolish_table_call_single\n");
     tif = subg_tif_ptr(subgoal);
     psc = TIF_PSC(tif);
 
@@ -2833,6 +2913,7 @@ void abolish_table_call_transitive(CTXTdeclc VariantSF subgoal) {
     Psc psc;
     int action;
 
+    //    printf("in abolish_table_call_transitive\n");
     tif = subg_tif_ptr(subgoal);
     psc = TIF_PSC(tif);
 
@@ -2881,13 +2962,18 @@ Currently, calls can be abolished only for call-variance -- hence
 the use of varsf_has_conditional_answer()
 */
 void abolish_table_call(CTXTdeclc VariantSF subgoal, int invocation_flag) {
+  //  printf("in abolish_table_call\n");
   if (varsf_has_conditional_answer(subgoal) 
       && (invocation_flag == ABOLISH_TABLES_TRANSITIVELY 
-	  || (invocation_flag == ABOLISH_TABLES_DEFAULT 
-	      && flags[TABLE_GC_ACTION] == ABOLISH_TABLES_TRANSITIVELY))) {
-      abolish_table_call_transitive(CTXTc subgoal);
+	  || !(invocation_flag == ABOLISH_TABLES_DEFAULT 
+	       && flags[TABLE_GC_ACTION] == ABOLISH_TABLES_SINGLY))) {
+    //    printf("calling atc\n");
+    abolish_table_call_transitive(CTXTc subgoal);
     }
-  else abolish_table_call_single(CTXTc subgoal);
+  else {
+    //    printf("calling ats\n");
+    abolish_table_call_single(CTXTc subgoal);
+  }
 }
 
 /*------------------------------------------------------------------*/
@@ -3021,21 +3107,23 @@ int find_pred_backward_dependencies(CTXTdeclc TIFptr tif) {
 
 /* 
    Recurse through CP stack looking for trie nodes that match PSC.
+   Also look through delay list.
    Returns 1 if found a psc match, 0 if safe to delete now
 */
-
 int abolish_table_pred_cps_check(CTXTdeclc Psc psc) 
 {
   CPtr cp_top1,cp_bot1 ;
   byte cp_inst;
-  int found_psc_match;
   BTNptr trieNode;
+  CPtr dlist;
+  Cell tmp_cell;
+  VariantSF subgoal;
 
   cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
 
   cp_top1 = breg ;				 
-  found_psc_match = CAN_RECLAIM;
-  while ( cp_top1 < cp_bot1 && (found_psc_match == CAN_RECLAIM)) {
+  /* First check the CP stack */
+  while ( cp_top1 < cp_bot1 ) {
     cp_inst = *(byte *)*cp_top1;
     // Want trie insts, but will need to distinguish from
     // asserted and interned tries
@@ -3044,13 +3132,23 @@ int abolish_table_pred_cps_check(CTXTdeclc Psc psc)
       trieNode = TrieNodeFromCP(cp_top1);
       if (IsInAnswerTrie(trieNode)) {
 	if (psc == get_psc_for_answer_trie_cp(CTXTc trieNode)) {
-	  found_psc_match = CANT_RECLAIM;
+	  return CANT_RECLAIM;
 	}
       }
     }
+    /* Now check delaylist */
+    dlist = cp_pdreg(cp_top1);
+    while (islist(dlist) ) {
+      dlist = clref_val(dlist);
+      tmp_cell = cell((CPtr)cs_val(cell(dlist)) + 1);
+      subgoal = (VariantSF) addr_val(tmp_cell);
+      if (psc == TIF_PSC(subg_tif_ptr(subgoal))) 
+	return CANT_RECLAIM;
+      dlist = (CPtr)cell(dlist+1);
+    }
     cp_top1 = cp_prevtop(cp_top1);
   }
-  return found_psc_match;
+  return CAN_RECLAIM;
 }
 
 /* Delays spece reclamation if the cps check does not pass OR if
@@ -3346,7 +3444,8 @@ int sweep_private_tabled_preds(CTXTdecl) {
 #endif
 
 /* No mutex on this predicate, as global portions can only be called
-   with one active thread */
+   with one active thread.  This actually reclaims both abolished
+   predicates and subgoals */
 
 int sweep_tabled_preds(CTXTdecl) {
   DelTFptr deltf_ptr, next_deltf_ptr;
@@ -3548,13 +3647,14 @@ int abolish_mt_tables_cps_check(CTXTdecl,xsbBool isPrivate)
 {
   CPtr cp_top1,cp_bot1 ;
   byte cp_inst;
-  int found_match;
   BTNptr trieNode;
+  CPtr dlist;
+  Cell tmp_cell;
+  VariantSF subgoal;
 
   cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
   cp_top1 = breg ;				 
-  found_match = 0;
-  while ( cp_top1 < cp_bot1 && !(found_match)) {
+  while ( cp_top1 < cp_bot1 ) {
     cp_inst = *(byte *)*cp_top1;
     // Want trie insts, but will need to distinguish from
     // asserted and interned tries
@@ -3563,13 +3663,23 @@ int abolish_mt_tables_cps_check(CTXTdecl,xsbBool isPrivate)
       // Below we want basic_answer_trie_tt, ts_answer_trie_tt
       if (IsInAnswerTrie(trieNode)) {
 	if (get_private(get_psc_for_answer_trie_cp(CTXTc trieNode)) == isPrivate) {
-	  found_match = 1;
+	  return CANT_RECLAIM;
 	}
       }
     }
+    /* Now check delaylist */
+    dlist = cp_pdreg(cp_top1);
+    while (islist(dlist) ) {
+      dlist = clref_val(dlist);
+      tmp_cell = cell((CPtr)cs_val(cell(dlist)) + 1);
+      subgoal = (VariantSF) addr_val(tmp_cell);
+      if (get_private(TIF_PSC(subg_tif_ptr(subgoal))) == isPrivate) 
+	return CANT_RECLAIM;
+      dlist = (CPtr)cell(dlist+1);
+    }
     cp_top1 = cp_prevtop(cp_top1);
   }
-  return found_match;
+  return CAN_RECLAIM;
 }
 
 /* will not reclaim space if more than one thread */
@@ -3787,6 +3897,10 @@ void abolish_all_tables_cps_check(CTXTdecl)
 		  "\n\t Backtracking through tables to be abolished.");
       }
     }
+    /* Now check delaylist */
+    if ( cp_pdreg(cp_top1) != (CPtr) NULL) 
+      xsb_abort("[abolish_all_tables/0] Illegal table operation"
+		"\n\t tables to be abolished are in delay list.");
       cp_top1 = cp_prevtop(cp_top1);
   }
 }
@@ -3794,7 +3908,7 @@ void abolish_all_tables_cps_check(CTXTdecl)
 #if !defined(WIN_NT) || defined(CYGWIN) 
 inline 
 #endif
-void abolish_table_info(CTXTdecl)
+void abolish_all_tables(CTXTdecl)
 {
   TIFptr pTIF;
   

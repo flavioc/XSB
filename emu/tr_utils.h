@@ -107,7 +107,7 @@ extern void abolish_table_predicate_switch(CTXTdeclc TIFptr, Psc, int, int);
 extern void abolish_table_call(CTXTdeclc VariantSF, int);
 extern void abolish_private_tables(CTXTdecl);
 extern void abolish_shared_tables(CTXTdecl);
-extern void abolish_table_info(CTXTdecl);
+extern void abolish_all_tables(CTXTdecl);
 extern int abolish_usermod_tables(CTXTdecl);
 extern int abolish_module_tables(CTXTdeclc const char *module_name);
 extern int abolish_table_call_incr(CTXTdeclc VariantSF); /* incremental evaluation */

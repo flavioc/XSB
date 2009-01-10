@@ -319,8 +319,8 @@ typedef struct Table_Info_Frame {
 #define TIF_ComplCond(pTIF)   	   ( (pTIF)->compl_cond )
 #endif
 
-#define	cps_check_mark_tif(pTIF)   TIF_Mark(pTIF) = 0x1
-#define	cps_check_unmark_tif(pTIF)   TIF_Mark(pTIF) = 0x0
+#define	gc_mark_tif(pTIF)   TIF_Mark(pTIF) = 0x1
+#define	gc_unmark_tif(pTIF)   TIF_Mark(pTIF) = 0x0
 
 /*
  * #define IsVariantPredicate(pTIF)		\

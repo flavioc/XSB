@@ -146,7 +146,7 @@
 #define FILE_FUNCTION           123
 #define SLASH_BUILTIN           124
 
-#define ABOLISH_TABLE_INFO      126
+#define ABOLISH_ALL_TABLES      126
 #define ZERO_OUT_PROFILE        127
 #define WRITE_OUT_PROFILE       128
 #define ASSERT_CODE_TO_BUFF	129
