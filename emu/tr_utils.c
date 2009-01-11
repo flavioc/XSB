@@ -3293,118 +3293,117 @@ inline void abolish_table_predicate(CTXTdeclc Psc psc, int invocation_flag) {
   through a different table altogether, and we needn't mark.
 */
 
+void inline mark_deltfs(CTXTdeclc TIFptr tif, VariantSF subgoal) {
+  BTNptr call_trie;
+  DelTFptr dtf;
+
+  call_trie = get_call_trie_from_subgoal_frame(CTXTc subgoal);
+  //	printf("subgoal %p call_trie %p\n",subgoal,call_trie);
+	
+  dtf = TIF_DelTF(tif);
+  // Cycle through all deltfs for this pred
+  while (dtf) {
+    if (DTF_CallTrie(dtf) == call_trie) {
+      DTF_Mark(dtf) = 1;
+      dtf = NULL;
+    } else dtf = DTF_NextPredDTF(dtf);
+  }
+
+  //	if (TIF_CallTrie(tif) == NULL && TIF_Subgoals(tif) == NULL) {
+  //	 //   && !get_shared(TIF_PSC(tif))) { 
+  //	  dtf = TIF_DelTF(tif);
+  //	  DTF_Mark(dtf) = 1;
+  //	}
+	
+  /* Now check for subgoal DelTFs */
+  if (is_completed(subgoal)) {
+    if (subg_deltf_ptr(subgoal) != NULL) {
+      DTF_Mark((DelTFptr) subg_deltf_ptr(subgoal)) = 1;
+    }
+  }
+}
+
+void inline gc_mark_delaylist_tabled_preds(CTXTdeclc CPtr dlist) {
+  Cell tmp_cell;
+  VariantSF subgoal;
+
+  //  if (dlist != NULL) {
+  //    printf("checking list ");print_delay_list(CTXTc stddbg, dlist);
+    while (islist(dlist)) {
+      dlist = clref_val(dlist);
+      // printf("\n checking element "); print_delay_element(CTXTc stddbg, cell(dlist));
+      tmp_cell = cell((CPtr)cs_val(cell(dlist)) + 1);
+      subgoal = (VariantSF) addr_val(tmp_cell);
+      mark_deltfs(CTXTc subg_tif_ptr(subgoal), subgoal);
+      dlist = (CPtr)cell(dlist+1);
+    }
+  }
+
 void mark_tabled_preds(CTXTdecl) { 
   CPtr cp_top1,cp_bot1 ; byte cp_inst;
   TIFptr tif;
   VariantSF subgoal;
-  BTNptr call_trie, trieNode;
+  BTNptr trieNode;
 
   cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
 
   cp_top1 = breg ;				 
   while ( cp_top1 < cp_bot1 ) {
     cp_inst = *(byte *)*cp_top1;
-    // Want trie insts, but will need to distinguish from
-    // asserted and interned tries
+    // Want trie insts, but need to distinguish asserted and interned tries
     if ( is_trie_instruction(cp_inst) ) {
       trieNode = TrieNodeFromCP(cp_top1);
       if (IsInAnswerTrie(trieNode)) {
-	DelTFptr dtf;
 
 	/* Check for predicate DelTFs */
 	tif = get_tif_for_answer_trie_cp(CTXTc trieNode);
-
 	subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc trieNode);
-	call_trie = get_call_trie_from_subgoal_frame(CTXTc subgoal);
-	//	printf("subgoal %p call_trie %p\n",subgoal,call_trie);
-	
-	dtf = TIF_DelTF(tif);
-	while (dtf) {
-	  if (DTF_CallTrie(dtf) == call_trie) {
-	    DTF_Mark(dtf) = 1;
-	    dtf = NULL;
-	  } else dtf = DTF_NextPredDTF(dtf);
-	}
-
-	//	if (TIF_CallTrie(tif) == NULL && TIF_Subgoals(tif) == NULL) {
-	//	  dtf = TIF_DelTF(tif);
-	//	  DTF_Mark(dtf) = 1;
-	//	}
-	
-	/* Now check for subgoal DelTFs */
-	subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc trieNode);
-	if (is_completed(subgoal)) {
-	  if (subg_deltf_ptr(subgoal) != NULL) {
-	    DTF_Mark((DelTFptr) subg_deltf_ptr(subgoal)) = 1;
-	  }
-	}
+	mark_deltfs(CTXTc tif, subgoal);
       }
     }
+
+    /* Now check delaylist */
+    gc_mark_delaylist_tabled_preds(CTXTc cp_pdreg(cp_top1));
+
     cp_top1 = cp_prevtop(cp_top1);
   }
 }
 
 /* Mark only private tables -- ignore shared tables. Used by mt system
    when gc-ing with more than 1 active thread -- and used in lieu
-   of mark_tabled_preds()
-*/
+   of mark_tabled_preds() */
+#ifdef MULTI_THREAD
 void mark_private_tabled_preds(CTXTdecl) { 
   CPtr cp_top1,cp_bot1 ; byte cp_inst;
   TIFptr tif;
   VariantSF subgoal;
-  BTNptr call_trie,trieNode;
+  BTNptr trieNode;
   
   cp_bot1 = (CPtr)(tcpstack.high) - CP_SIZE;
 
   cp_top1 = breg ;				 
   while ( cp_top1 < cp_bot1 ) {
     cp_inst = *(byte *)*cp_top1;
-    // Want trie insts, but will need to distinguish from
-    // asserted and interned tries
+    // Want trie insts, but need to distinguish asserted and interned tries
     if ( is_trie_instruction(cp_inst) ) {
       trieNode = TrieNodeFromCP(cp_top1);
       if (IsInAnswerTrie(trieNode)) {
-	DelTFptr dtf;
 
 	/* Check for predicate DelTFs */
 	tif = get_tif_for_answer_trie_cp(CTXTc trieNode);
-
 	if (!get_shared(TIF_PSC(tif))) {
 	  subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc trieNode);
-	  call_trie = get_call_trie_from_subgoal_frame(CTXTc subgoal);
-	  //	printf("subgoal %p call_trie %p\n",subgoal,call_trie);
-	
-	  dtf = TIF_DelTF(tif);
-	  while (dtf) {
-	    if (DTF_CallTrie(dtf) == call_trie) {
-	      DTF_Mark(dtf) = 1;
-	      dtf = NULL;
-	    } else dtf = DTF_NextPredDTF(dtf);
-	  }
-
-	}
-
-	if (TIF_CallTrie(tif) == NULL && TIF_Subgoals(tif) == NULL 
-	    && !get_shared(TIF_PSC(tif))) { 
-	  dtf = TIF_DelTF(tif);
-	  DTF_Mark(dtf) = 1;
-	}
-
-	/* Now check for subgoal DelTFs */
-	subgoal = get_subgoal_frame_for_answer_trie_cp(CTXTc trieNode);
-	if (is_completed(subgoal) 
-	    && !get_shared(TIF_PSC(subg_tif_ptr(subgoal)))) {
-	  if (subg_deltf_ptr(subgoal) != NULL) {
-	    DTF_Mark((DelTFptr) subg_deltf_ptr(subgoal)) = 1;
-	  }
+	  mark_deltfs(CTXTc tif, subgoal);
 	}
       }
     }
+    /* Now check delaylist */
+    gc_mark_delaylist_tabled_preds(CTXTc cp_pdreg(cp_top1));
+
     cp_top1 = cp_prevtop(cp_top1);
   }
 }
 
-#ifdef MULTI_THREAD
 int sweep_private_tabled_preds(CTXTdecl) {
   DelTFptr deltf_ptr, next_deltf_ptr;
   int dtf_cnt = 0;
@@ -3415,7 +3414,7 @@ int sweep_private_tabled_preds(CTXTdecl) {
   while (deltf_ptr) {
     next_deltf_ptr = DTF_NextDTF(deltf_ptr);
     if (DTF_Mark(deltf_ptr)) {
-      tif_ptr = subg_tif_ptr(DTF_Subgoals(deltf_ptr));
+      //      tif_ptr = subg_tif_ptr(DTF_Subgoals(deltf_ptr));
       //           fprintf(stderr,"Skipping: %s/%d\n",
       //   get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
       DTF_Mark(deltf_ptr) = 0;
@@ -3458,7 +3457,7 @@ int sweep_tabled_preds(CTXTdecl) {
   while (deltf_ptr) {
     next_deltf_ptr = DTF_NextDTF(deltf_ptr);
     if (DTF_Mark(deltf_ptr)) {
-      tif_ptr = subg_tif_ptr(DTF_Subgoals(deltf_ptr));
+      //      tif_ptr = subg_tif_ptr(DTF_Subgoals(deltf_ptr));
       //      fprintf(stderr,"Skipping: %s/%d\n",
       //      get_name(TIF_PSC(tif_ptr)),get_arity(TIF_PSC(tif_ptr)));
       DTF_Mark(deltf_ptr) = 0;
