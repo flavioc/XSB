@@ -4,9 +4,9 @@ XSB offers a mechanism by which large numbers of facts can be directly
 stored and manipulated in {\em tries}, which can either be private to
 a thread or shared among threads.  The mechanism described in this
 chapter is in some ways similar to trie-indexed asserted code as
-described in Section~\ref{sec:assert}.  However, the interned, but
-allows creation of tries that are shared between threads, and of
-associative tries that support efficient memory management.
+described in Section~\ref{sec:assert}, but allows creation of tries
+that are shared between threads, and of associative tries that support
+efficient memory management.
 
 When stored in a trie, facts are compiled into trie-instructions
 similar to those used for XSB's tables.  For instance set of facts
@@ -46,7 +46,7 @@ forms~\footnote{Future versions may support more types of tries}:
   is deleted from $Tr$, memory will be reclaimed if it is safe to do
   so at the time of deletion~\footnote{That is, if no choice points
     are around that may cause backtracking into $Tr$.}; otherwise the
-  will not be reclaimed until all terms in $Tr$ are removed by
+  space will not be reclaimed until all terms in $Tr$ are removed by
   truncating $Tr$ or until the thread exits.
 
 \item {\em Private, associative} Associative tries are more restricted
@@ -61,8 +61,8 @@ forms~\footnote{Future versions may support more types of tries}:
 
 \item {\em Shared, associative} tries are associative tries that are
   shared among threads.  Memory for deleted key-value pairs is always
-  immediately reclaimed, and xbwhen the trie is truncated or dropped.
-\ei
+  immediately reclaimed, and when the trie is truncated or dropped.
+  \ei
 
 \section{Examples of Using Tries}
 
@@ -152,8 +152,9 @@ error
 {\small
 \begin{verbatim}
 | ?- trie_insert(foo,f(a,b)).
-++Error[XSB/Runtime/P]: [Domain (f(a,b) not in domain pair/2)]  in arg 2 of pre\
-dicate trie_insert/2 (Inserted term must be key-value pair in trie 1048577)
+++Error[XSB/Runtime/P]: [Domain (f(a,b) not in domain pair/2)]  
+in arg 2 of predicate trie_insert/2 
+(Inserted term must be key-value pair in trie 1048577)
 \end{verbatim}
 }  \noindent
 Finally, in an associative trie, if we insert a value for a key that
@@ -176,14 +177,13 @@ yes
 %
 The following subsections describe predicates for inserting terms into
 a trie, deleting terms from a trie, and unifying a term with terms in
-a trie, further predicates for creating, dropping, and truncating
-tries, as well as predicates for bulk insertes into and deletes from a
-trie.  These predicates can apply to any type of trie, and perform
-full error checking on their call arguments.  As such, they are safer
-and more general than the lower-level trie predicates described in
-Chapter 1 of Volume 2 of this manual.  Use of the predicates described
-here is recommended for applications unless the need for speed is
-paramount.
+a trie, predicates for creating, dropping, and truncating tries, as
+well as predicates for bulk insertes into and deletes from a trie.
+These predicates can apply to any type of trie, and perform full error
+checking on their call arguments.  As such, they are safer and more
+general than the lower-level trie predicates described in Chapter 1 of
+Volume 2 of this manual.  Use of the predicates described here is
+recommended for applications unless the need for speed is paramount.
 
 \begin{description}
 %
@@ -192,9 +192,9 @@ paramount.
 %
 {\tt OptionList} allows optional parameters in the configuration of a
 trie to indicate its type and whether an alias should be used.  In the
-present version of  
+present version, {\tt OptionList} may contain the following terms
 \bi
-\item {\tt Type} can be one of
+\item {\tt type(Type)} where {\tt Type} can be one of
 \bi
 \item {\tt prge} (private, general) maintains information that is
   accessable only to the calling thread.  No other restrictions are

@@ -876,9 +876,8 @@ called at that moment.
 The following predicates are used to semantically invalidate tables
 and/or reclaim their space. The use of the word ``tables'' in this
 section is rather unspecific.  For the purpose of deletion a table can
-either be information pertaining to a single subgoal of a tabled
-predicate (which is called here a tabled subgoal), or pertaining to
-all subgoals of a tabled predicate.  Predicates are provided to
+either refer to a single subgoal and its answers, or to all subgoals
+and answers for a tabled predicate.  Predicates are provided to
 invalidate tables not only for particular predicates and subgoals, but
 for all tabled predicates, all tabled predicates in a module, and in
 the multi-threaded engine all thread-private tabled predicates or all
@@ -891,31 +890,38 @@ restriction is made since if $S$ is incomplete there may be pointers
 to $S$ from various elements of the current execution environment, and
 removing all of these pointers may be difficult to do.  If one of the
 deletion predicates is called when the current execution environment
-contains a choice point into a {\em completed} table that is being
+contains a reference to a {\em completed} table that is being
 abolished, space for the abolished information is not immediately
-reclaimed.  More precisely, if the current execution envonment has a
-choice point that points to an answer $A$ we say that $A$ is {\em
-  active in the current environment}.  If a tabled predicate $P$ or
-subgoal $S$ to be abolished has an answer that is active in the
-current environment, reclamation of space for $P$ or $S$ will be
-delayed until no answers for $P$ or $S$ are active.  New calls to $P$
-or $S$, however, will derive a new table, rather than using the
-abolished information.
+reclaimed.  More precisely, if the current global tabling envonment
+(including suspended states) has either
+\begin{itemize}
+\item a choice point that points to an answer $A$; 
+\item or a (heap) delay list that points to a subgoal $S$
+\end{itemize}
+we say that $A$ or $S$ is {\em active}.  Also, since tables can be
+abolished and rederived during the course of an evaluation, the table
+deletion system marks the tables with versions.  Accordingly, if a
+tabled predicate $P_{version}$ or subgoal $S_{version}$ to be
+abolished has an answer that is active in the current environment,
+reclamation of space for that version of $P$ or $S$ will be delayed
+until no answers for $P_{version}$ or $S_{version}$ are active.  New
+calls to $P$ or $S$, however, will derive a new table versions, rather
+than using the abolished information.
 
 When conditional answers are present, abolishing a specific table or
 call may lead to semantic or implementational complications.  Consider
 the conditional answer {\tt r(a,b):- undef|} from
-Figure~\ref{ex:deletion}.  If the predicate {\tt r/2)} (or subgoal
-{\tt r(a,X)}) is abolished and later rederived, the rederivation of
-{\tt r(a,X)} might have different semantics than the original
-derivation (e.g. if {\tt undef} depended on a dynamic predicate whose
-definition has changed).  From an implementation perspective, if space
-for {\tt r(a,X))} is reclaimed, then the call {\tt
-  get\_residual(p(a,X),Y)} may core dump, even if there are no choice
-points for completed tables anywhere in the choice point stack.  To
-address this problem, by default abolishing a subgoal $S$ (predicate
-$P$) will abolish all subgoals (predicates) that (transtively) depend
-on $S$ ($P$)~\footnote{Dao Tran Minh contributed to implementing this
+Figure~\ref{ex:deletion}.  If the predicate {\tt r/2} (or subgoal {\tt
+  r(a,X)}) is abolished and later rederived, the rederivation of {\tt
+  r(a,X)} might have different semantics than the original derivation
+(e.g. if {\tt undef} depended on a dynamic predicate whose definition
+has changed).  From an implementation perspective, if space for {\tt
+  r(a,X))} is reclaimed, then the call {\tt get\_residual(p(a,X),Y)}
+may core dump, even if there are no choice points for completed tables
+anywhere in the choice point stack.  To address this problem, by
+default abolishing a subgoal $S$ (predicate $P$) will abolish all
+subgoals (predicates) that (transtively) depend on $S$
+($P$)~\footnote{Dao Tran Minh contributed to implementing this
   functionality.}.  In this case the goal {\tt
   abolish\_table\_call(r(a,X))} would cause the deletion of {\tt
   p(a,X)} while the goal {\tt abolish\_table\_pred(r/2)} would cause
