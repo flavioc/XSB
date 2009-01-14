@@ -645,7 +645,7 @@ extern void expand_trie_ht(CTXTdeclc BTHTptr);
    for ( pBTHT = (BTHTptr)SM_AllocList(SM);  IsNonNULL(pBTHT);		\
 	 pBTHT = (BTHTptr)BTHT_NextBTHT(pBTHT) ) {			\
      /*     printf("freeing table for thread %d: %x\n",xsb_thread_id,pBTHT); */ \
-     if (BTHT_NumBuckets(pBTHT) > TrieHT_INIT_SIZE)			\
+     /*     if (BTHT_NumBuckets(pBTHT) > TrieHT_INIT_SIZE) memory leak if in	*/	\
        mem_dealloc(BTHT_BucketArray(pBTHT),BTHT_NumBuckets(pBTHT)*sizeof(void *),TABLE_SPACE); \
    }									\
  }
