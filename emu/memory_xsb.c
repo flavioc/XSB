@@ -120,7 +120,8 @@ void print_mem_allocs() {
 }
 #endif
 
-static long alloc_cnt = 0;  /* DSW for tracing */
+//extern FILE *logfile;
+//static long alloc_cnt = 0;  /* DSW for analyzing memory usage */
 
 /* === alloc permanent memory ============================================== */
 
@@ -160,7 +161,7 @@ void *mem_alloc(unsigned long size, int category)
       sprintf(msgstring,"memory [%s]",pspace_cat[category]);
       xsb_memory_error(msgstring,"mem_alloc()");
     }
-    //    if (category == TABLE_SPACE) printf("alloc(mem_alloc,%ld,'%p',%ld).\n",alloc_cnt++,ptr,size);
+    //    fprintf(logfile,"alloc(mem_alloc,%ld,'%p',%ld,%d).\n",alloc_cnt++,ptr,size,category);
     return ptr;
 }
 
@@ -191,7 +192,7 @@ void *mem_alloc_nocheck(unsigned long size, int category)
 #ifdef NON_OPT_COMPILE
     SYS_MUTEX_UNLOCK_NOERROR(MUTEX_MEM);
 #endif
-    //    if (category == TABLE_SPACE) printf("alloc(mem_alloc_nocheck,%ld,'%p',%ld).\n",alloc_cnt++,ptr,size);
+    //    fprintf(logfile,"alloc(mem_alloc_nocheck,%ld,'%p',%ld,%d).\n",alloc_cnt++,ptr,size,category);
     return ptr;
 }
 
@@ -226,7 +227,7 @@ void *mem_calloc(unsigned long size, unsigned long occs, int category)
       sprintf(msgstring,"memory [%s]",pspace_cat[category]);
       xsb_memory_error(msgstring,"mem_calloc()");
     }
-    //    if (category == TABLE_SPACE) printf("alloc(mem_calloc,%ld,'%p',%ld).\n",alloc_cnt++,ptr,length);
+    //    fprintf(logfile,"alloc(mem_calloc,%ld,'%p',%ld,%d).\n",alloc_cnt++,ptr,length,category);
     return ptr;
 }
 
@@ -255,7 +256,7 @@ void *mem_calloc_nocheck(unsigned long size, unsigned long occs, int category)
 #ifdef NON_OPT_COMPILE
     SYS_MUTEX_UNLOCK_NOERROR(MUTEX_MEM);
 #endif
-    //    if (category == TABLE_SPACE) printf("alloc(mem_calloc_nocheck,%ld,'%p',%ld).\n",alloc_cnt++,ptr,length);
+    //    fprintf(logfile,"alloc(mem_calloc_nocheck,%ld,'%p',%ld,%d).\n",alloc_cnt++,ptr,length,category);
     return ptr;
 }
 
@@ -289,7 +290,7 @@ void *mem_realloc(void *addr, unsigned long oldsize, unsigned long newsize, int 
       sprintf(msgstring,"memory [%s]",pspace_cat[category]);
       xsb_memory_error(msgstring,"mem_realloc()");
     }
-    //    if (category == TABLE_SPACE) printf("alloc(mem_realloc,%ld,'%p','%p',%ld,%ld).\n",alloc_cnt++,addr,new_addr,oldsize,newsize);
+    //    fprintf(logfile,"alloc(mem_realloc,%ld,'%p','%p',%ld,%ld,%d).\n",alloc_cnt++,addr,new_addr,oldsize,newsize,category);
     return new_addr;
 }
 
@@ -315,7 +316,7 @@ void *mem_realloc_nocheck(void *addr, unsigned long oldsize, unsigned long newsi
 #ifdef NON_OPT_COMPILE
     SYS_MUTEX_UNLOCK_NOERROR(MUTEX_MEM);
 #endif
-    //    if (category == TABLE_SPACE) printf("alloc(mem_realloc_nocheck,%ld,'%p','%p',%ld,%ld).\n",alloc_cnt++,addr,new_addr,oldsize,newsize);
+    //    fprintf(logfile,"alloc(mem_realloc_nocheck,%ld,'%p','%p',%ld,%ld,%d).\n",alloc_cnt++,addr,new_addr,oldsize,newsize,category);
     return new_addr;
 }
 
@@ -336,7 +337,7 @@ void mem_dealloc(void *addr, unsigned long size, int category)
     pspacesize[category] -= size;
 #endif
 #endif
-    //    if (category == TABLE_SPACE) printf("alloc(mem_dealloc,%ld,'%p',%ld).\n",alloc_cnt++,addr,size);
+    //    fprintf(logfile,"alloc(mem_dealloc,%ld,'%p',%ld,%d).\n",alloc_cnt++,addr,size,category);
 
     free(addr);
 #ifdef NON_OPT_COMPILE

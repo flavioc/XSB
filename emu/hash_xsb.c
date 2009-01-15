@@ -198,7 +198,7 @@ void expand_string_table() {
       new_table[new_index] = (void *)cur_entry;
     }
 
-  mem_dealloc((void *)string_table.table,string_table.size,STRING_SPACE);
+  mem_dealloc((void *)string_table.table,string_table.size*sizeof(void *),STRING_SPACE);
   string_table.size = new_size;
   string_table.table = new_table;
   //  printf("expanded string table to: %ld\n",new_size);
