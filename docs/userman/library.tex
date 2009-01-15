@@ -2299,9 +2299,8 @@ second(array(1,2,6))
 third(array(1,2,7))
 
 no
- \end{verbatim}
+\end{verbatim}
 }
-
 
 \section{The Profiling Library} \label{sec:profile}
 %==============================
@@ -2403,46 +2402,26 @@ Clears the table that accumulates counts of calls in particular modes
 
 %----------------------------------------------------------------------
 \comment{
-%TLS: finally took this out...
-%\input{tr_assert}
-\section{Asserts/Retracts using Tries }
+% Replaced by tries section in volume 1.
 
-\index{\texttt{trie\_assert/1}}
-\index{\texttt{trie\_retract/1}}
-\index{\texttt{trie\_retractall/1}}
-\index{\texttt{trie\_retract\_nr/1}}
-\index{\texttt{abolish\_trie\_asserted/1}}
-\index{\texttt{trie\_dynamic/1}}
+\section{Low-level Trie Manipulation Utilities}
 
-In \version, trie asserted code has been merged with standard asserted
-code.  If the user wishes to use tries for dynamic code, the
-recommended programming practice is as outlined in the section {\it
-Modification of the Database} in Volume 1.  For compatibility with
-previous versions, the predicates {\tt trie\_assert/1}, {\tt
-trie\_retract/1}, {\tt trie\_retractall/1}, {\tt trie\_retract\_nr/1},
-{\tt abolish\_trie\_asserted/1} and {\tt trie\_dynamic/1} can be
-imported from the module {\sf tables}.  However, if the current index
-specification of these predicates is {\tt trie} (again, see the
-section {\it Modification of the Database} in Volume 1, the predicates
-are defined as {\tt assert/1}, {\tt retract/1}, {\tt retractall/1},
-{\tt retract\_nr/1}, {\tt abolish/1} and {\tt dynamic/1} respectively.
-If the index specification is other than {\tt tries}, the predicate
-will issue a warning message and have no effect on the database.
-}
+Chapter 8 of Volume 1 indicates how tries can be used as an efficient
+mechanism to store thread-private and thread-shared terms.  However,
+while they are efficient, the trie manipulation routines in Chapter 8
+of Volume 1 may not be suitable
 
-\section{Interned Tries and Low-level Trie Manipulation Utilities}
-
-Interned tries can be used to assert an retract facts in an extremely
-efficient manner.  Terms can be interned within different tries,
-designated by a {\tt Root}, or left as default.  Like trie-indexed
-dynamic code and unlike normal asserted code, interned tries have a
-set semantics: the variant of a term can occur in a trie only once,
-additional asserts have no effect.  In addition, no ordering of terms
-within the trie is guaranteed.  In \version{} of XSB, when multiple
-threads are used, all interned tries are private to a thread, so that
-information interned by one trie will not be visible to other
-threads.  In order to ensure efficiency for these routines, not all
-possible error checking is done on their inputs.
+and thread-safe manner Interned tries can be used to assert an retract
+facts in an extremely efficient manner.  Terms can be interned within
+different tries, designated by a {\tt Root}, or left as default.  Like
+trie-indexed dynamic code and unlike normal asserted code, interned
+tries have a set semantics: the variant of a term can occur in a trie
+only once, additional asserts have no effect.  In addition, no
+ordering of terms within the trie is guaranteed.  In \version{} of
+XSB, when multiple threads are used, all interned tries are private to
+a thread, so that information interned by one trie will not be visible
+to other threads.  In order to ensure efficiency for these routines,
+not all possible error checking is done on their inputs.
 
 
 Section~\ref{sec:intern-basic} below provides an overview for the
@@ -2450,7 +2429,6 @@ basic interface to interned tries, while
 Section~\ref{sec:intern-advanced} describes more advanced features.
 See also the module {\tt storage} in Volume 1 which uses interned
 tries for backtrackable updates and associative arrays.
-
 
 \subsection{A Basic API for Interned Tries} \label{sec:intern-basic}
 %%
@@ -2667,7 +2645,7 @@ otherwise be ensure that no failure continuations point to a node in
 
 %%
 \end{description}
-
+}
 \section{Gensym}
 %================================
 

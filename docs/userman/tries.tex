@@ -6,7 +6,11 @@ a thread or shared among threads.  The mechanism described in this
 chapter is in some ways similar to trie-indexed asserted code as
 described in Section~\ref{sec:assert}, but allows creation of tries
 that are shared between threads, and of associative tries that support
-efficient memory management.
+efficient memory management~\footnote{For nearly all purposes, the
+  predicates in this chapter replace the low-level API for interned
+  tries in previous versions, which included {\tt trie\_intern}, {\tt
+    trie\_unintern}, {\tt trie\_interned} etc.  However that API
+  continues to be supported for low-level systems programming.}.
 
 When stored in a trie, facts are compiled into trie-instructions
 similar to those used for XSB's tables.  For instance set of facts
