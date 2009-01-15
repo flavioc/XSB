@@ -1132,9 +1132,9 @@ void delete_trie(CTXTdeclc BTNptr iroot) {
       break;
     }
   }
-  mem_dealloc(delete_trie_op,trie_op_size,TABLE_SPACE); delete_trie_op = NULL;
-  mem_dealloc(delete_trie_node,trie_node_size,TABLE_SPACE); delete_trie_node = NULL;
-  mem_dealloc(delete_trie_hh,trie_hh_size,TABLE_SPACE); delete_trie_hh = NULL;
+  mem_dealloc(delete_trie_op,trie_op_size*sizeof(char),TABLE_SPACE); delete_trie_op = NULL;
+  mem_dealloc(delete_trie_node,trie_node_size*sizeof(BTNptr),TABLE_SPACE); delete_trie_node = NULL;
+  mem_dealloc(delete_trie_hh,trie_hh_size*sizeof(BTHTptr),TABLE_SPACE); delete_trie_hh = NULL;
   trie_op_size = 0; 
 }
 
@@ -2731,9 +2731,9 @@ int find_answers_for_subgoal(CTXTdeclc VariantSF subgoal) {
       }
     }
   }
-  mem_dealloc(delete_trie_op,trie_op_size,TABLE_SPACE); delete_trie_op = NULL;
-  mem_dealloc(delete_trie_node,trie_node_size,TABLE_SPACE); delete_trie_node = NULL;
-  mem_dealloc(delete_trie_hh,trie_hh_size,TABLE_SPACE); delete_trie_hh = NULL;
+  mem_dealloc(delete_trie_op,trie_op_size*sizeof(char),TABLE_SPACE); delete_trie_op = NULL;
+  mem_dealloc(delete_trie_node,trie_node_size*sizeof(BTNptr),TABLE_SPACE); delete_trie_node = NULL;
+  mem_dealloc(delete_trie_hh,trie_hh_size*sizeof(BTHTptr),TABLE_SPACE); delete_trie_hh = NULL;
   trie_op_size = 0; 
   //  print_answer_stack(CTXT);
   return num_leaves;

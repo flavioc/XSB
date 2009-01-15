@@ -120,6 +120,8 @@ void print_mem_allocs() {
 }
 #endif
 
+static long alloc_cnt = 0;  /* DSW for tracing */
+
 /* === alloc permanent memory ============================================== */
 
 /* TLS: NOERROR locking done in mem_xxxoc() will not cause concurrency
@@ -158,6 +160,7 @@ void *mem_alloc(unsigned long size, int category)
       sprintf(msgstring,"memory [%s]",pspace_cat[category]);
       xsb_memory_error(msgstring,"mem_alloc()");
     }
+    //    if (category == TABLE_SPACE) printf("alloc(mem_alloc,%ld,'%p',%ld).\n",alloc_cnt++,ptr,size);
     return ptr;
 }
 
@@ -188,6 +191,7 @@ void *mem_alloc_nocheck(unsigned long size, int category)
 #ifdef NON_OPT_COMPILE
     SYS_MUTEX_UNLOCK_NOERROR(MUTEX_MEM);
 #endif
+    //    if (category == TABLE_SPACE) printf("alloc(mem_alloc_nocheck,%ld,'%p',%ld).\n",alloc_cnt++,ptr,size);
     return ptr;
 }
 
@@ -222,6 +226,7 @@ void *mem_calloc(unsigned long size, unsigned long occs, int category)
       sprintf(msgstring,"memory [%s]",pspace_cat[category]);
       xsb_memory_error(msgstring,"mem_calloc()");
     }
+    //    if (category == TABLE_SPACE) printf("alloc(mem_calloc,%ld,'%p',%ld).\n",alloc_cnt++,ptr,length);
     return ptr;
 }
 
@@ -250,6 +255,7 @@ void *mem_calloc_nocheck(unsigned long size, unsigned long occs, int category)
 #ifdef NON_OPT_COMPILE
     SYS_MUTEX_UNLOCK_NOERROR(MUTEX_MEM);
 #endif
+    //    if (category == TABLE_SPACE) printf("alloc(mem_calloc_nocheck,%ld,'%p',%ld).\n",alloc_cnt++,ptr,length);
     return ptr;
 }
 
@@ -258,6 +264,7 @@ void *mem_calloc_nocheck(unsigned long size, unsigned long occs, int category)
 
 void *mem_realloc(void *addr, unsigned long oldsize, unsigned long newsize, int category)
 {
+  byte *new_addr;
     newsize = (newsize+7) & ~0x7 ;	      /* round to 8 */
     oldsize = (oldsize+7) & ~0x7 ;	      /* round to 8 */
 #ifdef NON_OPT_COMPILE
@@ -270,23 +277,25 @@ void *mem_realloc(void *addr, unsigned long oldsize, unsigned long newsize, int 
 #endif
 #endif
 
-    addr = (byte *) realloc(addr,newsize);
+    new_addr = (byte *) realloc(addr,newsize);
 #if defined(GENERAL_TAGGING)
-    extend_enc_dec_as_nec(addr,addr+newsize);
+    extend_enc_dec_as_nec(new_addr,new_addr+newsize);
 #endif
 #ifdef NON_OPT_COMPILE
     SYS_MUTEX_UNLOCK_NOERROR(MUTEX_MEM);
 #endif
-    if (addr == NULL && newsize > 0) {
+    if (new_addr == NULL && newsize > 0) {
       char msgstring[40];
       sprintf(msgstring,"memory [%s]",pspace_cat[category]);
       xsb_memory_error(msgstring,"mem_realloc()");
     }
-    return addr;
+    //    if (category == TABLE_SPACE) printf("alloc(mem_realloc,%ld,'%p','%p',%ld,%ld).\n",alloc_cnt++,addr,new_addr,oldsize,newsize);
+    return new_addr;
 }
 
 void *mem_realloc_nocheck(void *addr, unsigned long oldsize, unsigned long newsize, int category)
 {
+  byte *new_addr;
     newsize = (newsize+7) & ~0x7 ;	      /* round to 8 */
     oldsize = (oldsize+7) & ~0x7 ;	      /* round to 8 */
 #ifdef NON_OPT_COMPILE
@@ -299,14 +308,15 @@ void *mem_realloc_nocheck(void *addr, unsigned long oldsize, unsigned long newsi
 #endif
 #endif
 
-    addr = (byte *) realloc(addr,newsize);
+    new_addr = (byte *) realloc(addr,newsize);
 #if defined(GENERAL_TAGGING)
-    extend_enc_dec_as_nec(addr,addr+newsize);
+    extend_enc_dec_as_nec(new_addr,new_addr+newsize);
 #endif
 #ifdef NON_OPT_COMPILE
     SYS_MUTEX_UNLOCK_NOERROR(MUTEX_MEM);
 #endif
-    return addr;
+    //    if (category == TABLE_SPACE) printf("alloc(mem_realloc_nocheck,%ld,'%p','%p',%ld,%ld).\n",alloc_cnt++,addr,new_addr,oldsize,newsize);
+    return new_addr;
 }
 
 
@@ -326,6 +336,7 @@ void mem_dealloc(void *addr, unsigned long size, int category)
     pspacesize[category] -= size;
 #endif
 #endif
+    //    if (category == TABLE_SPACE) printf("alloc(mem_dealloc,%ld,'%p',%ld).\n",alloc_cnt++,addr,size);
 
     free(addr);
 #ifdef NON_OPT_COMPILE
