@@ -1608,6 +1608,9 @@ multifile([P/A, _T1, T2]) :-	% T1 is not used
 %
 % import(Mod) :- import all preds in that module. not implemented yet.
 
+use_module(Mod,Syms):- 
+	import(from(Syms, Mod)).
+
 import(from(Syms, Mod)) :- !, 
 	conname(Mod, MName),
 	import(Syms, MName).

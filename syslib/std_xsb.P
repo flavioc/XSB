@@ -405,6 +405,7 @@ standard_symbol(unify_with_occurs_check, 2, machine).  % ISO
 standard_symbol(unix, 1, unix).	       	   % obsolete
 standard_symbol(unix, 2, unix).	       	   % obsolete
 standard_symbol(unload_package, 1, packaging).
+standard_symbol(use_module,2,standard).
 standard_symbol((use_variant_tabling), 1, tables).
 standard_symbol((use_subsumptive_tabling), 1, tables).
 

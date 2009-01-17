@@ -71,7 +71,7 @@
 	skip/1,		statistics/1,	statistics/0,	structure/1,
 	tab/1,		tell/1,		telling/1,	time/1,	told/0,true/0,
 	ttywrite/1,	ttywritenl/1,   ttywrite/2,	ttywritenl/2, 
-        var/1,		walltime/1,	
+        use_module/2,   var/1,		walltime/1,	
 	write/1,	write/2,	write_prolog/1,	write_prolog/2,
 	writeln/1,	writeln/2,	writeq/1,	writeq/2,
 	write_canonical/1,  write_canonical/2,
