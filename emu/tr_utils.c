@@ -763,7 +763,6 @@ extern void hashtable1_destroy(void *, int);
   if ( TIF_CallTrie(tif) != NULL ) {
     SET_TRIE_ALLOCATION_TYPE_TIP(tif);
     if ( IsVariantPredicate(tif) ) {
-      //      printf("delete_variant_table %p\n",tif);
       delete_variant_table(CTXTc TIF_CallTrie(tif),get_incr(TIF_PSC(tif)),warn);
     }
     else
@@ -775,7 +774,6 @@ extern void hashtable1_destroy(void *, int);
 
 void transitive_delete_predicate_table(CTXTdeclc TIFptr tif, xsbBool should_warn) {
 
-  //  printf("delete_variant_table %p\n",tif);
   SET_TRIE_ALLOCATION_TYPE_TIP(tif);
   delete_variant_table(CTXTc TIF_CallTrie(tif),get_incr(TIF_PSC(tif)),should_warn);
   TIF_CallTrie(tif) = NULL;
@@ -889,7 +887,6 @@ static BTNptr get_prev_sibl(BTNptr node)
  * structure manager to use (smBTN vs smTSTN)
  */
 void delete_branch(CTXTdeclc BTNptr lowest_node_in_branch, BTNptr *hook,int eval_method) {
-  //  printf("in delete branch\n");
 
   int num_left_in_hash;
   BTNptr prev, parent_ptr, *y1, *z;
@@ -1059,7 +1056,6 @@ void undelete_branch(BTNptr lowest_node_in_branch) {
    otherwise, need to set smBTN and smBTHT to private/shared */
 
 void delete_trie(CTXTdeclc BTNptr iroot) {
-  //  printf("in delete trie\n");
   BTNptr root, sib, chil;  
   int trie_op_top = 0;
   int trie_node_top = 0;
@@ -1666,14 +1662,12 @@ int interned_trie_cps_check(CTXTdeclc BTNptr root)
       // Below we want interned_trie_tt
       trieNode = TrieNodeFromCP(cp_top1);
       if (IsInInternTrie(trieNode)) {
-	//	printf(" found interned trie instruction\n");
 	pLeaf = trieNode;
 	while ( IsNonNULL(pLeaf) && (! IsTrieRoot(pLeaf)) && 
 		((int) TN_Instr(pLeaf) != trie_fail_unlock) ) {
 	  pLeaf = BTN_Parent(pLeaf);
 	}
 	if (pLeaf == root) {
-	  //	  printf(" found root!\n");
 	  return CANT_RECLAIM;
 	}
       }
@@ -3978,16 +3972,19 @@ void abolish_all_tables(CTXTdecl)
 #endif
 
 #ifdef BITS64
-#define STACK_MASK 0xfffffffffffffff
+#define STACK_MASK 0xffffffffffffff
 #else
-#define STACK_MASK 0xfffffff
+#define STACK_MASK 0xffffff
 #endif
 
 #define VISITED_ANSWER(as_leaf)  (asi_scratchpad((ASI) Child(as_leaf)) & VISITED_MASK)
 #define STACK_INDEX(as_leaf)  (asi_scratchpad((ASI) Child(as_leaf)) & STACK_MASK)
-#define MARK_VISITED_ANSWER(as_leaf) {asi_scratchpad((ASI) Child(as_leaf)) = VISITED_MASK;}
+#define MARK_VISITED_ANSWER(as_leaf) {asi_scratchpad((ASI) Child(as_leaf)) = asi_scratchpad((ASI) Child(as_leaf)) | VISITED_MASK;}
 #define MARK_STACK_INDEX(as_leaf,index) {			\
     asi_scratchpad((ASI) Child(as_leaf)) = ( VISITED_MASK | index );}
+
+#define POP_MARK_STACK_INDEX(as_leaf,index) {			\
+    asi_scratchpad((ASI) Child(as_leaf)) = ( POPPED_MASK | VISITED_MASK | index );}
 
 static int dfn = 0;
 
@@ -4006,6 +4003,18 @@ typedef struct answer_dfn *answerDFN;
 int component_stack_top = 0;
 answerDFN component_stack = NULL;
 int component_stack_size = 0;
+
+#ifdef BITS64
+#define POPPED_MASK 0x0f00000000000000
+#else
+#define POPPED_MASK 0x0f000000
+#endif
+
+#define POPPED_ANSWER(as_leaf)  (asi_scratchpad((ASI) Child(as_leaf)) & POPPED_MASK)
+#define	MARK_POPPED(answer_idx) ( \
+(asi_scratchpad((ASI) Child(component_stack[answer_idx].answer))) \
+= (asi_scratchpad((ASI) Child(component_stack[answer_idx].answer)) | POPPED_MASK))
+
 
 #define push_comp_node(as_leaf,index) {				\
   if (component_stack_top >= component_stack_size) {\
@@ -4088,7 +4097,7 @@ int done_answer_stack_size = 0;
     done_answer_stack[done_answer_stack_top].scc = dfn_num;				\
     done_answer_stack[done_answer_stack_top].checked = 0;				\
     done_answer_stack[done_answer_stack_top].answer = component_stack[index].answer;	\
-    MARK_STACK_INDEX(component_stack[index].answer,done_answer_stack_top);	\
+    POP_MARK_STACK_INDEX(component_stack[index].answer,done_answer_stack_top);	\
     done_answer_stack_top++;							\
   }
 
@@ -4139,8 +4148,9 @@ BTNptr traverse_subgoal(VariantSF pSF) {
   }							 \
 
 #define  update_minlink_dfn(from_answer,to_answer) { \
-    if (component_stack[to_answer].dfn < component_stack[from_answer].min_link)	 \
-      component_stack[from_answer].min_link = component_stack[to_answer].dfn;	 \
+    if (component_stack[to_answer].dfn < component_stack[from_answer].min_link) { \
+      printf(" to_answer dfn %d from answer minlink %d\n",component_stack[to_answer].dfn,component_stack[from_answer].min_link); \
+      component_stack[from_answer].min_link = component_stack[to_answer].dfn;	} \
   }							 \
 
 int table_component_check(CTXTdeclc NODEptr from_answer) {
@@ -4152,8 +4162,9 @@ int table_component_check(CTXTdeclc NODEptr from_answer) {
   //  if (is_conditional_answer(from_answer)) {
     push_comp_node(from_answer,from_answer_idx);
     //    printf("starting: %d %d ; ",VISITED_ANSWER(from_answer),STACK_INDEX(from_answer)); 
-       print_subgoal(CTXTc stddbg, asi_subgoal((ASI) Child(from_answer)));printf("\n");
-       
+    printf("tcc: ");print_subgoal(CTXTc stddbg, asi_subgoal((ASI) Child(from_answer)));printf("\n"); 
+    printf("*");    print_comp_stack(CTXT); printf("\n");
+      
     //    print_comp_stack(CTXT);
     delayList = asi_dl_list((ASI) Child(from_answer));
     while (delayList) {
@@ -4162,9 +4173,16 @@ int table_component_check(CTXTdeclc NODEptr from_answer) {
 	if (de_ans_subst(delayElement)) to_answer = de_ans_subst(delayElement);
 	else to_answer = traverse_subgoal(de_subgoal(delayElement));
 	if  (0 >  (to_answer_idx = visited_answer(to_answer))) {
+	  printf("doing table component check  ");
+	  printf("*");    print_comp_stack(CTXT); printf("\n");
 	  to_answer_idx = table_component_check(CTXTc to_answer);
 	  update_minlink_minlink(from_answer_idx,to_answer_idx);
-	} else update_minlink_dfn(from_answer_idx,to_answer_idx);
+	} else {
+	  if (!POPPED_ANSWER(to_answer)) {
+	    printf("updating from dfn to_answer %p %x\n",to_answer,asi_scratchpad((ASI) Child(to_answer)));
+	    update_minlink_dfn(from_answer_idx,to_answer_idx);
+	  }
+	}
 	delayElement = de_next(delayElement);
       }
       delayList = de_next(delayList);
@@ -4176,6 +4194,10 @@ int table_component_check(CTXTdeclc NODEptr from_answer) {
 	== component_stack[from_answer_idx].min_link) {
       component_num = component_stack[from_answer_idx].dfn;
       while (from_answer_idx < component_stack_top) {
+	MARK_POPPED(from_answer_idx);
+	printf("answer %x  scratch %x\n",component_stack[from_answer_idx].answer,
+	       asi_scratchpad((ASI) Child(component_stack[from_answer_idx].answer)));
+
 	push_done_node(component_stack_top-1,component_num);
 	component_stack_top--;
       }
@@ -4234,6 +4256,9 @@ int table_inspection_function( CTXTdecl ) {
   switch (ptoc_int(CTXTc 1)) {
 
   case FIND_COMPONENTS: {
+    dfn = 0;
+    component_stack_top = 0;
+    done_answer_stack_top = 0;
     table_component_check(CTXTc (NODEptr) ptoc_int(CTXTc 2));
     print_done_answer_stack(CTXT);
     unfounded_component(CTXT);
