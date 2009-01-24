@@ -91,8 +91,8 @@ int global_num_vars;
  * those that are bound to elements in VarEnumerator[].
  */
 #ifndef MULTI_THREAD
-static CPtr VarEnumerator_trail[NUM_TRIEVARS];
-static CPtr *VarEnumerator_trail_top;
+CPtr VarEnumerator_trail[NUM_TRIEVARS];
+CPtr *VarEnumerator_trail_top;
 #endif
 
 
