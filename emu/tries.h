@@ -340,6 +340,8 @@ typedef struct Call_Check_Insert_Results {
 
 #ifndef MULTI_THREAD
 extern int AnsVarCtr;
+extern CPtr VarEnumerator_trail[];
+extern CPtr *VarEnumerator_trail_top;
 
 extern BTNptr   newBasicTrie(Cell,int);
 extern byte *	trie_get_calls(void);
