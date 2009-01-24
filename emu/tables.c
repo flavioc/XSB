@@ -429,6 +429,7 @@ BTNptr table_answer_search(CTXTdeclc VariantSF producer, int size, int attv_num,
     //      fprintf(stddbg, "The answer is new: ");printTriePath(stderr, answer, NO);
     do_delay_stuff(CTXTc (NODEptr)answer, producer, wasFound);
 
+    VarEnumerator_trail_top = (CPtr *)(& VarEnumerator_trail[0]) - 1;
     undo_answer_bindings(CTXT);
     Trail_Unwind_All;
 
