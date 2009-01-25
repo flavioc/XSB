@@ -50,7 +50,9 @@
      from standard.
 :- import retractall/1, (dynamic)/1 from assert.
 :- import mpa_to_skel/2 from file_op.
-   :- import existence_error/4,misc_error/1, syntax_error/1 from error_handler.
+:- import existence_error/4,misc_error/1, syntax_error/1, domain_error/5, 
+   type_error/4, check_ground/3
+   from error_handler.
 
 :- import spawn_process/5, process_control/2 from shell.
 :- import xsb_configuration/2 from xsb_configuration.

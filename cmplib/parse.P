@@ -498,28 +498,35 @@ parse_directive(Directive,_QrList,_SymTab,_ModName) :-
 parse_directive(Query,QrList,SymTab,_ModName) :-  %% else its a query
 	parse_query(Query, QrList, SymTab).
 
+parse_table_options(Options,PredCList,QrList,SymTab,ModName) :- !,
+	check_ground(Options,(table)/1,1),
+	parse_table_options_1(Options,PredCList,QrList,SymTab,ModName).
 
-parse_table_options((Option,Options),PredCList,QrList,SymTab,ModName) :- !,
-	parse_table_options(Option,PredCList,QrList,SymTab,ModName),
-	parse_table_options(Options,PredCList,QrList,SymTab,ModName).
-parse_table_options(dynamic,PredCList,QrList,SymTab,ModName) :- !,
+parse_table_options_1((Option,Options),PredCList,QrList,SymTab,ModName) :- !,
+	parse_table_option(Option,PredCList,QrList,SymTab,ModName),
+	parse_table_options_1(Options,PredCList,QrList,SymTab,ModName).
+parse_table_options_1(Culprit,_PredCList,_QrList,_SymTab,_ModName) :- 
+	type_error(comma_list,Culprit,(table)/1,1).
+
+parse_table_option(dynamic,PredCList,QrList,SymTab,ModName) :- !,
 	parse_directive(dynamic(PredCList),QrList,SymTab,ModName).
-parse_table_options(dyn,PredCList,QrList,SymTab,ModName) :- !,
+parse_table_option(dyn,PredCList,QrList,SymTab,ModName) :- !,
 	parse_directive(dynamic(PredCList),QrList,SymTab,ModName).
-parse_table_options(subsumptive,PredCList,QrList,SymTab,ModName) :- !,
+parse_table_option(subsumptive,PredCList,QrList,SymTab,ModName) :- !,
 	parse_directive(use_subsumptive_tabling(PredCList),QrList,SymTab,ModName).
-parse_table_options(variant,PredCList,QrList,SymTab,ModName) :- !,
+parse_table_option(variant,PredCList,QrList,SymTab,ModName) :- !,
 	parse_directive(use_variant_tabling(PredCList),QrList,SymTab,ModName).
-parse_table_options(incremental,PredCList,QrList,SymTab,ModName) :- !,
+parse_table_option(incremental,PredCList,QrList,SymTab,ModName) :- !,
 	parse_directive(use_incremental_tabling(PredCList),QrList,SymTab,ModName).
-parse_table_options(opaque,PredCList,QrList,SymTab,ModName) :- !,
+parse_table_option(opaque,PredCList,QrList,SymTab,ModName) :- !,
 	parse_directive(use_opaque_tabling(PredCList),QrList,SymTab,ModName).
-parse_table_options(private,PredCList,QrList,SymTab,ModName) :- !,
+parse_table_option(private,PredCList,QrList,SymTab,ModName) :- !,
 	parse_directive(thread_private(PredCList),QrList,SymTab,ModName).
-parse_table_options(shared,PredCList,QrList,SymTab,ModName) :- !,
+parse_table_option(shared,PredCList,QrList,SymTab,ModName) :- !,
 	parse_directive(thread_shared(PredCList),QrList,SymTab,ModName).
-parse_table_options(Option,_PredCList,_QrList,_SymTab,_ModName) :- !,
-	error((Option,' is an illegal option for the table directive')).
+parse_table_option(Option,_PredCList,_QrList,_SymTab,_ModName) :- !,
+	domain_error(table_option,Option,(table)/1,1,
+	'must be one of dynamic,dyn,subsumptive,variant,incremental,opaque,private,shared').
 
 parse_dynamic_options((Option,Options),PredCList,QrList,SymTab,ModName) :- !,
 	parse_dynamic_options(Option,PredCList,QrList,SymTab,ModName),
