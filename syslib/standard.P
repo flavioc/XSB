@@ -929,18 +929,59 @@ index_convert_to_dyna(PHead,Type,Index) :-
 /*------------------------------------------------------------------*/
 
 /* add tabling declaration */
+/* Perhaps it would be better to check, then execute */
+table(as(Ps,List)) :- !,
+	table(Ps),
+	exec_table_options(List,Ps).
 table(Ps) :- 
 	check_nonvar(Ps,(table)/1,1),
+	table_1(Ps).
+
+table_1((One,Two)):- !,
+	table_2(One),
+	table_1(Two).
+table_1(Ps):- 
+	(structure(Ps) ; atom(Ps)),!,
 	(Ps=P/S,nonvar(P),nonvar(S)
 	 ->	Ps1 = Ps
 	 ;	functor(Ps,P,S), Ps1 = P/S
 	),
-%%	dynamic(Ps1),		% implies dynamic....
 	add_table(Ps1).
+table_1(Pred):- 
+	domain_error(comma_list\_or\_predicate\_indicator,Pred,(table)/1,1).
 
+exec_table_options(Options,PredList) :- !,
+	check_ground(Options,(table)/1,1),
+	exec_table_options_1(Options,PredList).
 
+exec_table_options_1((Option,Options),PredList) :- !,
+	exec_table_option(Option,PredList),
+	exec_table_options_1(Options,PredList).
+exec_table_options_1(Option,PredList) :- 
+	atom(Option),!,
+	exec_table_option(Option,PredList).
+exec_table_options_1(Culprit,_PredList) :- 
+	domain_error(comma_list_or_table_options,Culprit,(table)/1,1).
 
-
+exec_table_option(dynamic,PredList) :- !,
+	dynamic(PredList).
+exec_table_option(dyn,PredList) :- !,
+	dynamic(PredList).
+exec_table_option(subsumptive,PredList) :- !,
+	use_subsumptive_tabling(PredList).
+exec_table_option(variant,PredList) :- !,
+	use_variant_tabling(PredList).
+exec_table_option(incremental,PredList) :- !,
+	use_incremental_tabling(PredList).
+exec_table_option(opaque,PredList) :- !,
+	use_opaque_tabling(PredList).
+exec_table_option(private,PredList) :- !,
+	thread_private(PredList).
+exec_table_option(shared,PredList) :- !,
+	thread_shared(PredList).
+exec_table_option(Option,_PredList) :- !,
+	domain_error(table_option,Option,(table)/1,1,
+	'must be one of dynamic,dyn,subsumptive,variant,incremental,opaque,private,shared').
 
 /* for incremental evaluation: add incremental tabled declaration */
 
