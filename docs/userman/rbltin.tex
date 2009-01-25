@@ -629,16 +629,6 @@ error will be thrown.
 | when the file contains clauses defining the so-specified predicate.
 }
 
-\standarditem{table(+PredSpec)}{table/1}
-is an executable predicate, where PredSpec is a predicate
-specification for a dynamic predicate. (This is also a compiler
-directive when {\tt PredSpec} specifies a compiled predicate. See the
-section of this manual on compiler directives.) This predicate
-declares a dynamic predicate to be tabled. It simply saves information
-to be used at the time of assert and so it must be called before any
-clauses are asserted into the specified predicate in order for the
-predicate to be tabled.
-
 \end{description}
 
 \subsection{Reading Dynamic Code from Files} \label{sec:LoadDyn}

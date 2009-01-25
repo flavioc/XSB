@@ -137,13 +137,78 @@ a predicate \code{p} and arity \code{n}, represented as
 \begin{description}
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-\ourstandarditem{table\ \ +P$_1$/N$_1$, \ldots, +P$_k$/N$_k$.}{table/1}{Tabling}
+\ourstandarditem{table(+Operations)}{table/1}{Tabling}
 %
 Used as a compiler declaration, it indicates that each predicate
-denoted by the predicate indicator \code{P$_i$/N$_i$} is to be
-compiled using tabling.  Executed as a directive in a state of
-execution where no clauses exist for {\tt P$_i$/N$_i$}, {\tt table/1}
-ensures that any clauses asserted for {\tt P$_i$/N$_i$} use tabling.
+denoted by the command is to be compiled using tabling.  Executed as a
+directive in a state of execution where no clauses exist for each
+denoted predicate {\tt table/1} ensures that any clauses asserted
+each predicate use tabling.
+{\tt Operations} can take one of two forms:
+%
+\begin{enumerate}
+\item {\tt Operations} is a predicate indicator, a callable term, or
+  a comma-list or list of predicate indicators or callable terms.
+%
+\item {\tt Operations} has the form {\tt Predspec as Options} where
+\bi
+\item {\tt PredSpec} is a predicate indicator, a callable term, or p
+  comma-list or list of predicate indicators or callable terms.
+%
+\item {\tt Options} is either a table option or a list of table
+  options.  In \version, the following table options are supported
+\bi
+\item {\tt dynamic} or {\tt dyn} which causes the predicate(s) to be
+  treated as dynamic in addition to being tabled, and is equivalent to
+  {\tt ?- dynamic PredSpec}.
+%
+\item {\tt subsumptive} which causes the table evaluation method of
+  the predicate(s) to use call subsumption, and is
+  equivalent to {\tt ?- use\_subsumprive\_tabling PredSpec}.
+%
+\item {\tt variant} which causes the table evaluation method of the
+  predicate(s) to use call variance, and is equivalent to {\tt ?-
+    use\_variant\_tabling PredSpec}.
+%
+\item {\tt incremental} which causes the table evaluation method of
+  the predicate(s) to be incremental and is equivalent to {\tt ?-
+    use\_incremental\_tabling PredSpec}.
+%
+\item {\tt opaque} which indicates that the tables predicate is used
+  in the definition of an incremental table, but are not to be
+  incrementally maintained themselves.  It is equivalent to {\tt ?-
+    use\_opaque\_tabling PredSpec}.
+%
+\item {\tt private} which causes the predicate(s) to be treated as
+  thread private in addition to being tabled, and is equivalent to
+  {\tt ?- thread\_private PredSpec}.
+%
+\item {\tt shared} which causes the predicate(s) to be treated as
+  thread shared in addition to being tabled, and is equivalent to
+  {\tt ?- thread\_shared PredSpec}.
+%
+\ei
+\ei
+\end{enumerate}
+
+{\bf Error Cases}
+\bi
+\item {\tt Operations} is not ground
+\bi
+\item {\tt instantiation\_error}
+\ei
+\item {\tt Operations} is of the form {\tt PredSpec} as {\tt Options} and 
+\bi
+\item {\tt PredSpec} is not a comma-list 
+\bi
+\item {\tt domain\_error(comma\_list\_or\_predicate\_indicator,PredSpec)}
+\ei
+\item {\tt Options} is not a table option or a comma-list of table options
+\bi
+\item {\tt domain\_error(comma\_list\_or\_table\_option,Options)}
+\ei
+\ei
+\ei
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
