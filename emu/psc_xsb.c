@@ -355,16 +355,16 @@ Pair insert_module(int type, char *name)
 Pair link_sym(Psc psc, Psc mod_psc)
 {
     Pair *search_ptr, found_pair;
-    char *name, message[120];
+    char *name;
     byte arity, global_flag, type;
 
     SYS_MUTEX_LOCK_NOERROR( MUTEX_SYMBOL ) ;
     name = get_name(psc);
     arity = get_arity(psc);
-    if ( (global_flag = is_globalmod(mod_psc)) )
+    if ( (global_flag = is_globalmod(mod_psc)) ) {
       search_ptr = (Pair *)symbol_table.table +
 	           hash(name, arity, symbol_table.size);
-    else
+    } else
       search_ptr = (Pair *)&get_data(mod_psc);
     if ((found_pair = search(arity, name, search_ptr))) {
       if (pair_psc(found_pair) != psc) {
@@ -374,13 +374,19 @@ Pair link_sym(Psc psc, Psc mod_psc)
 	 */
 	type = get_type(pair_psc(found_pair));
 	if ( type != T_ORDI ) {
+	  char message[220], modmsg[200];
 	  if (type == T_DYNA || type == T_PRED) {
-	    Psc mod_psc = (Psc) get_data(pair_psc(found_pair));
-	    snprintf(message,120,
-		    "%s/%d (type %d) had been defined in module: %s",
-		    name, arity, type, mod_psc == 0 ? "usermod" : get_name(mod_psc));
+	    Psc mod_psc;
+	    mod_psc = (Psc) get_data(pair_psc(found_pair));
+	    if (mod_psc == 0) snprintf(modmsg,200,"%s","usermod");
+	    else if (isstring(mod_psc)) snprintf(modmsg,200,"usermod from file: %s",string_val(mod_psc));
+	    else snprintf(modmsg,200,"module: %s",get_name(mod_psc));
+	    snprintf(message,220,
+		    "%s/%d (type %d) had been defined in %s",
+		     name, arity, type, 
+		     modmsg);
 	  } else 
-	    snprintf(message,120,
+	    snprintf(message,220,
 		    "%s/%d (type %d) had been defined in another module!",
 		    name, arity, type);
 	  xsb_warn(message);
