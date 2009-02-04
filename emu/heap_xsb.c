@@ -242,7 +242,7 @@ int gc_strings = FALSE;
 
 int force_string_gc = FALSE; /* flag set when string space has expanded a lot */
 long last_string_space_size = 100000;
-static long last_assert_space_size = 10000;
+long last_assert_space_size = 10000;
 #define AUTO_STRING_GC_NTH 10
 
 /******* When to GC string space? *************/
