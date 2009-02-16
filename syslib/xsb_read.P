@@ -719,8 +719,17 @@ iso_read_syntax_error(Psc,Tokens):-
 	T1 = SpaceList,
 	T2 = PrintList1,
 	NewTail = [],
-	concat_atom(PrintList,NewMessage),
-	syntax_error(NewMessage).				     
+	cvt_strings(PrintList,PrintListNoStr),
+	concat_atom(PrintListNoStr,NewMessage),
+	syntax_error(NewMessage).			     
+
+cvt_strings([],[]).
+cvt_strings([T|Ts],NTs) :-
+	(T = string(NT)
+	 ->	NTs = ['"',NT,'"'|NTs0]  % for error message
+	 ;	NTs = [T|NTs0]
+	),
+	cvt_strings(Ts,NTs0).
 
 make_spaces(0,T,T):-!.
 make_spaces(N,[' '|R],Handle):-
