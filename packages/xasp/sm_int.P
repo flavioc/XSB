@@ -181,7 +181,7 @@ translated to unique integers.  The corresponding raw predicates,
 used to add raw predicates immediately into the SModels API. ").
 
 smcAddRule(Head,Body):- 
-	writeln(smcAddRule(Head,Body)),
+%	writeln(smcAddRule(Head,Body)),
 	(member(weightConst(_,_,_),[Head|Body]) -> 
 	    smcAddGeneralRule(Head,Body)
 	  ; smcAddBasicRule(Head,Body) ).
@@ -625,8 +625,9 @@ XSB clause store, and may be useful for debugging.").
 :- import thread_self/1 from thread.
 
 print_cache:- 
-	writeln('-----------------------------'),
-	thread_self(N),writeln(thread(N)),
+%	writeln('-----------------------------'),
+	thread_self(N),
+%       writeln(thread(N)),
 	fail.
 print_cache:- 
 	'$sm_fact'(N),
@@ -661,7 +662,7 @@ print_cache:-
 	translate_neglitlist(Neg,Negatom),
 	writeln(weightrule(A,weightConst(Bound,[Posatom,Negatom]),undef)),
 	fail.
-print_cache:- 	writeln('-----------------------------').
+print_cache.
 
 	
 translate_neglitlist([],[]).
@@ -753,7 +754,19 @@ assert_atomnum(One,Two):-
 private_conget(Tag,Value):- conget(Tag,Value).
 private_conset(Tag,Value):- conset(Tag,Value).
 */
+:- import trie_pras_unify/2,trie_pras_insert/2,trie_pras_delete/2 from intern.
 
+private_conget(Tag,Value):-
+	conset_trie(Root),
+	trie_pras_unify(Root,pair(Tag,Value)).
+
+private_conset(Tag,Value):-
+	conset_trie(Root),
+	(trie_pras_unify(Root,pair(Tag,V)) -> 
+	  trie_pras_delete(Root,pair(Tag,V)) ; true),
+	trie_pras_insert(Root,pair(Tag,Value)),!.
+
+/*
 private_conget(Tag,Value):-
 	conset_trie(Root),
 	trie_interned(tagged(Tag,Value),Root).
@@ -763,6 +776,6 @@ private_conset(Tag,Value):-
 	(trie_interned(tagged(Tag,V),Root) -> 
 	  deterministic_trie_unintern(tagged(Tag,V),Root) ; true),
 	deterministic_trie_intern(tagged(Tag,Value),Root),!.
-
+*/
 
 end_of_file.
