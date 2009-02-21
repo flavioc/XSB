@@ -33,36 +33,39 @@
 #include "smodels/atomrule.h"
 #include "xsb_config.h"
 
+Atom **globatoms;
+
 // These variables should not be global in the MT-engine.
 // They will soon be moved to the th_context structure so that
 // each thread can have its own Smodels instance.
-#define MULTI_THREAD 1
-#ifdef MULTI_THREAD
+
 #include "context.h"
+
+//#define MULTI_THREAD 1
+
+#ifdef MULTI_THREAD
 #include "xasp.h"
-Atom **globatoms;
 #else
 Smodels *smodels;
 Api *api;
 Atom **atoms;
-int curatom,totatoms; /* current atom, used during creation */
+int curatom, totatoms;
 #endif
 
 extern "C" void init(CTXTdecl)
 {
 
-  th->_smodels = (CPtr) (new Smodels);
-  //  smodels = (new Smodels);
+  smodels = (new Smodels);
   
-  th->_api = (CPtr) (new Api(&(((Smodels *) (th->_smodels))->program)));
+  api = (new Api(&(smodels)->program));
 }
 
 extern "C" void numberAtoms(CTXTdeclc int nAtoms)
 {
   int i;
 
-  //  atoms = (Atom **) malloc(sizeof(Atom*)*nAtoms);
-  th->_atoms = (CPtr) malloc(sizeof(Atom*)*nAtoms);
+  atoms = (Atom **) malloc(sizeof(Atom*)*nAtoms);
+
   for (i=0; i<nAtoms; i++) 
     atoms[i] = api->new_atom();
 
@@ -70,7 +73,7 @@ extern "C" void numberAtoms(CTXTdeclc int nAtoms)
   totatoms=nAtoms;
 }
 
-/***
+/*
 extern "C" void atomName(CTXTdeclc char *name)
 { 
   Atom ** loc_atoms = atoms;
@@ -78,8 +81,8 @@ extern "C" void atomName(CTXTdeclc char *name)
   api->set_name(globatoms[loc_curatom],name);
   curatom++;
 }
-***/
-extern "C" void __assert(const char *a, int b, const char *c) { return; }
+*/
+//extern "C" void __assert(const char *a, int b, const char *c) { return; }
 
 
 extern "C" void beginBasicRule(CTXTdecl)
@@ -145,7 +148,7 @@ extern "C" void printProgram(CTXTdecl)
 
 extern "C" int existsModel(CTXTdecl)
 {
-  printf("exists Model called\n");
+  //  printf("exists Model called\n");
   return smodels->model();
 }
 
