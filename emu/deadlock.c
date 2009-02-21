@@ -96,6 +96,8 @@ static void reset_thread( th_context *th, th_context *ctxt, VariantSF sgf,
 
 	/* delete the generator cp */
         breg = tcp_prevbreg(breg) ; 
+
+	ctxt->reset_thread = TRUE;
 }
 
 void reset_leader( th_context *th )
