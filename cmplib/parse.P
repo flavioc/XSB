@@ -455,6 +455,7 @@ parse_directive(compiler_options(Options),_QrList,_SymTab,_ModName) :- !,
 	check_file_compiler_options(Options),
 	setoptions1(Options).
 parse_directive(comment(_,_),_QrList,_SymTab,_ModName) :- !.
+parse_directive(meta_predicate(_),_QrList,_SymTab,_ModName) :- !.
 parse_directive(thread_shared(PredCList),_QrList,SymTab,_ModName) :- !,
 	parse_comma_list(PredCList,SymTab,[(thread_shared)],(thread_shared)).
 parse_directive(thread_private(PredCList),_QrList,SymTab,_ModName) :- !,
