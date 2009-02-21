@@ -1041,57 +1041,6 @@ copying garbage collector will be used; or it may be the atom
 collector will be used.
 }
 
-\standarditem{statistics(?Key,-Result)}{statistics/2}
-%
-{\tt statistics/2} allows a user to determine information about
-resources used by XSB.  Currently {\tt statistics/2} unifies {\tt Key}
-with
-\bi
-\item {\tt runtime}, which instantiates {\tt Result} to the structure
-  {\tt [TotalCPU,IncrCPU]} where {\tt TotalCPU} is the total
-  (process-level) CPU time at the time of call, and {\tt IncrCPU} is
-  the CPU time taken since the last call to {\tt statistics/2}.  Times
-  are measured in seconds.  The process-level CPU time includes time
-  taken for system calls, as well as time taken for garbage collection
-  and stack-shifting.  Note that in the multi-threaded engine,
-  {\tt statistics/2} measures the time for all threads.
-%
-\item {\tt walltime}, which instantiates {\tt Result} to the structure
-  {\tt [TotalTime,IncrTime]} where {\tt TotalTime} is the total
-  elapsed time at the time of call, and {\tt IncrTime} is the elapsed
-  time taken since the last call to {\tt statistics/2}.  Times are
-  measured in seconds.  
-\ei
-
-\comment{ 
-\standarditem{cputime(-CPU\_Time)}{cputime/1}
-%
-\standarditem{walltime(-Time)}{cputime/1}
-%
-Returns the \texttt{Time}, in seconds, since execution started, or
-since the last call to \texttt{statistics(0)} by any thread.
-
-Returns the (process-level) {\tt CPU\_Time} at the time of the call in
-seconds.  The difference between results of successive calls to this
-predicate can measure the time spent in specific predicates.  Note
-that in the multi-threaded engine, {cputime/1} measures the time for
-all threads.
-
-\standarditem{walltime(-Time)}{cputime/1}
-%
-Returns the \texttt{Time}, in seconds, since execution started, or
-since the last call to \texttt{statistics(0)} by any thread.
-}
-
-\standarditem{time(+Goal)}{time/1}
-\index{Prologs!SWI}
-\index{Prologs!YAP}
-%
-Prints both the CPU time and wall time taken by the execution of \texttt{Goal}.
-Any choice-points of \texttt{Goal} are discarded. The definition of predicate is based 
-on the SWI-Prolog definition (minus reporting the number of inferences, which XSB does 
-not currently support). This predicate is also found on other Prolog compilers such as YAP.
-
 \standarditem{statistics}{statistics/0}
 %
 Displays usage information on the current output stream, including: 
@@ -1312,6 +1261,57 @@ Total Strings:	1702
   While this option is intended primarily for developers, it can also
   provide valuable information for the serious user of tabling.
 \end{itemize}
+
+\standarditem{statistics(?Key,-Result)}{statistics/2}
+%
+{\tt statistics/2} allows a user to determine information about
+resources used by XSB.  Currently {\tt statistics/2} unifies {\tt Key}
+with
+\bi
+\item {\tt runtime}, which instantiates {\tt Result} to the structure
+  {\tt [TotalCPU,IncrCPU]} where {\tt TotalCPU} is the total
+  (process-level) CPU time at the time of call, and {\tt IncrCPU} is
+  the CPU time taken since the last call to {\tt statistics/2}.  Times
+  are measured in seconds.  The process-level CPU time includes time
+  taken for system calls, as well as time taken for garbage collection
+  and stack-shifting.  Note that in the multi-threaded engine,
+  {\tt statistics/2} measures the time for all threads.
+%
+\item {\tt walltime}, which instantiates {\tt Result} to the structure
+  {\tt [TotalTime,IncrTime]} where {\tt TotalTime} is the total
+  elapsed time at the time of call, and {\tt IncrTime} is the elapsed
+  time taken since the last call to {\tt statistics/2}.  Times are
+  measured in seconds.  
+\ei
+
+\comment{ 
+\standarditem{cputime(-CPU\_Time)}{cputime/1}
+%
+\standarditem{walltime(-Time)}{cputime/1}
+%
+Returns the \texttt{Time}, in seconds, since execution started, or
+since the last call to \texttt{statistics(0)} by any thread.
+
+Returns the (process-level) {\tt CPU\_Time} at the time of the call in
+seconds.  The difference between results of successive calls to this
+predicate can measure the time spent in specific predicates.  Note
+that in the multi-threaded engine, {cputime/1} measures the time for
+all threads.
+
+\standarditem{walltime(-Time)}{cputime/1}
+%
+Returns the \texttt{Time}, in seconds, since execution started, or
+since the last call to \texttt{statistics(0)} by any thread.
+}
+
+\standarditem{time(+Goal)}{time/1}
+\index{Prologs!SWI}
+\index{Prologs!YAP}
+%
+Prints both the CPU time and wall time taken by the execution of \texttt{Goal}.
+Any choice-points of \texttt{Goal} are discarded. The definition of predicate is based 
+on the SWI-Prolog definition (minus reporting the number of inferences, which XSB does 
+not currently support). This predicate is also found on other Prolog compilers such as YAP.
 
 \end{description}
 
