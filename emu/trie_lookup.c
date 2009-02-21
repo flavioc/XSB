@@ -1430,6 +1430,8 @@ static BTNptr rec_sub_trie_lookup(CTXTdeclc BTNptr parent, TriePathType *pathTyp
  * there exists a subsuming path in the given trie.  A pointer to the
  * leaf of the discovered path, if any, is returned, and a flag is set
  * to indicate how the path relates to the subterm.
+ * 
+ * Used in get_producer_call/3 and other Prolog routines.
  */
 
 void *subsumptive_trie_lookup(CTXTdeclc void *trieRoot, int nTerms, CPtr termVector,
