@@ -79,12 +79,49 @@ mean the following:
 In XSB {\tt current\_input/1} does not throw an error if {\tt Stream}
 is not a current input stream, but quietly fails instead.
 
+\index{Prolog-commons}
 \isoitem{current\_prolog\_flag(?Flag\_Name, ?Value)}{current\_prolog\_flag/2}
 %
 {\tt current\_prolog\_flag/2} allows the user to examine both dynamic
-aspects of XSB along with certain non-changeable ISO flags.  Calls to
-{\tt current\_prolog\_flag/2} will unify against not only standard
-Prolog flags, but also values of {\tt xsb\_flag/2}.
+aspects of XSB along with certain non-changeable ISO flags and
+non-changeable Prolog-commons flags.  Calls to {\tt
+  current\_prolog\_flag/2} will unify against not only standard Prolog
+flags, but also values of {\tt xsb\_flag/2}.  ISO and Prolog-commons
+flags are as follows:
+
+\begin{itemize}
+\item {\tt bounded} Indicates whether integers in XSB are bounded.
+  This flag always has the value {\tt true}
+%
+\item {\tt min\_integer, max\_integer} The minimum integer available in the current
+  XSB configuration (differs between 32- and 64-bits.
+%
+\item {\tt max\_arity} Indicates the maximum arity of terms in XSB.
+  This flag always has the value {\tt 255}
+%
+\item {\tt integer\_rounding\_function} This flag always has the value
+  {\tt toward\_zero}
+%
+\item {\tt integer\_rounding\_function} This flag always has the value
+  {\tt toward\_zero}
+%
+\item {\tt debug} Indicates whether trace or debugging is turned {\tt
+  on} or {\tt off}
+%
+\item {\tt unknown} Indicates the behavior taken when calling an
+  unknown predicate.  Values can be set to {\tt fail}, {\tt warning},
+  or {\tt error}, indincating that calls to unknown predicates fail,
+  produce a warning message to {\tt user\_warning} or throw an
+  existence error.  The default setting is {\tt error}.
+%
+\item {\tt double\_quotes} Indicates that double-quoted terms in XSB
+  represent lists of character codes.  Value is {\tt codes}
+%
+\item {\tt dialect} indicates the implementation of Prolog that is
+  running.  Using this flag, applications intended to run on more than
+  one Prolog can take actions that conditional on the executing
+  Prolog.  The value is {\tt xsb}.
+\end{itemize}
 
 {\bf Error Cases}
 \bi
@@ -1003,9 +1040,37 @@ copying garbage collector will be used; or it may be the atom
 \verb|indirection| indicating that the indirect-sliding garbage
 collector will be used.
 }
- 
+
+\standarditem{statistics(?Key,-Result)}{statistics/2}
+%
+{\tt statistics/2} allows a user to determine information about
+resources used by XSB.  Currently {\tt statistics/2} unifies {\tt Key}
+with
+\bi
+\item {\tt runtime}, which instantiates {\tt Result} to the structure
+  {\tt [TotalCPU,IncrCPU]} where {\tt TotalCPU} is the total
+  (process-level) CPU time at the time of call, and {\tt IncrCPU} is
+  the CPU time taken since the last call to {\tt statistics/2}.  Times
+  are measured in seconds.  The process-level CPU time includes time
+  taken for system calls, as well as time taken for garbage collection
+  and stack-shifting.  Note that in the multi-threaded engine,
+  {\tt statistics/2} measures the time for all threads.
+%
+\item {\tt walltime}, which instantiates {\tt Result} to the structure
+  {\tt [TotalTime,IncrTime]} where {\tt TotalTime} is the total
+  elapsed time at the time of call, and {\tt IncrTime} is the elapsed
+  time taken since the last call to {\tt statistics/2}.  Times are
+  measured in seconds.  
+\ei
+
+\comment{ 
 \standarditem{cputime(-CPU\_Time)}{cputime/1}
 %
+\standarditem{walltime(-Time)}{cputime/1}
+%
+Returns the \texttt{Time}, in seconds, since execution started, or
+since the last call to \texttt{statistics(0)} by any thread.
+
 Returns the (process-level) {\tt CPU\_Time} at the time of the call in
 seconds.  The difference between results of successive calls to this
 predicate can measure the time spent in specific predicates.  Note
@@ -1016,6 +1081,7 @@ all threads.
 %
 Returns the \texttt{Time}, in seconds, since execution started, or
 since the last call to \texttt{statistics(0)} by any thread.
+}
 
 \standarditem{time(+Goal)}{time/1}
 \index{Prologs!SWI}
