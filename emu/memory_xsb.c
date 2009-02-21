@@ -202,8 +202,8 @@ void *mem_calloc(unsigned long size, unsigned long occs, int category)
 {
     byte * ptr;
 
-#ifdef NON_OPT_COMPILE
     unsigned long length = (size*occs+7) & ~0x7;
+#ifdef NON_OPT_COMPILE
     //    printf("Callocing size %d occs %d category %d\n",size,occs,category);
     memcount_gl.num_mem_allocs++;
     SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
