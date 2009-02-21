@@ -249,6 +249,8 @@ standard_symbol(mutex_unlock_all,0,  mutex_xsb).
 standard_symbol(mutex_property,2, mutex_xsb).
 standard_symbol((multifile), 1, standard).
 
+%standard_symbol(member,2,basics).
+
 standard_symbol(name, 2, standard).
 standard_symbol(nl, 0, standard).
 standard_symbol(nl, 1, standard).
@@ -329,6 +331,7 @@ standard_symbol(spawn_process, 5, shell).
 standard_symbol((spy), 1, debugger).
 standard_symbol(statistics, 0, standard).
 standard_symbol(statistics, 1, standard).
+standard_symbol(statistics, 2, standard).
 standard_symbol(time, 1, standard).			% also in SWI-Prolog and YAP
 standard_symbol(str_cat, 3, string).
 standard_symbol(str_length, 2, string).

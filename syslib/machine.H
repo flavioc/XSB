@@ -95,6 +95,7 @@
 	getenv/2, 
 	putenv/1, 
 	sys_syscall/4,
+	sys_syscall/5,
 	sys_system/7, 
 	sys_gethost/2, 
 	sys_errno/1, 

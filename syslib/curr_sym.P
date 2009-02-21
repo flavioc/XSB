@@ -570,7 +570,9 @@ current_prolog_flag(Flag,Value):-
 	((var(Flag) ; atom(Flag)) -> 
 	    true
 	  ; domain_error(atom_or_variable,Flag,current_prolog_flag/2,1) ),
-	  (iso_flag(Flag,Value) ; xsb_flag(Flag,Value)).
+	  (  iso_flag(Flag,Value) 
+           ; xsb_flag(Flag,Value)
+           ; prolog_commons_flag(Flag,Value)).
 
 settable_flag(unknown).
 settable_flag_value(unknown,error).
@@ -628,6 +630,10 @@ iso_flag(double_quotes,codes).
 %iso_flag(double_quotes,{chars,codes,atom}).
 % TLS: shd. add
 %iso_flag(unknown,{error,warning,fail})
+
+/* ===== prolog_commons_flag/2 ========================================== */
+
+prolog_commons_flag(dialect,xsb).
 
 /* ===== xsb_flag/2 ========================================== */
 

@@ -100,6 +100,7 @@ deactivate_op(T, S) :-
 
 :- dynamic dyn_op(_,_,_).	% need this form so get right psc record.
 
+
 '_$op1'(1200,xfx,(':-')).
 '_$op1'(1200,xfx,('-->')).	% Not in the Prolog standard
 '_$op1'(1200,fx,(':-')).
@@ -108,6 +109,7 @@ deactivate_op(T, S) :-
 '_$op1'(1150,fx,(hilog)).	% Added for HiLog
 '_$op1'(1150,fx,(dynamic)).
 '_$op1'(1150,fx,(multifile)).
+'_$op1'(1150,fx,meta_predicate).
 '_$op1'(1100,xfy,';').
 '_$op1'(1100,fx,(table)).	% Added for tabling
 '_$op1'(1100,fx,(use_variant_tabling)).		% Added for tabling

@@ -39,6 +39,8 @@
 #include "io_defs_xsb.h"
 #include "heap_defs_xsb.h"
 #include "biassert_defs.h"
+#include "system_defs_xsb.h"
+
 
 :- import (:-)/2 from usermod.
 :- import fmt_write/2 from file_io.
@@ -1416,6 +1418,21 @@ check_statistics_input(mutex,4):- !.
 check_statistics_input(atom,8):- !.
 check_statistics_input(X,_):-
 	domain_error(statisticsInputDomain,X,statistics/1,1).
+
+statistics_2_trans(runtime,RUNTIME).
+statistics_2_trans(walltime,WALLTIME).
+
+:- export statistics/2.
+:- import sys_syscall/5 from machine.
+
+statistics(Type,Result):- 
+	statistics_2_trans(Type,Num),
+	statistics_1(Num,Result).
+
+statistics_1(RUNTIME,[R1,R2]):- 
+	sys_syscall(STATISTICS_2,_RES,RUNTIME,R1,R2).
+statistics_1(WALLTIME,[R1,R2]):- 
+	sys_syscall(STATISTICS_2,_RES,WALLTIME,R1,R2).
 
 %%	time(+Goal)
 %
