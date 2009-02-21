@@ -5,11 +5,11 @@
 
 XSB has two ways of evaluating predicates.  The default is to use
 Prolog-style evaluation, but by using various declarations a
-programmer can also use tabled resolution which allows for a
+programmer can also use tabled resolution which can provide a
 different, more declarative programming style than Prolog.  In this
-section we discuss various aspects of tabling and how it is
-implemented in XSB\@.  Our aim in this section is to provide a user
-with enough information to be able to program productively in XSB\@.
+section we discuss various aspects of tabling and its implementation
+in XSB\@.  Our aim in this section is to provide a user with enough
+information to be able to program productively with tables in XSB\@.
 It is best to read this tutorial with a copy of XSB handy, since much
 of the information is presented through a series of exercises.
 
@@ -146,12 +146,20 @@ These programs include the important class of \emph{Datalog} programs.
 Predicates can be declared tabled in a variety of ways.  A common form
 is the compiler directive \stdrefindex{table/1}
 \[
-	\verb|:- table | p_1/n_1, \ldots, p_k/n_k.
+	\verb|:- table | P_1, \ldots, P_n.
 \]
-where $p_i$ is a predicate symbol and $n_i$ is an integer representing
-the arity of $p_i$.  For static predicates, this is directive added to
-a file containing the predicate(s) to be tabled, compiles them to use
-tabling.  For dynamic predicates, the executable directive 
+where $P_i$ is a predicate indicator or callable term.  More
+generally as explained below,
+\[
+	\verb|:- table | P_1, \ldots, P_n\ {\tt as\ Options}.
+\]
+allows a user to specify different types of tabling through {\tt
+  Options} along with other properties of the designated predicates
+For static predicates, these directives must be added to the file
+containing the clauses of the predicate(s) to be tabled, and compiles
+them to use tabling~\footnote{In \version, tabling does not work
+  together with multi-file predicates.}.  For dynamic predicates, the
+executable directive
 \[
        \verb| ?- table | p/n.
 \]
@@ -376,7 +384,10 @@ downsides to this paradigm.  First of all, subsumptively tabled
 predicates do not interact well with certain Prolog constructs with
 which variant-tabled predicates can (see
 Example~\ref{example:sub-fail} below).  Second, call subsumption does
-not yet support tabled attributed variables or answer subsumption.
+not yet support calls with tabled attributed variables or answer
+subsumption~\footnote{Beginning with Version 3.2, XSB supports
+  attributed variables in answers under call subsumption, although not
+  in calls.}.
 
 %Further, in the
 %current implementation of subsumption-based tabling, subsumptive

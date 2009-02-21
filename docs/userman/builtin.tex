@@ -2640,6 +2640,11 @@ If {\tt +P} is a non-tabled predicate {\tt sk\_not/1} ensures that
   sk\_not/1} can be used with non-tabled predicates as well,
 regardless of whether {\tt +P} is ground or not.
 
+{\tt sk\_not/1} uses an auxiliary tabled predicate, {\tt tunnumcall/1}
+in its execution.  Therefore to reclaim space at the predicate or call
+level (e.g. using {\tt abolish\_table\_pred/1} or similar predicates),
+{\tt tunnumcall/1} must be explicitly abolished.
+
 {\bf Error Cases}
 \begin{itemize}
 \item	{\tt P} is not instantiated
