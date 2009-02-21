@@ -4104,11 +4104,13 @@ int done_answer_stack_size = 0;
 void print_done_answer_stack(CTXTdecl) {
   int frame = 0;
   while (frame < done_answer_stack_top) {
-    printf("done_frame %d answer %p scc %d checked %d ",frame, 
-	   done_answer_stack[frame].answer,done_answer_stack[frame].scc,done_answer_stack[frame].checked);
-    print_subgoal(CTXTc stddbg, asi_subgoal((ASI) Child(done_answer_stack[frame].answer)));
-    printf("\n");
-    frame++;
+    if (done_answer_stack[frame].answer) {
+      printf("done_frame %d answer %p scc %d checked %d ",frame, 
+	     done_answer_stack[frame].answer,done_answer_stack[frame].scc,done_answer_stack[frame].checked);
+      print_subgoal(CTXTc stddbg, asi_subgoal((ASI) Child(done_answer_stack[frame].answer)));
+      printf("\n");
+      frame++;
+    }
   }
 }
 
@@ -4195,9 +4197,6 @@ int table_component_check(CTXTdeclc NODEptr from_answer) {
       component_num = component_stack[from_answer_idx].dfn;
       while (from_answer_idx < component_stack_top) {
 	MARK_POPPED(from_answer_idx);
-	printf("answer %x  scratch %x\n",component_stack[from_answer_idx].answer,
-	       asi_scratchpad((ASI) Child(component_stack[from_answer_idx].answer)));
-
 	push_done_node(component_stack_top-1,component_num);
 	component_stack_top--;
       }
@@ -4220,7 +4219,8 @@ void unfounded_component(CTXTdecl) {
     founded = 0; 
     index = starting_index;
     starting_scc = done_answer_stack[index].scc;
-    while (!founded && done_answer_stack[index].scc == starting_scc) {
+    while (!founded && done_answer_stack[index].scc == starting_scc 
+	   && index < done_answer_stack_top) {
       cur_answer = done_answer_stack[index].answer;
       delayList = asi_dl_list((ASI) Child(cur_answer));
       print_subgoal(CTXTc stddbg, asi_subgoal((ASI) Child(cur_answer)));printf("\n");
@@ -4240,8 +4240,21 @@ void unfounded_component(CTXTdecl) {
       index++;
     }
     if (!founded) {
+      for ( ; done_answer_stack[starting_index].scc == starting_scc && starting_index < done_answer_stack_top ; starting_index++) {
+
       printf("SCC %d is unfounded!\n",starting_scc);
       // start simplification operations
+
+      /* This function is not used much, and does not handle call subsumption */ 
+      //    SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
+      //      subgoal = asi_subgoal(Delay(cur_answer));
+      release_all_dls(CTXTc Delay(cur_answer));
+      //    SET_TRIE_ALLOCATION_TYPE_SF(subgoal);
+      handle_unsupported_answer_subst(CTXTc cur_answer);
+      //    SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
+
+      done_answer_stack[starting_index].answer = 0;
+      } 
     }
     else {
       printf("SCC %d is founded\n",starting_scc);
@@ -4251,6 +4264,76 @@ void unfounded_component(CTXTdecl) {
   }
 }
 
+#ifdef UNDEFINED
+
+#include "system_xsb.h"
+
+xsbBool checkSupportedAnswer(BTNptr answer_leaf) {
+  int index, answer_supported, delaylist_supported;
+  DL DelayList;
+  DE DelayElement;  
+
+  if (VISITED_ANSWER(answer_leaf)) {
+    if (FALSE) /* answer_leaf is in completion stack */
+      return FALSE;
+    else return TRUE;
+  }
+  else { /* not visited */
+    MARK_VISITED_ANSWER(answer_leaf);
+    push_comp_node(answer_leaf,index);
+    DelayList = asi_dl_list(Delay(answer_leaf));
+    answer_supported = UNKNOWN;
+    while (DelayList && answer_supported != TRUE) {
+      DelayElement = dl_de_list(DelayList);
+      delaylist_supported = TRUE; /* UNKNOWN? */
+      while (DelayElement && delaylist_supported != FALSE) {
+	if (de_positive(DelayElement) /* && Is in SCC */) {
+	  if (!checkSupportedAnswer((BTNptr) de_ans_subst(DelayElement)))
+	    delaylist_supported = FALSE;
+	  DelayElement = de_next(DelayElement);
+	}
+        if (delaylist_supported == FALSE) { /* does this propagate */
+	  if (!remove_dl_from_dl_list(CTXTc DelayList, Delay(answer_leaf)))
+	    simplify_pos_unsupported(CTXTc (NODEptr) answer_leaf);
+	}
+	else answer_supported = TRUE;
+      }
+      DelayList = dl_next(DelayList);
+    }
+    if (IsValidNode(answer_leaf)) return TRUE;
+    else return FALSE;
+  }
+}
+
+
+void resetStack() {
+}
+
+void answer_completion(CTXTdeclc CPtr cs_ptr) {
+  VariantSF compl_subg;
+  CPtr ComplStkFrame = cs_ptr; 
+  ALNptr answerPtr;
+  BTNptr answer_leaf;
+
+  printf("calling answer completion\n");
+
+  /* For each subgoal S in SCC */
+  while (ComplStkFrame >= openreg) {
+    compl_subg = compl_subgoal_ptr(ComplStkFrame);
+    answerPtr = subg_ans_list_ptr(compl_subg);
+    while (answerPtr ) {
+      answer_leaf = ALN_Answer(answerPtr);
+      checkSupportedAnswer(answer_leaf);
+      resetStack();
+      answerPtr = ALN_Next(answerPtr);
+    }
+
+    ComplStkFrame = next_compl_frame(ComplStkFrame);
+  }
+
+}
+
+#endif
 //----------------------------------------------------------------------
 int table_inspection_function( CTXTdecl ) {
   switch (ptoc_int(CTXTc 1)) {
@@ -4262,7 +4345,8 @@ int table_inspection_function( CTXTdecl ) {
     table_component_check(CTXTc (NODEptr) ptoc_int(CTXTc 2));
     print_done_answer_stack(CTXT);
     unfounded_component(CTXT);
-    print_done_answer_stack(CTXT);
+    printf("done w. unfounded component\n");
+    //    print_done_answer_stack(CTXT);
     break;
   }
 
@@ -4312,6 +4396,7 @@ int table_inspection_function( CTXTdecl ) {
   
   case FIND_ANSWERS: {
     return find_pred_backward_dependencies(CTXTc get_tip(CTXTc term_psc(ptoc_tag(CTXTc 2))));
+
   }
 
 /********************************************************************

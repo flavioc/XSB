@@ -66,6 +66,8 @@
 #include "thread_defs_xsb.h"
 #include "thread_xsb.h"
 
+extern void get_statistics(CTXTdecl);
+
 #define MAX_CMD_LEN 8192
 
 static int xsb_spawn (CTXTdeclc char *prog, char *arg[], int callno,
@@ -182,6 +184,10 @@ int sys_syscall(CTXTdeclc int callno)
     break;
   }
 
+  case STATISTICS_2: {
+    get_statistics(CTXT);
+    break;
+  }
   default: xsb_abort("[SYS_SYSCALL] Unknown system call number, %d", callno);
   }
   return result;

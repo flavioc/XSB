@@ -47,11 +47,15 @@
 #include "thread_xsb.h"
 #include "deadlock.h"
 #include "slgdelay.h"
+#include "cinterf.h"
+#include "system_defs_xsb.h"
 
 /*======================================================================*/
 /* Process-level information: keep this global */
 
 double time_start;      /* time from which stats started being collected */
+static double last_cpu = 0;      /* time from which stats started being collected */
+static double last_wall = 0;      /* time from which stats started being collected */
 
 #ifndef MULTI_THREAD
 struct trace_str tds;			/* trace datastructure */
@@ -601,3 +605,46 @@ void reset_stat_total(void)
 #endif
 
 /*======================================================================*/
+
+// dont use register 2 -- used for return in sys_syscall
+extern double realtime_count_gl; /* from subp.c */
+
+void  get_statistics(CTXTdecl) {
+  int type;
+
+  type = ptoc_int(CTXTc 3);
+  switch (type) {
+// runtime [since start of Prolog,since previous statistics] 
+// CPU time used while executing, excluding time spent
+// garbage collecting, stack shifting, or in system calls. 
+  case RUNTIME: {
+    double tot_cpu, incr_cpu;
+
+    tot_cpu = cpu_time();
+    incr_cpu = tot_cpu - last_cpu;
+    last_cpu = tot_cpu;
+    //    tds.time_count = incr_cpu - time_start;
+    //    reset_stat_total(); 	/* reset 'ttt' struct variable (all 0's) */
+
+    ctop_float(CTXTc 4, tot_cpu);
+    ctop_float(CTXTc 5, incr_cpu);
+    break;
+  }
+  case WALLTIME: {
+    double tot_wall,this_wall,incr_wall;
+
+    this_wall = real_time();
+    tot_wall = this_wall - realtime_count_gl;
+
+    if (!last_wall) last_wall = realtime_count_gl;
+    incr_wall = this_wall - last_wall;
+    last_wall = this_wall;
+
+    ctop_float(CTXTc 4, tot_wall);
+    ctop_float(CTXTc 5, incr_wall);
+    break;
+  }
+  }
+}
+
+

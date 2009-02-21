@@ -38,3 +38,9 @@
 #define EXEC                     11
 #define GET_TMP_FILENAME         12
 #define LIST_DIRECTORY           13
+#define STATISTICS_2             14
+
+#define RUNTIME 0
+#define WALLTIME 1
+
+

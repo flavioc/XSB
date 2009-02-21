@@ -326,11 +326,11 @@ static inline void CompleteSimplifyAndReclaim(CTXTdeclc CPtr cs_ptr)
     ComplStkFrame = next_compl_frame(ComplStkFrame);
   } /* while */
   
-  /* TLS: placemarker while I develop it.  This function should happen
+  /* TLS: placemarker for development.  This function should happen
    *after* simplification and *before* removal of answer lists, which
-   is useful for traversing dependency graphs. */
+   *is useful for traversing dependency graphs. */
 
-  /*  remove_unfounded_set(cs_ptr); */
+  //  answer_completion(CTXTc cs_ptr);
       
   /* reclaim all answer lists, but the one for the leader */
   ComplStkFrame = next_compl_frame(cs_ptr);

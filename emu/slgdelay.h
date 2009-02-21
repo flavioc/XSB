@@ -131,6 +131,7 @@ struct delay_element {
 #define de_subs_fact(X)	     (X) -> subs_fact
 #define de_subs_fact_leaf(X) (X) -> subs_fact_leaf
 
+#define de_positive(X)   ((X) -> ans_subst != NULL)
 /*--------------------------------------------------------------------*/
 
 struct delay_list {
@@ -251,6 +252,7 @@ extern xsbBool answer_is_junk(CPtr);
 extern void abolish_wfs_space(void);
 extern void simplify_neg_fails(VariantSF);
 extern void do_delay_stuff(NODEptr, VariantSF, xsbBool);
+extern void handle_unsupported_answer_subst(NODEptr);
 #else
 struct th_context;
 extern xsbBool answer_is_junk(struct th_context *,CPtr);
@@ -258,6 +260,7 @@ extern void abolish_wfs_space(struct th_context *);
 extern void abolish_private_wfs_space(struct th_context *);
 extern void simplify_neg_fails(struct th_context *, VariantSF);
 extern void do_delay_stuff(struct th_context *, NODEptr, VariantSF, xsbBool);
+extern void handle_unsupported_answer_subst(struct th_context *, NODEptr);
 #endif
 extern unsigned long unused_de_space(void);
 extern unsigned long unused_dl_space(void);

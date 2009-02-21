@@ -429,7 +429,8 @@ Cell _pflags[MAX_PRIVATE_FLAGS];
 /* stuff for deadlock detection in completion */
 #ifdef SHARED_COMPL_TABLES
 int waiting_for_tid;
-int is_deadlock_leader;
+	int is_deadlock_leader;
+int reset_thread;
 struct th_context *tmp_next;
 struct subgoal_frame *	waiting_for_subgoal;
 #endif

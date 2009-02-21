@@ -937,7 +937,7 @@ static xsbBool remove_de_from_dl(CTXTdeclc DE de, DL dl)
  * simplify_neg_succeeds() and simplify_pos_unsupported()).
  ******************************************************************/
 
-static xsbBool remove_dl_from_dl_list(CTXTdeclc DL dl, ASI asi)
+xsbBool remove_dl_from_dl_list(CTXTdeclc DL dl, ASI asi)
 {
   DL current = asi_dl_list(asi);
   DL prev_dl = NULL;
@@ -1159,7 +1159,7 @@ static void handle_empty_dl_creation(CTXTdeclc DL dl)
  * all DLs of as_leaf are removed (by remove_dl_from_dl_list)
  *******************************************************************/
 
-static void handle_unsupported_answer_subst(CTXTdeclc NODEptr as_leaf)
+void handle_unsupported_answer_subst(CTXTdeclc NODEptr as_leaf)
 {
 
   ASI unsup_asi = Delay(as_leaf);
@@ -1189,7 +1189,7 @@ static void handle_unsupported_answer_subst(CTXTdeclc NODEptr as_leaf)
   /* must do delete branch before simplifying -- otherwise checks will be thrown off */
   if (IsSubProdSF(unsup_subgoal)) 
     delete_branch(CTXTc as_leaf, &subg_ans_root_ptr(unsup_subgoal),SUBSUMPTIVE_EVAL_METHOD);
-  else {
+  else { /* VariantSF -- set to private or shared.  */
     SET_TRIE_ALLOCATION_TYPE_SF(unsup_subgoal);
     delete_branch(CTXTc as_leaf, &subg_ans_root_ptr(unsup_subgoal),VARIANT_EVAL_METHOD);
   }
@@ -1445,7 +1445,8 @@ void simplify_pos_unsupported(CTXTdeclc NODEptr as_leaf)
 	else {			  /* is PDE */
 	  de_asi = Delay(de_ans_subst(de));
 #ifdef MULTI_THREAD
-	  de_asi = Delay(de_ans_subst(de));
+	  /* TLS: changed this */
+	  //	  de_asi = Delay(de_ans_subst(de));
 	  if (IsPrivateSF(asi_subgoal(de_asi)))
 	    remove_pnde(asi_pdes(de_asi), de_pnde(de),private_released_pndes)
 	  else
@@ -1589,7 +1590,6 @@ void force_answer_true(CTXTdeclc NODEptr as_leaf)
   }
 }
 
-/* This function is not used much, and does not handle call subsumption */ 
 void force_answer_false(CTXTdeclc NODEptr as_leaf)
 {
   ASI asi = Delay(as_leaf);
