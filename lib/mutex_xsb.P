@@ -146,6 +146,19 @@ with_mutex_handler(Ball,Mutex):-
 	thread_request(XSB_MUTEX_UNLOCK,Mutex,_,_,_,_,_,_,_),
 	throw(Ball).
 
+%-----------------------------
+
+mutex_unlock_all:- 
+	thread_request( MUTEX_UNLOCK_ALL,_,_,_,_,_,_,_,_).
+
+%-----------------------------
+
+mutex_property(Mutex, Property) :-
+	(nonvar(Mutex) -> 
+   	   ('_$alias_dynamic'(Mutex,MUTEX_ALIAS,Mid) -> true ; mutex_error(Mutex,mutex_property/2)),
+	   bound_mutex_property(Mid, Property)
+          ;     mutex_property_list(Mutex, Property) ).
+
 get_first_mutex_property(This,Locks,Owner,Next):-
 	thread_request( GET_FIRST_MUTEX_PROPERTY,This,Locks,Owner,Next,_,_,_,_).
 
