@@ -6,8 +6,8 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "/Users/macuser/XSB/XSB/emu/cinterf.h"
-#include "/Users/macuser/XSB/XSB/emu/context.h"
+#include "../../emu/cinterf.h"
+#include "../../emu/context.h"
 
 /* New Definition: smodelsInit from void init(CTXTdecl). */
 void init(CTXTdecl );
