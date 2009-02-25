@@ -18,6 +18,143 @@
 
 <h1>Release Notes</h1>
 
+<h2> Version 3.2 (Kopi Lewak)</h2>
+
+Version 3.2 is a major rewriting of XSB that includes new
+functionalities and significantly improves XSB's stability and speed.
+Some of the improvements for Version 3.2 are as follows.
+
+<h3>Constraint libraries</h3>
+     While XSB has long supported attributed variables and constraint
+     handling rules, it has been missing constraint libraries for the
+     past few versions.  Version 3.2 includes both CLP(R) and a simple
+     finite domain range solver.  Constraint evaluation is private to
+     each thread, and handlers are available whether XSB is called
+     from the command-line or embedded on a process.
+
+<h3>Improved tabling with call subsumption</h3>
+     Call subsumption now supports evaluation over the full
+     well-founded semantics as well as supporting attributed variables
+     in answers.  In a multi-threaded environment call subsumption is
+     fully supported for private tables, and is more scalable than in
+     version 3.1.
+
+<h3>Compatibility with ISO standards</h3>
+<ul>
+<li>
+     <i>Core ISO Standard</i> XSB is now in closer accord with the core ISO
+     standard in its handling of arithmetic expressions and exception
+     handling for various ISO predicates; in addition sub_atom/5 and
+     char_code/2 are now implemented, as are evaluable functions **/2
+     and sign/1.
+</li>
+
+<li>
+     <i>Core Revision</i> ISO predicates call_cleanup/2,
+     call/[2-10], evaluable functions '><'/2 and arithmetic constants
+     pi/0 and e/o are now implemented.  In addition, user_error,
+     user_warning, and user_message stream aliases have been added.
+</li>
+
+<li>
+     <i>Draft ISO Multi-Threading Standard</i> Aliases for ISO-style
+     mutexes are now better supported, and thread_create/2 allows
+     specification of an on_exit handler.
+</li>
+</ul>
+
+<h3>Improved compatibility with other Prologs and installation</h3>
+     XSB's atom-based module system has different behavior than the
+     predicate-based module system of most other Prologs, but in most
+     cases XSB now supports the syntax common to most module systems.
+     module/1 is now synonymous with export/1 and use_module/2 is now
+     synonymous with import/2. Explicit module calls using :/2 are
+     supported in most places.
+<p>
+     Limited support for statistics/2 is also now available.  time/1
+     also added, for compatibility with SWI and YAP.  Also, multifile
+     now fully supports dynamic and static predicates.
+</p>
+     In addition, XSB is now easier to install as a package on Mac OS
+     X.
+
+<h3>Speed Improvements</h3>
+
+     XSB's arithmetic is now much faster as well as throwing errors
+     that are more ISO-compatible.  Compiler changes were made to
+     exploit determinism in conditional tests.  In addition, speed
+     improvements were also made to assert/1, trie_assert/1,
+     retract/1, retractall/1, and call/1.
+
+<h3>Improvements to 64-bit evaluation</h3> 
+
+     64-bit XSB now runs properly on Macs (in addition to Linux).
+     Boxed floats on 64 bit port give floating point computation that
+     is fully IEEE compatible.  read_canonical/[1,2], and
+     fmt_write/[1,2] now work for 64 bits.  max_integer and
+     min_integer are now correct in 64-bit evaluation.
+
+<h3>Improvements in multi-threading</h3>
+      The MT engine has been made more stable and efficient overall,
+     for both non-tabled and tabled code.
+<p>
+     For private tables Version 3.2 provides greatly improved
+     scalability.  For shared tables under local evaluation (shared
+     completed tables), more concurrency is now possible and fewer
+     thread wake-ups now occur.  Code is also more robust in
+     (pathological) cases of cascading usurpations.
+</p>
+     In addition to public message queues, private message queues and
+     signal queues are now supported.  All queues in the MT engine are
+     now more stable.  thread_sleep/1 is now cancelable i.e. sleeping
+     threads may be cancelled.  In addition, predicates
+     thread_property/2, threads/0 and thread_peek_message/1 are now
+     supported.
+
+<h3>Foreign-Language Interface</h3>
+     Changes now allow XSB and C to call each other recursively, both
+     in the single-threaded and the multi-threaded engines.
+
+<h3>Interned Tries</h3>
+     XSB allows efficient interning of terms within trie data
+     structures.  A new API for interned tries is now available that
+     supports both thread-private and thread-shared tries, and allows
+     for different levels of (safe) memory management when terms are
+     deleted from tries.
+
+<h3>XASP package</h3>
+     The Smodels engine is now distributed with XSB making XASP
+     installation easier.  XASP is now more stable on cygwin and some
+     elements of XASP are thread safe.
+
+<h3>dbdrivers package</h3>
+     The dbdrivers package now supports embedded mysql, so that XSB
+     can be configured to directly call mysql without requiring a
+     separate mysql driver.  Memory leaks also fixed for dbdrivers
+     package.
+
+<h3>Profiling</h3>
+     XSB's profiling now has primitive functionality for determining
+     what modes (and how many times) a call is being made.
+
+<h3>random.P</h3>
+     Generation of weibull, exponential, and normal distributions is
+     now supported.
+
+<h3>Memory management</h3>
+     <i>string garbage collection</i> Heuristics changed to avoid
+     unnecessary calls
+<p>
+     <i>table garbage collection</i> has more thorough reclamation of
+     abolished table space.  In addition, table garbage collection now
+     checks delay lists so that garbage collection within
+     non-stratified queries is safer.
+</p>
+
+     Garbage collection of retracted dynamic clauses works better and
+     faster, and heap garbage collection is more stable.
+
+
 <h2>Version 3.1 (Incognito) </h2>
 
 Version 3.1 is a major rewriting of XSB to new functionalities and
