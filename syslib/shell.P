@@ -77,6 +77,10 @@ process_status(Pid, Status) :- sys_system(PROCESS_STATUS,Pid,Status,_,_,_,_).
 process_control(Pid, Signal) :- sys_system(PROCESS_CONTROL,
 					   Pid, Signal, _,_,_,_).
 
+/* darwin, linux-gnu */
+platform(Platform):- 
+	xsb_configuration(os_type,Platform).
+
 %% Sleep for the specified number of seconds
 sleep(Seconds) :- sys_system(SLEEP_FOR_SECS, Seconds,_,_,_,_,_).
 is_plain_file(File) :- sys_system(IS_PLAIN_FILE, File,_,_,_,_,_).

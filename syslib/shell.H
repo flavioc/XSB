@@ -35,6 +35,7 @@
 :- export sys_chdir/2, sys_access/3, sys_stat/3, sys_link/3,
 	sys_mkdir/2, sys_rmdir/2,
 	sys_unlink/2, sys_exit/1, sys_rename/3, sys_filecopy/3.
+:- export platform/1.
 
 :- import file_to_list/2 from scrptutl.
 :- import ground/1, append/3, member/2 from basics.
