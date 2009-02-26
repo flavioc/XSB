@@ -19,19 +19,6 @@ make:-
  	       '-o xasppkg.dylib xasppkg.o xsb_wrap_xasppkg.o ',
 	       PkgPath,'/xasp/smodels/.libs/libsmodels.a']).
 
-end_of_file.
-
-make_seq:- 
-	shell('rm -f *dylib *.o'),
-	% 1) compile xasppkg
-	shell(['g++ -I/Users/macuser/XSB/XSB/config/i386-apple-darwin8.9.1-dflt -I/Users/macuser/XSB/XSB/emu -I/Users/macuser/XSB/XSB/packages/xasp/smodels -c -o xasppkg.o xasppkg.c']),
-	% 1) compile xsb_wrap_xasppkg
-	shell(['gcc -I/Users/macuser/XSB/XSB/config/i386-apple-darwin8.9.1-dflt -I/Users/macuser/XSB/XSB/emu -I/Users/macuser/XSB/XSB/packages/xasp/smodels -c xsb_wrap_xasppkg.c']),
-	% 3) make dylib
-	shell(['g++ -I/Users/macuser/XSB/XSB/config/i386-apple-darwin8.9.1-dflt -I/Users/macuser/XSB/XSB/emu -I/Users/macuser/XSB/XSB/packages/xasp/smodels -lm ',
-	'-dynamiclib -undefined dynamic_lookup -single_module -nostartfiles ',
-	'-o xasppkg.dylib xasppkg.o xsb_wrap_xasppkg.o ',
-	'/Users/macuser/XSB/XSB/packages/xasp/smodels/.libs/libsmodels.a']).
 
 %%%% DANGER (sometimes have trouble w. wrapper).
 remake_all:- 
