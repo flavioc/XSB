@@ -73,15 +73,17 @@ extern "C" void numberAtoms(CTXTdeclc int nAtoms)
   totatoms=nAtoms;
 }
 
-/*
+
 extern "C" void atomName(CTXTdeclc char *name)
 { 
-  Atom ** loc_atoms = atoms;
-  int loc_curatom = curatom;
-  api->set_name(globatoms[loc_curatom],name);
+  api->set_name(atoms[curatom],name);
   curatom++;
+//  Atom ** loc_atoms = atoms;
+//  int loc_curatom = curatom;
+//  api->set_name(globatoms[loc_curatom],name);
+//  curatom++;
 }
-*/
+
 //extern "C" void __assert(const char *a, int b, const char *c) { return; }
 
 
