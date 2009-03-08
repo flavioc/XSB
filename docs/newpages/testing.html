@@ -1,0 +1,78 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<link type="text/css" rel="stylesheet" href="xsb.css">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15">
+<title>Testing for XSB Releases</title>
+</head>
+
+<div class="xsb-menu">
+<p>
+<a href="index.html" >Home</a>
+<a href="research.html" >Research</a>
+<a href="xsbsystem.html" >XSB System</a>
+<a href="contactus.html" >Contact Us</a>
+</p>
+</div>
+
+<h1>Testing for XSB Releases</h1>
+
+We provide here our checklist for release testing of XSB in order to
+help users understand whether an interim release may be suitable for
+them to download.  All of the tests below are run for each full
+release (usually), and most are run for interim releases.
+
+The main tests involved are
+</p>
+
+The <i>sequential</i> XSB test suite, which contains about 70,000+ lines of
+code.  This test suite tests tabling and non-tabling features of XSB's
+core engine and code, along with libraries and packages.  It can be
+obtained through checking out the module <tt>xsbtests</tt> through anonymous
+CVS.
+</p>
+
+<p>
+The <i>multi-threaded</i> XSB test suite, which tests thread-safety
+and concurrency features for the core engine and libraries, along with
+threading, mutex, and message queue predicates.  It contains about
+6000 lines of code, and can be obtained by checking out the
+module <tt> mttests</tt> through anonymous CVS.
+</p>
+
+<p>
+The <i>garbage-collection</i> test, in which the sequential test suite is run
+with heap garbage collection invoked every 100 or so WAM instructions.
+</p>
+
+<ul>
+<li>The sequential test suite under the following configurations is
+run on Mac OS X, Linux, Windows-Cygwin and Windows-MSVC</li>
+<ul>
+<li>  32-bit mode, single-threaded, local evaluation</li>
+<li>  32-bit mode, multi-threaded, local evaluation</li>
+<li>  32-bit mode, single-threaded, batched evaluation</li>
+</ul>
+<li>The multi-theaded test suite, configured for 32-bit mode local
+evaluation, is run on Mac OS X, Linux, Windows-Cygwin and Windows-MSVC</li>
+<li>The sequential test suite is run under the following
+configurations on Mac OS X and Linux</li>
+<ul>
+<li>  64-bit mode, single-threaded, local evaluation</li>
+<li>  64-bit mode, multi-threaded, local evaluation</li>
+<li>  64-bit mode, single-threaded, batched evaluation</li>
+</ul>
+<li>The multi-theaded test suite is run configured for 64-bit mode and
+local evaluation is run under Mac OS X and Linux</li>
+<li> The garbage-collection test of local evaluation are also run on
+Windows and a Unix platform for 32-bit mode, single-threaded, local
+evaluation</li>
+</ul>
+
+
+<hr>
+<!-- hhmts start -->Last modified: $Id$ <!-- hhmts end -->
+</body> </html>
+
+
+
