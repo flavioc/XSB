@@ -241,11 +241,8 @@ table to use. */
 '_$trie_asserted'(Term) :- 
 	conpsc('_$trie_asserted1'(_),Psc),
 	psc_type(Psc, Type),
-	(Type =:= 1				% DYNA so exists 
-	 ->     '_$trie_asserted1'(Term)
-         ;      fail     % table doesn't exist yet, so it is empty
-        ).
-	
+	Type =:= 1,		% DYNA so exists 
+	'_$trie_asserted1'(Term).
 
 add_trie_index(Spec) :-
 	mpa_to_skel(Spec,Pcall),
