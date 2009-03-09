@@ -940,7 +940,7 @@ table(Ps) :-
 	table_1(Ps).
 
 table_1((One,Two)):- !,
-	table_2(One),
+	table_1(One),
 	table_1(Two).
 table_1(Ps):- 
 	(structure(Ps) ; atom(Ps)),!,
