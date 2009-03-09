@@ -464,6 +464,7 @@ standard_metapredicate((:),2,2).
 standard_symbol(('^'), 2, setof).
 
 standard_symbol((:-), 2, usermod).
+standard_symbol((?-), 1, usermod).
 standard_symbol((-->), 2, usermod).
 standard_symbol(('?='),2,standard).
 
