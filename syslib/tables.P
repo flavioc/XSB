@@ -261,7 +261,7 @@ t_not(Subgoal,PredType,PTCP) :-
 
 writeit(0).
 %writeit(1).
-mywriteln(Term):- (writeit(1) -> writeln(Term); true).
+mywriteln(Term):- writeit(If),(If =:= 1 -> writeln(Term); true).
 
 %% skolemized tnot.  Variables temporarily changed to ground and tnot 
 %% call is made.  Should give existential semantics to nonground negative
