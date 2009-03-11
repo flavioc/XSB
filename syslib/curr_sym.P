@@ -544,8 +544,12 @@ psc_properties(PSC, Property) :-
 psc_properties(PSC, Property) :-
 	psc_name(PSC, Functor),		% Finding the Functor and the Arity
 	psc_arity(PSC, Arity),		% twice is silly, isn''t it?
-	( standard_symbol(Functor, Arity, _) -> Property = xsb_standard_predicate ).
-		 % Unfortunately this doesn''t take the Module into account.
+	(	standard_symbol(Functor, Arity, _) ->
+		(	Property = xsb_standard_predicate
+		;	Property = built_in
+		)
+	).
+	% Unfortunately this doesn''t take the Module into account.
 
 /* ===== module_property/2 ============================================ */
 
