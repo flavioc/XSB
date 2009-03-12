@@ -65,12 +65,10 @@ maintained, and using specific dynamic predicate update operations,
 the system will automatically keep the tables for {\tt p/2} correct.
 Consider the program:
 \begin{verbatim}
-:- table p/2.
 :- use_incremental_tabling p/2.
 
 p(X,Y) :- q(X,Y),Y =< 5.
 
-:- dynamic q/2.
 :- use_incremental_dynamic q/2.
 
 q(a,1).
