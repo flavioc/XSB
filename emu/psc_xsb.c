@@ -92,7 +92,7 @@ char *string_find(const char *str, int insert) {
     strcpy(str0, str);
     string_table_increment_and_check_for_overflow;
     if ((pspacesize[STRING_SPACE] > 4*last_string_space_size) &&
-	(pspacesize[ASSERT_SPACE] < 4*last_assert_space_size)) {
+	(pspacesize[ASSERT_SPACE] < 2*last_assert_space_size)) {
       force_string_gc = TRUE;
     }
   }
