@@ -2,3 +2,6 @@ auto
 *.out
 manual1
 manual2
+*.sty
+*.def
+*.bst
