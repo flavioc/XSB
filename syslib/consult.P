@@ -375,10 +375,6 @@ which when concatenated, is the directory name.
 add_lib_dir((A,B)) :- !,
 	add_lib_dir(A),
 	add_lib_dir(B).
-add_lib_dir([A|B]) :- !,
-	add_lib_dir(A),
-	add_lib_dir(B).
-add_lib_dir([]) :- !.
 add_lib_dir(Path) :-
 	add_lib_dir1(Path).
 
