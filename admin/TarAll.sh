@@ -1,6 +1,7 @@
+
 #!/bin/sh 
 
-    # Create an XSB tarball sans testsuite; untar in the XSB install directory
+    # Create an XSB tarball sans docs or examples; untar in the XSB install directory
 
     # RUN this in ./admin/ directory!
 

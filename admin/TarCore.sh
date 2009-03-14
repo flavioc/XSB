@@ -1,7 +1,7 @@
 #!/bin/sh 
 
     # Create an XSB tarball; to be untarr'ed in the XSB installation directory
-
+    # No docs or examples
     # Run this in ./admin/ directory!
 
 files="./XSB/LICENSE ./XSB/INSTALL ./XSB/INSTALL_PROBLEMS ./XSB/INSTALL_WINDOWS \
