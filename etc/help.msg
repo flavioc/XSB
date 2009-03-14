@@ -1,17 +1,8 @@
-Usage:	xsb [flags] [-l] [-i]
-	xsb [flags] -n
+Usage:	xsb [flags] [-l] 
 	xsb [flags] module
-	xsb [flags] -B boot_module [-D cmd_loop_driver] [-t] [-e goal]
+	xsb [flags] -B boot_module [-D cmd_loop_driver] [-t]
 	xsb [flags] -B module_to_disassemble -d
-	xsb -[h | v]
-	xsb --help | --version | --nobanner | --quietload | --noprompt
-
-      	memory management flags:
-	     -c tcpsize [unit] | -m glsize [unit] | -o complsize [unit] 
-             | -u pdlsize [unit] | -r | -g gc_type
-          unit: k/K memory in kilobytes; m/M in megabytes; g/G in gigabytes
-	miscellaneous flags:
-	     -s | -S | -T
+	xsb [-h | --help | -v | --version]
 
 	module:
 	     Module to execute after XSB starts up.
@@ -30,30 +21,35 @@ Usage:	xsb [flags] [-l] [-i]
 	     The top-level command loop driver to be used instead of the
 	     standard one.  Usually needed when XSB is run as a server.
 
-               -i : bring up the XSB interpreter
-          -e goal : evaluate goal when XSB starts up
-               -l : the interpreter prints unbound variables using letters
-               -n : used when calling XSB from C
-               -B : specify the boot module to use in lieu of the standard loader
-               -D : Sets top-level command loop driver to replace the default
-               -t : trace execution at the SLG-WAM instruction level
-                    (for this to work, build XSB with the --debug option)
-               -d : disassemble the module and exit
-       -c N [unit]: allocate N units (def. KB) for the trail/choice-point stack
-       -m N [unit]: allocate N units (def. KB) for the local/global stack
-       -o N [unit]: allocate N units (def. KB) for the SLG completion stack
-       -u N [unit]: allocate N units (def. KB) for the SLG unification stack
-               -r : turn off automatic stack expansion
-       -g gc_type : choose heap garbage collection ("none", "sliding",
-                                                    "indirection" or "copying")
-               -p : enable Prolog profiling thru use of profile_call/1
-               -s : maintain detailed statistical information
-               -S : set default tabling method to subsumption-based
-               -T : print a trace of each called predicate
-  --max_threads N : maintain information for up to N threads
-    -v, --version : print the version and configuration information about XSB
-       -h, --help : print this help message
-       --nobanner : don't show the XSB banner on startup
-      --quietload : don't show the `module loaded' messages
-       --noprompt : don't show prompt (for non-interactive use)
+                 -B : specify the boot module to use in lieu of the standard loader
+                 -D : Sets top-level command loop driver to replace the default
+                 -t : trace execution at the SLG-WAM instruction level
+                      (for this to work, build XSB with the --debug option)
+                 -d : disassemble the module and exit
+      -v, --version : print the version and configuration information about XSB
+         -h, --help : print this help message
+
+Flags: 
+      	memory management flags:
+	     -c tcpsize [unit] | -m glsize [unit] | -o complsize [unit] 
+             | -u pdlsize [unit] | -r | -g gc_type
+          unit: k/K memory in kilobytes; m/M in megabytes; g/G in gigabytes
+
+            -e goal : evaluate goal when XSB starts up
+                 -p : enable Prolog profiling through use of profile_call/1
+                 -l : the interpreter prints unbound variables using letters
+         --nobanner : don't show the XSB banner on startup
+        --quietload : don't show the `module loaded' messages
+         --noprompt : don't show prompt (for non-interactive use)
+    --max_threads N : maintain information for up to N threads
+                 -S : set default tabling method to call-subsumption
 --shared_predicates : make predicates thread-shared by default
+         -g gc_type : choose heap garbage collection ("indirection","none" or "copying")
+         -c N [unit]: allocate N units (def. KB) for the trail/choice-point stack
+         -m N [unit]: allocate N units (def. KB) for the local/global stack
+         -o N [unit]: allocate N units (def. KB) for the SLG completion stack
+         -u N [unit]: allocate N units (def. KB) for the SLG unification stack
+                 -r : turn off automatic stack expansion
+                 -s : maintain detailed statistical information
+                 -T : print a trace of each called predicate
+
