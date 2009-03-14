@@ -54,7 +54,7 @@
   case NUMBER:	/* r1: ?term */ {
       Cell tag = ptoc_tag(CTXTc 1);
       printf("number in std_cases_xsb_i.h This should NOT occur! This code should now be unreachable\n");
-      return (isnumber(tag) || isboxedinteger(tag) || isboxedfloat(tag));
+      return (xsb_isnumber(tag) || isboxedinteger(tag) || isboxedfloat(tag));
   }
   case ATOMIC: {	/* r1: ?term */
     Cell term = ptoc_tag(CTXTc 1);

@@ -4213,7 +4213,7 @@ void unfounded_component(CTXTdecl) {
   int starting_scc = done_answer_stack[starting_index].scc;
   DL delayList;
   DE delayElement;
-  BTNptr cur_answer;
+  BTNptr cur_answer = 0;  // TLS: compiler (rightly) complained about it being uninit.
 
   while (starting_index < done_answer_stack_top) {
     founded = 0; 

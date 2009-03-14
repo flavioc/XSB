@@ -210,6 +210,7 @@ void *mem_calloc(unsigned long size, unsigned long occs, int category)
     pspacesize[category] += length;
 #else
 #ifndef MULTI_THREAD
+    unsigned long length = (size*occs+7) & ~0x7;
     pspacesize[category] += length;
 #endif
 #endif

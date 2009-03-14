@@ -1894,7 +1894,7 @@ argument positions.
 
   XSB_Start_Instr(cmpreg,_cmpreg) /* PRR */
     Def3ops
-    int res;
+    int res = 2; /* TLS: compiler thinks res may be used uninitialized, but I dont thinks so */
     Op1(Register(get_xrx));
     Op3(get_xxr);
     ADVANCE_PC(size_xxx);
@@ -2052,6 +2052,9 @@ argument positions.
 	}
       } else { arithmetic_abort(CTXTc op2, "compare-operator", op1); }
     }
+#ifdef NON_OPT_COMPILE
+    if (res == 2) xsb_abort("uninitialized use of res in cmpreg instruction");
+#endif
     bld_oint(op3,res);
   XSB_End_Instr() 
 
@@ -2221,7 +2224,7 @@ argument positions.
     Op3(get_xxxxl);
     ADVANCE_PC(size_xxxXX);
     XSB_Deref(op1); 
-    if (isnumber(op1)) {
+    if (xsb_isnumber(op1)) {
       if (int_val(op1) == (Integer)op2)
 	lpcreg = (byte *)op3;
     }
@@ -2245,7 +2248,7 @@ argument positions.
     Op3(get_xxxxl);
     ADVANCE_PC(size_xxxXX);
     XSB_Deref(op1); 
-    if (isnumber(op1)) {
+    if (xsb_isnumber(op1)) {
       if (int_val(op1) != (Integer)op2)
 	lpcreg = (byte *) op3;
     }
@@ -2911,7 +2914,7 @@ argument positions.
       jump_cond_fail(isofloat(op2));
       break;
     case NUMBER_TEST:
-      jump_cond_fail(isnumber(op2) || isboxedinteger(op2) || isboxedfloat(op2));
+      jump_cond_fail(xsb_isnumber(op2) || isboxedinteger(op2) || isboxedfloat(op2));
       break;
     case ATOMIC_TEST:
       jump_cond_fail(isatomic(op2) || isboxedinteger(op2) || isboxedfloat(op2));

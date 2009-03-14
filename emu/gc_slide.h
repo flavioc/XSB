@@ -265,7 +265,7 @@ static void sort_buffer(unsigned long *indata, unsigned long insize)
 
 static CPtr slide_heap(CTXTdeclc int num_marked)
 {
-  int  tag ;
+  int  tag = 0;  // TLS: to quiet compiler
   Cell contents;
   CPtr p, q ;
 
