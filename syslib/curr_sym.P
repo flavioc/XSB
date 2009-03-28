@@ -638,6 +638,8 @@ iso_flag(double_quotes,codes).
 /* ===== prolog_commons_flag/2 ========================================== */
 
 prolog_commons_flag(dialect,xsb).
+prolog_commons_flag(version_data,xsb(3, 2, 0, _)).
+
 
 /* ===== xsb_flag/2 ========================================== */
 
