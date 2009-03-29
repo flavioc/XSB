@@ -5,10 +5,10 @@
 # RUN this in ./admin/ directory!
 
 files="./XSB/LICENSE ./XSB/INSTALL ./XSB/INSTALL_PROBLEMS \
-        ./XSB/INSTALL_WINDOWS ./XSB/README ./XSB/FAQ ./XSB/Makefile ./XSB/admin/*.sh \
+        ./XSB/INSTALL_WINDOWS ./XSB/README ./XSB/FAQ ./XSB/Makefile ./XSB/bin  \
         ./XSB/build/ac* ./XSB/build/*.in ./XSB/build/config.guess \
         ./XSB/build/config.sub ./XSB/build/*sh ./XSB/build/*.msg \
-        ./XSB/build/configure ./XSB/build/README \
+        ./XSB/build/configure ./XSB/build/README ./XSB/config \
         ./XSB/emu ./XSB/syslib ./XSB/cmplib  ./XSB/lib \
 	./XSB/gpp \
 	./XSB/prolog_includes \
