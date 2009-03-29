@@ -121,6 +121,8 @@ extern void release_all_tabling_resources(CTXTdecl);
 // Perhaps this should be in hashtable.h?
 extern void hashtable1_destroy_all(int);
 
+#define MAX_INTERNED_TRIES 2003
+
 #endif /* __TR_UTILS_H__ */
 
 

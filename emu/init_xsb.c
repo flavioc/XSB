@@ -164,7 +164,7 @@ extern void reset_stat_total(void);
 extern void perproc_reset_stat(void); 
 
 extern double realtime_count_gl;
-
+extern int max_interned_tries_glc;
 
 /* these three are from orient_xsb.c */
 extern char *install_dir_gl; 
@@ -379,6 +379,12 @@ static int process_long_option(char *option,int *ctr,char *argv[],int argc)
 #endif
     }
     else xsb_warn("Missing size value for --max_threads");
+  }  else if (0==strcmp(option, "max_tries")) {
+    if ((int) (*ctr) < argc) {
+      (*ctr)++;
+      sscanf(argv[*ctr], "%d", &max_interned_tries_glc);
+    }
+    else xsb_warn("Missing size value for --max_triess");
   } else if (0==strcmp(option, "max_mqueues")) {
     if ((int) (*ctr) < argc) {
       (*ctr)++;
@@ -517,6 +523,7 @@ static long get_memarea_size( char *s )
   reset_stat_total();
 #endif
 
+  max_interned_tries_glc = MAX_INTERNED_TRIES; 
 #ifdef MULTI_THREAD
   max_threads_glc = MAX_THREADS; 
   max_mqueues_glc = MAX_MQUEUES; 
