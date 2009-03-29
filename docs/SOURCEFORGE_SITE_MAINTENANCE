@@ -1,31 +1,60 @@
 
-As of 2007 the old homepage/SOURCEFORGE_SITE_MAINTENANCE seems
-out-dated.  Among other things, shadow_site is owned by lfcastro, so
-the approach of checking things into CVS does not work in general.
-Nor could I get cvs to work directly under htdocs.
+Sourceforge keeps changing its policies and procedures for site
+maintenance.  Here are the notes from putting out version 2.2.
 
-So, to update the web page do the following steps.
+To update the web page do the following steps.
 
 -- make whatever changes you need in docs/newpages, and when you are
    done update cvs.
 
--- log in to shell.sourceforge.net as xsb then cd to xsb/htdocs (full
-path is /home/groups/x/xs/xsb/htdocs).  Copy into the staging directory any
-of the .html or other files you need.  Eg. 
+-- log in to shell.sourceforge.net as xsb. This is done as:
 
-scp about.html xsb@shell.sourceforge.net:/home/groups/x/xs/xsb/htdocs/staging
+ssh -t xsb,xsb@shell.sourceforge.net create
 
--- Add the release file following the instructions of:
+then cd to xsb/htdocs (the full path is /home/groups/x/xs/xsb/htdocs).
 
-https://sourceforge.net/docs/E01/en/#top
+Copy into the various directories any of the .html or other files you
+need.  Eg.
+
+scp index.html xsb,xsb@web.sourceforge.net:/home/groups/x/xs/xsb/htdocs
+
+-- For full releases, add the release file following the instructions of:
+
+http://apps.sourceforge.net/trac/sitedocs/wiki/Release%20files%20for%20download
+%https://sourceforge.net/docs/E01/en/#top
 
 -- There are several other directories that may need to be updated.
 
-api -- has generated documentation for XSB
-manual1 -- subdirectory for manual vol. 1
-manual2 -- subdirectory for manual vol. 2
+api -- has generated documentation for XSB  /* TLS: not maintained in v. 3.2 */
+manual1 -- subdirectory for manual vol. 1   /* TLS: not maintained in v. 3.2 */
+manual2 -- subdirectory for manual vol. 2   /* TLS: not maintained in v. 3.2 */
 packages -- subdirecotry for packages manuals
 
 -- Finally, update the news.  Login to sourceforge, under the admin
 menu, click news, then submit.  this will bring you to a form where
 you can submit the news story.
+
+For Binaries, you can run 
+
+admin/TarRelease.sh
+
+to make an XSB.tar.gz, then move the tar file somewhere, untar it, cd
+to the admin directory, and run configure_release.sh.  This makes
+optimized versions of 
+
+sequential, 32-bit, local
+sequential, 64-bit, local
+mt, 32-bit, local
+mt, 64-bit, local
+sequential, 32-bit, batched
+
+Next, run TarBin.sh to create tarball, and copy over to sourceforge.
+
+Problems
+
+If the xsb password expires, you can't login to shell.sourceforge.net,
+even though you can log into sourceforge through a browser.  If this
+happens, simply change the password through the browser and things
+should work (make sure to notify the relevant developers).
+
+
