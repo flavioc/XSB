@@ -59,6 +59,7 @@ Prolog = $(XSB) -e "segfault_handler(warn)."
 SVFILE = '../build/.xsb_cmplib_warn.tmp'
 STDWARN = 3
 HDRMSG = "While compiling XSB/cmplib:"
+CMDFILE = 'cmd...'
 
 OBJFILESAVED = objfiles.saved
 
@@ -67,14 +68,14 @@ OBJFILESAVED = objfiles.saved
 .SUFFIXES: .P ${OBJEXT} .H
 
 all: init  $(ALL) finish
-	@../build/touch.sh cmd...
-	$(Prolog) < cmd...
-	/bin/rm cmd...
+	@../build/touch.sh $(CMDFILE)
+	$(Prolog) < $(CMDFILE)
+	/bin/rm $(CMDFILE)
 	@cat $(SVFILE)
 
 %${OBJEXT}:   %.P  $(PROLOG_INCLUDES) $(EMU_INCLUDES)
 	@cp -f $*${OBJEXT} $(OBJFILESAVED) || echo ""
-	echo 'mc($*, $(Option)).' >> cmd...
+	echo 'mc($*, $(Option)).' >> $(CMDFILE)
 # The following is done because of brain damage in some make utilities
 # (notably Sun's), which don't take %.P %.H in the same dependency list
 %.P:   %.H
@@ -86,7 +87,7 @@ all: init  $(ALL) finish
 	../build/touch.sh $@
 .P${OBJEXT}:
 	@cp -f $*${OBJEXT} $(OBJFILESAVED) || echo ""
-	echo 'mc($*, $(Option)).' >> cmd...
+	echo 'mc($*, $(Option)).' >> $(CMDFILE)
 
 # Redirect warnings into a file so we would be able to display it later.
 # Assert the emu/prolog_includes into xpp_include_dir, to make sure that
@@ -95,17 +96,17 @@ all: init  $(ALL) finish
 init:
 	rm -f $(SVFILE)
 	@test -d $(OBJFILESAVED) || mkdir $(OBJFILESAVED)
-	@echo "import file_reopen/4, file_flush/2 from file_io." >> cmd...
-	@echo "file_reopen($(SVFILE),w,$(STDWARN),_)." >> cmd...
-	@echo "file_write($(STDWARN),'----------------- Warnings ------------------------'), file_nl($(STDWARN))." >> cmd...
-	@echo "file_write($(STDWARN),'$(HDRMSG)'), file_nl($(STDWARN))." >> cmd...
-	@echo "file_flush($(STDWARN),_)." >> cmd...
-	@echo "import xpp_include_dir/1 from parse." >> cmd...
-	@echo "assert(xpp_include_dir('../emu'))." >> cmd...
-	@echo "assert(xpp_include_dir('../prolog_includes'))." >> cmd...
+	@echo "import file_reopen/4, file_flush/2 from file_io." >> $(CMDFILE)
+	@echo "file_reopen($(SVFILE),w,$(STDWARN),_)." >> $(CMDFILE)
+	@echo "file_write($(STDWARN),'----------------- Warnings ------------------------'), file_nl($(STDWARN))." >> $(CMDFILE)
+	@echo "file_write($(STDWARN),'$(HDRMSG)'), file_nl($(STDWARN))." >> $(CMDFILE)
+	@echo "file_flush($(STDWARN),_)." >> $(CMDFILE)
+	@echo "import xpp_include_dir/1 from parse." >> $(CMDFILE)
+	@echo "assert(xpp_include_dir('../emu'))." >> $(CMDFILE)
+	@echo "assert(xpp_include_dir('../prolog_includes'))." >> $(CMDFILE)
 
 finish:
-	@echo "file_write($(STDWARN),'-------------------- End --------------------------'), file_nl($(STDWARN))." >> cmd...
+	@echo "file_write($(STDWARN),'-------------------- End --------------------------'), file_nl($(STDWARN))." >> $(CMDFILE)
 
 restore:
 	mv -f $(OBJFILESAVED)/*${OBJEXT} .
