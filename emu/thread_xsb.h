@@ -49,14 +49,14 @@ typedef pthread_t pthread_t_p;
 #define PTHREAD_CANCEL(a) pthread_cancel(a);
 #endif
 
-/* Lower 20 bytes of thread are entry, others are incarnation 
+/* Lower 20 bits of thread are entry, others are incarnation 
    TLS: problems with INC_MASK_RIGHT and 64-bits? */
 #define INC_MASK_RIGHT			0x3ff
 #define INC_SHIFT			20
 #define INC_MASK			(INC_MASK_RIGHT<<INC_SHIFT)
 #define ENTRY_MASK			0x000fffff
 
-#define DEFAULT_MQ_SIZE 100
+#define DEFAULT_MQ_SIZE 1024
 
 #define THREAD_ENTRY(TID)		((TID)&ENTRY_MASK)
 #define THREAD_INCARN(TID)		(((TID)&INC_MASK)>>INC_SHIFT)
