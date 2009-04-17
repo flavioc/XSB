@@ -358,7 +358,15 @@ transform_slash_to_skel(Spec,ModName,SymTab,Skel) :-
 /*	inserting any symbols to the symbol table (non-backtrackable	*/
 /*	insert).							*/
 /*======================================================================*/
-
+:- import call/1 from standard.
+parse_directive(if(Condition), _QrList,_SymTab,_ModName) :- !, 	
+        (cond_call(Condition) -> 
+          true
+	; skip_over_condition(1)).
+% if reading the elseif from normal parsing, we've already taken another branch.
+parse_directive(elseif(_), _QrList,_SymTab,_ModName):- !,
+	skip_over_condition(1).
+parse_directive(endif, _QrList,_SymTab,_ModName):- !.
 parse_directive(module(ModIn,X), _QrList,SymTab,ModName) :- !, 	
 	(ModIn == ModName -> 
 	    parse_list(X, SymTab, [ex], (export))
@@ -559,6 +567,32 @@ parse_multifile(Skel,QrList,SymTab,ModName) :-
 	functor(LinkSkel,LinkPred,Arity),
 	sym_insert(LinkPred,Arity,SymPar,SymTab,_LinkSym),
 	parse_query(multifile([Pred/Arity,ModName,LinkSkel]),QrList,SymTab).
+
+%-----------
+%code for conditional compilation
+
+cond_call_1(current_prolog_flag(Type,_Val)):- 
+	member(Type,[dialect,version_data]),!.
+cond_call_1(true).
+cond_call_1(false).
+
+:- import member/2 from basics.
+cond_call(Call):- 
+	(cond_call_1(Call) ->
+	    true
+	 ;  warning(('Dangerous use of changeable goal in compilation producing object file: ',
+	             Call))),
+	call(Call).
+
+skip_over_condition(N):- 
+        my_read(Cl,_),
+	(Cl = (':-'(endif)) -> 
+	    true
+	  ; (Cl = (':-'(elseif(Condition))),cond_call(Condition) -> 
+     	        true    
+	        ;  (Cl = (':-'(if(_Call)))) -> 
+     	               misc_error('XSB does not support nested conditional compilation.')
+		     ; skip_over_condition(N))).
 
 
 /*======================================================================*/
