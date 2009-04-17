@@ -551,7 +551,6 @@ parse_dynamic_options(shared,PredCList,QrList,SymTab,ModName) :- !,
 parse_dynamic_options(Option,_PredCList,_QrList,_SymTab,_ModName) :- !,
 	error((Option,' is an illegal option for the dynamic directive')).
 
-
 parse_multifile((Skel1,Skel2),QrList,SymTab,ModName) :- !,
 	parse_multifile(Skel1,QrList,SymTab,ModName),
 	parse_multifile(Skel2,QrList,SymTab,ModName).
@@ -570,13 +569,14 @@ parse_multifile(Skel,QrList,SymTab,ModName) :-
 
 %-----------
 %code for conditional compilation
+:- import xsb_flag/2 from curr_sym.
 
 cond_call_1(current_prolog_flag(Type,_Val)):- 
-	member(Type,[dialect,version_data]),!.
+	\+ xsb_flag(Type,_).     % XSB flags are fluent as opp. to ISO.
+cond_call_1(predicate_property(_pred,_Val)):- !.
 cond_call_1(true).
 cond_call_1(false).
 
-:- import member/2 from basics.
 cond_call(Call):- 
 	(cond_call_1(Call) ->
 	    true
