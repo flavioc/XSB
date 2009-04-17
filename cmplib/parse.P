@@ -574,6 +574,7 @@ parse_multifile(Skel,QrList,SymTab,ModName) :-
 cond_call_1(current_prolog_flag(Type,_Val)):- 
 	\+ xsb_flag(Type,_).     % XSB flags are fluent as opp. to ISO.
 cond_call_1(predicate_property(_pred,_Val)):- !.
+cond_call_1(xsb_configuration(_pred,_Val)):- !.
 cond_call_1(true).
 cond_call_1(false).
 
