@@ -568,22 +568,8 @@ parse_multifile(Skel,QrList,SymTab,ModName) :-
 	parse_query(multifile([Pred/Arity,ModName,LinkSkel]),QrList,SymTab).
 
 %-----------
-%code for conditional compilation
+% code for conditional compilation
 :- import xsb_flag/2 from curr_sym.
-
-cond_call_1(current_prolog_flag(Type,_Val)):- 
-	\+ xsb_flag(Type,_).     % XSB flags are fluent as opp. to ISO.
-cond_call_1(predicate_property(_pred,_Val)):- !.
-cond_call_1(xsb_configuration(_pred,_Val)):- !.
-cond_call_1(true).
-cond_call_1(false).
-
-cond_call(Call):- 
-	(cond_call_1(Call) ->
-	    true
-	 ;  warning(('Dangerous use of changeable goal in compilation producing object file: ',
-	             Call))),
-	call(Call).
 
 skip_over_condition(N):- 
         my_read(Cl,_),
@@ -595,6 +581,20 @@ skip_over_condition(N):-
      	               misc_error('XSB does not support nested conditional compilation.')
 		     ; skip_over_condition(N))).
 
+cond_call(Call):- 
+	check_cond_call(Call),
+	call(Call).
+
+check_cond_call(\+(Goal)):- !,check_cond_call(Goal).
+check_cond_call(current_prolog_flag(Type,_Val)):- !,
+	\+ xsb_flag(Type,_).     % XSB flags are fluent as opp. to ISO.
+check_cond_call(predicate_property(_pred,_Val)):- !.
+check_cond_call(xsb_configuration(_pred,_Val)):- !.
+check_cond_call(true):- !.
+check_cond_call(false):- !.
+check_cond_call(Call):- 
+	warning(('Dangerous use of changeable goal in compilation producing object file: ',
+	             Call)).
 
 /*======================================================================*/
 /* process regular clauses --- collect them in List			*/
