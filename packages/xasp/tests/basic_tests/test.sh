@@ -11,3 +11,4 @@ options=$2
 ../gentest.sh "$XEMU $options" cooked_choice "test."
 #../gentest.sh "$XEMU $options" lowlevel_ex "test."
 ../gentest.sh "$XEMU $options" rawex "test."
+../gentest.sh "$XEMU $options" xnmr_int1 "test."
