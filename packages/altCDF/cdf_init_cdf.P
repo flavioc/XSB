@@ -667,12 +667,10 @@ immed_hasAttr1(SCid,Rid,TCid) :-
 immed_hasAttr1(SCid,Rid,TCid) :-
     immed_minAttr2(SCid,Rid,TCid,_).
 
-:- conset(loop_count,0).
 immed_hasAttr2(SCid,Rid,TCid) :-
 	%check_hasAttr_indices(SCid,Rid,TCid),
     hasAttr_ext(SCid,Rid,TCid).
 immed_hasAttr2(SCid,Rid,TCid) :-
-    (var(SCid),var(Rid),var(TCid) -> coninc(loop_count),conget(loop_count,CNT),(CNT>4->abort(loop);true) ; true),
     hasAttr_int(SCid,Rid,TCid).
 
 check_hasAttr_indices(Scid,Rid,Tcid):-
