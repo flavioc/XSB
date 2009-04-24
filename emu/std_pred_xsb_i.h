@@ -165,7 +165,7 @@ inline static xsbBool univ_builtin(CTXTdecl)
   int i, arity;
   int  new_indicator;
   char *name;
-  Cell list, new_list, term;
+  Cell list, new_list, term, chead, ctail;
   CPtr head, top = 0;
   Pair sym;
 
@@ -197,16 +197,18 @@ inline static xsbBool univ_builtin(CTXTdecl)
   } else { /* usage is construction; term is known to be a variable */
     if (islist(list)) {
       head = clref_val(list);
-      XSB_Deref(cell(head));
-      if (isatom(cell(head))) {
-	if (isnil(cell(head+1))) {	/* atom construction */
-	  bind_copy((CPtr)term, cell(head));
-	  return TRUE;	/* succeed */
+      chead = cell(head);
+      XSB_Deref(chead);
+      if (isatom(chead)) {
+	ctail = cell(head+1);
+	XSB_Deref(ctail);
+	if (isnil(ctail)) {	/* atom construction */
+	  bind_copy((CPtr)term, chead);
 	} else {
 	  xsbBool list_construction = FALSE;
-	  name = string_val(cell(head));
+	  name = string_val(chead);
 	  if (!strcmp(name, ".")) { /* check for list construction */
-	    list = cell(head+1); XSB_Deref(list);
+	    list = ctail;
 	    if (islist(list)) {
 	      list = cell(clref_val(list)+1); XSB_Deref(list);
 	      if (islist(list)) {
@@ -217,8 +219,7 @@ inline static xsbBool univ_builtin(CTXTdecl)
 	  }
 	  if (list_construction) { /* no errors can occur */
 	    bind_list((CPtr)term, hreg);
-	    list = cell(head+1);
-	    XSB_Deref(list);
+	    list = ctail;
 	    bld_copy(hreg, cell(clref_val(list))); hreg++;
 	    list = cell(clref_val(list)+1);
 	    XSB_Deref(list);
@@ -226,7 +227,7 @@ inline static xsbBool univ_builtin(CTXTdecl)
 	  } else { /* compound term construction */
 	    sreg = hreg;
 	    bind_cs((CPtr)term, sreg); hreg = sreg; sreg++;
-	    for (arity = 0, list = cell(head+1); ;
+	    for (arity = 0, list = ctail; ;
 		 arity++, list = cell(clref_val(list)+1)) {
 	      XSB_Deref(list); /* necessary */
 	      if (!islist(list)) break; /* really ugly */
@@ -253,14 +254,14 @@ inline static xsbBool univ_builtin(CTXTdecl)
 	  }
 	} return TRUE;
       }
-      if ((xsb_isnumber(cell(head)) || isboxedinteger(cell(head))) && isnil(cell(head+1))) { /* list=[num] */
-	bind_copy((CPtr)term, cell(head));	 /* term<-num  */
+      if ((xsb_isnumber(chead) || isboxedinteger(chead)) && isnil(ctail)) { /* list=[num] */
+	bind_copy((CPtr)term, chead);	 /* term<-num  */
 	return TRUE;	/* succeed */
       }
       else
 	{
-	  if (isnonvar(cell(head))) 
-	    xsb_type_error(CTXTc "atomic",cell(head),"=../2",2);  /* X =.. X =.. [2,a,b]. */
+	  if (isnonvar(chead)) 
+	    xsb_type_error(CTXTc "atomic",chead,"=../2",2);  /* X =.. X =.. [2,a,b]. */
 	  else xsb_instantiation_error(CTXTc "=../2",2);
 	  return(FALSE);
 	}
