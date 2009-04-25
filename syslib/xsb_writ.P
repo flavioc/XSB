@@ -31,6 +31,7 @@
 #include "flag_defs_xsb.h"
 #include "thread_defs_xsb.h"
 #include "io_defs_xsb.h"
+#include "standard.h"
 
 /* TLS: Note that file_puttoken is NOT locked, so locking must appear
    around it.  This is to avoid the need for recursive mutexes. */
@@ -125,29 +126,72 @@ set_file_write_depth(X) :-
 get_file_write_depth(X) :-
 	conget('_$lwrite_depth_level',X).
 
+
+dot_attributes(Var):- 
+	get_attributes(Var,Atts),
+	dot_attributes_1(Atts).
+
+dot_attributes_1([]).
+dot_attributes_1([Mod,_|T]):- 
+	file_write(STDFDBK,' { '),
+	file_write(STDFDBK,Mod),
+	file_write(STDFDBK,' : ...}'),
+	dot_attributes_1(T).
+
+portray_attributes(Var):- 
+	get_attributes(Var,Atts),
+	portray_attributes_1(Atts).
+
+portray_attributes_1([]).
+portray_attributes_1([Mod,Attr|T]):- 
+	(attribute_portray_hook(Mod,Attr,Handler) -> 
+	    file_write(STDFDBK,' { '),
+	    file_write(STDFDBK,Mod),
+	    file_write(STDFDBK,' : '),
+	    call(Handler),
+	    file_write(STDFDBK,' } ')
+	 ;  file_write(STDFDBK,' { '),
+   	    file_write(STDFDBK,Mod),
+	    file_write(STDFDBK,' : ...unknown portray_attributes for this module}')),
+	 portray_attributes_1(T).
+
 l_write(File,T,Prec) :-
 	conget('_$lwrite_depth_level',Level),
-	l_write(File,T,Prec,Level).
+	stat_flag(WRITE_ATTRIBUTES,AttrAct),
+	l_write(File,T,Prec,Level,AttrAct).
 
-l_write(File,_,_,0) :-
+l_write(File,_,_,0,_) :-
 	!,
 	file_puttoken(File, XSB_STRING, '...').
-l_write(File, Var, _, _D) :- 
+l_write(File, Var, _, _D,_) :- 
 	term_type(Var, Type), 
-	(Type =:= XSB_FREE; Type =:= XSB_ATTV),
+	Type =:= XSB_FREE,
 	!, 
 	file_puttoken(File, Type, Var).
-l_write(File, '$VAR'(N), _, D) :- 
+l_write(File, Var, _, _D,Flag) :- 
+	term_type(Var, Type), 
+	Type =:= XSB_ATTV,
+	!, 
+	file_puttoken(File, Type, Var),
+	(Flag == WA_IGNORE -> 
+	    true
+	  ; Flag == WA_PORTRAY -> 
+	     stat_set_flag(WRITE_ATTRIBUTES,WA_IGNORE),
+	     portray_attributes(Var),
+	     stat_set_flag(WRITE_ATTRIBUTES,Flag)
+	  ; Flag == WA_DOTS -> 
+	     dot_attributes(Var)).	     
+l_write(File, '$VAR'(N), _, D,Flag) :- 
 	!,
 	D1 is D - 1,
-	l_writevar(File, N, 0, D1).
-l_write(File, [X|Y], _, D) :- 
+	l_writevar(File, N, 0, D1,Flag).
+l_write(File, [X|Y], _, D,Flag) :- 
 	!, 
 	file_put(File, 91), 	% '['
 	D1 is D - 1,
-	l_write(File, X, 999, D1),
-	l_writetail(File, Y, D1).
-l_write(File, T, Prec, D) :- 	% functor(T, OP, N),
+	l_write(File, X, 999, D1,Flag),
+	l_writetail(File, Y, D1,Flag).
+l_write(File, T, Prec, D,Flag) :- 	% functor(T, OP, N),
 	term_type(T, Type), 
 	Type =:= XSB_STRUCT, !,		
 	term_psc(T, PSC), 
@@ -159,42 +203,42 @@ l_write(File, T, Prec, D) :- 	% functor(T, OP, N),
 	; N=:=1 ->
 		( '_$op'(Opprec, fx, OP) ->
 			Nprec is Opprec-1, 
-			l_writepreop(File, Name, T, Prec, Opprec, Nprec, D)
+			l_writepreop(File, Name, T, Prec, Opprec, Nprec, D,Flag)
 		; '_$op'(Opprec, fy, OP) ->
-			l_writepreop(File, Name, T, Prec, Opprec, Opprec, D)
+			l_writepreop(File, Name, T, Prec, Opprec, Opprec, D,Flag)
 		; '_$op'(Opprec, xf, OP) ->
 			Nprec is Opprec-1, 
-			l_writepostop(File, Name, T, Prec, Opprec, Nprec, D)
+			l_writepostop(File, Name, T, Prec, Opprec, Nprec, D,Flag)
 		; '_$op'(Opprec, yf, OP) ->
-			l_writepostop(File, Name, T, Prec, Opprec, Opprec, D)
+			l_writepostop(File, Name, T, Prec, Opprec, Opprec, D,Flag)
 		; Name == {} ->
-			l_write_curly(File, T, D1)
-		; l_writestr(File, Name, N, T, D1)
+			l_write_curly(File, T, D,Flag)
+		; l_writestr(File, Name, N, T, D1,Flag)
 		)
 	; N=:=2 ->
 		( '_$op'(Opprec, xfx, OP) ->
 			Nprec is Opprec-1,
-			l_writebinop(File, Name, T, Prec, Opprec, Nprec, Nprec, D)
+			l_writebinop(File, Name, T, Prec, Opprec, Nprec, Nprec, D,Flag)
 		; '_$op'(Opprec, xfy, OP) ->
 			Nprec is Opprec-1,
-			l_writebinop(File, Name, T, Prec, Opprec, Nprec, Opprec, D)
+			l_writebinop(File, Name, T, Prec, Opprec, Nprec, Opprec, D,Flag)
 		; '_$op'(Opprec, yfx, OP) ->
 			Nprec is Opprec-1,
-			l_writebinop(File, Name, T, Prec, Opprec, Opprec, Nprec, D)
+			l_writebinop(File, Name, T, Prec, Opprec, Opprec, Nprec, D,Flag)
 		; Name == apply ->
-			l_hilog_writestr(File, N, T, D) 
-		; l_writestr(File, Name, N, T, D1)
+			l_hilog_writestr(File, N, T, D,Flag) 
+		; l_writestr(File, Name, N, T, D1,Flag)
 		)
 	; ( Name == apply -> 
-              l_hilog_writestr(File, N, T, D)
-	  ; l_writestr(File, Name, N, T, D1)
+              l_hilog_writestr(File, N, T, D,Flag)
+	  ; l_writestr(File, Name, N, T, D1,Flag)
 	  )
 	).
-l_write(File, T, _, _D) :- 
+l_write(File, T, _, _D,_Flag) :- 
 	term_type(T, Type),
 	file_puttoken(File, Type, T).
 
-l_writevar(File, N, Quoted, D) :-
+l_writevar(File, N, Quoted, D,Flag) :-
              (integer(N) ->
 	        (N < 0 -> 
    	           file_put(File, CH_UNDERSCORE)
@@ -211,108 +255,109 @@ l_writevar(File, N, Quoted, D) :-
 	             file_puttoken(File, TK_ATOM, '$VAR'), 
 	             file_put(File, CH_QUOTE) ),
 	        file_put(File, CH_LPAREN),
-	        l_write(File, N, 999, D),
+	        l_write(File, N, 999, D,Flag),
 	        file_put(File, CH_RPAREN) ).
 
-l_writestr(File, Name, N, Term, D) :-
+l_writestr(File, Name, N, Term, D,Flag) :-
 	file_puttoken(File, TK_ATOM, Name), 
 	file_put(File, CH_LPAREN),    % (
 	term_arg(Term, 1, X),
-	l_write(File, X, 999, D),
-        l_writearg(File, Term, N, 1, D), 
+	l_write(File, X, 999, D,Flag),
+        l_writearg(File, Term, N, 1, D,Flag), 
 	file_put(File, CH_RPAREN).    % )
 
-l_write_curly(File, Term, D) :- 
+l_write_curly(File, Term, D,Flag) :- 
 	file_put(File, CH_LBRACE),	% {
 	term_arg(Term, 1, Arg),
-	l_write(File, Arg, 999, D),
+	l_write(File, Arg, 999, D,Flag),
 	file_put(File, CH_RBRACE).	% }
 
-l_hilog_writestr(File, N, Term, D) :-
+l_hilog_writestr(File, N, Term, D,Flag) :-
 	term_arg(Term, 1, HiLogFunctor),
-        l_write(File, HiLogFunctor, 999, D),
+        l_write(File, HiLogFunctor, 999, D,Flag),
 	D1 is D - 1,
 	term_arg(Term, 2, FirstArg),
 	file_put(File, CH_LPAREN),	% (
-	l_write(File, FirstArg, 999, D1), % write the first of the HiLog args
-	l_writearg(File, Term, N, 2, D1), % write the rest  of the HiLog args
+	l_write(File, FirstArg, 999, D1,Flag), % write the first of the HiLog args
+	l_writearg(File, Term, N, 2, D1,Flag), % write the rest  of the HiLog args
 	file_put(File, CH_RPAREN).	% )
 
-l_writebinop(File, Op, Term, Oldp, Curp, Newlp, Newrp, D) :- 
+l_writebinop(File, Op, Term, Oldp, Curp, Newlp, Newrp, D,Flag) :- 
 	term_arg(Term, 1, Arg1),
 	term_arg(Term, 2, Arg2),
 	(Curp > Oldp -> 
 		file_put(File, 40),		% '('
-		'write binop'(File, Arg1, Op, Arg2, Newlp, Newrp, D),
+		'write binop'(File, Arg1, Op, Arg2, Newlp, Newrp, D,Flag),
 		file_put(File, 41)		% ')'
 	;
-		'write binop'(File, Arg1, Op, Arg2, Newlp, Newrp, D)
+		'write binop'(File, Arg1, Op, Arg2, Newlp, Newrp, D,Flag)
 	).
 
-'write binop'(File, Arg1, Op, Arg2, Newlp, Newrp, D) :-
+'write binop'(File, Arg1, Op, Arg2, Newlp, Newrp, D,Flag) :-
         D1 is D - 1,
-	l_write(File, Arg1, Newlp, D1),
+	l_write(File, Arg1, Newlp, D1,Flag),
 	file_put(File, 0' ),	    	% '  to fool the C preprocessor
 	file_puttoken(File, TK_INOP, Op),
 	file_put(File, 0' ),	    	% '  to fool the C preprocessor
-	l_write(File, Arg2, Newrp, D1).
+	l_write(File, Arg2, Newrp, D1,Flag).
 
-l_writepreop(File, Op, Term, Oldp, Curp, Newp, D) :- 
+l_writepreop(File, Op, Term, Oldp, Curp, Newp, D,Flag) :- 
 	term_arg(Term, 1, Arg),
 	D1 is D - 1,
 	(Curp > Oldp -> 
 		file_put(File, 40),		% '('
 		file_puttoken(File, TK_PREOP, Op),
-		l_write(File, Arg, Newp, D1),
+		l_write(File, Arg, Newp, D1,Flag),
 		file_put(File, 41)		% ')'
 	;
 		file_puttoken(File, TK_PREOP, Op),
-		l_write(File, Arg, Newp, D1)
+		l_write(File, Arg, Newp, D1,Flag)
 	).
 
-l_writepostop(File, Op, Term, Oldp, Curp, Newp, D) :- 
+l_writepostop(File, Op, Term, Oldp, Curp, Newp, D,Flag) :- 
 	term_arg(Term, 1, Arg),
 	D1 is D - 1,
 	(Curp > Oldp -> 
 		file_put(File, 40),		% '('
-		l_write(File, Arg, Newp, D1),
+		l_write(File, Arg, Newp, D1,Flag),
 		file_puttoken(File, TK_POSTOP, Op),
 		file_put(File, 41)		% ')'
 	;
-		l_write(File, Arg, Newp, D1),
+		l_write(File, Arg, Newp, D1,Flag),
 		file_puttoken(File, TK_POSTOP, Op)
 	).
 
 
-l_writearg(_File, _T, N, N, _D) :- !.
-l_writearg(File, T, N, M, D) :- 
+l_writearg(_File, _T, N, N, _D,_Flag) :- !.
+l_writearg(File, T, N, M, D,Flag) :- 
 	L is M + 1, 
 	file_put(File, 44), 		% ','
 	term_arg(T, L, X),
-        l_write(File, X, 999, D), 
-	l_writearg(File, T, N, L, D).
+        l_write(File, X, 999, D,Flag), 
+	l_writearg(File, T, N, L, D,Flag).
 
-l_writetail(File, _, 0) :-
+l_writetail(File, _, 0,_Flag) :-
 	!,
 	file_put(File,93).
-l_writetail(File, Var, _D) :- 
+%TLS: need to change
+l_writetail(File, Var, _D,_Flag) :- 
 	term_type(Var, Type),
 	(Type =:= XSB_FREE; Type =:= XSB_ATTV),
 	!, 
 	file_put(File, 124), 		% '|'
 	file_puttoken(File, Type, Var), 
 	file_put(File, 93).		% ']'
-l_writetail(File, [X|Y], D) :- 
+l_writetail(File, [X|Y], D,Flag) :- 
 	!, 
 	file_put(File, 44), 		% ','
-	l_write(File, X, 999, D), 
-	l_writetail(File, Y, D).
-l_writetail(File, [], _D) :- 
+	l_write(File, X, 999, D,Flag), 
+	l_writetail(File, Y, D,Flag).
+l_writetail(File, [], _D,_Flag) :- 
 	!, 
 	file_put(File, 93).		% ']'
-l_writetail(File, X, D) :- 
+l_writetail(File, X, D,Flag) :- 
 	file_put(File, 124), 		% '|'
-	l_write(File, X, 999, D), 
+	l_write(File, X, 999, D,Flag), 
 	file_put(File, 93).		% ']'
 
 

@@ -36,10 +36,12 @@
 :- import file_put/2 from file_io.
 :- import file_function/3 from machine.
 :- import integer/1 from standard.
-:- import term_psc/2, psc_arity/2, psc_name/2, term_arg/3, 
-	stat_flag/2,
-	term_type/2, file_puttoken/3, file_writequoted/2
+:- import attribute_portray_hook/3,
+   term_psc/2, psc_arity/2, psc_name/2, term_arg/3, 
+   stat_flag/2,stat_set_flag/2,get_attributes/2,
+   term_type/2, file_puttoken/3, file_writequoted/2
      from machine.
+:- import call/1 from standard.
 
 :- import conget/2, conset/2 from gensym.
 

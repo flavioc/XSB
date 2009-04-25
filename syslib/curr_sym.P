@@ -602,8 +602,10 @@ set_prolog_flag(Flag,Value) :-
 		 ;	findall(Val,settable_flag_value(Flag,Val),Vals),
 			make_set_tail(Vals,SetVals),
 			domain_error(['{'|SetVals],Value,set_prolog_flag/2,2)
-		)				
-	 ;	domain_error(settable_flag,Flag,set_prolog_flag/2,1)
+		)
+           ; set_xsb_flag(Flag,Value)
+% error handled in xsb_flag
+%	 ;	domain_error(settable_flag,Flag,set_prolog_flag/2,1)
 	).
 
 make_set_tail([Val],[Val,'}']) :- !.
@@ -653,6 +655,11 @@ prolog_commons_flag(version_data,xsb(Maj, Min, 0, _)):-
 %%   In contrast, xsb_configuration is to be used for settings that are the
 %%   same for different sessions and are fixed at XSB build time.
 
+xsb_flag(write_attributes,Value):- 
+	stat_flag(WRITE_ATTRIBUTES, V), 
+	( V =:= WA_IGNORE -> Value = ignore
+	  ;  V =:= WA_DOTS -> Value = dots
+	  ;  V =:= WA_PORTRAY -> Value = portray).
 xsb_flag(write_depth,Depth):- 
 	get_file_write_depth(Depth).
 xsb_flag(backtrace_on_error, BT) :-
@@ -812,6 +819,14 @@ set_xsb_flag_1(heap_garbage_collection, GCmode) :-  !,
                        GCmode,set_xsb_flag/2,2,'garbage_collection clause')
 	),
 	stat_set_flag(GARBAGE_COLLECT, GCflag).
+set_xsb_flag_1(write_attributes,Code) :-  !, 
+	( Code = ignore -> Flag = WA_IGNORE
+	; Code = dots -> Flag = WA_DOTS
+	; Code = portray -> Flag = WA_PORTRAY
+	; domain_error([ignore,dots,portray],
+                       Code,set_xsb_flag/2,2,'write_attributes clause')
+	),
+	stat_set_flag(WRITE_ATTRIBUTES, Flag).
 set_xsb_flag_1(clause_garbage_collection, OnOff) :-  !, 
 	( OnOff == off -> Value = 0 ; Value = 1 ),
 	stat_set_flag(CLAUSE_GARBAGE_COLLECT, Value).
@@ -890,7 +905,7 @@ set_xsb_flag_1(warning_action,Action):- !,
 	                        Action,set_xsb_flag/2,2,'warning_action clause') ) ) ),
 	 stat_set_flag(WARNING_ACTION,A).
 set_xsb_flag_1(Type, _) :-  
-	domain_error(xsb_flag,Type,set_xsb_flag/2,2).
+	domain_error(prolog_flag,Type,set_prolog_flag/2,1).
 
 /* ==================================================================== */
 

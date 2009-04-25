@@ -211,12 +211,16 @@ exclude__([V|Vs], PVs) :-
 print_answer([]) :- !.
 print_answer([vv(Name,Val)|Tail]) :-
 	file_nl(STDFDBK), file_write(STDFDBK, Name), 
-	file_write(STDFDBK, ' = '), file_write(STDFDBK, Val),
-	(is_attv(Val) -> portray_attributes(Val) ; true),
+	file_write(STDFDBK, ' = '), 
+	file_write(STDFDBK, Val),
+%	(is_attv(Val) -> portray_attributes(Val) ; true),
 	print_answer(Tail).
 
-:- import get_attributes/2 from machine.
 
+/*********************
+% moved to xsb_writ.P
+
+:- import get_attributes/2 from machine.
 portray_attributes(Var):- 
 	get_attributes(Var,Atts),
 	portray_attributes_1(Atts).
@@ -232,6 +236,7 @@ portray_attributes_1([Mod,Attr|T]):-
 	    file_write(STDFDBK,' } ')
 	 ; true),
 	 portray_attributes_1(T).
+***********************/
 
 %%:- import writeln/1 from standard.
 :- import constraint_portray_hook/4 from machine.
