@@ -997,6 +997,9 @@ void tstCreateTSIs(struct th_context *,TSTNptr);
 #define subgoal_space_has_been_reclaimed(SUBG_PTR,CS_FRAME) \
         (SUBG_PTR != compl_subgoal_ptr(CS_FRAME))
 
+/* TLS: the "visited" fields are only used by batched, not local.
+   Mainly, the neg_loop field is set to true to indicate that the
+   subgoal will be delayed upon resuming */
 #define mark_delayed(csf1, csf2, susp) { \
 	  compl_visited(csf1) = DELAYED; \
 	  compl_visited(csf2) = DELAYED; \
