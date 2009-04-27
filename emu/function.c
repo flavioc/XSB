@@ -64,6 +64,7 @@
 #define FUN_ceiling  25
 #define FUN_sign 26
 #define FUN_min  27
+#define FUN_lgamma  28
 
 /* --- returns 1 when succeeds, and returns 0 when there is an error --	*/
 
@@ -310,6 +311,11 @@ int  unifunc_call(CTXTdeclc int funcnum, CPtr regaddr)
       bld_int(regaddr,-1);
     }
     break;
+  case FUN_lgamma:
+    set_fvalue_from_value;
+    fvalue = (Float)lgamma(fvalue);
+    bld_boxedfloat(CTXTc regaddr, fvalue);
+    break;
 
   default:  return 0;
   }
@@ -317,7 +323,7 @@ int  unifunc_call(CTXTdeclc int funcnum, CPtr regaddr)
 }
 
 /* xsb_eval evaluates a Prolog term representing an arithmetic
-   expression and returns its value as an inteer or float. */
+   expression and returns its value as an integer or float. */
 
 int xsb_eval(CTXTdeclc Cell expr, FltInt *value) {
 
@@ -608,6 +614,10 @@ int xsb_eval(CTXTdeclc Cell expr, FltInt *value) {
 	  } else if (strcmp(get_name(op_psc),"log10")==0) {
 	    if (isfiint(fiop1)) set_flt_val(value,(Float)log10((Float)fiint_val(fiop1)));
 	    else set_flt_val(value,(Float)log10(fiflt_val(fiop1)));
+	    break;
+	  } else if (strcmp(get_name(op_psc),"lgamma")==0) {
+	    if (isfiint(fiop1)) set_flt_val(value,(Float)lgamma((Float)fiint_val(fiop1)));
+	    else set_flt_val(value,(Float)lgamma(fiflt_val(fiop1)));
 	    break;
 	  } else set_and_return_fail(value);
 
