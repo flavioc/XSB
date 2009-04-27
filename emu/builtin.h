@@ -98,6 +98,8 @@
 #define SYS_ERRNO		 58
 #define PUTENV                   59
 
+#define PSC_MOD		 	 60
+
 #define FILE_WRITEQUOTED	 61
 #define GROUND  		 62
 
