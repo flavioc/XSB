@@ -69,6 +69,7 @@ inline_builtin(psc_name, 2, PSC_NAME).
 inline_builtin(psc_arity, 2, PSC_ARITY).
 inline_builtin(psc_type, 2, PSC_TYPE).
 inline_builtin(psc_prop, 2, PSC_PROP).
+inline_builtin(psc_mod, 2, PSC_MOD).
 inline_builtin(psc_set_type, 2, PSC_SET_TYPE).
 inline_builtin(psc_set_prop, 2, PSC_SET_PROP).
 inline_builtin(psc_set_spy, 2, PSC_SET_SPY).
