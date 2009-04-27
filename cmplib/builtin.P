@@ -279,3 +279,4 @@ builtin_function(truncate, 1, 23).
 builtin_function(round, 1, 24).
 builtin_function(ceiling, 1, 25).
 builtin_function(sign, 1, 26).
+builtin_function(lgamma, 1, 28).
