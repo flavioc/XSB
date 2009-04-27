@@ -59,6 +59,7 @@ psc_name(PSC, String) :- psc_name(PSC, String).
 psc_arity(PSC, Arity) :- psc_arity(PSC, Arity).
 psc_type(PSC, Type) :- psc_type(PSC, Type).
 psc_prop(PSC, Term) :- psc_prop(PSC, Term).
+psc_mod(PSC, Term) :- psc_mod(PSC, Term).
 psc_set_type(PSC, Type) :- psc_set_type(PSC, Type).
 psc_set_prop(PSC, Term) :- psc_set_prop(PSC, Term).
 psc_set_spy(PSC, Spy) :- psc_set_spy(PSC, Spy).

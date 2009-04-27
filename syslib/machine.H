@@ -36,6 +36,7 @@
 	psc_arity/2, 
 	psc_type/2, 
 	psc_prop/2, 
+	psc_mod/2, 
 	psc_set_type/2, 
 	psc_set_prop/2,
 	psc_set_spy/2,

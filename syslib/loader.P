@@ -287,7 +287,7 @@ load_pred1(PSC) :-
 	psc_env(PSC, Env), 
 	( Env =:= T_UNLOADED
 	->  % is "imported"
-	    psc_prop(PSC, ModPSC),
+	    psc_mod(PSC, ModPSC),
 	    psc_name(ModPSC, ModName),
 	    psc_type(ModPSC, ModType), 
 	    (ModType =:= T_MODU

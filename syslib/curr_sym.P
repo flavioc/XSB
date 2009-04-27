@@ -528,7 +528,7 @@ psc_properties(PSC, Property) :-
 	psc_env(PSC, Env),
 	( Env =:= T_EXPORTED -> Property = exported
 	; Env =:= T_LOCAL -> Property = (local)
-	; Env =:= T_IMPORTED -> psc_prop(PSC, ModulePSC), 
+	; Env =:= T_IMPORTED -> psc_mod(PSC, ModulePSC), 
 		       psc_name(ModulePSC, ModuleName), 
 		       Property = imported_from(ModuleName)
 	; Property = global ).
