@@ -95,7 +95,7 @@ ISO and Prolog-commons flags are as follows:
   This flag always has the value {\tt true}
 %
 \item {\tt min\_integer, max\_integer} The minimum integer available in the current
-  XSB configuration (differs between 32- and 64-bits.
+  XSB configuration (differs between 32- and 64-bits).
 %
 \item {\tt max\_arity} Indicates the maximum arity of terms in XSB.
   This flag always has the value {\tt 255}
@@ -122,6 +122,11 @@ ISO and Prolog-commons flags are as follows:
   running.  Using this flag, applications intended to run on more than
   one Prolog can take actions that conditional on the executing
   Prolog.  The value is {\tt xsb}.
+
+\item {\tt version\_data} indicates the version of XSB that is
+  running.  Using this flag, applications intended to run on more than
+  one Prolog can take actions that conditional on the executing
+  Prolog.  The value is {\tt xsb}.
 \end{itemize}
 
 \compatability The ISO flags {\tt char\_conversion} is not available
@@ -130,9 +135,8 @@ strings as lists of character codes, so that the value of the flag
 {\tt double\_quotes} is always {\tt codes}, and this flag is not
 settable.
 
-Other flag names may be specific to XSB or may be common to XSB and
-certain other Prologs although they have not been made standard.  These
-flag names are:
+Non-standard flag names may be specific to XSB or may be common to XSB
+and certain other Prolog.  These flag names are:
 \begin{itemize}
 %
 \item {\tt backtrace\_on\_error} {\tt on} iff system-handled errors
@@ -147,8 +151,9 @@ whether the backtrace for a current execution will be printed to {\tt
 Section~\ref{sec-dcg-differences} for more details. Default is {\tt
   xsb}. This flag affects all threads in the process.
 %
-\item {\tt debugging}  {\tt on} iff debug mode is on; {\tt off} otherwise.
-This flag affects all threads in the process. 
+% Subsumed by ISO flag
+%\item {\tt debugging}  {\tt on} iff debug mode is on; {\tt off} otherwise.
+%This flag affects all threads in the process. 
 %
 \item {\tt heap\_garbage\_collection}  {\tt indirection}, {\tt none}, {\tt
   sliding}, or {\tt copying} depending on the heap garbage collection
@@ -190,6 +195,22 @@ threads in the process.
     silent\_warning} silently succeeds when {\tt warning/1} is called;
   and {\tt error\_warning/1} throws a miscellaneous exception.
 
+\index{Attributed variables}
+\item {\tt write\_attributes} Determines the action to take by {\tt
+  write/1} when it writes an attributed variable.  By default {\em
+  write/1} portrays attributed variables using module-specific
+  routines (cf. Volume 2 of this manual) as $Variable \{ Module :
+  PA\_Output\}$ where $PA\_Output$ is the output of the {\tt
+    portray\_attrubutes/2} clause for $Module$.  However the value {\tt
+    ignore} causes an attributed variable to be written simply as a
+  variable; and {\tt dots} causes $Variable \{ <module_name> : ...\}$
+  to be written.  The default behavior is set by the value {\tt
+    portray}
+\end{itemize}
+
+The following flags affect only the multi-threaded engine.
+
+\begin{itemize}
 \item {\tt thread\_glsize} In the multi-threaded engine, the initial
   size, in kbytes, of the global and local stack area of a newly
   created thread if no such option is explicitly passed.  By default
@@ -249,18 +270,6 @@ threads in the process.
   thread-private by default.  This option is settable only by a
   command-line argument, and has no effect in the
   single-threaded engine.
-
-\index{Attributed variables}
-\item {\tt write\_attributes} Determines the action to take by {\tt
-  write/1} when it writes an attributed variable.  By default {\em
-  write/1} portrays attributed variables using module-specific
-  routines (cf. Volume 2 of this manual) as $Variable \{ Module :
-  PA\_Output\}$ where $PA\_Output$ is the output of the {\tt
-    portray\_attrubutes/2} clause for $Module$.  However the value {\tt
-    ignore} causes an attributed variable to be written simply as a
-  variable; and {\tt dots} causes $Variable \{ <module_name> : ...\}$
-  to be written.  The default behavior is set by the value {\tt
-    portray}
 
 \end{itemize}
     

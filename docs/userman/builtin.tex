@@ -1385,7 +1385,9 @@ additions.
 % 
 Semantically, {\tt write/1} behaves as if {\tt write\_term/1} were
 invoked using {\tt quoted(false)}, {\tt ignore\_ops(false)}, and {\tt
-  numbervars(false)}.
+  numbervars(false)}.  Attributed variables are written according to
+the value of the Prolog flag {\tt write\_attributes/2} (cf. {\tt
+  current\_prolog\_flag/2}).
 
 The HiLog term {\tt Term} is written to the current output stream,
 according to the operator declarations in force.  Any uninstantiated
@@ -1495,6 +1497,9 @@ of the form \verb|'$VAR'(N)| specially. It writes square bracket lists
 using {\tt '.'/2} and {\tt []} (that is, {\tt [foo, bar]} is written
 as \verb|'.'(foo,'.'(bar,[]))|).
 
+Finally, {\tt write canonical/2} writes attributed variables as simple
+variables.
+
 \compatability
 %
 In XSB, list notation and infix comma-list notation are considered
@@ -1533,6 +1538,8 @@ using the first argument.
     {\tt writeln(Term)} can be defined as {\tt write(Stream,Term),
     nl(Stream)}.
 
+\comment{
+TLS I dont think we still need this -- console_write seems better for that.
 \standarditem{display(?Term)}{display/1}
     The HiLog term {\tt Term} is displayed on the terminal (standard output 
     stream), according to the operator declarations in force. In other words,
@@ -1540,6 +1547,7 @@ using the first argument.
     written on {\tt ``userout''}\@.  Like {\tt write/1}, {\tt display/1} 
     always succeeds without producing an error. After returning from a call 
     to this predicate, the current output stream remains unchanged.
+}
 
 \ourrepeatstandarditem{write\_prolog(?Term)}{write\_prolog/1}{HiLog}
 \ourstandarditem{write\_prolog(+Stream\_or\_alias,?Term)}{write\_prolog/1}{HiLog}
