@@ -30,23 +30,24 @@
 
 /* Thread private flags */
 
-#define STACK_REALLOC    1      /* 1 = allow realloc of stacks on Oflow YW */
-#define CURRENT_INPUT	 2	/* current input file descriptor	NW */
-#define CURRENT_OUTPUT	 3	/* current output file descriptor	NW */
-#define SYS_TIMER        4      /* XSB Timer	    	    	    	MK */
-#define VERBOSENESS_LEVEL 5     /* how verbose debug messages should be    */
-#define GARBAGE_COLLECT  6      /* type of garbage collection employed:    */
-                                /* 0 = none; 1 = sliding; 2 = copying.  NW */
-#define CLAUSE_INT	 7	/* for clause interrupt			YW */
-#define BACKTRACE	 8	/* for backtracing on error      Y/N       */
+#define STACK_REALLOC    1        /* 1 = allow realloc of stacks on Oflow YW */
+#define CURRENT_INPUT	 2	  /* current input file descriptor	NW */
+#define CURRENT_OUTPUT	 3	  /* current output file descriptor	NW */
+#define SYS_TIMER        4        /* XSB Timer	    	    	    	MK */
+#define VERBOSENESS_LEVEL 5       /* how verbose debug messages should be    */
+#define GARBAGE_COLLECT  6        /* type of garbage collection employed:    */
+                                  /* 0 = none; 1 = sliding; 2 = copying.  NW */
+#define CLAUSE_INT	 7	  /* for clause interrupt			YW */
+#define BACKTRACE	 8	  /* for backtracing on error      Y/N       */
 /* the following three flags are only in effect when
    the system is compiled with --enable-debug         --lfcastro           */
-#define VERBOSE_GC       9      /* be verbose on garbage collection        */
-#define COUNT_CHAINS    10      /* count size of chains on GC              */
-#define EXAMINE_DATA    11      /* examine data on GC                      */
+#define VERBOSE_GC       9        /* be verbose on garbage collection        */
+#define COUNT_CHAINS    10        /* count size of chains on GC              */
+#define EXAMINE_DATA    11        /* examine data on GC                      */
 #define PROFFLAG        12
-#define TABLING_METHOD	13      /* Default method used to evaluate tabled */
-#define CLAUSE_GARBAGE_COLLECT 14 /* Turn clause gc on or off */
+#define TABLING_METHOD	13        /* Default method used to evaluate tabled  */
+#define CLAUSE_GARBAGE_COLLECT 14 /* Turn clause gc on or off                */
+#define WRITE_ATTRIBUTES 15       /* Action to take when writing an attv     */
 /* Flags 15-24 are open to use */
 
 /*
@@ -148,4 +149,11 @@ interrupt flag
 #define PRINT_WARNING     0
 #define SILENT_WARNING    1
 #define ERROR_WARNING     2
+
+/* for WRITE_ATTRIBUTES */
+#define WA_PORTRAY           0
+#define WA_DOTS              1
+#define WA_IGNORE            2
+/* In SWI, but Not yet implemented  */
+#define WA_WRITE_TERN        3
 
