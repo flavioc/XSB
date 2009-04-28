@@ -42,6 +42,7 @@ Atom::Atom (Program *p0)
   source = 0;
   posScore = 0;
   negScore = 0;
+  wrong_choices = 0;
   name = 0;
   closure = false;
   Bpos = false;
@@ -945,7 +946,7 @@ ConstraintRule::print_internal ()
   cout << (int)type << ' ' << head->posScore << ' '
        << (nend-nbody)+(pend-pbody) << ' ' << nend-nbody;
   head->negScore = 1;
-  cout << ' ' << atleast;
+  cout << ' ' << lit;
   Atom **a;
   for (a = nbody; a != nend; a++)
     {
@@ -2239,7 +2240,7 @@ WeightRule::print_internal ()
 # endif
   cout << (int)type << ' ' << head->posScore;
   head->negScore = 1;
-  cout << ' ' << atleast << ' ' << bend-body;
+  cout << ' ' << (minweight >= atleast ? WEIGHT_MIN : atleast-minweight) << ' ' << bend-body;
   long neg = 0;
   Atom **a;
   for (a = body; a != bend; a++)
@@ -2485,7 +2486,7 @@ OptimizeRule::print_internal ()
 # ifdef USEDOUBLE
   cout.precision (DBL_DIG);
 # endif
-  cout << (int)type << ' ';
+  cout << (int)type << ' ' << 0;
   cout << ' ' << (nend-nbody)+(pend-pbody) << ' ' << nend-nbody;
   Atom **a;
   for (a = nbody; a != nend; a++)

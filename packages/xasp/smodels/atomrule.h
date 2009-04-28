@@ -120,6 +120,8 @@ public:
 		          // closure, and in print_internal
   unsigned long negScore; // Used in heuristic, in improvement of upper
 		          // closure, and in print_internal
+  unsigned long wrong_choices; // The number of wrong choices when
+			       // this atom was chosen or backtracked.
   char *name;             // The name of the atom
 };
 

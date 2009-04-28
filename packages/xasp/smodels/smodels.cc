@@ -49,6 +49,7 @@ Smodels::Smodels ()
   max_conflicts = 0;
   setup_top = 0;
   score = 0;
+  use_lookahead = false;
 }
 
 Smodels::~Smodels ()
@@ -121,6 +122,9 @@ Smodels::reset_dependency ()
 void
 Smodels::clear_dependency ()
 {
+  unsigned long default_score = 0;
+  if (use_lookahead)
+    default_score = ULONG_MAX;
   for (Node *n = program.atoms.head (); n; n = n->next)
     {
       Atom *a = n->atom;
@@ -128,8 +132,8 @@ Smodels::clear_dependency ()
       a->dependsonFalse = false;
       a->pos_tested = false;
       a->neg_tested = false;
-      a->posScore = ULONG_MAX;
-      a->negScore = ULONG_MAX;
+      a->posScore = default_score;
+      a->negScore = default_score;
     }
   depends.reset ();
 }
@@ -185,9 +189,7 @@ Smodels::pick (bool look, bool simple)
 void
 Smodels::lazy_lookahead ()
 {
-  score = 0;
-  hiscore1 = 0;
-  hiscore2 = 0;
+  unsigned long search_space_size = ULONG_MAX;
   hi_is_positive = false;
   hi_index = 0;
   for (long i = 0; i < atomtop; i++)
@@ -198,14 +200,22 @@ Smodels::lazy_lookahead ()
 	  removeAtom (i);
 	  i--;
 	}
-      else if (a->posScore == ULONG_MAX || a->negScore == ULONG_MAX)
+      else if (a->posScore == 0 || a->negScore == 0)
 	{
 	  hi_index = i;
-	  hi_is_positive = (a->posScore == ULONG_MAX);
+	  hi_is_positive = (a->posScore == 0);
 	  break;
 	}
       else
-	testScore (a, i);
+	{
+	  unsigned long search_space = a->posScore + a->negScore;
+	  if (search_space < search_space_size)
+	    {
+	      search_space_size = search_space;
+	      hi_index = i;
+	      hi_is_positive = (a->posScore < a->negScore);
+	    }
+	}
     }
   choose ();
 }
@@ -313,6 +323,7 @@ Smodels::setup ()
 void
 Smodels::setup_with_lookahead ()
 {
+  use_lookahead = true;
   setup ();
   while (!conflict_found && lookahead_no_heuristic ())
     expand ();
@@ -365,25 +376,35 @@ Smodels::unwind ()
     {
       if (a->Bpos)
 	{
-	  if (a->posScore > score)
-	    a->posScore = score;
+	  if (use_lookahead)
+	    {
+	      if (a->posScore > score)
+		a->posScore = score;
+	    }
+	  else if (a->backtracked)
+	    {
+	      wrong_choices = a->wrong_choices;
+	      a->posScore = number_of_wrong_choices - a->wrong_choices;
+	    }
+	  else if (a->posScore < number_of_wrong_choices - wrong_choices)
+	    a->posScore = wrong_choices;
 	  a->backtrackFromBTrue ();
 	}
       else if (a->Bneg)
 	{
-	  if (a->negScore > score)
-	    a->negScore = score;
+	  if (use_lookahead)
+	    {
+	      if (a->negScore > score)
+		a->negScore = score;
+	    }
+	  else if (a->backtracked)
+	    {
+	      wrong_choices = a->wrong_choices;
+	      a->negScore = number_of_wrong_choices - a->wrong_choices;
+	    }
+	  else if (a->negScore < number_of_wrong_choices - wrong_choices)
+	    a->negScore = wrong_choices;
 	  a->backtrackFromBFalse ();
-	}
-      if (a->backtracked)
-	{
-	  score = 0;
-	  Atom **b = stack.stack+stack.top-1;
-	  for (; !((*b)->guess | (*b)->backtracked); b--)
-	    if ((*b)->isnant)
-	      score++;
-	  if ((*b)->isnant)
-	    score++;
 	}
       a->backtracked = false;
       a->forced = false;
@@ -428,16 +449,18 @@ Smodels::backtrack ()
   a->backtracked = true;
   if (a->Bneg)
     {
-      a->negScore = score;
+      a->negScore = number_of_wrong_choices - a->wrong_choices;
       a->backtrackFromBFalse ();
       a->setBTrue ();
     }
   else
     {
-      a->posScore = score;
+      a->posScore = number_of_wrong_choices - a->wrong_choices;
       a->backtrackFromBTrue ();
       a->setBFalse ();
     }
+  wrong_choices = a->wrong_choices;
+  a->wrong_choices = number_of_wrong_choices;
   stack.push (a);
   return a;
 }
@@ -709,6 +732,8 @@ Smodels::choose ()
     a->setBTrue ();
   else
     a->setBFalse ();
+  wrong_choices = number_of_wrong_choices;
+  a->wrong_choices = number_of_wrong_choices;
   number_of_picked_atoms++;
   number_of_choice_points++;
   PRINT_PICK (if (hi_is_positive)

@@ -90,7 +90,7 @@ int main (int argc, char *argv[])
       return 1;
     }
   if (!print_internal)
-    cout << "smodels version 2.32. Reading...";
+    cout << "smodels version 2.33. Reading...";
   int bad = stable.read(cin);
   if (!print_internal)
     cout << "done" << endl;

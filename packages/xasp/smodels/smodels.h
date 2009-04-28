@@ -108,7 +108,9 @@ public:
   unsigned long hiscore2;// Least significant heuristic score
   bool hi_is_positive;   // Most significant score is for positive literal
   long hi_index;         // Index of heuristic choice in array atom
-
+  unsigned long wrong_choices; // For computing an estimated lower
+			       // bound on the score.
+  bool use_lookahead;
   unsigned long answer_number;
   unsigned long number_of_choice_points;
   unsigned long number_of_wrong_choices;
