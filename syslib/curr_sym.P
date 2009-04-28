@@ -640,10 +640,18 @@ iso_flag(double_quotes,codes).
 /* ===== prolog_commons_flag/2 ========================================== */
 
 prolog_commons_flag(dialect,xsb).
+prolog_commons_flag(version_data,xsb(Maj, Min, 0, _)):-
+        xsb_configuration(major_version,MajAtom),
+        atom_codes(MajAtom, MajCodes),
+        number_codes(Maj, MajCodes),
+        xsb_configuration(minor_version,MinAtom),
+        atom_codes(MinAtom, MinCodes),
+        number_codes(Min, MinCodes).
+/*
 prolog_commons_flag(version_data,xsb(Maj, Min, 0, _)):- 
 	xsb_configuration(major_version,Maj),
 	xsb_configuration(minor_version,Min).
-
+*/
 
 /* ===== xsb_flag/2 ========================================== */
 
