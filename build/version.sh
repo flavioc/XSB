@@ -2,7 +2,7 @@
 #! /bin/sh
 
 xsb_major_version=3
-xsb_minor_version="2-pre"
+xsb_minor_version="2"
 #xsb_beta_version=pre"
 #xsb_codename="Skol"        # for Version 2.1
 #xsb_codename="Tsingtao"    # for Version 2.2
@@ -18,4 +18,4 @@ xsb_codename="Kopi Lewak"    # Version 3.2 Civit coffee
 # Format: YYYY-MM-DD or YYYY.MM.DD or YYYY/MM/DD
 # With this, XSB should become Y2K compliant :-)
 #xsb_release_date=2006-08-07
-xsb_release_date=2009-02-26
+xsb_release_date=2009-03-15
