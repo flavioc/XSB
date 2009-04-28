@@ -1,3 +1,9 @@
+smodels 2.33: April 17, 2008
+- Improve the heuristic used in lazy lookahead. Since we are lazy,
+  we can compute a better estimate of the size of the remaining
+  search space.
+- Fix print internal of the constraint, weight and optimize rules.
+
 smodels 2.32: August 7, 2006
 - Remove inline from smodels.cc to make the examples compile.
 - Add "-simple" for using the simple heuristic with "-nolookahead"
