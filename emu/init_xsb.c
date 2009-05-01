@@ -248,6 +248,7 @@ static void init_flags(CTXTdecl)
 #ifdef MULTI_THREAD
   flags[MAX_QUEUE_TERMS] = DEFAULT_MQ_SIZE; 
 #endif
+  flags[HEAP_GC_MARGIN] = 8192 * ZOOM_FACTOR;
 }
 
 /*==========================================================================*/

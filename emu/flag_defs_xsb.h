@@ -129,6 +129,7 @@ interrupt flag
 #define RECOMPILE_OVERRIDE        79   /* Allows compilation when more than 1 thread */
 #define PRIVSHAR_DEFAULT          80   /* Default for shared or private predicates */
 #define WARNING_ACTION            81   /* Action to take on warnings: print,silent,exception */
+#define HEAP_GC_MARGIN            82   /* Size of heap overflow margin */
 
 #define MAX_FLAGS		85
 
