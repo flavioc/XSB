@@ -155,11 +155,19 @@ Section~\ref{sec-dcg-differences} for more details. Default is {\tt
 %\item {\tt debugging}  {\tt on} iff debug mode is on; {\tt off} otherwise.
 %This flag affects all threads in the process. 
 %
+\index{garbage collection}
 \item {\tt heap\_garbage\_collection}  {\tt indirection}, {\tt none}, {\tt
   sliding}, or {\tt copying} depending on the heap garbage collection
 strategy that is currently being employed (see also
 Section~\ref{sec:EmuOptions}).  Default is {\tt indirection}.  This
 flag is private to each thread.  
+%
+\item {\tt heap\_margin} Specifies the size of the margin used to
+  determine whether to perform heap garbage collection or reallocation
+  of the environment stack.  Usually this field does not need ot be
+  set, but there may be cases in which XSB's memory management does
+  not properly handle creation of a very large term on the heap (we
+  hope there are very few such cases).
 %
 \item {\tt clause\_garbage\_collection}  {\tt on} if garbage collection for
 retracted clauses is allowed, and off otherwise. Default is {\tt
@@ -195,7 +203,7 @@ threads in the process.
     silent\_warning} silently succeeds when {\tt warning/1} is called;
   and {\tt error\_warning/1} throws a miscellaneous exception.
 
-\index{Attributed variables}
+\index{attributed variables}
 \item {\tt write\_attributes} Determines the action to take by {\tt
   write/1} when it writes an attributed variable.  By default {\em
   write/1} portrays attributed variables using module-specific
