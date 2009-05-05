@@ -37,6 +37,7 @@
 #include "deref.h"
 #include "heap_xsb.h"
 #include "binding.h"
+#include "error_xsb.h"
 #include "function.h"
 
 #define FUN_PLUS   1
@@ -313,7 +314,12 @@ int  unifunc_call(CTXTdeclc int funcnum, CPtr regaddr)
     break;
   case FUN_lgamma:
     set_fvalue_from_value;
+#ifdef WIN_NT
+    xsb_warn("lgamma function NOT defined");
+    fvalue = 0.0;
+#else
     fvalue = (Float)lgamma(fvalue);
+#endif
     bld_boxedfloat(CTXTc regaddr, fvalue);
     break;
 
@@ -616,8 +622,13 @@ int xsb_eval(CTXTdeclc Cell expr, FltInt *value) {
 	    else set_flt_val(value,(Float)log10(fiflt_val(fiop1)));
 	    break;
 	  } else if (strcmp(get_name(op_psc),"lgamma")==0) {
+#ifdef WIN_NT
+	    xsb_warn("lgamma function NOT defined");
+	    set_flt_val(value,0.0);
+#else
 	    if (isfiint(fiop1)) set_flt_val(value,(Float)lgamma((Float)fiint_val(fiop1)));
 	    else set_flt_val(value,(Float)lgamma(fiflt_val(fiop1)));
+#endif
 	    break;
 	  } else set_and_return_fail(value);
 
