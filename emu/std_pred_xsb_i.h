@@ -199,9 +199,9 @@ inline static xsbBool univ_builtin(CTXTdecl)
       head = clref_val(list);
       chead = cell(head);
       XSB_Deref(chead);
+      ctail = cell(head+1);
+      XSB_Deref(ctail);
       if (isatom(chead)) {
-	ctail = cell(head+1);
-	XSB_Deref(ctail);
 	if (isnil(ctail)) {	/* atom construction */
 	  bind_copy((CPtr)term, chead);
 	} else {
