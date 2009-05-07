@@ -204,13 +204,14 @@ void total_stat(CTXTdeclc double elapstime) {
     if (i != TABLE_SPACE && i != INCR_TABLE_SPACE) pspacetot += pspacesize[i];
 
   total_alloc =
-    pspacetot  +  trieassert_alloc  +  pspacesize[TABLE_SPACE] +
+    pspacetot  +  pspacesize[TABLE_SPACE] +
     pspacesize[INCR_TABLE_SPACE] +
     (pdl.size + glstack.size + tcpstack.size + complstack.size) * K +
     de_space_alloc + dl_space_alloc  + pnde_space_alloc;
 
   total_used  =
-    pspacetot  +  trieassert_used  +  pspacesize[TABLE_SPACE]-(tablespace_alloc-tablespace_used) +
+    pspacetot  +  pspacesize[TABLE_SPACE]-(tablespace_alloc-tablespace_used)
+    - (trieassert_alloc - trieassert_used) +
     pspacesize[INCR_TABLE_SPACE] +
     (glstack.size * K - gl_avail) + (tcpstack.size * K - tc_avail) +
     de_space_used + dl_space_used;
