@@ -3517,10 +3517,10 @@ void retractall_prref(CTXTdeclc PrRef prref) {
       buffer = buffers_to_free[--btop];
       switch (ClRefType(buffer)) {
       case SOB_RECORD: 
-	if (another_buff(ClRefJumpInstr(buffer)))
-	  buffers_to_free[btop++] = (ClRef) ClRefFirstIndex(buffer);
 	if (another_buff(ClRefTryInstr(buffer)))
 	  buffers_to_free[btop++] = ClRefNext(buffer);
+	if (another_buff(ClRefJumpInstr(buffer)))
+	  buffers_to_free[btop++] = (ClRef) ClRefFirstIndex(buffer);
 	mem_dealloc((pb)ClRefAddr(buffer),ClRefSize(buffer),ASSERT_SPACE);
 	if (xsb_profiling_enabled)
 	  remove_prog_seg((pb)buffer);
