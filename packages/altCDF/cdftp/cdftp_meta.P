@@ -181,12 +181,15 @@ metaAtLeastInvRel([NewElt|Rest],Elt,R,Class,AbdIn,AbdOut,
 % Abducing
 
 % checkAbd checks for elt(Elt,not(Class).
+% TLS: object change.
+%abduceElt(unique(_Class),_Elt,AbdIn,AbdIn,_Const):-!.
+
+%abduceElt(unique(Class),Elt,AbdIn,AbdOut,Const):-!,
+%	checkAbd(elt(Elt,unique(Class)),AbdOut,Const),
+%	updateElt(AbdIn,elt(Elt,unique(Class)),AbdOut).
 abduceElt(Class,Elt,AbdIn,AbdOut,Const):- 
 	checkAbd(elt(Elt,Class),AbdOut,Const),
 	updateElt(AbdIn,elt(Elt,Class),AbdOut).
-abduceElt(unique(Class),Elt,AbdIn,AbdOut,Const):- 
-	checkAbd(elt(Elt,Class),AbdOut,Const),
-	updateUniqueElt(AbdIn,elt(Elt,Class),AbdOut).
 
 abduceRel(R,Elt,NewElt,AbdIn,AbdOut,_Const):- 
 %	checkAbd(rel(Elt,R,NewElt),AbdIn,Const),
@@ -274,13 +277,15 @@ updateUniqueElt1([Term|R],T1,[Term|AbdOut]):-
 % Executes on Constraint List..  We are trying to add not(Class) as a
 % new constraint.  This does not evaluate the constraint: it only
 % tries to ensure all classes are prinicple.
+% updateNotElt(ConstrIn,Term,CounstrOut).
+
 updateNotElt([],Term,[Term]).
 updateNotElt([elt(Elt,not(C))|R],elt(Elt,not(Class)),ConstOut):- !,
           (tp_subclass(Class,C) -> 
-	      ConstOut = [elt(Elt,C)|R]
+	      ConstOut = [elt(Elt,not(C))|R]
 	      ; (tp_subclass(C,Class) -> 
-	             ConstOut = [elt(Elt,Class)|ConstMid]
-		   ; ConstOut = [elt(Elt,C)|ConstMid]),
+	             ConstOut = [elt(Elt,not(Class))|ConstMid]
+		   ; ConstOut = [elt(Elt,not(C))|ConstMid]),
   	         updateNotElt(R,elt(Elt,Class),ConstMid)).
 updateNotElt([Term|R],T1,[Term|ConstOut]):- 
 	updateNotElt(R,T1,ConstOut).
@@ -289,8 +294,10 @@ updateNotElt([Term|R],T1,[Term|ConstOut]):-
 % Checks
 
 checkAbd(elt(Elt,Class),_Abd,Constraint):- 
-	\+ (currentConstr(elt(Elt,not(C1)),Constraint),
-	     tp_subclass(Class,C1)).
+%        writeln(checkAbd(elt(Elt,Class),_Abd,Constraint)),
+	\+ (Class = cid(Id,NS),
+	    currentConstr(elt(Elt,not(C1)),Constraint),
+	    tp_subclass(cid(Id,NS),C1)).
 
 %-----------------------------------------------------
 % For alls, need to abduce -- this is why the meta.
@@ -357,7 +364,8 @@ constrainAtMostInv(atMostInv(Elt,N,R,Class),Abd):-
 %-----------------------------------------------------
 
 checkConstraint(elt(Elt,not(C1)),Abd):- 
-	\+ (abduced(elt(Elt,Class),Abd),tp_subclass(Class,C1)).
+	\+ (abduced(elt(Elt,Class),Abd),
+	    tp_subclass(Class,C1)).
 	   
 checkFinalConstraints(ConstOut,AbdOut):- 
 	\+ finalConstraintFailure(ConstOut,ConstOut,AbdOut).

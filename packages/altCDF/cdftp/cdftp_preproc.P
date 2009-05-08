@@ -109,8 +109,8 @@ preprocessNot(sameAs(R1,C1,R2,C2),
 preprocessNot(not(Class),C1,NIn,NOut):- !,
 	% Should fail here if class is cdfroot.
 	preprocess1(Class,C1,NIn,NOut).
-preprocessNot(oid(Id,Cmpt),not(unique(Id,Cmpt)),Nin,Nin):- !.
-preprocessNot(unique(cid(Id,Cmpt)),not(unique(Id,Cmpt)),Nin,Nin):- !.
+preprocessNot(oid(Id,Cmpt),not(unique(cid(Id,Cmpt))),Nin,Nin):- !.
+preprocessNot(unique(cid(Id,Cmpt)),not(unique(cid(Id,Cmpt))),Nin,Nin):- !.
 preprocessNot(cid(Class,Cmpt),not(cid(Class,Cmpt)),Nin,Nin):- !.
 preprocessNot(Other,_,_Nin,_Nin):-
 	domain_error(['class expression constructor'],Other,

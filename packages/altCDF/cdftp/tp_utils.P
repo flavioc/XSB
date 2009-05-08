@@ -1,7 +1,7 @@
 
 :- export  tp_prettyPrintCE/2,
               tp_gensym/2, tp_gennum/1, reset_gennum/0, tp_testgennum/1,
-	  tp_writeln/2, set_debug_on/1, set_debug_off/0.
+	  tp_writeln/2, set_debug_on/1, set_debug_off/0, get_debug_level/1.
 
 :- import conset/2,conget/2 from gensym.
 :- import member/2 from basics.
@@ -82,6 +82,8 @@ largeCE(CE):-
 :- dynamic debugging/1.
 
 :- set_debug_on(2).
+
+get_debug_level(N):- debugging(N).
 
 set_debug_off:- 
 	retractall(debugging(_)),
