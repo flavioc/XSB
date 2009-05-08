@@ -52,7 +52,7 @@
 :- import standard_symbol/3 from std_xsb.
 :- import predicate_property/2, current_predicate/1 from curr_sym.
 :- import findall/3, setof/3 from setof.
-
+:- import type_error/4 from error_handler.
 % := hide debug/0.
 
 :- import hide_this_show/2, hide_this_hide/2, show_this_hide/2,

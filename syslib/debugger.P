@@ -597,6 +597,7 @@ make_pretty_list_1([H],['and ',H]):- !.
 make_pretty_list_1([H|T],[H,', '|T1]):- 
 	make_pretty_list_1(T,T1).
 
+% TLS; if predicate does not exist, no psc record is made for the pred (unlike spy)
 nospy(X) :- var(X),!,warning('Spy specification cannot be a variable. Ignored.').
 nospy([Pred|More]) :- !, nospy(Pred),nospy(More).
 nospy([]) :- !.
@@ -606,19 +607,27 @@ nospy(P) :- atom(P),!,
 nospy(M:P) :- atom(P),!,
 	findall(M:P/A,current_predicate(M:P/A),Preds),
 	nospy(Preds).
+% reports removed, even if spy point does not exist.  To fix, we need a psc_get_spy,
+%  or some other indication of which predicates are spied.
 nospy(M:P/A) :- !,
-	spy_psc(M, P, A, NPsc),	psc_set_spy(NPsc, 0).
+	(current_predicate(M:P/A) -> 
+	   spy_psc(M, P, A, NPsc),	psc_set_spy(NPsc, 0),
+   	   console_writeln(['Spy point removed from ',M:P/A])
+	 ; warning(['Nospy: ',M:P/A,' does not exist'])).
 nospy(P/A) :- !, nospy(usermod:P/A).
+% TLS -- don't know if we're still supporting conditional spying.
 nospy((M:T:-B)) :- !,
 	term_mod(M:T,Psc,NewT),
 	psc_set_spy(Psc, 192),
 	(retract(('_b_SPY_condition'(NewT):-B)),fail ; true).
 nospy((T:-B)) :- !, nospy((usermod:T:-B)).
-nospy(M:T) :- 
+nospy(M:T) :- !,
 	term_mod(M:T,Psc,NewT),
 	psc_set_spy(Psc, 192),
 	retractall('_b_SPY_condition'(NewT)).
-nospy(T) :- !, nospy([]:T).
+nospy(T):- type_error(predicate_indicator,T,(nospy)/1,1).
+% Old default case.
+%nospy(T) :- !, nospy([]:T).
 
 
 spy_psc(M, P, A, Psc) :-
