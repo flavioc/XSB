@@ -460,6 +460,13 @@ sat_test((exists(rid(hP,test),exists(rid(hP,test),cid(thumb,test))),
 	  atMost(2,rid(hP,test)),
 	  atLeast(2,rid(hP,test),not(exists(rid(hP,test),cid(thumb,test)))))).
 
+%--------------------------------------------------------------
+% MKNF (tests of objects)
+
+sat_test((exists(rid(r1,test),oid(c1,test)),not(exists(rid(r1,test),oid(c1,test)))),false).
+
+
+
 end_of_file.
 
 sat_test((cid(c1,test),exists(rid(r1,test),exists(rid(r1,test),cid(c1,test))),exists(rid(r2,test),cid(c2,test)),sameAs(rid(r1,test),cid(c1,test),rid(r2,test),cid(c2,test))),true).
@@ -470,7 +477,6 @@ sat_test((atLeast(1,rid(r1,test),cid(c1,test)),atLeast(1,rid(r2,test),cid(c2,tes
 % ics.
 
 sat_test(stereo,exists(amplifier,big),exists(amplifier,small),true).
-
 
 
 end_of_file.
@@ -513,4 +519,5 @@ sat_test((a,exists(s,(all(p,exists(r,cid('CDF Classes',cdf))),
 sat_test((not(cid(c1,test)),atMost(1,inv(rt)),exists(inv(rt),cid(c1,test)),all(inv(rt),(exists(inv(rt),cid(c1,test)),atMost(1,inv(rt)))),false).
 
 test out atLeast along with transitive.
+
 

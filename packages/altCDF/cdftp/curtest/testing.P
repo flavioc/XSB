@@ -29,3 +29,5 @@ testval(Formula,false):-
 	  ; writeln('!!!failing'(sat_test(Formula,false)))).
 
 
+:- import isa/2 from cdf_init_cdf.
+tp_subclass(A,B):- isa(A,B).
