@@ -4,8 +4,6 @@
 
 :- import cdf_id_fields/4, isa/2 from cdf_init_cdf.
 
-tp_subclass(X,Y):- isa(X,Y).
-
 classIdentifier(C):- cdf_id_fields(C,cid,_,_).
 
 topIdentifier(cid('CDF Classes',cdf)).
