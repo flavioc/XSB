@@ -135,8 +135,13 @@ meta(Class,Elt,AbdIn,AbdOut,ConstIn,ConstIn):-
 
 %-----------------------------------------------------
 
+% Should be called only from all.
+% checking for uniques because there existed R relations to a given world W, 
+% Now we may be specifying that all R relations are to a given object, so if world W 
+% also had an object, we fail due to the unique names assumption.
 metaList([],_Class,AbdIn,AbdIn,ConstIn,ConstIn).
 metaList([Elt|Rest],Class,AbdIn,AbdOut,ConstIn,ConstOut):- 
+%	\+ twoUniques(Class,Elt,AbdIn),
 	meta(Class,Elt,AbdIn,AbdMid,ConstIn,ConstMid),
 	metaList(Rest,Class,AbdMid,AbdOut,ConstMid,ConstOut).
 
@@ -189,7 +194,12 @@ metaAtLeastInvRel([NewElt|Rest],Elt,R,Class,AbdIn,AbdOut,
 %	updateElt(AbdIn,elt(Elt,unique(Class)),AbdOut).
 abduceElt(Class,Elt,AbdIn,AbdOut,Const):- 
 	checkAbd(elt(Elt,Class),AbdOut,Const),
+	\+ twoUniques(Class,Elt,AbdIn),
 	updateElt(AbdIn,elt(Elt,Class),AbdOut).
+
+twoUniques(unique(cid(O1,_)),Elt,AbdIn):- 
+ 	    abduced(elt(Elt,unique(cid(O2,_))),AbdIn),
+	    O1 \== O2.
 
 abduceRel(R,Elt,NewElt,AbdIn,AbdOut,_Const):- 
 %	checkAbd(rel(Elt,R,NewElt),AbdIn,Const),
@@ -257,7 +267,8 @@ updateElt1([Term|R],T1,[Term|AbdOut]):-
 	updateElt1(R,T1,AbdOut).
 
 %---------- 
-
+/*
+ * no longer used
 updateUniqueElt(abd(Worldin,Elts),Term,abd(WorldOut,Elts)):- 
 	updateUniqueElt1(Worldin,Term,WorldOut).
 
@@ -272,7 +283,7 @@ updateUniqueElt1([elt(Elt1,C)|_R],elt(Elt,C),_):-
 	fail.	
 updateUniqueElt1([Term|R],T1,[Term|AbdOut]):- 
 	updateUniqueElt1(R,T1,AbdOut).
-
+*/
 %---------- 
 % Executes on Constraint List..  We are trying to add not(Class) as a
 % new constraint.  This does not evaluate the constraint: it only
@@ -293,11 +304,16 @@ updateNotElt([Term|R],T1,[Term|ConstOut]):-
 %----------------------------------------------------------
 % Checks
 
+%checkAbd(elt(Elt,Class),_Abd,Constraint):- 
+%        writeln(checkAbd(elt(Elt,Class),_Abd,Constraint)),
+%	\+ (Class = cid(Id,NS),
+%	    currentConstr(elt(Elt,not(C1)),Constraint),
+%	    tp_subclass(cid(Id,NS),C1)).
+
 checkAbd(elt(Elt,Class),_Abd,Constraint):- 
 %        writeln(checkAbd(elt(Elt,Class),_Abd,Constraint)),
-	\+ (Class = cid(Id,NS),
-	    currentConstr(elt(Elt,not(C1)),Constraint),
-	    tp_subclass(cid(Id,NS),C1)).
+	\+ (currentConstr(elt(Elt,not(C1)),Constraint),
+	    tp_subclass(Class,C1)).
 
 %-----------------------------------------------------
 % For alls, need to abduce -- this is why the meta.
