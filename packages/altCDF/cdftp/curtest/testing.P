@@ -30,4 +30,10 @@ testval(Formula,false):-
 
 
 :- import isa/2 from cdf_init_cdf.
-tp_subclass(A,B):- isa(A,B).
+%tp_subclass(A,B):- isa(A,B).
+
+tp_subclass(X,Y):- normalize(X,NewX),normalize(Y,NewY),isa(NewX,NewY).
+
+normalize(X,NewX):- nonvar(X),X = unique(cid(Id,NS)),NewX = oid(Id,NS),!.
+normalize(X,X).
+

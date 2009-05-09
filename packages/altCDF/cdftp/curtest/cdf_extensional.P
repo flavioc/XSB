@@ -10,3 +10,6 @@ isa_ext(rid(rr3,test),rid('CDF Object-Object Relations',cdf)).
 isa_ext(rid(rr1,test),rid(rr2,test)).
 isa_ext(rid(rr2,test),rid(rr3,test)).
 isa_ext(rid(rr1,test),rid(rr3,test)).
+
+isa_ext(oid(o1,test),cid(c1,test)).
+
