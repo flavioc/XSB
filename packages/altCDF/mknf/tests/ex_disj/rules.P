@@ -1,0 +1,81 @@
+
+/**** 
+p_or_q \subseteq (p or q)
+p_or_q \subseteq r
+
+first \subseteq second
+
+****/
+
+l1(ab):- dlnot(l2(ab)).
+l2(ab):- dlnot(l1(ab)).
+
+first(callback).
+third(X):- known(second(X)).
+fifth(X):- known(fourth(X)).
+
+win1(tok).
+win3(tok):- dlnot(win2(tok)).
+win5(tok):- dlnot(win4(tok)).
+
+definedClass(first(Obj),first,Obj):- Obj = callback.
+definedClass(second(Obj),second,Obj):- Obj = callback.
+definedClass(third(Obj),third,Obj):- Obj = callback.
+definedClass(fourth(Obj),fourth,Obj):- Obj = callback.
+definedClass(fifth(Obj),fifth,Obj):- Obj = callback.
+
+definedClass(win1(Obj),win1,Obj):- Obj = tok.
+definedClass(win2(Obj),win2,Obj):- Obj = tok.
+definedClass(win3(Obj),win3,Obj):- Obj = tok.
+definedClass(win4(Obj),win4,Obj):- Obj = tok.
+definedClass(win5(Obj),win5,Obj):- Obj = tok.
+
+definedClass(l1(Obj),l1,Obj):- Obj = ab.
+definedClass(l2(Obj),l2,Obj):- Obj = ab.
+
+/*
+definedClass(loop1(Obj),loop1,Obj):- Obj = abd.
+definedClass(loop2(Obj),loop2,Obj):- Obj = abd.
+
+*/
+
+test:- 
+       test_call(k(fifth(callback)),get_object_model(oid(callback,mknf),
+                 [entry(known(fifth(callback),6),[[]]),
+                  entry(known(first(callback),6),[[]]),
+                  entry(known(fourth(callback),6),[[]]),
+                  entry(known(second(callback),6),[[]]),
+		  entry(known(third(callback),6),[[]])],
+                  [],
+                  [entry(allModelsEntails(oid(callback,mknf),cid(fifth,mknf),6),[[]]),
+ 		   entry(allModelsEntails(oid(callback,mknf),cid(first,mknf),6),[[]]),
+		   entry(allModelsEntails(oid(callback,mknf),cid(fourth,mknf),6),[[]]),
+ 		   entry(allModelsEntails(oid(callback,mknf),cid(second,mknf),6),[[]]),
+		   entry(allModelsEntails(oid(callback,mknf),cid(third,mknf),6),[[]])])),
+        
+       test_call(k(win5(tok)),get_object_model(oid(tok,mknf),
+                 [entry(known(win1(tok),2),[[]]),entry(known(win3(tok),2),[[]]),
+		  entry(known(win5(tok),2),[[]])],
+		 [entry(dlnot(win2(tok),2),[[]]),entry(dlnot(win4(tok),2),[[]])],
+		 [entry(allModelsEntails(oid(tok,mknf),not cid(win2,mknf),2),[[]]),
+		  entry(allModelsEntails(oid(tok,mknf),not cid(win4,mknf),2),[[]]),
+		  entry(allModelsEntails(oid(tok,mknf),cid(win1,mknf),2),[[]]),
+		  entry(allModelsEntails(oid(tok,mknf),cid(win3,mknf),2),[[]]),
+		  entry(allModelsEntails(oid(tok,mknf),cid(win5,mknf),2),[[]])])),
+
+       test_call(k(l1(ab)),get_object_model(oid(ab,mknf),
+          [entry(known(l1(ab),3),[[dlnot(l2(ab),3)],[allModelsEntails(oid(ab,mknf),cid(l1,mknf),2)]]),
+	   entry(known(l2(ab),3),[[dlnot(l1(ab),3)],[allModelsEntails(oid(ab,mknf),cid(l2,mknf),2)]])],
+         [entry(dlnot(l1(ab),3),[[tnot(known(l1(ab),3))]]),
+          entry(dlnot(l2(ab),3),[[tnot(known(l2(ab),3))]])],
+	 [entry(allModelsEntails(oid(ab,mknf),cid(l1,mknf),3),[[known(l1(ab),2),known(l2(ab),2)]]),
+          entry(allModelsEntails(oid(ab,mknf),cid(l2,mknf),3),[[known(l1(ab),2),known(l2(ab),2)]])])).
+
+
+end_of_file.
+
+
+
+
+
+

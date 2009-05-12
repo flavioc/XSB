@@ -1,0 +1,15 @@
+
+/*
+nessesCond_ext(oid(p_or_q,mknf),vid(';'(cid(p,mknf),cid(q,mknf)))).
+isa_ext(oid(p_or_q,mknf),cid(r,mknf)).
+*/
+
+isa_ext(cid(first,mknf),cid(second,mknf)).
+isa_ext(cid(third,mknf),cid(fourth,mknf)).
+
+necessCond_ext(cid(win1,mknf),vid(not(cid(win2,mknf)))).
+necessCond_ext(cid(win3,mknf),vid(not(cid(win4,mknf)))).
+
+necessCond_ext(cid(loop2,mknf),vid(not(cid(loop1,mknf)))).
+
+%isa_ext(oid(tok,mknf),cid(win1,mknf)).
