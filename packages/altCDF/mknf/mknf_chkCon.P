@@ -346,6 +346,7 @@ getRelevantFacts_1(Id,allAttr(Id,R,C)):-
 getRelevantFacts_1(Id,maxAttr(Id,R,C,N)):- 
 	maxAttr(Id,R,C,N).
 getRelevantFacts_1(Id,necessCond(Id,Cond)):- 
+%	necessCond(Id,Cond).
 	mknf_necessCond(Id,Cond).
 %getRelevantFacts_1(Id,(H <= B)):- 
 %	compdlrule(_,H,B),
