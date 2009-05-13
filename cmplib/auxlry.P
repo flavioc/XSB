@@ -226,7 +226,7 @@ verbo_time_message(StartTime, Message) :-
 
 /*================================================================*/
 /*  subsumes(+X, +Y):							*/
-/*	X subsumes Y, i.e. X is an instance of Y			*/
+/*	X subsumes Y, i.e. Y is an instance of X			*/
 /*	The procedure is side-effect free.				*/
 /*===============================================================*/
 
