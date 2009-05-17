@@ -1,0 +1,9 @@
+
+/* will have only test */
+
+test:- 
+	con_test(cid(one,t1),false),
+	con_test(cid(one,t2),true),
+	con_test(cid(one,t3),false),
+	con_test(cid(one,t4),true).
+
