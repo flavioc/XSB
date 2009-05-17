@@ -15,6 +15,7 @@
 % Issues
 % -- Add explicit negation in rules.
 % question about mknf_isa / isa ... etc.
+% potential problem w. queried etc and mknf.
 
 %-------------------------------------------------
 % Main API
@@ -33,6 +34,7 @@ k(Term):-
 le(Dir):- load_ex(Dir).
 
 le:- le('tests/ex_disj').
+lc:- le('tests/chkCon').
 
 %-------------------------
 % Known
