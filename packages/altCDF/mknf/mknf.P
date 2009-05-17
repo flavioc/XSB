@@ -13,9 +13,8 @@
 :- retractall(cdf_flags(_,_)).
 
 % Issues
-% -- Mknf in necesscond etc.  necessCond in get_conditional_deps.
-% -- Allow relations in known, etc.
 % -- Add explicit negation in rules.
+% question about mknf_isa / isa ... etc.
 
 %-------------------------------------------------
 % Main API
@@ -32,6 +31,8 @@ k(Term):-
 
 % Loads an example (denoted by its directory
 le(Dir):- load_ex(Dir).
+
+le:- le('tests/ex_disj').
 
 %-------------------------
 % Known
@@ -55,6 +56,7 @@ known(Term,Iter):-
 	debug(derived(known(Term,Iter))).
 
 % Call made within iteration by allModelsEntails (via cdf_internsional).
+% Note that only unconditional answers are propagated.
 last_known(Term):- 
 	arg(1,Term,Obj),
 	object_iter(oid(Obj,mknf),Iter),
@@ -63,7 +65,7 @@ last_known(Term):-
 	    final_iter(oid(Obj,mknf),FinIt),
 	    known(Term,FinIt)
           ; Iter1 is Iter - 1,
-	    known(Term,Iter1)).
+	    get_residual(known(Term,Iter1),[])).
 
 %------------------------
 % dlnot
@@ -84,17 +86,6 @@ dlnot(Term,Iter):-
 	lastAllModelsEntails(oid(Obj,mknf),not(cid(Class,mknf)))),
 	debug(derived(dlnot(Term,Iter))).
 
-% Call made within iteration by allModelsEntails (via cdf_internsional).
-last_dlnot(Term):- 
-	arg(1,Term,Obj),
-	object_iter(oid(Obj,mknf),Iter),
-	(Iter = final ; Iter > 0),!,
-	(Iter = final -> 
-	    final_iter(oid(Obj,mknf),FinIt),
-	    dlnot(Term,FinIt)
-          ; Iter1 is Iter - 1,
-	    dlnot(Term,Iter1)).
-
 %------------------------
 
 % Called by ame/1, computes primitives.
@@ -107,37 +98,22 @@ aME_1(Id,CE,_Iter):-
 % Called within computeObjectPrimitives.
 :- table allModelsEntails/3.
 allModelsEntails(Id,CE,_Iter):- 
-%        (rec_allModelsEntails(Id,not(CE)) -> fail ; true).
-        (rec_allModelsEntails(Id,not(CE)) -> fail ; get_conditional_dependencies(Id)).
-
-get_conditional_dependencies(Id):- 
-    getRelevantFacts(Id,Facts),
-    get_conditional_dependencies_1(Facts).
-
-get_conditional_dependencies_1([]).
-get_conditional_dependencies_1([isa(One,Two)|T]):- !,
-    mknf_isa(One,Two),						   
-    get_conditional_dependencies_1(T).
-% TLS: need to fix
-get_conditional_dependencies_1([necessCond(One,Two)|T]):- 
-%    mknf_isa(One,Two),						   
-    get_conditional_dependencies_1(T).
+%        (rec_allModelsEntails(Id,not(CE)) -> fail ; get_conditional_dependencies(Id)).
+        (rec_allModelsEntails(Id,not(CE)) -> fail ; true).
 
 % Call made within iteration by known/2.
+% Note that only unconditional answers are propagated.
 lastAllModelsEntails(oid(Obj,mknf),CE):- 
 	object_iter(oid(Obj,mknf),Iter),
 	(Iter = final ; Iter > 0),!,
 	(Iter = final -> 
 	    final_iter(oid(Obj,mknf),FinIt),
-%	    get_residual(allModelsEntails(oid(Obj,mknf),CE,FinIt),D)
 	    allModelsEntails(oid(Obj,mknf),CE,FinIt)
           ; Iter1 is Iter - 1,
-%	    get_residual(allModelsEntails(oid(Obj,mknf),CE,Iter1),D)).
-	    allModelsEntails(oid(Obj,mknf),CE,Iter1)).
+	    get_residual(allModelsEntails(oid(Obj,mknf),CE,Iter1),[])).
 
 %------------------------
 
-%:- table computeObjectPrimitives/2.
 computeObjectPrimitives(Id,Iter):- 
 	debug(computeObjectPrimitives(Id,Iter)),
         (var(Iter) -> get_object_iter(Id,I),Iter = I ; true),
@@ -168,7 +144,7 @@ computeObjectPrimitives_1(oid(Obj,mknf),Iter):-
 	fail.
 computeObjectPrimitives_1(_Obj,_Iter).
 
-%------------------------
+%------------------------------------------------
 % Hook from sat-checker (cdftp-meta).  Not using CDF's isa which is
 % tabled and highly optimized (and so is harder to debug)
 
@@ -185,7 +161,8 @@ normalize(X,X).
 
 mknf_necessCond(Class,Cond):- 
 	mknf_isa(Class,C1),
-	immed_necessCond(C1,Cond).
+	immed_necessCond(C1,Cond1),
+	Cond1 = Cond.
 
 % sat-checker treats objects as classes w. unique elements.
 mknf_isa(Sub,Sup):- 
@@ -210,7 +187,7 @@ mknf_immed_isa(SubCid,SupCid) :-
 mknf_immed_isa(SubCid,SupCid) :-
     isa_int(SubCid,SupCid).
 
-%------------------------
+%------------------------------------------------
 % Manipulation of object info to control iterations.  May need to be
 % changed for multiple objects.
 % Using obj(Id,mknf) for object representation.
@@ -240,7 +217,6 @@ finalize_object(Obj):-
 	
 completed_object(Obj):- 
 	object_iter(Obj,final).
-
 check_final_object(Obj):- 
 	object_iter(Obj,final),!.
 check_final_object(Obj):- 
@@ -265,6 +241,9 @@ check_final_object(Obj):-
 
 abstract_iters([],[]).
 abstract_iters([known(Term,_)|R],[known(Term)|R1]):- !,
+     abstract_iters(R,R1).
+abstract_iters([tnot(Term)|R],[tnot(Term1)|R1]):- !,
+     abstract_iters([Term],[Term1]),
      abstract_iters(R,R1).
 abstract_iters([dlnot(Term,_)|R],[dlnot(Term)|R1]):- !,
      abstract_iters(R,R1).
@@ -333,26 +312,32 @@ get_object_model(Obj,E1,E2,E3):-
 
 get_last_known(Obj,Entries):- 
         final_iter(Obj,Iter),
-	(setof(entry(Call,ResList),
-	      A^B^C^Res^(get_calls_for_table(known(A,B),Call),
+	(setof(entry(CallAbs,ResList),
+	      A^B^C^Res^Call^(get_calls_for_table(known(A,B),Call),
 	                 Call = known(C,Iter),
-		 	setof(Res,get_residual(Call,Res),ResList)),E) -> 
- 			Entries = E ; Entries = []).
+			 CallAbs = known(C),
+		    	 setof(Res1,Res^(get_residual(Call,Res),
+ 	 	  	                 abstract_iters(Res,Res1)),ResList)),E) -> 
+ 			                                   Entries = E ; Entries = []).
 get_last_dlnot(Obj,Entries):- 
         final_iter(Obj,Iter),
-	(setof(entry(Call,ResList),
-	      A^B^C^Res^(get_calls_for_table(dlnot(A,B),Call),
+	(setof(entry(CallAbs,ResList),
+	      A^B^C^Res^Call^(get_calls_for_table(dlnot(A,B),Call),
 	                 Call = dlnot(C,Iter),
-		 	setof(Res,get_residual(Call,Res),ResList)),E) ->
+			 CallAbs = dlnot(C),
+		 	setof(Res1,Res^(get_residual(Call,Res),
+ 	 	  	                 abstract_iters(Res,Res1)),ResList)),E) -> 
 			Entries = E ; Entries = []).
 get_last_ame(Obj,Entries):- 
         final_iter(Obj,Iter),
-	(setof(entry(Call,ResList),
-	      A^B^C^D^F^Res^(get_calls_for_table(allModelsEntails(A,B,C),Call),
+	(setof(entry(CallAbs,ResList),
+	      A^B^C^D^F^Res^Call^(get_calls_for_table(allModelsEntails(A,B,C),Call),
 	                 Call = allModelsEntails(D,F,Iter),
+			 CallAbs = allModelsEntails(D,F),
 		 	setof(Res,get_residual(Call,Res),ResList)),E) ->
 			Entries = E ; Entries = []).
 
+/* test driver for mknf */
 test_call(Call,Model):-
 	(debugging_mknf -> 
 	   retractall(debugging_mknf),
@@ -366,7 +351,21 @@ test_call(Call,Model):-
 	 (get_object_model(Obj,E1,E2,E3) = Model -> 
 	    	 write('   ***'),write(Call),writeln(' is correct')
 	    ;    write('   ***'),write(Call),writeln(' is not correct')).
-	 
+	
+/* test driver for checking consistency */
+con_test(Id,Value):-
+	writeln(testing(con_test(Id,Value))),
+	(debugging_mknf -> 
+	   retractall(debugging_mknf),
+	   get_debug_level(N),
+	   set_debug_off,
+           (checkIdConsistency(Id) -> 
+ 	       (Value = true -> true ; writeln('!!!failing'(sat_test(Id,false))))
+	     ; (Value = false -> true ; writeln('!!!failing'(sat_test(Id,true))))),
+	   set_debug_on(N),
+	   assert(debugging_mknf)
+           ; checkIdConsistency(Id)).
+
 load_ex(Dir):- 
 	abolish_all_tables,
 	load_intensional_rules(Dir),
@@ -379,6 +378,8 @@ load_ex(Dir):-
 
 init:- [cdf_init_cdf],[mknf_chkCon].
 
+end_of_file.
+
 /*
 dlnot0(Term):- 
 	debug(dlnot(Term)),
@@ -387,5 +388,34 @@ dlnot0(Term):-
 	(Term =.. [Class,Obj] -> 
 	    concat_atom([not,Class],NegClass),
 	    isa(oid(Obj,mknf),cid(NegClass,mknf)) ; fail).
+*/
+
+% Dont think this is needed.
+% Call made within iteration by allModelsEntails (via cdf_internsional).
+% Note that only unconditional answers are propagated.
+/*
+last_dlnot(Term):- 
+	arg(1,Term,Obj),
+	object_iter(oid(Obj,mknf),Iter),
+	(Iter = final ; Iter > 0),!,
+	(Iter = final -> 
+	    final_iter(oid(Obj,mknf),FinIt),
+	    dlnot(Term,FinIt)
+          ; Iter1 is Iter - 1,
+	    get_residual(dlnot(Term,Iter1),[])).
+
+get_conditional_dependencies(Id):- 
+    getRelevantFacts(Id,Facts),
+    get_conditional_dependencies_1(Facts).
+
+% TLS: assuming relevant facts.
+get_conditional_dependencies_1([]).
+get_conditional_dependencies_1([isa(One,Two)|T]):- 
+    mknf_isa(One,Two),!,						   
+    get_conditional_dependencies_1(T).
+get_conditional_dependencies_1([necessCond(One,Two)|T]):- 
+    mknf_necessCond(One,Two),!,
+    get_conditional_dependencies_1(T).
+
 */
 

@@ -1,35 +1,33 @@
 :- compiler_options([spec_off]).
 
-:- op(1150, xfx, (<=)).
+%:- op(1150, xfx, (<=)).
 :- [altCDF].
 :- [cdftp_meta].
 :- [cdftp_cdfsc].
 :- [cdftp_preproc].
-/*
-:- document_export descend_all/0, ceDepth/2, aME/2,
-	localClassExpression/2,  % hide
+
+:- document_export
+ descend_all/0, 
+  ceDepth/2, aME/2,
 	checkIdConsistency/1, consistentWith/2,
-	allModelsEntails/2,
-	localClassExpression/3,	check_lce/2,
-            isCE/1, ceMember/2.
+	allModelsEntails/2,isCE/1, ceMember/2.
+%	check_lce/2,            
 
-:- document_import isa_ext/2,necessCond_ext/2 from usermod.
-:- document_import compdlrule/3 from usermod.
+:- document_import isa_ext/2 from usermod.
+:- document_import mknf_isa/2, mknf_necessCond/2, debug/1 from usermod.
+:- document_import object_iter/2 from mknf.
 
-:- document_import classIdentifier/1,topIdentifier/1,
-	                 bottomIdentifier/1 from cdftp_cdfsc.
+:- document_import topIdentifier/1, bottomIdentifier/1 from cdftp_cdfsc.
 
 :- document_import checkContexts/6,
             sat/3
 %	subsumes/2
     from cdftp_meta.
-*/
-:- import length/2 from basics.
 
 :- import tp_writeln/2 from tp_utils.
 :- import   isa/2, allAttr/3, hasAttr/3, necessCond/2,
 	   maxAttr/4, minAttr/4,cdf_id_fields/4,
-	   assert_cdf_term/1, retractall_cdf_term/1,abolish_cdf_tables/0 from cdf_init_cdf.
+	   abolish_cdf_tables/0 from cdf_init_cdf.
 :- import 
 %         cdf_id_fields/4, system_component/1,
 	abolish_cdf_tables/0
@@ -39,8 +37,8 @@
 
 :- import conset/2, conget/2, coninc/1 from gensym.
 :- import message/1 from standard.
-:- import domain_error/4, misc_error/1,check_ground/3 from error_handler.
-:- import memberchk/2,member/2 from basics.
+:- import misc_error/1,check_ground/3 from error_handler.
+:- import memberchk/2,member/2,comma_append/3 from basics.
 
 %---------------------------------------------------- :-
 :- comment(module,"The module @tt{cdftp_chkCon} contains the top-level
@@ -60,24 +58,33 @@ words, if @tt{Id} is a class identifier, @tt{consistentWith/2}
 determines whether there is a model of the CDF instance in which all
 elements in @tt{Id} are also in @tt{CE}. If @tt{Id} is an object
 identifier, @tt{consistentWith/2} determines whether there is a model
-in which @tt{Id} @tt{Id} is in @tt{CE}.").
+in which @tt{Id}  is in @tt{CE}.").
 
-consistentWith(cid(Id,Cmpt),CE):- 
-	assertNecessCond(cid(Id,Cmpt),CE),
-	(checkIdConsistency(cid(Id,Cmpt)) ->
-	    retractNecessCond(cid(Id,Cmpt),CE)
-	  ; retractNecessCond(cid(Id,Cmpt),CE),
-	    fail).
+%consistentWith(cid(Id,Cmpt),CE):- 
+%	assertNecessCond(cid(Id,Cmpt),CE),
+%	(checkIdConsistency(cid(Id,Cmpt)) ->
+%	    retractNecessCond(cid(Id,Cmpt),CE)
+%	  ; retractNecessCond(cid(Id,Cmpt),CE),
+%	    fail).
 
-assertNecessCond(cid(Id,Comp),CE):- 
-	abolish_cdf_tables,
-	assert_cdf_term(necessCond_ext(cid(Id,Comp),vid(CE))).
-assertNecessCond(oid(Id,Comp),CE):- 
-	abolish_cdf_tables,
-	assert_cdf_term(necessCond_ext(oid(Id,Comp),vid(CE))).
+%-----------------------------------------------------------------------------
 
-retractNecessCond(Id,CE):- 
-	retractall_cdf_term(necessCond_ext(Id,vid(CE))).
+:- comment(checkIdConsistency/1,"In @tt{checkIdConsistency(IdList)}
+@tt{IdList} is a list of object or class identifiers which is taken as
+a conjunction.  The predicate checks whether @tt{IdList} is consistent
+in the current CDF instance.").
+
+/* Top level call that skips the loop check and goes immediately to 
+    tableConsChk.
+    In the code that follows, an Id is always a CDF class or object id; 
+    A Context is a list (representing a set) of these contexts, and an
+    AncList is a list of Contexts  */
+
+checkIdConsistency(Id):- 
+        retractmytabling,
+	topIdentifier(Top),
+%        bottomIdentifier(Bottom),
+	 rec_allModelsEntails(Id,Top).
 
 %--------------------------------------------------
 
@@ -95,34 +102,13 @@ This predicate assumes that all class and object identifiers in a
 given CDF instance are correct.").
 
 rec_allModelsEntails(cid(Id,Cmpt),CE):- 
-	rec_checkIdConsistency(cid(Id,Cmpt),CE).
+        sort([cid(Id,Cmpt),CE],Slist),
+	rec_tableConsChk(Slist,[[cid(Id,Cmpt),CE]]).
 rec_allModelsEntails(oid(Id,Cmpt),CE):- 
 	object_iter(oid(Id,Cmpt),Iter),
 	debug(rec_allModelsEntails(oid(Id,Cmpt),CE,Iter)),
-	rec_checkIdConsistency(oid(Id,Cmpt),CE).
-
-%-----------------------------------------------------------------------------
-
-:- comment(checkIdConsistency/1,"In @tt{checkIdConsistency(IdList)}
-@tt{IdList} is a list of object or class identifiers which is taken as
-a conjunction.  The predicate checks whether @tt{IdList} is consistent
-in the current CDF instance.").
-
-/* Top level call that skips the loop check and goes immediately to 
-    tableConsChk.
-    In the code that follows, an Id is always a CDF class or object id; 
-    A Context is a list (representing a set) of these contexts, and an
-    AncList is a list of Contexts  */
-
-% checkIdConsistency(Id):- 
-%	checkIdConsistency(single,Id).
-
-%checkIdConsistency(Mode,Id):- 
-%	retractmytabling,
-%	tableConsChk(Mode,[Id],[[Id]]).
-
-rec_checkIdConsistency(Id,Context):- 
-	rec_tableConsChk(single,[context(Id,Context)],[[Id,Context]],Context).
+        sort([oid(Id,Cmpt),CE],Slist),
+	rec_tableConsChk(Slist,[[oid(Id,Cmpt),CE]]).
 
 %-------------------------
 
@@ -175,102 +161,55 @@ checkIdConsistency_1 handles case 2).
 Cases 1) and 3) are handled by checkIdConsistency_2
 */
 
-%checkIdConsistency_1(Mode,Context,AncList):- 
-%	(memberchk(Context,AncList) -> 
-%	     tp_writeln(1,inLoopSuccess(Context))
-%	   ; checkIdConsistency_2(Mode,Context,[Context|AncList])).
+%----------
 
- checkIdConsistency_2(_Mode,[],_).
- checkIdConsistency_2(Mode,Context,AncList):- 
- 	(queried(Context) -> 
- 	    (succeeded(Context) -> tp_writeln(1,succeedingOnTable(Context))
- 	      ; (failed(Context) -> tp_writeln(1,failingOnTable(Context)),fail
- 	          ; tp_writeln(0,tableNotRight(Context,AncList))))
-               ;   tp_writeln(1,recursivelyChecking(Context)),
- 	      tableConsChk(Mode,Context,AncList)).
-
-rec_checkIdConsistency_1(Mode,Context,AncList):- 
+% next two only called from check_worlds
+rec_checkIdConsistency_1(Context,AncList):- 
 	(memberchk(Context,AncList) -> 
 	     tp_writeln(1,inLoopSuccess(Context))
-	   ; rec_checkIdConsistency_2(Mode,Context,[Context|AncList])).
+	   ; rec_checkIdConsistency_2(Context,[Context|AncList])).
 
-rec_checkIdConsistency_2(_Mode,[],_).
-rec_checkIdConsistency_2(Mode,Context,AncList):- 
+rec_checkIdConsistency_2([],_).
+rec_checkIdConsistency_2(Context,AncList):- 
  	(queried(Context) -> 
  	    (succeeded(Context) -> tp_writeln(1,succeedingOnTable(Context))
  	      ; (failed(Context) -> tp_writeln(1,failingOnTable(Context)),fail
  	          ; tp_writeln(0,tableNotRight(Context,AncList))))
                ;   tp_writeln(1,recursivelyChecking(Context)),
-	           topIdentifier(Top),
- 	           rec_tableConsChk(Mode,Context,AncList,Top)).
+ 	           rec_tableConsChk(Context,[Context|AncList])).
+
+%	rec_tableConsChk(single,[context(Id,Context)],[[Id,Context]],Context).
+%----------
 
 % no call has been made before to context.
-tableConsChk(Mode,Context,AncList):- 
+rec_tableConsChk(Context,AncList):- 
 	call_assert(queried(Context)),
-	(tableConsChk_1(Mode,Context,AncList) -> 
-	    call_assert(succeeded(Context)),
-	    tp_writeln(1,succeededConsistCheck(Context))
+	(rec_tableConsChk_1(Context,AncList) -> 
+	    call_assert(succeeded(Context))
+%	    tp_writeln(1,succeededConsistCheck(Context))
 	  ; call_assert(failed(Context)),
-           	    tp_writeln(1,failedConsistCheck(Context)),
+%       	    tp_writeln(1,failedConsistCheck(Context)),
                 fail).
 
-% no call has been made before to context.
-% ... and what does mode mean???
-rec_tableConsChk(Mode,Context,AncList,Resolvant):- 
-	call_assert(queried(Context)),
-	(rec_tableConsChk_1(Mode,Context,AncList,Resolvant) -> 
-	    call_assert(succeeded(Context)),
-	    tp_writeln(1,succeededConsistCheck(Context))
-	  ; call_assert(failed(Context)),
-       	    tp_writeln(1,failedConsistCheck(Context)),
-                fail).
-
-tableConsChk_1(Mode,Context,AncList):- 
+rec_tableConsChk_1(Context,AncList):- 
 	localClassExpression(Context,Expr),
+%	maybeAddRes(Context,Expr1,Expr),
 	tp_prettyPrintCE(2,Expr),
 	sat(Expr,abd(Struct,Worlds),Constraints),
-	checkContexts(Constraints,AncList,Struct,Worlds,Contexts,L),
-	check_worlds(Mode,0,L,Contexts,AncList).
-
-rec_tableConsChk_1(Mode,Context,AncList,Resolv):- 
-	localClassExpression(Context,Expr1),
-	maybeAddRes(Context,Resolv,Expr1,Expr),
-	tp_prettyPrintCE(2,(Resolv,Expr)),
-	sat((Resolv,Expr),abd(Struct,Worlds),Constraints),
 	debug(derived_sat(Expr,abd(Struct,Worlds),Constraints)),
-	checkContexts(Constraints,AncList,Struct,Worlds,_Contexts,_L).
-%	check_worlds(Mode,0,L,Contexts,AncList).
-
-maybeAddRes(context(oid(I,N),_),not(cid(Id,N1)),ExprIn,ExprOut):- !,
-        (mknf_isa(oid(I,N),cid(Id,N1)) -> 
-	  ExprOut = (cid(Id,N1),ExprIn) ; ExprOut = ExprIn).
-maybeAddRes(oid(I,N),not(cid(Id,N1)),ExprIn,ExprOut):- !,
-        (mknf_isa(oid(I,N),cid(Id,N1)) -> 
-	  ExprOut = (cid(Id,N1),ExprIn) ; ExprOut = ExprIn).
-maybeAddRes(unique(oid(I,N)),not(cid(Id,N1)),ExprIn,ExprOut):- !,
-        (mknf_isa(oid(I,N),cid(Id,N1)) -> 
-	  ExprOut = (cid(Id,N1),ExprIn) ; ExprOut = ExprIn).
-maybeAddRes(_Id,_Res,Expr,Expr):- 
-	debug(maybeAddRes(_Id,_Res,Expr,Expr)).
+	checkContexts(Constraints,AncList,Struct,Worlds,Contexts,L),
+	check_worlds(0,L,Contexts,AncList).
 
 /* Assumes a context structure of arity L.
-   This routine checks all contexts within a given model.
-   Mode is single or multiple. */
-check_worlds(_Mode,L,L,_Contexts,_):- !.
-check_worlds(Mode,L,Arity,Contexts,AncList):- 
+   This routine checks all contexts within a given model.*/
+check_worlds(L,L,_Contexts,_):- !.
+check_worlds(L,Arity,Contexts,AncList):- 
 	L1 is L + 1,
 	arg(L1,Contexts,Context),
-	length(Context,Clen),
-	(Mode == multiple -> 
-	    (Clen > 1 -> 
-	       sort(Context,Csort),
-	       rec_checkIdConsistency_1(Mode,Csort,AncList)
-	    ;  
-	       true)
-	 ;  sort(Context,Csort),
-	    rec_checkIdConsistency_1(Mode,Csort,AncList) ),	   
-            check_worlds(Mode,L1,Arity,Contexts,AncList).
-
+       sort(Context,Csort),
+       rec_checkIdConsistency_1(Csort,AncList),	   
+       check_worlds(L1,Arity,Contexts,AncList).
+	
 call_assert(Term):- (call(Term) -> true ; asserta(Term)).
 
 %--------------------------------------------------
@@ -286,50 +225,48 @@ CDF instance.
 This predicate assumes that all class and object identifiers in a
 given CDF instance are correct.").
 
-check_lce(Id,N):- 
-	localClassExpression(Id,N,Expr),
-	tp_prettyPrintCE(0,Expr),
-	debug(Expr).
+%check_lce(Id,N):- 
+%	localClassExpression(Id,N,Expr),
+%	tp_prettyPrintCE(0,Expr),
+%	debug(Expr).
 
 :- comment(localClassExpression/3,"In the goal
 @tt{localClassExpression(+IdList,+N,-Expr)} @tt{IdList} is a list of
-class identifiers, and @tt{N} is a positive integer.  In its
-semantics, @tt{IdList} is interpreted as a conjunction of identifiers,
-and upon success, @tt{Expr} is a class expression, unfolded to depth
-@tt{N}, that describes @tt{IdList} according to the current CDF
-instance.").
+class identifiers or class expressions and @tt{N} is a positive
+integer.  In its semantics, @tt{IdList} is interpreted as a
+conjunction of identifiers, and upon success, @tt{Expr} is a class
+expression, unfolded to depth @tt{N}, that describes @tt{IdList}
+according to the current CDF instance.").
 
-localClassExpression([context(H,Res)],N,(H,Res,Expr)):- !,
- 	localClassExpr_1(H,N,Expr),
-	maybeAddRes(H,Res,Expr).
-localClassExpression([context(H,Res)|T],N,((H,Res,Expr1),Expr2)):- 
- 	localClassExpr_1(H,N,Expr1),
- 	localClassExpression(T,N,Expr2).
+localClassExpression(Context,Expr):- 
+     localClassExpression(Context,1,true,Expr).
 
-%:- comment(hide,localClassExpression/2).
- localClassExpression([context(H,Res)],(H,Res,Expr)):- !,
- 	localClassExpr_1(H,1,Expr).
- localClassExpression([context(H,Res)|T],((H,Res,Expr1),Expr2)):- 
- 	localClassExpr_1(H,1,Expr1),
- 	localClassExpression(T,1,Expr2).
+% TLS Bug: need to make this work for length gt 1
+localClassExpression([],_N,Expr,Expr):- !.
+localClassExpression([H|T],N,ExprIn,ExprOut):- 
+ 	localClassExpr_1(H,ExprIn,ExprMid),
+ 	localClassExpression(T,N,ExprMid,ExprOut).
 
 % This actually returns oids, rather than all unique cids
-localClassExpr_1(Id,N,Expr):- 
-	getRelevantFacts(Id,CDFList),
-	N1 is N - 1,
-	localClassExpr_2(CDFList,N1,Expr).
-		
+%localClassExpr_1(Id,Expr,Expr):- !.
+localClassExpr_1(Id,ExprIn,ExprOut):- 
+	extractCDFidentifier(Id,Id1),
+	\+ topIdentifier(Id1),!,
+	getRelevantFacts(Id1,CDFList),
+	localClassExpr_2(CDFList,1,ExprNew),
+	comma_append(ExprIn,ExprNew,ExprOut).
+localClassExpr_1(Id,Expr,Id).
+
 %-------------------------
 getRelevantFacts(Id,Facts):-
-	extractCDFidentifier(Id,Id1),
-	findall(F,getRelevantFacts_1(Id1,F),Facts_1),
+	findall(F,getRelevantFacts_1(Id,F),Facts_1),
 	sort(Facts_1,Facts).
 	
 extractCDFidentifier(cid(Id,Cpnt),cid(Id,Cpnt)):- !.
 extractCDFidentifier(oid(Id,Cpnt),oid(Id,Cpnt)):- !.
 extractCDFidentifier(unique(cid(Id,Cpnt)),oid(Id,Cpnt)):-!.
-extractCDFidentifier(X,_):-
-     domain_error(['cid(_),oid(_), or unique(cid(_))'],X,extractCDFidentifier/2,1).
+%extractCDFidentifier(X,_):-
+%     domain_error(['cid(_,_),oid(_,_), or unique(cid(_,_))'],X,extractCDFidentifier/2,1).
 
 %:- table getRelevantFacts_1/2.
 getRelevantFacts_1(Id,isa(Id,Id2)):- 
@@ -353,20 +290,20 @@ getRelevantFacts_1(Id,necessCond(Id,Cond)):-
 %	relevantInRule(Id,H,B).
 
 % TLS: disallowing default relevant rules, for now.
-relevantInRule(Id,H,B):- 
-	relevantInRule_1(','(H,B),Id,Flag),
-	nonvar(Flag),!.
+% relevantInRule(Id,H,B):- 
+%	relevantInRule_1(','(H,B),Id,Flag),
+%	nonvar(Flag),!.
  
-relevantInRule_1(','(One,Two),Id,Flag):- !,
-	relevantInRule_1(One,Id,Flag),
-	relevantInRule_1(Two,Id,Flag).
-relevantInRule_1(';'(One,Two),Id,Flag):- !,
-	relevantInRule_1(One,Id,Flag),
-	relevantInRule_1(Two,Id,Flag).
-relevantInRule_1(Cid,Id,relevant):- 
-	classIdentifier(Cid),
-	cdftp_isa(Id,Cid),!.
-relevantInRule_1(_Cid,_Id,_).
+%%relevantInRule_1(','(One,Two),Id,Flag):- !,
+%	relevantInRule_1(One,Id,Flag),
+%	relevantInRule_1(Two,Id,Flag).
+%relevantInRule_1(';'(One,Two),Id,Flag):- !,
+%	relevantInRule_1(One,Id,Flag),
+%	relevantInRule_1(Two,Id,Flag).
+%relevantInRule_1(Cid,Id,relevant):- 
+%	classIdentifier(Cid),
+%	cdftp_isa(Id,Cid),!.
+%relevantInRule_1(_Cid,_Id,_).
 
 %-------------------------
 
@@ -387,7 +324,7 @@ localClassExpr_3(minAttr(_,Rid,Cid,N),Lev,atLeast(N,Rid,Expr)):- !,
 	retraverseLevel(Lev,Cid,Expr).
 localClassExpr_3(maxAttr(_,Rid,Cid,N),Lev,atMost(N,Rid,Expr)):- !,
 	retraverseLevel(Lev,Cid,Expr).
-localClassExpr_3(<=(H,B),_,(H ; not(B))):- !.
+%localClassExpr_3(<=(H,B),_,(H ; not(B))):- !.
 localClassExpr_3(necessCond(_,vid(Expr)),_,Expr).
 
 % TLS Im not sure if Expr can ever equal Cid.
@@ -412,6 +349,7 @@ retractmytabling:-
 
 :- comment(hide,descend_all/0).
 
+/* broken for mknf */
 descend_all:- 
 	cputime(Start),
 	conset(descend,0),
@@ -736,3 +674,59 @@ end_of_file.
 %            sat((LCE,CE),abd(Struct,Worlds),Constraints),
 %	checkContexts(Constraints,[],Struct,Worlds,Contexts,L),
 %	check_worlds(multiple,0,L,Contexts,[]).
+
+%tableConsChk_1(Mode,Context,AncList):- 
+%	localClassExpression(Context,Expr),
+%	tp_prettyPrintCE(2,Expr),
+%	sat(Expr,abd(Struct,Worlds),Constraints),
+%	checkContexts(Constraints,AncList,Struct,Worlds,Contexts,L),
+%	check_worlds(Mode,0,L,Contexts,AncList).
+
+% no call has been made before to context.
+%tableConsChk(Mode,Context,AncList):- 
+%	call_assert(queried(Context)),
+%	(tableConsChk_1(Mode,Context,AncList) -> 
+%	    call_assert(succeeded(Context)),
+%	    tp_writeln(1,succeededConsistCheck(Context))
+%	  ; call_assert(failed(Context)),
+%           	    tp_writeln(1,failedConsistCheck(Context)),
+%                fail).
+
+%checkIdConsistency_1(Mode,Context,AncList):- 
+%	(memberchk(Context,AncList) -> 
+%	     tp_writeln(1,inLoopSuccess(Context))
+%	   ; checkIdConsistency_2(Mode,Context,[Context|AncList])).
+
+%  checkIdConsistency_2(_Mode,[],_).
+%  checkIdConsistency_2(Mode,Context,AncList):- 
+%  	(queried(Context) -> 
+%  	    (succeeded(Context) -> tp_writeln(1,succeedingOnTable(Context))
+%  	      ; (failed(Context) -> tp_writeln(1,failingOnTable(Context)),fail
+%  	          ; tp_writeln(0,tableNotRight(Context,AncList))))
+%                ;   tp_writeln(1,recursivelyChecking(Context)),
+%  	      tableConsChk(Mode,Context,AncList)).
+% 
+% 	rec_tableConsChk(single,[context(oid(Id,Cmpt),CE)],[[oid(Id,Cmpt),CE]],CE).
+
+%assertNecessCond(cid(Id,Comp),CE):- 
+%	abolish_cdf_tables,
+% 	assert_cdf_term(necessCond_ext(cid(Id,Comp),vid(CE))).
+%assertNecessCond(oid(Id,Comp),CE):- 
+%	abolish_cdf_tables,
+%	assert_cdf_term(necessCond_ext(oid(Id,Comp),vid(CE))).
+
+%retractNecessCond(Id,CE):- 
+%	retractall_cdf_term(necessCond_ext(Id,vid(CE))).
+
+% maybeAddRes(context(oid(I,N),_),not(cid(Id,N1)),ExprIn,ExprOut):- !,
+%         (mknf_isa(oid(I,N),cid(Id,N1)) -> 
+% 	  ExprOut = (cid(Id,N1),ExprIn) ; ExprOut = ExprIn).
+% maybeAddRes(oid(I,N),not(cid(Id,N1)),ExprIn,ExprOut):- !,
+%         (mknf_isa(oid(I,N),cid(Id,N1)) -> 
+% 	  ExprOut = (cid(Id,N1),ExprIn) ; ExprOut = ExprIn).
+% maybeAddRes(unique(oid(I,N)),not(cid(Id,N1)),ExprIn,ExprOut):- !,
+%         (mknf_isa(oid(I,N),cid(Id,N1)) -> 
+% 	  ExprOut = (cid(Id,N1),ExprIn) ; ExprOut = ExprIn).
+% maybeAddRes(_Id,_Res,Expr,Expr):- 
+% 	debug(maybeAddRes(_Id,_Res,Expr,Expr)).
+
