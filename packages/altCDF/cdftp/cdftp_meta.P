@@ -297,7 +297,7 @@ updateNotElt([elt(Elt,not(C))|R],elt(Elt,not(Class)),ConstOut):- !,
 	      ; (tp_subclass(C,Class) -> 
 	             ConstOut = [elt(Elt,not(Class))|ConstMid]
 		   ; ConstOut = [elt(Elt,not(C))|ConstMid]),
-  	         updateNotElt(R,elt(Elt,Class),ConstMid)).
+  	         updateNotElt(R,elt(Elt,not(Class)),ConstMid)).
 updateNotElt([Term|R],T1,[Term|ConstOut]):- 
 	updateNotElt(R,T1,ConstOut).
 
