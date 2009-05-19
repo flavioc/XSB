@@ -366,7 +366,9 @@ con_test(Id,Value):-
 	     ; (Value = false -> true ; writeln('!!!failing'(sat_test(Id,true))))),
 	   set_debug_on(N),
 	   assert(debugging_mknf)
-           ; checkIdConsistency(Id)).
+           ; (checkIdConsistency(Id) -> 
+               (Value = true -> true ; writeln('!!!failing'(sat_test(Id,false))))
+	     ; (Value = false -> true ; writeln('!!!failing'(sat_test(Id,true)))))).
 
 load_ex(Dir):- 
 	abolish_all_tables,
