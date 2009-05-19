@@ -59,9 +59,9 @@ definedClass(two4(X),two4,X):- X = a4.
 definedClass(one4(X),one4,X):- X = a4.
 
 %-----------
-% Ex 5 (not yet working)
-% p_or_q \subset (p \cup q)
-% r \subset not (p \cup q)
+% Ex 5 
+% p_or_q \subset (p5 \cup q5)
+% r \subset not (p5 \cup q5)
 
 p5(a5).
 
@@ -94,6 +94,16 @@ definedClass(murdered(X),murdered,X):- member(X,[j1,j2,j3,max,thomas]).
 definedClass(benefits(X),benefits,X):- member(X,[j1,j2,j3,max,thomas]).
 definedClass(responsible(X),responsible,X):- member(X,[j1,j2,j3,max,thomas]).
 */
+
+%-----------
+% Ex 7 (not yet working)
+% notp \subset not p
+
+p7(a7).
+notp7(a7).
+
+definedClass(p7(X),p7,X):- X = a7.
+definedClass(notp7(X),notp7,X):- X = a7.
 
 %-----------
 % example w. multiple objects.
@@ -152,8 +162,14 @@ test:-
 	   [entry(dlnot(two4(a4)),[[]])],
 	   [entry(allModelsEntails(oid(a4,mknf),not cid(two4,mknf)),[[]]),
             entry(allModelsEntails(oid(a4,mknf),cid(one4,mknf)),[[]]),
-            entry(allModelsEntails(oid(a4,mknf),cid(p4,mknf)),[[]])])).
+            entry(allModelsEntails(oid(a4,mknf),cid(p4,mknf)),[[]])])),
 
+         test_call(k(p5(a5)),get_object_model(oid(a5,mknf),
+		[entry(known(p5(a5)),[[]]),entry(known(p_or_q5(a5)),[[]])],
+		[entry(dlnot(q5(a5)),[[]]),entry(dlnot(r5(a5)),[[]])],
+		[entry(allModelsEntails(oid(a5,mknf),not cid(r5,mknf)),[[]]),
+		 entry(allModelsEntails(oid(a5,mknf),cid(p5,mknf)),[[]]),
+ 	 	 entry(allModelsEntails(oid(a5,mknf),cid(p_or_q5,mknf)),[[]])])).
 
 end_of_file.
 

@@ -5,5 +5,17 @@ test:-
 	con_test(cid(one,t1),false),
 	con_test(cid(one,t2),true),
 	con_test(cid(one,t3),false),
-	con_test(cid(one,t4),true).
+	con_test(cid(one,t4),true),
+	con_test(cid(one,t5),true),
+	con_test(cid(one,t6),true),
+	con_test(cid(one,t7),false),
+	con_test(cid(one,t8),false),
+	con_test(cid(one,t9),false),
+	con_test(cid(one,t10),true),
+	con_test(cid(one,t11),false),
+	con_test(cid(one,t12),false),
+	con_test(cid(one,t13),true),
+	con_test(cid(one,t14),false),
+	con_test(cid(one,t15),true),
+	con_test(cid(one,t16),false).
 
