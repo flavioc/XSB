@@ -516,7 +516,7 @@ isa_nocheck(Sub,Sup):-
     (Sup @= oid(_,_) -> Sub = Sup ;
     (ground(Sub) ->
         (ground(Sup) ->
-            isa_bb(Sub,Sup) %,!	% want det for bb.
+            isa_bb(Sub,Sup) ,!	% want det for bb.
           ; isa_bf(Sub,Sup))
         ;   isa_fx(Sub,Sup) )).
 
