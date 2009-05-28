@@ -4209,25 +4209,58 @@ For the predicate {\tt p/3} in the example for {\tt setof/3}, the goal \\
 %
 \label{tfindall/3}
 
-    {\em Note: {\tt tfindall/3} may be deprecated in current versions.
-    Please use the predicates described in
-    Section~\ref{tabling_aggregate_predicates} if possible}.
-
     Like {\tt findall/3}, {\tt tfindall/3} treats all variables in
     {\tt Goal} that do not occur in {\tt Template} as existential.  However,
     in {\tt tfindall/3}, the {\tt Goal} must be a call to a single
     tabled predicate.
 	
-    {\tt tfindall/3} allows the user to build programs that use
-    stratified aggregation.  If the table to {\tt Goal} is incomplete,
-    {\tt tfindall/3} suspends until the table has been completed, and
-    only then computes {\tt List}.  See Chapter~\ref{chap:TablingOverview}
-    for further discussion of {\tt tfindall/3}.  Like {\tt findall/3},
-    if {\tt Goal} is unsatisfiable, {\tt tfindall/3} succeeds binding
-    {\tt List} to the empty list.
+    {\tt tfindall/3} allows {\tt findall} functionality to be used
+    safely with tabling by throwing an error if it is called
+    recursively.  Its use can be seen by considering the following
+    series of programs.
 
-    Some of the differences between predicates {\tt findall/3} and
-    {\tt tfindall/3} can be seen from the following example:
+    {\footnotesize
+    \begin{verbatim}
+            p1(X):- findall(Y,p1(Y),X).
+    \end{verbatim}
+} 
+%
+When executing the goal {\tt p(X)}, XSB will throw an error when it
+reaches the maximum number of recursive invocations of findall.
+
+Next, consider the program
+    {\footnotesize
+    \begin{verbatim}
+            :- table t/1.
+            t(X):- findall(Y,t(Y),X).
+            t(a).
+    \end{verbatim}
+} 
+%
+The query {\tt t(X)} will terminate without error, but will return two
+answers: {\tt X = []} and {\tt X = a}.  These answers are hard to
+defend semantically, since there is an implicit domain closure axiom
+in findall-like predicates.  On the other hand, for the program
+%
+{\footnotesize
+    \begin{verbatim}
+            :- table t2/1.
+            t2(X):- tfindall(Y,t2(Y),X).
+            t2(a).
+    \end{verbatim}
+}
+%
+the query {\tt t2(X)} will throw a table error, indicating that a call
+to {\tt tfundall/3} is apparently non-stratified~footnote{Detection of
+  non-stratification is based on the approximate detection of
+  dependencies among subgoals maintained by XSB.  This approximation
+  is quite close for local evaluation, but is less close for batched
+  evaluation.}.  Other behavior for tabled aggregation is provided by
+the answer subsumption predicates of
+Section~\ref{tabling_aggregate_predicates}.
+
+Other differences between predicates {\tt findall/3} and {\tt
+  tfindall/3} can be seen from the following example:
 
     {\footnotesize
     \begin{verbatim}
@@ -4268,24 +4301,25 @@ For the predicate {\tt p/3} in the example for {\tt setof/3}, the goal \\
     \end{verbatim}
     }
 
-    Error cases are the same as predicate {\tt findall/3} (see above).
-    Also:
+Error cases inclode those of {\tt findall/3} (see above), along with 
     \begin{description}
     \item[{\tt table\_error}]
 	Upon execution {\tt Goal} is not a subgoal of a tabled predicate.
+    \item[{\tt table\_error}]
+	A call to {\tt tfindall/3} is apparently non-stratified
     \end{description}
 
-\ourrepeatstandarditem{tsetof(?X, +Goal, ?List)}{tsetof/3}{Tabling}
-\ourstandarditem{tbagof(?X, +Goal, ?List)}{tbagof/3}{Tabling}
+%\ourrepeatstandarditem{tsetof(?X, +Goal, ?List)}{tsetof/3}{Tabling}
+%\ourstandarditem{tbagof(?X, +Goal, ?List)}{tbagof/3}{Tabling}
 
-    {\em Note: {\tt tbagof/3} and {\tt tsetof/3} may be deprecated in
-    current versions.  Please use the predicates described in
-    Section~\ref{tabling_aggregate_predicates} if possible.}
+%    {\em Note: {\tt tbagof/3} and {\tt tsetof/3} may be deprecated in
+%    current versions.  Please use the predicates described in
+%    Section~\ref{tabling_aggregate_predicates} if possible.}
 
-The standard predicates {\tt tbagof/3} and {\tt tsetof/3} provide
-tabled versions of {\tt bagof/3} and {\tt setof/3} in a similar manner
-to the way in which {\tt tfindall/3} provides a tabled version of {\tt
-findall/3}.
+%The standard predicates {\tt tbagof/3} and {\tt tsetof/3} provide
+%tabled versions of {\tt bagof/3} and {\tt setof/3} in a similar manner
+%to the way in which {\tt tfindall/3} provides a tabled version of {\tt
+%findall/3}.
 
 \isoitem{X \^\ Goal}{\^\ /2}
 %
