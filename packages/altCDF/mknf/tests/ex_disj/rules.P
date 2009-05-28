@@ -118,6 +118,31 @@ definedClass(loop2(Obj),loop2,Obj):- Obj = abd.
 
 */
 
+%-----------
+% Ex 8 - Roles (Added by Sofia)
+% Tbox: Second8 ⊑ First8
+% Abox: fourth8(David)
+
+first8(X) :- person8(Y), person8(X), known(role(X,Y)).
+third8(X) :- known(second8(X)).
+fifth8(X) :- known(fourth8(X)).
+
+role(john,david).
+person8(david).
+person8(john).
+
+definedRole(role(Obj1,Obj2),role,Obj1,Obj2) :- Obj1 = john, Obj2 = david.
+definedClass(person8(Obj),person8,Obj):- ( Obj = david ; Obj = john).
+definedClass(fifth8(Obj),fifth8,Obj):- Obj = david.
+definedClass(fourth8(Obj),fourth8,Obj):- Obj = david.
+definedClass(third8(Obj),third8,Obj):- Obj = john.
+definedClass(second8(Obj),second8,Obj):- Obj = john.
+definedClass(first8(Obj),first8,Obj):- Obj = john.
+
+%------------
+
+
+
 test:- 
        test_call(k(fifth(callback)),get_object_model(oid(callback,mknf),
                  [entry(known(fifth(callback)),[[]]),
@@ -164,13 +189,29 @@ test:-
             entry(allModelsEntails(oid(a4,mknf),cid(one4,mknf)),[[]]),
             entry(allModelsEntails(oid(a4,mknf),cid(p4,mknf)),[[]])])),
 
-         test_call(k(p5(a5)),get_object_model(oid(a5,mknf),
+     test_call(k(p5(a5)),get_object_model(oid(a5,mknf),
 		[entry(known(p5(a5)),[[]]),entry(known(p_or_q5(a5)),[[]])],
 		[entry(dlnot(q5(a5)),[[]]),entry(dlnot(r5(a5)),[[]])],
 		[entry(allModelsEntails(oid(a5,mknf),not cid(r5,mknf)),[[]]),
 		 entry(allModelsEntails(oid(a5,mknf),cid(p5,mknf)),[[]]),
- 	 	 entry(allModelsEntails(oid(a5,mknf),cid(p_or_q5,mknf)),[[]])])).
-
+ 	 	 entry(allModelsEntails(oid(a5,mknf),cid(p_or_q5,mknf)),[[]])])),
+ 	 	 
+    test_call(k(role(john,david)), get_object_model(oid(david,mknf),
+        [entry(known(fifth8(david)),[[]]),entry(known(first8(john)),[[]]),
+        entry(known(fourth8(david)),[[]]),entry(known(person8(david)),[[]]),
+        entry(known(person8(john)),[[]]),entry(known(second8(john)),[[]]),
+        entry(known(third8(john)),[[]]),entry(known(role(john,david)),[[]])],
+        [entry(dlnot(role(john,david)),[[]])],
+        [entry(allModelsEntails(oid(david,mknf),cid(fifth8,mknf)),[[]]),
+        entry(allModelsEntails(oid(david,mknf),cid(fourth8,mknf)),[[]]),
+        entry(allModelsEntails(oid(david,mknf),cid(person8,mknf)),[[]]),
+        entry(allModelsEntails(oid(john,mknf),not exists(rid(role,mknf),oid(david,mknf))),[[]]),
+        entry(allModelsEntails(oid(john,mknf),cid(first8,mknf)),[[]]),
+        entry(allModelsEntails(oid(john,mknf),cid(person8,mknf)),[[]]),
+        entry(allModelsEntails(oid(john,mknf),cid(second8,mknf)),[[]]),
+        entry(allModelsEntails(oid(john,mknf),cid(third8,mknf)),[[]]),
+        entry(allModelsEntails(oid(john,mknf),exists(rid(role,mknf),oid(david,mknf))),[[]])])). 
+    
 end_of_file.
 
 

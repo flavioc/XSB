@@ -257,6 +257,19 @@ localClassExpr_1(not(Id),ExprIn,ExprOut):-
 	localClassExpr_2(CDFList,1,ExprMid),
 	negate_comma_list(ExprMid,ExprNew),
 	comma_append(ExprIn,ExprNew,ExprOut).
+localClassExpr_1(not(exists(Rid,Id)),ExprIn,ExprOut):- 
+	extractCDFidentifier(Id,Id1),
+	\+ topIdentifier(Id1),!,
+	getRelevantFacts(Id1,CDFList),
+	localClassExpr_2(CDFList,1,ExprMid),
+	negate_comma_list((exists(Rid,Id),ExprMid),ExprNew),
+	comma_append(ExprIn,ExprNew,ExprOut).
+localClassExpr_1(exists(Rid,Id),ExprIn,ExprOut):- 
+	extractCDFidentifier(Id,Id1),
+	\+ topIdentifier(Id1),!,
+	getRelevantFacts(Id1,CDFList),
+	localClassExpr_2(CDFList,1,ExprNew),
+	comma_append(ExprIn,(exists(Rid,Id),ExprNew),ExprOut).
 localClassExpr_1(Id,ExprIn,ExprOut):- 
 	extractCDFidentifier(Id,Id1),
 	\+ topIdentifier(Id1),!,

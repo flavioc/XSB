@@ -481,6 +481,7 @@ if there is a corresponding fact in @pred{isa_ext/2} or in the
 intensional rules.  It does not use the Implicit Isa Axiom or the
 Domain Containment Axiom, or reflexive or transitive closure.").
 
+
 immed_isa(SubCid,SupCid) :-
     apply_checks(query,isa_ext(SubCid,SupCid)),
     immed_isa1(SubCid,SupCid).
@@ -515,7 +516,7 @@ isa_nocheck(Sub,Sup):-
     (Sup @= oid(_,_) -> Sub = Sup ;
     (ground(Sub) ->
         (ground(Sup) ->
-            isa_bb(Sub,Sup),!	% want det for bb.
+            isa_bb(Sub,Sup) %,!	% want det for bb.
           ; isa_bf(Sub,Sup))
         ;   isa_fx(Sub,Sup) )).
 

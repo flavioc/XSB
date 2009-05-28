@@ -46,3 +46,10 @@ isa_ext(oid(j1,mknf),cid(notNaturalDeath,mknf)).
 
 isa_ext(oid(a7,mknf),cid(notp7,mknf)).
 nessesCond_ext(cid(notp7,mknf),vid(not(cid(p7,mknf)))).
+
+%-----------
+% Ex 8
+
+isa_ext(cid(second8,mknf),cid(first8,mknf)).
+isa_ext(oid(david,mknf),cid(fourth8,mknf)).
+
