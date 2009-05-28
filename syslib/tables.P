@@ -122,6 +122,7 @@ slg_not(ProducerSF) :- slg_not(ProducerSF).
 %lrd_success(ProducerSF,Subgoal) :- lrd_success(ProducerSF,Subgoal).
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+:- import table_error/1 from error_handler.
 
 tfindall(T, Call, Result) :-
 	table_state(Call,PredType,_CallType,AnsSetStatus),
@@ -131,11 +132,12 @@ tfindall(T, Call, Result) :-
           ; AnsSetStatus == undefined ->
 	      ( call(Call), fail ; tfindall(T,Call,Result) )
 	  ; AnsSetStatus == incomplete ->
-	      get_ptcp(PTCP),
+	      table_error('tfinall/3 is in a possible loop.  Cannot evaluate non-stratified tfindall/3')  
+/*	      get_ptcp(PTCP),
 	      get_producer_call(Call,ProdSF,_CallAT),
 	      is_incomplete(ProdSF,PTCP),
 	      findall(T,Call,Result)
-	  )
+*/	  )
 	; abort(['Illegal (untabled?) subgoal to tfindall/3: ', Call])
 	).
 
