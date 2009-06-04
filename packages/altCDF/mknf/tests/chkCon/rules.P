@@ -19,5 +19,18 @@ test:-
 	con_test(cid(one,t15),true),
 	con_test(cid(one,t16),false),
 	con_test(cid(one,t17),true),
-	con_test(cid(one,t18),true).
+	con_test(cid(one,t18),true),
+	con_test(cid(one,t19),true),
+	con_test(oid(a,t20),false),
+	con_test(oid(one,o1),false),
+	con_test(oid(one,o2),false),
+	con_test(oid(one,o3),false),
+	con_test(oid(one,o4),true),
+	con_test(oid(one,o5),true),
+	con_test(oid(one,o6),true),
+	con_test(oid(one,o6_a),true),
+	con_test(oid(one,o7),false),
+	con_test(oid(one,o8),false),
+	con_test(oid(one,o9),false),
+	con_test(oid(one,o10),true).
 
