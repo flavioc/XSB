@@ -105,8 +105,9 @@ rec_allModelsEntails(cid(Id,Cmpt),CE):-
         sort([cid(Id,Cmpt),CE],Slist),
 	rec_tableConsChk(Slist,[[cid(Id,Cmpt),CE]]).
 rec_allModelsEntails(oid(Id,Cmpt),CE):- 
-	object_iter(oid(Id,Cmpt),Iter),
-	debug(rec_allModelsEntails(oid(Id,Cmpt),CE,Iter)),
+	(object_iter(oid(Id,Cmpt),Iter) -> 
+		debug(rec_allModelsEntails(oid(Id,Cmpt),CE,Iter))
+	  ;     true),
         sort([oid(Id,Cmpt),CE],Slist),
 	rec_tableConsChk(Slist,[[oid(Id,Cmpt),CE]]).
 
@@ -238,48 +239,49 @@ expression, unfolded to depth @tt{N}, that describes @tt{IdList}
 according to the current CDF instance.").
 
 localClassExpression(Context,Expr):- 
-     localClassExpression(Context,1,true,Expr).
+     localClassExpression(Context,[],1,true,Expr).
 
 % TLS Bug: need to make this work for length gt 1
-localClassExpression([],_N,Expr,Expr):- !.
-localClassExpression([H|T],N,ExprIn,ExprOut):- 
- 	localClassExpr_1(H,ExprIn,ExprMid),
- 	localClassExpression(T,N,ExprMid,ExprOut).
+% Ancs are present so that the predicate can be called from retraverse_level
+localClassExpression([],_Ancs,_N,Expr,Expr):- !.
+localClassExpression([H|T],AncsIn,N,ExprIn,ExprOut):- 
+ 	localClassExpr_1(H,AncsIn,ExprIn,ExprMid),
+ 	localClassExpression(T,AncsIn,N,ExprMid,ExprOut).
 
 % This actually returns oids, rather than all unique cids
 %localClassExpr_1(Id,Expr,Expr):- !.
-localClassExpr_1(not(not(Id)),ExprIn,ExprOut):- !,
-        localClassExpr_1(Id,ExprIn,ExprOut).
-localClassExpr_1(not(Id),ExprIn,ExprOut):- 
+localClassExpr_1(not(not(Id)),Ancs,ExprIn,ExprOut):- !,
+        localClassExpr_1(Id,Ancs,ExprIn,ExprOut).
+localClassExpr_1(not(Id),Ancs,ExprIn,ExprOut):- 
 	extractCDFidentifier(Id,Id1),
 	\+ topIdentifier(Id1),!,
 	getRelevantFacts(Id1,CDFList),
-	localClassExpr_2(CDFList,1,ExprMid),
+	localClassExpr_2(CDFList,[Id1|Ancs],1,ExprMid),
 	negate_comma_list(ExprMid,ExprNew),
 	comma_append(ExprIn,ExprNew,ExprOut).
-localClassExpr_1(not(exists(Rid,Id)),ExprIn,ExprOut):- 
+localClassExpr_1(not(exists(Rid,Id)),Ancs,ExprIn,ExprOut):- 
 	extractCDFidentifier(Id,Id1),
 	\+ topIdentifier(Id1),!,
-	getRelevantFacts(Id1,CDFList),
-	localClassExpr_2(CDFList,1,ExprMid),
+%	getRelevantFacts(Id1,CDFList),
+	localClassExpr_2([hasAttr(_,Rid,Id)],Ancs,1,ExprMid),
 	negate_comma_list((exists(Rid,Id),ExprMid),ExprNew),
 	comma_append(ExprIn,ExprNew,ExprOut).
-localClassExpr_1(exists(Rid,Id),ExprIn,ExprOut):- 
+localClassExpr_1(exists(Rid,Id),Ancs,ExprIn,ExprOut):- 
 	extractCDFidentifier(Id,Id1),
 	\+ topIdentifier(Id1),!,
-	getRelevantFacts(Id1,CDFList),
-	localClassExpr_2(CDFList,1,ExprNew),
+%	getRelevantFacts(Id1,CDFList),
+	localClassExpr_2([hasAttr(_,Rid,Id)],Ancs,1,ExprNew),
 	comma_append(ExprIn,(exists(Rid,Id),ExprNew),ExprOut).
-localClassExpr_1(Id,ExprIn,ExprOut):- 
+localClassExpr_1(Id,Ancs,ExprIn,ExprOut):- 
 	extractCDFidentifier(Id,Id1),
 	\+ topIdentifier(Id1),!,
 	getRelevantFacts(Id1,CDFList),
-	localClassExpr_2(CDFList,1,ExprNew),
+	localClassExpr_2(CDFList,[Id1|Ancs],1,ExprNew),
 	comma_append(ExprIn,ExprNew,ExprOut).
-localClassExpr_1(Id,ExprIn,ExprIn):- 
+localClassExpr_1(Id,_Ancs,ExprIn,ExprIn):- 
 	extractCDFidentifier(Id,Id1),
 	topIdentifier(Id1),!.
-localClassExpr_1(Id,_Expr,Id):- 
+localClassExpr_1(Id,_Ancs,_Expr,Id):- 
         abort(['Unexpected Context in local class expression: ',Id]).
 
 negate_comma_list((H,T),(not(H),T1)):- !,
@@ -288,6 +290,7 @@ negate_comma_list(H,not(H)):- !.
 
 %-------------------------
 getRelevantFacts(Id,Facts):-
+	abolish_cdf_tables,
 	findall(F,getRelevantFacts_1(Id,F),Facts_1),
 	sort(Facts_1,Facts).
 	
@@ -336,31 +339,32 @@ getRelevantFacts_1(Id,necessCond(Id,Cond)):-
 
 %-------------------------
 
-localClassExpr_2([],_,Top):- !,
+localClassExpr_2([],_Ancs,_,Top):- !,
 	topIdentifier(Top).
-localClassExpr_2([Term],N,Expr):- !,
-	localClassExpr_3(Term,N,Expr).
-localClassExpr_2([Term|Rest],N,','(E1,E2)):- !,
-	localClassExpr_3(Term,N,E1),
-	localClassExpr_2(Rest,N,E2).
+localClassExpr_2([Term],Ancs,N,Expr):- !,
+	localClassExpr_3(Term,Ancs,N,Expr).
+localClassExpr_2([Term|Rest],Ancs,N,','(E1,E2)):- !,
+	localClassExpr_3(Term,Ancs,N,E1),
+	localClassExpr_2(Rest,Ancs,N,E2).
 
-localClassExpr_3(isa(_,Cid),_N,Cid):- !.
-localClassExpr_3(allAttr(_,Rid,Cid),N,all(Rid,Expr)):- !,
-	retraverseLevel(N,Cid,Expr).
-localClassExpr_3(hasAttr(_,Rid,Cid),N,exists(Rid,Expr)):- !,
-	retraverseLevel(N,Cid,Expr).
-localClassExpr_3(minAttr(_,Rid,Cid,N),Lev,atLeast(N,Rid,Expr)):- !,
-	retraverseLevel(Lev,Cid,Expr).
-localClassExpr_3(maxAttr(_,Rid,Cid,N),Lev,atMost(N,Rid,Expr)):- !,
-	retraverseLevel(Lev,Cid,Expr).
+localClassExpr_3(isa(_,Cid),_Ancs,_N,Cid):- !.
+localClassExpr_3(allAttr(_,Rid,Cid),Ancs,N,all(Rid,Expr)):- !,
+	retraverseLevel(N,Ancs,Cid,Expr).
+localClassExpr_3(hasAttr(_,Rid,Cid),Ancs,N,exists(Rid,Expr)):- !,
+	retraverseLevel(N,Ancs,Cid,Expr).
+localClassExpr_3(minAttr(_,Rid,Cid,N),Ancs,Lev,atLeast(N,Rid,Expr)):- !,
+	retraverseLevel(Lev,Ancs,Cid,Expr).
+localClassExpr_3(maxAttr(_,Rid,Cid,N),Ancs,Lev,atMost(N,Rid,Expr)):- !,
+	retraverseLevel(Lev,Ancs,Cid,Expr).
 %localClassExpr_3(<=(H,B),_,(H ; not(B))):- !.
-localClassExpr_3(necessCond(_,vid(Expr)),_,Expr).
+% TLS: retraverse necessCond?
+localClassExpr_3(necessCond(_,vid(Expr)),_Ancs,_,Expr).
 
 % TLS Im not sure if Expr can ever equal Cid.
-retraverseLevel(N,Cid,OutExpr):- 
+retraverseLevel(N,Ancs,Cid,OutExpr):- 
 	(N == 0 -> 
 	    OutExpr = Cid
-	  ; localClassExpr_1(Cid,true,Expr),
+	  ; (member(Cid,Ancs) -> true ; localClassExpr_1(Cid,Ancs,true,Expr)),
 	    (Expr \== Cid -> 
 		(Expr = cid('CDF Classes',cdf) -> 
 		    OutExpr = Cid 

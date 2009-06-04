@@ -110,5 +110,11 @@ necessCond_ext(cid(one,t15),vid(';'(not(cid(two,t15)),';'(not(cid(three,t15)),no
 necessCond_ext(cid(one,t16),vid(';'(cid(two,t16), ';'(cid(three,t16),cid(four,t16))))).
 necessCond_ext(cid(one,t16),vid(not(';'(cid(two,t16),';'(cid(three,t16),cid(four,t16)))))).
 
+%-------------------------------
 
+hasAttr_ext(cid(one,t17),rid(r1,t17),cid(one,t17)).
+
+%-------------------------------
+
+ hasAttr_ext(oid(one,t18),rid(r1,t18),oid(one,t18)).
 

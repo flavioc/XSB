@@ -17,5 +17,7 @@ test:-
 	con_test(cid(one,t13),true),
 	con_test(cid(one,t14),false),
 	con_test(cid(one,t15),true),
-	con_test(cid(one,t16),false).
+	con_test(cid(one,t16),false),
+	con_test(cid(one,t17),true),
+	con_test(cid(one,t18),true).
 

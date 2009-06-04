@@ -14,8 +14,10 @@
 
 % Issues                                                                      
 % -- Add explicit negation in rules.                                          
-% question about mknf_isa / isa ... etc.                                       
+% question about mknf_isa / isa ... etc (may be able to just abolish_tables).
 % potential problem w. queried etc and mknf.                                   
+% retraverseing necessConds?
+% add more oid tests to chkCon
 
 %-------------------------------------------------
 % Main API
@@ -144,7 +146,7 @@ lastAllModelsEntails(oid(Obj,mknf),CE):-
 %------------------------
 
 checkAllObjects(Id,Iter) :-
-    writeln('HERE!!'),
+%    writeln('HERE!!'),
     get_object_iter(Id1,I),
     Id \= Id1,
     I \= final,
@@ -367,20 +369,20 @@ get_object_model(Obj,E1,E2,E3):-
 		get_last_dlnot(Obj,E2),
 		get_last_ame(Obj,E3).
 
-get_last_known(Obj,Entries):- 
-        final_iter(Obj,Iter),
+get_last_known(oid(Obj,mknf),Entries):- 
+        final_iter(oid(Obj,mknf),Iter),
 	(setof(entry(CallAbs,ResList),
 	      A^B^C^Res^Call^(get_calls_for_table(known(A,B),Call),
-	                 Call = known(C,Iter),
+	                 Call = known(C,Iter),arg(1,C,Obj),
 			 CallAbs = known(C),
 		    	 setof(Res1,Res^(get_residual(Call,Res),
  	 	  	                 abstract_iters(Res,Res1)),ResList)),E) -> 
  			                                   Entries = E ; Entries = []).
-get_last_dlnot(Obj,Entries):- 
-        final_iter(Obj,Iter),
+get_last_dlnot(oid(Obj,mknf),Entries):- 
+        final_iter(oid(Obj,mknf),Iter),
 	(setof(entry(CallAbs,ResList),
 	      A^B^C^Res^Call^(get_calls_for_table(dlnot(A,B),Call),
-	                 Call = dlnot(C,Iter),
+	                 Call = dlnot(C,Iter),arg(1,C,Obj),
 			 CallAbs = dlnot(C),
 		 	setof(Res1,Res^(get_residual(Call,Res),
  	 	  	                 abstract_iters(Res,Res1)),ResList)),E) -> 
@@ -388,14 +390,15 @@ get_last_dlnot(Obj,Entries):-
 get_last_ame(Obj,Entries):- 
         final_iter(Obj,Iter),
 	(setof(entry(CallAbs,ResList),
-	      A^B^C^D^F^Res^Call^(get_calls_for_table(allModelsEntails(A,B,C),Call),
-	                 Call = allModelsEntails(D,F,Iter),
-			 CallAbs = allModelsEntails(D,F),
+	      A^B^C^F^Res^Call^(get_calls_for_table(allModelsEntails(A,B,C),Call),
+	                 Call = allModelsEntails(Obj,F,Iter),
+			 CallAbs = allModelsEntails(Obj,F),
 		 	setof(Res,get_residual(Call,Res),ResList)),E) ->
 			Entries = E ; Entries = []).
 
 /* test driver for mknf */
 test_call(Call,Model):-
+	Call = k(Term),
 	(debugging_mknf -> 
 	   retractall(debugging_mknf),
 	   get_debug_level(N),
@@ -404,8 +407,9 @@ test_call(Call,Model):-
 	   set_debug_on(N),
 	   assert(debugging_mknf)
          ; Call),
-	 get_object_model(Obj,E1,E2,E3),
-	 (get_object_model(Obj,E1,E2,E3) = Model -> 
+	 arg(1,Term,Obj),
+	 get_object_model(oid(Obj,mknf),E1,E2,E3),
+	 (get_object_model(oid(Obj,mknf),E1,E2,E3) = Model -> 
 	    	 write('   ***'),write(Call),writeln(' is correct')
 	    ;    write('   ***'),write(Call),writeln(' is not correct')).
 	

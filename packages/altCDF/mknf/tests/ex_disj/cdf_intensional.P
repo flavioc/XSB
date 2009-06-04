@@ -10,6 +10,13 @@ isa_int(oid(Obj,NS),cid(Class,NS)):-
 	definedClass(Call,Class,Obj),
 	last_known(Call).
 
+hasAttr_int(oid(Obj1,NS),rid(Rel,NS),oid(Obj2,NS)):- 
+	ground(Obj1),
+	definedRole(Call,Rel,Obj1,Obj2),
+%	writeln(hasAttr_int(oid(Obj1,NS),rid(Rel,NS),oid(Obj2,NS))),
+	last_known(Call).
+
+
 /*
 necessCond_int(oid(Obj,NS),vid(not(cid(Class,NS1)))):- 
 	ground(Obj),ground(Class),!,
