@@ -15,6 +15,7 @@ definedClass(fifth(Obj),fifth,Obj):- Obj = callback.
 
 %-----------
 % Ex 2
+% tests stratified negation, interleaved between ont and rules.
 % win1 \subset not(win2)
 % win3 \subset not(win4)
 
@@ -30,6 +31,7 @@ definedClass(win5(Obj),win5,Obj):- Obj = tok.
 
 %-----------
 % Ex 3
+% tests non-stratified negation, solely in rules.
 
 l1(ab):- dlnot(l2(ab)).
 l2(ab):- dlnot(l1(ab)).
@@ -40,6 +42,7 @@ definedClass(l2(Obj),l2,Obj):- Obj = ab.
 %-----------
 % Ex 4
 % p \in not(two4).
+% tests non-stratified negation broken through O |= -two4
 
 one4(X):- known(p4(a4)),dlnot(two4(X)).
 two4(X):- known(p4(a4)),dlnot(one4(X)).
@@ -52,6 +55,8 @@ definedClass(one4(X),one4,X):- X = a4.
 
 %-----------
 % Ex 5 
+% Tests rules with ontology in disjunction
+
 % p_or_q \subset (p5 \cup q5)
 % r \subset not (p5 \cup q5)
 
@@ -64,6 +69,7 @@ definedClass(r5(X),r5,X):- X = a5.
 
 %-----------
 % Ex 6
+% not yet in test suite
 
 % NaturalDeath ⊑ Pay
 % Suicide ⊑ ¬Pay 
@@ -137,6 +143,16 @@ definedClass(nine_2(X),nine_2,X):- member(X,[p9_1,p9_2]).
 definedClass(nine_3(X),nine_3,X):- member(X,[p9_1,p9_2]).
 
 %-----------
+% Ex 10 (not yet in test suite)
+% notp \subset not p
+
+%p7(a7).
+%notp7(a7).
+
+%definedClass(p7(X),p7,X):- X = a7.
+%definedClass(notp7(X),notp7,X):- X = a7.
+
+%-----------
 % Ex 11 simplest roles
 
 role_11(john_11,david_11).
@@ -145,6 +161,7 @@ definedRole(role_11(Obj1,Obj2),role,Obj1,Obj2) :- Obj1 = john_11, Obj2 = david_1
 
 %-----------
 % Ex 12
+% interleaving neg w. ontology (ontology has to override dlnot).
 
 c12(X) :- dlnot(b12(X)).
 a12(o12).
@@ -154,18 +171,53 @@ definedClass(b12(X),b12,X):- X = o12.
 definedClass(c12(X),c12,X):- X = o12.
 
 %-----------
-% Ex  (not yet working)
-% notp \subset not p
+% Ex 13
+% same as 12, but o12 is in ont.
 
-p7(a7).
-notp7(a7).
+c13(X) :- dlnot(b13(X)).
 
-definedClass(p7(X),p7,X):- X = a7.
-definedClass(notp7(X),notp7,X):- X = a7.
+definedClass(a13(X),a13,X):- X = o13.
+definedClass(b13(X),b13,X):- X = o13.
+definedClass(c13(X),c13,X):- X = o13.
+
+%-----------
+% Ex 14
+%  like 12, but with another two strata
+
+e14(X) :- dlnot(d14(X)).
+c14(X) :- dlnot(b14(X)).
+a14(o14).
+
+definedClass(a14(X),a14,X):- X = o14.
+definedClass(b14(X),b14,X):- X = o14.
+definedClass(c14(X),c14,X):- X = o14.
+definedClass(d14(X),d14,X):- X = o14.
+definedClass(e14(X),e14,X):- X = o14.
+
+%-----------
+% Ex 15 (dynamically stratified)
+%  loop broken by positive knowl rather then negative knowl as in 4)
+
+a15(X):- dlnot(b15(X)).
+b15(X):- dlnot(a15(X)).
+b15(X):- known(c15(X)).
+
+definedClass(a15(X),a15,X):- X = o15.
+definedClass(b15(X),b15,X):- X = o15.
+definedClass(c15(X),c15,X):- X = o15.
+
+%-----------
+% Ex 16
+
+a16(X):- dlnot(b16(X)).
+%b16(X):- known(c16(X)).
+c16(X):- dlnot(a16(X)).
+
+definedClass(a16(X),a16,X):- X = o16.
+definedClass(b16(X),b16,X):- X = o16.
+definedClass(c16(X),c16,X):- X = o16.
 
 %------------
-
-
 
 test:- 
        test_call(k(fifth(callback)),get_object_model(oid(callback,mknf),
@@ -246,6 +298,32 @@ test:-
       test_call(k(role_11(john_11,david_11)), get_object_model(oid(john_11,mknf),
        [entry(known(role_11(john_11,david_11)),[[]])],
        [],
-       [entry(allModelsEntails(oid(john_11,mknf),exists(rid(role,mknf),oid(david_11,mknf))),[[]])])).
+       [entry(allModelsEntails(oid(john_11,mknf),exists(rid(role,mknf),oid(david_11,mknf))),[[]])])),
+
+       test_call(k(a12(o12)), get_object_model(oid(o12,mknf), 
+        [entry(known(a12(o12)),[[]]),entry(known(b12(o12)),[[]])],
+	[entry(dlnot(c12(o12)),[[]])],
+	[  entry(allModelsEntails(oid(o12,mknf),cid(a12,mknf)),[[]]),
+	   entry(allModelsEntails(oid(o12,mknf),cid(b12,mknf)),[[]])])),
+
+       test_call(k(a13(o13)), get_object_model(oid(o13,mknf), 
+        [entry(known(a13(o13)),[[]]),entry(known(b13(o13)),[[]])],
+	[entry(dlnot(c13(o13)),[[]])],
+	[  entry(allModelsEntails(oid(o13,mknf),cid(a13,mknf)),[[]]),
+	   entry(allModelsEntails(oid(o13,mknf),cid(b13,mknf)),[[]])])),
+
+       test_call(k(a14(o14)), get_object_model(oid(o14,mknf), 
+        [entry(known(a14(o14)),[[]]),entry(known(b14(o14)),[[]]),entry(known(e14(o14)),[[]])],
+	[entry(dlnot(c14(o14)),[[]]),entry(dlnot(d14(o14)),[[]])],
+	[ entry(allModelsEntails(oid(o14,mknf),cid(a14,mknf)),[[]]),
+ 	  entry(allModelsEntails(oid(o14,mknf),cid(b14,mknf)),[[]]),
+	  entry(allModelsEntails(oid(o14,mknf),cid(e14,mknf)),[[]])])),
+
+       test_call(k(a15(o15)), get_object_model(oid(o15,mknf), 
+       [entry(known(b15(o15)),[[]]),entry(known(c15(o15)),[[]])],
+       [entry(dlnot(a15(o15)),[[]])],
+       [  entry(allModelsEntails(oid(o15,mknf),cid(b15,mknf)),[[]]),
+       	  entry(allModelsEntails(oid(o15,mknf),cid(c15,mknf)),[[]])])).
+
 
 end_of_file.

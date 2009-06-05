@@ -16,8 +16,7 @@
 % -- Add explicit negation in rules.                                          
 % potential problem w. queried etc and mknf.                                   
 % retraverseing necessConds?
-% Sophia's bug
-% get Jose's examples to work.
+% get Jose's examples to work. (ex 6, 10 and others)
 
 %-------------------------------------------------
 % Main API
@@ -97,6 +96,8 @@ dlnot(Term):-
         dlnot(Term,Iter).
 
 :- table dlnot/2.
+dlnot(Term,0):- !.
+dlnot(Term,1):- !,fail.
 dlnot(Term,Iter):- 
 	debug(dlnot(Term,Iter)),
 	Term =.. [Class,Obj],
@@ -105,7 +106,6 @@ dlnot(Term,Iter):-
         ; 
 	lastAllModelsEntails(oid(Obj,mknf),not(cid(Class,mknf)))),
 	debug(derived(dlnot(Term,Iter))).
-	
 %dlnot for Roles	
 dlnot(Term,Iter):- 
 	debug(dlnot(Term,Iter)),
@@ -247,8 +247,8 @@ check_final_object(Obj):-
 	object_iter(Obj,final),!.
 check_final_object(Obj):- 
 	object_iter(Obj,Iter),
-	Iter >= 1,
-	LastIter is Iter - 1,
+	Iter >= 2, 1 is Iter rem 2,
+	LastIter is Iter - 2,
 	debug(check_final_object(Obj,Iter)),
 	(setof(resid(Term,NewDel),Del^(get_residual(known(Term,Iter),Del),
 	                               abstract_iters(Del,NewDel)),NewK) -> 
@@ -331,6 +331,9 @@ write_return(Call):-
 	(DL == [] ->  nl ; write( ':-' ),write(DL), writeln(' |')).
 
 %--------
+gom(Obj,E1,E2,E3):- 
+		    get_object_model(oid(Obj,mknf),E1,E2,E3).
+
 get_object_model(Obj,E1,E2,E3):- 
 		get_last_known(Obj,E1),
 		get_last_dlnot(Obj,E2),
@@ -355,7 +358,8 @@ get_last_dlnot(oid(Obj,mknf),Entries):-
  	 	  	                 abstract_iters(Res,Res1)),ResList)),E) -> 
 			Entries = E ; Entries = []).
 get_last_ame(Obj,Entries):- 
-        final_iter(Obj,Iter),
+        final_iter(Obj,FinIter),
+	Iter is FinIter - 1,
 	(setof(entry(CallAbs,ResList),
 	      A^B^C^F^Res^Call^(get_calls_for_table(allModelsEntails(A,B,C),Call),
 	                 Call = allModelsEntails(Obj,F,Iter),

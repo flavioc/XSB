@@ -14,8 +14,6 @@ necessCond_ext(cid(win3,mknf),vid(not(cid(win4,mknf)))).
 %-----------
 % Ex 3
 
-necessCond_ext(cid(loop2,mknf),vid(not(cid(loop1,mknf)))).
-
 %-----------
 % Ex 4
 
@@ -59,7 +57,43 @@ isa_ext(oid(david,mknf),cid(fourth8,mknf)).
 isa_ext(oid(p9_2,mknf),cid(nine_2,mknf)).
 
 %-----------
+% Ex 10
+
+%-----------
+% Ex 11
+% all rules.
+
+%-----------
 % Ex 12
 
 isa_ext(cid(a12,mknf),cid(b12,mknf)).
+
+%-----------
+% Ex 13
+
+isa_ext(cid(a13,mknf),cid(b13,mknf)).
+isa_ext(oid(o13,mknf),cid(a13,mknf)).
+
+%-----------
+% Ex 14
+
+isa_ext(cid(a14,mknf),cid(b14,mknf)).
+isa_ext(cid(c14,mknf),cid(d14,mknf)).
+
+%-----------
+% Ex 15
+
+isa_ext(oid(o15,mknf),cid(c15,mknf)).
+
+%-----------
+% Ex 16
+
+%isa_ext(cid(c16,mknf),cid(b16,mknf)).
+%isa_ext(cid(b16,mknf),cid(c16,mknf)).
+
+%-----------
+% Ex 17
+
+%isa_ext(oid(o16,mknf),cid(b16,mknf)).
+
 
