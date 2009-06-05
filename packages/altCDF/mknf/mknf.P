@@ -14,10 +14,10 @@
 
 % Issues                                                                      
 % -- Add explicit negation in rules.                                          
-% question about mknf_isa / isa ... etc (may be able to just abolish_tables).
 % potential problem w. queried etc and mknf.                                   
 % retraverseing necessConds?
-% add more oid tests to chkCon
+% Sophia's bug
+% get Jose's examples to work.
 
 %-------------------------------------------------
 % Main API
@@ -152,7 +152,6 @@ checkAllObjects(Id,Iter) :-
     I \= final,
     computeObjectPrimitives(Id1,I),
     fail.
-
 checkAllObjects(_,_).
 
 computeObjectPrimitives(Id,Iter):- 
@@ -213,38 +212,6 @@ tp_subclass(X,Y):- normalize(X,NewX),normalize(Y,NewY),isa(NewX,NewY).
 
 normalize(X,NewX):- nonvar(X),X = unique(cid(Id,NS)),NewX = oid(Id,NS),!.
 normalize(X,X).
-
-%:- table t_mknf_isa/3.
-%t_mknf_isa(Sub,Sup,Iter):- 
-%	mknf_isa_1(Sub,Sup).
-
-mknf_necessCond(Class,Cond):- 
-	mknf_isa(Class,C1),
-	immed_necessCond(C1,Cond1),
-	Cond1 = Cond.
-
-% sat-checker treats objects as classes w. unique elements.
-mknf_isa(Sub,Sup):- 
-%        (Sub = unique(cid(Id,NS)) -> 
-%	    mknf_isa_1(oid(Id,NS),Sup)
-	      mknf_isa_1(Sub,Sup).
-
-%:- table mknf_isa_1/2.
-mknf_isa_1(Sub,Sup):- 
-%	writeln(mknf_isa(Sub,Sup)),
-        (Sub = Sup
-	 ; 
-  	mknf_immed_isa(Sub,Sup)).
-%	writeln('       derived_mknf_isa'(Sub,Sup)).
-mknf_isa_1(Sub,Sup):- 
-     mknf_immed_isa(Sub,S1),
-     mknf_isa(S1,Sup).
-%     writeln('       derived_mknf_isa'(Sub,Sup)).
-
-mknf_immed_isa(SubCid,SupCid) :-
-    isa_ext(SubCid,SupCid).
-mknf_immed_isa(SubCid,SupCid) :-
-    isa_int(SubCid,SupCid).
 
 %------------------------------------------------
 % Manipulation of object info to control iterations.  May need to be
@@ -399,6 +366,7 @@ get_last_ame(Obj,Entries):-
 /* test driver for mknf */
 test_call(Call,Model):-
 	Call = k(Term),
+        set_prolog_flag(unknown,fail),
 	(debugging_mknf -> 
 	   retractall(debugging_mknf),
 	   get_debug_level(N),
@@ -411,7 +379,8 @@ test_call(Call,Model):-
 	 get_object_model(oid(Obj,mknf),E1,E2,E3),
 	 (get_object_model(oid(Obj,mknf),E1,E2,E3) = Model -> 
 	    	 write('   ***'),write(Call),writeln(' is correct')
-	    ;    write('   ***'),write(Call),writeln(' is not correct')).
+	    ;    write('   ***'),write(Call),writeln(' is not correct')),
+        set_prolog_flag(unknown,fail).
 	
 /* test driver for checking consistency */
 con_test(Id,Value):-
@@ -442,7 +411,7 @@ load_ex(Dir):-
 init:- [cdf_init_cdf],[mknf_chkCon].
 
 end_of_file.
-
+------------------------------------------------------------------------------------
 /*
 dlnot0(Term):- 
 	debug(dlnot(Term)),
@@ -481,4 +450,32 @@ get_conditional_dependencies_1([necessCond(One,Two)|T]):-
     get_conditional_dependencies_1(T).
 
 */
+
+mknf_necessCond(Class,Cond):- 
+	mknf_isa(Class,C1),
+	immed_necessCond(C1,Cond1),
+	Cond1 = Cond.
+
+% sat-checker treats objects as classes w. unique elements.
+mknf_isa(Sub,Sup):- 
+%        (Sub = unique(cid(Id,NS)) -> 
+%	    mknf_isa_1(oid(Id,NS),Sup)
+	      mknf_isa_1(Sub,Sup).
+
+%:- table mknf_isa_1/2.
+mknf_isa_1(Sub,Sup):- 
+%	writeln(mknf_isa(Sub,Sup)),
+        (Sub = Sup
+	 ; 
+  	mknf_immed_isa(Sub,Sup)).
+%	writeln('       derived_mknf_isa'(Sub,Sup)).
+mknf_isa_1(Sub,Sup):- 
+     mknf_immed_isa(Sub,S1),
+     mknf_isa(S1,Sup).
+%     writeln('       derived_mknf_isa'(Sub,Sup)).
+
+mknf_immed_isa(SubCid,SupCid) :-
+    isa_ext(SubCid,SupCid).
+mknf_immed_isa(SubCid,SupCid) :-
+    isa_int(SubCid,SupCid).
 

@@ -144,6 +144,16 @@ role_11(john_11,david_11).
 definedRole(role_11(Obj1,Obj2),role,Obj1,Obj2) :- Obj1 = john_11, Obj2 = david_11.
 
 %-----------
+% Ex 12
+
+c12(X) :- dlnot(b12(X)).
+a12(o12).
+
+definedClass(a12(X),a12,X):- X = o12.
+definedClass(b12(X),b12,X):- X = o12.
+definedClass(c12(X),c12,X):- X = o12.
+
+%-----------
 % Ex  (not yet working)
 % notp \subset not p
 

@@ -14,7 +14,7 @@
 %	check_lce/2,            
 
 :- document_import isa_ext/2 from usermod.
-:- document_import mknf_isa/2, mknf_necessCond/2, debug/1 from usermod.
+:- document_import debug/1 from usermod.
 :- document_import object_iter/2 from mknf.
 
 :- document_import topIdentifier/1, bottomIdentifier/1 from cdftp_cdfsc.
@@ -303,8 +303,8 @@ extractCDFidentifier(unique(cid(Id,Cpnt)),oid(Id,Cpnt)):-!.
 %:- table getRelevantFacts_1/2.
 getRelevantFacts_1(Id,isa(Id,Id2)):- 
         Id = unique(cid(Id,NS)) -> 
-	        mknf_isa(oid(Id,NS),Id2)
-	   ;    mknf_isa(Id,Id2).				     
+	        isa(oid(Id,NS),Id2)
+	   ;    isa(Id,Id2).				     
 getRelevantFacts_1(Id,hasAttr(Id,R,C)):- 
 	hasAttr(Id,R,C),
 	\+ (minAttr(Id,R,C,N),N > 1).
@@ -315,8 +315,8 @@ getRelevantFacts_1(Id,allAttr(Id,R,C)):-
 getRelevantFacts_1(Id,maxAttr(Id,R,C,N)):- 
 	maxAttr(Id,R,C,N).
 getRelevantFacts_1(Id,necessCond(Id,Cond)):- 
-%	necessCond(Id,Cond).
-	mknf_necessCond(Id,Cond).
+	necessCond(Id,Cond).
+%	mknf_necessCond(Id,Cond).
 %getRelevantFacts_1(Id,(H <= B)):- 
 %	compdlrule(_,H,B),
 %	relevantInRule(Id,H,B).

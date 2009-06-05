@@ -57,3 +57,9 @@ isa_ext(oid(david,mknf),cid(fourth8,mknf)).
 % Ex 9
 
 isa_ext(oid(p9_2,mknf),cid(nine_2,mknf)).
+
+%-----------
+% Ex 12
+
+isa_ext(cid(a12,mknf),cid(b12,mknf)).
+
