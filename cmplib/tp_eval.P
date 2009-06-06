@@ -423,8 +423,11 @@ eval_var_source(Varocc,Loc,Type0,HoldR,Tin,Tout,EPN) :-
 	vprag_occ(Prag,Occ),
 	((Occ == s ; Occ == l)
 	 ->	vprag_type(Prag,Type),
-		(Type == t -> Type0 = 0 ; Type0 = 1),
-		release_if_done(Vid,Loc,Prag,HoldR,Tmid,Tout)
+		(Type == t
+		 ->	Type0 = 0,
+			release_if_done(Vid,Loc,Prag,HoldR,Tmid,Tout)
+		 ;	Type0 = 1, Tout = Tmid   %% if perm then Loc is not a register
+		)
 	 ;	EPN = e(PredSym,NC),
 		sym_name(PredSym, P, A),
 		error('Unbound variable in an arithmetic expression'),
