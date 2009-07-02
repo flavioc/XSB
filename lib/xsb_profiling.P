@@ -41,7 +41,7 @@ profile_call(Goal) :-
 		Time is T1-T0,
 		telling(OF),tell(userout),write('PROFILE FOR: '),write_term(Goal,[max_depth(3)]),
 		write('  Total cputime: '),write(Time),writeln(' seconds'),
-		dump_prof,
+		dump_profile,
 		tell(OF)
 	 ;	call(Goal),	% profiling not enabled (xsb -p)
 		cputime(T1),
@@ -56,6 +56,9 @@ handle_profile_catch(Ball) :-
 	throw(Ball).
 
 get_profile_tuple(Node,Tuple,NNode) :- prof_cmd(3,Node,Tuple,NNode).
+
+start_profiling :- prof_cmd(1).
+stop_profiling :- prof_cmd(2).
 
 prof_cmd(_CODE) :- '_$builtin'(237).
 prof_cmd(_Code,_Node,_Tuple,_NNode) :- '_$builtin'(237).
@@ -72,7 +75,7 @@ profile_tuple(NodePtr,Tuple0,Tuple) :-
 	 profile_tuple(NextNodePtr,Tuple1,Tuple)
 	).
 
-dump_prof :-
+dump_profile :-
 	findall(Tuple,profile_tuple(Tuple),Tuples),
 	parsort(Tuples,[asc(2),asc(1)],0,[p(PSC,MPSC,Cnt)|STuples]),
 	sum_profile(STuples,Cnt,Total),

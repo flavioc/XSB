@@ -22,7 +22,7 @@
 ** 
 */
 
-:- export profile_call/1.
+:- export profile_call/1, start_profiling/0, stop_profiling/0.
 
 :- export profile_mode_init/0, profile_mode_call/1, profile_mode_dump/0.
 
