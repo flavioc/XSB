@@ -367,28 +367,78 @@ The library predicates of XSB that support DCGs are the following:
     as though {\tt phrase(X)} appeared instead, {\tt X} would expand into 
     a call to {\tt phrase(X, L, R)} for some lists {\tt L} and {\tt R}.  
 
-\standarditem{expand\_term(+Term1, ?Term2)}{expand\_term/2}
-    This predicate is used to transform terms that appear in a Prolog program
-    before the program is compiled or consulted.
-    The standard transformation performed by {\tt expand\_term/2} is that 
-    when {\tt Term1} is a grammar rule, then {\tt Term2} is the corresponding
-    Prolog clause; otherwise {\tt Term2} is simply {\tt Term1} unchanged. If
-    {\tt Term1} is not of the proper form, or {\tt Term2} does not unify with
-    its clausal form, predicate {\tt expand\_term/2} simply fails.
+\standarditem{expand\_term(+Term1, ?Term2)}{expand\_term/2} 
+%
+This predicate is used to transform terms that appear in a Prolog
+program before the program is compiled or consulted.  The default
+transformation performed by {\tt expand\_term/2} is that when {\tt
+  Term1} is a grammar rule, then {\tt Term2} is the corresponding
+Prolog clause; otherwise {\tt Term2} is simply {\tt Term1}
+unchanged. If {\tt Term1} is not of the proper form, or {\tt Term2}
+does not unify with its clausal form, predicate {\tt expand\_term/2}
+simply fails.
 
-    Users may override the standard transformations performed by
-    predicate {\tt expand\_term/2} by defining their own compile-time
-    transformations.  This can be done by defining clauses for the
-    predicate {\tt term\_expansion/2}\stdrefindex{term\_expansion/2},
-    When a term {\tt Term1} is read in when a file is being compiled
-    or consulted, {\tt expand\_term/2} calls {\tt term\_expansion/2}
-    first; if the expansion succeeds, the transformed term so obtained
-    is used and the standard grammar rule expansion is not tried;
-    otherwise, if {\tt Term1} is a grammar rule, then it is expanded
-    using {\tt dcg/2}; otherwise, {\tt Term1} is used as is.  Note
-    that predicate {\tt term\_expansion/2} must be defined in the
-    XSB's default read-in module ({\tt usermod}) and should be loaded
-    there before the compilation begins.
+Users may augment the default transformations by asserting clauses for
+the predicate {\tt term\_expansion/2}\stdrefindex{term\_expansion/2}
+to {\tt usermod}.  After {\tt term\_expansion(Term\_a,Term\_b)} is
+asserted, then if a consulted file contains a clause that unifies with
+{\tt Term\_a} the clause will be transformed to {\tt Term\_b} before
+further compilation.  {\tt expand\_term/2} calls user clauses for {\tt
+  term\_expansion/2} first; if the expansion succeeds, the transformed
+term so obtained is used and the standard grammar rule expansion is
+not tried; otherwise, if {\tt Term1} is a grammar rule, then it is
+expanded using {\tt dcg/2}; otherwise, {\tt Term1} is used as is.
+%Note that predicate {\tt term\_expansion/2} must be defined in the
+%XSB's default read-in module ({\tt usermod}) and should be loaded
+%there before the compilation begins.
+
+{\bf Example:} 
+%
+Suppose the following clause is asserted:
+%
+\begin{verbatim}
+?- assert(term_expansion(foo(X),bar(X))).
+\end{verbatim}
+and that the file {\tt te.P} contains the clause
+%
+{\tt foo(a)}
+%
+then the clause will automatically be expanded upon consulting the file:
+%
+\begin{verbatim}
+| ?- [te].
+[Compiling /Users/macuser/te]
+[te compiled, cpu time used: 0.0170 seconds]
+[te loaded]
+
+yes
+| ?- bar(X).
+
+X = a
+
+yes
+| ?- foo(X).
+++Error[XSB/Runtime/P]: [Existence (No procedure usermod : foo / 1 exists)] []
+Forward Continuation...
+\end{verbatim}
+
+However, {\tt read/[1,2]} does not automatically perform term expansion
+%
+\begin{verbatim}
+| ?- use_module(standard,[expand_term/2]).
+
+yes
+| ?- read(X),expand_term(X,Y).
+foo(a).
+
+X = foo(a)
+Y = bar(a)
+
+yes
+\end{verbatim}
+
+
+
 
 \standarditem{'C'(?L1, ?Terminal, ?L2)}{`C'/3}
 This predicate generally is of no concern to the user.  Rather it is used 
