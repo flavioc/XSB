@@ -1,25 +1,25 @@
 /* File:      complete_local.h
 ** Author(s): Juliana Freire, Kostis Sagonas, Terry Swift, Luis Castro
 ** Contact:   xsb-contact@cs.sunysb.edu
-** 
+**
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-2001
-** 
+**
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
 ** Software Foundation; either version 2 of the License, or (at your option)
 ** any later version.
-** 
+**
 ** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
 ** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 ** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
 ** more details.
-** 
+**
 ** You should have received a copy of the GNU Library General Public License
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
 ** $Id$
-** 
+**
 */
 #ifndef __COMPLETE_LOCAL_H__
 #define __COMPLETE_LOCAL_H__
@@ -107,7 +107,7 @@ computation.
 
 Type = 1 if it is a positive link (consumer choice point)
 Type = -1 if it is a negative link to a completion suspension choice point
-Type = 2 if it is the first call (generator cp is used here).  
+Type = 2 if it is the first call (generator cp is used here).
 
 Right now, there isnt a good way of determining whether the first call
 of a tabled predicate is positive or negative.  So its best to table
@@ -116,27 +116,27 @@ tnot/1 in tables.P if you want to keep full track of signs */
 #ifdef PROFILE
 void print_sdg_edge(int check_num,int sign,VariantSF fromsf,VariantSF tosf)
 {
-  fprintf(stddbg,"edge(%d,%d,",check_num,sign);   
+  fprintf(stddbg,"edge(%d,%d,",check_num,sign);
   print_subgoal(stddbg,fromsf); fprintf(stddbg,",");
   print_subgoal(stddbg,tosf); fprintf(stddbg,").\n");
 }
 
 void SpitOutGraph(CPtr cs_ptr)
-{ 
+{
   CPtr tmp_openreg = cs_ptr;
   CPtr nsf;
-  int num_subgoals = 0; 
-  VariantSF prof_compl_subg; 
-  
-  sdg_check_num++; 
-  if (sdg_sample_rate > 0 && (sdg_check_num % sdg_sample_rate == 0)) { 
+  int num_subgoals = 0;
+  VariantSF prof_compl_subg;
+
+  sdg_check_num++;
+  if (sdg_sample_rate > 0 && (sdg_check_num % sdg_sample_rate == 0)) {
     printf(" /* now checking: %d */ \n",sdg_check_num);
     while (tmp_openreg < COMPLSTACKBOTTOM) {
       num_subgoals++;
       prof_compl_subg = compl_subgoal_ptr(tmp_openreg);
 
       fprintf(stddbg,"   /* ");
-      print_subgoal(stddbg, prof_compl_subg); 
+      print_subgoal(stddbg, prof_compl_subg);
       fprintf(stddbg," */ \n");
 
       if (tcp_ptcp(subg_cp_ptr(prof_compl_subg)) != NULL ) {
@@ -146,30 +146,33 @@ void SpitOutGraph(CPtr cs_ptr)
       } else {
       }
 
-      nsf = subg_asf_list_ptr(prof_compl_subg); 
+      nsf = subg_asf_list_ptr(prof_compl_subg);
       while (nsf != NULL) {
 
 	print_sdg_edge(sdg_check_num,1,nlcp_ptcp(nsf),prof_compl_subg);
 
-	nsf = nlcp_prevlookup(nsf); 
+	nsf = nlcp_prevlookup(nsf);
       }
 
-      nsf = subg_compl_susp_ptr(prof_compl_subg); 
+      nsf = subg_compl_susp_ptr(prof_compl_subg);
       while (nsf != NULL) {
 
 	print_sdg_edge(sdg_check_num,-1,csf_ptcp(nsf),prof_compl_subg);
 
-	nsf = csf_prevcsf(nsf); 
+	nsf = csf_prevcsf(nsf);
       }
 
       tmp_openreg = prev_compl_frame(tmp_openreg);
     }
     /*    printf("doing checking %d %d \n",sdg_check_num,num_subgoals); */
-  } 
+  }
 }
 #else
 #define SpitOutGraph
 #endif
+
+/* amp: Answer Completion flag initialization (to 'off') */
+flags[ANSWER_COMPLETION]=0;
 
 #ifdef LOCAL_EVAL
 #define DisposeOfComplSusp(subgoal) \
@@ -184,9 +187,9 @@ void SpitOutGraph(CPtr cs_ptr)
  * final completion, and the test suite passes if the alternate form
  * (below) is used.  I'll wait until the MT engine stabilizes until I
  * make the change, though.
- * 
- * 8/05 Took out lines     
- * cs_pcreg(nsftmp) = (pb) &resume_compl_suspension_inst;  
+ *
+ * 8/05 Took out lines
+ * cs_pcreg(nsftmp) = (pb) &resume_compl_suspension_inst;
  * as these should be unnecessary, and appears to be an artifact from old code
  */
 #define ResumeCSFs() \
@@ -226,8 +229,8 @@ define ResumeCSFs()				\
   subg_compl_susp_ptr(compl_subg) = NULL; \
 }
 */
-  
-static inline CPtr ProcessSuspensionFrames(CTXTdeclc CPtr cc_tbreg_in, 
+
+static inline CPtr ProcessSuspensionFrames(CTXTdeclc CPtr cc_tbreg_in,
 					   CPtr cs_ptr)
 {
   CPtr ComplStkFrame = cs_ptr;
@@ -251,13 +254,13 @@ static inline CPtr ProcessSuspensionFrames(CTXTdeclc CPtr cc_tbreg_in,
     }
     else { /* if not early completed */
       CPtr nsf;
-      if ((nsf = subg_compl_susp_ptr(compl_subg)) != NULL) { 
+      if ((nsf = subg_compl_susp_ptr(compl_subg)) != NULL) {
 	CPtr p, prev_nsf = NULL;
 	/* check each suspension frame for appropriate action: if
 	 * their root subgoals are completed these completion
 	 * suspensions are irrelevant, so skip over them; o/w keep
 	 * them on chain, delay them, and let simplification take care
-	 * of the rest 
+	 * of the rest
 	*/
 	while (nsf) {
 	  if ((p = csf_ptcp(nsf)) != NULL) {
@@ -291,14 +294,16 @@ static inline void CompleteSimplifyAndReclaim(CTXTdeclc CPtr cs_ptr)
 {
   VariantSF compl_subg;
   SubConsSF pCons;
-  CPtr ComplStkFrame = cs_ptr; 
+  CPtr ComplStkFrame = cs_ptr;
+
+  //printf("Child = %p\n",Child(ALN_Answer(subg_ans_list_ptr(compl_subgoal_ptr(ComplStkFrame)))));
 
   /* mark all SCC as completed and do simplification also, reclaim
      space for all but the leader */
 
   while (ComplStkFrame >= openreg) {
     compl_subg = compl_subgoal_ptr(ComplStkFrame);
-    mark_as_completed(compl_subg); 
+    mark_as_completed(compl_subg);
     if (ProducerSubsumesSubgoals(compl_subg)) {
       //      fprintf(stddbg, "Producer:\n  ");
       //      sfPrintGoal(CTXTc stddbg, (VariantSF)compl_subg, YES);
@@ -325,13 +330,18 @@ static inline void CompleteSimplifyAndReclaim(CTXTdeclc CPtr cs_ptr)
     }
     ComplStkFrame = next_compl_frame(ComplStkFrame);
   } /* while */
-  
+
   /* TLS: placemarker for development.  This function should happen
    *after* simplification and *before* removal of answer lists, which
    *is useful for traversing dependency graphs. */
 
-  //  answer_completion(CTXTc cs_ptr);
-      
+  /*  remove_unfounded_set(cs_ptr); */
+  if (flags[ANSWER_COMPLETION]) {
+	  if ((SCC_has_delayed) || (FALSE) /*  */) {
+		  answer_completion(CTXTc cs_ptr);
+	  }
+  }
+
   /* reclaim all answer lists, but the one for the leader */
   ComplStkFrame = next_compl_frame(cs_ptr);
   while (ComplStkFrame >= openreg) {
@@ -355,14 +365,14 @@ static inline void CompleteSimplifyAndReclaim(CTXTdeclc CPtr cs_ptr)
 #endif
 }
 
-static inline void SetupReturnFromLeader(CTXTdeclc CPtr orig_breg, CPtr cs_ptr, 
+static inline void SetupReturnFromLeader(CTXTdeclc CPtr orig_breg, CPtr cs_ptr,
 					 VariantSF subgoal)
 {
   CPtr answer_template;
   int template_size, attv_num;
   Integer tmp;
 
-  switch_envs(orig_breg); 
+  switch_envs(orig_breg);
   /* check where this brings the stacks, that will determine how
      much can be reclaimed if there are answers to be returned */
   ptcpreg = tcp_ptcp(orig_breg);
@@ -374,7 +384,7 @@ static inline void SetupReturnFromLeader(CTXTdeclc CPtr orig_breg, CPtr cs_ptr,
   ebreg = cp_ebreg(tcp_prevbreg(orig_breg));
   hbreg = cp_hreg(tcp_prevbreg(orig_breg));
   subg_asf_list_ptr(subgoal) = 0;
-  
+
   /* reclaim stacks, including leader */
   openreg = prev_compl_frame(cs_ptr);
   reclaim_stacks(orig_breg);
@@ -395,7 +405,7 @@ static inline void SetupReturnFromLeader(CTXTdeclc CPtr orig_breg, CPtr cs_ptr,
     }
     /* now num_vars_in_var_regs should be attv_num - 1 */
   }
-  
+
   reg_arrayptr = reg_array - 1;
   for (tmp = 0; tmp < template_size; tmp++) {
     CPtr cptr = answer_template;

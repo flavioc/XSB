@@ -1,26 +1,26 @@
 /* File:      slgdelay.c
 ** Author(s): Kostis Sagonas, Baoqiu Cui
 ** Contact:   xsb-contact@cs.sunysb.edu
-** 
+**
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
 ** Copyright (C) ECRC, Germany, 1990
-** 
+**
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
 ** Software Foundation; either version 2 of the License, or (at your option)
 ** any later version.
-** 
+**
 ** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
 ** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 ** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
 ** more details.
-** 
+**
 ** You should have received a copy of the GNU Library General Public License
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
 ** $Id$
-** 
+**
 */
 
 
@@ -165,10 +165,10 @@ static PNDE current_pnde_block_top_gl = NULL; /* the top of current PNDE block*/
 
 /* * * * */
 
-/* 
+/*
  * TLS: AS info had been using malloc directly, so I changed it to use
  * the structure managers that are more common to the rest of the
- * system, rather than the new_entry/release_entry methods. 
+ * system, rather than the new_entry/release_entry methods.
  *
  * Allocate shared structure is not needed, as shared structures will be
  * protected by the lock in do_delay_stuff to MUTEX_DELAY
@@ -331,7 +331,7 @@ unsigned long unused_pnde_space_private(CTXTdecl)
  * delay list, a check is made that DE is neither successful nor
  * failed in the current interpretation.  The checks thus perform an
  * analog of simplification.
- * 
+ *
  * For positive DEs we have a pointer to an answer, which is either
  * deleted, unconditional or conditional.  For negative DEs we have a
  * pointer to a subgoal frame.  Determining whether the subgoal is
@@ -360,24 +360,24 @@ void *simpl_var_trie_lookup(CTXTdeclc void *branchRoot, xsbBool *wasFound,
   parent = branchRoot;
   std_var_num = Trail_NumBindings;
   while ( ! TermStack_IsEmpty ) {
-								
-    TermStack_Pop(symbol);	
+
+    TermStack_Pop(symbol);
     {
       BTNptr chain;
       int chain_length;
       if ( IsHashHeader(BTN_Child(parent)) ) {
-	BTHTptr ht = BTN_GetHashHdr(parent);
-	chain = *CalculateBucketForSymbol(ht,symbol);
+    	  BTHTptr ht = BTN_GetHashHdr(parent);
+    	  chain = *CalculateBucketForSymbol(ht,symbol);
       }
       else
-	chain = BTN_Child(parent);
+    	  chain = BTN_Child(parent);
       SearchChainForSymbol(chain,symbol,chain_length);
       if ( IsNonNULL(chain) )
-	parent = chain;
+    	  parent = chain;
       else {
-	*wasFound = FALSE;
-	*failedSymbol = symbol;
-	return NULL;
+    	  *wasFound = FALSE;
+    	  *failedSymbol = symbol;
+    	  return NULL;
       }
     }
   }
@@ -421,7 +421,7 @@ NODEptr get_answer_for_subgoal(CTXTdeclc SubConsSF consumerSF) {
   return trieNode;
 }
 
-/* * * * * * * * * * 
+/* * * * * * * * * *
  * Checks whether a delay element that is about to be interned was
  * simplifiable (simplifications were already initiated for this DE).
  * More specifically, negative delay elements were simplifiable if their
@@ -436,7 +436,7 @@ xsbBool was_simplifiable(CTXTdeclc VariantSF subgoal, NODEptr ANS) {
   if (ANS == NULL) { /* negative delay element */
     if (IsSubConsSF(subgoal)) {
       AnsLeaf = get_answer_for_subgoal(CTXTc (SubConsSF) subgoal);
-      return (is_completed(conssf_producer(subgoal)) 
+      return (is_completed(conssf_producer(subgoal))
 	      && (IsNULL(AnsLeaf) || IsDeletedNode(AnsLeaf)));
     } else /* TLS: not 100% SURE subgoal_fails handles deleted nodes */
       return (is_completed(subgoal) && subgoal_fails(subgoal));
@@ -451,8 +451,8 @@ xsbBool is_failing_delay_element(CTXTdeclc VariantSF subgoal, NODEptr ANS) {
     if (IsSubConsSF(subgoal)) {
       AnsLeaf = get_answer_for_subgoal(CTXTc (SubConsSF) subgoal);
       return (IsNonNULL(AnsLeaf) && is_unconditional_answer(AnsLeaf));
-    } else 
-      return (is_completed(subgoal) && has_answer_code(subgoal) 
+    } else
+      return (is_completed(subgoal) && has_answer_code(subgoal)
 	      && subgoal_unconditionally_succeeds(subgoal));
   }
   else /* positive delay element: no difference between subsumption and variance */
@@ -484,7 +484,7 @@ static DE intern_delay_element(CTXTdeclc Cell delay_elem)
   tmp_cell = cell(cptr + 2);
   ans_subst = (NODEptr) addr_val(tmp_cell);
   tmp_cell = cell(cptr + 3);
-  
+
   //  fprintf(stddbg,"DE: ");print_delay_element(CTXTc stddbg, delay_elem);fprintf(stddbg,"\n");
   /*
    * cell(cptr + 3) can be one of the following:
@@ -517,7 +517,7 @@ static DE intern_delay_element(CTXTdeclc Cell delay_elem)
     if (arity != 0) {
       de_subs_fact_leaf(de) = delay_chk_insert(CTXTc arity, ret_n + 1,
 					       (CPtr *) &de_subs_fact(de));
-    } 
+    }
 #endif /* IGNORE_DELAYVAR */
     return de;
   }
@@ -551,7 +551,7 @@ static DE intern_delay_element_private(CTXTdeclc Cell delay_elem)
   tmp_cell = cell(cptr + 2);
   ans_subst = (NODEptr) addr_val(tmp_cell);
   tmp_cell = cell(cptr + 3);
-  
+
   /*
    * cell(cptr + 3) can be one of the following:
    *   1. integer 0 (NEG_DELAY), for a negative DE;
@@ -582,7 +582,7 @@ static DE intern_delay_element_private(CTXTdeclc Cell delay_elem)
     if (arity != 0) {
       de_subs_fact_leaf(de) = delay_chk_insert(CTXTc arity, ret_n + 1,
 					       (CPtr *) &de_subs_fact(de));
-    } 
+    }
     return de;
   }
   else
@@ -665,7 +665,7 @@ static DL intern_delay_list_private(CTXTdeclc CPtr dlist) /* assumes that dlist 
  * 1) (If de is a negative DE) Add a NDE `pnde' to the nde_list of de's
  *    subgoal frame.  Point de_pnde(de) to `pnde', and point
  *    pnde_dl(pnde) to dl, pnde_de(pnde) to de.
- *    
+ *
  * 2) (If de is a positive DE) Add a PDE `pnde' to the pdes of the
  *    Delay Info node of de's answer substitution leaf.  Point
  *    de_pnde(de) to `pnde', and point pnde_dl(pnde) to dl, pnde_de(pnde)
@@ -680,7 +680,7 @@ static void record_de_usage(DL dl)
 #ifdef DEBUG_DELAYVAR
   PNDE tmp;
 #endif
- 
+
   de = dl_de_list(dl);
   while (de) {
     new_entry(pnde,
@@ -724,7 +724,7 @@ static void record_de_usage_private(CTXTdeclc DL dl)
   DE de;
   PNDE pnde, current_first;
   NODEptr as_leaf;
- 
+
   de = dl_de_list(dl);
   while (de) {
     new_entry(pnde,private_released_pndes,
@@ -783,13 +783,13 @@ static void record_de_usage_private(CTXTdeclc DL dl)
  * When the delay trie has been created, and a pointer in the delay
  * element (saved in the answer trie) has been set, we can say the
  * conditional answer is tabled.
- * 
+ *
  * TLS: moved mutexes into conditionals.  This avoids locking the
  * delay mutex when adding an answer for a LRD stratified program.
  * For non-LRD programs the placement of mutexes may mean that we lock
  * the mutex more than once per answer, but such cases will be
  * uncommon for the most part (as two of the cases engender
- * simplification).  
+ * simplification).
  */
 
 void do_delay_stuff_shared(CTXTdeclc NODEptr as_leaf, VariantSF subgoal, xsbBool sf_exists)
@@ -797,7 +797,7 @@ void do_delay_stuff_shared(CTXTdeclc NODEptr as_leaf, VariantSF subgoal, xsbBool
     ASI	asi;
     DL dl = NULL;
 
-    if (delayreg) { 
+    if (delayreg) {
       //      print_delay_list(CTXTc stddbg,delayreg);fprintf(stddbg,"\n");
       SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
       if (!sf_exists || is_conditional_answer(as_leaf)) {
@@ -866,7 +866,7 @@ void do_delay_stuff(CTXTdeclc NODEptr as_leaf, VariantSF subgoal, xsbBool sf_exi
 {
 
   //  fprintf(stddbg,"in do delay stuff (past answer is junk)\n");
-#ifdef MULTI_THREAD  
+#ifdef MULTI_THREAD
   if (threads_current_sm == PRIVATE_SM) {
     do_delay_stuff_private(CTXTc as_leaf, subgoal, sf_exists);
   } else {
@@ -942,6 +942,10 @@ xsbBool remove_dl_from_dl_list(CTXTdeclc DL dl, ASI asi)
   DL current = asi_dl_list(asi);
   DL prev_dl = NULL;
 
+  // amp: what if 'current' is already NULL ?? It can happen, you know? Maybe it shouldn't happen, but it does.
+  if (!current)
+	  return FALSE;
+
   while (current != dl) {
     prev_dl = current;
     current = dl_next(current);
@@ -972,7 +976,7 @@ xsbBool remove_dl_from_dl_list(CTXTdeclc DL dl, ASI asi)
  * determine whether there is a consuming subgoal frame associated
  * with that answer.  In order to do this we have to bind the answer
  * to the substitution factor of the call in construct_ground_term().
- * 
+ *
  * This check is done both in handle_empty_dl_creation() and in
  * handle_unsupported_answer_subst()
 
@@ -1006,7 +1010,7 @@ void answerStack_copyTerm(CTXTdecl) {
   //  printf("working on AS: ");printTrieSymbol(stddbg, symbol);fprintf(stddbg,"\n");
   if (symbol != (Cell) NULL) {
     SymbolStack_Push(symbol);
-    if (IsTrieFunctor(symbol))   
+    if (IsTrieFunctor(symbol))
       for (i = 0 ; i < get_arity(DecodeTrieFunctor(symbol)) ; i++) {
 	answerStack_copyTerm(CTXT);
       }
@@ -1026,7 +1030,7 @@ void answerStack_copyTermPtr(CTXTdeclc CPtr symbolPtr) {
   symbol = *symbolPtr;
   //  printf("working on AS (Ptr): ");printTrieSymbol(stddbg, symbol);fprintf(stddbg,"\n");
   SymbolStack_Push(symbol);
-  if (IsTrieFunctor(symbol)) 
+  if (IsTrieFunctor(symbol))
     for (i = 0 ; i < get_arity(DecodeTrieFunctor(symbol)) ; i++) {
       symbolPtr--;
       answerStack_copyTermPtr(CTXTc symbolPtr);
@@ -1064,8 +1068,8 @@ void construct_ground_term(CTXTdeclc BTNptr as_leaf,VariantSF subgoal) {
     if (IsTrieVar(symbol)) {
       if (DecodeTrieVar(symbol) <= maxvar) {
 	answerStack_copyTermPtr(CTXTc aliasArray[DecodeTrieVar(symbol)]);
-      } 
-      else { 
+      }
+      else {
 	maxvar++;
 	aliasArray[maxvar] = DynStk_PrevFrame(simplAnsStack);
 	  //DynStk_Top(simplAnsStack) - DynStk_FrameSize(simplAnsStack);
@@ -1080,7 +1084,7 @@ void construct_ground_term(CTXTdeclc BTNptr as_leaf,VariantSF subgoal) {
 int is_ground_answer(NODEptr as_leaf) {
   while (! IsTrieRoot(as_leaf)) {
     //    printTrieNode(stddbg,as_leaf);
-    if ( IsTrieVar(as_leaf) ) 
+    if ( IsTrieVar(as_leaf) )
       return 0;
     else as_leaf = TSTN_Parent(as_leaf);
   }
@@ -1116,9 +1120,9 @@ static void handle_empty_dl_creation(CTXTdeclc DL dl)
     subgoal = asi_subgoal(Delay(as_leaf));
     //    fprintf(stddbg,"in handle empty dl ");
     //    fprintf(stddbg, ">>>> the subgoal is: ");
-    //    print_subgoal(stddbg, subgoal); fprintf(stddbg,"\n");
+    //    print_subgoal(stddbg, subgoal); fprintf(stddbg,"\n");		<----
     //    fprintf(stddbg, ">>>> the answer is: ");
-    //    printTriePath(CTXTc stddbg, as_leaf, FALSE); fprintf(stddbg,"\n");
+    //    printTriePath(CTXTc stddbg, as_leaf, FALSE); fprintf(stddbg,"\n");		<----
     //    printf("dl list %p\n",asi_dl_list(Delay(as_leaf)));
 
     /*
@@ -1135,7 +1139,7 @@ static void handle_empty_dl_creation(CTXTdeclc DL dl)
       construct_ground_term(CTXTc as_leaf,subgoal);
 
       leaf = simpl_variant_trie_lookup(CTXTc TIF_CallTrie(subg_tif_ptr(subgoal)),
-				 get_arity(TIF_PSC(subg_tif_ptr(subgoal))), 
+				 get_arity(TIF_PSC(subg_tif_ptr(subgoal))),
 				 (CPtr) DynStk_Base(tstSymbolStack), callVars);
       if ( IsNonNULL(leaf) ) {
 	//	printf("found call! %x",leaf);
@@ -1179,7 +1183,7 @@ void handle_unsupported_answer_subst(CTXTdeclc NODEptr as_leaf)
     construct_ground_term(CTXTc as_leaf,unsup_subgoal);
 
     subgoal_leaf = simpl_variant_trie_lookup(CTXTc TIF_CallTrie(subg_tif_ptr(unsup_subgoal)),
-				     get_arity(TIF_PSC(subg_tif_ptr(unsup_subgoal))), 
+				     get_arity(TIF_PSC(subg_tif_ptr(unsup_subgoal))),
 				     (CPtr) DynStk_Base(tstSymbolStack), callVars);
 
     if (IsNonNULL(subgoal_leaf) )
@@ -1187,7 +1191,7 @@ void handle_unsupported_answer_subst(CTXTdeclc NODEptr as_leaf)
   }
 
   /* must do delete branch before simplifying -- otherwise checks will be thrown off */
-  if (IsSubProdSF(unsup_subgoal)) 
+  if (IsSubProdSF(unsup_subgoal))
     delete_branch(CTXTc as_leaf, &subg_ans_root_ptr(unsup_subgoal),SUBSUMPTIVE_EVAL_METHOD);
   else { /* VariantSF -- set to private or shared.  */
     SET_TRIE_ALLOCATION_TYPE_SF(unsup_subgoal);
@@ -1201,13 +1205,13 @@ void handle_unsupported_answer_subst(CTXTdeclc NODEptr as_leaf)
     }
 
     /* Perform simplify_neg_fails() for consumer sfs */
-    if ( IsSubProdSF(unsup_subgoal) && IsNonNULL(subgoal_leaf) 
+    if ( IsSubProdSF(unsup_subgoal) && IsNonNULL(subgoal_leaf)
 	 && subsumed_subgoal != unsup_subgoal) {
       simplify_neg_fails(CTXTc subsumed_subgoal);
     }
-  }    
+  }
 #ifdef MULTI_THREAD
-  if (IsPrivateSF(asi_subgoal(unsup_asi))) 
+  if (IsPrivateSF(asi_subgoal(unsup_asi)))
     SM_DeallocateStruct(*private_smASI,unsup_asi)
   else
 #endif
@@ -1237,24 +1241,24 @@ void release_all_dls(CTXTdeclc ASI asi)
     de = dl_de_list(dl);
     while (de) {
       tmp_de = de_next(de);
-      if (de_ans_subst(de) == NULL) { /* is NDE */  
-	if (subg_nde_list(de_subgoal(de))) { 
+      if (de_ans_subst(de) == NULL) { /* is NDE */
+    	  if (subg_nde_list(de_subgoal(de))) {
 #ifdef MULTI_THREAD
 	  if (IsPrivateSF(subg_nde_list(de_subgoal(de))))
 	    remove_pnde(subg_nde_list(de_subgoal(de)), de_pnde(de), private_released_pndes)
 	  else
 #endif
-	    remove_pnde(subg_nde_list(de_subgoal(de)), de_pnde(de), released_pndes_gl);
-	}
+			  remove_pnde(subg_nde_list(de_subgoal(de)), de_pnde(de), released_pndes_gl);
+    	  }
       }
       else {
-	de_asi = Delay(de_ans_subst(de));
+    	  de_asi = Delay(de_ans_subst(de));
 #ifdef MULTI_THREAD
 	if (IsPrivateSF(asi_subgoal(de_asi)))
 	  remove_pnde(asi_pdes(de_asi), de_pnde(de),private_released_pndes)
 	else
 #endif
-	  remove_pnde(asi_pdes(de_asi), de_pnde(de),released_pndes_gl);
+		remove_pnde(asi_pdes(de_asi), de_pnde(de),released_pndes_gl);
       }
 #ifdef MULTI_THREAD
 	  /* Now remove the de itself (allocated for the same table as the DL and anawer) */
@@ -1314,7 +1318,7 @@ static void simplify_pos_unconditional(CTXTdeclc NODEptr as_leaf)
 #ifdef MULTI_THREAD
   if (isPrivate)
     SM_DeallocateStruct(*private_smASI,asi)
-  else 
+  else
 #endif
   SM_DeallocateSharedStruct(smASI,asi);
 }
@@ -1347,10 +1351,10 @@ void simplify_neg_fails(CTXTdeclc VariantSF subgoal)
 }
 
 /********************************************************************
- * On occasion that the subgoal succeeds (gets an unconditional	
- * answer that is identical to the subgoal), it deletes all delay	
+ * On occasion that the subgoal succeeds (gets an unconditional
+ * answer that is identical to the subgoal), it deletes all delay
  * lists that contain a negative delay element with that subgoal.
- * 
+ *
  * Before remove_dl_from_dl_list(), all the DEs in the DL to be
  * removed have to be released, and each P(N)DE which points to a DE
  * in the DL has also to be released.
@@ -1374,25 +1378,25 @@ static void simplify_neg_succeeds(CTXTdeclc VariantSF subgoal)
     if (IsValidNode(used_as_leaf) && (used_asi = Delay(used_as_leaf)) != NULL) {
       de = dl_de_list(dl); /* to release all DEs in dl */
       while (de) {
-	tmp_de = de_next(de);
-	if (de_ans_subst(de) == NULL) { /* is NDE */
-	  /* Remove pndes from the subgoal to which the de refers */
+    	  tmp_de = de_next(de);
+    	  if (de_ans_subst(de) == NULL) { /* is NDE */
+    		  /* Remove pndes from the subgoal to which the de refers */
 #ifdef MULTI_THREAD
 	  if (IsPrivateSF(subg_nde_list(de_subgoal(de))))
 	    remove_pnde(subg_nde_list(de_subgoal(de)), de_pnde(de), private_released_pndes)
 	  else
 #endif
-	    remove_pnde(subg_nde_list(de_subgoal(de)), de_pnde(de), released_pndes_gl);
-	}
-	else { 	  /* Remove pndes from the answer to which the de refers */
-	  de_asi = Delay(de_ans_subst(de));
+			  remove_pnde(subg_nde_list(de_subgoal(de)), de_pnde(de), released_pndes_gl);
+    	  }
+    	  else { 	  /* Remove pndes from the answer to which the de refers */
+    		  de_asi = Delay(de_ans_subst(de));
 #ifdef MULTI_THREAD
 	  if (IsPrivateSF(asi_subgoal(de_asi)))
 	    remove_pnde(asi_pdes(de_asi), de_pnde(de),private_released_pndes)
 	  else
 #endif
-	    remove_pnde(asi_pdes(de_asi), de_pnde(de),released_pndes_gl);
-	}
+			  remove_pnde(asi_pdes(de_asi), de_pnde(de),released_pndes_gl);
+    	  }
 #ifdef MULTI_THREAD
 	  /* Now remove the de itself (allocated for the same table as the DL and anawer) */
 	if (IsPrivateSF(asi_subgoal(Delay(dl_asl(dl)))))
@@ -1400,10 +1404,10 @@ static void simplify_neg_succeeds(CTXTdeclc VariantSF subgoal)
 	  else
 #endif
 	    release_shared_de_entry(de);
-	de = tmp_de; /* next DE */
+		de = tmp_de; /* next DE */
 	} /* while */
       if (!remove_dl_from_dl_list(CTXTc dl, used_asi)) {
-	handle_unsupported_answer_subst(CTXTc used_as_leaf);
+    	  handle_unsupported_answer_subst(CTXTc used_as_leaf);
       }
     } /* if */
   } /* while */
@@ -1428,22 +1432,24 @@ void simplify_pos_unsupported(CTXTdeclc NODEptr as_leaf)
 
   while ((pde = asi_pdes(asi))) {
     dl = pnde_dl(pde); /* dl: to be removed */
+
+    if (!dl) return; // amp: necessary check for Answer Completion
+
     used_as_leaf = dl_asl(dl);
-    if (IsValidNode(used_as_leaf) &&
-	(used_asi = Delay(used_as_leaf)) != NULL) {
+    if (IsValidNode(used_as_leaf) && (used_asi = Delay(used_as_leaf)) != NULL) {
       de = dl_de_list(dl); /* to release all DEs in dl */
       while (de) {
-	tmp_de = de_next(de);
-	if (de_ans_subst(de) == NULL) { /* is NDE */
+    	  tmp_de = de_next(de);
+    	  if (de_ans_subst(de) == NULL) { /* is NDE */
 #ifdef MULTI_THREAD
 	  if (IsPrivateSF(subg_nde_list(de_subgoal(de))))
 	    remove_pnde(subg_nde_list(de_subgoal(de)), de_pnde(de), private_released_pndes)
 	  else
 #endif
-	    remove_pnde(subg_nde_list(de_subgoal(de)), de_pnde(de), released_pndes_gl);
-	}
-	else {			  /* is PDE */
-	  de_asi = Delay(de_ans_subst(de));
+			  remove_pnde(subg_nde_list(de_subgoal(de)), de_pnde(de), released_pndes_gl);
+    	  }
+    	  else {			  /* is PDE */
+    		  de_asi = Delay(de_ans_subst(de));
 #ifdef MULTI_THREAD
 	  /* TLS: changed this */
 	  //	  de_asi = Delay(de_ans_subst(de));
@@ -1451,8 +1457,8 @@ void simplify_pos_unsupported(CTXTdeclc NODEptr as_leaf)
 	    remove_pnde(asi_pdes(de_asi), de_pnde(de),private_released_pndes)
 	  else
 #endif
-	    remove_pnde(asi_pdes(de_asi), de_pnde(de), released_pndes_gl);
-	}
+			  remove_pnde(asi_pdes(de_asi), de_pnde(de), released_pndes_gl);
+    	  }
 #ifdef MULTI_THREAD
 	  /* Now remove the de itself (allocated for the same table as the DL and anawer) */
 	if (IsPrivateSF(asi_subgoal(Delay(dl_asl(dl)))))
@@ -1501,7 +1507,7 @@ void abolish_wfs_space(CTXTdecl)
   }
 
   /* reset some pointers */
-  
+
   released_des_gl = NULL;
   released_dls_gl = NULL;
   released_pndes_gl = NULL;
@@ -1580,7 +1586,7 @@ void abolish_private_wfs_space(CTXTdecl)
 void force_answer_true(CTXTdeclc NODEptr as_leaf)
 {
   VariantSF subgoal;
-  
+
   if (is_conditional_answer(as_leaf)) {
     SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
     subgoal = asi_subgoal(Delay(as_leaf));
