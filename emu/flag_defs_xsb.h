@@ -1,26 +1,31 @@
 /* File:      flag_defs_xsb.h
 ** Author(s): Jiyang Xu, Kostis Sagonas, Ernie Johnson
 ** Contact:   xsb-contact@cs.sunysb.edu
-** 
+**
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1999
 ** Copyright (C) ECRC, Germany, 1990
-** 
+**
 ** XSB is free software; you can redistribute it and/or modify it under the
 ** terms of the GNU Library General Public License as published by the Free
 ** Software Foundation; either version 2 of the License, or (at your option)
 ** any later version.
-** 
+**
 ** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
 ** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 ** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
 ** more details.
-** 
+**
 ** You should have received a copy of the GNU Library General Public License
 ** along with XSB; if not, write to the Free Software Foundation,
 ** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 **
+<<<<<<< flag_defs_xsb.h
 ** $Id$
-** 
+**
+=======
+** $Id$
+**
+>>>>>>> 1.28
 */
 
 
@@ -45,9 +50,11 @@
 #define COUNT_CHAINS    10        /* count size of chains on GC              */
 #define EXAMINE_DATA    11        /* examine data on GC                      */
 #define PROFFLAG        12
-#define TABLING_METHOD	13        /* Default method used to evaluate tabled  */
-#define CLAUSE_GARBAGE_COLLECT 14 /* Turn clause gc on or off                */
+#define TABLING_METHOD	13      /* Default method used to evaluate tabled */
+#define CLAUSE_GARBAGE_COLLECT 14 /* Turn clause gc on or off */
 #define WRITE_ATTRIBUTES 15       /* Action to take when writing an attv     */
+#define ANSWER_COMPLETION 16 /* amp: Incremental Answer Completion switch on or off */
+
 /* Flags 15-24 are open to use */
 
 /*
@@ -78,7 +85,7 @@ interrupt flag
 #define BANNER_CTL      45      /* Controls whether banner, "loaded" msgs
 				   are displayed; passed to Prolog side.
 				   Check BANNER_CTL values at the end      */
-#define CMD_LINE_GOAL  	46	/* The Prolog goal passed on cmd 
+#define CMD_LINE_GOAL  	46	/* The Prolog goal passed on cmd
 				   line with -e	       	       	           */
 #define USER_HOME  	47	/* $HOME, if not null. Else INSTALL_DIR    */
 #define INSTALL_DIR	48	/* set dynamically in orient_xsb.c         */
@@ -137,7 +144,7 @@ interrupt flag
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-/* Banner control values recognized on the Prolog side. 
+/* Banner control values recognized on the Prolog side.
    MUST BE PRIME NUMBERS */
 #define NOBANNER          2   /* don't display XSB banner */
 #define QUIETLOAD    	  3   /* don't display "module loaded" msgs */
