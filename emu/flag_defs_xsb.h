@@ -53,9 +53,8 @@
 #define TABLING_METHOD	13      /* Default method used to evaluate tabled */
 #define CLAUSE_GARBAGE_COLLECT 14 /* Turn clause gc on or off */
 #define WRITE_ATTRIBUTES 15       /* Action to take when writing an attv     */
-#define ANSWER_COMPLETION 16 /* amp: Incremental Answer Completion switch on or off */
 
-/* Flags 15-24 are open to use */
+/* Flags 15-24 are open to use for thread-private flags*/
 
 /*
  *  Flags 25-41 are reserved for Interrupt Handler PSCs.
@@ -137,6 +136,7 @@ interrupt flag
 #define PRIVSHAR_DEFAULT          80   /* Default for shared or private predicates */
 #define WARNING_ACTION            81   /* Action to take on warnings: print,silent,exception */
 #define HEAP_GC_MARGIN            82   /* Size of heap overflow margin */
+#define ANSWER_COMPLETION         83   /* amp: Incremental Answer Completion switch */   
 
 #define MAX_FLAGS		85
 

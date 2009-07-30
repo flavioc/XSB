@@ -171,9 +171,6 @@ void SpitOutGraph(CPtr cs_ptr)
 #define SpitOutGraph
 #endif
 
-/* amp: Answer Completion flag initialization (to 'off') */
-flags[ANSWER_COMPLETION]=0;
-
 #ifdef LOCAL_EVAL
 #define DisposeOfComplSusp(subgoal) \
         subg_compl_susp_ptr(subgoal) = NULL
@@ -335,12 +332,16 @@ static inline void CompleteSimplifyAndReclaim(CTXTdeclc CPtr cs_ptr)
    *after* simplification and *before* removal of answer lists, which
    *is useful for traversing dependency graphs. */
 
-  /*  remove_unfounded_set(cs_ptr); */
-  if (flags[ANSWER_COMPLETION]) {
-	  if ((SCC_has_delayed) || (FALSE) /*  */) {
-		  answer_completion(CTXTc cs_ptr);
-	  }
-  }
+  //  /*  remove_unfounded_set(cs_ptr); */
+
+  // TLS: answer_completion was ifdeffed out, so I'm commenting it out here for now.
+  //  if (flags[ANSWER_COMPLETION]) {
+    // TLS: took out following line as SCC_has_delayed is not otherwise defined.
+    // The var is probably part of the heuristics and should be in the thread context
+    //	  if ((SCC_has_delayed) || (FALSE) /*  */) {
+    //		  answer_completion(CTXTc cs_ptr);
+		  //%	  }
+    //  }
 
   /* reclaim all answer lists, but the one for the leader */
   ComplStkFrame = next_compl_frame(cs_ptr);
