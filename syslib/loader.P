@@ -452,6 +452,12 @@ libpath(P) :- stat_flag(INSTALL_DIR, InstallDir1),  % get the installation dir
 	      slash(Slash),
 	      %% <installdir>/lib/  (slash type depends on the OS)
 	      local_fmt_write_string(P, '%s%slib%s', f(InstallDir, Slash, Slash)).
+libpath(P) :- stat_flag(INSTALL_DIR, InstallDir1),  % get the installation dir
+	      intern_string(InstallDir1, InstallDir),
+	      slash(Slash),
+	      %% <installdir>/prolog_commons/  (slash type depends on the OS)
+	      local_fmt_write_string(P, '%s%sprolog-commons%s', 
+	                                f(InstallDir, Slash, Slash)).
 libpath(P) :- slash(Slash), str_cat('.', Slash,P).
 
 /*
