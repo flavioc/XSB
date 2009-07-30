@@ -401,8 +401,8 @@ parse_directive(document_import(from(X, Mod)), _QrList,SymTab,_ModName) :- !,
 	 ->	error(('Module cannot be a variable. Document_importing: ',X))
 	 ;	parse_comma_list(X, SymTab, [docim(Mod)], (document_import))
 	).
-parse_directive(local(X), _QrList,SymTab,_ModName) :- !,
-	parse_comma_list(X, SymTab, [(local)], (local)).
+parse_directive(include(_X), _QrList,_SymTab,_ModName) :- !,
+        warning('include/1 not yet implemented!').			    
 parse_directive(index(X), _QrList,SymTab,_ModName) :- !,	% for compiled-code indexing
 	parse_index(X, SymTab).
 parse_directive(index(Ps,Arg,Size), QrList,SymTab,_ModName) :- !,
@@ -425,6 +425,8 @@ parse_directive(index(Ps,Arg), QrList,SymTab,_ModName) :- !,
 	),
 	index(Ps,Arg),
 	parse_query(index(Ps,Arg), QrList,SymTab).
+parse_directive(local(X), _QrList,SymTab,_ModName) :- !,
+	parse_comma_list(X, SymTab, [(local)], (local)).
 parse_directive(mode(X), _QrList,SymTab,_ModName) :- !,
 	parse_mode(X, SymTab).
 parse_directive(parallel(X), _QrList,SymTab,_ModName) :- !,
