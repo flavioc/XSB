@@ -37,7 +37,6 @@ ALL = 	aggregs${OBJEXT} array${OBJEXT} assoc_xsb${OBJEXT} \
 	ugraphs${OBJEXT} wrapping${OBJEXT} write_term${OBJEXT} \
 	xsb_ciao${OBJEXT} xnmr${OBJEXT} justifyLP${OBJEXT} \
 	xsb_profiling${OBJEXT} xsb_lint_impexp${OBJEXT} \
-	xref${OBJEXT} \
 	globalvar$(OBJEXT) pairlist$(OBJEXT) pretty_print$(OBJEXT)
 
 EMU_INCLUDES = ../emu/builtin.h ../emu/celltags_xsb.h ../emu/flag_defs_xsb.h \
