@@ -1,3 +1,47 @@
+/* File:      xxref.P
+** Author(s): David S. Warren
+** Contact:   xsb-contact@cs.sunysb.edu
+** 
+** Copyright (C) Copyright: David S. Warren
+** 
+** XSB is free software; you can redistribute it and/or modify it under the
+** terms of the GNU Library General Public License as published by the Free
+** Software Foundation; either version 2 of the License, or (at your option)
+** any later version.
+** 
+** XSB is distributed in the hope that it will be useful, but WITHOUT ANY
+** WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+** FOR A PARTICULAR PURPOSE.  See the GNU Library General Public License for
+** more details.
+** 
+** You should have received a copy of the GNU Library General Public License
+** along with XSB; if not, write to the Free Software Foundation,
+** Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+** 
+** 
+*/
+
+:- comment(build_ref/0, "@pred{build_ref/0} descends from the current
+directory and reads every XSB source file found (by the .P suffix).
+It creates a set of predicates that record all predicates defined and
+used in every XSB source file encountered.  It then writes this
+information out to a file named xsb_xref.P, whcih can be later
+dynamically loaded to find where predicates are defined and used.
+").
+
+:- comment(build_ref/1, "@pred{build_ref/1} is similar to
+@pred{build_ref/0}, but it takes an explicit directory name, and it
+does not create a file, but only builds the necessary predicates in
+memory.  @pred{dump_xref/0} or @pred{dump_xref/1} can be used to write
+the information out to a file.").
+
+:- comment(dump_xref/0, "@pred(dump_xref/0} writes out information
+gathered by @pred{build_ref/1} to the file named xsb_xref.P into the
+current directory.").
+
+:- comment(dump_xref/1, "@pred(dump_xref/1} writes out information
+gathered by @pred{build_ref/1} to the file named by its argument.").
+
 /* Explore building a simple program to read all Prolog (.P) files in
 a part of the file system and build a table of where predicates are
 defined and used.  */
