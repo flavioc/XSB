@@ -127,6 +127,8 @@
 #include "incr_xsb.h"
 #include "call_graph_xsb.h"
 
+#include "table_stats.h"
+
 int mem_flag;
 
 /*======================================================================*/
@@ -1743,6 +1745,17 @@ int builtin_call(CTXTdeclc byte number)
       break;
     case 2: /* value of delayreg */
       ctop_int(CTXTc 2, (Integer)delayreg);
+      break;
+    case 3: /* current interned trie space used, SLOW */
+      {NodeStats abtn;
+	HashStats abtht;
+	unsigned long trieassert_used;
+	abtn = node_statistics(&smAssertBTN);
+	abtht = hash_statistics(&smAssertBTHT);
+	trieassert_used =
+	  NodeStats_SizeUsedNodes(abtn) + HashStats_SizeUsedTotal(abtht);
+	ctop_int(CTXTc 2, (Integer)trieassert_used);
+	}
       break;
     default: xsb_domain_error(CTXTc "xwam_state_case",ptoc_tag(CTXTc 1),"xwam_state/2",1);
     }
