@@ -48,7 +48,8 @@
 	]).
 
 :- import format/3 from format.
-:- import setarg/3, statistics/2 from swi.
+%:- import setarg/3, statistics/2 from swi.
+:- import setarg/3 from swi.
 :- import {}/1 from nf_r.
 
 %
