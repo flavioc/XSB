@@ -40,7 +40,10 @@
 
 %-----------------------------------------------------------------------
 
+/* TLS: not supporting include when compiling from userin */
 parse(Modname, PFile, HFile, Module) :-
+	filestack_reset,
+	stat_flag(CURRENT_INPUT,Str),filestack_push(Str),
 	conset(needs_restart, 0),  % reset, if an error prevented this
 	(Modname == user
 	 ->	set_symbol_hash_table_size(1,Module0),
@@ -52,12 +55,16 @@ parse(Modname, PFile, HFile, Module) :-
 		 ->	parse1(Modname,HFile,Module0)
 		 ;	Module0 = Module0	% init (lamp variable)
 		),
+%		console_writeln(parsing_pfile),
 		parse1(Modname,PFile,Module0)
+%%		console_writeln(parse(Module0))
 	    ;   existence_error('file/module',PFile,compile/1,1)
 %	 ;	error(('Cannot find the file ', PFile)), fail, Module0=Module0
 	),
 	conset(needs_restart, 0),  % clean up this var
-	module_close(Module0,Module), !.
+	module_close(Module0,Module), 
+	filestack_reset,
+	!.
 
 set_symbol_hash_table_size(FileSize,module(sym_tab(_,_,HashTab),_,_,_)) :-
 	EstSyms is FileSize // 50,
@@ -65,12 +72,15 @@ set_symbol_hash_table_size(FileSize,module(sym_tab(_,_,HashTab),_,_,_)) :-
 	log_ith(0,HashTab,Prime). % store hashtable size in 0th pos.
 
 parse1(Modname, File, Module) :-
-	seeing(OldFile),
+%        console_writeln(calling_parse1)	,
 	open_or_xpp_file(File,XPP_process),
 	(parse_clauses(Modname, Module)
 	%% check if must restart
 	 ->	(conget(needs_restart,1)
-		 ->	seen, see(OldFile), fail
+		 ->	seen, 
+		        filestack_pop(_OFile),
+			parsing_file(PFile), see(PFile), %console_writeln(needs_restart(OFile,PFile)),
+			fail
 		 ;	!	% doesn't need restart so cut away 2nd parse1 cls.
 		)
 	 ;	true
@@ -94,8 +104,11 @@ parse1(Modname, File, Module) :-
 	    conset(xpp_on,0),
 	    conset(xpp_dump,0)
 	),
-	seen,
-	see(OldFile).
+	seen, % = close
+	filestack_pop(_OldFile),
+	parsing_file(Prev),
+	see(Prev).
+%        console_writeln(finishing_parse1).
 
 %% When :- compiler_options([xpp_on]) is detected, setoptions1 skips the 
 %% rest of the options and sets needs_restart to 1.
@@ -110,16 +123,25 @@ parse1(Modname, File, Module) :-
 	%% If we are restarting due to gpp, then reset needs_restart.
 	conget(needs_restart,1), conset(needs_restart, 0),
 	parse1(Modname, File, Module).
+%        console_writeln(finishing_parse1).
 
 
+:- import open/3 from standard.
 %% If xpp_on option is not set, just open the file.
 %% Otherwise, pass it through the C preprocessor
 open_or_xpp_file(File, XPP_process) :-
-	(conget(xpp_on,0) -> see(File), XPP_process = none
+	(conget(xpp_on,0) -> 
+	    open(File,read,Istr),
+	    filestack_push(Istr),
+	    see(Istr), 
+	    XPP_process = none
+%	    console_writeln(seeing(File,Istr))
 	; 
 	    %% xpp_on is set: use preprocessor
 	    xpp_process_file(File, XPP_process, IOportFromProc),
-	    stat_set_flag(CURRENT_INPUT, IOportFromProc)
+	    stat_set_flag(CURRENT_INPUT, IOportFromProc),
+%	    console_writeln(preprocessing),
+	    filestack_push(IOportFromProc)
 	).
 
 %% FileName can either be a string (a file name), an integer (an I/O port),
@@ -288,12 +310,13 @@ parse_clause([], _,_) :- !.
 parse_clause([Cl|Cls], Module,ModName) :- !,
 	parse_clause(Cl, Module,ModName),
 	parse_clause(Cls, Module,ModName).
-parse_clause(Cl, module(SymTab,_DcList,ClList,QrList),ModName) :-
+parse_clause(Cl, module(SymTab,DcList,ClList,QrList),ModName) :-
 	(Cl = (':-'(H, B))
 	 ->	parse_preddef_chk_dyn(H, B, ClList, QrList, ModName, SymTab)
 	 ; Cl = (':-'(Directive))
 	 ->	transform_directive(Directive,ModName,SymTab,PDirective),
-		parse_directive(PDirective,QrList,SymTab,ModName)
+		parse_directive(PDirective,QrList,SymTab,ModName, 
+		                  module(SymTab,DcList,ClList,QrList))
 	 ; Cl = ('?-'(Q))
 	 ->	parse_query(Q,QrList,SymTab)
 	 ;	parse_preddef_chk_dyn(Cl, true, ClList, QrList, ModName, SymTab)
@@ -359,53 +382,68 @@ transform_slash_to_skel(Spec,ModName,SymTab,Skel) :-
 /*	insert).							*/
 /*======================================================================*/
 :- import call/1 from standard.
-parse_directive(if(Condition), _QrList,_SymTab,_ModName) :- !, 	
+parse_directive(if(Condition), _QrList,_SymTab,_ModName,_ModStruct) :- !, 	
         (cond_call(Condition) -> 
           true
 	; skip_over_condition(1)).
 % if reading the elseif from normal parsing, we've already taken another branch.
-parse_directive(elseif(_), _QrList,_SymTab,_ModName):- !,
+parse_directive(elseif(_), _QrList,_SymTab,_ModName,_ModStruct):- !,
 	skip_over_condition(1).
-parse_directive(endif, _QrList,_SymTab,_ModName):- !.
-parse_directive(module(ModIn,X), _QrList,SymTab,ModName) :- !, 	
+parse_directive(endif, _QrList,_SymTab,_ModName,_ModStruct):- !.
+parse_directive(module(ModIn,X), _QrList,SymTab,ModName,_ModStruct) :- !, 	
 	(ModIn == ModName -> 
 	    parse_list(X, SymTab, [ex], (export))
 	  ; misc_error(('Declared module name (',ModIn,') must be the same as file base (',ModName,').')) ).
-parse_directive(export(X), _QrList,SymTab,_ModName) :- !,
+parse_directive(export(X), _QrList,SymTab,_ModName,_ModStruct) :- !,
 	parse_comma_list(X, SymTab, [ex], (export)).
-parse_directive(document_export(X), _QrList,SymTab,_ModName) :- !,
+parse_directive(document_export(X), _QrList,SymTab,_ModName,_ModStruct) :- !,
 	parse_comma_list(X, SymTab, [docex], (document_export)).
-parse_directive(import(from(P/A, Mod)), _QrList,_SymTab,_ModName) :-
+parse_directive(import(from(P/A, Mod)), _QrList,_SymTab,_ModName,_ModStruct) :-
 	inline_predicate(P, A), \+ standard_symbol(P,A,Mod), !,
 %%	error((P,'/',A,' is an inline predicate, cannot be imported !')).
 	warning((P,'/',A,' is an inline predicate, cannot be imported, ignored !')).
-parse_directive(document_import(from(P/A, _Mod)), _QrList,_SymTab,_ModName) :-
+parse_directive(document_import(from(P/A, _Mod)), _QrList,_SymTab,_ModName,_ModStruct) :-
 	inline_predicate(P, A), !,
 %%	error((P,'/',A,' is an inline predicate, cannot be doc-imported !')).
 	warning((P,'/',A,' is an inline predicate, cannot be doc-imported, ignored !')).
-parse_directive(import(from(X, Mod)), _QrList,SymTab,_ModName) :- !,
+parse_directive(import(from(X, Mod)), _QrList,SymTab,_ModName,_ModStruct) :- !,
 	(var(Mod)
 	 ->	error(('Module cannot be a variable. Importing: ',X))
 	 ;	parse_comma_list(X, SymTab, [im(Mod)], (import)),
 		sym_insert(Mod, 0, [module], SymTab, _)
 	).
-parse_directive(use_module(ModIm,X), _QrList,SymTab,_ModName) :- !,
+parse_directive(use_module(ModIm,X), _QrList,SymTab,_ModName,_ModStruct) :- !,
 	(var(ModIm)
 	 ->	error(('Module cannot be a variable. Importing: ',X))
 	 ;	(ModIm = library(Mod1) -> Mod = Mod1 ; Mod = ModIm),
 	        parse_list(X, SymTab, [im(Mod)], (import)),
 		sym_insert(Mod, 0, [module], SymTab, _)
 	).
-parse_directive(document_import(from(X, Mod)), _QrList,SymTab,_ModName) :- !,
+parse_directive(document_import(from(X, Mod)), _QrList,SymTab,_ModName,_ModStruct) :- !,
 	(var(Mod)
 	 ->	error(('Module cannot be a variable. Document_importing: ',X))
 	 ;	parse_comma_list(X, SymTab, [docim(Mod)], (document_import))
 	).
-parse_directive(include(_X), _QrList,_SymTab,_ModName) :- !,
-        warning('include/1 not yet implemented!').			    
-parse_directive(index(X), _QrList,SymTab,_ModName) :- !,	% for compiled-code indexing
+% not worrying about .h files
+% not worrying about resetting hash table size
+% not worrying about redefining file extensions
+parse_directive(include(FileIn), _QrList,_SymTab,ModName,ModStruct) :- !,
+	(var(FileIn)
+	 ->	error(('Module cannot be a variable. Include: '))
+          ;	(FileIn = library(File1) -> File = File1 ; File = FileIn),
+		(file_exists(FileIn)
+			 ->   search_module(File, _Dir, _Newame, _SExt, Base, _Obj),
+			      file_names(Base,'.P',PFile, _HFile, _OFile, _AFile,_DFile,
+			      		   _SpecFile, _TIFile, _TableFile, _OptFile),
+%					   console_writeln(before(ModStruct)),
+			      parse1(ModName,PFile,ModStruct)
+%					   console_writeln(after(ModStruct))
+			    ;   existence_error('file/module',File,compile/1,1))
+	).
+% for compiled-code indexing
+parse_directive(index(X), _QrList,SymTab,_ModName,_ModStruct) :- !,
 	parse_index(X, SymTab).
-parse_directive(index(Ps,Arg,Size), QrList,SymTab,_ModName) :- !,
+parse_directive(index(Ps,Arg,Size), QrList,SymTab,_ModName,_ModStruct) :- !,
 	(Ps = Pname/Arity -> true ; functor(Ps,Pname,Arity)),
 	(integer(Arg)
 	 ->	sym_insert(Pname,Arity,[index(Arg)],SymTab,_)
@@ -415,7 +453,7 @@ parse_directive(index(Ps,Arg,Size), QrList,SymTab,_ModName) :- !,
 	),
 	index(Ps,Arg,Size), 
 	parse_query(index(Ps,Arg,Size), QrList,SymTab).
-parse_directive(index(Ps,Arg), QrList,SymTab,_ModName) :- !,
+parse_directive(index(Ps,Arg), QrList,SymTab,_ModName,_ModStruct) :- !,
 	(Ps = Pname/Arity -> true ; functor(Ps,Pname,Arity)),
 	(integer(Arg)
 	 ->	sym_insert(Pname,Arity,[index(Arg)],SymTab,_)
@@ -425,36 +463,36 @@ parse_directive(index(Ps,Arg), QrList,SymTab,_ModName) :- !,
 	),
 	index(Ps,Arg),
 	parse_query(index(Ps,Arg), QrList,SymTab).
-parse_directive(local(X), _QrList,SymTab,_ModName) :- !,
+parse_directive(local(X), _QrList,SymTab,_ModName,_ModStruct) :- !,
 	parse_comma_list(X, SymTab, [(local)], (local)).
-parse_directive(mode(X), _QrList,SymTab,_ModName) :- !,
+parse_directive(mode(X), _QrList,SymTab,_ModName,_ModStruct) :- !,
 	parse_mode(X, SymTab).
-parse_directive(parallel(X), _QrList,SymTab,_ModName) :- !,
+parse_directive(parallel(X), _QrList,SymTab,_ModName,_ModStruct) :- !,
 	parse_comma_list(X, SymTab, [(parallel)], (parallel)).
-parse_directive(auto_table, _QrList,_SymTab,_ModName) :- !,	% This is quite dirty!
+parse_directive(auto_table, _QrList,_SymTab,_ModName,_ModStruct) :- !,	% This is quite dirty!
 	conset(auto_table, 1).
-parse_directive(suppl_table, _QrList,_SymTab,_ModName) :- !,	% This is quite dirty!
+parse_directive(suppl_table, _QrList,_SymTab,_ModName,_ModStruct) :- !,	% This is quite dirty!
 	conset(suppl_table, 1).
-parse_directive(suppl_table(EDB_Dep), _QrList,_SymTab,_ModName) :- !,	% This is quite dirty!
+parse_directive(suppl_table(EDB_Dep), _QrList,_SymTab,_ModName,_Modstruct) :- !,	% This is quite dirty!
 	conset('EDB Dep #', EDB_Dep),
 	conset(suppl_table, 1).
-parse_directive(op(P,T,S), QrList,SymTab,_ModName) :- !,
+parse_directive(op(P,T,S), QrList,SymTab,_ModName,_ModStruct) :- !,
 	op(P,T,S), 
 	parse_query(op(P,T,S),QrList,SymTab).
-parse_directive(hilog(X), QrList,SymTab,_ModName) :- !,
+parse_directive(hilog(X), QrList,SymTab,_ModName,_ModStruct) :- !,
 	add_hilog_symbol(X), 
 	parse_query(hilog(X),QrList,SymTab).
-parse_directive(ti(X), _QrList,SymTab,_ModName) :- !,
+parse_directive(ti(X), _QrList,SymTab,_ModName,_ModStruct) :- !,
 	parse_ti(X, (ti), SymTab).
-parse_directive(ti_all, _QrList,_SymTab,_ModName) :- !,
+parse_directive(ti_all, _QrList,_SymTab,_ModName,_ModStruct) :- !,
 	conset(ti_all, 1).
-parse_directive(ti_off(X), _QrList,SymTab,_ModName) :- !,
+parse_directive(ti_off(X), _QrList,SymTab,_ModName,_ModStruct) :- !,
 	parse_ti(X, (ti_off), SymTab).
-parse_directive(ti_off_all, _QrList,_SymTab,_ModName) :- !,
+parse_directive(ti_off_all, _QrList,_SymTab,_ModName,_ModStruct) :- !,
 	conset(ti_off_all, 1).
-parse_directive(edb(X), _QrList,SymTab,_ModName) :- !,
+parse_directive(edb(X), _QrList,SymTab,_ModName,_ModStruct) :- !,
 	parse_comma_list(X, SymTab, [(edb)], (edb)).
-parse_directive(compiler_options(Options),_QrList,_SymTab,_ModName) :- !,
+parse_directive(compiler_options(Options),_QrList,_SymTab,_ModName,_ModStruct) :- !,
 	%% Found compiler_options directive in the file,
 	%% but xpp_on is currently off.
 	%% We might need to restart parsing, if one of the encountered
@@ -464,93 +502,93 @@ parse_directive(compiler_options(Options),_QrList,_SymTab,_ModName) :- !,
 	(conget(xpp_on, 0) ->  conset(migh_need_restart,1) ;   true),
 	check_file_compiler_options(Options),
 	setoptions1(Options).
-parse_directive(comment(_,_),_QrList,_SymTab,_ModName) :- !.
-parse_directive(meta_predicate(_),_QrList,_SymTab,_ModName) :- !.
-parse_directive(thread_shared(PredCList),_QrList,SymTab,_ModName) :- !,
+parse_directive(comment(_,_),_QrList,_SymTab,_ModName,_ModStruct) :- !.
+parse_directive(meta_predicate(_),_QrList,_SymTab,_ModName,_ModStruct) :- !.
+parse_directive(thread_shared(PredCList),_QrList,SymTab,_ModName,_ModStruct) :- !,
 	parse_comma_list(PredCList,SymTab,[(thread_shared)],(thread_shared)).
-parse_directive(thread_private(PredCList),_QrList,SymTab,_ModName) :- !,
+parse_directive(thread_private(PredCList),_QrList,SymTab,_ModName,_ModStruct) :- !,
 	parse_comma_list(PredCList,SymTab,[(thread_private)],(thread_private)).
-parse_directive(table(as(PredCList,Options)),QrList,SymTab,ModName) :- !,
+parse_directive(table(as(PredCList,Options)),QrList,SymTab,ModName,ModStruct) :- !,
 	parse_comma_list(PredCList,SymTab,[tabled],(table)),
-	parse_table_options(Options,PredCList,QrList,SymTab,ModName).
-parse_directive(table(PredCList),_QrList,SymTab,_ModName) :- !,
+	parse_table_options(Options,PredCList,QrList,SymTab,ModName,ModStruct).
+parse_directive(table(PredCList),_QrList,SymTab,_ModName,_ModStruct) :- !,
 	parse_comma_list(PredCList,SymTab,[tabled],(table)).
-parse_directive(use_subsumptive_tabling(PredCList),_QrList,SymTab,_ModName) :- !,
+parse_directive(use_subsumptive_tabling(PredCList),_QrList,SymTab,_ModName,_ModStruct) :- !,
 	parse_comma_list(PredCList,SymTab,[tabled],(table)),  % implies tabled
 	parse_comma_list(PredCList,SymTab,[(use_subsumptive_tabling)],(use_subsumptive_tabling)).
-parse_directive(use_variant_tabling(PredCList),_QrList,SymTab,_ModName) :- !,
+parse_directive(use_variant_tabling(PredCList),_QrList,SymTab,_ModName,_ModStruct) :- !,
 	parse_comma_list(PredCList,SymTab,[tabled],(table)),  % implies tabled
 	parse_comma_list(PredCList,SymTab,[(use_variant_tabling)],(use_variant_tabling)).
-parse_directive(dynamic(as(PredCList,Options)),QrList,SymTab,ModName) :- !,
+parse_directive(dynamic(as(PredCList,Options)),QrList,SymTab,ModName,ModStruct) :- !,
 	parse_comma_list_dyn(PredCList,SymTab),
 	copy_term(PredCList,PredCListVars),
 	parse_query(dynamic(PredCList), QrList, SymTab),
-	parse_dynamic_options(Options,PredCListVars,QrList,SymTab,ModName).
-parse_directive(dynamic(Skels),QrList,SymTab,_ModName) :- !,
+	parse_dynamic_options(Options,PredCListVars,QrList,SymTab,ModName,ModStruct).
+parse_directive(dynamic(Skels),QrList,SymTab,_ModName,_ModStruct) :- !,
 	parse_comma_list_dyn(Skels, SymTab),
 	parse_query(dynamic(Skels), QrList, SymTab).
-parse_directive(multifile(Skels),QrList,SymTab,ModName) :- !,
+parse_directive(multifile(Skels),QrList,SymTab,ModName,_ModStruct) :- !,
 	parse_multifile(Skels,QrList,SymTab,ModName).
-parse_directive(use_incremental_dynamic(Skels),QrList,SymTab,_ModName) :- !,
+parse_directive(use_incremental_dynamic(Skels),QrList,SymTab,_ModName,_ModStruct) :- !,
 	parse_comma_list_dyn(Skels, SymTab),
 	parse_query(use_incremental_dynamic(Skels), QrList, SymTab).
-parse_directive(use_incremental_tabling(Skels),QrList,SymTab,_ModName) :- !,
+parse_directive(use_incremental_tabling(Skels),QrList,SymTab,_ModName,_ModStruct) :- !,
 	parse_comma_list(Skels,SymTab,[tabled],(use_incremental_tabling)),
 	parse_query(use_incremental_tabling(Skels), QrList, SymTab).
-parse_directive(use_opaque_tabling(Skels),QrList,SymTab,_ModName) :- !,
+parse_directive(use_opaque_tabling(Skels),QrList,SymTab,_ModName,_ModStruct) :- !,
 	parse_comma_list(Skels,SymTab,[tabled],(use_opaque_tabling)),
 	parse_query(use_opaque_tabling(Skels), QrList, SymTab).
-parse_directive(initialization(Q),QrList,SymTab,_ModName) :- !,
+parse_directive(initialization(Q),QrList,SymTab,_ModName,_ModStruct) :- !,
 	parse_query(Q,QrList,SymTab).
-parse_directive(Directive,_QrList,_SymTab,_ModName) :-
+parse_directive(Directive,_QrList,_SymTab,_ModName,_ModStruct) :-
 	option(ciao_directives),
 	included_ciao_directive(Directive), % ignore ciao directives
 	!.
-parse_directive(Query,QrList,SymTab,_ModName) :-  %% else its a query
+parse_directive(Query,QrList,SymTab,_ModName,_ModStruct) :-  %% else its a query
 	parse_query(Query, QrList, SymTab).
 
-parse_table_options(Options,PredCList,QrList,SymTab,ModName) :- !,
+parse_table_options(Options,PredCList,QrList,SymTab,ModName,ModStruct) :- !,
 	check_ground(Options,(table)/1,1),
-	parse_table_options_1(Options,PredCList,QrList,SymTab,ModName).
+	parse_table_options_1(Options,PredCList,QrList,SymTab,ModName,ModStruct).
 
-parse_table_options_1((Option,Options),PredCList,QrList,SymTab,ModName) :- !,
-	parse_table_option(Option,PredCList,QrList,SymTab,ModName),
-	parse_table_options_1(Options,PredCList,QrList,SymTab,ModName).
-parse_table_options_1(Culprit,_PredCList,_QrList,_SymTab,_ModName) :- 
+parse_table_options_1((Option,Options),PredCList,QrList,SymTab,ModName,ModStruct) :- !,
+	parse_table_option(Option,PredCList,QrList,SymTab,ModName,ModStruct),
+	parse_table_options_1(Options,PredCList,QrList,SymTab,ModName,ModStruct).
+parse_table_options_1(Culprit,_PredCList,_QrList,_SymTab,_ModName,_ModStruct) :- 
 	type_error(comma_list,Culprit,(table)/1,1).
 
-parse_table_option(dynamic,PredCList,QrList,SymTab,ModName) :- !,
-	parse_directive(dynamic(PredCList),QrList,SymTab,ModName).
-parse_table_option(dyn,PredCList,QrList,SymTab,ModName) :- !,
-	parse_directive(dynamic(PredCList),QrList,SymTab,ModName).
-parse_table_option(subsumptive,PredCList,QrList,SymTab,ModName) :- !,
-	parse_directive(use_subsumptive_tabling(PredCList),QrList,SymTab,ModName).
-parse_table_option(variant,PredCList,QrList,SymTab,ModName) :- !,
-	parse_directive(use_variant_tabling(PredCList),QrList,SymTab,ModName).
-parse_table_option(incremental,PredCList,QrList,SymTab,ModName) :- !,
-	parse_directive(use_incremental_tabling(PredCList),QrList,SymTab,ModName).
-parse_table_option(opaque,PredCList,QrList,SymTab,ModName) :- !,
-	parse_directive(use_opaque_tabling(PredCList),QrList,SymTab,ModName).
-parse_table_option(private,PredCList,QrList,SymTab,ModName) :- !,
-	parse_directive(thread_private(PredCList),QrList,SymTab,ModName).
-parse_table_option(shared,PredCList,QrList,SymTab,ModName) :- !,
-	parse_directive(thread_shared(PredCList),QrList,SymTab,ModName).
-parse_table_option(Option,_PredCList,_QrList,_SymTab,_ModName) :- !,
+parse_table_option(dynamic,PredCList,QrList,SymTab,ModName,ModStruct) :- !,
+	parse_directive(dynamic(PredCList),QrList,SymTab,ModName,ModStruct).
+parse_table_option(dyn,PredCList,QrList,SymTab,ModName,ModStruct) :- !,
+	parse_directive(dynamic(PredCList),QrList,SymTab,ModName,ModStruct).
+parse_table_option(subsumptive,PredCList,QrList,SymTab,ModName,ModStruct) :- !,
+	parse_directive(use_subsumptive_tabling(PredCList),QrList,SymTab,ModName,ModStruct).
+parse_table_option(variant,PredCList,QrList,SymTab,ModName,ModStruct) :- !,
+	parse_directive(use_variant_tabling(PredCList),QrList,SymTab,ModName,ModStruct).
+parse_table_option(incremental,PredCList,QrList,SymTab,ModName,ModStruct) :- !,
+	parse_directive(use_incremental_tabling(PredCList),QrList,SymTab,ModName,ModStruct).
+parse_table_option(opaque,PredCList,QrList,SymTab,ModName,ModStruct) :- !,
+	parse_directive(use_opaque_tabling(PredCList),QrList,SymTab,ModName,ModStruct).
+parse_table_option(private,PredCList,QrList,SymTab,ModName,ModStruct) :- !,
+	parse_directive(thread_private(PredCList),QrList,SymTab,ModName,ModStruct).
+parse_table_option(shared,PredCList,QrList,SymTab,ModName,ModStruct) :- !,
+	parse_directive(thread_shared(PredCList),QrList,SymTab,ModName,ModStruct).
+parse_table_option(Option,_PredCList,_QrList,_SymTab,_ModName,_ModStruct) :- !,
 	domain_error(table_option,Option,(table)/1,1,
 	'must be one of dynamic,dyn,subsumptive,variant,incremental,opaque,private,shared').
 
-parse_dynamic_options((Option,Options),PredCList,QrList,SymTab,ModName) :- !,
-	parse_dynamic_options(Option,PredCList,QrList,SymTab,ModName),
-	parse_dynamic_options(Options,PredCList,QrList,SymTab,ModName).
-parse_dynamic_options(tabled,PredCList,QrList,SymTab,ModName) :- !,
-	parse_directive(table(PredCList),QrList,SymTab,ModName).
-parse_dynamic_options(incremental,PredCList,QrList,SymTab,ModName) :- !,
-	parse_directive(use_incremental_dynamic(PredCList),QrList,SymTab,ModName).
-parse_dynamic_options(private,PredCList,QrList,SymTab,ModName) :- !,
-	parse_directive(thread_private(PredCList),QrList,SymTab,ModName).
-parse_dynamic_options(shared,PredCList,QrList,SymTab,ModName) :- !,
-	parse_directive(thread_shared(PredCList),QrList,SymTab,ModName).
-parse_dynamic_options(Option,_PredCList,_QrList,_SymTab,_ModName) :- !,
+parse_dynamic_options((Option,Options),PredCList,QrList,SymTab,ModName,ModStruct) :- !,
+	parse_dynamic_options(Option,PredCList,QrList,SymTab,ModName,ModStruct),
+	parse_dynamic_options(Options,PredCList,QrList,SymTab,ModName,ModStruct).
+parse_dynamic_options(tabled,PredCList,QrList,SymTab,ModName,ModStruct) :- !,
+	parse_directive(table(PredCList),QrList,SymTab,ModName,ModStruct).
+parse_dynamic_options(incremental,PredCList,QrList,SymTab,ModName,ModStruct) :- !,
+	parse_directive(use_incremental_dynamic(PredCList),QrList,SymTab,ModName,ModStruct).
+parse_dynamic_options(private,PredCList,QrList,SymTab,ModName,ModStruct) :- !,
+	parse_directive(thread_private(PredCList),QrList,SymTab,ModName,ModStruct).
+parse_dynamic_options(shared,PredCList,QrList,SymTab,ModName,ModStruct) :- !,
+	parse_directive(thread_shared(PredCList),QrList,SymTab,ModName,ModStruct).
+parse_dynamic_options(Option,_PredCList,_QrList,_SymTab,_ModName,_ModStruct) :- !,
 	error((Option,' is an illegal option for the dynamic directive')).
 
 parse_multifile((Skel1,Skel2),QrList,SymTab,ModName) :- !,
@@ -905,6 +943,17 @@ prime(13107229).
 prime(24999983).
 prime(_).  % to generate an error!
 
+:- dynamic parsing_file/1.
+
+filestack_reset:- retractall(parsing_file(_)).
+filestack_push(File):-
+%	console_writeln(pushing(File)), 
+	asserta(parsing_file(File)).
+%filestack_pop(Str):-  (retract(parsing_file(Str)) -> 
+%		      		      console_writeln(popping(Str))
+%				      ; console_writeln(outofstack)).
+filestack_pop(Str):-  retract(parsing_file(Str)),!.
 
 /* ---------------------- end of file parse.P ------------------------- */
+
 

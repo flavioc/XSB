@@ -363,4 +363,31 @@ hack_self_compile :-
 	force_tp_geninline_loaded,
 	force_ti_mod_loaded.
 
+end_of_file.
+
+preprocess_if_necessary(PIn,HIn,POut,HOut):- 
+        preprocessing_needed(PIn,HIn,Preprocessing),
+	( Preprocessing = [] -> 
+	     PIn = POut, HIn = HOut
+	  ;  perform_preprocessing(Preprocessing,PIn,HIn,POut,HOut)).
+
+preprocessing_needed(PIn,HIn,Preprocessing):- 
+        file_open(PIn,read,PStr),
+	read(PStr,PTerm),
+	file_close(PStr),
+	(PTerm = (':-'(compiler_options(PList))) -> L1 = PList ; L1 = []),
+        file_open(HIn,read,HStr),
+	read(HStr,HTerm),
+	file_close(HStr),
+	(HTerm = (':-'(compiler_options(HList))) -> L1 = HList ; L1 = []),
+	append(PList,HList,WholeList),
+	get_preprocessing(WholeList,Preprocessing).
+
+get_preprocessing([],[]).
+get_preprocessing([H|T],PrepOut):- 
+        (H = preprocessing(Type) -> PrepOut = [Type|Prep] ; PrepOut = Prep),
+	get_preprocessing(T,Prep).
+
+perform_preprocessing(Preprocessing,PIn,HIn,PIn,HIn):- 
+        console_writeln(found_preprocessing(Preprocessing)).
 
