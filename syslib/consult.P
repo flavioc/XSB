@@ -193,25 +193,25 @@ needs_recompile(XSB_SRC_EXTENSION_ATOM_SANS_DOT, Base, Obj) :-
 	  file_time(Obj, time(OTime1,Otime2)),
 	  %% If no header file exists, then HTime = 0
 	  file_time(HFileName, time(HTime1,HTime2)), 
-	  time(OTime1,Otime2) @< time(HTime1,HTime2)
+	  time(OTime1,Otime2) @=< time(HTime1,HTime2)
 	).	  
 needs_recompile(pl, Base, Obj) :-
 	( str_cat(Base, '.pl', PFileName),
 	  file_time(Obj, time(OTime1,OTime2)), 
 	  file_time(PFileName, time(PTime1,PTime2)),
-	  time(OTime1,OTime2) @< time(PTime1,PTime2)
+	  time(OTime1,OTime2) @=< time(PTime1,PTime2)
 	)
 	;
 	( str_cat(Base, XSB_HDR_EXTENSION_ATOM, HFileName),
 	  file_time(Obj, time(OTime1,Otime2)),
 	  %% If no header file exists, then HTime = 0
 	  file_time(HFileName, time(HTime1,HTime2)), 
-	  time(OTime1,Otime2) @< time(HTime1,HTime2)
+	  time(OTime1,Otime2) @=< time(HTime1,HTime2)
 	).	  
 needs_recompile('', Base, Obj) :-
 	file_time(Obj, time(OTime1,OTime2)), 
 	file_time(Base, time(PTime1,PTime2)),
-	time(OTime1,OTime2) @< time(PTime1,PTime2).
+	time(OTime1,OTime2) @=< time(PTime1,PTime2).
 needs_recompile('c', Base, Obj) :-
 	xsb_configuration(os_type, OS_type),
 	( ( str_sub('solaris', OS_type) -> str_cat(Base, '.so', C_Obj)
