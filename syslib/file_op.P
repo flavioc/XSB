@@ -170,9 +170,12 @@ deactivate_op(T, S) :-
 '_$op1'(500,yfx,'/\').
 '_$op1'(500,yfx,'\/').
 '_$op1'(500,yfx,'><').
-'_$op1'(500,fx,'+').		% Not in the Prolog standard (200 in Ciao)
-'_$op1'(500,fx,'-').		% Not in the Prolog standard (200 in Ciao)
-'_$op1'(500,fx,'\').		% Not in the Prolog standard (200 in Ciao)
+%%'_$op1'(500,fx,'+').		% Not in the Prolog standard (200 in Ciao)
+'_$op1'(200,fx,'+').
+%%'_$op1'(500,fx,'-').		% Not in the Prolog standard (200 in Ciao)
+'_$op1'(200,fx,'-').
+%%'_$op1'(500,fx,'\').		% Not in the Prolog standard (200 in Ciao)
+'_$op1'(200,fx,'\').
 '_$op1'(400,yfx,'*').
 '_$op1'(400,yfx,'/').
 '_$op1'(400,yfx,'//').
