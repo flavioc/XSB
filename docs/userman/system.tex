@@ -1488,17 +1488,15 @@ The following options are currently recognized by the compiler:
   compile/2 and as part of the {\tt compiler\_options/1} directive inside
   the source file. See Appendix~\ref{gpp-man} for more details on GPP.
 
-  When an \verb|#include "file"| statement is encountered,
-  XSB directs GPP preprocessor to search for the files to include in the
-  directories \verb|$XSB_DIR/emu| 
-  %%$
-  and \verb|$XSB_DIR/prolog_includes|.
-  %%$
-  \index{GPP!\texttt{xpp\_include\_dir}}
-  %%
+  When an \verb|#include "file"| statement is encountered, XSB directs
+  GPP preprocessor to search for the files to include in the
+  directories \verb|$XSB_DIR/emu| and
+  \verb|$XSB_DIR/prolog_includes|. \index{GPP!\texttt{xpp\_include\_dir}}
   However, additional directories can be added to this search path by
-  asserting into the predicate \verb|xpp_include_dir/1|, {\bf which must
-    be imported from module} {\tt parse}.
+  asserting into the predicate \verb|xpp_include_dir/1|, {\bf which
+    must be imported from module} {\tt parse}~\footnote{For
+    compatability, XSB also supports the ISO predicate {\tt include/1}
+    which also allows extra files to be included during compilation.}.
   
   Note that when compiling XSB programs, GPP searches the current directory
   and the directory of the parent file that contains the include-directive
@@ -1895,10 +1893,32 @@ non-compiler directives the use of {\tt ?-} and {\tt :-} has no effect
 --- in both cases the directive is executed upon loading the file.
 
 The following compiler directives are recognized in \version\ of XSB
-\footnote{Any parallelisation directives ({\tt parallel}) are simply
-ignored by the compiler, but do not result in syntax errors to enhance
-compatibility with various other earlier versions of PSB-Prolog.}.
+%\footnote{Any parallelisation directives ({\tt parallel}) are simply
+%ignored by the compiler, but do not result in syntax errors to enhance
+%compatibility with various other earlier versions of PSB-Prolog.}.
 
+\subsubsection{Including Files in a Compilation}
+
+\begin{description}
+
+\isoitem{include(+FileName)}{include/1}
+
+The ISO directive 
+
+\demo{:- include(FileName)} 
+
+\noindent
+
+Causes the compiler to act as if the code from {\tt FileName} were
+contained at the position where the directive was encountered.  XSB's
+preprocessor can perform the same function via the command
+\verb|#include FileName| and can support more sophisticated
+substitutions, but {\tt include/1} should be used if code portability
+is desired.
+
+\end{description}
+
+%
 \subsubsection{Mode Declarations}\label{mode_declarations}
 \index{modes!directives}\index{directives!modes}
 %-----------------------------------------------------
