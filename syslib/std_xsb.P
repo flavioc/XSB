@@ -210,6 +210,7 @@ standard_symbol(hilog_functor, 3, standard).
 standard_symbol(hilog_symbol, 1, curr_sym).
 
 standard_symbol((import), 1, standard).
+standard_symbol(include, 1, usermod).
 standard_symbol((index), 3, standard).
 standard_symbol((index), 2, standard).
 standard_symbol(integer, 1, standard).
