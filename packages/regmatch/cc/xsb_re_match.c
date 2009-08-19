@@ -42,8 +42,8 @@
 
 extern char *p_charlist_to_c_string(CTXTdeclc prolog_term term, VarString *outstring, 
 				    char *in_func, char *where);
-extern void c_string_to_p_charlist(char *name, prolog_term list,
-				   char *in_func, char *where);
+extern void c_string_to_p_charlist(CTXTdeclc char *name, prolog_term list,
+			    int regs_to_protect, char *in_func, char *where);
 
 /* from hash.c */
 extern unsigned long hash(char *objname, byte arity, unsigned long tbl_size);
@@ -391,7 +391,7 @@ int do_regsubstitute__(void)
  EXIT:
   /* get result out */
   if (conversion_required)
-    c_string_to_p_charlist(output_buffer.string, output_term,
+    c_string_to_p_charlist(CTXTc output_buffer.string, output_term, 4,
 			   "RE_SUBSTITUTE", "Arg 4");
   else
     /* DO NOT intern. When atom table garbage collection is in place, then
@@ -477,7 +477,7 @@ int do_regsubstring__(void)
   
   /* get result out */
   if (conversion_required)
-    c_string_to_p_charlist(output_buffer.string, output_term,
+    c_string_to_p_charlist(CTXTc output_buffer.string, output_term, 4,
 			   "RE_SUBSTITUTE", "Arg 4");
   else
     /* DO NOT intern. When atom table garbage collection is in place, then
