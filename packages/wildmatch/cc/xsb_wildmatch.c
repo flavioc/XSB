@@ -52,8 +52,8 @@
 
 extern char *p_charlist_to_c_string(CTXTdeclc prolog_term term, VarString *outstring,
 				    char *in_func, char *where);
-extern void c_string_to_p_charlist(char *name, prolog_term list,
-				   char *in_func, char *where);
+extern void c_string_to_p_charlist(CTXTdeclc char *name, prolog_term list,
+			    int regs_to_protect, char *in_func, char *where);
 static prolog_term wild_term, input_string_term;
 
 static char *lowercase_string(char *str);
@@ -212,7 +212,7 @@ int do_glob_directory__(void)
     listHead = p2p_car(listTail); /* get head of the list */
 
     if (conversion_required)
-      c_string_to_p_charlist(file_vector.gl_pathv[i], listHead,
+      c_string_to_p_charlist(CTXTc file_vector.gl_pathv[i], listHead, 4,
 			     "GLOB_DIRECTORY", "arg 3");
     else
       c2p_string(CTXTc file_vector.gl_pathv[i], listHead);
@@ -293,7 +293,7 @@ int do_convert_string__(void)
     xsb_abort("[CONVERT_STRING] Valid conversion flags (Arg 3): `tolower', `toupper'");
 
   if (to_string_conversion_required)
-    c_string_to_p_charlist(output_ptr,output_term,"CONVERT_STRING","Arg 2");
+    c_string_to_p_charlist(CTXTc output_ptr,output_term, 3, "CONVERT_STRING","Arg 2");
   else
     c2p_string(CTXTc output_ptr, output_term);
 
