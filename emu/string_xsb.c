@@ -51,8 +51,8 @@
 
 extern char *p_charlist_to_c_string(CTXTdeclc prolog_term term, VarString *outstring, 
 				    char *in_func, char *where);
-extern void c_string_to_p_charlist(char *name, prolog_term list,
-				   int regs_to_protect, char *in_func, char *where);
+extern void c_string_to_p_charlist(CTXTdeclc char *name, prolog_term list,
+			    int regs_to_protect, char *in_func, char *where);
 
 static Cell term, term2, term3;
 
@@ -242,7 +242,7 @@ xsbBool substring(CTXTdecl)
   
   /* get result out */
   if (conversion_required)
-    c_string_to_p_charlist(output_buffer.string, output_term,
+    c_string_to_p_charlist(CTXTc output_buffer.string, output_term,
 			   4, "SUBSTRING", "Arg 4");
   else
     c2p_string(CTXTc output_buffer.string, output_term);
@@ -363,7 +363,7 @@ xsbBool string_substitute(CTXTdecl)
  EXIT:
   /* get result out */
   if (conversion_required)
-    c_string_to_p_charlist(output_buffer.string, output_term,
+    c_string_to_p_charlist(CTXTc output_buffer.string, output_term,
 			   4, "STRING_SUBSTITUTE", "Arg 4");
   else
     c2p_string(CTXTc output_buffer.string, output_term);
