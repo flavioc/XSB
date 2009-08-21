@@ -42,5 +42,16 @@
 
 #define RUNTIME 0
 #define WALLTIME 1
+#define TOTALMEMORY 2
+#define GLMEMORY 3
+#define TCMEMORY 4
+#define TABLESPACE 5
+#define TRIEASSERTMEM 6
+#define HEAPMEM 7
+#define TRAILMEM 8
+#define CPMEM 9 
+#define LOCALMEM 10
+#define OPENTABLECOUNT 11
+#define SHARED_TABLESPACE 12
 
 

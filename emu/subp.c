@@ -301,6 +301,20 @@ void print_statistics(CTXTdeclc int amount) {
   }
 }
 
+
+
+/*======================================================================*/
+/*  Memory statistics.					*/
+/*======================================================================*/
+/*
+ * Called through builtin statistics/2.
+ */
+void statistics_inusememory(CTXTdeclc int type) {
+  perproc_stat();		/* move max usage into 'ttt' struct variable */
+    stat_inusememory(CTXTc real_time()-realtime_count_gl,type);   /* collect */
+  reset_stat_total(); 	/* reset 'ttt' struct variable (all 0's) */
+}
+
 /*======================================================================*/
 /*======================================================================*/
 

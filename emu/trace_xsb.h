@@ -35,6 +35,7 @@ struct trace_str {		/* for tracing purpose below */
 extern struct trace_str tds;
 
 extern void total_stat(CTXTdeclc double);
+extern void stat_inusememory(CTXTdeclc double,int);
 extern void perproc_reset_stat(void), reset_stat_total(void); 
 
 extern void perproc_stat(void); 

@@ -1419,11 +1419,24 @@ check_statistics_input(atom,8):- !.
 check_statistics_input(X,_):-
 	domain_error(statisticsInputDomain,X,statistics/1,1).
 
-statistics_2_trans(runtime,RUNTIME).
-statistics_2_trans(walltime,WALLTIME).
-
 :- export statistics/2.
 :- import sys_syscall/5 from machine.
+
+statistics_2_trans(runtime,RUNTIME):- !.
+statistics_2_trans(walltime,WALLTIME):- !.
+statistics_2_trans(total_memory,TOTALMEMORY):- !.
+statistics_2_trans(gl,GLMEMORY):- !.
+statistics_2_trans(tc,TCMEMORY):- !.
+statistics_2_trans(tablespace,TABLESPACE):- !.
+statistics_2_trans(shared_tablespace,SHARED_TABLESPACE):- !.
+statistics_2_trans(trieassert,TRIEASSERTMEM):- !.
+statistics_2_trans(heap,HEAPMEM):- !.
+statistics_2_trans(choice_point,CPMEM):- !.
+statistics_2_trans(trail,TRAILMEM):- !.
+statistics_2_trans(local,LOCALMEM):- !.
+statistics_2_trans(open_tables,OPENTABLECOUNT):- !.
+statistics_2_trans(X,_):-
+	domain_error(statisticsInputDomain,X,statistics/2,1).
 
 statistics(Type,Result):- 
 	statistics_2_trans(Type,Num),
@@ -1433,6 +1446,29 @@ statistics_1(RUNTIME,[R1,R2]):-
 	sys_syscall(STATISTICS_2,_RES,RUNTIME,R1,R2).
 statistics_1(WALLTIME,[R1,R2]):- 
 	sys_syscall(STATISTICS_2,_RES,WALLTIME,R1,R2).
+statistics_1(TOTALMEMORY,[R1,R2]):- 
+	sys_syscall(STATISTICS_2,_RES,TOTALMEMORY,R1,R2).
+statistics_1(GLMEMORY,[R1,R2]):- 
+	sys_syscall(STATISTICS_2,_RES,GLMEMORY,R1,R2).
+statistics_1(TCMEMORY,[R1,R2]):- 
+	sys_syscall(STATISTICS_2,_RES,TCMEMORY,R1,R2).
+statistics_1(TABLESPACE,[R1,R2]):- 
+	sys_syscall(STATISTICS_2,_RES,TABLESPACE,R1,R2).
+statistics_1(SHARED_TABLESPACE,[R1,R2]):- 
+	sys_syscall(STATISTICS_2,_RES,SHARED_TABLESPACE,R1,R2).
+statistics_1(TRIEASSERTMEM,[R1,R2]):- 
+	sys_syscall(STATISTICS_2,_RES,TRIEASSERTMEM,R1,R2).
+statistics_1(HEAPMEM,R1):- 
+	sys_syscall(STATISTICS_2,_RES,HEAPMEM,R1,_R2).
+statistics_1(CPMEM,R1):- 
+	sys_syscall(STATISTICS_2,_RES,CPMEM,R1,_R2).
+statistics_1(TRAILMEM,R1):- 
+	sys_syscall(STATISTICS_2,_RES,TRAILMEM,R1,_R2).
+statistics_1(LOCALMEM,R1):- 
+	sys_syscall(STATISTICS_2,_RES,LOCALMEM,R1,_R2).
+statistics_1(OPENTABLECOUNT,R1):- 
+	sys_syscall(STATISTICS_2,_RES,OPENTABLECOUNT,R1,_R2).
+
 
 %%	time(+Goal)
 %

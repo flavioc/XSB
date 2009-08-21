@@ -49,6 +49,9 @@
 #include "slgdelay.h"
 #include "cinterf.h"
 #include "system_defs_xsb.h"
+#include "subp.h"
+#include "error_xsb.h"
+#include "macro_xsb.h"
 
 /*======================================================================*/
 /* Process-level information: keep this global */
@@ -123,6 +126,150 @@ char *pspace_cat[NUM_CATS_SPACE] =
    "special     ","other       ","incr table  ","odbc        "};
 
 #ifndef MULTI_THREAD
+void stat_inusememory(CTXTdeclc double elapstime, int type) {
+
+  NodeStats
+    tbtn,		/* Table Basic Trie Nodes */
+    abtn,		/* Asserted Basic Trie Nodes */
+    tstn,		/* Time Stamp Trie Nodes */
+    aln,		/* Answer List Nodes */
+    tsi,		/* Time Stamp Indices (Index Entries/Nodes) */
+    varsf,		/* Variant Subgoal Frames */
+    prodsf,		/* Subsumptive Producer Subgoal Frames */
+    conssf,		/* Subsumptive Consumer Subgoal Frames */
+    asi;		/* Answer Subst Info for conditional answers */
+
+  HashStats
+    tbtht,		/* Table Basic Trie Hash Tables */
+    abtht,		/* Asserted Basic Trie Hash Tables */
+    tstht;		/* Time Stamp Trie Hash Tables */
+  
+  unsigned long
+    total_alloc, total_used,
+    tablespace_alloc, tablespace_used,
+    trieassert_alloc, trieassert_used,
+    gl_avail, tc_avail,
+    de_space_alloc, de_space_used,
+    dl_space_alloc, dl_space_used,
+    pnde_space_alloc, pnde_space_used,
+    pspacetot;
+
+  int
+    num_de_blocks, num_dl_blocks, num_pnde_blocks,
+    de_count, dl_count, 
+    i;
+
+  tbtn = node_statistics(&smTableBTN);
+  tbtht = hash_statistics(&smTableBTHT);
+  varsf = subgoal_statistics(CTXTc &smVarSF);
+  prodsf = subgoal_statistics(CTXTc &smProdSF);
+  conssf = subgoal_statistics(CTXTc &smConsSF);
+  aln = node_statistics(&smALN);
+  tstn = node_statistics(&smTSTN);
+  tstht = hash_statistics(&smTSTHT);
+  tsi = node_statistics(&smTSIN);
+  asi = node_statistics(&smASI);
+
+  tablespace_alloc = CurrentTotalTableSpaceAlloc(tbtn,tbtht,varsf,prodsf,
+						 conssf,aln,tstn,tstht,tsi,asi);
+  tablespace_used = CurrentTotalTableSpaceUsed(tbtn,tbtht,varsf,prodsf,
+					       conssf,aln,tstn,tstht,tsi,asi);
+
+  de_space_alloc = allocated_de_space(current_de_block_gl,&num_de_blocks);
+  de_space_used = de_space_alloc - unused_de_space();
+  de_count = (de_space_used - num_de_blocks * sizeof(Cell)) /
+	     sizeof(struct delay_element);
+
+  dl_space_alloc = allocated_dl_space(current_dl_block_gl,&num_dl_blocks);
+  dl_space_used = dl_space_alloc - unused_dl_space();
+  dl_count = (dl_space_used - num_dl_blocks * sizeof(Cell)) /
+	     sizeof(struct delay_list);
+
+  pnde_space_alloc = allocated_pnde_space(current_pnde_block_gl,&num_pnde_blocks);
+  pnde_space_used = pnde_space_alloc - unused_pnde_space();
+
+  tablespace_alloc = tablespace_alloc + de_space_alloc + dl_space_alloc + pnde_space_alloc;
+
+  tablespace_used = tablespace_used + de_space_used + dl_space_used + pnde_space_used;
+
+  abtn = node_statistics(&smAssertBTN);
+  abtht = hash_statistics(&smAssertBTHT);
+  trieassert_alloc =
+    NodeStats_SizeAllocNodes(abtn) + HashStats_SizeAllocTotal(abtht);
+  trieassert_used =
+    NodeStats_SizeUsedNodes(abtn) + HashStats_SizeUsedTotal(abtht);
+
+  gl_avail = (top_of_localstk - top_of_heap - 1) * sizeof(Cell);
+  tc_avail = (top_of_cpstack - (CPtr)top_of_trail - 1) * sizeof(Cell);
+
+  pspacetot = 0;
+  for (i=0; i<NUM_CATS_SPACE; i++) 
+    if (i != TABLE_SPACE && i != INCR_TABLE_SPACE) pspacetot += pspacesize[i];
+
+  total_alloc =
+    pspacetot  +  pspacesize[TABLE_SPACE] +
+    pspacesize[INCR_TABLE_SPACE] +
+    (pdl.size + glstack.size + tcpstack.size + complstack.size) * K +
+    de_space_alloc + dl_space_alloc  + pnde_space_alloc;
+
+  total_used  =
+    pspacetot  +  pspacesize[TABLE_SPACE]-(tablespace_alloc-tablespace_used)
+    - (trieassert_alloc - trieassert_used) +
+    pspacesize[INCR_TABLE_SPACE] +
+    (glstack.size * K - gl_avail) + (tcpstack.size * K - tc_avail) +
+    de_space_used + dl_space_used;
+
+    switch(type) {
+	
+    case TOTALMEMORY: {
+      ctop_int(CTXTc 4, total_alloc);
+      ctop_int(CTXTc 5, total_used);
+      break;
+    }
+    case GLMEMORY: {
+      ctop_int(CTXTc 4, glstack.size *K);
+      ctop_int(CTXTc 5, (glstack.size * K - gl_avail));
+      break;
+    }
+    case TCMEMORY: {
+      ctop_int(CTXTc 4, tcpstack.size * K);
+      ctop_int(CTXTc 5, (tcpstack.size * K - tc_avail));
+      break;
+    }
+    case TABLESPACE: {
+      ctop_int(CTXTc 4, tablespace_alloc);
+      ctop_int(CTXTc 5, tablespace_used);
+      break;
+    }
+    case TRIEASSERTMEM: {
+      ctop_int(CTXTc 4, trieassert_alloc);
+      ctop_int(CTXTc 5, trieassert_used);
+      break;
+    }
+    case HEAPMEM: {
+      ctop_int(CTXTc 4,(long)((top_of_heap - (CPtr)glstack.low + 1)* sizeof(Cell)));
+      break;
+    }
+    case CPMEM: {
+      ctop_int(CTXTc 4, (long)(((CPtr)tcpstack.high - top_of_cpstack) * sizeof(Cell)));
+      break;
+    }
+    case TRAILMEM: {
+      ctop_int(CTXTc 4, (long)((top_of_trail - (CPtr *)tcpstack.low + 1) * sizeof(CPtr)));
+      break;
+    }
+    case LOCALMEM: {
+      ctop_int(CTXTc 4, (long)(((CPtr)glstack.high - top_of_localstk) * sizeof(Cell)));
+      break;
+    }
+    case OPENTABLECOUNT: {
+      ctop_int(CTXTc 4, ((unsigned long)COMPLSTACKBOTTOM - (unsigned long)top_of_complstk) / 
+	       sizeof(struct completion_stack_frame));
+      break;
+    }
+    }
+}
+
 void total_stat(CTXTdeclc double elapstime) {
 
   NodeStats
@@ -319,6 +466,202 @@ void total_stat(CTXTdeclc double elapstime) {
 /**********************************************************************/
 #else /* Below, the MT version */
 /**********************************************************************/
+
+void stat_inusememory(CTXTdeclc double elapstime, int type) {
+
+  NodeStats
+    tbtn,		/* Table Basic Trie Nodes */
+    abtn,		/* Asserted Basic Trie Nodes */
+    aln,		/* Answer List Nodes */
+    varsf,		/* Variant Subgoal Frames */
+    asi,		/* Answer Subst Info for conditional answers */
+
+    pri_tbtn,		/* Table Basic Trie Nodes */
+    pri_tstn,		/* Time Stamp Trie Nodes */
+    pri_aln,		/* Answer List Nodes */
+    pri_asi,		/* Answer Subst Info for conditional answers */
+    pri_tsi,		/* Time Stamp Indices (Index Entries/Nodes) */
+    pri_varsf,		/* Variant Subgoal Frames */
+    pri_prodsf,		/* Subsumptive Producer Subgoal Frames */
+    pri_conssf;		/* Subsumptive Consumer Subgoal Frames */
+
+  HashStats
+    tbtht,		/* Table Basic Trie Hash Tables */
+    abtht,		/* Asserted Basic Trie Hash Tables */
+
+    pri_tbtht,		/* Table Basic Trie Hash Tables */
+    pri_tstht;		/* Time Stamp Trie Hash Tables */
+  
+  unsigned long
+    total_alloc, total_used,
+    tablespace_alloc, tablespace_used,
+    private_tablespace_alloc, private_tablespace_used,
+    shared_tablespace_alloc, shared_tablespace_used,
+    trieassert_alloc, trieassert_used,
+    gl_avail, tc_avail,
+    de_space_alloc, de_space_used,
+    dl_space_alloc, dl_space_used,
+    pnde_space_alloc, pnde_space_used,
+    private_de_space_alloc, private_de_space_used,
+    private_dl_space_alloc, private_dl_space_used,
+    private_pnde_space_alloc, private_pnde_space_used,
+    pspacetot;
+
+  int
+    num_de_blocks, num_dl_blocks, num_pnde_blocks,
+    de_count, dl_count, private_de_count, private_dl_count,
+    i;
+
+  tbtn = node_statistics(&smTableBTN);
+  tbtht = hash_statistics(&smTableBTHT);
+  varsf = subgoal_statistics(CTXTc &smVarSF);
+  aln = node_statistics(&smALN);
+  asi = node_statistics(&smASI);
+
+  pri_tbtn = node_statistics(&smTableBTN);
+  pri_tbtht = hash_statistics(&smTableBTHT);
+  pri_varsf = subgoal_statistics(CTXTc &smVarSF);
+  pri_aln = node_statistics(&smALN);
+  pri_asi = node_statistics(&smASI);
+  pri_prodsf = subgoal_statistics(CTXTc &smProdSF);
+  pri_conssf = subgoal_statistics(CTXTc &smConsSF);
+  pri_tstn = node_statistics(&smTSTN);
+  pri_tstht = hash_statistics(&smTSTHT);
+  pri_tsi = node_statistics(&smTSIN);
+
+  private_tablespace_alloc = CurrentPrivateTableSpaceAlloc(pri_tbtn,pri_tbtht,pri_varsf,
+							   pri_prodsf,
+  		  	  	    pri_conssf,pri_aln,pri_tstn,pri_tstht,pri_tsi,pri_asi);
+  private_tablespace_used = CurrentPrivateTableSpaceUsed(pri_tbtn,pri_tbtht,pri_varsf,
+							   pri_prodsf,
+  		  	  	    pri_conssf,pri_aln,pri_tstn,pri_tstht,pri_tsi,pri_asi);
+
+  shared_tablespace_alloc = CurrentSharedTableSpaceAlloc(tbtn,tbtht,varsf,aln,asi);
+  shared_tablespace_used = CurrentSharedTableSpaceUsed(tbtn,tbtht,varsf,aln,asi);
+
+  tablespace_alloc = shared_tablespace_alloc + private_tablespace_alloc;
+  tablespace_used =  shared_tablespace_used + private_tablespace_used;
+
+  de_space_alloc = allocated_de_space(current_de_block_gl,&num_de_blocks);
+  de_space_used = de_space_alloc - unused_de_space();
+  de_count = (de_space_used - num_de_blocks * sizeof(Cell)) / sizeof(struct delay_element);
+
+  dl_space_alloc = allocated_dl_space(current_dl_block_gl,&num_dl_blocks);
+  dl_space_used = dl_space_alloc - unused_dl_space();
+  dl_count = (dl_space_used - num_dl_blocks * sizeof(Cell)) / sizeof(struct delay_list);
+
+  pnde_space_alloc = allocated_pnde_space(current_pnde_block_gl,&num_pnde_blocks);
+  pnde_space_used = pnde_space_alloc - unused_pnde_space();
+
+  private_de_space_alloc = allocated_de_space(private_current_de_block,&num_de_blocks);
+  private_de_space_used = private_de_space_alloc - unused_de_space_private(CTXT);
+  private_de_count = (private_de_space_used - num_de_blocks * sizeof(Cell)) /
+             sizeof(struct delay_element);
+
+  private_dl_space_alloc = allocated_dl_space(private_current_dl_block,&num_dl_blocks);
+  private_dl_space_used = private_dl_space_alloc - unused_dl_space_private(CTXT);
+  private_dl_count = (private_dl_space_used - num_dl_blocks * sizeof(Cell)) /
+             sizeof(struct delay_list);
+
+  private_pnde_space_alloc = allocated_pnde_space(private_current_pnde_block,&num_pnde_blocks);
+  private_pnde_space_used = private_pnde_space_alloc - unused_pnde_space_private(CTXT);
+
+  tablespace_alloc = tablespace_alloc + de_space_alloc + dl_space_alloc + pnde_space_alloc;
+  tablespace_used =  tablespace_used + de_space_used + dl_space_used + pnde_space_alloc;  
+
+  shared_tablespace_alloc = shared_tablespace_alloc + de_space_alloc + dl_space_alloc 
+  			   + pnde_space_alloc;
+  shared_tablespace_used =  shared_tablespace_used + de_space_used + dl_space_used 
+  			    + pnde_space_used;
+
+  private_tablespace_alloc = private_tablespace_alloc + private_de_space_alloc + 
+    private_dl_space_alloc + private_pnde_space_alloc;
+
+  private_tablespace_used = private_tablespace_used + private_de_space_used + 
+    private_dl_space_used + private_pnde_space_used;
+
+  abtn = node_statistics(&smAssertBTN);
+  abtht = hash_statistics(&smAssertBTHT);
+  trieassert_alloc =
+    NodeStats_SizeAllocNodes(abtn) + HashStats_SizeAllocTotal(abtht);
+  trieassert_used =
+    NodeStats_SizeUsedNodes(abtn) + HashStats_SizeUsedTotal(abtht);
+
+  gl_avail = (top_of_localstk - top_of_heap - 1) * sizeof(Cell);
+  tc_avail = (top_of_cpstack - (CPtr)top_of_trail - 1) * sizeof(Cell);
+
+  pspacetot = 0;
+  for (i=0; i<NUM_CATS_SPACE; i++) 
+    if (i != TABLE_SPACE && i != INCR_TABLE_SPACE) pspacetot += pspacesize[i];
+
+  total_alloc =
+    pspacetot  +  pspacesize[TABLE_SPACE]  + pspacesize[INCR_TABLE_SPACE] +
+    (pdl.size + glstack.size + tcpstack.size + complstack.size) * K +
+    de_space_alloc + dl_space_alloc  + pnde_space_alloc;
+
+  total_used  =
+    pspacetot  +  pspacesize[TABLE_SPACE]-(tablespace_alloc-tablespace_used)
+    - (trieassert_alloc - trieassert_used) +
+    pspacesize[INCR_TABLE_SPACE] +
+    (glstack.size * K - gl_avail) + (tcpstack.size * K - tc_avail) +
+    de_space_used + dl_space_used;
+
+    switch(type) {
+	
+    case TOTALMEMORY: {
+      ctop_int(CTXTc 4, total_alloc);
+      ctop_int(CTXTc 5, total_used);
+      break;
+    }
+    case GLMEMORY: {
+      ctop_int(CTXTc 4, glstack.size *K);
+      ctop_int(CTXTc 5, (glstack.size * K - gl_avail));
+      break;
+    }
+    case TCMEMORY: {
+      ctop_int(CTXTc 4, tcpstack.size * K);
+      ctop_int(CTXTc 5, (tcpstack.size * K - tc_avail));
+      break;
+    }
+    case TABLESPACE: {
+      ctop_int(CTXTc 4, private_tablespace_alloc);
+      ctop_int(CTXTc 5, private_tablespace_used);
+      break;
+    }
+    case TRIEASSERTMEM: {
+      ctop_int(CTXTc 4, trieassert_alloc);
+      ctop_int(CTXTc 5, trieassert_used);
+      break;
+    }
+    case HEAPMEM: {
+      ctop_int(CTXTc 4,(long)((top_of_heap - (CPtr)glstack.low + 1)* sizeof(Cell)));
+      break;
+    }
+    case CPMEM: {
+      ctop_int(CTXTc 4, (long)(((CPtr)tcpstack.high - top_of_cpstack) * sizeof(Cell)));
+      break;
+    }
+    case TRAILMEM: {
+      ctop_int(CTXTc 4, (long)((top_of_trail - (CPtr *)tcpstack.low + 1) * sizeof(CPtr)));
+      break;
+    }
+    case LOCALMEM: {
+      ctop_int(CTXTc 4, (long)(((CPtr)glstack.high - top_of_localstk) * sizeof(Cell)));
+      break;
+    }
+    case OPENTABLECOUNT: {
+      ctop_int(CTXTc 4, ((unsigned long)COMPLSTACKBOTTOM - (unsigned long)top_of_complstk) / 
+	       sizeof(struct completion_stack_frame));
+      break;
+    }
+    case SHARED_TABLESPACE: {
+      ctop_int(CTXTc 4, shared_tablespace_alloc);
+      ctop_int(CTXTc 5, shared_tablespace_used);
+      break;
+    }
+    }
+
+}
 
 void total_stat(CTXTdeclc double elapstime) {
 
@@ -612,7 +955,6 @@ extern double realtime_count_gl; /* from subp.c */
 
 void  get_statistics(CTXTdecl) {
   int type;
-
   type = ptoc_int(CTXTc 3);
   switch (type) {
 // runtime [since start of Prolog,since previous statistics] 
@@ -645,7 +987,28 @@ void  get_statistics(CTXTdecl) {
     ctop_float(CTXTc 5, incr_wall);
     break;
   }
-  }
+    case TOTALMEMORY: 
+    case GLMEMORY: 
+    case TCMEMORY: 
+    case TABLESPACE: 
+    case TRIEASSERTMEM: 
+    case HEAPMEM: 
+    case CPMEM: 
+    case TRAILMEM: 
+    case LOCALMEM: 
+    case OPENTABLECOUNT: 
+      {
+	statistics_inusememory(CTXTc type);
+	break;
+      }
+    case SHARED_TABLESPACE: 
+      {
+#ifdef MULTI_THREAD
+	statistics_inusememory(CTXTc type);
+#else
+	xsb_abort("statistics/2 with parameter shared_tables not supported in this configuration\n");
+#endif 
+	break;
+      }
+    }
 }
-
-
