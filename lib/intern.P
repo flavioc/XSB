@@ -364,7 +364,7 @@ trie_prge_bulk_insert(Tid,Callable_Term):-
 	    new_i_trie_intern(Tid,TrieTerm,_Leaf,_Flag,NO_CPS_CHECK,DONT_EXPAND_HASHES)
 	; 
 	    call(Callable_Term),
-	    new_i_trie_intern(Tid,TrieTerm,_Leaf,_Flag,NO_CPS_CHECK,DONT_EXPAND_HASHES) ),
+	    new_i_trie_intern(Tid,TrieTerm,_Leaf,_Flag,NO_CPS_CHECK,EXPAND_HASHES) ),
 	fail.    
 trie_prge_bulk_insert(_Trie,_Callable_Term).
 
