@@ -53,5 +53,6 @@
 #define LOCALMEM 10
 #define OPENTABLECOUNT 11
 #define SHARED_TABLESPACE 12
+#define ATOMMEM 13
 
 

@@ -220,7 +220,7 @@ void stat_inusememory(CTXTdeclc double elapstime, int type) {
     de_space_used + dl_space_used;
 
     switch(type) {
-	
+
     case TOTALMEMORY: {
       ctop_int(CTXTc 4, total_alloc);
       ctop_int(CTXTc 5, total_used);
@@ -265,6 +265,10 @@ void stat_inusememory(CTXTdeclc double elapstime, int type) {
     case OPENTABLECOUNT: {
       ctop_int(CTXTc 4, ((unsigned long)COMPLSTACKBOTTOM - (unsigned long)top_of_complstk) / 
 	       sizeof(struct completion_stack_frame));
+      break;
+    }
+    case ATOMMEM: {
+      ctop_int(CTXTc 4, pspacesize[ATOM_SPACE]);
       break;
     }
     }
@@ -986,23 +990,9 @@ void  get_statistics(CTXTdecl) {
     ctop_float(CTXTc 4, tot_wall);
     ctop_float(CTXTc 5, incr_wall);
     break;
-  }
-    case TOTALMEMORY: 
-    case GLMEMORY: 
-    case TCMEMORY: 
-    case TABLESPACE: 
-    case TRIEASSERTMEM: 
-    case HEAPMEM: 
-    case CPMEM: 
-    case TRAILMEM: 
-    case LOCALMEM: 
-    case OPENTABLECOUNT: 
-      {
-	statistics_inusememory(CTXTc type);
-	break;
       }
-    case SHARED_TABLESPACE: 
-      {
+  case SHARED_TABLESPACE: 
+    {
 #ifdef MULTI_THREAD
 	statistics_inusememory(CTXTc type);
 #else
@@ -1010,5 +1000,10 @@ void  get_statistics(CTXTdecl) {
 #endif 
 	break;
       }
+  default: {
+      statistics_inusememory(CTXTc type);
+      break;
     }
+
+  }
 }
