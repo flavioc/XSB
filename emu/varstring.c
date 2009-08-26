@@ -212,8 +212,8 @@ static void vs_append(VarString *vstr, char *str)
 }
 
 static inline void vs_appendc(VarString *vstr, char code) {
-  if (vstr->size < vstr->length+1) 
-    vs_adjust_size(vstr,vstr->length+1);
+  if (vstr->size < vstr->length+2) // \0 + new one to add
+    vs_adjust_size(vstr,vstr->length+2);
   *(vstr->string+vstr->length) = code;
   vstr->length++;
   *(vstr->string+vstr->length) = '\0';
@@ -395,7 +395,6 @@ static void vs_adjust_size(VarString *vstr, int minsize)
 
   vstr->size = newsize;
 }
-
 
 
 #ifdef DEBUG_VARSTRING

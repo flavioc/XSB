@@ -1627,6 +1627,10 @@ xsbBool quotes_are_needed(char *string)
   return flag;
 }
 
+xsbBool string_contains_quotes(char *string) {
+  if (strstr(string,"\'") == NULL && strstr(string,"\\") == NULL) return FALSE;
+  return TRUE;
+}
 
 void double_quotes(char *string, char *new_string)
 {
@@ -1692,17 +1696,25 @@ void call_conv write_canonical_term_rec(CTXTdeclc Cell prologterm, int letter_fl
     {
     case XSB_INT:
       sprintf(wcan_buff->string,"%ld",(long)int_val(prologterm));
-      XSB_StrAppendV(wcan_string,wcan_buff);
+      XSB_StrAppend(wcan_string,wcan_buff->string);
       break;
-    case XSB_STRING: 
+    case XSB_STRING:
       if (quotes_are_needed(string_val(prologterm))) {
-	int len_needed = 2*strlen(string_val(prologterm))+1;
-	XSB_StrEnsureSize(wcan_atombuff,len_needed);
-	double_quotes(string_val(prologterm),wcan_atombuff->string);
-	XSB_StrAppendC(wcan_string,'\'');
-	XSB_StrAppend(wcan_string,wcan_atombuff->string);
-	XSB_StrAppendC(wcan_string,'\'');
-      } else XSB_StrAppend(wcan_string,string_val(prologterm));
+	if (string_contains_quotes(string_val(prologterm))) {
+	  int len_needed = 2*strlen(string_val(prologterm))+1;
+	  XSB_StrEnsureSize(wcan_atombuff,len_needed);
+	  double_quotes(string_val(prologterm),wcan_atombuff->string);
+	  XSB_StrAppendC(wcan_string,'\'');
+	  XSB_StrAppend(wcan_string,wcan_atombuff->string);
+	  XSB_StrAppendC(wcan_string,'\'');
+	} else {
+	  XSB_StrAppendC(wcan_string,'\'');
+	  XSB_StrAppend(wcan_string,string_val(prologterm));
+	  XSB_StrAppendC(wcan_string,'\'');
+	}
+      } else {
+	XSB_StrAppend(wcan_string,string_val(prologterm));
+      }
       break;
     case XSB_FLOAT:
       //      sprintf(wcan_buff->string,"%2.4f",float_val(prologterm));
@@ -1721,7 +1733,7 @@ void call_conv write_canonical_term_rec(CTXTdeclc Cell prologterm, int letter_fl
 	  XSB_StrAppend(wcan_buff,exp);
 	}
       }
-      XSB_StrAppendV(wcan_string,wcan_buff);
+      XSB_StrAppend(wcan_string,wcan_buff->string);
       break;
     case XSB_REF:
     case XSB_REF1: {
@@ -1737,7 +1749,7 @@ void call_conv write_canonical_term_rec(CTXTdeclc Cell prologterm, int letter_fl
 	} else varval = prologterm;   /* Should never happen */
       }
       sprintf(wcan_buff->string,"%d",varval);
-      XSB_StrAppendV(wcan_string,wcan_buff);
+      XSB_StrAppend(wcan_string,wcan_buff->string);
     }
       break;
     case XSB_STRUCT: /* lettervar: i.e., print '$VAR'(i) terms as Cap Alpha-Num */
@@ -1747,7 +1759,7 @@ void call_conv write_canonical_term_rec(CTXTdeclc Cell prologterm, int letter_fl
      if (isboxedinteger(prologterm))
      {
       sprintf(wcan_buff->string,"%ld",(long)boxedint_val(prologterm));
-      XSB_StrAppendV(wcan_string,wcan_buff);
+      XSB_StrAppend(wcan_string,wcan_buff->string);
           break;         
      }
      else if (isboxedfloat(prologterm))
@@ -1768,7 +1780,7 @@ void call_conv write_canonical_term_rec(CTXTdeclc Cell prologterm, int letter_fl
 	   XSB_StrAppend(wcan_buff,exp);
 	 }
        }
-       XSB_StrAppendV(wcan_string,wcan_buff);
+       XSB_StrAppend(wcan_string,wcan_buff->string);
        break;         
      }        
       if (!dollar_var_psc) {
@@ -1786,7 +1798,7 @@ void call_conv write_canonical_term_rec(CTXTdeclc Cell prologterm, int letter_fl
 	XSB_StrAppendC(wcan_string,(char)(letter+'A'));
 	if (ival != 0) {
 	  sprintf(wcan_buff->string,"%d",ival);
-	  XSB_StrAppendV(wcan_string,wcan_buff);
+	  XSB_StrAppend(wcan_string,wcan_buff->string);
 	}
       } else {
 	int i; 
