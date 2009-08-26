@@ -1435,6 +1435,7 @@ statistics_2_trans(choice_point,CPMEM):- !.
 statistics_2_trans(trail,TRAILMEM):- !.
 statistics_2_trans(local,LOCALMEM):- !.
 statistics_2_trans(open_tables,OPENTABLECOUNT):- !.
+statistics_2_trans(atoms,ATOMMEM):- !.
 statistics_2_trans(X,_):-
 	domain_error(statisticsInputDomain,X,statistics/2,1).
 
@@ -1468,6 +1469,8 @@ statistics_1(LOCALMEM,R1):-
 	sys_syscall(STATISTICS_2,_RES,LOCALMEM,R1,_R2).
 statistics_1(OPENTABLECOUNT,R1):- 
 	sys_syscall(STATISTICS_2,_RES,OPENTABLECOUNT,R1,_R2).
+statistics_1(ATOMMEM,R1):- 
+	sys_syscall(STATISTICS_2,_RES,ATOMMEM,R1,_R2).
 
 
 %%	time(+Goal)
