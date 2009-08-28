@@ -508,9 +508,11 @@ get_component_fact(Name,Fact):-
 
 %:- [cdftp_chkCon].
 classify_if_necessary_term(necessCond_ext(First,Vid),Upd1,Upd):-!,
-	findall(Id,ceMember(Vid,Id),Ids),
-	sort(Ids,Idsort),
-	classify_if_necessary_list([First|Idsort],Upd1,Upd).
+	writeln(userout,'ceMember/2 is not defined.  This is stopgap until someone figures out what it should be....'),
+	fail.   % when figure out what ceMember is supposed to be/do, fix this.
+%%	findall(Id,ceMember(Vid,Id),Ids),
+%%	sort(Ids,Idsort),
+%%	classify_if_necessary_list([First|Idsort],Upd1,Upd).
 classify_if_necessary_term(isa_ext(First,Second),Upd1,Upd):-!,
 	arg(1,First,Arg),
 	(structure(Arg) -> 

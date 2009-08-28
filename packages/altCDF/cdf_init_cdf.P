@@ -104,7 +104,7 @@ load_cdf_init_cdf.  % to allow altCDF to force loading of this module.
 :- import parsort/4 from machine.
 
 :- import '_$index'/3 from file_op.
-:- import conset/2, conget/2, coninc/1 from gensym.
+%%%:- import conset/2, conget/2, coninc/1 from gensym.
 :- import ground/1,member/2 from basics.
 :- import abolish_table_pred/1 from tables.
 :- import concat_atom/2 from string.
@@ -674,12 +674,14 @@ immed_hasAttr2(SCid,Rid,TCid) :-
 immed_hasAttr2(SCid,Rid,TCid) :-
     hasAttr_int(SCid,Rid,TCid).
 
+/** comment back in if gets used above...
 check_hasAttr_indices(Scid,Rid,Tcid):-
     (ground(Scid) ->
         true
       ; (ground(Rid),ground(Tcid) ->
              true
            ; writeln(userout,nonindexed(hasAttr(Scid,Rid,Tcid))) ) ).
+***/
 
 :- comment(hasAttr/3, "@tt{hasAttr(SCid,Rid,TCid)} defines the
 inheritable relation predicate, where @tt{SCid} is the source class or
