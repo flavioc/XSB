@@ -47,7 +47,7 @@
       table_state/2,
       table_state/4,
       tfindall/3,
-      tnot/1,
+   (tnot)/1,
       't not'/1,
       (trie_dynamic)/1,
       trie_assert/1,

@@ -139,6 +139,7 @@ deactivate_op(T, S) :-
 '_$op1'(1050,xfy,'->').
 '_$op1'(1000,xfy,',').
 '_$op1'(900,fy,not).		% Not in the Prolog standard
+'_$op1'(900,fy,tnot).		% Not in the Prolog standard
 '_$op1'(900,fy,'\+').		% Not in the Prolog standard
 '_$op1'(900,fy,spy).		% Not in the Prolog standard
 '_$op1'(900,fy,nospy).		% Not in the Prolog standard
