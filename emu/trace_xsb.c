@@ -663,6 +663,10 @@ void stat_inusememory(CTXTdeclc double elapstime, int type) {
       ctop_int(CTXTc 5, shared_tablespace_used);
       break;
     }
+    case ATOMMEM: {
+      ctop_int(CTXTc 4, pspacesize[ATOM_SPACE]);
+      break;
+    }
     }
 
 }
