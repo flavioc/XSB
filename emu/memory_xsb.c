@@ -172,13 +172,8 @@ void *mem_alloc_nocheck(unsigned long size, int category)
 #ifdef NON_OPT_COMPILE
     memcount_gl.num_mem_allocs++;
     SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
-    pspacesize[category] += size;
-#else
-#ifndef MULTI_THREAD
-    pspacesize[category] += size;
 #endif
-#endif
-
+    pspacesize[category] += size;
 
     ptr = (byte *) malloc(size);
 #if defined(GENERAL_TAGGING)
@@ -198,20 +193,16 @@ void *mem_calloc(unsigned long size, unsigned long occs, int category)
 {
     byte * ptr;
 
-#if defined(NON_OPT_COMPILE) || !defined(MULTI_THREAD)  || defined(GENERAL_TAGGING)
+    // #if defined(NON_OPT_COMPILE) || !defined(MULTI_THREAD)  || defined(GENERAL_TAGGING)
     unsigned long length = (size*occs+7) & ~0x7;
-#endif
+    // #endif
 
 #ifdef NON_OPT_COMPILE
     //    printf("Callocing size %d occs %d category %d\n",size,occs,category);
     memcount_gl.num_mem_allocs++;
     SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
-    pspacesize[category] += length;
-#else
-#ifndef MULTI_THREAD
-    pspacesize[category] += length;
 #endif
-#endif
+    pspacesize[category] += length;
 
     ptr = (byte *) calloc(size,occs);
 #if defined(GENERAL_TAGGING)
@@ -234,20 +225,16 @@ void *mem_calloc(unsigned long size, unsigned long occs, int category)
 void *mem_calloc_nocheck(unsigned long size, unsigned long occs, int category)
 {
     byte * ptr;
-#if defined(NON_OPT_COMPILE) || !defined(MULTI_THREAD)  || defined(GENERAL_TAGGING)
+    // #if defined(NON_OPT_COMPILE) || !defined(MULTI_THREAD)  || defined(GENERAL_TAGGING)
     unsigned long length = (size*occs+7) & ~0x7;
-#endif
+    // #endif
 
 #ifdef NON_OPT_COMPILE
     //    printf("Callocing size %d occs %d category %d\n",size,occs,category);
     memcount_gl.num_mem_allocs++;
     SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
-    pspacesize[category] += length;
-#else
-#ifndef MULTI_THREAD
-    pspacesize[category] += length;
 #endif
-#endif
+    pspacesize[category] += length;
 
     ptr = (byte *) calloc(size,occs);
 #if defined(GENERAL_TAGGING)
@@ -272,12 +259,8 @@ void *mem_realloc(void *addr, unsigned long oldsize, unsigned long newsize, int 
 #ifdef NON_OPT_COMPILE
     memcount_gl.num_mem_reallocs++;
     SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
-    pspacesize[category] = pspacesize[category] - oldsize + newsize;
-#else
-#ifndef MULTI_THREAD
-    pspacesize[category] = pspacesize[category] - oldsize + newsize;
 #endif
-#endif
+    pspacesize[category] = pspacesize[category] - oldsize + newsize;
 
     new_addr = (byte *) realloc(addr,newsize);
 #if defined(GENERAL_TAGGING)
@@ -303,12 +286,8 @@ void *mem_realloc_nocheck(void *addr, unsigned long oldsize, unsigned long newsi
 #ifdef NON_OPT_COMPILE
     memcount_gl.num_mem_reallocs++;
     SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
-    pspacesize[category] = pspacesize[category] - oldsize + newsize;
-#else
-#ifndef MULTI_THREAD
-    pspacesize[category] = pspacesize[category] - oldsize + newsize;
 #endif
-#endif
+    pspacesize[category] = pspacesize[category] - oldsize + newsize;
 
     new_addr = (byte *) realloc(addr,newsize);
 #if defined(GENERAL_TAGGING)
@@ -332,13 +311,9 @@ void mem_dealloc(void *addr, unsigned long size, int category)
     memcount_gl.num_mem_deallocs++;
     SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
     //    if (size > 0) for (i=0; i<size/4-1; i++) *((CPtr *)addr + i) = (CPtr)0xefefefef;
-    pspacesize[category] -= size;
-#else
-#ifndef MULTI_THREAD
-    pspacesize[category] -= size;
 #endif
-#endif
-    //    fprintf(logfile,"alloc(mem_dealloc,%ld,'%p',%ld,%d).\n",alloc_cnt++,addr,size,category);
+    pspacesize[category] -= size;
+    //    fbprintf(logfile,"alloc(mem_dealloc,%ld,'%p',%ld,%d).\n",alloc_cnt++,addr,size,category);
 
     free(addr);
 #ifdef NON_OPT_COMPILE
