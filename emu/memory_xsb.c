@@ -139,12 +139,8 @@ void *mem_alloc(unsigned long size, int category)
 #ifdef NON_OPT_COMPILE
     memcount_gl.num_mem_allocs++;
     SYS_MUTEX_LOCK_NOERROR(MUTEX_MEM);
-    pspacesize[category] += size;
-#else
-#ifndef MULTI_THREAD
-    pspacesize[category] += size;
 #endif
-#endif
+    pspacesize[category] += size;
 
     ptr = (byte *) malloc(size);
 
