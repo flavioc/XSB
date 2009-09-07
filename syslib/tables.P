@@ -580,19 +580,24 @@ check_abolish_options_list(Culprit,_ActionType,Pred):-
 abolish_table_call(Call) :-
 	abolish_table_call_internal(Call,ABOLISH_TABLES_DEFAULT).
 
+/* TLS: Action on call subsumption is to delete producer for consumer
+   calls. get_calls/3 automatically finds all producers, so there is
+   no action we need to take for consumer calls. */
 abolish_table_call_internal(Call,Action) :-
 	get_calls(Call,Handle,_Template),
-	table_state(Handle,PredType,_CallType,AnsSetStatus),
+	table_state(Handle,_PredType,CallType,AnsSetStatus),
+	CallType \== subsumed,
 	(   AnsSetStatus == undefined
 	->  table_error(['abolishing undefined tabled call ',Call])
 	;   AnsSetStatus == incomplete
 	->  table_error(['abolishing incomplete tabled call ',Call])
-	;   PredType == subsumptive
-	->  table_error(['abolishing subsumptive tabled call ',Call])
+%	;   PredType == subsumptive
+%	->  table_error(['abolishing subsumptive tabled call ',Call])
 	;   abolish_table_call_bi(Handle,Action)
 	),
 	fail.
 abolish_table_call_internal(_Call,_Action).
+
 
 abolish_table_call_bi(_Handle,_Action) :-
 	'_$builtin'(ABOLISH_TABLE_CALL).
