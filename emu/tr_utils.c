@@ -758,7 +758,8 @@ extern void hashtable1_destroy(void *, int);
 
 }
 
-/* called when it is now known whether a predicate is variant or subsumptive */
+/* called when it is now known whether a predicate is variant or subsumptive 
+   (by abolish_table_pred) */
   void delete_predicate_table(CTXTdeclc TIFptr tif, xsbBool warn) {
   if ( TIF_CallTrie(tif) != NULL ) {
     SET_TRIE_ALLOCATION_TYPE_TIP(tif);
@@ -781,8 +782,6 @@ void transitive_delete_predicate_table(CTXTdeclc TIFptr tif, xsbBool should_warn
 }
 
 /* - - - - - */
-
-void reclaim_deleted_subsumptive_table(CTXTdeclc DelTFptr);
 
 /* Just like delete_predicate_table, but called from gc sweeps with deltf_ptr.
    In addition, does not reset TIFs.*/
@@ -2877,7 +2876,12 @@ void abolish_table_call_single(CTXTdeclc VariantSF subgoal) {
     SET_TRIE_ALLOCATION_TYPE_SF(subgoal); // set smBTN to private/shared
     if (action == CAN_RECLAIM) {
       delete_branch(CTXTc subgoal->leaf_ptr, &tif->call_trie,VARIANT_EVAL_METHOD); /* delete call */
-      delete_variant_sf_and_answers(CTXTc subgoal, TRUE); // (warn if cond)
+      if (IsVariantSF(subgoal)) {
+	delete_variant_sf_and_answers(CTXTc subgoal, TRUE); // (warn if cond)
+      }
+      else {
+	delete_subsumptive_call(CTXTc (SubProdSF) subgoal);
+      }
     }
     else {
       //      fprintf(stderr,"Delaying abolish of call in use for: %s/%d\n",
@@ -2949,16 +2953,15 @@ void abolish_table_call_transitive(CTXTdeclc VariantSF subgoal) {
 /* Took check for incomplete out -- its been done in tables.P.
 However, we now need to check the default setting (settable in
 xsb_flag) as well as an option set by the options list, if any. 
-
-Currently, calls can be abolished only for call-variance -- hence
-the use of varsf_has_conditional_answer()
 */
+
 void abolish_table_call(CTXTdeclc VariantSF subgoal, int invocation_flag) {
   //  printf("in abolish_table_call\n");
-  if (varsf_has_conditional_answer(subgoal) 
-      && (invocation_flag == ABOLISH_TABLES_TRANSITIVELY 
-	  || !(invocation_flag == ABOLISH_TABLES_DEFAULT 
-	       && flags[TABLE_GC_ACTION] == ABOLISH_TABLES_SINGLY))) {
+  if (IsVariantSF(subgoal) 
+      &&  (varsf_has_conditional_answer(subgoal) 
+             && (invocation_flag == ABOLISH_TABLES_TRANSITIVELY 
+   	          || !(invocation_flag == ABOLISH_TABLES_DEFAULT 
+		       && flags[TABLE_GC_ACTION] == ABOLISH_TABLES_SINGLY)))) {
     //    printf("calling atc\n");
     abolish_table_call_transitive(CTXTc subgoal);
     }

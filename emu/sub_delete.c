@@ -119,6 +119,8 @@ static void delete_private_sf(CTXTdeclc VariantSF sf) {
  *  its children.
  */
 
+extern void release_conditional_answer_info(CTXTdeclc BTNptr);
+
 static void delete_tst_answer_set(CTXTdeclc TSTNptr root) {
 
   TSTNptr current, sibling;
@@ -145,6 +147,10 @@ static void delete_tst_answer_set(CTXTdeclc TSTNptr root) {
       }
     delete_private_tstht(CTXTc hash_hdr);
   }
+
+  else if ( IsLeafNode(root) )		  
+    release_conditional_answer_info(CTXTc (BTNptr) root);
+
   else if ( ! IsLeafNode(root) )
     for ( current = TSTN_Child(root);  IsNonNULL(current);
 	  current = sibling ) {
@@ -214,6 +220,25 @@ void delete_subsumptive_table(CTXTdeclc TIFptr tif) {
     delete_private_sf(CTXTc (VariantSF)cur_prod);
   }
   delete_call_index(CTXTc TIF_CallTrie(tif));
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+
+void delete_subsumptive_call(CTXTdeclc SubProdSF cur_prod) {
+  SubConsSF cur_cons, next_cons;
+  
+  //  if (IsSubConsSF(cur_prod)) {
+  //    printf("abolishing producer via consume\n");
+  //    cur_prod = conssf_producer(cur_prod);
+  //  }
+
+  for ( cur_cons = subg_consumers(cur_prod);
+	IsNonNULL(cur_cons);  cur_cons = next_cons ) {
+    next_cons = conssf_consumers(cur_cons);
+    delete_private_sf(CTXTc (VariantSF)cur_cons);
+    }
+  delete_tst_answer_set(CTXTc (TSTNptr)subg_ans_root_ptr(cur_prod));
+  delete_private_sf(CTXTc (VariantSF)cur_prod);
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
