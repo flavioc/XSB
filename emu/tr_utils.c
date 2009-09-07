@@ -3179,7 +3179,7 @@ inline void abolish_table_pred_single(CTXTdeclc TIFptr tif, int cps_check_flag) 
   if (action == CAN_RECLAIM) {
     delete_predicate_table(CTXTc tif,TRUE);
   }
-  else {
+  else if (TIF_Subgoals(tif)) {
     //        fprintf(stderr,"Delaying abolish of table in use: %s/%d\n",
     //        get_name(psc),get_arity(psc));
 #ifndef MULTI_THREAD
