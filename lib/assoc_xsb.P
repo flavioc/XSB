@@ -1,6 +1,7 @@
 /* File:      assoc_xsb.P
 ** Author(s): Mats Carlsson (see below)
 **	      (modified by Baoqiu Cui to make it work in XSB)
+**            David S. Warren (for addkey and friends, from Bratko)
 ** Contact:   xsb-contact@cs.sunysb.edu
 **
 ** This file is adapted from SICStus Prolog:
@@ -41,6 +42,8 @@
 	ord_list_to_assoc/2,		% List -> Assoc
 	ord_list_to_assoc/4,
 	put_assoc/4.			% Key x Assoc x Val -> Assoc
+
+:- export addkey/4, find/3, updatevs/5.  % for 2-3 trees.
 
 :- import length/2 from basics.
 :- import compare/3, writeln/1 from standard.
@@ -436,3 +439,128 @@ msb1(X, N) :-
 	X1 is X // 2,
 	msb1(X1, N1),
 	N is N1 + 1.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+/* 
+This is a set of routines that supports indexed tables. Tables
+are sets of key-value_list pairs. With each key is associated a list
+of values. It uses 2-3 trees for the index (modified by D.S. Warren
+from Ivan Bratko: ``Prolog Programming for Artificial
+Intelligence'', Addison Wesley, 1986). Operations are: 
+
+Keys must be ground! (so numbervar them)
+
+addkey(Tree,Key,V,Tree1) adds a new Key with value V, returning 
+	new Tree1. Fails if the key is already there.
+
+find(Tree,Key,V) finds the entry with Key and returns associated
+	values in V.
+
+updatevs(Tree,Key,OldV,NewV,Tree1) replaces value of entry with key
+	Key and value OldV with NewV.
+
+*/
+:- export addkey/4, find/3, updatevs/5.
+
+
+addkey(Tree,X,V,Tree1) :-
+	ins2(Tree,X,V,Trees),
+	cmb0(Trees,Tree1).
+addkey([],X,V,l(X,V)).
+
+
+find(T,K,V) :-
+	(var(K)
+	 ->	find2(T,K,V)
+	 ;	find1(T,K,V)
+	).
+
+find1(l(X,V),Xs,V) :- X == Xs.
+find1(n2(T1,M,T2),X,V) :-
+	(M @=< X
+	 ->	find1(T2,X,V)
+	 ;	find1(T1,X,V)
+	).
+find1(n3(T1,M2,T2,M3,T3),X,V) :-
+	(M2 @=< X
+	 ->	(M3 @=< X
+		 ->	find1(T3,X,V)
+		 ;	find1(T2,X,V)
+		)
+	 ;	find1(T1,X,V)
+	).
+
+%% return all nondeterministically
+find2(l(X,V),X,V).
+find2(n2(T1,_M,T2),X,V) :-
+	(find2(T1,X,V)
+	 ;	
+	 find2(T2,X,V)
+	).
+find2(n3(T1,_,T2,_,T3),X,V) :-
+	(find2(T1,X,V)
+	 ;	
+	 find2(T2,X,V)
+	 ;
+	 find2(T3,X,V)
+	).
+
+% updatevs(Tab0,X,Ov,Nv,Tab) updates Tab0 to Tab, by replacing
+% Ov of entry with key X by Nv.
+
+updatevs(l(X,Ov),Xs,Ov,Nv,l(X,Nv)) :- X == Xs.
+updatevs(n2(T1,M,T2),X,Ov,Nv,n2(NT1,M,NT2)) :-
+	M @=< X
+	 ->	updatevs(T2,X,Ov,Nv,NT2), NT1=T1
+	 ;	updatevs(T1,X,Ov,Nv,NT1), NT2=T2.
+updatevs(n3(T1,M2,T2,M3,T3),X,Ov,Nv,n3(NT1,M2,NT2,M3,NT3)) :-
+	M2 @=< X
+	 ->	(M3 @=< X
+		 ->	updatevs(T3,X,Ov,Nv,NT3), NT2=T2, NT1=T1
+		 ;	updatevs(T2,X,Ov,Nv,NT2), NT1=T1, NT3=T3
+		)
+	 ;	updatevs(T1,X,Ov,Nv,NT1), NT2=T2, NT3=T3.
+
+
+ins2(n2(T1,M,T2),X,V,Tree) :- 
+	M @=< X
+	 ->	ins2(T2,X,V,Tree1),
+		cmb2(Tree1,T1,M,Tree)
+	 ;	ins2(T1,X,V,Tree1),
+		cmb1(Tree1,M,T2,Tree).
+ins2(n3(T1,M2,T2,M3,T3),X,V,Tree) :- 
+	M2 @=< X
+	 ->	(M3 @=< X
+		 ->	ins2(T3,X,V,Tree1),
+			cmb4(Tree1,T1,M2,T2,M3,Tree)
+		 ;	ins2(T2,X,V,Tree1),
+			cmb5(Tree1,T1,M2,M3,T3,Tree)
+		)
+	 ;	ins2(T1,X,V,Tree1),
+		cmb3(Tree1,M2,T2,M3,T3,Tree).
+ins2(l(A,V),X,Vn,Tree) :-
+	A @=< X
+	 ->	(X @=< A
+		 ->	fail
+		 ;	Tree = t(l(A,V),X,l(X,Vn))
+		)
+	 ;	Tree = t(l(X,Vn),A,l(A,V)).
+
+cmb0(t(Tree),Tree).
+cmb0(t(T1,M,T2),n2(T1,M,T2)).
+
+cmb1(t(NT1),M,T2,t(n2(NT1,M,T2))).
+cmb1(t(NT1a,Mb,NT1b),M,T2,t(n3(NT1a,Mb,NT1b,M,T2))).
+
+cmb2(t(NT2),T1,M,t(n2(T1,M,NT2))).
+cmb2(t(NT2a,Mb,NT2b),T1,M,t(n3(T1,M,NT2a,Mb,NT2b))).
+
+cmb3(t(NT1),M2,T2,M3,T3,t(n3(NT1,M2,T2,M3,T3))).
+cmb3(t(NT1a,Mb,NT1b),M2,T2,M3,T3,t(n2(NT1a,Mb,NT1b),M2,n2(T2,M3,T3))).
+
+cmb4(t(NT3),T1,M2,T2,M3,t(n3(T1,M2,T2,M3,NT3))).
+cmb4(t(NT3a,Mb,NT3b),T1,M2,T2,M3,t(n2(T1,M2,T2),M3,n2(NT3a,Mb,NT3b))).
+
+cmb5(t(NT2),T1,M2,M3,T3,t(n3(T1,M2,NT2,M3,T3))).
+cmb5(t(NT2a,Mb,NT2b),T1,M2,M3,T3,t(n2(T1,M2,NT2a),Mb,n2(NT2b,M3,T3))).
