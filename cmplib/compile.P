@@ -166,9 +166,10 @@ table_process(ModuleIn, ModuleOut, SFile) :-
 		supplementary_tabling(ModuleIn, ModuleMid)
 	; ModuleMid = ModuleIn
 	),
+	aggregation_transform(ModuleMid,ModuleMid1),
 	conget('table #', Tables),
-	( Tables =:= 0 -> ModuleOut = ModuleMid
-	; cp_opt(ModuleMid, ModuleOut)
+	( Tables =:= 0 -> ModuleOut = ModuleMid1
+	; cp_opt(ModuleMid1, ModuleOut)
           %%,( option(no_check) -> true ; build_graph(ModuleOut) )
 	),
 	( option(table_dump) -> dump_module(SFile, ModuleOut) ; true ).

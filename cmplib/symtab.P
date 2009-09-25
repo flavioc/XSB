@@ -412,7 +412,10 @@ sym_category(sym(_,_,prop(Cat,_,_,_,_,_),_), Cat).
 /*======================================================================*/
 
 sym_type(sym(_,_,prop(_,_,_,_,_,Other),_), tabled(Ind,Arity)) :-
-	member2(tabled(Ind,Arity), Other).
+	member2(tabled(Ind,Arity), Other),
+	!.
+sym_type(sym(_,_,prop(_,_,_,_,_,Other),_), aggregation(Spec)) :-
+	member2(aggregation(Spec), Other).
 
 
 /*======================================================================*/

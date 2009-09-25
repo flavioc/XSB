@@ -33,7 +33,8 @@ cp_opt0([pred(Sym,Pscs,Oth)|CList0],Outlist,Symtab):-
 	cp_opt_block(pred(Sym,Pscs,Oth), pred(Sym1,Pscs1,Oth1), 
 					 Symtab,Switch),
 	(Switch =:= 0 -> Outlist = [pred(Sym,Pscs,Oth)|CList1]
-	 ; Outlist = [pred(Sym1,Pscs,Oth),pred(Sym,Pscs1,Oth1)|CList1]),
+	 ; Outlist = [pred(Sym1,Pscs,Oth),pred(Sym,Pscs1,Oth1)|CList1]
+	),
 	cp_opt0(CList0, CList1,Symtab).
 cp_opt0([One|Rest],[One|Rest1],Symtab):-
 	cp_opt0(Rest,Rest1,Symtab).
@@ -72,7 +73,7 @@ cp_opt_block(pred(Sym,Pscs,Oth),pred(Sym1,Pscs1,Oth1),Symtab,BigPicture):-
 	BigPicture is Hc + Res,
 	cp_opt_block1(BigPicture,
 		      pred(Sym,Pscs,Oth),pred(Sym1,Pscs1,Oth1),Symtab).
-	
+
 cp_opt_block1(0,_,_,_):-!.
 cp_opt_block1(_,pred(Sym,_Pscs,_Oth),pred(Sym1,Pscs1,Oth1),Symtab):-
 	sym_name(Sym,Pred,Arity),
@@ -122,3 +123,120 @@ cpo_index_argpat(varocc(_), v, v).
 cpo_index_argpat(string(_), l, l).
 cpo_index_argpat(structure(Sym,_), l,l) :- sym_name(Sym, '.', 2).
 cpo_index_argpat(structure(Sym,_), s,Sym).
+
+/************************************************************************/
+/* Given an aggregate declaration, now of the form, e.g.
+:- table short_path(_,_,min(_,_,_)*99999999).
+
+The user is responsible for having defined the binary function min/3.
+
+transforms clauses of short_path adding:
+     short_path(A,B,C) :- bagReduce(X,'_$short_path'(A,B,X),C,min(_,_),99999999).
+and modifying short_path clauses as:
+     '_$short_path'(..) :- short_path_body1.
+     '_$short_path'(..) :- short_path_body2.
+
+Legal aggregation specs are of the form:
+   reduceFun(_,_,_)*Identity  which will be transformed as above.
+   reduceFun/3*Identity  which will be transformed similarly
+   ordRel(_,_)  which will cause a tranformation to (e.g.)
+       short_path(A,B,C) :- bagPO(X,'_$short_path'(A,B,X),C,ordRel(_,_)).
+   ordRel/2  which will be treated as ordRel(_,_).
+
+									*/
+/************************************************************************/
+aggregation_transform(module(Symtab,DcList,ClList,QrList),
+		      module(Symtab,DcList,ClList1,QrList)) :-
+	aggr_trans(ClList,ClList1,Symtab).
+
+aggr_trans([],[],_SymTab).
+aggr_trans([pred(Sym,Pscs,Oth)|ClList0],ClList,SymTab) :-
+	sym_type(Sym,aggregation(Spec)),
+	!,
+	(extract_aggr_spec(Spec,ArgNo,ExistArgList,OpSpec,OpArity,Iden)
+	 ->	aggr_trans_pred(Sym,Pscs,Oth,ArgNo,ExistArgList,OpSpec,OpArity,Iden,NewClList,SymTab)
+	 ;	warning(('Illegal aggregation specification: ',Spec)),
+		NewClList = [pred(Sym,Pscs,Oth)]
+	),
+	append(NewClList,ClList1,ClList),
+	aggr_trans(ClList0,ClList1,SymTab).
+aggr_trans([Pred|ClList0],[Pred|ClList],SymTab) :-
+	aggr_trans(ClList0,ClList,SymTab).
+
+aggr_trans_pred(Sym,Pscs,Oth,ArgNo,ExistArgList,OpSpec,OpArity,Iden,[pred(Sym1,Pscs,Oth)|ClList2],
+		SymTab) :-
+	sym_name(Sym,Pred,Arity),
+	transform_pred(Pred,Pred1),
+	length(Args,Arity),
+	NewTerm =.. [Pred1|Args],
+	copy_term(OpSpec,OpSpec1),
+	length(PArgs,Arity),
+	length(P1Args,Arity),
+	equate_but_argno(PArgs,P1Args,1,ExistArgList,ExistVarList,Var,Var1,ArgNo),
+	PredTerm =.. [Pred|PArgs], Pred1Term =.. [Pred1|P1Args],
+	(OpArity =:= 2		% bagPO
+	 ->	parse_preddef(PredTerm,
+			      bagPO(Var1,ExistVarList^Pred1Term,Var,OpSpec1),
+			      ClList2,SymTab),
+		ensure_bagPO_defined(SymTab)
+	 ;	parse_preddef(PredTerm,
+			      bagReduce(Var1,ExistVarList^Pred1Term,Var,OpSpec1,Iden),
+			      ClList2,SymTab),
+		ensure_bagReduce_defined(SymTab)
+	),
+	parse_preddef(NewTerm,true,[pred(Sym1,_,_)],SymTab).
+
+equate_but_argno([],[],_,[],[],_,_,_).
+equate_but_argno([X|PArgs],[Y|P1Args],CurArg,ArgList,VarList,A,B,ArgNo) :-
+	(ArgNo =:= CurArg
+	 ->	A = X, Y = B,
+		ArgList0 = ArgList, VarList0 = VarList
+	 ;	(ArgList = [CurArg|ArgList0]
+		 ->	VarList = [Y|VarList0]
+		 ;	X = Y,
+			ArgList0 = ArgList, VarList0 = VarList
+		)
+	),
+	CurArg1 is CurArg + 1,
+	equate_but_argno(PArgs,P1Args,CurArg1,ArgList0,VarList0,A,B,ArgNo).
+
+extract_aggr_spec(Spec,ArgNo,ExistArgList,OpSpec,OpArity,Iden) :-
+	functor(Spec,_,Arity),
+	get_aggr_spec0(1,Spec,Arity,ExistArgList,ArgNo,OpSpec0),
+	(OpSpec0 = OpSpec*Iden
+	 ->	true
+	 ;	Iden = no_identity,
+		OpSpec = OpSpec0
+	),
+	(OpSpec = _/OpArity
+	 ->	true
+	 ;	functor(OpSpec,_,OpArity)
+	).
+
+get_aggr_spec0(ArgNo,Spec,Arity,ExistArgList,OpArgNo,OpSpec) :-
+	(ArgNo > Arity
+	 ->	ExistArgList = []
+	 ;	arg(ArgNo,Spec,ArgVal),
+		ArgNo1 is ArgNo+1,
+		(nonvar(ArgVal)
+		 ->	(ArgVal == '^'
+			 ->	ExistArgList = [ArgNo|EAL1],
+				get_aggr_spec0(ArgNo1,Spec,Arity,EAL1,OpArgNo,OpSpec)
+			 ;	var(OpArgNo),  % only set once
+				OpSpec = ArgVal, OpArgNo = ArgNo,
+				get_aggr_spec0(ArgNo1,Spec,Arity,ExistArgList,OpArgNo,OpSpec)
+			)
+		 ;	get_aggr_spec0(ArgNo1,Spec,Arity,ExistArgList,OpArgNo,OpSpec)
+		)
+	).
+
+ensure_bagReduce_defined(SymTab) :-
+	Mod = aggregs,
+	sym_insert(Mod,0,[module],SymTab,_),
+	sym_insert(bagReduce,5,im(Mod),SymTab,_).
+
+ensure_bagPO_defined(SymTab) :-
+	Mod = aggregs,
+	sym_insert(Mod,0,[module],SymTab,_),
+	sym_insert(bagPO,4,im(Mod),SymTab,_).
+

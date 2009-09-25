@@ -30,7 +30,7 @@
 :- export file_names/11.
 
 :- import spec/2 from spec.
-:- import cp_opt/2 from cp_opt.
+:- import cp_opt/2, aggregation_transform/2 from cp_opt.
 :- import str_cat/3, stat_flag/2 from machine.
 :- import useinfer/3 from useinfer.
 %%:- import db_optimize/4 from db_opt.

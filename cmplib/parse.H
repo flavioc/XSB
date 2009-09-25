@@ -38,13 +38,13 @@
 :- import singleton_check/2 from singlton.
 :- import add_hilog_symbol/1 from hilogsym.
 :- import conset/2, conget/2 from gensym.
-:- import append/3, memberchk/2, log_ith/3, copy_term/2 from basics.
+:- import append/3, memberchk/2, log_ith/3, copy_term/2, member/2 from basics.
 :- import check_file_compiler_options/1, 
              error/1, message/1, option/1, setoptions1/1, warning/1 from auxlry.
 :- import sym_insert/5, sym_propin/2, sym_complete/1, sym_prop/2,
 	  add_new_clause/2, clause_listify/2
      from symtab.
-:- import functor/3, seen/0, file_exists/1, '=..'/2, atom/1, integer/1, 
+:- import functor/3, seen/0, file_exists/1, '=..'/2, atom/1, integer/1,
 	  op/3, (index)/3, (index)/2, real/1, see/1, expand_term/2, (=..)/2,
 	  '\='/2,
           % seeing/1, 

@@ -509,15 +509,15 @@ parse_directive(thread_shared(PredCList),_QrList,SymTab,_ModName,_ModStruct) :- 
 parse_directive(thread_private(PredCList),_QrList,SymTab,_ModName,_ModStruct) :- !,
 	parse_comma_list(PredCList,SymTab,[(thread_private)],(thread_private)).
 parse_directive(table(as(PredCList,Options)),QrList,SymTab,ModName,ModStruct) :- !,
-	parse_comma_list(PredCList,SymTab,[tabled],(table)),
+	parse_comma_list_table(PredCList,SymTab),
 	parse_table_options(Options,PredCList,QrList,SymTab,ModName,ModStruct).
 parse_directive(table(PredCList),_QrList,SymTab,_ModName,_ModStruct) :- !,
-	parse_comma_list(PredCList,SymTab,[tabled],(table)).
+	parse_comma_list_table(PredCList,SymTab).
 parse_directive(use_subsumptive_tabling(PredCList),_QrList,SymTab,_ModName,_ModStruct) :- !,
-	parse_comma_list(PredCList,SymTab,[tabled],(table)),  % implies tabled
+	parse_comma_list_table(PredCList,SymTab),  % implies tabled
 	parse_comma_list(PredCList,SymTab,[(use_subsumptive_tabling)],(use_subsumptive_tabling)).
 parse_directive(use_variant_tabling(PredCList),_QrList,SymTab,_ModName,_ModStruct) :- !,
-	parse_comma_list(PredCList,SymTab,[tabled],(table)),  % implies tabled
+	parse_comma_list_table(PredCList,SymTab),  % implies tabled
 	parse_comma_list(PredCList,SymTab,[(use_variant_tabling)],(use_variant_tabling)).
 parse_directive(dynamic(as(PredCList,Options)),QrList,SymTab,ModName,ModStruct) :- !,
 	parse_comma_list_dyn(PredCList,SymTab),
@@ -726,6 +726,50 @@ parse_comma_list(Spec, SymTab, SymbolProp, _Directive) :-
 parse_comma_list(X, _, _, Directive) :-
 	warning(('Non predicate specification "', X, 
 		 '" found in ', Directive, ' directive. Ignored!')).
+
+parse_comma_list_table((Pred, Preds), SymTab) :- 
+	!,
+	parse_comma_list_table(Pred, SymTab),
+	parse_comma_list_table(Preds, SymTab).
+parse_comma_list_table(P/A, SymTab) :- 
+	atom(P), integer(A), 
+	!,
+	sym_insert(P, A, [tabled], SymTab, _).
+parse_comma_list_table(Spec, SymTab) :- 
+	is_most_general_term(Spec),
+	!,
+	functor(Spec,P,A),
+	sym_insert(P, A, [tabled], SymTab, _).
+parse_comma_list_table(Spec, SymTab) :- 
+	is_aggregation_spec(Spec),
+	!,
+	functor(Spec,P,A),
+	sym_insert(P, A, [aggregation(Spec)], SymTab, _).
+parse_comma_list_table(X, _) :-
+	warning(('Non predicate specification "', X, 
+		 '" found in table directive. Ignored!')).
+
+is_aggregation_spec(Spec) :-
+	Spec =.. [_|Args],
+	get_aggregation_spec(Args,Arg),
+	(Arg = P/3* _Id, atom(P)
+	 ;
+	 Arg = Skel* _Id, functor(Skel,_,3)
+	 ;
+	 Arg = P/2, atom(P)
+	 ;
+	 functor(Arg,_,2)
+	),
+	!.
+
+get_aggregation_spec([A|Args],Arg) :-
+	(var(A)
+	 ->	get_aggregation_spec(Args,Arg)
+	 ; A == '^'
+	 ->	get_aggregation_spec(Args,Arg)
+	 ;	\+ (member(B,Args), (nonvar(B) ; B \== '^')),
+		Arg = A
+	).
 
 parse_comma_list_dyn((Spec,Specs),SymTab) :- !,
 	parse_comma_list_dyn(Spec,SymTab),
