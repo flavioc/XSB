@@ -274,7 +274,8 @@ subseq([H|T],S,[H|C]) :- subseq(T,S,C).
 
 %---
 % A not so naive reverse
-reverse(L, R) :- reverse_acc(L, [], R).
+reverse(L, R) :- nonvar(L), !, reverse_acc(L, [], R).
+reverse(L, R) :- reverse_acc(R, [], L).
 
 reverse_acc([], Acc, Acc).
 reverse_acc([Head|Tail], Acc, Reversed) :-
