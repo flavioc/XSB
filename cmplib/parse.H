@@ -53,7 +53,7 @@
    :- import retractall/1, retract/1, asserta/1, (dynamic)/1 from assert.
 :- import mpa_to_skel/2 from file_op.
 :- import existence_error/4,misc_error/1, syntax_error/1, domain_error/5, 
-   type_error/4, check_ground/3
+   check_ground/3
    from error_handler.
 :- import file_names/11 from compile.
 :- import search_module/6 from consult.
