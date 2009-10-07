@@ -38,7 +38,7 @@
 :- import singleton_check/2 from singlton.
 :- import add_hilog_symbol/1 from hilogsym.
 :- import conset/2, conget/2 from gensym.
-:- import append/3, memberchk/2, log_ith/3, copy_term/2, member/2, reverse/2 from basics.
+:- import append/3, memberchk/2, log_ith/3, copy_term/2, member/2 from basics.
 :- import check_file_compiler_options/1, 
              error/1, message/1, option/1, setoptions1/1, warning/1 from auxlry.
 :- import sym_insert/5, sym_propin/2, sym_complete/1, sym_prop/2,
@@ -55,7 +55,6 @@
 :- import existence_error/4,misc_error/1, syntax_error/1, domain_error/5, 
    check_ground/3
    from error_handler.
-:- import file_names/11 from compile.
 :- import search_module/6 from consult.
 
 :- import spawn_process/5, process_control/2 from shell.
@@ -63,6 +62,7 @@
 
 :- import fmt_write_string/3, file_close/1 from file_io.
 :- import file_size/2 from file_io.
+:- import concat_atom/2 from string.
 
 :- import standard_symbol/3 from std_xsb.
 

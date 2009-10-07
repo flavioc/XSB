@@ -431,15 +431,10 @@ parse_directive(include(FileIn), _QrList,_SymTab,ModName,ModStruct) :- !,
 	(var(FileIn)
 	 ->	error(('Module cannot be a variable. Include: '))
           ;	(FileIn = library(File1) -> File = File1 ; File = FileIn),
-		(file_exists(FileIn)
-			 ->   search_module(File, _Dir, _Newame, _SExt, Base, _Obj),
-			      get_extension(File,Ext),
-			      file_names(Base,Ext,PFile, _HFile, _OFile, _AFile,_DFile,
-			      		   _SpecFile, _TIFile, _TableFile, _OptFile),
-%					   console_writeln(before(ModStruct)),
-			      parse1(ModName,PFile,ModStruct)
-%					   console_writeln(after(ModStruct))
-			    ;   existence_error('file/module',File,compile/1,1))
+		(search_module(File, _Dir, _Newame, Ext, Base, _Obj) ->
+		    concat_atom([Base,'.',Ext],PFile),
+		    parse1(ModName,PFile,ModStruct)
+		;   existence_error('file/module',File,compile/1,1))
 	).
 % for compiled-code indexing
 parse_directive(index(X), _QrList,SymTab,_ModName,_ModStruct) :- !,
@@ -998,6 +993,8 @@ filestack_push(File):-
 %		      		      console_writeln(popping(Str))
 %				      ; console_writeln(outofstack)).
 filestack_pop(Str):-  retract(parsing_file(Str)),!.
+
+end_of_file.
 
 get_extension(File,Ext):- 
 	atom_codes(File,List),
