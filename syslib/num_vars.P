@@ -22,7 +22,7 @@
 ** 
 */
 
-:- compiler_options([xpp_on]).
+:- compiler_options([xpp_on,sysmod]).
 
 #include "celltags_xsb.h"
 
@@ -35,6 +35,7 @@
 %   value FirstVar+2, and so on.  The last variable in Term has the value 
 %   LastVar-1.
 
+%:- import writeln/1 from standard.
 numbervars(Y,I,J) :- term_type(Y,T),
 	(T =:= XSB_FREE
 	 ->	Y='$VAR'(I), J is I+1
