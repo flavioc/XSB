@@ -433,7 +433,8 @@ parse_directive(include(FileIn), _QrList,_SymTab,ModName,ModStruct) :- !,
           ;	(FileIn = library(File1) -> File = File1 ; File = FileIn),
 		(file_exists(FileIn)
 			 ->   search_module(File, _Dir, _Newame, _SExt, Base, _Obj),
-			      file_names(Base,'.P',PFile, _HFile, _OFile, _AFile,_DFile,
+			      get_extension(File,Ext),
+			      file_names(Base,Ext,PFile, _HFile, _OFile, _AFile,_DFile,
 			      		   _SpecFile, _TIFile, _TableFile, _OptFile),
 %					   console_writeln(before(ModStruct)),
 			      parse1(ModName,PFile,ModStruct)
@@ -997,6 +998,17 @@ filestack_push(File):-
 %		      		      console_writeln(popping(Str))
 %				      ; console_writeln(outofstack)).
 filestack_pop(Str):-  retract(parsing_file(Str)),!.
+
+get_extension(File,Ext):- 
+	atom_codes(File,List),
+	reverse(List,Rlist),
+	get_extension_1(Rlist,Rext),
+	reverse(Rext,Ext).
+
+get_extension_1([46|_],[46]):- !.
+get_extension_1([H|T],[H|T1]):- 
+	get_extension_1(T,T1).
+
 
 /* ---------------------- end of file parse.P ------------------------- */
 
