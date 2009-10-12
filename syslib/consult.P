@@ -389,16 +389,7 @@ add_lib_dir(Root,(A,B)) :- !,
 	add_lib_dir(Root,A),
 	add_lib_dir(Root,B).
 add_lib_dir(Root,Path) :-
-	add_lib_dir1(Root,Path).
-
-add_lib_dir1(Root,Path) :-
-	expand_filename([Root,'/',Path], FullPath),
-	(library_directory(FullPath)
-	 ->	true
-	 ;	assert(library_directory(FullPath))
-	).
-
-	
+	add_lib_dir1([Root,'/',Path]).
 
 /*-------------define load_dyn for reading in dynamic predicates -----*/
 
