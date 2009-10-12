@@ -23,7 +23,7 @@
 ** 
 */
 
-:- export 	  add_lib_dir/1,
+:- export 	  add_lib_dir/1, add_lib_dir/2,
 	  compile/1, compile/2, search_module/6,
           consult/1, consult/2, '.'/2, reconsult/1, reconsult/2,
 	  current_loaded_file/1,

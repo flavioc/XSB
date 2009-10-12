@@ -328,9 +328,25 @@ path_sysop(isabsolute,Filename) :- !,
 	is_absolute_filename(Filename).
 path_sysop(expand,Filename,ExpandedName) :- !,
 	expand_filename(Filename,ExpandedName).
+path_sysop(cwd_ancestordir,BaseName,ExpandedName) :- !,
+	cwd(CurrDir),
+	(get_ancestor(CurrDir,BaseName,ExpandedName)
+	 ->	true
+	 ;	abort(('[PATH_SYSOP]: No such ancestor directory: ', BaseName))
+	).
 path_sysop(X,_,_) :- abort(('[PATH_SYSOP]: Invalid request for path_sysop/3, ', X)).
 path_sysop(X,_) :- abort(('[PATH_SYSOP]: Invalid request for path_sysop/2, ', X)).
 
+
+get_ancestor(CurrDir,BaseName,AncDir) :-
+	CurrDir \== '',
+	CurrDir1 = [CurrDir,'/.'],
+	path_sysop(basename,CurrDir1,CurrDirName),
+	(CurrDirName = BaseName
+	 ->	AncDir = CurrDir
+	 ;	path_sysop(dirname,CurrDir1,ParentDir),
+		get_ancestor(ParentDir,BaseName,AncDir)
+	).
 
 %----------------------------------------------------------------------------------------------------
 % Stream and Alias Checking.
