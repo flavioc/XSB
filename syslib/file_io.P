@@ -332,7 +332,10 @@ path_sysop(cwd_ancestordir,BaseName,ExpandedName) :- !,
 	cwd(CurrDir),
 	(get_ancestor(CurrDir,BaseName,ExpandedName)
 	 ->	true
-	 ;	abort(('[PATH_SYSOP]: No such ancestor directory: ', BaseName))
+	 ;	(getenv([BaseName,'_HOME'],ExpandedName)
+		 ->	true
+		 ;	abort(('[PATH_SYSOP]: No such ancestor directory and no environment variable for: ', BaseName))
+		)
 	).
 path_sysop(X,_,_) :- abort(('[PATH_SYSOP]: Invalid request for path_sysop/3, ', X)).
 path_sysop(X,_) :- abort(('[PATH_SYSOP]: Invalid request for path_sysop/2, ', X)).

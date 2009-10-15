@@ -26,7 +26,7 @@
 
 :- import stat_flag/2, file_function/7, file_function/3,
 	parse_filename/4, is_absolute_filename/1,
-	expand_filename/2,
+	expand_filename/2, getenv/2,
 	sys_system/7, formatted_io/5 
       from machine.
 %%%:- import conpsc/2, psc_set_type/2, psc_set_prop/2 from machine.
