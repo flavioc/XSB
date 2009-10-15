@@ -513,7 +513,10 @@ load_dyn1(Rfname,Dir) :-
 	),
 	seen,
 	see(OldFile),
-	time_message(T0,(Rfname,' dynamically loaded')).
+	(   banner_control(quietload)
+	->  true
+	;   time_message(T0,(Rfname,' dynamically loaded'))
+	).
 load_dyn1(Rfname,Dir) :- 
 	%% If we are restarting due to gpp, then reset needs_restart.
 	conget(needs_restart,1), conset(needs_restart, 0),
@@ -606,7 +609,10 @@ load_dync1(Rfname,Dir) :-
 	),
 	seen,
 	see(OldFile),
-	time_message(T0,(Rfname,' dynamically loaded')).
+	(   banner_control(quietload)
+	->  true
+	;   time_message(T0,(Rfname,' dynamically loaded'))
+	).
 load_dync1(Rfname,Dir) :- 
 	%% If we are restarting due to gpp, then reset needs_restart.
 	conget(needs_restart,1), conset(needs_restart, 0),
