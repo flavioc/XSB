@@ -126,7 +126,12 @@ cpo_index_argpat(structure(Sym,_), s,Sym).
 
 /************************************************************************/
 /* Given an aggregate declaration, now of the form, e.g.
-:- table short_path(_,_,min(_,_,_)*99999999).
+:- table short_path(_,_,min(_,_,_)*99999999)
+
+In general the spec is either 
+    POTerm where POTerm is F/2 or POTerm = f(_,_)
+    Jointerm*Id where Jointerm is f/3 or JoinTerm = f(_,_,_)
+                      and Id = term or ID = i/1.
 
 The user is responsible for having defined the binary function min/3.
 
@@ -163,6 +168,8 @@ aggr_trans([pred(Sym,Pscs,Oth)|ClList0],ClList,SymTab) :-
 aggr_trans([Pred|ClList0],[Pred|ClList],SymTab) :-
 	aggr_trans(ClList0,ClList,SymTab).
 
+%:- import console_writeln/1 from standard.
+
 aggr_trans_pred(Sym,Pscs,Oth,ArgNo,ExistArgList,OpSpec,OpArity,Iden,[pred(Sym1,Pscs,Oth)|ClList2],
 		SymTab) :-
 	sym_name(Sym,Pred,Arity),
@@ -179,12 +186,21 @@ aggr_trans_pred(Sym,Pscs,Oth,ArgNo,ExistArgList,OpSpec,OpArity,Iden,[pred(Sym1,P
 			      bagPO(Var1,ExistVarList^Pred1Term,Var,OpSpec1),
 			      ClList2,SymTab),
 		ensure_bagPO_defined(SymTab)
-	 ;	parse_preddef(PredTerm,
-			      bagReduce(Var1,ExistVarList^Pred1Term,Var,OpSpec1,Iden),
-			      ClList2,SymTab),
+	 ;	check_identity(Iden,Pred,Arity),
+	        (Iden = F/1 -> 
+	           functor(Term,F,1), arg(1,Term,NewId),
+	           Join = (Term , bagReduce(Var1,ExistVarList^Pred1Term,Var,OpSpec1,NewId))
+	         ; Join = bagReduce(Var1,ExistVarList^Pred1Term,Var,OpSpec1,Iden) ),
+	        parse_preddef(PredTerm,Join,ClList2,SymTab),
 		ensure_bagReduce_defined(SymTab)
 	),
 	parse_preddef(NewTerm,true,[pred(Sym1,_,_)],SymTab).
+
+:- import syntax_error/1 from error_handler.
+
+check_identity(no_identity,Pred,Arity):- !,
+	syntax_error(['Improper join specification in tabling declaration for ',Pred,'/',Arity]).
+check_identity(_,_,_).
 
 equate_but_argno([],[],_,[],[],_,_,_).
 equate_but_argno([X|PArgs],[Y|P1Args],CurArg,ArgList,VarList,A,B,ArgNo) :-
@@ -203,7 +219,7 @@ equate_but_argno([X|PArgs],[Y|P1Args],CurArg,ArgList,VarList,A,B,ArgNo) :-
 extract_aggr_spec(Spec,ArgNo,ExistArgList,OpSpec,OpArity,Iden) :-
 	functor(Spec,_,Arity),
 	get_aggr_spec0(1,Spec,Arity,ExistArgList,ArgNo,OpSpec0),
-	(OpSpec0 = OpSpec*Iden
+	(OpSpec0 = OpSpec-Iden
 	 ->	true
 	 ;	Iden = no_identity,
 		OpSpec = OpSpec0
