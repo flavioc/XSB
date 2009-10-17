@@ -31,6 +31,7 @@
 	get_attr/3,
 	put_attr/3,
 	del_attr/2,
+	install_attribute_portray_hook/3,
 	install_verify_attribute_handler/4
    from machine.
 :- import sort/2 from setof.
@@ -200,6 +201,23 @@ attr_unify_hook1(Other,List) :-
 	!.	
 
 attr_unify_hook1(_Other,[]).
+
+:- install_attribute_portray_hook(when,Attr,portray_when(Attr)).
+
+portray_when(Attr):- 
+	portray_whenlist(Attr).
+
+portray_whenlist([]).
+portray_whenlist([H]):- !,
+        portray_trigger(H).
+portray_whenlist([H|T]):- 
+        portray_trigger(H),nl,
+	portray_whenlist(T).
+
+portray_trigger(trigger_nonvar(V,Constraint)):- !,
+	    write('trigger '),write(Constraint),write(' when nonvar'(V)).
+portray_trigger(trigger_ground(V,Constraint)):- !,
+	    write('trigger '),write(Constraint),write(' when ground'(V)).
 
 call_list([]) :- !.
 
@@ -429,3 +447,4 @@ lookup_variable_id(Var,_Id) :-
 	write(' Does not have an Id assigned to it. It has not been globalized. ###'),
 	nl,
 	fail.
+
