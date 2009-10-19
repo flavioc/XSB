@@ -118,6 +118,7 @@ inline_builtin(str_match, 5, STR_MATCH).
 inline_builtin(dirname_canonic, 2, DIRNAME_CANONIC).
 inline_builtin(psc_insert, 4, PSC_INSERT).
 inline_builtin(psc_import, 3, PSC_IMPORT).
+inline_builtin(psc_import_as, 2, PSC_IMPORT_AS).
 
 inline_builtin(psc_insertmod, 3, PSC_INSERTMOD).
 
@@ -281,3 +282,4 @@ builtin_function(round, 1, 24).
 builtin_function(ceiling, 1, 25).
 builtin_function(sign, 1, 26).
 builtin_function(lgamma, 1, 28).
+builtin_function(erf, 1, 29).
