@@ -46,7 +46,7 @@
 	  code_call/3, code_load/3, intern_string/2,
 	  stat_flag/2, stat_set_flag/2, expand_filename/2,
      	  tilde_expand_filename/2, is_absolute_filename/1,
-	  unload_seg/1, machine_file_exists/1, call0/1,
+	  unload_seg/1, call0/1,
               formatted_io/5, slash/1, dirname_canonic/2, xsb_backtrace/1
    from machine.
 %%:- import call_xsb_hook/3, xsb_undefined_predicate_hook/1 from xsb_hook.

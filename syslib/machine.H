@@ -79,6 +79,7 @@
         dirname_canonic/2,
 	psc_insert/4, 
 	psc_import/3, 
+	psc_import_as/2, 
 	psc_insertmod/3,
 	substring/4,
 	str_len/2, 

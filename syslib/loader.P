@@ -1,5 +1,5 @@
 /* File:      loader.P
-** Author(s): Ernie Johnson, Jiyang Xu, Kostis F. Sagonas
+** Author(s): Ernie Johnson, Jiyang Xu, Kostis F. Sagonas, David S. Warren
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 
 ** Copyright (C) The Research Foundation of SUNY, 1986, 1993-1998
@@ -46,6 +46,9 @@
 #include "psc_defs.h"
 #include "thread_defs_xsb.h"
 #include "extensions_xsb.h"
+#include "builtin.h"
+#include "syscall_xsb.h"
+#include "system_defs_xsb.h"
 
 %% Provide tests for the respective OS.
 %% windows_os_loader is used only here and in parse (and in nl).
@@ -72,9 +75,25 @@ windows_os_loader :-  stat_flag(CONFIG_NAME, ConfigurationC),
 local_fmt_write_string(S,Fmt,A) :- formatted_io(FMT_WRITE_STRING, S,Fmt,A,_).
 local_fmt_write(File,Fmt,A) :- formatted_io(FMT_WRITE, File,Fmt,A,_).
 
+local_file_exists(File) :-
+	local_sys_syscall(SYS_access, Res, File, 'r'), Res =:= 0.
+
+local_sys_syscall(_CallNo, _Res, _A1, _A2) :- '_$builtin'(SYS_SYSCALL).
+
+local_newerthan(File1,File2) :-
+	Time1 = time(_,_),
+	Time2 = time(_,_),
+	sys_system(STAT_FILE_TIME,File1,Time1,_,_,_,_),
+	sys_system(STAT_FILE_TIME,File2,Time2,_,_,_,_),
+	Time1 @>= Time2.
+
+sys_system(STAT_FILE_TIME,FileName,Time, _,_,_,_) :-
+	sys_system(STAT_FILE_TIME,FileName,Time, _,_,_,_).
+
+local_append([],L,L).
+local_append([X|L1],L2,[X|L3]) :- local_append(L1,L2,L3).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
 
 :-	set_inthandler('_$load_undef'(_), MYSIG_UNDEF),		% MYSIG_UNDEF
 	set_current_module,
@@ -195,8 +214,8 @@ load_library_directories :-
 %%	str_cat(SiteFileName, XSB_SRC_EXTENSION_ATOM, SiteFileNameP),
 %%	str_cat(SiteFileName, XSB_OBJ_EXTENSION_ATOM, SiteFileNameO),
 	%% Site init file isn't mandatory
-	( (machine_file_exists([SiteFileName,XSB_SRC_EXTENSION_ATOM])
-	   ; machine_file_exists([SiteFileName,XSB_OBJ_EXTENSION_ATOM])) ->
+	( (local_file_exists([SiteFileName,XSB_SRC_EXTENSION_ATOM])
+	   ; local_file_exists([SiteFileName,XSB_OBJ_EXTENSION_ATOM])) ->
 		reconsult(SiteFileName)
 	        ; true
 	),
@@ -207,8 +226,8 @@ load_library_directories :-
 %%	str_cat(UsrFileN, XSB_SRC_EXTENSION_ATOM, UserFileNameP),
 %%	str_cat(UsrFileN, XSB_OBJ_EXTENSION_ATOM, UserFileNameO),
 	%% User init file isn't mandatory
-	( (machine_file_exists([UsrFileN, XSB_SRC_EXTENSION_ATOM])
-	   ; machine_file_exists([UsrFileN, XSB_OBJ_EXTENSION_ATOM])) ->
+	( (local_file_exists([UsrFileN, XSB_SRC_EXTENSION_ATOM])
+	   ; local_file_exists([UsrFileN, XSB_OBJ_EXTENSION_ATOM])) ->
 		reconsult(UsrFileN)
 		; true
         ).
@@ -361,41 +380,59 @@ not_handling_undef_pred :- conget('_$_$_undefhook',0).
 */
 
 /*
- *  Loads and executes the directives of a module.  The file containing
+ *  Loads and executes the directives of a module.  The file(s) containing
  *  the module is constructed using search_file/3, below.
  */
-
 load(ModName) :-
-	'_$savecp'(B),
 	stat_flag(DEBUG_ON, Debug_on),
-	(   Debug_on =:= 1
-	->  local_fmt_write(STDDBG, "[ load module %s ]\n", arg(ModName))
-	;   true
+	(Debug_on =:= 1
+	 ->	local_fmt_write(STDDBG, "[ load module %s ]\n", arg(ModName))
+	 ;	true
 	),
-	(   search_file(ModName, FileName_O, XSB_OBJ_EXTENSION_ATOM),
-	    code_load(FileName_O, Init, 0), % use the C loader
-	    (	Init =\= 0	% load succeeded
-	    ->	'_$cutto'(B),
-		(   Init =\= 4 % prolog byte-code succeeded
-		->  ll_code_call(Init, true, 2), % call '_$main'
-		    unload_seg(Init) % delete code for '_$main'
-		;   true	% load foreign obj code succeeded
+	(search_file(ModName, [FileName_O,FileName_P,FileName_H],
+		     [XSB_OBJ_EXTENSION_ATOM,XSB_SRC_EXTENSION_ATOM,XSB_HDR_EXTENSION_ATOM]),
+	 (local_file_exists(FileName_O),ObjExists=1 ; local_file_exists(FileName_P),ObjExists=0)
+	 ->	(ObjExists =:= 1
+		 ->	(system_mod(FileName_O)	% DONT CHECK TIME but load byte-code regardless if in XSB system 
+			 ->	do_the_load(FileName_O) % (allows self recompile, could just exempt cmplib and syslib)
+			 ;	(local_file_exists(FileName_P)
+				 ->	(local_newerthan(FileName_P,FileName_O) % check if source is newer
+					 ->	compile_and_load(FileName_P,ModName)
+					 ; local_file_exists(FileName_H),
+					   local_newerthan(FileName_H,FileName_O)
+					 ->	compile_and_load(FileName_P,ModName)
+					 ;	do_the_load(FileName_O) % load byte-code, it's newest
+					)
+				 ;	do_the_load(FileName_O) % load byte-code, no P-file
+				)
+			)
+		 ;	compile_and_load(FileName_P,ModName) % no byte-code file, compile sourcefile
 		)
-	    )
-	->  true
-	%% If OBJ file doesn't exist or doesn't load,
-	%% but SRC file exists somewhere on the load path
-	%% then recompile the SRC file and load it.
-	;   (search_file(ModName, FileName_P, XSB_SRC_EXTENSION_ATOM),
-	     machine_file_exists(FileName_P))
-	->	compile(FileName_P),
-		load(ModName)
-	;   tilde_expand_filename(ModName,ExpandedModName),
-	    existence_error(module,ExpandedModName,load,1)
-%	    throw(error(existence_error(module,ExpandedModName),
-%			['Module ', ExpandedModName,
-%			 ' is not found in XSB library directories']))
+	 ;	tilde_expand_filename(ModName,ExpandedModName), % file not found
+		existence_error(module,ExpandedModName,load,1)
 	).
+
+% actually load the byte-code file
+do_the_load(FileName_O) :-
+	code_load(FileName_O, Init, 0), % use the C loader
+	(Init =\= 0		% load succeeded
+	 ->	(Init =\= 4 % prolog byte-code succeeded
+		 ->	ll_code_call(Init, true, 2), % call '_$main'
+			unload_seg(Init) % delete code for '_$main'
+		 ;	true	% load foreign obj code succeeded
+		)
+	).
+
+% compile the source file, and then reload the module
+compile_and_load(FileNameList,ModName) :-
+	str_cat_list(FileNameList,FileName_P),
+	compile(FileName_P),
+	load(ModName).
+
+str_cat_list([Seg],Seg) :- !.
+str_cat_list([Seg|Segs],AllSegs) :-
+	str_cat_list(Segs,AllSegs1),
+	str_cat(Seg,AllSegs1,AllSegs).
 
 /*
  *  To use code_call/3, it must be the last clause in a rule.
@@ -404,24 +441,32 @@ load(ModName) :-
 
 ll_code_call(A,B,C) :- code_call(A,B,C).
 
-
-
 /*
  *  Takes a filename (INT or STRING encoded pointer) and returns an
- *  absolute filename (STRING) with Extension
- *  (e.g., XSB_SRC_EXTENSION_ATOM, XSB_OBJ_EXTENSION_ATOM) added to it.
+ *  list of absolute filename (STRING) each with Extension from Extensions
+ *  (e.g., [XSB_SRC_EXTENSION_ATOM, XSB_OBJ_EXTENSION_ATOM] added to it.
  *  The extension should NOT already be a part of the incoming ModName.
  */
 
-search_file(ModName, AbsFileName, Extension) :- 
+search_file(ModName, AbsFileNames, Extensions) :- 
 	tilde_expand_filename(ModName,ExpandedModName),
-	( is_absolute_filename(ExpandedModName)
-	->  WholePath = ExpandedModName
-	;   libpath(LibPath),
-	    str_cat(LibPath, ExpandedModName, WholePath)
+	(is_absolute_filename(ExpandedModName)
+	 ->	WholePath = [ExpandedModName]
+	 ;	libpath(LibPath),
+		WholePath = [LibPath,ExpandedModName]
 	),
-	str_cat(WholePath, Extension, AbsFileName).
+	app_list(Extensions,WholePath,AbsFileNames).
 
+app_list([],_WholePath,[]).
+app_list([Extension|Extensions],WholePath,[AbsFileName|AbsFileNames]) :-
+	local_append(WholePath,[Extension],AbsFileName),
+	app_list(Extensions,WholePath,AbsFileNames).
+
+system_mod([FileName|_]) :- 
+	stat_flag(INSTALL_DIR,InstallDir1),
+	intern_string(InstallDir1, InstallDir),
+	str_match(InstallDir,FileName,f,0,_). % could probably be =
+	
 
 /*
  *  Used in searching for a file.  Directory paths are returned in the

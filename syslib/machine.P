@@ -163,6 +163,7 @@ dirname_canonic(File, Canonic) :- dirname_canonic(File, Canonic).
 /* for efficiency reasons, the following predicates are also implemented */
 psc_insert(Name, Arity, PSC, MName) :- psc_insert(Name, Arity, PSC, MName).
 psc_import(Pname, Arity, MName) :- psc_import(Pname, Arity, MName).
+psc_import_as(Psc1, Psc2) :- psc_import_as(Psc1, Psc2).
 
 psc_insertmod(ModName, Def, PSC) :- psc_insertmod(ModName, Def, PSC).
 
