@@ -143,6 +143,19 @@ static Psc make_psc_rec(char *name, char arity) {
   return temp;
 }
 
+void set_psc_ep_to_psc(Psc psc_to_set, Psc target_psc) {
+  if (get_arity(psc_to_set) != get_arity(target_psc)) {
+    xsb_warn("Cannot import predicate as a predicate with a different arity: %s/%d\n",
+	     get_name(psc_to_set),get_arity(psc_to_set));
+  } else if (get_ep(psc_to_set) != (byte *)&(psc_to_set->load_inst)) {
+    xsb_warn("Psc to set must not already be defined: %s/%d\n",
+	    get_name(psc_to_set),get_arity(psc_to_set));
+  } else {
+    set_ep(psc_to_set,get_ep(target_psc));
+  }
+}
+
+
 /*
  *  Create a PSC-PAIR record, set it to point to a PSC record, and place
  *  it at the head of a PSC-PAIR record chain.

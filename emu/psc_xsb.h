@@ -151,6 +151,7 @@ typedef struct psc_pair *Pair;
 extern Pair link_sym(Psc, Psc);
 extern Pair insert_module(int, char *);
 extern Pair insert(char *, byte, Psc, int *);
+extern void set_psc_ep_to_psc(Psc, Psc);
 
 extern char* string_find(const char*, int);
 

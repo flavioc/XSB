@@ -978,6 +978,7 @@ void init_builtin_table(void)
 
   set_builtin_table(PSC_INSERT, "psc_insert");
   set_builtin_table(PSC_IMPORT, "psc_import");
+  set_builtin_table(PSC_IMPORT_AS, "psc_import_as");
   set_builtin_table(PSC_DATA, "psc_data");
   set_builtin_table(PSC_INSERTMOD, "psc_insertmod");
   set_builtin_table(CALLN, "calln");
@@ -1766,7 +1767,7 @@ int builtin_call(CTXTdeclc byte number)
 				/*	0 indicates an error                 */
 				/* R3 = 1 if exports to be exported, 0 otw   */
     SYS_MUTEX_LOCK( MUTEX_LOADER );
-    ctop_int(CTXTc 2, (Integer)loader(CTXTc ptoc_string(CTXTc 1), ptoc_int(CTXTc 3)));
+    ctop_int(CTXTc 2, (Integer)loader(CTXTc ptoc_longstring(CTXTc 1), ptoc_int(CTXTc 3)));
     SYS_MUTEX_UNLOCK( MUTEX_LOADER );
     break;
 
@@ -1807,6 +1808,12 @@ int builtin_call(CTXTdeclc byte number)
     else link_sym(pair_psc(sym), global_mod);
     break;
   }
+
+  case PSC_IMPORT_AS: {    /* R1: PSC addr of source psc, R2 PSC addr of target psc */
+    set_psc_ep_to_psc((Psc)ptoc_int(CTXTc 2),(Psc)ptoc_int(CTXTc 1));
+    break;
+  }
+
 
   case PSC_DATA:  {	/* R1: +PSC; R2: -int */
     Psc psc = (Psc)ptoc_addr(1);

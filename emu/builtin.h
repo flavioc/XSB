@@ -102,6 +102,7 @@
 
 #define FILE_WRITEQUOTED	 61
 #define GROUND  		 62
+#define PSC_IMPORT_AS		 63
 
 #define INTERN_STRING            65
 #define EXPAND_FILENAME 	 66
