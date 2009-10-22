@@ -378,6 +378,9 @@ int     delay_it;
   reg_arrayptr--;							\
 }
 
+/* TLS: 
+   reg_arrayptr is ptr to the call that we are unifying the answer with
+*/
 #define unify_with_trie_attv {						\
   XSB_Deref(*reg_arrayptr);			       			\
   num_vars_in_var_regs = (int)int_val(opatom) &0xffff;			\
@@ -389,14 +392,39 @@ int     delay_it;
     bind_ref((CPtr)dec_addr(*reg_arrayptr), makeattv(hreg));	\
   }									\
   else {								\
-    attv_dbgmsg(">>>> add_interrupt in unify_with_trie_attv\n");	\
-    add_interrupt(CTXTc makeattv(hreg+INT_REC_SIZE), *reg_arrayptr);			\
+    add_interrupt(CTXTc makeattv(hreg+INT_REC_SIZE+1), *reg_arrayptr);	\
+    bind_copy((hreg+INT_REC_SIZE),*reg_arrayptr);			\
   }									\
-  var_regs[num_vars_in_var_regs] = (CPtr) makeattv(hreg);		\
+  var_regs[num_vars_in_var_regs] = (CPtr) *reg_arrayptr;		\
   new_heap_free(hreg);							\
   *reg_arrayptr = (Cell) hreg;						\
   new_heap_free(hreg);							\
   check_glstack_overflow(0,pcreg,0);					\
 }
+
+#ifdef UNDEFINED
+#define unify_with_trie_attv {						\
+  XSB_Deref(*reg_arrayptr);			       			\
+  num_vars_in_var_regs = (int)int_val(opatom) &0xffff;			\
+  if (isref(*reg_arrayptr)) {						\
+    bind_ref((CPtr) *reg_arrayptr, makeattv(hreg));			\
+  }									\
+  else if (isattv(*reg_arrayptr)) {					\
+    add_interrupt(CTXTc cell(((CPtr)dec_addr(*reg_arrayptr) + 1)),makeattv(hreg+INT_REC_SIZE));   \
+    bind_ref((CPtr)dec_addr(*reg_arrayptr), makeattv(hreg));	\
+  }									\
+  else {								\
+    printf("%p >>>> add_interrupt in unify_with_trie_attv\n",*reg_arrayptr);		\
+    makeattv((hreg+INT_REC_SIZE));					\
+    add_interrupt(CTXTc makeattv(hreg+INT_REC_SIZE+1), *reg_arrayptr);	\
+    bind_copy((hreg+INT_REC_SIZE),*reg_arrayptr);			\
+  }									\
+  var_regs[num_vars_in_var_regs] = *reg_arrayptr;			\
+  new_heap_free(hreg);							\
+  *reg_arrayptr = (Cell) hreg;						\
+  new_heap_free(hreg);							\
+  check_glstack_overflow(0,pcreg,0);					\
+}
+#endif
 
 /*----------------------------------------------------------------------*/
