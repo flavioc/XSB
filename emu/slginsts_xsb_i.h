@@ -413,7 +413,7 @@ seq_table_try:
 
       reg_arrayptr = reg_array-1;
       for (i = 0; i < template_size; i++) {
-	pushreg(cell(answer_template-template_size+i));
+	push_reg_array(cell(answer_template-template_size+i));
       }
       delay_it = 1;
       lpcreg = (byte *)subg_ans_root_ptr(producer_sf);

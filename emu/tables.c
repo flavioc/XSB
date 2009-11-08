@@ -430,7 +430,7 @@ BTNptr table_answer_search(CTXTdeclc VariantSF producer, int size, int attv_num,
     do_delay_stuff(CTXTc (NODEptr)answer, producer, wasFound);
 
     VarEnumerator_trail_top = (CPtr *)(& VarEnumerator_trail[0]) - 1;
-    undo_answer_bindings(CTXT);
+    undo_answer_bindings;
     Trail_Unwind_All;
 
       *is_new = ! wasFound;
@@ -447,7 +447,7 @@ BTNptr table_answer_search(CTXTdeclc VariantSF producer, int size, int attv_num,
 
     do_delay_stuff(CTXTc (NODEptr)answer, producer, wasFound);
 
-    undo_answer_bindings(CTXT);
+    undo_answer_bindings;
 
     *is_new = ! wasFound;
   }

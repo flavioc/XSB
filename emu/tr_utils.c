@@ -1524,7 +1524,7 @@ int private_trie_interned(CTXTdecl) {
     if ( isref(Leafterm) ) {  
       reg_arrayptr = reg_array -1;
       num_vars_in_var_regs = -1;
-      pushreg(trie_term); 
+      push_reg_array(trie_term); 
       pcreg = (byte *)*trie_root_addr;
       ret_val =  TRUE;
     }
@@ -1556,7 +1556,7 @@ int shas_trie_interned(CTXTdecl) {
     //    if ( isref(Leafterm) ) {  
       reg_arrayptr = reg_array -1;
       num_vars_in_var_regs = -1;
-      pushreg(trie_term); 
+      push_reg_array(trie_term); 
       pcreg = (byte *)*trie_root_addr;
       ret_val =  TRUE;
       //    }

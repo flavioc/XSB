@@ -293,6 +293,7 @@ typedef struct Answer_List_Node *ALNptr;
 typedef struct Answer_List_Node {
   ALNptr link;
   BTNptr answer_leaf;
+  //  ALNptr backlink;
 } AnsListNode;
 
 #define ALN_Next(pALN)		((pALN)->link)
@@ -443,6 +444,12 @@ extern int  global_num_vars;
 /* used for statistics */
 extern counter subg_chk_ins, subg_inserts, ans_chk_ins, ans_inserts;
 
+#define undo_answer_bindings		\
+    while (VarEnumerator_trail_top >= VarEnumerator_trail) {	\
+	untrail(*VarEnumerator_trail_top);		\
+	VarEnumerator_trail_top--;			\
+    }	
+
 #ifndef MULTI_THREAD
 /* trie routine variables */
 extern BTNptr Last_Nod_Sav;
@@ -472,7 +479,7 @@ extern CPtr reg_arrayptr, var_regs[];
    }\
 }
 
-#define pushreg(X) {\
+#define push_reg_array(X) {\
    will_overflow_reg_array(reg_arrayptr+1);\
    (*(++reg_arrayptr)) = (Cell) X;\
 }

@@ -119,7 +119,7 @@ char *trie_trie_type_table[] = {"call_trie_tt","basic_answer_trie_tt",
 /*****************Addr Stack************* 
 
  TLS 08/05: The addr_stack and term_stack (below) are used by
- answer_return.  to copy information out of a trie and into a ret/n
+ answer_return to copy information out of a trie and into a ret/n
  structure.  Its also used by table predicates to get delay lists.
 
  */
@@ -157,7 +157,7 @@ static long term_stacksize = DEFAULT_ARRAYSIZ;
 /*----------------------------------------------------------------------*/
 /*********Simpler trails ****************/
 
-#define simple_table_undo_bindings		\
+#define undo_answer_bindings		\
     while (VarEnumerator_trail_top >= VarEnumerator_trail) {	\
 	untrail(*VarEnumerator_trail_top);		\
 	VarEnumerator_trail_top--;			\
@@ -171,6 +171,7 @@ static long term_stacksize = DEFAULT_ARRAYSIZ;
 /* Variables used only in this file                                     */
 /*----------------------------------------------------------------------*/
 
+/* for make_heap_term */
 static BasicTrieNode dummy_ans_node = {{0,1,0,0},NULL,NULL,NULL,0};
 
 #ifndef MULTI_THREAD
@@ -347,18 +348,19 @@ BTNptr newBasicTrie(CTXTdeclc Cell symbol, int trie_type) {
 
 /*-------------------------------------------------------------------------*/
 
-/*
+/* TLS: took out single use, 11/09
  * Creates a root node for a given type of trie.  Differs from above in that
  * the parent is intended to be set to the subgoal frame.
+ * 
+ * BTNptr newBasicAnswerTrie(CTXTdeclc Cell symbol, CPtr Paren, int trie_type) {
+ * 
+ *   BTNptr pRoot;
+ * 
+ *   New_BTN( pRoot, trie_type, TRIE_ROOT_NT, symbol, Paren, NULL );
+ *   return pRoot;
+ * }
  */
 
-BTNptr newBasicAnswerTrie(CTXTdeclc Cell symbol, CPtr Paren, int trie_type) {
-
-  BTNptr pRoot;
-
-  New_BTN( pRoot, trie_type, TRIE_ROOT_NT, symbol, Paren, NULL );
-  return pRoot;
-}
 
 /*----------------------------------------------------------------------*/
 
@@ -391,7 +393,7 @@ BTNptr newBasicAnswerTrie(CTXTdeclc Cell symbol, CPtr Paren, int trie_type) {
  *  new NODE.  Upon exiting this macro, 'Paren' is set to point to the
  *  node containing this symbol and 'GNodePtrPtr' gets the address of
  *  this nodes' Child field.
- *
+~ *
  *  Algorithm:
  *  ---------
  *  If the parent has no children, then create a node for the symbol
@@ -728,6 +730,11 @@ BTNptr get_next_trie_solution(ALNptr *NextPtrPtr)
 }
 
 /*----------------------------------------------------------------------*/
+/* does not save substitution factor so should not be used for copying
+   in answers with delay lists.  I.e. it should be used by
+   delay_chk_insert, asserting tries, and interning tries.
+*/
+
 #define recvariant_trie(flag,TrieType) {				\
   int  j;								\
 									\
@@ -902,8 +909,7 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
     else
       retSymbol = EncodeTrieConstant(makestring(get_ret_string()));
     subg_ans_root_ptr(subgoal_ptr) =
-      newBasicAnswerTrie(CTXTc retSymbol, (CPtr) subgoal_ptr, 
-			 BASIC_ANSWER_TRIE_TT);
+      new_btn(CTXTc BASIC_ANSWER_TRIE_TT, TRIE_ROOT_NT, retSymbol, (BTNptr)subgoal_ptr, (BTNptr)NULL);
   }
   Paren = subg_ans_root_ptr(subgoal_ptr);
   GNodePtrPtr = &BTN_Child(Paren);
@@ -1005,11 +1011,7 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
       one_node_chk_ins(flag, EncodeTrieList(xtemp1), BASIC_ANSWER_TRIE_TT);
       pdlpush(cell(clref_val(xtemp1)+1));
       pdlpush(cell(clref_val(xtemp1)));
-#ifndef IGNORE_DELAYVAR
       recvariant_trie_ans_subsf(flag, BASIC_ANSWER_TRIE_TT);
-#else
-      recvariant_trie(flag, BASIC_ANSWER_TRIE_TT);
-#endif 
       break;
     case XSB_STRUCT:
       psc = (Psc)follow(cs_val(xtemp1));
@@ -1018,11 +1020,7 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
       for (j = get_arity(psc); j >= 1 ; j--) {
 	pdlpush(cell(clref_val(xtemp1)+j));
       }
-#ifndef IGNORE_DELAYVAR
       recvariant_trie_ans_subsf(flag, BASIC_ANSWER_TRIE_TT);
-#else
-      recvariant_trie(flag, BASIC_ANSWER_TRIE_TT);
-#endif
       break;
     case XSB_ATTV:
       /* Now xtemp1 can only be the first occurrence of an attv */
@@ -1037,11 +1035,7 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
       one_node_chk_ins(flag, EncodeNewTrieAttv(ctr), BASIC_ANSWER_TRIE_TT);
       attv_ctr++; ctr++;
       pdlpush(cell(xtemp1+1));	/* the ATTR part of the attv */
-#ifndef IGNORE_DELAYVAR
       recvariant_trie_ans_subsf(flag, BASIC_ANSWER_TRIE_TT);
-#else
-      recvariant_trie(flag, BASIC_ANSWER_TRIE_TT);
-#endif
       break;
     default:
       xsb_abort("Bad type tag in variant_answer_search()");
@@ -1055,7 +1049,7 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
    * the sf_size of the substitution factor is 0, then put integer 0
    * into cell ans_var_pos_reg).
    *
-   * Notice that simple_table_undo_bindings in pre-1.9 version of XSB
+   * Notice that undo_answer_bindings in pre-1.9 version of XSB
    * has been removed here, because all the variable bindings of this
    * answer will be used in do_delay_stuff() immediatly after the
    * return of vas() when we build the delay list for this answer.
@@ -1073,10 +1067,6 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
      * the substitution factor of the answer, into `AnsVarCtr'.
      */
   AnsVarCtr = ctr;		
-
-#ifdef DEBUG_DELAYVAR
-  xsb_dbgmsg((LOG_DEBUG,">>>> [V] AnsVarCtr = %d", AnsVarCtr));
-#endif
 
   /* if there is no term to insert, an ESCAPE node has to be created/found */
 
@@ -1148,24 +1138,6 @@ BTNptr variant_answer_search(CTXTdeclc int sf_size, int attv_num, CPtr cptr,
 
   *flagptr = flag;	
   return Paren;
-}
-
-/*
- * undo_answer_bindings() has the same functionality of
- * simple_table_undo_bindings.  It is called just after do_delay_stuff(),
- * and do_delay_stuff() is called after variant_answer_search (in
- * new_answer_dealloc)
- *
- * In XSB 1.8.1, simple_table_undo_bindings is called in
- * variant_answer_search().  But to handle variables in delay list in
- * do_delay_stuff() , we need the variable binding information got from
- * variant_answer_search().  So we have to take simple_table_undo_bindings
- * out of variant_answer_search() and call it after do_delay_stuff() is
- * done.
- */
-
-void undo_answer_bindings(CTXTdecl) {
-  simple_table_undo_bindings;
 }
 
 /*
@@ -2001,7 +1973,7 @@ BTNptr whole_term_chk_ins(CTXTdeclc Cell term, BTNptr *hook, int *flagptr, int c
      */
     global_num_vars = num_vars_in_var_regs = ctr - 1;
     Last_Nod_Sav = Paren;
-    simple_table_undo_bindings;
+    undo_answer_bindings;
 
     /* if node was deleted, then return 0 to indicate that the insertion took
        place conceptually (even if not physically */
@@ -2104,7 +2076,7 @@ BTNptr one_term_chk_ins(CTXTdeclc CPtr termptr, BTNptr root, int *flagptr)
   }                
   resetpdl;                                                   
 
-  simple_table_undo_bindings;
+  undo_answer_bindings;
 
   /* if there is no term to insert, an ESCAPE node has to be created/found */
 
@@ -2177,7 +2149,7 @@ byte *trie_get_returns(CTXTdeclc VariantSF sf, Cell retTerm) {
 
     reg_arrayptr = reg_array -1;
     for (i = arity, cptr = clref_val(retTerm);  i >= 1;  i--) {
-      pushreg(cell(cptr+i));
+      push_reg_array(cell(cptr+i));
     }
   }
 #ifdef DEBUG_DELAYVAR
@@ -2241,7 +2213,7 @@ byte * trie_get_calls(CTXTdecl)
 #ifdef DEBUG_DELAYVAR
 	 xsb_dbgmsg((LOG_DEBUG,">>>> push one cell"));
 #endif
-	 pushreg(cell(cptr+i));
+	 push_reg_array(cell(cptr+i));
        }
 #ifdef MULTI_THREAD_RWL
 /* save choice point for trie_unlock instruction */

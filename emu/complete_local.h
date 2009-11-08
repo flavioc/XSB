@@ -410,7 +410,7 @@ static inline void SetupReturnFromLeader(CTXTdeclc CPtr orig_breg, CPtr cs_ptr,
   reg_arrayptr = reg_array - 1;
   for (tmp = 0; tmp < template_size; tmp++) {
     CPtr cptr = answer_template;
-    pushreg(*cptr);
+    push_reg_array(*cptr);
     answer_template++;
   }
   /* backtrack to prev tabled subgoal after returning answers */

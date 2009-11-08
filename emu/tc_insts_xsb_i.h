@@ -859,7 +859,7 @@ XSB_Start_Instr(trie_assert_inst,_trie_assert_inst)
     psc_ptr = DecodeTrieFunctor(BTN_Symbol(NodePtr));
     reg_arrayptr = reg_array -1;
     num_vars_in_var_regs = -1;
-    for (i = get_arity(psc_ptr); i >= 1; i--) { pushreg(*(rreg+i)); }
+    for (i = get_arity(psc_ptr); i >= 1; i--) { push_reg_array(*(rreg+i)); }
     lpcreg = (byte *) Child(NodePtr);
 #ifdef MULTI_THREAD_RWL
 /* save choice point for trie_unlock instruction */
