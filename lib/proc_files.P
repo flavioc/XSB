@@ -54,6 +54,20 @@ load_dsv(FileName,PSpec,Options) :-
 	),
 	load_dsv(FileName,PSpec,Sep,Delim,Options).
 
+read_dsv(FileName,Options,Term) :-
+	(member(separator=Sep,Options)
+	 ->	true
+	 ;	Sep = ","
+	),
+	(member(delimiter=Delim,Options)
+	 ->	true
+	 ;	Delim = """"
+	),
+	functor(Term,Pred,Arity),
+	length(Types,Arity),	% no constraints
+	Term =.. [Pred|Args],
+	load_dsv(FileName,Term,Sep,Delim,Options,Types,Args).
+
 :- comment(load_dsv/5,
 "@pred{load_dsv(+FileName,+PSpec,+Sep,+Delim,+Options)} loads a
 separated field delimited text file into a predicate.  The file to be
@@ -77,11 +91,23 @@ supported, to use asserta instead of assertz when asserting the facts.
 ").
 
 load_dsv(FileName,PSpec,Sep,Delim,Options) :-
-	cputime(T0),
 	(member(order=reverse,Options) -> Reverse = 1 ; Reverse = 0),
 	process_predspec(PSpec,Spec,Types,Args),
 	dynamic(Spec),
 	retractall(Spec),
+	(load_dsv(FileName,PSpec,Sep,Delim,Options,Types,Args),
+	 (Reverse =:= 0
+	  ->	 assertz(Spec),
+		 fail
+	  ;	 asserta(Spec),
+		 fail
+	 )
+	 ;
+	 true
+	).
+
+load_dsv(FileName,PSpec,Sep,Delim,Options,Types,Args) :-
+	cputime(T0),
 	conset('__errcnt',0),
 	file_open(FileName,read,Stream),
 	(member(returns=Returns,Options)
@@ -93,17 +119,12 @@ load_dsv(FileName,PSpec,Sep,Delim,Options) :-
 	(CodeFields == end_of_file
 	 ->	!,
 		file_close(Stream),
-		time_message(T0,(FileName,' loaded (delimited)'))
+		time_message(T0,(FileName,' loaded (delimited)')),
+		fail
 	 ;	atom_codes_list(Fields,CodeFields),
 		(atom(PSpec)
 		 ->	Args = Fields
 		 ;	cvt_types(Fields,Types,Args,Fields)
-		),
-		(Reverse =:= 0
-		 ->	assertz(Spec),
-			fail
-		 ;	asserta(Spec),
-			fail
 		)
 	).
 

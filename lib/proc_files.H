@@ -31,6 +31,7 @@
 :- export copy_dsv/4.
 :- export load_with_header/2.
 :- export file_header/4.
+:- export read_dsv/3.
 
 :- import append/3 from basics.
 :- import length/2 from basics.
