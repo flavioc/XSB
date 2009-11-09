@@ -285,14 +285,14 @@ process_parg('-'(Var),arguse(Var,'-')) :-
 	write('output').
 
 define_ctype(void,'+',void). % for return type
-define_ctype(int,'-',int).
+define_ctype(int,'-',prolog_int).
 define_ctype(float,'-',double).
 define_ctype(atom,'-','unsigned long').
 define_ctype(chars,'-','char *').
 define_ctype(string,'-','char *').
 define_ctype(term,'-',prolog_term).
 
-define_ctype(int,'+',int).
+define_ctype(int,'+',prolog_int).
 define_ctype(float,'+',double).
 define_ctype(atom,'+','unsigned long').
 define_ctype(chars,'+','char *').
@@ -301,7 +301,7 @@ define_ctype(string,'+','char *').
 define_ctype(string(_),'+','char *').
 define_ctype(term,'+',prolog_term).
 
-define_ctype(intptr,_,'int *').
+define_ctype(intptr,_,'prolog_int *').
 define_ctype(floatptr,_,'double *').
 define_ctype(atomptr,_,'unsigned long *').
 define_ctype(charsptr,_,'char **').
@@ -374,7 +374,7 @@ out_variables(Var,'+',float) :-
 out_variables(Var,'+',chars) :-
 	fmt_write('   prolog_term %sIn;',args(Var)),nl,
         fmt_write('   char *%s;',args(Var)),nl,
-        fmt_write('   int %ssize;',args(Var)),nl.
+        fmt_write('   prolog_int %ssize;',args(Var)),nl.
 out_variables(Var,'+',string) :-
 	fmt_write('   prolog_term %sIn;',args(Var)),nl,
         fmt_write('   char *%s;',args(Var)),nl.
@@ -394,7 +394,7 @@ out_variables(Var,'+',floatptr) :-
         fmt_write('   double %s;',args(Var)),nl.
 out_variables(Var,'+',charsptr) :-
 	fmt_write('   prolog_term %sIn;',args(Var)),nl,
-        fmt_write('   int %ssize;',args(Var)),nl,
+        fmt_write('   prolog_int %ssize;',args(Var)),nl,
         fmt_write('   char *%s,*%sTemp;',args(Var,Var)),nl.
 out_variables(Var,'+',stringptr) :-
 	fmt_write('   prolog_term %sIn;',args(Var)),nl,
@@ -431,7 +431,7 @@ out_variables(Var,'-',stringptr) :-
 out_variables(Var,'-',termptr) :-
 	fmt_write('   prolog_term %sOut;',args(Var)),nl,
 		fmt_write('   prolog_term %s;',args(Var)),nl,
-		write('   int unificationResult;\n').
+		write('   prolog_int unificationResult;\n').
 out_variables(Var,'-',atomptr) :-
 	fmt_write('   prolog_term %sOut;',args(Var)),nl,
         fmt_write('   unsigned long %s;',args(Var)),nl.
@@ -445,14 +445,14 @@ out_variables(Var,'+-',floatptr) :-
 out_variables(Var,'+-',chars(Size)) :-
 	fmt_write('   prolog_term %sIn,%sOut;',args(Var,Var)),nl,
         fmt_write('   char %s[%d+1];',args(Var,Size)),nl,
-        fmt_write('   int %ssize;',args(Var)),nl.
+        fmt_write('   prolog_int %ssize;',args(Var)),nl.
 out_variables(Var,'+-',string(Size)) :-
 	fmt_write('   prolog_term %sIn,%sOut;',args(Var,Var)),nl,
         fmt_write('   char %s[%d+1],*%sTemp;',args(Var,Size,Var)),nl.
 out_variables(Var,'+-',charsptr) :-
 	fmt_write('   prolog_term %sIn,%sOut;',args(Var,Var)),nl,
         fmt_write('   char *%s,%sTemp;',args(Var,Var)),nl,
-        fmt_write('   int %ssize;',args(Var)),nl.
+        fmt_write('   prolog_int %ssize;',args(Var)),nl.
 out_variables(Var,'+-',stringptr) :-
 	fmt_write('   prolog_term %sIn,%sOut;',args(Var,Var)),nl,
         fmt_write('   char *%s;',args(Var)),nl.
@@ -658,7 +658,7 @@ out_postcall(Var,'+-',atomptr) :-
 	fmt_write('   extern_c2p_string((char *)%s,%sOut);',args(Var,Var)),nl.
 
 out_funchead(FuncName) :-
-	fmt_write('DllExport int call_conv %s(CTXTdecl)',args(FuncName)),nl,
+	fmt_write('DllExport prolog_int call_conv %s(CTXTdecl)',args(FuncName)),nl,
         write('{'),nl.
 
 out_functail :-
