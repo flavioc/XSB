@@ -7,6 +7,7 @@
 #define MyAppUrlName "XSB Web Site.url"
 
 #define XSB_DIR "{reg:HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment,XSB_DIR|{pf}\XSB}"
+#define MyBaseDir "C:\lgtsvn"
 
 [Setup]
 AppName={#MyAppName}
@@ -19,8 +20,8 @@ ChangesEnvironment=yes
 DefaultDirName={#XSB_DIR}
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
-LicenseFile=C:\xsb\LICENSE
-InfoBeforeFile=C:\xsb\README
+LicenseFile={#MyBaseDir}\LICENSE
+InfoBeforeFile={#MyBaseDir}\README
 OutputBaseFilename=xsb-3.2
 Compression=lzma
 SolidCompression=yes
@@ -60,22 +61,22 @@ BeveledLabel=XSB 3.2 © The Research Foundation of SUNY, 1986, 1993-2002
 Name: "{userdocs}\XSB uninstaller"
 
 [Files]
-Source: "C:\XSB\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyBaseDir}\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base; Flags: ignoreversion recursesubdirs createallsubdirs
 
-Source: "C:\XSB\bin\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "C:\XSB\config\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyBaseDir}\bin\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyBaseDir}\config\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base; Flags: ignoreversion recursesubdirs createallsubdirs
 
-Source: "C:\XSB\syslib\*.xwam"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "C:\XSB\cmplib\*.xwam"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "C:\XSB\lib\*.xwam"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyBaseDir}\syslib\*.xwam"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyBaseDir}\cmplib\*.xwam"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyBaseDir}\lib\*.xwam"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base; Flags: ignoreversion recursesubdirs createallsubdirs
 
-Source: "C:\XSB\syslib\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base\sources; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "C:\XSB\cmplib\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base\sources; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "C:\XSB\lib\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base\sources; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyBaseDir}\syslib\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base\sources; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyBaseDir}\cmplib\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base\sources; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyBaseDir}\lib\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base\sources; Flags: ignoreversion recursesubdirs createallsubdirs
 
-Source: "C:\XSB\docs\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: documentation; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "C:\XSB\examples\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: examples; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "C:\XSB\packages\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: packages; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyBaseDir}\docs\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: documentation; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyBaseDir}\examples\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: examples; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyBaseDir}\packages\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: packages; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [INI]
 Filename: "{app}\{#MyAppUrlName}"; Section: "InternetShortcut"; Key: "URL"; String: "{#MyAppURL}"; Components: base
