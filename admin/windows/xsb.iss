@@ -91,6 +91,8 @@ Name: "{group}\Web Site"; Filename: "{#MyAppUrl}"; Components: base
 
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"; Components: base
 
+Name: "{userdesktop}\XSB"; Filename: "{app}"; Components: base; Tasks: shortcut
+
 [Registry]
 Root: HKLM; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"; ValueType: expandsz; ValueName: "XSB_DIR"; ValueData: "{app}"; Components: base; Flags: deletevalue uninsdeletevalue
 
