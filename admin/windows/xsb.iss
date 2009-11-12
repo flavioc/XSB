@@ -81,7 +81,9 @@ Source: "{#MyBaseDir}\packages\*"; Excludes: ".*,CVS"; DestDir: "{app}\packages"
 Filename: "{app}\{#MyAppUrlName}"; Section: "InternetShortcut"; Key: "URL"; String: "{#MyAppURL}"; Components: base
 
 [Icons]
-Name: "{group}\XSB"; Filename: "{app}\config\x86-pc-windows\bin\xsb.exe"; Parameters: ""; Comment: "Runs XSB within a command shell"; WorkingDir: "{userdocs}"; Components: base; Flags: createonlyiffileexists
+Name: "{group}\XSB"; Filename: "{app}\config\i686-pc-cygwin\bin\xsb.exe"; Parameters: ""; Comment: "Runs XSB within a command shell"; WorkingDir: "{userdocs}"; Components: base; Flags: createonlyiffileexists
+
+Name: "{group}\XSB"; Filename: "{app}\config\i686-pc-cygwin-mt\bin\xsb.exe"; Parameters: ""; Comment: "Runs XSB-MT within a command shell"; WorkingDir: "{userdocs}"; Components: base; Flags: createonlyiffileexists
 
 Name: "{group}\License"; Filename: "{app}\LICENSE"; Components: base
 Name: "{group}\Read Me"; Filename: "{app}\README"; Components: base
