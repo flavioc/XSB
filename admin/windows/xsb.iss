@@ -7,7 +7,7 @@
 #define MyAppUrlName "XSB Web Site.url"
 
 #define XSB_DIR "{reg:HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment,XSB_DIR|{pf}\XSB}"
-#define MyBaseDir "C:\lgtsvn"
+#define MyBaseDir "C:\XSBSYS\XSBENV\XSB"
 
 [Setup]
 AppName={#MyAppName}
@@ -61,22 +61,21 @@ BeveledLabel=XSB 3.2 © The Research Foundation of SUNY, 1986, 1993-2002
 Name: "{userdocs}\XSB uninstaller"
 
 [Files]
-Source: "{#MyBaseDir}\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyBaseDir}\bin\*"; Excludes: ".*,CVS"; DestDir: "{app}\bin"; Components: base; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyBaseDir}\config\*"; Excludes: ".*,CVS"; DestDir: "{app}\config"; Components: base; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyBaseDir}\pthreads\Pre-built\lib\*"; Excludes: ".*,CVS"; DestDir: "{app}\pthreads\Pre-built\lib"; Components: base; Flags: ignoreversion recursesubdirs createallsubdirs
 
-Source: "{#MyBaseDir}\bin\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#MyBaseDir}\config\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyBaseDir}\syslib\*.xwam"; Excludes: ".*,CVS"; DestDir: "{app}\syslib"; Components: base; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyBaseDir}\cmplib\*.xwam"; Excludes: ".*,CVS"; DestDir: "{app}\cmplib"; Components: base; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyBaseDir}\lib\*.xwam"; Excludes: ".*,CVS"; DestDir: "{app}\lib"; Components: base; Flags: ignoreversion recursesubdirs createallsubdirs
 
-Source: "{#MyBaseDir}\syslib\*.xwam"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#MyBaseDir}\cmplib\*.xwam"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#MyBaseDir}\lib\*.xwam"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyBaseDir}\syslib\*"; Excludes: ".*,CVS"; DestDir: "{app}\syslib"; Components: base\sources; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyBaseDir}\cmplib\*"; Excludes: ".*,CVS"; DestDir: "{app}\cmplib"; Components: base\sources; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyBaseDir}\lib\*"; Excludes: ".*,CVS"; DestDir: "{app}\lib"; Components: base\sources; Flags: ignoreversion recursesubdirs createallsubdirs
 
-Source: "{#MyBaseDir}\syslib\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base\sources; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#MyBaseDir}\cmplib\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base\sources; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#MyBaseDir}\lib\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: base\sources; Flags: ignoreversion recursesubdirs createallsubdirs
-
-Source: "{#MyBaseDir}\docs\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: documentation; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#MyBaseDir}\examples\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: examples; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#MyBaseDir}\packages\*"; Excludes: ".*,CVS"; DestDir: "{app}"; Components: packages; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyBaseDir}\docs\*"; Excludes: ".*,CVS"; DestDir: "{app}\docs"; Components: documentation; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyBaseDir}\examples\*"; Excludes: ".*,CVS"; DestDir: "{app}\examples"; Components: examples; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#MyBaseDir}\packages\*"; Excludes: ".*,CVS"; DestDir: "{app}\packages"; Components: packages; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [INI]
 Filename: "{app}\{#MyAppUrlName}"; Section: "InternetShortcut"; Key: "URL"; String: "{#MyAppURL}"; Components: base
