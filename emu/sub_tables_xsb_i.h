@@ -178,13 +178,10 @@ inline static  void subsumptive_call_search(CTXTdeclc TabledCallInfo *callStruct
   }
 #endif
 
-#ifndef MULTI_THREAD
-  NumSubOps_CallCheckInsert++;
-#else
-#ifdef NON_OPT_COMPILE
+#if !defined(MULTI_THREAD) || defined(NON_OPT_COMPILE)
   NumSubOps_CallCheckInsert++;
 #endif
-#endif
+
   btRoot = TIF_CallTrie(CallInfo_TableInfo(*callStruct));
   answer_template = CallInfo_VarVectorLoc(*callStruct) - 1;
 
@@ -194,17 +191,8 @@ inline static  void subsumptive_call_search(CTXTdeclc TabledCallInfo *callStruct
     xsbBool isNew;
 
     btn = bt_escape_search(CTXTc btRoot, &isNew);
-#ifndef MULTI_THREAD
-    if ( isNew )
-      NumSubOps_ProducerCall++;
-    else {
-      if ( is_completed(CallTrieLeaf_GetSF(btn)) )
-	NumSubOps_CallToCompletedTable++;
-      else
-	NumSubOps_VariantCall++;
-    }
-#else
-#ifdef NON_OPT_COMPILE
+
+#if !defined(MULTI_THREAD) || defined(NON_OPT_COMPILE)
     if ( isNew )
       NumSubOps_ProducerCall++;
     else {
@@ -214,7 +202,7 @@ inline static  void subsumptive_call_search(CTXTdeclc TabledCallInfo *callStruct
 	NumSubOps_VariantCall++;
     }
 #endif
-#endif
+
     CallLUR_VariantFound(*results) = ( ! isNew );
     CallLUR_Leaf(*results) = btn;
     CallLUR_Subsumer(*results) = CallTrieLeaf_GetSF(btn);
@@ -245,12 +233,8 @@ inline static  void subsumptive_call_search(CTXTdeclc TabledCallInfo *callStruct
    */
 
   if ( path_type == NO_PATH ) {    /* new producer */
-#ifndef MULTI_THREAD
+#if !defined(MULTI_THREAD) || defined(NON_OPT_COMPILE)
     NumSubOps_ProducerCall++;
-#else
-#ifdef NON_OPT_COMPILE
-    NumSubOps_ProducerCall++;
-#endif
 #endif
     Trail_Unwind_All;
     CallLUR_Subsumer(*results) = NULL;  /* no SF found, so no subsumer */
@@ -281,7 +265,7 @@ inline static  void subsumptive_call_search(CTXTdeclc TabledCallInfo *callStruct
 	fprintf(stddbg,"\nWith ");   /* continued below */
       }
 #endif
-#ifndef MULTI_THREAD
+#if !defined(MULTI_THREAD) || defined(NON_OPT_COMPILE)
       if ( is_completed(sf_with_ans_set) )
 	NumSubOps_CallToCompletedTable++;
       else {
@@ -290,17 +274,6 @@ inline static  void subsumptive_call_search(CTXTdeclc TabledCallInfo *callStruct
 	else
 	  NumSubOps_SubsumedCall++;
       }
-#else
-#ifdef NON_OPT_COMPILE
-      if ( is_completed(sf_with_ans_set) )
-	NumSubOps_CallToCompletedTable++;
-      else {
-	if ( path_type == VARIANT_PATH )
-	  NumSubOps_VariantCall++;
-	else
-	  NumSubOps_SubsumedCall++;
-      }
-#endif
 #endif
       answer_template = extract_template_from_lookup(CTXTc answer_template);
       Trail_Unwind_All;
@@ -316,18 +289,11 @@ inline static  void subsumptive_call_search(CTXTdeclc TabledCallInfo *callStruct
       }
 #endif
       sf_with_ans_set = conssf_producer(sf_with_ans_set);
-#ifndef MULTI_THREAD
+#if !defined(MULTI_THREAD) || defined(NON_OPT_COMPILE)
       if ( is_completed(sf_with_ans_set) )
 	NumSubOps_CallToCompletedTable++;
       else
 	NumSubOps_SubsumedCall++;
-#else
-#ifdef NON_OPT_COMPILE
-      if ( is_completed(sf_with_ans_set) )
-	NumSubOps_CallToCompletedTable++;
-      else
-	NumSubOps_SubsumedCall++;
-#endif
 #endif
       Trail_Unwind_All;
       answer_template =
@@ -349,12 +315,8 @@ inline static  void subsumptive_call_search(CTXTdeclc TabledCallInfo *callStruct
     /* Conditionally Create Call Entry
        ------------------------------- */
     if ( (path_type != VARIANT_PATH) && (! is_completed(sf_with_ans_set)) ) {
-#ifndef MULTI_THREAD
+#if !defined(MULTI_THREAD) || defined(NON_OPT_COMPILE)
       NumSubOps_SubsumedCallEntry++;
-#else
-#ifdef NON_OPT_COMPILE
-      NumSubOps_SubsumedCallEntry++;
-#endif
 #endif
       CallLUR_Leaf(*results) =
 	bt_insert(CTXTc btRoot,stl_restore_variant_cont(CTXT),NO_INSERT_SYMBOL);

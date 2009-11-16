@@ -166,12 +166,12 @@ if((get_incr(TIF_PSC(TableInfo))) &&(IsVariantPredicate(TableInfo))){
 
 
 /*
- * Create an Empty Call Index, represented by a Basic Trie.  Note that
+ * Create an Empty Call Trie, represented by a Basic Trie.  Note that
  * the root of the trie is labelled with the predicate symbol.
  * Assumes that private/shared switch for SMs has been set.
  */
 
-inline static  BTNptr newCallIndex(CTXTdeclc Psc predicate) {
+inline static  BTNptr newCallTrie(CTXTdeclc Psc predicate) {
 
   BTNptr pRoot;
 
@@ -183,7 +183,7 @@ inline static  BTNptr newCallIndex(CTXTdeclc Psc predicate) {
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 /*
- * Note that the call index of the TIF is not allocated until the first
+ * Note that the call trie of the TIF is not allocated until the first
  * call is entered.  Upon exit, CallLUR_VarVector(*results) points to
  * the size of the answer template on the CPS.  See slginsts_xsb_i.h
  * for answer template layout.
@@ -208,7 +208,7 @@ void table_call_search(CTXTdeclc TabledCallInfo *call_info,
 
   tif = CallInfo_TableInfo(*call_info);
   if ( IsNULL(TIF_CallTrie(tif)) )
-    TIF_CallTrie(tif) = newCallIndex(CTXTc TIF_PSC(tif));
+    TIF_CallTrie(tif) = newCallTrie(CTXTc TIF_PSC(tif));
   if ( IsVariantPredicate(tif) ){
     variant_call_search(CTXTc call_info,results);
 #ifndef MULTI_THREAD
@@ -321,7 +321,7 @@ void table_call_search_incr(CTXTdeclc TabledCallInfo *call_info,
   BTNptr leaf;
   tif = CallInfo_TableInfo(*call_info);
   if ( IsNULL(TIF_CallTrie(tif)) )
-    TIF_CallTrie(tif) = newCallIndex(CTXTc TIF_PSC(tif));
+    TIF_CallTrie(tif) = newCallTrie(CTXTc TIF_PSC(tif));
 
   if ( IsVariantPredicate(tif) ){
     variant_call_search(CTXTc call_info,results);
@@ -334,7 +334,10 @@ void table_call_search_incr(CTXTdeclc TabledCallInfo *call_info,
     }
   }
   else
-    xsb_warn("Incremental and subsumptive do not match");
+  /* TLS: in principle this should already have been checked, but I'm
+     not sure we can count on it */
+    xsb_misc_error("Tabled predicate cannot be both incremental and subsumptive",
+		get_name(TIF_PSC(tif)),get_arity(TIF_PSC(tif)));
   
   {
     /*
@@ -520,12 +523,9 @@ ALNptr table_identify_relevant_answers(CTXTdeclc SubProdSF prodSF, SubConsSF con
   //  printf("\n"); printAnswerTemplate(stderr,templ,size);
   ts = conssf_timestamp(consSF);
   tstRoot = (TSTNptr)subg_ans_root_ptr(prodSF);
-#ifndef MULTI_THREAD
+
+#if !defined(MULTI_THREAD) || defined(NON_OPT_COMPILE)
   NumSubOps_IdentifyRelevantAnswers++;
-#else
-#ifdef NON_OPT_COMPILE
-  NumSubOps_IdentifyRelevantAnswers++;
-#endif
 #endif
 
   answers = tst_collect_relevant_answers(CTXTc tstRoot,ts,size,templ);
@@ -556,6 +556,7 @@ ALNptr table_identify_relevant_answers(CTXTdeclc SubProdSF prodSF, SubConsSF con
  *  For statistical purposes, we check whether the current usage of
  *  these incomplete-table structures are new maximums.
  *
+ *  TLS 09/11 -- Now only doing this in NON_OPT_COMPILE
  *  Currently, timestamps from the TSIs are copied back to the TSTNs.
  *  Although not necessary, this method has some advantages.  Foremost,
  *  this field will never contain garbage values, and so we avoid
@@ -591,10 +592,12 @@ void table_complete_entry(CTXTdeclc VariantSF producerSF) {
     for ( ht = TSTRoot_GetHTList(subg_ans_root_ptr(producerSF));
 	  IsNonNULL(ht);  ht = TSTHT_InternalLink(ht) ) {
 
+#ifdef NON_OPT_COMPILE
       /*** Put timestamps back into TSTNs ***/
       for ( tsi_entry = TSTHT_IndexHead(ht);  IsNonNULL(tsi_entry);
-	    tsi_entry = TSIN_Next(tsi_entry) )
-	TSTN_TimeStamp(TSIN_TSTNode(tsi_entry)) = TSIN_TimeStamp(tsi_entry);
+      	    tsi_entry = TSIN_Next(tsi_entry) )
+      	TSTN_TimeStamp(TSIN_TSTNode(tsi_entry)) = TSIN_TimeStamp(tsi_entry);
+#endif
 
       /*** Return TSIN chain to Structure Manager ***/
       if ( IsNULL(TSTHT_IndexTail(ht)) ||
