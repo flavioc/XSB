@@ -36,7 +36,7 @@
 #include "psc_xsb.h"
 #include "cinterf.h"
 #include "trie_internals.h"
-#include "macro_xsb.h"
+#include "tab_structs.h"
 #include "error_xsb.h"
 
 #include "tr_utils.h"

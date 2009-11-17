@@ -1,4 +1,4 @@
-/* File:      macro_xsb.h
+/* File:      tab_structs.h
 ** Author(s): Swift, Sagonas, Rao, Freire, Johnson
 ** Contact:   xsb-contact@cs.sunysb.edu
 ** 

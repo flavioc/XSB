@@ -8,7 +8,7 @@
 #include "error_xsb.h"
 #include "psc_xsb.h"
 #include "tries.h"
-#include "macro_xsb.h"
+#include "tab_structs.h"
 #include "debug_xsb.h"
 #include "register.h"
 

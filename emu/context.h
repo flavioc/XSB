@@ -124,7 +124,7 @@ typedef struct Message_Queue_Cell {
 #include "psc_xsb.h"
 #include "tries.h"
 #include "choice.h"
-#include "macro_xsb.h"
+#include "tab_structs.h"
 #include "token_defs_xsb.h"
 #include "odbc_def_xsb.h"
 #include "findall.h"

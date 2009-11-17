@@ -69,7 +69,7 @@
 #include "token_xsb.h"
 #include "sig_xsb.h"
 #include "inst_xsb.h"
-#include "macro_xsb.h"
+#include "tab_structs.h"
 #include "table_stats.h"
 #include "unify_xsb.h"
 #include "subp.h"

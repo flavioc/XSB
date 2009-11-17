@@ -47,7 +47,7 @@
 #include "flags_xsb.h"
 #include "trie_internals.h"
 #include "tst_aux.h"
-#include "macro_xsb.h"
+#include "tab_structs.h"
 #include "sw_envs.h"
 #include "choice.h"
 #include "cut_xsb.h"

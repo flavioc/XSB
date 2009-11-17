@@ -148,12 +148,12 @@ unmarking marked strings.
    ------------------------- */
 #include <stdio.h>         /* for printf and friends */
 
-#include "register.h"      /* breg, trreg */
-#include "psc_xsb.h"       /* needed by "tries.h" and "macro_xsb.h" */
-#include "tries.h"         /* needed by "choice.h" */
-#include "choice.h"        /* choice point structures and macros */
-#include "error_xsb.h"     /* xsb_exit() and friends */
-#include "macro_xsb.h"     /* Completion Stack and Subgoal Frame def's */
+#include "register.h"       /* breg, trreg */
+#include "psc_xsb.h"        /* needed by "tries.h" and "tab_structs.h" */
+#include "tries.h"          /* needed by "choice.h" */
+#include "choice.h"         /* choice point structures and macros */
+#include "error_xsb.h"      /* xsb_exit() and friends */
+#include "tab_structs.h"   /* Completion Stack and Subgoal Frame def's */
 #include "realloc.h"       /* Heap - ls reallocation macros */
 #include "flags_xsb.h"     /* for checking whether functionality is enabled */
 #include "heap_xsb.h"

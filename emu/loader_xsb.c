@@ -54,7 +54,7 @@
 #include "heap_xsb.h"
 #include "flags_xsb.h"
 #include "tries.h"
-#include "macro_xsb.h"
+#include "tab_structs.h"
 #include "error_xsb.h"
 #include "io_builtins_xsb.h"
 #include "inst_xsb.h"

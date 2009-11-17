@@ -6,7 +6,7 @@
 
 #include "context.h"
 #include "basicdefs.h"
-#include "macro_xsb.h"
+#include "tab_structs.h"
 #include "cell_xsb.h"
 #include "choice.h"
 #include "conc_compl.h"

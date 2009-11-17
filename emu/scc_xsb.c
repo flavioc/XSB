@@ -34,7 +34,7 @@
 #include "register.h"
 #include "psc_xsb.h"
 #include "tries.h"
-#include "macro_xsb.h"
+#include "tab_structs.h"
 #include "scc_xsb.h"
 
 #if (!defined(LOCAL_EVAL))

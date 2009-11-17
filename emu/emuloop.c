@@ -59,7 +59,7 @@
 #include "trie_internals.h"
 #include "choice.h"
 #include "sw_envs.h"
-#include "macro_xsb.h"
+#include "tab_structs.h"
 #include "tables.h"
 #include "subinst.h"
 #include "scc_xsb.h"

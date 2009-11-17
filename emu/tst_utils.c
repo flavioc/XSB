@@ -38,7 +38,7 @@
 #include "deref.h"
 #include "trie_internals.h"
 #include "tst_aux.h"
-#include "macro_xsb.h"
+#include "tab_structs.h"
 #include "choice.h"
 #include "inst_xsb.h"
 #include "error_xsb.h"

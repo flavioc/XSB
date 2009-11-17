@@ -67,7 +67,7 @@
 
 /* different things are included based on context.h -- easiest to
    include this conditionally. */
-#include "macro_xsb.h"
+#include "tab_structs.h"
 
 #include <errno.h>
 

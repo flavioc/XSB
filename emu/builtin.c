@@ -77,7 +77,7 @@
 #include "flags_xsb.h"
 #include "loader_xsb.h"
 #include "binding.h"
-#include "macro_xsb.h"
+#include "tab_structs.h"
 #include "builtin.h"
 #include "sig_xsb.h"
 #include "subp.h"

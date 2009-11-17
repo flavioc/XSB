@@ -34,7 +34,7 @@
 #include "psc_xsb.h"
 #include "table_stats.h"
 #include "trie_internals.h"
-#include "macro_xsb.h"
+#include "tab_structs.h"
 #include "error_xsb.h"
 #include "flags_xsb.h"
 #include "debug_xsb.h"

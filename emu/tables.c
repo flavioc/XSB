@@ -43,7 +43,7 @@
 #include "psc_xsb.h"
 #include "table_stats.h"
 #include "trie_internals.h"
-#include "macro_xsb.h"
+#include "tab_structs.h"
 #include "error_xsb.h"
 #include "flags_xsb.h"
 #include "tst_utils.h"
@@ -336,7 +336,7 @@ void table_call_search_incr(CTXTdeclc TabledCallInfo *call_info,
   else
   /* TLS: in principle this should already have been checked, but I'm
      not sure we can count on it */
-    xsb_misc_error("Tabled predicate cannot be both incremental and subsumptive",
+    xsb_misc_error(CTXTc "Tabled predicate cannot be both incremental and subsumptive",
 		get_name(TIF_PSC(tif)),get_arity(TIF_PSC(tif)));
   
   {
@@ -574,7 +574,10 @@ void table_complete_entry(CTXTdeclc VariantSF producerSF) {
   SubConsSF pSF;
   ALNptr pRealAnsList, pALN, tag;
   TSTHTptr ht;
+
+#ifdef NON_OPT_COMPILE  
   TSINptr tsi_entry;
+#endif
 
   dbg_print_subgoal(LOG_STRUCT_MANAGER, stddbg, producerSF);
   xsb_dbgmsg((LOG_STRUCT_MANAGER, " complete... reclaiming structures.\n"));
@@ -760,7 +763,7 @@ void table_complete_entry(CTXTdeclc VariantSF producerSF) {
 
 /*-------------------------------------------------------------------------*/
 
-/* TLS: I made this into a function and moved it from macro_xsb to
+/* TLS: I made this into a function and moved it from tab_structs.h to
    make the tif_list conditional a little more transparent, and to
    facilitate debugging. */
 

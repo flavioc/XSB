@@ -48,7 +48,7 @@
 #include "register.h"
 #include "binding.h"
 #include "trie_internals.h"
-#include "macro_xsb.h"
+#include "tab_structs.h"
 #include "choice.h"
 #include "subp.h"
 #include "cinterf.h"

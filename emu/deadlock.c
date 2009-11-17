@@ -12,7 +12,7 @@
 #include "sw_envs.h"
 #include "deadlock.h"
 #include "debug_xsb.h"
-#include "macro_xsb.h"
+#include "tab_structs.h"
 #include "thread_xsb.h"
 #include "trie_internals.h"
 

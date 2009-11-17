@@ -41,7 +41,7 @@
 #include "trie_internals.h"
 #include "memory_xsb.h"
 #include "choice.h"
-#include "macro_xsb.h"
+#include "tab_structs.h"
 #include "tr_utils.h"
 #include "inst_xsb.h"
 #include "error_xsb.h"

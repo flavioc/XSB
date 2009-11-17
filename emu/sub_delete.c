@@ -34,7 +34,7 @@
 #include "cell_xsb.h"
 #include "psc_xsb.h"
 #include "trie_internals.h"
-#include "macro_xsb.h"
+#include "tab_structs.h"
 #include "error_xsb.h"
 #include "thread_xsb.h"
 #include "memory_xsb.h"

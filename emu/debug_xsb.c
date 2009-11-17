@@ -42,7 +42,7 @@
 #include "deref.h"
 #include "trie_internals.h"
 #include "choice.h"
-#include "macro_xsb.h"
+#include "tab_structs.h"
 #include "inst_xsb.h"
 #include "debug_xsb.h"
 #include "varstring_xsb.h"

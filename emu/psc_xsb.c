@@ -37,7 +37,7 @@
 #include "psc_xsb.h"
 #include "tries.h"
 #include "hash_xsb.h"
-#include "macro_xsb.h"
+#include "tab_structs.h"
 #include "loader_xsb.h"
 #include "flags_xsb.h"
 #include "sig_xsb.h"

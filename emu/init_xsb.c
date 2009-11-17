@@ -59,7 +59,7 @@
 #include "flags_xsb.h"
 #include "loader_xsb.h"
 #include "extensions_xsb.h"
-#include "macro_xsb.h"
+#include "tab_structs.h"
 #include "tr_utils.h"
 #include "export.h"
 #include "io_builtins_xsb.h"

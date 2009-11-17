@@ -55,7 +55,7 @@
 #include "tries.h"     /* needed by "choice.h" */
 #include "choice.h"
 #include "error_xsb.h"
-#include "macro_xsb.h"
+#include "tab_structs.h"
 #include "thread_xsb.h"
 
 #include "flags_xsb.h"

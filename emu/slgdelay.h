@@ -242,7 +242,7 @@ extern xsbBool neg_delay;
  * Procedures used in other parts of the system.
  */
 
-/* TLS: because of include dependencies (context -> macro_xsb ->
+/* TLS: because of include dependencies (context -> tab_structs.h ->
    slgdelay), context.h cannot be included until the code is
    refactored.  Therefore, the CTXT-style declarations cannot yet be
    used. */

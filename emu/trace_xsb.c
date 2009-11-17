@@ -38,7 +38,7 @@
 #include "table_stats.h"
 #include "trie_internals.h"
 #include "tries.h"
-#include "macro_xsb.h"
+#include "tab_structs.h"
 #include "choice.h"
 #include "flags_xsb.h"
 #include "heap_xsb.h"
@@ -51,7 +51,7 @@
 #include "system_defs_xsb.h"
 #include "subp.h"
 #include "error_xsb.h"
-#include "macro_xsb.h"
+#include "tab_structs.h"
 
 /*======================================================================*/
 /* Process-level information: keep this global */

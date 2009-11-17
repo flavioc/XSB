@@ -45,7 +45,7 @@
 #include "trie_internals.h"
 #include "choice.h"
 #include "cut_xsb.h"	   /* trail frame field access macros */
-#include "macro_xsb.h"
+#include "tab_structs.h"
 #include "tst_aux.h"
 #include "tst_utils.h"
 #include "debug_xsb.h"

@@ -44,7 +44,7 @@
 #include "tries.h"
 #include "choice.h"
 #include "inst_xsb.h"
-#include "macro_xsb.h"
+#include "tab_structs.h"
 #include "tr_utils.h"
 #include "binding.h"
 #include "cut_xsb.h"

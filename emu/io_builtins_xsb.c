@@ -51,7 +51,7 @@
 #include "subp.h"
 #include "tries.h"
 #include "choice.h"
-#include "macro_xsb.h"
+#include "tab_structs.h"
 #include "io_builtins_xsb.h"
 #include "wind2unix.h"
 #include "binding.h"

@@ -39,7 +39,7 @@
 #include "subp.h"          /* xsbBool unify(Cell, Cell) */
 #include "table_stats.h"
 #include "trie_internals.h"
-#include "macro_xsb.h"
+#include "tab_structs.h"
 #include "choice.h"
 #include "tst_aux.h"
 #include "tst_utils.h"
