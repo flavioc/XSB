@@ -804,6 +804,11 @@ extern ALNptr empty_return(struct th_context *,VariantSF);
 #define empty_return_handle(SF) empty_return(th,SF)
 #endif
 
+/* tags for ALP pointers in leaf nodes, for faster delete */
+#define HasALNPtr 0x2
+#define untag_as_ALNptr(Node) ((ALNptr)((word)(Child(Node)) & ~HasALNPtr))
+#define hasALNtag(Node) ((word)(Child(Node)) & HasALNPtr)
+
 /* Appending to the Answer List of a SF
    ------------------------------------ */
 #define SF_AppendNewAnswerList(pSF,pAnsList) {	\
@@ -819,17 +824,19 @@ extern ALNptr empty_return(struct th_context *,VariantSF);
 #define SF_AppendNewAnswer(pSF,pAns)	SF_AppendToAnswerList(pSF,pAns,pAns)
 
 #define SF_AppendToAnswerList(pSF,pHead,pTail) {			\
-   if ( has_answers(pSF) )						\
+   if ( has_answers(pSF) ) {						\
      /*
       *  Insert new answer at the end of the answer list.
       */								\
      ALN_Next(subg_ans_list_tail(pSF)) = pHead; 			\
-   else									\
+     Child(ALN_Answer(pHead)) = (NODEptr) ((word)(subg_ans_list_tail(pSF)) | HasALNPtr); \
+   } else {								\
      /*
       * The dummy answer list node is the only node currently in the list.
       * It's pointed to by the head ptr, but the tail ptr is NULL.
       */								\
      ALN_Next(subg_ans_list_ptr(pSF)) = pHead;				\
+   }									\
    subg_ans_list_tail(pSF) = pTail;					\
  }
 

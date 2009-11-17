@@ -162,15 +162,16 @@ struct pos_neg_de_list {
  * Handling of conditional answers.	     			      
  */
 
-#define UNCONDITIONAL_MARK 0x3
+#define UNCONDITIONAL_MARK 0x1
 
-#define Delay(X) (ASI) ((word) (TN_Child(X)) & ~UNCONDITIONAL_MARK)
+#define Delay(X) (ASI) ((word) (TN_Child(X)) & ~(UNCONDITIONAL_MARK | HasALNPtr))
 
 #define is_conditional_answer(ANS) \
-  (Child(ANS) && !((word) (Child(ANS)) & UNCONDITIONAL_MARK))
+  (Child(ANS) && !hasALNtag(ANS) && !((word) (Child(ANS)) & UNCONDITIONAL_MARK))
 
 #define is_unconditional_answer(ANS) \
-  (!Child(ANS) || ((word) (Child(ANS)) & UNCONDITIONAL_MARK))
+  !is_conditional_answer(ANS)
+  /*  (!Child(ANS) || ((word) (Child(ANS)) & UNCONDITIONAL_MARK)) */
 
 /*
 Checking for these two conditionis was made more difficult when WFS
@@ -197,7 +198,7 @@ to functions in slgdelay.c
  */
 
 #define mark_conditional_answer(ANS, SUBG, NEW_DL,STRUCT_MGR)		\
-  if (Child(ANS) == NULL) {						\
+  if (Child(ANS) == NULL || hasALNtag(ANS)) {				\
     create_as_info(STRUCT_MGR,ANS, SUBG);				\
   }									\
   else {								\

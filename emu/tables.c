@@ -675,7 +675,9 @@ void table_complete_entry(CTXTdeclc VariantSF producerSF) {
       do {
 	if ( is_conditional_answer(ALN_Answer(pALN)) ) {
 	  tag = COND_ANSWERS;
-	  break;
+	}
+	if (hasALNtag(ALN_Answer(pALN))) { /* reset to null */
+	  Child(ALN_Answer(pALN)) = NULL;
 	}
 	pALN = ALN_Next(pALN);
       } while ( IsNonNULL(pALN) );
@@ -690,7 +692,9 @@ void table_complete_entry(CTXTdeclc VariantSF producerSF) {
     do {
       if ( is_conditional_answer(ALN_Answer(pALN)) ) {
 	tag = COND_ANSWERS;
-	break;
+      }
+      if (hasALNtag(ALN_Answer(pALN))) { /* reset to null */
+	Child(ALN_Answer(pALN)) = NULL;
       }
       pALN = ALN_Next(pALN);
     } while ( IsNonNULL(pALN) );

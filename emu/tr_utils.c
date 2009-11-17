@@ -657,7 +657,7 @@ void delete_variant_sf_and_answers(CTXTdeclc VariantSF pSF, xsbBool should_warn)
 
 extern void hashtable1_destroy(void *, int);
 
- static void delete_variant_table(CTXTdeclc BTNptr x, int incr, xsbBool should_warn) {
+static void delete_variant_table(CTXTdeclc BTNptr x, int incr, xsbBool should_warn) {
 
    //   printf("in delete variant table\n");
 
@@ -1155,7 +1155,7 @@ void delete_trie(CTXTdeclc BTNptr iroot) {
  * MUTEX_DELAY.  But I'm not sure that other parts of this function
  * are thread-safe.
  */
-void delete_return(CTXTdeclc BTNptr l, VariantSF sg_frame,int eval_method) 
+void delete_return(CTXTdeclc BTNptr leaf, VariantSF sg_frame,int eval_method) 
 {
   ALNptr a, n, next;
   NLChoice c;
@@ -1164,36 +1164,44 @@ void delete_return(CTXTdeclc BTNptr l, VariantSF sg_frame,int eval_method)
   TChoice  tc;
 #endif
 
-    xsb_dbgmsg((LOG_INTERN, "DELETE_NODE: %d - Par: %d", l, BTN_Parent(l)));
+    xsb_dbgmsg((LOG_INTERN, "DELETE_NODE: %d - Par: %d", leaf, BTN_Parent(leaf)));
 
     /* deleting an answer makes it false, so we have to deal with 
        delay lists */
     SET_TRIE_ALLOCATION_TYPE_SF(sg_frame);
-    if (is_conditional_answer(l)) {
-      ASI asi = Delay(l);
+    if (is_conditional_answer(leaf)) {
+      ASI asi = Delay(leaf);
       SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
       release_all_dls(CTXTc asi);
       SYS_MUTEX_UNLOCK( MUTEX_DELAY ) ;
       /* TLS 12/00 changed following line from 
-	 (l == subg_ans_root_ptr(sg_frame) && ..
+	 (leaf == subg_ans_root_ptr(sg_frame) && ..
 	 so that negation failure simplification is properly performed */
-      if (l == BTN_Child(subg_ans_root_ptr(sg_frame)) &&
-	  IsEscapeNode(l))
-	groundcall=TRUE; /* do it here, when l is still valid */
+      if (leaf == BTN_Child(subg_ans_root_ptr(sg_frame)) &&
+	  IsEscapeNode(leaf))
+	groundcall=TRUE; /* do it here, when leaf is still valid */
     }
 
   if (is_completed(sg_frame)) {
-    safe_delete_branch(l);
+    safe_delete_branch(leaf);
   } else {
-    delete_branch(CTXTc l,&subg_ans_root_ptr(sg_frame),eval_method);
-    n = subg_ans_list_ptr(sg_frame);
-    /* Find previous sibling -pvr */
-    while (ALN_Answer(ALN_Next(n)) != l) {
-      n = ALN_Next(n);/* if a is not in that list a core dump will result */
+    delete_branch(CTXTc leaf,&subg_ans_root_ptr(sg_frame),eval_method);
+    if (hasALNtag(leaf)) {
+      n = untag_as_ALNptr(leaf);
+    } else {
+      n = subg_ans_list_ptr(sg_frame);
+      /* Find previous sibling -pvr */
+      while (ALN_Answer(ALN_Next(n)) != leaf) {
+	n = ALN_Next(n);/* if a is not in that list a core dump will result */
+      }
+      if (n == NULL) {
+	xsb_exit(CTXTc "Error in delete_return()");
+      }
     }
-    if (n == NULL) {
-      xsb_exit(CTXTc "Error in delete_return()");
-    }
+    if (ALN_Next(n) && ALN_Next(ALN_Next(n)) &&
+	hasALNtag(ALN_Answer(ALN_Next(ALN_Next(n))))) {
+	Child(ALN_Answer(ALN_Next(ALN_Next(n)))) = Child(leaf);
+      }
     a               = ALN_Next(n);
     next            = ALN_Next(a);
     ALN_Answer(a)   = NULL; /* since we eagerly release trie nodes, this is
@@ -1222,15 +1230,13 @@ void delete_return(CTXTdeclc BTNptr l, VariantSF sg_frame,int eval_method)
       }
 #endif
    
-    ALN_Next(n) = next;
-
     if(next == NULL){ /* last answer */
       subg_ans_list_tail(sg_frame) = n;
     }      
   }
-  if (is_conditional_answer(l)) {
+  if (is_conditional_answer(leaf)) {
     SYS_MUTEX_LOCK( MUTEX_DELAY ) ;
-    simplify_pos_unsupported(CTXTc l);
+    simplify_pos_unsupported(CTXTc leaf);
     if (groundcall) {
       mark_subgoal_failed(sg_frame);
       simplify_neg_fails(CTXTc sg_frame);
