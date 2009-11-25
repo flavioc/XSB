@@ -61,6 +61,7 @@ I've forgotten.  */
 #define T_FORN 13	/* predicate in foreign language */
 
 #define T_DEFI 128      /* bit to pass from compiler to loader that pred has clauses */
+#define T_DEFA 64	/* bit to pass from compiler to loader for import-as (defined-as) */
 /* === loader definitions (module information) ==================== */
 
 #define T_EXPORTED 0

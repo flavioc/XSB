@@ -682,9 +682,9 @@ inline static void get_obj_atom(FILE *fd, VarString *atom)
 static xsbBool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
 {
   static XSB_StrDefine(str);
-  int  is_new;
-  byte t_arity, t_type, t_env, t_defined;
-  Pair temp_pair;
+  int  is_new, def_is_new;
+  byte t_arity, t_type, t_env, t_defined, t_definedas;
+  Pair temp_pair, defas_pair = NULL;
   Psc  mod;
 
   get_obj_byte(&t_env);
@@ -694,12 +694,13 @@ static xsbBool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
 	      cur_mod->nameptr, XSB_OBJ_EXTENSION_STRING);
 
   get_obj_byte(&t_type);  t_defined = t_type & T_DEFI; t_type = t_type & ~T_DEFI;
+  t_definedas = t_type & T_DEFA; t_type = t_type & ~T_DEFA;
   get_obj_byte(&t_arity);
   get_obj_atom(fd, &str);
   if (t_type == T_MODU)
     temp_pair = insert_module(0, str.string);
   else {
-    if ((t_env&0x7) == T_IMPORTED) {
+    if ((t_env&0x7) == T_IMPORTED || t_definedas) {
       byte t_modlen;
       char modname[MAXNAME+1];
 
@@ -708,12 +709,31 @@ static xsbBool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
       modname[t_modlen] = '\0';
       temp_pair = insert_module(0, modname);
       mod = temp_pair->psc_ptr;
+      if (t_definedas) {
+	byte t_defaslen;
+	char defasname[MAXNAME+1];
+	get_obj_byte(&t_defaslen);
+	get_obj_string(defasname, t_defaslen);
+	defasname[t_defaslen] = '\0';
+	defas_pair = insert(defasname, t_arity, mod, &def_is_new);
+	if (def_is_new) {
+	  set_data(defas_pair->psc_ptr, mod);
+	  set_env(defas_pair->psc_ptr, T_UNLOADED);
+	  set_type(defas_pair->psc_ptr, T_ORDI);
+	}
+	mod = cur_mod;  /* mod of this symbol is cur_mod */
+      }
     } else if ((t_env&0x7) == T_GLOBAL) 
       mod = global_mod;
     else 
       mod = cur_mod;
     temp_pair = insert(str.string, t_arity, mod, &is_new);
-/*     if (is_new && (t_env & 0x7)==T_IMPORTED) */
+
+    if (t_definedas) {
+      set_psc_ep_to_psc(temp_pair->psc_ptr,defas_pair->psc_ptr);
+      t_type = T_PRED;
+    }
+
     /* make sure all data fields of predicates PSCs point to 
        their corresponding module */
     if (is_new ||
@@ -743,11 +763,9 @@ static xsbBool load_one_sym(FILE *fd, Psc cur_mod, int count, int exp)
 	     so perhaps this code should be refactored. */
 	  if (t_env&T_SHARED_DET) {
 	    set_shared(temp_pair->psc_ptr, (t_env&(T_SHARED|T_SHARED_DET)));
-	    //	    printf("%s %x \n",get_name(temp_pair->psc_ptr),(temp_pair->psc_ptr)->env);
 	  }
 	  else if (!(((temp_pair->psc_ptr)->env)&T_SHARED_DET)) {
 	    set_shared(temp_pair->psc_ptr, (T_SHARED));
-	    //	    printf("setting shared %s %x \n",get_name(temp_pair->psc_ptr),(temp_pair->psc_ptr)->env);
 	  }
 	}
       }
@@ -939,6 +957,8 @@ static byte *loader1(CTXTdeclc FILE *fd, char *filename, int exp)
     /* 1st inst of file */
     /* set the entry point of the predicate */
     ptr = insert(name, arity, cur_mod, &is_new);
+    //    printf("created setep %s:%s/%d n=%d, psc=%p\n",get_name(cur_mod),get_name(ptr->psc_ptr),get_arity(ptr->psc_ptr),is_new,ptr->psc_ptr);
+
     switch (get_type(ptr->psc_ptr)) {
     case T_ORDI:
     case T_UDEF:

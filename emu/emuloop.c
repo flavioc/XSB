@@ -2553,38 +2553,30 @@ argument positions.
   XSB_End_Instr()
 
   XSB_Start_Instr(load_pred,_load_pred) /* PPP-S */
+    /* Executing this instruction causes itself to be changed to 
+       jump or load_forn by the predicate loading process. */
     Def1op
     Psc psc;
     
     Op1(get_xxxs);
+    psc = (Psc)op1; /* before getting lock, since may be changed by other loader in MT */
+#ifdef MULTI_THREAD
     SYS_MUTEX_LOCK(MUTEX_LOAD_UNDEF);
-    ADVANCE_PC(size_xxxX);
-    psc = (Psc)op1;
-    /* check env or type to give (better) error msgs? */
-    switch (get_type(psc)) {
-    case T_PRED:
-    case T_DYNA:
-    case T_FORN:
-#ifndef MULTI_THREAD
-      xsb_abort("[EMULOOP] Trying to load an already loaded pred");
-#else
-      /* predicate was loaded by another thread */
-      /* fprintf(stderr,"Predicate loaded by other thread\n");
-         fflush(stderr);
-       */	
-      SYS_MUTEX_UNLOCK(MUTEX_LOAD_UNDEF);
-      lpcreg = get_ep(psc);             /* new ep of predicate */
-      break;
+    if (*lpcreg == load_pred) { /* not loaded, so call interrupt routine to load it */
 #endif
-    default:
-      bld_cs(reg+1, build_call(CTXTc psc));   /* put call-term in r1 */
-      /* get psc of undef handler */
-      psc = (Psc)pflags[MYSIG_UNDEF+INT_HANDLERS_FLAGS_START];
-      bld_int(reg+2, MYSIG_UNDEF);      /* undef-pred code */
-      lpcreg = get_ep(psc);             /* ep of undef handler */
-      break;
-    }
+
+    bld_cs(reg+1, build_call(CTXTc psc));   /* put call-term in r1 */
+    /* get psc of undef handler */
+    psc = (Psc)pflags[MYSIG_UNDEF+INT_HANDLERS_FLAGS_START];
+    bld_int(reg+2, MYSIG_UNDEF);      /* undef-pred code */
+#ifdef MULTI_THREAD
+   } else { /* someone else loaded it, just release lock and go to it */
+      SYS_MUTEX_UNLOCK(MUTEX_LOAD_UNDEF);
+   }
+#endif
+    lpcreg = get_ep(psc);             /* ep of undef handler */
   XSB_End_Instr()
+
 
   XSB_Start_Instr(allocate_gc,_allocate_gc) /* PAA */
     Def3ops

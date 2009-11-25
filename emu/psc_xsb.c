@@ -151,7 +151,7 @@ void set_psc_ep_to_psc(Psc psc_to_set, Psc target_psc) {
     xsb_warn("Psc to set must not already be defined: %s/%d\n",
 	    get_name(psc_to_set),get_arity(psc_to_set));
   } else {
-    set_ep(psc_to_set,get_ep(target_psc));
+    set_ep(psc_to_set,(byte *)&(target_psc->load_inst));
   }
 }
 

@@ -82,8 +82,8 @@ struct psc_rec {
   char *nameptr;
   struct psc_rec *data;      /* psc of module, if pred; otw data */
   byte *ep;                     /* entry point (initted to next word) */
-  word load_inst;               /* byte-code load_pred, or call_forn */
-  struct psc_rec *this_psc;     /* BC arg: this psc or foreign entry point */
+  word load_inst;               /* byte-code load_pred, or jump, or call_forn */
+  struct psc_rec *this_psc;     /* BC arg: entry-point or foreign entry point */
 };
 
 typedef struct psc_rec *Psc;
@@ -132,7 +132,9 @@ typedef struct psc_pair *Pair;
 #define  set_incr(psc,val)      ((psc)->incr = ((psc)->incr & 3) | val)  /* incremental */
 #define  set_arity(psc, ari)	((psc)->arity = ari)
 #define  set_length(psc, len)	((psc)->length = len)
-#define  set_ep(psc, val)	((psc)->ep = val)
+#define  set_ep(psc, val)	do {(psc)->ep = val;     \
+    				    cell_opcode(&((psc)->load_inst)) = jump; \
+				    (psc)->this_psc = (void *)val;} while(0)
 #define  set_data(psc, val)     ((psc)->data = val)
 #define  set_name(psc, name)	((psc)->nameptr = name)
 
