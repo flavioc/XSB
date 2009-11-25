@@ -63,17 +63,28 @@ asm_putsym(OStr,Sym) :-
 	 ; sym_prop(tabled(_,_),Sym)
 	 ->	(sym_prop(defined,Sym)
 		 ->	true
+		 ; sym_prop(defined(_,_),Sym)
+		 ->	true
 		 ;	warning((Name/Arity,' declared as tabled, but not defined.'))
 		),
 		DomCode2 is DomCode1 \/ 72 %%T_TABLED_VAR\/T_TABLED_SUB_LOADFILE
 	 ;	DomCode2 = DomCode1
 	),
 	sym_category(Sym, Cat), category_code(Cat, CatCode),
-	(sym_prop(defined,Sym) -> CatCode2 is CatCode \/ T_DEFI ; CatCode2 = CatCode),
+	(sym_prop(defined,Sym)
+	 ->	CatCode2 is CatCode \/ T_DEFI
+	 ; sym_prop(defined(_,_),Sym)
+	 ->	CatCode2 is CatCode \/ T_DEFA \/ T_DEFI
+	 ;	CatCode2 = CatCode)
+	,
 	file_put(OStr,DomCode2), file_put(OStr,CatCode2), file_put(OStr,Arity), asm_putlength(OStr,L),
 	write(OStr,Name),
-	( DomCode =\= T_IMPORTED -> true
-	; Env = im(Mod), str_len(Mod, LM), file_put(OStr,LM), write(OStr,Mod)
+	(Env = im(Mod)
+	 ->	str_len(Mod, LM), file_put(OStr,LM), write(OStr,Mod)
+	 ; sym_prop(defined(Mod,PA),Sym)
+	 ->	str_len(Mod, LM), file_put(OStr,LM), write(OStr,Mod),
+		str_len(PA,LPA), file_put(OStr,LPA), write(OStr,PA)
+	 ;	true
 	),
 	!.
 
@@ -91,7 +102,7 @@ env_code(im(_), T_IMPORTED).
 env_code(global, T_GLOBAL).
 
 category_code(ordinary, T_ORDI).	% uninstantiated variable
-% category_code(dynamic, 1).		% not used in the compiler yet
+% category_code(dynamic, T_DYNA).	% not used in the compiler yet
 category_code(pred, T_UDEF).		% T_PRED=:=2
 category_code(module, T_MODU).
 

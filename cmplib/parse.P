@@ -412,6 +412,14 @@ parse_directive(import(from(X, Mod)), _QrList,SymTab,_ModName,_ModStruct) :- !,
 	 ;	parse_comma_list(X, SymTab, [im(Mod)], (import)),
 		sym_insert(Mod, 0, [module], SymTab, _)
 	).
+parse_directive(import(as(from(P/A, Mod),P2/A2)), _QrList,SymTab,_ModName,_ModStruct) :- !,
+	(var(Mod)
+	 ->	error(('Module cannot be a variable. Importing: ',P/A))
+	 ; A \== A2
+	 ->	error(('Predicate arities must be the same. Importing: ',P/A,' as ',P2/A2))
+	 ;	sym_insert(Mod, 0, [module,used], SymTab, _),
+		sym_insert(P2,A2,[defined(Mod,P)],SymTab,_)
+	).
 parse_directive(use_module(ModIm,X), _QrList,SymTab,_ModName,_ModStruct) :- !,
 	(var(ModIm)
 	 ->	error(('Module cannot be a variable. Importing: ',X))

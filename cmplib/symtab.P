@@ -50,7 +50,7 @@
 /*          * PropList: an open list of                                 */
 /*                      pred, module,		                        */
 /*                      ex, local, im(Modname)                          */
-/*                      defined,                                        */
+/*                      defined, defined(Modname,Predname)              */
 /*              * Two special modname: system, quintus                  */
 /*          * Other: not used yet                                       */
 /*                                                                      */
@@ -253,6 +253,7 @@ sym_prop0(internal, prop(_,Env,_,_,_,_)) :- !, Env == internal.
 sym_prop0(global, prop(_,Env,_,_,_,_)) :- !, Env == global.
 
 sym_prop0(defined, prop(_,_,Def,_,_,_)) :- !, Def == defined.
+sym_prop0(defined(Mod,Pred), prop(_,_,Def,_,_,_)) :- !, nonvar(Def), Def = defined(Mod,Pred).
 sym_prop0(undef, prop(_,_,Def,_,_,_)) :- !, Def == undef.
 sym_prop0(used, prop(_,_,_,Used,_,_)) :- !, Used == used.
 sym_prop0(unused, prop(_,_,Used,_,_)) :- !, Used == unused.
@@ -364,6 +365,7 @@ els_prop(mode(_)).
 % Usage checking
 %----------------
 def_prop(defined).
+def_prop(defined(_,_)).
 def_prop(undef).
 
 use_prop(used).
