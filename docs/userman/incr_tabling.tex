@@ -65,11 +65,11 @@ maintained, and using specific dynamic predicate update operations,
 the system will automatically keep the tables for {\tt p/2} correct.
 Consider the program:
 \begin{verbatim}
-:- use_incremental_tabling p/2.
+:- table p/2 as incremental.
 
 p(X,Y) :- q(X,Y),Y =< 5.
 
-:- use_incremental_dynamic q/2.
+:- dynamic q/2 as incremental.
 
 q(a,1).
 q(b,3).
@@ -77,9 +77,13 @@ q(c,5).
 q(d,7).
 \end{verbatim}
 in which {\tt p/2} is declared to be incrementally tabled (with {\tt
-:- use\_incremental\_tabling}) and {\tt q/2} is declared to be {\tt :-
-use\_incremental\_dynamic}, meaning that an incremental table depends on
-it.  Consider the following goals and execution:
+  :- table p/2 as incremental}) and {\tt q/2} is declared to be both
+dynamic and incremental, meaning that an incremental table depends on
+it~\footnote{The declarations {\tt use\_incremental\_tabling/1} and
+  {\tt use\_incremental\_dynamic/1} are deprecated in \version of XSB
+  -- in other words backwards compatability will be maintained for a
+  time, but these declarations will not be further supported.}.
+Consider the following goals and execution:
 \begin{verbatim}
 | ?- import incr_assert/1 from increval.
 
@@ -116,7 +120,7 @@ other tabled goals and (incremental) dynamic goals, and tries to
 minimize the amount of recomputation necessary.  Incrementally tabled
 predicates may depend on other tabled predicates.  In this case, those
 tabled predicates must also be declared as incremental (or opaque).
-The algorithm used is described in [].
+The algorithm used is described in~\cite{SaRa05,Saha06}.
 
 We note that there is a more efficient way to program incremental
 updates when there are several changes made to the base predicates at
@@ -134,32 +138,34 @@ The following directives support incremental tabling:
 \index{tabling!opaque}
 
 \begin{description}
-\ourstandarditem{use\_incremental\_tabling(+PredSpecs)}{use\_incremental\_tabling/1}{Tabling}
-is a executable predicate that indicates that each tabled predicate
+\ourstandarditem{table +PredSpecs as incremental}{table/1}{Tabling} is
+a executable predicate that indicates that each tabled predicate
 specified in {\tt PredSpec} is to have its tables maintained
 incrementally.  {\tt PredSpec} is a list of skeletons, i.e. open
-terms, or {\tt Pred/Arity} specifications.  The tables will be variant
-tables.  If a predicate is already declared as subsumptively tabled,
-an error is thrown.  This predicate, when called as a compiler
-directive, implies that its arguments are tabled predicates.
+terms, or {\tt Pred/Arity} specifications.  The tables must use call
+variance and must be thread-private.  If a predicate is already
+declared as subsumptively tabled, an error is thrown.  This predicate,
+when called as a compiler directive, implies that its arguments are
+tabled predicates.
 
 We also note that any tabled predicate that is called by a predicate
-marked as \linebreak {\tt use\_incremental\_tabling} must also be declared with
-{\tt use\_incremental\_tabling} (or with {\tt use\_opaque\_tabling}.)
-A dynamic predicate that is called by a predicate declared with {\tt
-use\_incremental\_tabling} may or may not be declared with {\tt
-use\_incremental\_dynamic}.  But if one is not declared {\tt
-use\_incremental\_dynamic}, then changes to it will not be propagated
-to incrementally maintained tables.
+tabled as incremental must also be tabled as incremental or as opaque.
+On the other hand, a dynamic predicate {\tt d/n} that is called by a
+predicate tabled as incremental may or may not need to be declared as
+incremental.  However if {\tt d/n} is not declared incremental, then
+changes to it will not be propagated to incrementally maintained
+tables.
 
-\ourstandarditem{use\_incremental\_dynamic(+PredSpecs)}{use\_incremental\_dynamic/1}{Tabling}
+\ourstandarditem{dynamic +PredSpecs as incremental}{dynamic/1}{Tabling}
+%
 is an executable predicate that indicates that a predicate is dynamic
 and used to define an incrementally tabled predicate and will be
 updated using {\tt incr\_assert} and/or {\tt incr\_retractall} (or
 relatives.)  This predicate, when called as a compiler directive,
 implies that its arguments are dynamic predicates.
 
-\ourstandarditem{use\_opaque\_tabling(+PredSpecs)}{use\_opaque\_tabling/1}{Tabling}
+\ourstandarditem{table +PredSpecs as opaque}{table/1}{Tabling} 
+%
 is an executable predicate that indicates that a predicate is tabled
 and is used in the definition of some incrementally tabled predicate
 but it should not be maintained incrementally.  In this case the
@@ -181,12 +187,12 @@ The following predicates are used to manipulate incrementally
 maintained tables:
 
 \begin{description}
-\ourmoditem{incr\_assert(+Clause)}{incr\_assert/1}{increval}
-is a version of {\tt assert/1} for dynamic predicates declared as
-\linebreak {\tt use\_incremental\_dynamic}.  This adds the clause to
-the database after any other clauses for the same predicate currently
-in the database.  It then updates all incrementally maintained tables
-that depend on this predicate.
+\ourmoditem{incr\_assert(+Clause)}{incr\_assert/1}{increval} is a
+version of {\tt assert/1} for dynamic predicates declared as
+incremental.  This adds the clause to the database after any other
+clauses for the same predicate currently in the database.  It then
+updates all incrementally maintained tables that depend on this
+predicate.
 
 \ourmoditem{incr\_assertz(+Clause)}{incr\_assertz/1}{increval}
 is the same as {\tt incr\_assert/1}.
@@ -198,9 +204,9 @@ database.
 
 \ourmoditem{incr\_retractall(+Clause)}{incr\_retractall/1}{increval}
 is a version of {\tt retractall/1} for dynamic predicates declared as
-{\tt use\_incremental\_dynamic}.  This removes all clauses in the database that
-match Clause.  It then updates all incrementally maintained tables
-that depend on this predicate.
+incremental.  This removes all clauses in the database that match
+Clause.  It then updates all incrementally maintained tables that
+depend on this predicate.
 
 \ourmoditem{incr\_assert\_inval(+Clause)}{incr\_assert\_inval/1}{increval}
 is similar to {\tt incr\_assert/1} except that it does not update the
@@ -230,10 +236,10 @@ incr\_table\_update/0} (or {\tt /1} or {\tt /2}).
 
 \ourmoditem{incr\_retract\_inval(+Clause)}{incr\_retract\_inval/1}{increval}
 is similar to {\tt retract/1} but is applied to dynamic predicates
-declared with \linebreak {\tt use\_incremental\_dynamic}.  It removes the matching
-clauses through backtracking and marks the depending tables as
-invalid.  All invalid tables should be updated by an explicit call to
-{\tt incr\_table\_update/0} (or {\tt /1} or {\tt /2}).
+declared as incremental.  It removes the matching clauses through
+backtracking and marks the depending tables as invalid.  All invalid
+tables should be updated by an explicit call to {\tt
+  incr\_table\_update/0} (or {\tt /1} or {\tt /2}).
 
 \ourmoditem{incr\_table\_update}{incr\_table\_update/0}{increval}
 is called after base predicates have been changed (by {\tt
@@ -269,13 +275,13 @@ table.  {\tt Goal} is the tabled call to invalidate.  A subsequent
 invocation of {\tt incr\_table\_update} will cause that tabled goal to
 be recomputed and all incrementally maintained tables depending on
 that goal will be updated.  This predicate can be used if a tabled
-predicate depends on some external data and not (only) on {\tt
-use\_incremental\_dynamic} predicates.  If, for example, an incrementally
-maintained predicate depends on a relation stored in an external
-relational database (perhaps accessed through the ODBC interface),
-then this predicate can be used to invalidate the table when the
-external relation changes.  The application programmer must know when
-the external relation changes and invoke this predicate as necessary.
+predicate depends on some external data and not (only) on dynamic
+incremental predicates.  If, for example, an incrementally maintained
+predicate depends on a relation stored in an external relational
+database (perhaps accessed through the ODBC interface), then this
+predicate can be used to invalidate the table when the external
+relation changes.  The application programmer must know when the
+external relation changes and invoke this predicate as necessary.
 
 \ourmoditem{incr\_directly\_depends(?DependentGoal,?Goal)}{incr\_directly\_depends/2}{increval}
 accesses the dependency structures used by the incremental table
@@ -299,7 +305,7 @@ relation.
 We have a number of variations to how predicates can be tabled in XSB:
 subsumptive, variant, incremental, opaque, dynamic, private, and
 shared.  We also have variations in forms of dynamic predicates:
-tabled, incremental, private, and shared.  We extend the {\tt table}
+tabled, incremental, private, and shared.  XSB extends the {\tt table}
 and {\tt dynamic} compiler directives with modifiers that allow users
 to indicate the kind of tabled or dynamic predicate they want.  For
 example,
@@ -311,15 +317,16 @@ example,
 :- dynamic r/2,t/1 as incremental.
 \end{verbatim}
 
-The first example above would be equivalent to:
-
-\begin{verbatim}
-:- table p/3,s/1.
-:- use_subsumptive_tabling p/3,s/1.
-:- thread_private p/3,s/1.
-
-\end{verbatim}
-
+\comment{
+% The first example above would be equivalent to:
+% 
+% \begin{verbatim}
+% :- table p/3,s/1.
+% :- use_subsumptive_tabling p/3,s/1.
+% :- thread_private p/3,s/1.
+% 
+% \end{verbatim}
+}
 The modifiers available for the {\tt table} compiler directive are
 {\tt subsumptive}, {\tt variant}, {\tt (dynamic)} or {\tt dyn}, {\tt
 incremental}, {\tt opaque}, {\tt private}, and {\tt shared}.  Not all

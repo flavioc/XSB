@@ -954,12 +954,11 @@ So that XSB can be used to write reasonable scripts.
   without multi-threading.
 \item[{\tt -S}] Indicates that tabled predicates are to be evaluated
   using subsumption-based tabling as a default for tabled predicates
-  whose tabling method is not specified by using {\tt
-    use\_variant\_tabling/1} or {\tt use\_subsumptive\_tabling/1} (see
-  Section \ref{sec:TablePred:Decl&Mod}).  If this option is not
-  specified, variant-based tabling will be used as the default tabling
-  method by XSB\@.  
-\index{shared\_predicates}
+  whose tabling method is not specified by using {\tt table Predspec
+    as subsumptive} or {\tt table Predspec as variant}(see Section
+  \ref{sec:TablePred:Decl&Mod}).  If this option is not specified,
+  variant-based tabling will be used as the default tabling method by
+  XSB\@.  \index{shared\_predicates}
 \item[{\tt --shared\_predicates}] In the multi-threaded engine, makes
     all predicates thread-shared by default; has no effect in the
     single-threaded engine.
@@ -1237,10 +1236,13 @@ static and dynamic loading.
 %
 \item Dynamic loading does not allow module/export declarations, mode
   declarations, or unification factoring.  It does however, allow
-  files to import predicates, allows tabling declarations (except for
-  {\tt auto\_table} and {\tt suppl\_table}, operator declarations
-  (when a canonical read is not used) and declarations of a predicate
-  to be thread\_shared or thread\_private.  \ei \ei
+  files to import predicates, allows tabling and dynamic declarations (except for
+  {\tt auto\_table} and {\tt suppl\_table}, and operator declarations
+  (when a canonical read is not used).
+% and declarations of a predicate
+%  to be thread\_shared or thread\_private.  
+\ei 
+\ei
 
 \subsection{The multifile directive}
 \index{declarations!\texttt{multifile/2}}

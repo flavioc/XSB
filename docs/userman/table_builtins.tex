@@ -163,29 +163,35 @@ each predicate use tabling.
   {\tt ?- dynamic PredSpec}.
 %
 \item {\tt subsumptive} which causes the table evaluation method of
-  the predicate(s) to use call subsumption, and is
-  equivalent to {\tt ?- use\_subsumprive\_tabling PredSpec}.
+  the predicate(s) to use call subsumption.
+%, and is
+%  equivalent to {\tt ?- use\_subsumprive\_tabling PredSpec}.
 %
 \item {\tt variant} which causes the table evaluation method of the
-  predicate(s) to use call variance, and is equivalent to {\tt ?-
-    use\_variant\_tabling PredSpec}.
+  predicate(s) to use call variance.
+%, and is equivalent to {\tt ?-
+%    use\_variant\_tabling PredSpec}.
 %
 \item {\tt incremental} which causes the table evaluation method of
-  the predicate(s) to be incremental and is equivalent to {\tt ?-
-    use\_incremental\_tabling PredSpec}.
+  the predicate(s) to be incremental.
+% and is equivalent to {\tt ?-
+%    use\_incremental\_tabling PredSpec}.
 %
 \item {\tt opaque} which indicates that the tables predicate is used
   in the definition of an incremental table, but are not to be
-  incrementally maintained themselves.  It is equivalent to {\tt ?-
-    use\_opaque\_tabling PredSpec}.
+  incrementally maintained themselves.  
+%It is equivalent to {\tt ?-
+%    use\_opaque\_tabling PredSpec}.
 %
 \item {\tt private} which causes the predicate(s) to be treated as
-  thread private in addition to being tabled, and is equivalent to
-  {\tt ?- thread\_private PredSpec}.
+  thread private in addition to being tabled.
+%, and is equivalent to
+%  {\tt ?- thread\_private PredSpec}.
 %
 \item {\tt shared} which causes the predicate(s) to be treated as
-  thread shared in addition to being tabled, and is equivalent to
-  {\tt ?- thread\_shared PredSpec}.
+  thread shared in addition to being tabled.
+%, and is equivalent to
+%  {\tt ?- thread\_shared PredSpec}.
 %
 \ei
 \ei
@@ -212,25 +218,25 @@ each predicate use tabling.
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-\ourstandarditem{use\_subsumptive\_tabling\ \ +PredSpec$_1$, \ldots, +PredSpec$_k$.}{use\_subsumptive\_tabling/1}{Tabling}
-
+% \ourstandarditem{use\_subsumptive\_tabling\ \ +PredSpec$_1$, \ldots, +PredSpec$_k$.}{use\_subsumptive\_tabling/1}{Tabling}
 %
-Declares each \emph{tabled predicate} denoted by \code{PredSpec$_i$}
-to use call-subsumption, thus overriding the system default of call
-variance~\footnote{If XSB is called with the {\tt -S} option the
-  default will be to use call subsumption}.  The tabling strategy can
-be changed at will through the invocation of this and the following
-predicate.  Note, however, that the table for the predicate must be
-empty at the time of the change.
+%
+% Declares each \emph{tabled predicate} denoted by \code{PredSpec$_i$}
+% to use call-subsumption, thus overriding the system default of call
+% variance~\footnote{If XSB is called with the {\tt -S} option the
+%   default will be to use call subsumption}.  The tabling strategy can
+% be changed at will through the invocation of this and the following
+% predicate.  Note, however, that the table for the predicate must be
+% empty at the time of the change.
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-\ourstandarditem{use\_variant\_tabling\ \ +PredSpec$_1$, \ldots, +PredSpec$_k$.}{use\_variant\_tabling/1}{Tabling}
+% \ourstandarditem{use\_variant\_tabling\ \ +PredSpec$_1$, \ldots, +PredSpec$_k$.}{use\_variant\_tabling/1}{Tabling}
 %
-Declares each \emph{tabled predicate} denoted by \code{PredSpec$_i$}
-to use call-variance, thus overriding the system default if XSB is
-called with the {\tt -S} option.  The same comments apply as for {\tt
-  use\_subsumptive\_tabling/1}.
+% Declares each \emph{tabled predicate} denoted by \code{PredSpec$_i$}
+% to use call-variance, thus overriding the system default if XSB is
+% called with the {\tt -S} option.  The same comments apply as for {\tt
+%   use\_subsumptive\_tabling/1}.
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 \end{description}
@@ -256,8 +262,8 @@ purposes.  One uses variant-based tabling:
 \rule[-2ex]{0ex}{5ex} \textbf{Program} & \textbf{Table} \\
 \begin{minipage}{14.5em}
 \begin{verbatim}
-:- table p/2.
-:- use_variant_tabling p/2.
+:- table p/2 as variant.
+
 p(1,2).
 p(1,3).
 p(1,_).
@@ -286,8 +292,7 @@ and the other uses subsumption-based tabling:
 \rule[-2ex]{0ex}{5ex} \textbf{Program} & \textbf{Table} \\
 \begin{minipage}{17em}
 \begin{verbatim}
-:- table q/2.
-:- use_subsumptive_tabling q/2.
+:- table q/2 as subsumptive.
 q(a,b).
 q(b,c).
 q(a,c).
@@ -1162,11 +1167,11 @@ Behaves as {abolish\_table\_pred/1}, but allows the default {\tt
 
 \ourstandarditem{abolish\_table\_call(+CallTerm)}{abolish\_table\_call/1}{Tabling}
 %
-Invalidates all entries from the table for the any subgoals that unify
+Invalidates all entries from the table for any subgoals that unify
 with {\tt CallTerm}.  If a subgoal $S$ unifying with {\tt CallTerm}
 contains an answer $A$ that is active in the current enviornment, the
 table entry for $S$ will not be reclaimed until $A$ is no longer
-active; otherwise the space for $S$ will be reclaimed immediately.  
+active; otherwise the space for $S$ will be reclaimed immediately.
 
 If $S$ contains a conditional answer, the default behavior will be to
 transitively abolish any subgoals that depend on any conditional
@@ -1203,11 +1208,11 @@ thread-private.
 \bi
 \item 	{\tt table\_error}
 \ei
-\item {\tt CallTerm} unifies with a table that is formed from a
-  predicate that does not use variant tabling.  
-\bi
-\item 	{\tt table\_error}
-\ei
+%\item {\tt CallTerm} unifies with a table that is formed from a
+%  predicate that does not use variant tabling.  
+%\bi
+%\item 	{\tt table\_error}
+%t\ei
 \ei
 %
 

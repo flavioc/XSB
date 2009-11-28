@@ -1062,7 +1062,7 @@ Displays usage information on the current output stream, including:
 \item Process-level information about allocated memory excluding
   execution stacks but including: 
 \begin{itemize}
-\item {\tt atom} Space used to maintain global information about
+\item {\tt atoms} Space used to maintain global information about
   predicates and structures. 
 %
 \item {\tt string} Space used to maintain information about atomic
@@ -1354,6 +1354,9 @@ with
  multi-threaded engine, this number refers to the completion stack of
  the calling thread, which may contain both thread-private and
  thread-shared tables.
+%
+\item {\tt atoms} which instantiates {\tt Result} to the number of
+ bytes taken by atoms in the atom table.
 %
 \ei
 

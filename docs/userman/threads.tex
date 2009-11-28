@@ -111,8 +111,8 @@ multi-threaded engine, the XSB thread id of any thread can be queried
 using the predicate {\tt thread\_self/1}.
 
 \section{Communication among Threads}
-\index{tabling!thread\_private}
-\index{tabling!thread\_shared}
+%\index{tabling!thread\_private}
+%\index{tabling!thread\_shared}
 
 \begin{example}
 Consider the program fragment
@@ -138,8 +138,13 @@ visible to various threads, {\tt p/1} must be declared to be shared
 with the following declaration.
 %
 \begin{verbatim}
-:- thread_shared(p(_)).
+:- table p/1 as shared.
 \end{verbatim}
+or
+\begin{verbatim}
+:- dynamic p/1 as shared.
+\end{verbatim}
+
 %
 Alternately, dynamic and tabled predicates can be made thread-shared
 by default by invoking XSB with the command-line argument {\tt
@@ -147,8 +152,13 @@ by default by invoking XSB with the command-line argument {\tt
 thread-private through the declaration
 %
 \begin{verbatim}
-:- thread_private(p(_)).
+:- table p/1 as private.
 \end{verbatim}
+or 
+\begin{verbatim}
+:- dynamic p/1 as private.
+\end{verbatim}
+
 %
 \index{shared\_predicates}
 
@@ -191,9 +201,9 @@ data, but
 %in the default multi-threaded configuration of XSB, which
 %uses local scheduling for tabled evaluation, 
 the tables themselves may be thread-shared or thread-private.  Like
-dynamic code, the declaration {\tt thread\_shared/1} allows sharing of
-tables for a predicate evaluated with call-variance to be shared among
-threads~\footnote{In \version, tabled predicates using
+dynamic code, the declaration {\tt table Predspec as shared} allows
+sharing of tables for a predicate evaluated with call-variance to be
+shared among threads~\footnote{In \version, tabled predicates using
   call-subsumption are always private; an attempt to make such a
   predicate thread-shared throws an exception.}.
 %
@@ -591,7 +601,7 @@ execute {\tt server\_loop}, as the main thread cannot be canceled.
 \begin{tt}
 \begin{tabbing}
 fooo\=foo\=foo\=foo\=fooooooooooooooooooooooooooooooo\=ooooooooooooo\=\kill
-\> :- thread\_shared server\_id/1. \\
+\> :- dynamic server\_id/1 as shared. \\
 \\
 \> server :-\\
 \> \> socket($SockFD$),\\
