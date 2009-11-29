@@ -186,35 +186,38 @@ first one encountered will be used.
 XSB has been designed as a module-oriented Prolog system.  Modules
 provide a small step towards {\em logic programming ``in the large''}
 that facilitates the construction of large programs or projects from
-components that are developed, compiled and tested separately.  Also
-module systems support the {\em principle of information hiding} and
-can provide a basis for {\em data abstraction}.  The module system of
-XSB is {\em file based} -- one module per file -- and {\em flat} --
-modules cannot be nested.  In addition, XSB's module system is to some
-extent {\em atom-based}, where any symbol in a module can be imported,
+components that are developed, compiled and tested separately.  Also,
+module systems support the principle of information hiding and can
+provide a basis for data abstraction.  The module system of XSB is
+{\em file based} -- one module per file -- and {\em flat} -- modules
+cannot be nested.  In addition, XSB's module system is to some extent
+{\em atom-based}, where any symbol in a module can be imported,
 exported or be a local symbol, as opposed to the predicate-based ones
 where this can be done only for predicate symbols~\footnote{Operator
   symbols can be exported as any other symbols, but their precedence
   must be redeclared in the importing module.}.  As we will discuss,
 this leads to certain differences of XSB's module system from those of
-some other Prologs.
+some other Prologs, and to certain incompatabilities with the ISO
+standard for modules (which is not supported by most Prologs).  At the
+same time, XSB's module system has enough commonalities with those of
+other Prologs to be able to support Prolog commons libraries.
 
 \paragraph*{Module Syntax}
 \index{modules!name} 
 %
 By default, files are not treated as modules.  In order for a file to
-be treated as a module, it must contain one or more {\tt export/1} or
-{\tt module/1} declarations, which specify that a set of symbols
+be treated as a module, it must contain one or more {\tt module/2} or
+{\tt export/1} declarations, which specify that a set of symbols
 appearing in that module is visible and therefore can be used by any
-other module.  In XSB, the {\em module name} is equal to the base file
-name in which the module is defined.  Any file (either module or not)
-may also contain {\tt import/1} or {\tt use\_module/2} declarations,
-which allow symbols defined in and exported by other modules to be
-used in the current module.  In addition, a module can also contain
-{\it local declarations}, which specify that a set of symbols is {\it
-  visible by this module only}, and therefore cannot be accessed by
-any other module.  Module declarations can appear anywhere in the
-source or header files and have the following forms:
+other module.  In XSB, the {\em module name} must be equal to the base
+file name in which the module is defined.  Any file (either module or
+not) may also contain {\tt use\_module/2} or {\tt import/1}
+declarations, which allow symbols defined in and exported by other
+modules to be used in the current module.  In addition, a module can
+also contain {\it local declarations}, which specify that a set of
+symbols is {\it visible by this module only}, and therefore cannot be
+accessed by any other module.  Module declarations can appear anywhere
+in the source or header files and have the following forms:
 
 \index{modules!XSB syntax} \index{declarations!\texttt{export/1}}
 \index{declarations!\texttt{import/2}} \index{declarations!\texttt{local/1}} 
@@ -225,11 +228,13 @@ source or header files and have the following forms:
 
 \demo{:- import $sym_1$, \ldots, $sym_n$ from $module$. }
 
+\demo{:- import $sym$ from $module$ as $sym'$. }
+
 \demo{:- local $sym_1$, \ldots, $sym_m$. }
 
 \noindent
-where $sym_i$ has the form $functor/arity$, and $module$ is a module
-name.
+where $sym_i$ has the form $functor/arity$, and $module$ is a Prolog
+atom representing a module name.
 
 In XSB, the declaration
 
@@ -263,6 +268,15 @@ which is often used in other Prolog systems, is {\em not} equivalent
 to an XSB import statement, as each XSB import statement must
 explicitly declare a list of predicates that are used from each
 module.  Such a declaration will raise a compilation error.
+
+The declaration 
+
+\demo{:- import $sym$ from $module$ as $sym'$. }
+
+\noindent
+allows a predicate to be imported from a module, but renamed as $sym'$
+within the importing module.  Such a feature is useful when porting a
+library written for another Prolog (e.g. a constraint library) to XSB.
 
 For modules, the base file name is stored in its byte code file, so
 that renaming a byte-code file for a mule may cause problems, as the
