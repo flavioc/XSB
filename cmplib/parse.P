@@ -412,9 +412,13 @@ parse_directive(import(from(X, Mod)), _QrList,SymTab,_ModName,_ModStruct) :- !,
 	 ;	parse_comma_list(X, SymTab, [im(Mod)], (import)),
 		sym_insert(Mod, 0, [module], SymTab, _)
 	).
-parse_directive(import(as(from(P/A, Mod),P2/A2)), _QrList,SymTab,_ModName,_ModStruct) :- !,
+parse_directive(import(as(from(PredIn, Mod),PredAs)), _QrList,SymTab,_ModName,_ModStruct) :- !,
 	(var(Mod)
 	 ->	error(('Module cannot be a variable. Importing: ',P/A))
+         ; \+ (PredIn = P/A,atom(P),integer(A))
+         -> error(('Predicate specifier myst be of the form PredName/Arity: ',(PredIn)))
+         ; \+ (PredAs = P/A,atom(P),integer(A))
+         -> error(('Predicate specifier myst be of the form PredName/Arity: ',PredAs))
 	 ; A \== A2
 	 ->	error(('Predicate arities must be the same. Importing: ',P/A,' as ',P2/A2))
 	 ;	sym_insert(Mod, 0, [module,used], SymTab, _),
@@ -728,7 +732,7 @@ parse_comma_list(Spec, SymTab, SymbolProp, _Directive) :-
 	functor(Spec,P,A),
 	sym_insert(P, A, SymbolProp, SymTab, _).
 parse_comma_list(X, _, _, Directive) :-
-	warning(('Non predicate specification "', X, 
+	error(('Non predicate specification "', X, 
 		 '" found in ', Directive, ' directive. Ignored!')).
 
 parse_comma_list_table((Pred, Preds), SymTab) :- 
