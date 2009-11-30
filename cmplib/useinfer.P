@@ -111,6 +111,8 @@ infer_export_fill(RestTab, SymTab, ClList, Domain) :-
 		; pred_implicitly_imported_from(Sym, Mod) ->
 			sym_insert(Mod, 0, [module,used], SymTab, _ModSym),
 			Dom = im(Mod)
+		; sym_prop(defined(Mod,_Pred),Sym) -> 
+			sym_insert(Mod, 0, [module,used], SymTab, _)
 		; Dom = Domain
 		)
 	; Dom = global	% function symbols are assumed global; temporarily
@@ -168,6 +170,10 @@ infer_usage_of_symbol(Sym, InList, OutList, Module,Ps_or_real) :-
 			 ; 	true)
 		  ; sym_prop((multifile),Sym) ->
 			  true	% cop-out, maybe should recurse through modded clauses
+		  ; sym_prop(defined(Mod,Pred),Sym) -> 
+			  sym_insert(Mod, 0, [module,used], SymTab, _),
+			  sym_name(Sym,_P,A),
+			  sym_insert(Pred, A, [used], SymTab, _)
 		  ; sym_name(Sym, P, A),
 		    sym_propin(undef, Sym),
 		    warning(('Undefined predicate ', P, '/', A))

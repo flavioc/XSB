@@ -415,14 +415,17 @@ parse_directive(import(from(X, Mod)), _QrList,SymTab,_ModName,_ModStruct) :- !,
 parse_directive(import(as(from(PredIn, Mod),PredAs)), _QrList,SymTab,_ModName,_ModStruct) :- !,
 	(var(Mod)
 	 ->	error(('Module cannot be a variable. Importing: ',P/A))
-         ; \+ (PredIn = P/A,atom(P),integer(A))
-         -> error(('Predicate specifier myst be of the form PredName/Arity: ',(PredIn)))
-         ; \+ (PredAs = P/A,atom(P),integer(A))
-         -> error(('Predicate specifier myst be of the form PredName/Arity: ',PredAs))
-	 ; A \== A2
-	 ->	error(('Predicate arities must be the same. Importing: ',P/A,' as ',P2/A2))
-	 ;	sym_insert(Mod, 0, [module,used], SymTab, _),
-		sym_insert(P2,A2,[defined(Mod,P)],SymTab,_)
+	 ; PredIn = P/A, PredAs = P2/A2
+	 ->	(\+ (atom(P),integer(A))
+		 ->	error(('Predicate specifier must be of the form PredName/Arity. Importing: ',(PredIn)))
+		 ; \+ (atom(P),integer(A))
+		 ->	error(('Predicate specifier must be of the form PredName/Arity. Importing as: ',PredAs))
+		 ; A \== A2
+		 ->	error(('Predicate arities must be the same. Importing: ',P/A,' as ',P2/A2))
+		 ;	sym_insert(Mod, 0, [module], SymTab, _),
+			sym_insert(P2,A2,[pred,defined(Mod,P)],SymTab,_)
+		)
+	 ;	error(('Predicate specifiers must be of the form PredName/Arity. Importing (as): ',PredIn,' and ',PredAs))
 	).
 parse_directive(use_module(ModIm,X), _QrList,SymTab,_ModName,_ModStruct) :- !,
 	(var(ModIm)
