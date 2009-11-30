@@ -145,11 +145,13 @@ static Psc make_psc_rec(char *name, char arity) {
 
 void set_psc_ep_to_psc(Psc psc_to_set, Psc target_psc) {
   if (get_arity(psc_to_set) != get_arity(target_psc)) {
-    xsb_warn("Cannot import predicate as a predicate with a different arity: %s/%d\n",
+    xsb_abort("[IMPORT AS] Cannot import predicate as a predicate with a different arity: %s/%d\n",
 	     get_name(psc_to_set),get_arity(psc_to_set));
-  } else if (get_ep(psc_to_set) != (byte *)&(psc_to_set->load_inst)) {
-    xsb_warn("Psc to set must not already be defined: %s/%d\n",
+  } else if (get_ep(psc_to_set) != (byte *)&(psc_to_set->load_inst) &&
+	     get_ep(psc_to_set) != (byte *)&(target_psc->load_inst)) {
+    xsb_warn("[IMPORT AS] Redefining entry to import-as predicate: %s/%d\n",
 	    get_name(psc_to_set),get_arity(psc_to_set));
+    set_ep(psc_to_set,(byte *)&(target_psc->load_inst));
   } else {
     set_ep(psc_to_set,(byte *)&(target_psc->load_inst));
   }
