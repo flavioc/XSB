@@ -389,27 +389,50 @@ load(ModName) :-
 	 ->	local_fmt_write(STDDBG, "[ load module %s ]\n", arg(ModName))
 	 ;	true
 	),
-	(search_file(ModName, [FileName_O,FileName_P,FileName_H],
-		     [XSB_OBJ_EXTENSION_ATOM,XSB_SRC_EXTENSION_ATOM,XSB_HDR_EXTENSION_ATOM]),
-	 (local_file_exists(FileName_O),ObjExists=1 ; local_file_exists(FileName_P),ObjExists=0)
+	(search_file(ModName, [FileName_O,FileName_P,FileName_H,FileName_C,FileName_CPP],
+		     [XSB_OBJ_EXTENSION_ATOM,XSB_SRC_EXTENSION_ATOM,XSB_HDR_EXTENSION_ATOM,'.c','.cpp']),
+	 (local_file_exists(FileName_O),ObjExists=1 ; local_file_exists(FileName_P),ObjExists=0,Type='P' ;
+	  local_file_exists(FileName_C),ObjExists=0,Type=c ; local_file_exists(FileName_CPP),ObjExists=0,Type=cpp)
 	 ->	(ObjExists =:= 1
 		 ->	(system_mod(FileName_O)	% DONT CHECK TIME but load byte-code regardless if in XSB system 
 			 ->	do_the_load(FileName_O) % (allows self recompile, could just exempt cmplib and syslib)
-			 ;	(local_file_exists(FileName_P)
-				 ->	(local_newerthan(FileName_P,FileName_O) % check if source is newer
-					 ->	compile_and_load(FileName_P,ModName)
-					 ; local_file_exists(FileName_H),
-					   local_newerthan(FileName_H,FileName_O)
-					 ->	compile_and_load(FileName_P,ModName)
-					 ;	do_the_load(FileName_O) % load byte-code, it's newest
-					)
-				 ;	do_the_load(FileName_O) % load byte-code, no P-file
-				)
+			 ;	check_times_and_load(FileName_O,FileName_P,FileName_H,FileName_C,FileName_CPP)
 			)
-		 ;	compile_and_load(FileName_P,ModName) % no byte-code file, compile sourcefile
+		 ;	(Type=='P'
+			 ->	compile_and_load(FileName_P,ModName) % no byte-code file, compile sourcefile
+			 ; Type == c
+			 ->	compile_and_load(FileName_C,ModName) % no byte-code, compile C sourcefile
+			 ; Type == cpp
+			 ->	compile_and_load(FileName_CPP,ModName) % no byte-code, compile C++ sourcefile
+			)
 		)
 	 ;	tilde_expand_filename(ModName,ExpandedModName), % file not found
 		existence_error(module,ExpandedModName,load,1)
+	).
+
+check_times_and_load(FileName_O,FileName_P,FileName_H,FileName_C,_FileName_CPP) :-
+	(local_file_exists(FileName_P)
+	 ->	(local_newerthan(FileName_P,FileName_O) % check if source is newer
+		 ->	compile_and_load(FileName_P,ModName)
+		 ; (local_file_exists(FileName_H),local_newerthan(FileName_H,FileName_O))
+		 ->	compile_and_load(FileName_P,ModName)
+		 ;	do_the_load(FileName_O) % load byte-code, it's newest
+		)
+	 ; local_file_exists(FileName_C)
+	 ->	(local_newerthan(FileName_C,FileName_O) % check if source is newer
+		 ->	compile_and_load(FileName_C,ModName)
+		 ; (local_file_exists(FileName_H),local_newerthan(FileName_H,FileName_O))
+		 ->	compile_and_load(FileName_C,ModName)
+		 ;	do_the_load(FileName_O) % load byte-code, it's newest
+		)
+	 ; local_file_exists(FileName_CPP)
+	 ->	(local_newerthan(FileName_CPP,FileName_O) % check if source is newer
+		 ->	compile_and_load(FileName_CPP,ModName)
+		 ; (local_file_exists(FileName_H),local_newerthan(FileName_H,FileName_O))
+		 ->	compile_and_load(FileName_CPP,ModName)
+		 ;	do_the_load(FileName_O) % load byte-code, it's newest
+		)
+	 ;	do_the_load(FileName_O) % load byte-code, no source-file
 	).
 
 % actually load the byte-code file
@@ -448,7 +471,7 @@ ll_code_call(A,B,C) :- code_call(A,B,C).
  *  The extension should NOT already be a part of the incoming ModName.
  */
 
-search_file(ModName, AbsFileNames, Extensions) :- 
+search_file(ModName, AbsFileNames, Extensions) :-
 	tilde_expand_filename(ModName,ExpandedModName),
 	(is_absolute_filename(ExpandedModName)
 	 ->	WholePath = [ExpandedModName]
