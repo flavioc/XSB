@@ -254,7 +254,7 @@ static struct xsb_data** driverMySQL_getNextRow(struct driverMySQL_queryInfo* qu
 					break;
 
 			case STRING_TYPE:
-					result[i]->val->str_val = (char *)malloc(strlen(row[i]) * sizeof(char));
+			  result[i]->val->str_val = (char *)malloc((strlen(row[i])+1) * sizeof(char));
 					strcpy(result[i]->val->str_val, (char *)row[i]);
 					break;
 		}
