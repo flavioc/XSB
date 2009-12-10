@@ -14,7 +14,7 @@ databases through various drivers. Using this interface, information
 in different DBMSs can be accessed by SQL queries. The interface
 defines Prolog predicates which makes it easy to connect to databases,
 query them, and disconnect from the databases. Central to the concept
-of a connection to a database is the notion of a \emph{handle}.  A
+of a connection to a database is the notion of a \emph{connection handle}.  A
 connection handle describes a particular connection to a database.
 Similar to a connection handle is the notion of a query handle which
 describes a particular query statement. As a consequence of the
@@ -223,7 +223,7 @@ for other (non-ODBC) database drivers.
 
 The {\tt db\_connect/5} predicate
 assumes that an entry for a data source name (DSN) exists in the {\tt
-  odbc.ini} file. The {\tt Handle} is the handle name used for the
+  odbc.ini} file. The {\tt Handle} is the connection handle name used for the
 connection. The {\tt Driver} is the driver being used for the connection.
 The {\tt User} and {\tt Password} are the user name and password being used
 for the connection. The user is responsible for giving the name to the
@@ -265,7 +265,7 @@ To close a database connection use:
 \end{verbatim}
 
 \noindent
-where handle is the handle name for the connection. For example, 
+where handle is the connection handle name. For example, 
 to close the connection to above mysql database call:
 
 \begin{verbatim}
@@ -290,7 +290,7 @@ Direct querying is done by the predicate:
 \end{verbatim}
 
 ConnectionHandle is the name of the handle used for the database connection.
-QueryHandle is the name of the handle for this particular query. 
+QueryHandle is the name of the \emph{query handle} for this particular query. 
 Currently, the query handle is being used only for prepared queries. 
 However, in future versions, the query handle can be used in direct
 queries to retrieve arbitrary tuples from a result set using cursors.
@@ -346,9 +346,9 @@ The BindList contains the ground values corresponding to the `?' in
 the prepared statement. The ReturnList is a list of variables for
 each argument in a tuple of the result set.
 
-For direct querying, the statement handle is closed automatically when
+For direct querying, the query handle is closed automatically when
 all the tuples in the result set have been retrieved. In order to explicitly
-close a statement handle, and free all the resources associated with
+close a query handle, and free all the resources associated with
 the handle, a call is made to the predicate:
 
 \begin{verbatim}
@@ -435,6 +435,12 @@ This error is thrown when the user tries to execute a prepared statement,
 using {\tt db\_prepare\_execute}, without binding all the parameters of the
 statement.
 
+\item {\bf XSB\_DBI\_010: XSB\_DBI ERROR: Same query handle used for
+    different queries}\\
+  This error is thrown when the user issues a prepare statement ({\tt
+    db\_prepare})  using a query
+  handle that has been in use by another prepared statement and which has
+  not been closed. Query handles must be closed before reuse.
 \end{itemize}
 
 \section{Notes on specific drivers}
