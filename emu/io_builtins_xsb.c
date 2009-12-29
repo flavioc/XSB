@@ -339,7 +339,7 @@ xsbBool fmt_write(CTXTdecl)
 no, need more space if no snprintf... */
 #ifdef HAVE_SNPRINTF
 #define SAFE_OUT_SIZE MAX_SPRINTF_STRING_SIZE
-int sprintf(char *s, const char *format, /* args */ ...);
+//int sprintf(char restrict *s, const char *format, /* args */ ...);
 #else
 #define SAFE_OUT_SIZE MAX_SPRINTF_STRING_SIZE
 #endif
