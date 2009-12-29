@@ -115,8 +115,7 @@ void dsExpand(DynamicStack *ds, int num_frames) {
   new_base = mem_realloc(DynStk_Base(*ds),DynStk_CurSize(*ds)*DynStk_FrameSize(*ds),total_bytes,TABLE_SPACE);
   if ( IsNULL(new_base) && total_bytes > 0)
     xsb_abort("Ran out of memory during expansion of %s", DynStk_Name(*ds));
-  DynStk_Top(*ds) =
-    new_base + ((char *)DynStk_Top(*ds) - (char *)DynStk_Base(*ds));
+  DynStk_Top(*ds) = new_base + DynStk_CurBytes(*ds);
   DynStk_Base(*ds) = new_base;
   DynStk_Ceiling(*ds) = new_base + total_bytes;
   DynStk_CurSize(*ds) = new_size;

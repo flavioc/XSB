@@ -55,8 +55,11 @@ typedef struct {
 #define DynStk_CurSize(DS)	( (DS).size.stackcur )
 #define DynStk_Name(DS)		( (DS).name )
 
+#define DynStk_CurBytes(DS)  \
+  ((char *)DynStk_Top(DS) - (char *)DynStk_Base(DS))
+
 #define DynStk_NumFrames(DS)	\
-   (((char *)DynStk_Top(DS) - (char *)DynStk_Base(DS)) / DynStk_FrameSize(DS))
+   (DynStk_CurBytes(DS) / DynStk_FrameSize(DS))
 
 
 /* Top-of-Stack Manipulations
