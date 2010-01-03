@@ -102,7 +102,7 @@ extern DynamicStack tstTermStack;
 
 #define TermStack_PushFunctorArgs(CS_Cell)                   \
    TermStack_PushLowToHighVector( clref_val(CS_Cell) + 1,    \
-				  get_cell_arity(CS_Cell) )
+				  get_arity((Psc)*clref_val(CS_Cell) ))
 
 #define TermStack_PushListArgs(LIST_Cell) {	\
    CPtr pListHeadCell = clref_val(LIST_Cell);	\
@@ -129,7 +129,7 @@ extern DynamicStack tstTermStack;
    DynStk_ExpandIfOverflow(tstTermStack,numElements);		\
    for (i = 0; i < numElements; i++) {				\
      pElement--;						\
-     TermStack_BlindPush(get_term_deref(pElement));				\
+     TermStack_BlindPush(*pElement);				\
    }								\
  }
    
@@ -142,7 +142,7 @@ extern DynamicStack tstTermStack;
    DynStk_ExpandIfOverflow(tstTermStack,numElements);		\
    for (i = 0; i < numElements; i++) {				\
      pElement++;						\
-     TermStack_BlindPush(get_term_deref(pElement));				\
+     TermStack_BlindPush(*pElement);				\
    }								\
  }
 

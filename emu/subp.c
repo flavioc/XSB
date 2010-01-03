@@ -214,7 +214,7 @@ xsbBool are_identical_terms(Cell term1, Cell term2) {
 
     for ( cptr1++, cptr2++, i = 0;  i < (int)get_arity(psc1)-1;  cptr1++, cptr2++, i++ )
       if ( ! are_identical_terms(*cptr1,*cptr2) ) 
-	return FALSE;
+	      return FALSE;
     term1 = *cptr1; 
     term2 = *cptr2;
     goto begin_are_identical_terms;

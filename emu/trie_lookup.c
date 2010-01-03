@@ -721,17 +721,17 @@ void *iter_sub_trie_lookup(CTXTdeclc void *trieNode, TriePathType *pathType) {
        *  NOTE:  A Trie constant looks like a Heap constant.
        */
       if (search_mode == MATCH_SYMBOL_EXACTLY) {
-	symbol = EncodeTrieConstant(subterm);
-	Set_Matching_and_TrieVar_Chains(symbol,pCurrentBTN,variableChain);
-	NonVarSearchChain_ExactMatch(symbol, pCurrentBTN, variableChain,
+	      symbol = EncodeTrieConstant(subterm);
+	      Set_Matching_and_TrieVar_Chains(symbol,pCurrentBTN,variableChain);
+	      NonVarSearchChain_ExactMatch(symbol, pCurrentBTN, variableChain,
 				     TermStack_NOOP)
-	/*
-	 *  We've failed to find an exact match of the constant in a node
-	 *  of the trie, so now we consider bound trievars whose bindings
-	 *  exactly match the constant.
-	 */
-	pCurrentBTN = variableChain;
-	SetNoVariant(pParentBTN);
+	      /*
+	       *  We've failed to find an exact match of the constant in a node
+	       *  of the trie, so now we consider bound trievars whose bindings
+	       *  exactly match the constant.
+	       */
+	      pCurrentBTN = variableChain;
+	      SetNoVariant(pParentBTN);
       }
       NonVarSearchChain_BoundTrievar(subterm,pCurrentBTN,variableChain);
 	/*
@@ -751,24 +751,24 @@ void *iter_sub_trie_lookup(CTXTdeclc void *trieNode, TriePathType *pathType) {
        *      	  XSB_STRUCT is a XSB_STRUCT-tagged ptr to a PSC ptr.
        */
       if (search_mode == MATCH_SYMBOL_EXACTLY) {
-	symbol = EncodeTrieFunctor(subterm);
-	Set_Matching_and_TrieVar_Chains(symbol,pCurrentBTN,variableChain);
-	NonVarSearchChain_ExactMatch(symbol, pCurrentBTN, variableChain,
+	      symbol = EncodeTrieFunctor(subterm);
+	      Set_Matching_and_TrieVar_Chains(symbol,pCurrentBTN,variableChain);
+	      NonVarSearchChain_ExactMatch(symbol, pCurrentBTN, variableChain,
 				     TermStack_PushFunctorArgs(subterm))
-	/*
-	 *  We've failed to find an exact match of the functor's name in
-	 *  a node of the trie, so now we consider bound trievars whose
-	 *  bindings exactly match the subterm.
-	 */
-	pCurrentBTN = variableChain;
-	SetNoVariant(pParentBTN);
+	      /*
+	       *  We've failed to find an exact match of the functor's name in
+	       *  a node of the trie, so now we consider bound trievars whose
+	       *  bindings exactly match the subterm.
+	       */
+	      pCurrentBTN = variableChain;
+	      SetNoVariant(pParentBTN);
       }
       NonVarSearchChain_BoundTrievar(subterm,pCurrentBTN,variableChain);
-	/*
-	 *  We've failed to find an exact match of the function expression
-	 *  with a binding of a trievar.  Our last alternative is to bind
-	 *  an unbound trievar to this subterm.
-	 */
+	    /*
+	     *  We've failed to find an exact match of the function expression
+	     *  with a binding of a trievar.  Our last alternative is to bind
+	     *  an unbound trievar to this subterm.
+	     */
       NonVarSearchChain_UnboundTrievar(subterm,variableChain);
       break;
 
@@ -846,37 +846,37 @@ void *iter_sub_trie_lookup(CTXTdeclc void *trieNode, TriePathType *pathType) {
        *  the possibility of a variant.)
        */
       if (search_mode == MATCH_SYMBOL_EXACTLY) {
-	//	printf("subterm is var\n");
-	if ( IsNonNULL(pCurrentBTN) && IsHashHeader(pCurrentBTN) )
-	  pCurrentBTN = variableChain =
-	    BTHT_BucketArray((BTHTptr)pCurrentBTN)[TRIEVAR_BUCKET];
-	else
-	  variableChain = pCurrentBTN;
+	      //	printf("subterm is var\n");
+	      if ( IsNonNULL(pCurrentBTN) && IsHashHeader(pCurrentBTN) )
+	        pCurrentBTN = variableChain =
+	          BTHT_BucketArray((BTHTptr)pCurrentBTN)[TRIEVAR_BUCKET];
+	      else
+	        variableChain = pCurrentBTN;
 
-	if ( ! PrologVar_IsMarked(subterm) ) {
-	  AnsVarCtr++;
-	  /*
-	   *  The subterm is a call variable that has not yet been seen
-	   *  (and hence is not tagged).  Therefore, it can only be paired
-	   *  with an unbound trievar, and there can only be one of these
-	   *  in a chain.  If we find it, apply the unification, mark the
-	   *  callvar, trail them both, and continue.  Otherwise, fail.
-	   *  Note we don't need to lay a CPF since this is the only
-	   *  possible pairing that could result.
-	   */
-	  while( IsNonNULL(pCurrentBTN) ) {
-	    if ( IsTrieVar(BTN_Symbol(pCurrentBTN)) &&
-		 IsNewTrieVar(BTN_Symbol(pCurrentBTN)) ) {
-	      trievar_index = DecodeTrieVar(BTN_Symbol(pCurrentBTN));
-	      TrieVar_BindToSubterm(trievar_index,subterm);
-	      PrologVar_MarkIt(subterm,trievar_index);
-	      Descend_In_Trie_and_Continue(pCurrentBTN);
-	    }
-	    pCurrentBTN = BTN_Sibling(pCurrentBTN);
-	  }
-	  SetNoVariant(pParentBTN);
-	  break;     /* no pairing, so backtrack */
-	}
+	      if ( ! PrologVar_IsMarked(subterm) ) {
+	        AnsVarCtr++;
+	        /*
+	         *  The subterm is a call variable that has not yet been seen
+	         *  (and hence is not tagged).  Therefore, it can only be paired
+	         *  with an unbound trievar, and there can only be one of these
+	         *  in a chain.  If we find it, apply the unification, mark the
+	         *  callvar, trail them both, and continue.  Otherwise, fail.
+	         *  Note we don't need to lay a CPF since this is the only
+	         *  possible pairing that could result.
+	         */
+	       while( IsNonNULL(pCurrentBTN) ) {
+	         if ( IsTrieVar(BTN_Symbol(pCurrentBTN)) &&
+		          IsNewTrieVar(BTN_Symbol(pCurrentBTN)) ) {
+	            trievar_index = DecodeTrieVar(BTN_Symbol(pCurrentBTN));
+	            TrieVar_BindToSubterm(trievar_index,subterm);
+	            PrologVar_MarkIt(subterm,trievar_index);
+	            Descend_In_Trie_and_Continue(pCurrentBTN);
+	          }
+	          pCurrentBTN = BTN_Sibling(pCurrentBTN);
+	        }
+	        SetNoVariant(pParentBTN);
+	        break;     /* no pairing, so backtrack */
+	      }
       }
       /*
        *  We could be in a forward or backward execution mode.  In either
@@ -888,16 +888,16 @@ void *iter_sub_trie_lookup(CTXTdeclc void *trieNode, TriePathType *pathType) {
        *  allow the binding of an unbound trievar to this callvar.
        */
       while ( IsNonNULL(pCurrentBTN) ) {
-	if ( IsTrieVar(BTN_Symbol(pCurrentBTN)) &&
-	     ! IsNewTrieVar(BTN_Symbol(pCurrentBTN)) ) {
-	  trievar_index = DecodeTrieVar(BTN_Symbol(pCurrentBTN));
-	  if ( are_identical_terms(TrieVarBindings[trievar_index],
-				      subterm) ) {
-	    Create_ChoicePoint(BTN_Sibling(pCurrentBTN),variableChain);
-	    Descend_In_Trie_and_Continue(pCurrentBTN);
-	  }
-	}
-	pCurrentBTN = BTN_Sibling(pCurrentBTN);
+	      if ( IsTrieVar(BTN_Symbol(pCurrentBTN)) &&
+	        ! IsNewTrieVar(BTN_Symbol(pCurrentBTN)) ) {
+	        trievar_index = DecodeTrieVar(BTN_Symbol(pCurrentBTN));
+	        if ( are_identical_terms(TrieVarBindings[trievar_index],
+				        subterm) ) {
+	          Create_ChoicePoint(BTN_Sibling(pCurrentBTN),variableChain);
+	          Descend_In_Trie_and_Continue(pCurrentBTN);
+	        }
+	      }
+	      pCurrentBTN = BTN_Sibling(pCurrentBTN);
       }
       /*
        *  We may have arrived here under several circumstances, but notice
@@ -913,13 +913,13 @@ void *iter_sub_trie_lookup(CTXTdeclc void *trieNode, TriePathType *pathType) {
       SetNoVariant(pParentBTN);
 
       while( IsNonNULL(variableChain) ) {
-	if ( IsTrieVar(BTN_Symbol(variableChain)) &&
-	     IsNewTrieVar(BTN_Symbol(variableChain)) ) {
-	  trievar_index = DecodeTrieVar(BTN_Symbol(variableChain));
-	  TrieVar_BindToMarkedPrologVar(trievar_index,subterm);
-	  Descend_In_Trie_and_Continue(variableChain);
-	}
-	variableChain = BTN_Sibling(variableChain);
+	      if ( IsTrieVar(BTN_Symbol(variableChain)) &&
+	        IsNewTrieVar(BTN_Symbol(variableChain)) ) {
+	        trievar_index = DecodeTrieVar(BTN_Symbol(variableChain));
+	        TrieVar_BindToMarkedPrologVar(trievar_index,subterm);
+	        Descend_In_Trie_and_Continue(variableChain);
+	      }
+	      variableChain = BTN_Sibling(variableChain);
       }
       break;
 
