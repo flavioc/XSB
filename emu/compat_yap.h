@@ -26,6 +26,4 @@
 
 #define COMPAT_YAP_DEFS
 
-#define get_cell_arity(CS_Cell) get_arity((Psc)*clref_val(CS_Cell))
-
 #endif /* COMPAT_YAP_DEFS */
