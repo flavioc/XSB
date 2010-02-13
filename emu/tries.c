@@ -1639,7 +1639,7 @@ void variant_call_search(CTXTdeclc TabledCallInfo *call_info,
 	 * not change bindings in the VarEnumerator array -- it just
 	 * changes bindings of heap variables that point into it.
          */
-	*(--VarPosReg) = (Cell) call_arg;	
+	*(--VarPosReg) = (Cell) call_arg;
 	StandardizeVariable(call_arg,ctr);
 	one_node_chk_ins(flag,EncodeNewTrieVar(ctr),
 			 CALL_TRIE_TT);
@@ -1721,7 +1721,7 @@ void variant_call_search(CTXTdeclc TabledCallInfo *call_info,
    * attv on the heap.  In this case, we make the VAR part of that
    * attv point to itself.  The actual value in VarPosReg (i.e. the
    * of a substitution factor) doesn't change in either case.
-   */     
+   */
   while (--tVarPosReg > VarPosReg) {
     if (isref(*tVarPosReg))	/* a regular variable */
       ResetStandardizedVariable(*tVarPosReg);

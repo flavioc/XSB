@@ -221,13 +221,13 @@ TSTNptr subsumptive_tst_search(CTXTdeclc TSTNptr tstRoot, int nTerms, CPtr termV
       TermStackLog_ResetTOS;
       tstn = iter_sub_trie_lookup(CTXTc tstRoot,&path_type);
       if ( path_type == NO_PATH ) {
-	Trail_Unwind_All;
-	tstn = tst_insert(CTXTc tstRoot, stl_restore_variant_cont(CTXT),
-			  NO_INSERT_SYMBOL, maintainTSI);
-	*isNew = TRUE;
+        Trail_Unwind_All;
+        tstn = tst_insert(CTXTc tstRoot, stl_restore_variant_cont(CTXT),
+          NO_INSERT_SYMBOL, maintainTSI);
+        *isNew = TRUE;
       }
       else
-	*isNew = FALSE;
+        *isNew = FALSE;
     }
 
 #ifdef DEBUG_VERBOSE
