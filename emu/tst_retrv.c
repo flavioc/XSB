@@ -578,6 +578,50 @@ static void tstCollectionError(CTXTdeclc char *string, xsbBool cleanup_needed) {
  
 /* ------------------------------------------------------------------------- */
 
+#ifdef SUBSUMPTION_XSB
+#define CreateHeapFunctor(Symbol) { \
+  CPtr heap_var_ptr;  \
+  int arity, i; \
+  Psc symbolPsc;  \
+  symbolPsc = (Psc)cs_val(Symbol);  \
+  arity = get_arity(symbolPsc); \
+  bld_cs(hreg, hreg + 1); \
+  bld_functor(++hreg, symbolPsc); \
+  for(heap_var_ptr = hreg + arity, i = 0; \
+      i < arity;  \
+      heap_var_ptr--, i++) {  \
+    bld_free(heap_var_ptr); \
+    TermStack_Push((Cell)heap_var_ptr); \
+  } \
+  hreg = hreg + arity + 1;  \
+}
+#define CreateHeapList() {  \
+  bld_list(hreg, hreg + 1); \
+  hreg = hreg + 3;  \
+  bld_free(hreg - 1); \
+  TermStack_Push((Cell)(hreg - 1)); \
+  bld_free(hreg - 2); \
+  TermStack_Push((Cell)(hreg - 2)); \
+}
+#else
+#define CreateHeapFunctor(Symbol) { \
+  Functor functor;													\
+	int arity, i;													\
+																	\
+	functor = (Functor)RepAppl(Symbol);	\
+	arity = ArityOfFunctor(functor);	\
+	                                            \
+	Term tf = Yap_MkNewApplTerm(functor,arity);	\
+	for (i = arity; i >= 1; i--)					\
+		TermStack_Push(*(RepAppl(tf) + i));	\
+}
+#define CreateHeapList() {  \
+  Term tl = Yap_MkNewPairTerm();	\
+	TermStack_Push(*(RepPair(tl) + 1));	\
+	TermStack_Push(*(RepPair(tl)));	\
+}
+#endif
+
 /*
  *  Unify the timestamp-valid node 'cur_chain' with the variable subterm.
  */
@@ -609,22 +653,8 @@ static void tstCollectionError(CTXTdeclc char *string, xsbBool cleanup_needed) {
 	* variable to it.  Then use this algorithm to find bindings	   \
 	* for the unbound variables X1,...,Xn in the trie.		   \
 	*/								   \
-       CPtr heap_var_ptr;						   \
-       int arity, i;							   \
-       Psc symbolPsc;							   \
-									   \
-       symbolPsc = (Psc)cs_val(symbol);					   \
-       arity = get_arity(symbolPsc);					   \
-       Trie_bind_copy((CPtr)Subterm,(Cell)hreg);			\
-       bld_cs(hreg, hreg + 1);						   \
-       bld_functor(++hreg, symbolPsc);					   \
-       for (heap_var_ptr = hreg + arity, i = 0;				   \
-	    i < arity;							   \
-	    heap_var_ptr--, i++) {					   \
-	 bld_free(heap_var_ptr);					   \
-	 TermStack_Push((Cell)heap_var_ptr);				   \
-       }								   \
-       hreg = hreg + arity + 1;						   \
+	     Trie_bind_copy((CPtr)Subterm,(Cell)hreg);			\
+       CreateHeapFunctor(symbol); \
      }									   \
      else {								   \
        /*								   \
@@ -643,12 +673,7 @@ static void tstCollectionError(CTXTdeclc char *string, xsbBool cleanup_needed) {
 	* bindings for the unbound variables X1 & X2 in the trie.	   \
 	*/								   \
        Trie_bind_copy((CPtr)Subterm,(Cell)hreg);				\
-       bld_list(hreg, hreg + 1);					   \
-       hreg = hreg + 3;							   \
-       bld_free(hreg - 1);						   \
-       TermStack_Push((Cell)(hreg - 1));				   \
-       bld_free(hreg - 2);						   \
-       TermStack_Push((Cell)(hreg - 2));				   \
+       CreateHeapList();  \
      }									   \
      else {								   \
        /*								   \
