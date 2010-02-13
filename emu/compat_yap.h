@@ -26,4 +26,6 @@
 
 #define COMPAT_YAP_DEFS
 
+#define SUBSUMPTION_XSB 1
+
 #endif /* COMPAT_YAP_DEFS */
