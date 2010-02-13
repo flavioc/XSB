@@ -784,24 +784,24 @@ void *iter_sub_trie_lookup(CTXTdeclc void *trieNode, TriePathType *pathType) {
        *         LIST-tagged ptr.
        */
       if (search_mode == MATCH_SYMBOL_EXACTLY) {
-	symbol = EncodeTrieList(subterm);
-	Set_Matching_and_TrieVar_Chains(symbol,pCurrentBTN,variableChain);
-	NonVarSearchChain_ExactMatch(symbol, pCurrentBTN, variableChain,
+	      symbol = EncodeTrieList(subterm);
+	      Set_Matching_and_TrieVar_Chains(symbol,pCurrentBTN,variableChain);
+	      NonVarSearchChain_ExactMatch(symbol, pCurrentBTN, variableChain,
 				     TermStack_PushListArgs(subterm))
-	/*
-	 *  We've failed to find a node in the trie with a XSB_LIST symbol, so
-	 *  now we consider bound trievars whose bindings exactly match the
-	 *  actual list subterm.
-	 */
-	pCurrentBTN = variableChain;
-	SetNoVariant(pParentBTN);
+	      /*
+	       *  We've failed to find a node in the trie with a XSB_LIST symbol, so
+	       *  now we consider bound trievars whose bindings exactly match the
+	       *  actual list subterm.
+	       */
+	      pCurrentBTN = variableChain;
+	      SetNoVariant(pParentBTN);
       }
       NonVarSearchChain_BoundTrievar(subterm,pCurrentBTN,variableChain);
-	/*
-	 *  We've failed to find an exact match of the list with a binding
-	 *  of a trievar.  Our last alternative is to bind an unbound
-	 *  trievar to this subterm.
-	 */
+	    /*
+	     *  We've failed to find an exact match of the list with a binding
+	     *  of a trievar.  Our last alternative is to bind an unbound
+	     *  trievar to this subterm.
+	     */
       NonVarSearchChain_UnboundTrievar(subterm,variableChain);
       break;
       
@@ -846,7 +846,7 @@ void *iter_sub_trie_lookup(CTXTdeclc void *trieNode, TriePathType *pathType) {
        *  the possibility of a variant.)
        */
       if (search_mode == MATCH_SYMBOL_EXACTLY) {
-	      //	printf("subterm is var\n");
+	      
 	      if ( IsNonNULL(pCurrentBTN) && IsHashHeader(pCurrentBTN) )
 	        pCurrentBTN = variableChain =
 	          BTHT_BucketArray((BTHTptr)pCurrentBTN)[TRIEVAR_BUCKET];
