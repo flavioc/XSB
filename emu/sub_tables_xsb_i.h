@@ -260,44 +260,44 @@ inline static  void subsumptive_call_search(CTXTdeclc TabledCallInfo *callStruct
     if ( IsSubsumptiveProducer(sf_with_ans_set) ) {
 #ifdef DEBUG_CALL_CHK_INS
       if ( strcmp(targetGN,goal_name) == 0 ) {
-	fprintf(stddbg,"Found producer:\n  ");
-	sfPrintGoal(stddbg,sf_with_ans_set,YES);
-	fprintf(stddbg,"\nWith ");   /* continued below */
+	      fprintf(stddbg,"Found producer:\n  ");
+	      sfPrintGoal(stddbg,sf_with_ans_set,YES);
+	      fprintf(stddbg,"\nWith ");   /* continued below */
       }
 #endif
 #if !defined(MULTI_THREAD) || defined(NON_OPT_COMPILE)
       if ( is_completed(sf_with_ans_set) )
-	NumSubOps_CallToCompletedTable++;
+	      NumSubOps_CallToCompletedTable++;
       else {
-	if ( path_type == VARIANT_PATH )
-	  NumSubOps_VariantCall++;
-	else
-	  NumSubOps_SubsumedCall++;
-      }
+	      if ( path_type == VARIANT_PATH )
+	        NumSubOps_VariantCall++;
+	      else
+	        NumSubOps_SubsumedCall++;
+        }
 #endif
-      answer_template = extract_template_from_lookup(CTXTc answer_template);
-      Trail_Unwind_All;
-    }
+        answer_template = extract_template_from_lookup(CTXTc answer_template);
+        Trail_Unwind_All;
+      }
     else {                         /* consume from subsumed call */
 #ifdef DEBUG_CALL_CHK_INS
       if ( strcmp(targetGN,goal_name) == 0 ) {
-	fprintf(stddbg,"Found entry without own answer table:\n  ");
-	sfPrintGoal(stddbg,sf_with_ans_set,YES);
-	fprintf(stddbg,"\nRecomputing template for:\n  ");
-	sfPrintGoal(stddbg,conssf_producer(sf_with_ans_set),YES);
-	fprintf(stddbg,"\n");   /* continue with A.T. print, below */
-      }
+	      fprintf(stddbg,"Found entry without own answer table:\n  ");
+	      sfPrintGoal(stddbg,sf_with_ans_set,YES);
+	      fprintf(stddbg,"\nRecomputing template for:\n  ");
+	      sfPrintGoal(stddbg,conssf_producer(sf_with_ans_set),YES);
+	      fprintf(stddbg,"\n");   /* continue with A.T. print, below */
+    }
 #endif
       sf_with_ans_set = conssf_producer(sf_with_ans_set);
 #if !defined(MULTI_THREAD) || defined(NON_OPT_COMPILE)
       if ( is_completed(sf_with_ans_set) )
-	NumSubOps_CallToCompletedTable++;
+	      NumSubOps_CallToCompletedTable++;
       else
-	NumSubOps_SubsumedCall++;
+	      NumSubOps_SubsumedCall++;
 #endif
       Trail_Unwind_All;
       answer_template =
-	reconstruct_template_for_producer(CTXTc callStruct, sf_with_ans_set,
+	      reconstruct_template_for_producer(CTXTc callStruct, sf_with_ans_set,
 					  answer_template);
     }
 
@@ -323,9 +323,9 @@ inline static  void subsumptive_call_search(CTXTdeclc TabledCallInfo *callStruct
       Trail_Unwind_All;
 #ifdef DEBUG_CALL_CHK_INS
       if ( strcmp(targetGN,goal_name) == 0 ) {
-	fprintf(stddbg,"Constructed new Call entry:\n  ");
-	printTriePath(stddbg,CallLUR_Leaf(*results),NO);
-	fprintf(stddbg,"\n");
+	      fprintf(stddbg,"Constructed new Call entry:\n  ");
+	      printTriePath(stddbg,CallLUR_Leaf(*results),NO);
+	      fprintf(stddbg,"\n");
       }
 #endif
     }
@@ -387,7 +387,7 @@ TSTNptr subsumptive_answer_search(CTXTdeclc SubProdSF sf, int nTerms,
     subg_ans_root_ptr(sf) = newAnswerSet(CTXTc nTerms, (TSTNptr) sf);
   root = (TSTNptr)subg_ans_root_ptr(sf);
   tstn = subsumptive_tst_search( CTXTc root, nTerms, answerVector, 
-				 (xsbBool)ProducerSubsumesSubgoals(sf), isNew );
+       (xsbBool)ProducerSubsumesSubgoals(sf), isNew );
 #ifndef MULTI_THREAD
   if ( *isNew )
     NumSubOps_AnswerInsert++;
