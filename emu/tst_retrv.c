@@ -65,6 +65,8 @@
  *  process.
  */
 
+#ifdef SUBSUMPTION_XSB
+
 #ifndef MULTI_THREAD
 static CPtr *trail_base;    /* ptr to topmost used Cell on the system Trail;
 			       the beginning of our local trail for this
@@ -93,6 +95,43 @@ static CPtr orig_ebreg;
    hreg = orig_hreg;			\
    hbreg = orig_hbreg;			\
    ebreg = orig_ebreg
+#else /* YAP */
+
+#define trreg TR
+#define hreg H
+#define hbreg HB
+#define ereg E
+#define trfreg TR_FZ
+#define cpreg CP
+#define top_of_trail ((trreg > trfreg) ? trreg : trfreg)
+#define Sys_Trail_Unwind(TR0) \
+  while(TR != TR0)  { \
+    printf("Untrail one\n");  \
+    TR--; \
+    RESET_VARIABLE((CELL *)TrailTerm(TR));  \
+  }
+#define unify(TERM1, TERM2) Yap_unify(TERM1, TERM2)
+
+static tr_fr_ptr trail_base;
+static tr_fr_ptr orig_trreg;
+static CPtr orig_hreg;
+static CPtr orig_hbreg;
+
+#define Save_and_Set_WAM_Registers  \
+  orig_hbreg = hbreg; \
+  orig_hreg = hbreg = hreg; \
+  orig_trreg = trreg;  \
+  trreg = top_of_trail
+  
+#define Restore_WAM_Registers \
+  trreg = orig_trreg; \
+  hreg = orig_hreg; \
+  hbreg = orig_hbreg
+
+/* amiops.h XXX */
+#define conditional(Addr) OUTSIDE(HBREG, Addr, B)
+#define pushtrail0 DO_TRAIL
+#endif /* SUBSUMPTION_XSB */
 
 /* TLS: 12/05.  There was an bug in the routine
    tst_collect_relevant_answers().  This routine used Bind_and_Trail
@@ -607,16 +646,21 @@ static void tstCollectionError(CTXTdeclc char *string, xsbBool cleanup_needed) {
 #define CreateHeapFunctor(Symbol) { \
   Functor functor;													\
 	int arity, i;													\
+  CPtr old_h = H++;               \
 																	\
 	functor = (Functor)RepAppl(Symbol);	\
-	arity = ArityOfFunctor(functor);	\
-	                                            \
+	arity = ArityOfFunctor(functor);  \
 	Term tf = Yap_MkNewApplTerm(functor,arity);	\
-	for (i = arity; i >= 1; i--)					\
-		TermStack_Push(*(RepAppl(tf) + i));	\
+  *old_h = tf;        \
+	for (i = arity; i >= 1; i--)			{		\
+    CPtr c = *(RepAppl(tf) + i);  \
+		TermStack_Push(c);	\
+	} \
 }
 #define CreateHeapList() {  \
+  CPtr old_h = H++;  \
   Term tl = Yap_MkNewPairTerm();	\
+  *old_h = tl;  \
 	TermStack_Push(*(RepPair(tl) + 1));	\
 	TermStack_Push(*(RepPair(tl)));	\
 }
