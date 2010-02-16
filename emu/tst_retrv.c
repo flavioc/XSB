@@ -655,7 +655,7 @@ static void tstCollectionError(CTXTdeclc char *string, xsbBool cleanup_needed) {
 	Term tf = Yap_MkNewApplTerm(functor,arity);	\
   *old_h = tf;        \
 	for (i = arity; i >= 1; i--)			{		\
-    CPtr c = *(RepAppl(tf) + i);  \
+    Cell c = *(RepAppl(tf) + i);  \
 		TermStack_Push(c);	\
 	} \
 }
@@ -666,89 +666,101 @@ static void tstCollectionError(CTXTdeclc char *string, xsbBool cleanup_needed) {
 	TermStack_Push(*(RepPair(tl) + 1));	\
 	TermStack_Push(*(RepPair(tl)));	\
 }
-#endif
+#endif /* SUBSUMPTION_XSB */
 
 /*
  *  Unify the timestamp-valid node 'cur_chain' with the variable subterm.
  */
+
+static inline
+xsbBool
+Unify_with_Variable(Cell symbol, Cell subterm, TSTNptr node) {
+  switch(TrieSymbolType(symbol)) {
+   case XSB_INT:
+#ifdef SUBSUMPTION_XSB
+   case XSB_FLOAT:
+#endif
+   case XSB_STRING:
+     /*     printf("before %x %x \n",(CPtr)Subterm,symbol);	*/
+     Trie_bind_copy((CPtr)subterm,symbol);
+     /*     printf("after %x\n",*(CPtr)Subterm);		*/
+     break;
+
+   case XSB_STRUCT:
+     /*
+      * Need to be careful here, because TrieVars are bound to heap-
+      * resident structures and a deref of the (trie) symbol doesn't
+      * tell you whether we have something in the trie or in the heap.
+      */
+     if ( IsTrieFunctor(TSTN_Symbol(node)) ) {
+       /*
+	      * Since the TSTN contains some f/n, create an f(X1,X2,...,Xn)
+	      * structure on the heap so that we can bind the subterm
+	      * variable to it.  Then use this algorithm to find bindings
+	      * for the unbound variables X1,...,Xn in the trie.
+	      */
+	     Trie_bind_copy((CPtr)subterm,(Cell)hreg);
+       CreateHeapFunctor(symbol);
+     }
+     else {
+       /*
+	      * We have a TrieVar bound to a heap-resident STRUCT.
+	      */
+       Trie_bind_copy((CPtr)subterm,symbol);
+     }
+     break;
+
+   case XSB_LIST:
+     if ( IsTrieList(TSTN_Symbol(node)) ) {
+       /*
+	      * Since the TSTN contains a (sub)list beginning, create a
+	      * [X1|X2] structure on the heap so that we can bind the
+	      * subterm variable to it.  Then use this algorithm to find
+	      * bindings for the unbound variables X1 & X2 in the trie.
+	      */
+       Trie_bind_copy((CPtr)subterm,(Cell)hreg);
+       CreateHeapList();
+     }
+     else {
+       /*
+	      * We have a TrieVar bound to a heap-resident LIST.
+	      */
+       Trie_bind_copy((CPtr)subterm,symbol);
+     }
+     break;
+
+   case XSB_REF:
+#ifdef SUBSUMPTION_XSB
+   case XSB_REF1:
+#endif
+     /*
+      * The symbol is either an unbound TrieVar or some unbound Prolog
+      * variable.  If it's an unbound TrieVar, we bind it to the
+      * Prolog var.  Otherwise, binding direction is WAM-defined.
+      */
+     if (IsUnboundTrieVar(symbol)) {
+       Bind_and_Trail((CPtr)symbol,subterm);
+     }
+     else
+       unify(CTXTc symbol,subterm);
+     break;
+
+   default:
+     return FALSE;
+   }  /* END switch(symbol_tag) */
+   return TRUE;
+}
 
 #define CurrentTSTN_UnifyWithVariable(Chain,Subterm,Continuation)	   \
    CPStack_PushFrame(Continuation);					   \
    TermStackLog_PushFrame;						   \
    symbol = TSTN_Symbol(Chain);						   \
    TrieSymbol_Deref(symbol);						   \
-   switch(TrieSymbolType(symbol)) {					   \
-   case XSB_INT:							   \
-   case XSB_FLOAT:							   \
-   case XSB_STRING:							   \
-     /*     printf("before %x %x \n",(CPtr)Subterm,symbol);	*/	\
-     Trie_bind_copy((CPtr)Subterm,symbol);				\
-     /*     printf("after %x\n",*(CPtr)Subterm);		*/	\
-     break;								   \
-									   \
-   case XSB_STRUCT:							   \
-     /*									   \
-      * Need to be careful here, because TrieVars are bound to heap-	   \
-      * resident structures and a deref of the (trie) symbol doesn't	   \
-      * tell you whether we have something in the trie or in the heap.	   \
-      */								   \
-     if ( IsTrieFunctor(TSTN_Symbol(Chain)) ) {				   \
-       /*								   \
-	* Since the TSTN contains some f/n, create an f(X1,X2,...,Xn)	   \
-	* structure on the heap so that we can bind the subterm		   \
-	* variable to it.  Then use this algorithm to find bindings	   \
-	* for the unbound variables X1,...,Xn in the trie.		   \
-	*/								   \
-	     Trie_bind_copy((CPtr)Subterm,(Cell)hreg);			\
-       CreateHeapFunctor(symbol); \
-     }									   \
-     else {								   \
-       /*								   \
-	* We have a TrieVar bound to a heap-resident STRUCT.		   \
-	*/								   \
-       Trie_bind_copy((CPtr)Subterm,symbol);				\
-     }									\
-     break;								   \
-									   \
-   case XSB_LIST:							   \
-     if ( IsTrieList(TSTN_Symbol(Chain)) ) {				   \
-       /*								   \
-	* Since the TSTN contains a (sub)list beginning, create a	   \
-	* [X1|X2] structure on the heap so that we can bind the		   \
-	* subterm variable to it.  Then use this algorithm to find	   \
-	* bindings for the unbound variables X1 & X2 in the trie.	   \
-	*/								   \
-       Trie_bind_copy((CPtr)Subterm,(Cell)hreg);				\
-       CreateHeapList();  \
-     }									   \
-     else {								   \
-       /*								   \
-	* We have a TrieVar bound to a heap-resident LIST.		   \
-	*/								   \
-       Trie_bind_copy((CPtr)Subterm,symbol);				\
-     }									   \
-     break;								   \
-									   \
-   case XSB_REF:							   \
-   case XSB_REF1:							   \
-     /*									   \
-      * The symbol is either an unbound TrieVar or some unbound Prolog	   \
-      * variable.  If it's an unbound TrieVar, we bind it to the	   \
-      * Prolog var.  Otherwise, binding direction is WAM-defined.	   \
-      */								   \
-     if (IsUnboundTrieVar(symbol)) {					   \
-       Bind_and_Trail((CPtr)symbol,Subterm);				   \
-     }									   \
-     else								   \
-       unify(CTXTc symbol,Subterm);					   \
-     break;								   \
-									   \
-   default:								   \
+   if(!Unify_with_Variable(symbol,Subterm,Chain)) { \
      fprintf(stderr, "subterm: unbound var (%ld),  symbol: unknown "	   \
-	     "(%ld)\n", cell_tag(Subterm), TrieSymbolType(symbol));	   \
-     TST_Collection_Error("Trie symbol with bogus tag!", RequiresCleanup); \
-     break;								   \
-   }  /* END switch(symbol_tag) */					   \
+ 	     "(%ld)\n", cell_tag(Subterm), TrieSymbolType(symbol));	   \
+      TST_Collection_Error("Trie symbol with bogus tag!", RequiresCleanup); \
+   } \
    Descend_Into_TST_and_Continue_Search
 
 
