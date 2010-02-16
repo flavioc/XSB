@@ -165,11 +165,13 @@ static CPtr orig_hbreg;
 
 #define Bind_and_Conditionally_Trail(Addr, Val)	Trie_bind_copy(Addr,Val) \
 
+#ifdef SUBSUMPTION_XSB	
 /*
  *  Create a binding and trail it.
  */
-#define Bind_and_Trail(Addr, Val)	pushtrail0(Addr, Val)	\
-  *(Addr) = Val
+#define Bind_and_Trail(Addr, Val) pushtrail0(Addr, Val) \
+   *(Addr) = Val
+#endif /* SUBSUMPTION_XSB */
 
 /*******************************************
 OLD VERSIONS
@@ -836,7 +838,9 @@ ALNptr tst_collect_relevant_answers(CTXTdeclc TSTNptr tstRoot, TimeStamp ts,
     /* SUBTERM IS A CONSTANT
        --------------------- */
     case XSB_INT:
-    case XSB_FLOAT:
+#ifdef SUBSUMPTION_XSB
+		case XSB_FLOAT:
+#endif
     case XSB_STRING:
       /*
        *  NOTE:  A Trie constant looks like a Prolog constant.
@@ -913,7 +917,9 @@ ALNptr tst_collect_relevant_answers(CTXTdeclc TSTNptr tstRoot, TimeStamp ts,
     /* SUBTERM IS AN UNBOUND VARIABLE
        ------------------------------ */
     case XSB_REF:
+#ifdef SUBSUMPTION_XSB
     case XSB_REF1:
+#endif
       /*
        *  Since variables unify with any term, only prune based on
        *  timestamps.  For Hashed/HashRoot nodes we can use the TSI to
