@@ -44,6 +44,7 @@
 #include "tst_aux.h"
 #include "tst_utils.h"
 #include "error_xsb.h"
+#include "tst_common.h"
 
 
 /* ========================================================================= */
@@ -293,91 +294,73 @@ static void consumption_error(CTXTdeclc char *string) {
  *  variable, unify it with the current symbol of the trie.
  */
 
-#define Unify_Symbol_With_Variable_Subterm(dSubterm,dSymbol,SymOrigTag)	 \
-									 \
-   switch(cell_tag(dSymbol)) {						 \
-   case XSB_INT:							 \
-   case XSB_FLOAT:							 \
-   case XSB_STRING:							 \
-     Bind_and_Trail_Subterm(dSubterm,dSymbol)				 \
-     break;								 \
-									 \
-   case XSB_STRUCT:							 \
-     /*									 \
-      * Need to be careful here, because TrieVars can be bound to heap-	 \
-      * resident structures and a deref of the (trie) symbol doesn't	 \
-      * tell you whether we have something in the trie or in the heap.	 \
-      */								 \
-     if ( SymOrigTag == XSB_STRUCT ) {					 \
-       /*								 \
-	*  Since the TST contains some f/n, create an f(X1,X2,...,Xn)	 \
-	*  structure on the heap so that we can bind the subterm	 \
-	*  variable to it.  Then use this algorithm to find bindings	 \
-	*  for the unbound variables X1,...,Xn along the trie path.	 \
-	*/								 \
-       CPtr heap_var_ptr;						 \
-       int arity, i;							 \
-       Psc symbolPsc;							 \
-									 \
-       symbolPsc = DecodeTrieFunctor(dSymbol);				 \
-       arity = get_arity(symbolPsc);					 \
-       Bind_and_Trail_Subterm(dSubterm, (Cell)hreg)			 \
-       bld_cs(hreg, hreg + 1);						 \
-       bld_functor(++hreg, symbolPsc);					 \
-       for (heap_var_ptr = hreg + arity, i = 0;				 \
-	    i < arity;							 \
-	    heap_var_ptr--, i++) {					 \
-	 bld_free(heap_var_ptr);					 \
-	 TermStack_Push((Cell)heap_var_ptr);				 \
-       }								 \
-       hreg = hreg + arity + 1;						 \
-     }									 \
-     else {								 \
-       /*								 \
-	*  We have a TrieVar bound to a heap-resident XSB_STRUCT.	 \
-	*/								 \
-       Bind_and_Trail_Subterm(dSubterm, dSymbol)			 \
-     }									 \
-     break;								 \
-									 \
-   case XSB_LIST:							 \
-     if ( SymOrigTag == XSB_LIST ) {					 \
-       /*								 \
-	*  Since the TST contains a (sub)list beginning, create a	 \
-	*  [X1|X2] structure on the heap so that we can bind the subterm \
-	*  variable to it.  Then use this algorithm to find bindings for \
-	*  the unbound variables X1 & X2 along the trie path.		 \
-	*/								 \
-       Bind_and_Trail_Subterm(dSubterm, (Cell)hreg)			 \
-       bld_list(hreg, hreg + 1);					 \
-       hreg = hreg + 3;							 \
-       bld_free(hreg - 1);						 \
-       TermStack_Push((Cell)(hreg - 1));				 \
-       bld_free(hreg - 2);						 \
-       TermStack_Push((Cell)(hreg - 2));				 \
-     }									 \
-     else {								 \
-       /*								 \
-	*  We have a TrieVar bound to a heap-resident XSB_LIST.		 \
-	*/								 \
-       Bind_and_Trail_Subterm(dSubterm, dSymbol)			 \
-     }									 \
-     break;								 \
-									 \
-   case XSB_REF:							 \
-   case XSB_REF1:							 \
-     /*									 \
-      *  The symbol is either an unbound TrieVar or some unbound heap	 \
-      *  variable.  If it's an unbound TrieVar, we bind it to the heap	 \
-      *  var.  Otherwise, the direction of binding is high mem to low.	 \
-      */								 \
-     Bind_and_Trail_Vars(dSymbol,dSubterm)				 \
-     break;								 \
-									 \
-   default:								 \
-     consumption_error(CTXTc "Unsupported tag on trie node symbol");	 \
-     return;								 \
-   }
+static inline xsbBool
+Unify_Symbol_With_Variable_Subterm(Cell subterm, Cell symbol, Cell sym_orig_tag) {
+  switch(cell_tag(symbol)) {
+   case XSB_INT:
+   case XSB_FLOAT:
+   case XSB_STRING:
+     Bind_and_Trail_Subterm(subterm,symbol)
+     break;
+
+   case XSB_STRUCT:
+     /*
+      * Need to be careful here, because TrieVars can be bound to heap-
+      * resident structures and a deref of the (trie) symbol doesn't
+      * tell you whether we have something in the trie or in the heap.
+      */
+     if ( sym_orig_tag == XSB_STRUCT ) {
+       /*
+	      *  Since the TST contains some f/n, create an f(X1,X2,...,Xn)
+	      *  structure on the heap so that we can bind the subterm
+	      *  variable to it.  Then use this algorithm to find bindings
+	      *  for the unbound variables X1,...,Xn along the trie path.
+	      */
+	     Bind_and_Trail_Subterm(subterm, (Cell)hreg)
+       CreateHeapFunctor(symbol);
+     }
+     else {
+       /*
+	      *  We have a TrieVar bound to a heap-resident XSB_STRUCT.
+	      */
+       Bind_and_Trail_Subterm(subterm, symbol)
+     }
+     break;
+
+   case XSB_LIST:
+     if ( sym_orig_tag == XSB_LIST ) {
+       /*
+	      *  Since the TST contains a (sub)list beginning, create a
+	      *  [X1|X2] structure on the heap so that we can bind the subterm
+	      *  variable to it.  Then use this algorithm to find bindings for
+	      *  the unbound variables X1 & X2 along the trie path.
+	      */
+       Bind_and_Trail_Subterm(subterm, (Cell)hreg)
+       CreateHeapList();
+     }
+     else {
+       /*
+	      *  We have a TrieVar bound to a heap-resident XSB_LIST.
+	      */
+       Bind_and_Trail_Subterm(subterm, symbol)
+     }
+     break;
+
+   case XSB_REF:
+   case XSB_REF1:
+     /*
+      *  The symbol is either an unbound TrieVar or some unbound heap
+      *  variable.  If it's an unbound TrieVar, we bind it to the heap
+      *  var.  Otherwise, the direction of binding is high mem to low.
+      */
+     Bind_and_Trail_Vars(symbol,subterm)
+     break;
+   
+   default:
+     return FALSE;
+  }
+  return TRUE;
+}
 
 
 /* ========================================================================= */
@@ -412,6 +395,7 @@ void consume_subsumptive_answer(CTXTdeclc BTNptr pAnsLeaf, int sizeTmplt,
     consumption_error(CTXTc "Bad answer handle");
     return;
   }
+#ifdef SUBSUMPTION_XSB
 #ifndef MULTI_THREAD
   NumSubOps_AnswerConsumption++;
 #else
@@ -420,6 +404,7 @@ void consume_subsumptive_answer(CTXTdeclc BTNptr pAnsLeaf, int sizeTmplt,
 #else
 #endif
 #endif
+#endif /* SUBSUMPTION_XSB */
 
   /* Initialize Data Structs
      ----------------------- */
@@ -442,13 +427,20 @@ void consume_subsumptive_answer(CTXTdeclc BTNptr pAnsLeaf, int sizeTmplt,
     switch ( cell_tag(subterm) ) {
     case XSB_INT:
     case XSB_STRING:
+#ifdef SUBSUMPTION_XSB
     case XSB_FLOAT:
+#endif
       Unify_Symbol_With_Constant_Subterm(subterm,symbol)
       break;
 
     case XSB_REF:
+#ifdef SUBSUMPTION_XSB
     case XSB_REF1:
-      Unify_Symbol_With_Variable_Subterm(subterm,symbol,sym_orig_tag)
+#endif
+      if(!Unify_Symbol_With_Variable_Subterm(subterm,symbol,sym_orig_tag)) {
+        consumption_error(CTXTc "Unsupported tag on trie node symbol");
+        return;
+      }
       break;
 
     case XSB_STRUCT:
