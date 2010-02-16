@@ -183,57 +183,61 @@ Unify_Symbol_With_Constant_Subterm(Cell subterm, Cell symbol) {
  *  function application, unify it with the current symbol of the trie.
  */
 
-#define Unify_Symbol_With_Functor_Subterm(dSubterm,dSymbol,SymOrigTag)	   \
-									   \
-   switch(cell_tag(dSymbol)) {						   \
-   case XSB_STRUCT:							   \
-     /*									   \
-      * Need to be careful here, because TrieVars can be bound to heap-	   \
-      * resident structures and a deref of the (trie) symbol doesn't	   \
-      * tell you whether we have something in the trie or in the heap.	   \
-      * Check that the same PSC Record is referred to by both.		   \
-      */								   \
-     if ( SymOrigTag == XSB_STRUCT ) {					   \
-       if ( get_str_psc(dSubterm) == DecodeTrieFunctor(dSymbol) ) {	   \
-	 /*								   \
-	  *  There's a corresponding function application in the trie, so  \
-	  *  we must process the rest of the term ourselves.		   \
-	  */								   \
-	 TermStack_PushFunctorArgs(dSubterm);				   \
-       }								   \
-       else {								   \
-	 consumption_error(CTXTc "Distinct Functor Symbols");		   \
-	 return;							   \
-       }								   \
-     }									   \
-     else {								   \
-       /*								   \
-	* We have a TrieVar bound to a heap STRUCT-term; use a standard	   \
-	* unification algorithm to check the match and perform additional  \
-	* unifications.							   \
-	*/								   \
-       if ( ! unify(CTXTc dSubterm, dSymbol) ) {			   \
-	 consumption_error(CTXTc "Distinct Function Applications");	   \
-	 return;							   \
-       }								   \
-     }									   \
-     break;								   \
-									   \
-   case XSB_REF:							   \
-   case XSB_REF1:							   \
-     /*									   \
-      * Either an unbound TrieVar or some unbound heap var.  We bind the   \
-      * variable to the entire subterm (functor + args), so we don't need  \
-      * to process its args.						   \
-      */								   \
-     Bind_and_Trail_Symbol(dSymbol,dSubterm)				   \
-     break;								   \
-									   \
-   default:								   \
-     consumption_error(CTXTc 						   \
-		       "Trie symbol fails to unify with functor subterm"); \
-     return;								   \
-   }
+static inline xsbBool
+Unify_Symbol_With_Functor_Subterm(Cell subterm, Cell symbol, Cell sym_orig_tag) {
+  switch(cell_tag(symbol)) {
+   case XSB_STRUCT:
+     /*
+      * Need to be careful here, because TrieVars can be bound to heap-
+      * resident structures and a deref of the (trie) symbol doesn't
+      * tell you whether we have something in the trie or in the heap.
+      * Check that the same PSC Record is referred to by both.
+      */
+     if ( sym_orig_tag == XSB_STRUCT ) {
+       if ( get_str_psc(subterm) == DecodeTrieFunctor(symbol) ) {
+	        /*
+	         *  There's a corresponding function application in the trie, so
+	         *  we must process the rest of the term ourselves.
+	         */
+	        TermStack_PushFunctorArgs(subterm);
+       }
+       else {
+	       consumption_error(CTXTc "Distinct Functor Symbols");
+	       return FALSE;
+       }
+     }
+     else {
+       /*
+	      * We have a TrieVar bound to a heap STRUCT-term; use a standard
+	      * unification algorithm to check the match and perform additional
+	      * unifications.
+	      */
+       if ( ! unify(CTXTc subterm, symbol) ) {
+	       consumption_error(CTXTc "Distinct Function Applications");
+         return FALSE;
+       }
+     }
+     break;
+
+   case XSB_REF:
+#ifdef SUBSUMPTION_XSB
+   case XSB_REF1:
+#endif
+     /*
+      * Either an unbound TrieVar or some unbound heap var.  We bind the
+      * variable to the entire subterm (functor + args), so we don't need
+      * to process its args.
+      */
+     Bind_and_Trail_Symbol(symbol,subterm)
+     break;
+
+   default:
+     consumption_error(CTXTc
+		       "Trie symbol fails to unify with functor subterm");
+     return FALSE;
+  }
+  return TRUE;
+}
 
 /* ------------------------------------------------------------------------- */
 
@@ -298,7 +302,9 @@ static inline xsbBool
 Unify_Symbol_With_Variable_Subterm(Cell subterm, Cell symbol, Cell sym_orig_tag) {
   switch(cell_tag(symbol)) {
    case XSB_INT:
+#ifdef SUBSUMPTION_XSB
    case XSB_FLOAT:
+#endif
    case XSB_STRING:
      Bind_and_Trail_Subterm(subterm,symbol)
      break;
@@ -347,7 +353,9 @@ Unify_Symbol_With_Variable_Subterm(Cell subterm, Cell symbol, Cell sym_orig_tag)
      break;
 
    case XSB_REF:
+#ifdef SUBSUMPTION_XSB
    case XSB_REF1:
+#endif
      /*
       *  The symbol is either an unbound TrieVar or some unbound heap
       *  variable.  If it's an unbound TrieVar, we bind it to the heap
@@ -447,7 +455,8 @@ void consume_subsumptive_answer(CTXTdeclc BTNptr pAnsLeaf, int sizeTmplt,
       break;
 
     case XSB_STRUCT:
-      Unify_Symbol_With_Functor_Subterm(subterm,symbol,sym_orig_tag)
+      if(!Unify_Symbol_With_Functor_Subterm(subterm,symbol,sym_orig_tag))
+        return;
       break;
 
     case XSB_LIST:
