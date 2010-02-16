@@ -157,7 +157,7 @@ static void consumption_error(CTXTdeclc char *string) {
 
 
 /*
- *                   A L G O R I T H M I C   M A C R O S
+ *                   A L G O R I T H M I C   F U N C T I O N S
  *                   ===================================
  */
 
@@ -167,13 +167,13 @@ static void consumption_error(CTXTdeclc char *string) {
  *  the trie.  Both have already been dereferenced.
  */
 
-#define Unify_Symbol_With_Constant_Subterm(dSubterm,dSymbol) {	\
-   if (isref(dSymbol))						\
-     Bind_and_Trail_Symbol(dSymbol,dSubterm)			\
-   else if (dSymbol != dSubterm) {				\
-     consumption_error(CTXTc "Unequal Constants");		\
-     return;							\
-   }								\
+static inline xsbBool
+Unify_Symbol_With_Constant_Subterm(Cell subterm, Cell symbol) {
+  if (isref(symbol))
+     Bind_and_Trail_Symbol(symbol,subterm)
+  else if (symbol != subterm)
+    return FALSE;
+  return TRUE; 
 }
 
 /* ------------------------------------------------------------------------- */
@@ -430,7 +430,10 @@ void consume_subsumptive_answer(CTXTdeclc BTNptr pAnsLeaf, int sizeTmplt,
 #ifdef SUBSUMPTION_XSB
     case XSB_FLOAT:
 #endif
-      Unify_Symbol_With_Constant_Subterm(subterm,symbol)
+      if(!Unify_Symbol_With_Constant_Subterm(subterm,symbol)) {
+        consumption_error(CTXTc "Unequal Constants");
+        return;
+      }
       break;
 
     case XSB_REF:
