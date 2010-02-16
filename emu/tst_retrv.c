@@ -615,7 +615,7 @@ static void tstCollectionError(CTXTdeclc char *string, xsbBool cleanup_needed) {
 
 static inline
 xsbBool
-Unify_with_Variable(Cell symbol, Cell subterm, TSTNptr node) {
+Unify_with_Variable(CTXTdeclc Cell symbol, Cell subterm, TSTNptr node) {
   switch(TrieSymbolType(symbol)) {
    case XSB_INT:
 #ifdef SUBSUMPTION_XSB
@@ -697,7 +697,7 @@ Unify_with_Variable(Cell symbol, Cell subterm, TSTNptr node) {
    TermStackLog_PushFrame;						   \
    symbol = TSTN_Symbol(Chain);						   \
    TrieSymbol_Deref(symbol);						   \
-   if(!Unify_with_Variable(symbol,Subterm,Chain)) { \
+   if(!Unify_with_Variable(CTXTc symbol,Subterm,Chain)) { \
      fprintf(stderr, "subterm: unbound var (%ld),  symbol: unknown "	   \
  	     "(%ld)\n", cell_tag(Subterm), TrieSymbolType(symbol));	   \
       TST_Collection_Error("Trie symbol with bogus tag!", RequiresCleanup); \
