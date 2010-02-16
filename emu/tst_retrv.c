@@ -96,22 +96,14 @@ static CPtr orig_ebreg;
    hreg = orig_hreg;			\
    hbreg = orig_hbreg;			\
    ebreg = orig_ebreg
+
 #else /* YAP */
 
-#define trreg TR
-#define hreg H
-#define hbreg HB
-#define ereg E
-#define trfreg TR_FZ
-#define cpreg CP
-#define top_of_trail ((trreg > trfreg) ? trreg : trfreg)
-#define Sys_Trail_Unwind(TR0) \
-  while(TR != TR0)  { \
-    printf("Untrail one\n");  \
-    TR--; \
-    RESET_VARIABLE((CELL *)TrailTerm(TR));  \
+#define Sys_Trail_Unwind(TR0)               \
+  while(TR != TR0)  {                       \
+    CELL *var = (CELL *)TrailTerm(--TR);    \
+    RESET_VARIABLE(var);                    \
   }
-#define unify(TERM1, TERM2) Yap_unify(TERM1, TERM2)
 
 static tr_fr_ptr trail_base;
 static tr_fr_ptr orig_trreg;
@@ -129,9 +121,6 @@ static CPtr orig_hbreg;
   hreg = orig_hreg; \
   hbreg = orig_hbreg
 
-/* amiops.h XXX */
-#define conditional(Addr) OUTSIDE(HBREG, Addr, B)
-#define pushtrail0 DO_TRAIL
 #endif /* SUBSUMPTION_XSB */
 
 /* TLS: 12/05.  There was an bug in the routine

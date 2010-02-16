@@ -69,4 +69,16 @@
 	TermStack_Push(*(RepPair(tl) + 1));	\
 	TermStack_Push(*(RepPair(tl)));	\
 }
+
+/* define WAM registers */
+#define trreg TR
+#define hreg H
+#define hbreg HB
+#define ereg E
+#define trfreg TR_FZ
+#define cpreg CP
+#define top_of_trail ((trreg > trfreg) ? trreg : trfreg)
+
+#define unify(TERM1, TERM2) Yap_unify(TERM1, TERM2)
+
 #endif
