@@ -711,12 +711,101 @@ void *iter_sub_trie_lookup(CTXTdeclc void *trieNode, TriePathType *pathType) {
     XSB_Deref(subterm);
     //    printf("   ");printterm(stddbg,subterm,25);printf(" %x\n",subterm);
     switch(cell_tag(subterm)) {
+#ifdef SUBSUMPTION_YAP
+      case TAG_FLOAT:
+        if(search_mode == MATCH_SYMBOL_EXACTLY) {
+          symbol = EncodeTrieFunctor(subterm);
+          Set_Matching_and_TrieVar_Chains(symbol, pCurrentBTN, variableChain);
+          
+          volatile Float dbl = FloatOfTerm(subterm);
+          volatile Term *t_dbl = (Term *)((void *) &dbl);
+
+          /* if double is twice the size of int then it
+           * is spread across three trie nodes, thus we
+           * must match 3 nodes before trying to match
+           * variables
+           */
+#if SIZEOF_DOUBLE == 2 * SIZEOF_INT_P
+          Term match1 = *(t_dbl + 1);
+          Term match2 = *t_dbl;
+          
+          while(IsNonNULL(pCurrentBTN)) {
+            if(symbol == BTN_Symbol(pCurrentBTN)) {
+              BTNptr child1 = BTN_Child(pCurrentBTN);
+              
+              Set_Hash_Match(child1, match1);
+              
+              while(IsNonNULL(child1)) {
+                if(match1 == BTN_Symbol(child1)) {
+                  BTNptr child2 = BTN_Child(child1);
+                  
+                  Set_Hash_Match(child2, match2);
+                  NonVarSearchChain_ExactMatch(match2, child2, variableChain, TermStack_NOOP);
+                }
+                
+                child1 = BTN_Sibling(child1);
+              }
+            }
+            
+            pCurrentBTN = BTN_Sibling(pCurrentBTN);
+          }
+#else
+          Term match1 = *t_dbl;
+          
+          while(IsNonNULL(pCurrentBTN)) {
+            if(symbol == BTN_Symbol(pCurrentBTN)) {
+              BTNptr child1 = BTN_Child(pCurrentBTN);
+              
+              Set_Hash_Match(child1, match);
+              
+              NonVarSearchChain_ExactMatch(match, child1, variableChain, TermStack_NOOP);
+            }
+            
+            pCurrentBTN = BTN_Sibling(pCurrentBTN);
+          }
+#endif /* SIZEOF_DOUBLE x SIZEOF_INT_P */
+          
+          /* failed to find a float */
+          pCurrentBTN = variableChain;
+          SetNoVariant(pParentBTN);
+        }
+        NonVarSearchChain_BoundTrievar(subterm, pCurrentBTN, variableChain);
+        NonVarSearchChain_UnboundTrieVar(subterm, variableChain);
+        break;
+      case TAG_LONG_INT:
+        if(search_mode == MATCH_SYMBOL_EXACTLY) {
+          symbol = EncodeTrieFunctor(subterm);
+          Set_Matching_and_TrieVar_Chains(symbol, pCurrentBTN, variableChain);
+          
+          Int li = LongIntOfTerm(subterm);
+          
+          /* first match the functor node, then the long int itself */
+          while(IsNonNULL(pCurrentBTN)) {
+            if(symbol == BTN_Symbol(pCurrentBTN)) {
+              BTNptr child = BTN_Child(pCurrentBTN);
+              
+              Set_Hash_Match(child, li);
+              NonVarSearchChain_ExactMatch(li, child, variableChain, TermStack_NOOP);
+            }
+            pCurrentBTN = BTN_Sibling(pCurrentBTN);
+          }
+          
+          /* failed to find a long int */
+          pCurrentBTN = variableChain;
+          SetNoVariant(pParentBTN);
+        }
+        NonVarSearchChain_BoundTrievar(subterm, pCurrentBTN, variableChain);
+        NonVarSearchChain_UnboundTrieVar(subterm, variableChain);
+      break;
+#endif /* SUBSUMPTION_YAP */
       
     /* SUBTERM IS A CONSTANT
        --------------------- */
     case XSB_STRING:
     case XSB_INT:
+#ifdef SUBSUMPTION_XSB
     case XSB_FLOAT:
+#endif
       /*
        *  NOTE:  A Trie constant looks like a Heap constant.
        */
@@ -809,7 +898,9 @@ void *iter_sub_trie_lookup(CTXTdeclc void *trieNode, TriePathType *pathType) {
     /* SUBTERM IS AN UNBOUND VARIABLE
        ------------------------------ */
     case XSB_REF:
+#ifdef SUBSUMPTION_XSB
     case XSB_REF1:
+#endif
       /*
        *  A never-before-seen variable in the call must always match a
        *  free variable in the trie.  We can determine this by checking
@@ -923,10 +1014,12 @@ void *iter_sub_trie_lookup(CTXTdeclc void *trieNode, TriePathType *pathType) {
       }
       break;
 
+#ifdef SUBSUMPTION_XSB
     case XSB_ATTV:
       xsb_table_error(CTXTc 
 	      "Attributed variables not yet implemented in calls to subsumptive tables.");
       break;
+#endif /* SUBSUMPTION_XSB */
 
     /* SUBTERM HAS UNKNOWN CELL TAG
        ---------------------------- */
