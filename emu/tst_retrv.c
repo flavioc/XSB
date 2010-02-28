@@ -96,14 +96,10 @@ static CPtr orig_ebreg;
    hreg = orig_hreg;			\
    hbreg = orig_hbreg;			\
    ebreg = orig_ebreg
+   
+#define Sys_Trail_Unwind(UnwindBase)      table_undo_bindings(UnwindBase)
 
 #else /* YAP */
-
-#define Sys_Trail_Unwind(TR0)               \
-  while(TR != TR0)  {                       \
-    CELL *var = (CELL *)TrailTerm(--TR);    \
-    RESET_VARIABLE(var);                    \
-  }
 
 static tr_fr_ptr trail_base;
 static tr_fr_ptr orig_trreg;
@@ -171,9 +167,6 @@ OLD VERSIONS
  *  if ( IsUnboundTrieVar(Addr) || conditional(Addr) )	\
  *    { pushtrail0(Addr, Val) }
  *******************************************/
-
-
-#define Sys_Trail_Unwind(UnwindBase)      table_undo_bindings(UnwindBase)
 
 /* ------------------------------------------------------------------------- */
 
