@@ -178,6 +178,56 @@ Unify_Symbol_With_Constant_Subterm(Cell subterm, Cell symbol) {
   return TRUE; 
 }
 
+#ifdef SUBSUMPTION_YAP
+/* ------------------------------------------------------------------------- */
+
+/*
+ *  Given that the current subterm of the Answer Template contains a
+ *  long int, unify it with the current symbol of
+ *  the trie.  Both have already been dereferenced.
+ */
+ 
+static inline xsbBool
+Unify_Node_With_LongInt(Cell subterm, Cell symbol, TSTNptr node, Cell sym_orig_tag) {
+  Int li = LongIntOfTerm(subterm);
+  switch(TrieSymbolType(symbol)) {
+    case TAG_LONG_INT:
+      /*
+       * Need to be careful here, because TrieVars can be bound to heap-
+       * resident structures and a deref of the (trie) symbol doesn't
+       * tell you whether we have something in the trie or in the heap.
+       * Check that the same long int is referred to by both.
+       */
+      if(sym_orig_tag == TAG_LONG_INT) {
+        if(TSTN_long_int((long_tst_node_ptr)node) != li) {
+          consumption_error("Distinct long int symbols");
+          return FALSE;
+        }
+      } else {
+        /*
+	       * We have a TrieVar bound to a heap STRUCT-term; use a standard
+	       * unification algorithm to check the match and perform additional
+	       * unifications.
+	       */
+	      if(LongIntOfTerm(symbol) != li) {
+          consumption_error("Distinct long int symbols");
+          return FALSE;
+	      }
+      }
+      break;
+    case XSB_REF:
+      Bind_and_Trail_Symbol(symbol,subterm);
+      break;
+    default:
+      consumption_error("Trie symbol fails to unify long int");
+      return FALSE;
+  }
+  
+  return TRUE;
+}
+
+#endif /* SUBSUMPTION_YAP */
+
 /* ------------------------------------------------------------------------- */
 
 /*
@@ -304,8 +354,29 @@ Unify_Symbol_With_List_Subterm(CTXTdeclc Cell subterm, Cell symbol, Cell sym_ori
  */
 
 static inline xsbBool
-Unify_Symbol_With_Variable_Subterm(CTXTdeclc Cell subterm, Cell symbol, Cell sym_orig_tag) {
-  switch(cell_tag(symbol)) {
+Unify_Symbol_With_Variable_Subterm(CTXTdeclc Cell subterm, Cell symbol, Cell sym_orig_tag
+#ifdef SUBSUMPTION_YAP
+       , TSTNptr node
+#endif  
+     ) {
+  switch(TrieSymbolType(symbol)) {
+#ifdef SUBSUMPTION_YAP
+    case TAG_LONG_INT:
+      /*
+       * Need to be careful here, because TrieVars can be bound to heap-
+       * resident structures and a deref of the (trie) symbol doesn't
+       * tell you whether we have something in the trie or in the heap.
+       */
+      if(sym_orig_tag == TAG_LONG_INT) {
+        Bind_and_Trail_Subterm(subterm, (Cell)hreg);
+        CreateHeapLongInt(TSTN_long_int((long_tst_node_ptr)node));
+      }
+      else {
+        /* TrieVar bound to heap resident long int */
+        Bind_and_Trail_Subterm(subterm, symbol);
+      }
+      break;
+#endif /* SUBSUMPTION_YAP */
     case XSB_INT:
 #ifdef SUBSUMPTION_XSB
    case XSB_FLOAT:
@@ -399,6 +470,9 @@ void consume_subsumptive_answer(CTXTdeclc BTNptr pAnsLeaf, int sizeTmplt,
 
   Cell subterm, symbol, sym_orig_tag;
   xsbBool success;
+#ifdef SUBSUMPTION_YAP
+  TSTNptr node;
+#endif
 
   /* Set globals for error reporting
      ------------------------------- */
@@ -429,17 +503,31 @@ void consume_subsumptive_answer(CTXTdeclc BTNptr pAnsLeaf, int sizeTmplt,
   TermStack_PushHighToLowVector(pAnsTmplt,sizeTmplt);
 
   SymbolStack_ResetTOS;
+#ifdef SUBSUMPTION_YAP
+  SymbolStack_PushPathNodes(pAnsLeaf);
+#else
   SymbolStack_PushPath(pAnsLeaf);
+#endif
 
   /* Consume the Answer
      ------------------ */
   while ( ! TermStack_IsEmpty ) {
     TermStack_Pop(subterm);
     XSB_Deref(subterm);
+#ifdef SUBSUMPTION_YAP
+    SymbolStack_Pop(node);
+    symbol = TSTN_Symbol(node);
+#else
     SymbolStack_Pop(symbol);
-    sym_orig_tag = cell_tag(symbol);
+#endif
+    sym_orig_tag = TrieSymbolType(symbol);
     TrieSymbol_Deref(symbol);
     switch ( cell_tag(subterm) ) {
+#ifdef SUBSUMPTION_YAP
+    case TAG_LONG_INT:
+      success = Unify_Node_With_LongInt(subterm,symbol,node,sym_orig_tag);
+      break;
+#endif /* SUBSUMPTION_YAP */
     case XSB_INT:
     case XSB_STRING:
 #ifdef SUBSUMPTION_XSB
@@ -452,7 +540,11 @@ void consume_subsumptive_answer(CTXTdeclc BTNptr pAnsLeaf, int sizeTmplt,
 #ifdef SUBSUMPTION_XSB
     case XSB_REF1:
 #endif
-      success = Unify_Symbol_With_Variable_Subterm(CTXTc subterm,symbol,sym_orig_tag);
+      success = Unify_Symbol_With_Variable_Subterm(CTXTc subterm,symbol,sym_orig_tag
+#ifdef SUBSUMPTION_YAP
+      ,node
+#endif
+      );
       break;
 
     case XSB_STRUCT:
