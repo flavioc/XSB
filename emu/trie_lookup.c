@@ -1097,6 +1097,8 @@ void *var_trie_lookup(CTXTdeclc void *branchRoot, xsbBool *wasFound,
 
   int std_var_num;	/* Next available TrieVar index; for standardizing
 			   variables when interned */
+	
+  int nodeType; /* as a parameter to ProcessNextSubtermFromTrieStacks */
 
 
 #ifdef DEBUG_ASSERTIONS
@@ -1111,7 +1113,7 @@ void *var_trie_lookup(CTXTdeclc void *branchRoot, xsbBool *wasFound,
     if ( IsLeafNode(parent) )
       TrieError_TooManyTerms("var_trie_lookup");
 #endif
-    ProcessNextSubtermFromTrieStacks(symbol,std_var_num);
+    ProcessNextSubtermFromTrieStacks(symbol,nodeType,std_var_num);
     {
       BTNptr chain;
       int chain_length;

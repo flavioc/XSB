@@ -325,12 +325,13 @@ extern DynamicStack tstTrail;
 
 /* Messy for now - until I'm sure that attributed variables are working correctly */
 
-#define ProcessNextSubtermFromTrieStacks(Symbol,StdVarNum) {	\
+#define ProcessNextSubtermFromTrieStacks(Symbol,NodeType,StdVarNum) {	\
 								\
    Cell subterm;						\
 								\
    TermStack_Pop(subterm);					\
    XSB_Deref(subterm);						\
+   NodeType = INTERIOR_NT;          \
    /*   fprintf(stddbg,"ProcessNext ");printterm(stddbg,subterm,25);fprintf(stddbg,"\n"); */ \
    switch ( cell_tag(subterm) ) {				\
    case XSB_REF:						\
