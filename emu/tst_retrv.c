@@ -476,11 +476,91 @@ static void tstCollectionError(CTXTdeclc char *string, xsbBool cleanup_needed) {
       TermStackLog_PushFrame; \
       Descend_Into_TST_and_Continue_Search; \
     } \
-    else if((cell_tag(symbol) == TAG_LONG_INT && LongIntOfTerm(symbol) == li) ||      \
-          (TrNode_is_long(Chain) && TSTN_long_int((long_tst_node_ptr)Chain) == li)) { \
-      CPStack_PushFrame(alt_chain);         \
+    else {  \
+      int go = FALSE; \
+        \
+      if(TrNode_is_long(Chain)) \
+        go = TSTN_long_int((long_tst_node_ptr)Chain) == li; \
+      else {  \
+        if(TrieSymbolType(symbol) == TAG_LONG_INT)  \
+          go = LongIntOfTerm(symbol) == li; \
+      } \
+        \
+      if(go) {  \
+        CPStack_PushFrame(alt_chain);         \
+        TermStackLog_PushFrame; \
+        Descend_Into_TST_and_Continue_Search; \
+      } \
+    } \
+    Chain = alt_chain;  \
+  } \
+}
+
+/* ------------------------------------------------------------------------- */
+
+/*
+ *  Overview:
+ *  --------
+ *  There are 4 cases when this operation should be used:
+ *   1) Searching an unhashed chain.
+ *   2) Searching bucket TRIEVAR_BUCKET after searching the hashed-to bucket.
+ *   3) Searching bucket TRIEVAR_BUCKET which is also the hashed-to bucket.
+ *   4) Searching some hashed chain that has been restored through
+ *        backtracking.
+ *
+ *  (1) and (3) clearly require a general algorithm, capable of dealing
+ *  with vars and nonvars alike.  (4) must use this since we may be
+ *  continuing an instance of (3).  (2) also requires a deref followed by
+ *  inspection, since a derefed variable may (or may not) lead to the
+ *  symbol we are interested in.
+ *
+ *  Detail:
+ *  --------
+ *  'cur_chain' should be non-NULL upon entry.  Get_TS_Op allows
+ *  this code to be used for both hashed and unhashed node chains as
+ *  each requires a different procedure for locating a node's timestamp.
+ *
+ *  Nodes are first pruned by timestamp validity.  If the node's timestamp
+ *  is valid and a unification is possible, the state is saved, with
+ *  cur_chain's sibling as the TSTN continuation, and we branch back to
+ *  the major loop of the algorithm.  Otherwise the chain is searched to
+ *  completion, exiting the block when cur_chain is NULL.
+ */
+#define SearchChain_UnifyWithFloat(Chain,Subterm,TS,Get_TS_Op) { \
+  Float flt = FloatOfTerm(Subterm);            \
+  dprintf("Unify with float %lf\n", flt);  \
+  Chain_NextValidTSTN(Chain,TS,Get_TS_Op);  \
+  while(IsNonNULL(Chain)) { \
+    alt_chain = TSTN_Sibling(Chain);  \
+    Chain_NextValidTSTN(alt_chain,TS,Get_TS_Op);  \
+    symbol = TSTN_Symbol(Chain);  \
+    TrieSymbol_Deref(symbol); \
+    dprintf("Search one float\n"); \
+    if(isref(symbol)) { \
+      /*                              \
+       * Either an unbound TrieVar or some unbound prolog var.  \
+       */                             \
+      CPStack_PushFrame(alt_chain); \
+      Bind_and_Conditionally_Trail((CPtr)symbol, Subterm);  \
       TermStackLog_PushFrame; \
       Descend_Into_TST_and_Continue_Search; \
+    } \
+    else {  \
+      int go = FALSE; \
+        \
+      if(TrNode_is_float(Chain))  \
+        go = TSTN_float((float_tst_node_ptr)Chain) == flt;  \
+      else {  \
+        if(TrieSymbolType(symbol) == TAG_FLOAT) \
+          go = FloatOfTerm(symbol) == flt;  \
+      } \
+        \
+      if(go) {  \
+        dprintf("Float ok\n");      \
+        CPStack_PushFrame(alt_chain);         \
+        TermStackLog_PushFrame; \
+        Descend_Into_TST_and_Continue_Search; \
+      } \
     } \
     Chain = alt_chain;  \
   } \
@@ -689,6 +769,24 @@ Unify_with_Variable(CTXTdeclc Cell symbol, Cell subterm, TSTNptr node) {
       Trie_bind_copy((CPtr)subterm, symbol);
     }
     break;
+  case TAG_FLOAT:
+    /*
+     * Need to be careful here, because TrieVars are bound to heap-
+     * resident structures and a deref of the (trie) symbol doesn't
+     * tell you whether we have something in the trie or in the heap.
+     */
+    if(TrNode_is_float(node)) {
+      /*
+       * Create an heap resident float and
+       * bind the variable to it
+       */
+      Trie_bind_copy((CPtr)subterm,(Cell)hreg);
+      CreateHeapFloat(TSTN_float((float_tst_node_ptr)node));
+    } else {
+      /* TrieVar bound to a heap resident float */
+      Trie_bind_copy((CPtr)subterm, symbol);
+    }
+    break;
 #endif /* SUBSUMPTION_YAP */
    case XSB_INT:
 #ifdef SUBSUMPTION_XSB
@@ -878,7 +976,7 @@ ALNptr tst_collect_relevant_answers(CTXTdeclc TSTNptr tstRoot, TimeStamp ts,
                   Descend_Into_TST_and_Continue_Search;
                 }
                 else
-                  break; /* matching long TS is too old */
+                  break; /* matching long int TS is too old */
               }
               cur_chain = TSTN_Sibling(cur_chain);
             }
@@ -892,6 +990,39 @@ ALNptr tst_collect_relevant_answers(CTXTdeclc TSTNptr tstRoot, TimeStamp ts,
             TSTN_GetTSfromTSIN)
         else
           SearchChain_UnifyWithLong(cur_chain,subterm,ts,TSTN_TimeStamp)
+        break;
+      /* SUBTERM IS A FLOAT
+         ------------------ */
+      case TAG_FLOAT:
+        dprintf("Float\n");
+        if(IsHashHeader(cur_chain)) {
+          SetMatchAndUnifyChains(EncodedFloatFunctor,cur_chain,alt_chain);
+
+          if(cur_chain != alt_chain) {
+            Float flt = FloatOfTerm(subterm);
+            dprintf("Flt %lf\n", flt);
+            while(IsNonNULL(cur_chain)) {
+              if(TrNode_is_float(cur_chain) && TSTN_float((float_tst_node_ptr)cur_chain) == flt) {
+                if(IsValidTS(TSTN_GetTSfromTSIN(cur_chain), ts)) {
+                  Chain_NextValidTSTN(alt_chain, ts, TSTN_GetTSfromTSIN);
+                  CPStack_PushFrame(alt_chain);
+                  TermStackLog_PushFrame;
+                  Descend_Into_TST_and_Continue_Search;
+                }
+                else
+                  break; /* matching float TS is too old */
+              }
+              cur_chain = TSTN_Sibling(cur_chain);
+            }
+            cur_chain = alt_chain;
+          }
+          if(IsNULL(cur_chain))
+            backtrack;
+        }
+        if(IsHashedNode(cur_chain))
+          SearchChain_UnifyWithFloat(cur_chain,subterm,ts,TSTN_GetTSfromTSIN)
+        else
+          SearchChain_UnifyWithFloat(cur_chain,subterm,ts,TSTN_TimeStamp)
         break;
 #endif /* SUBSUMPTION_YAP */
     /* SUBTERM IS A CONSTANT
