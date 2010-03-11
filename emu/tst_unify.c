@@ -226,6 +226,53 @@ Unify_Node_With_LongInt(Cell subterm, Cell symbol, TSTNptr node, Cell sym_orig_t
   return TRUE;
 }
 
+/* ------------------------------------------------------------------------- */
+
+/*
+ *  Given that the current subterm of the Answer Template contains a
+ *  float, unify it with the current symbol of
+ *  the trie.  Both have already been dereferenced.
+ */
+ 
+static inline xsbBool
+Unify_Node_With_Float(Cell subterm, Cell symbol, TSTNptr node, Cell sym_orig_tag) {
+  Float flt = FloatOfTerm(subterm);
+  switch(TrieSymbolType(symbol)) {
+    case TAG_FLOAT:
+      /*
+       * Need to be careful here, because TrieVars can be bound to heap-
+       * resident structures and a deref of the (trie) symbol doesn't
+       * tell you whether we have something in the trie or in the heap.
+       * Check that the same float is referred to by both.
+       */
+      if(sym_orig_tag == TAG_FLOAT) {
+        if(TSTN_float((float_tst_node_ptr)node) != flt) {
+          consumption_error("Distinct float symbols");
+          return FALSE;
+        }
+      } else {
+        /*
+	       * We have a TrieVar bound to a heap STRUCT-term; use a standard
+	       * unification algorithm to check the match and perform additional
+	       * unifications.
+	       */
+	      if(FloatOfTerm(symbol) != flt) {
+          consumption_error("Distinct float symbols");
+          return FALSE;
+	      }
+      }
+      break;
+    case XSB_REF:
+      Bind_and_Trail_Symbol(symbol,subterm);
+      break;
+    default:
+      consumption_error("Trie symbol fails to unify float");
+      return FALSE;
+  }
+  
+  return TRUE;
+}
+
 #endif /* SUBSUMPTION_YAP */
 
 /* ------------------------------------------------------------------------- */
@@ -373,6 +420,21 @@ Unify_Symbol_With_Variable_Subterm(CTXTdeclc Cell subterm, Cell symbol, Cell sym
       }
       else {
         /* TrieVar bound to heap resident long int */
+        Bind_and_Trail_Subterm(subterm, symbol);
+      }
+      break;
+    case TAG_FLOAT:
+      /*
+       * Need to be careful here, because TrieVars can be bound to heap-
+       * resident structures and a deref of the (trie) symbol doesn't
+       * tell you whether we have something in the trie or in the heap.
+       */
+      if(sym_orig_tag == TAG_FLOAT) {
+        Bind_and_Trail_Subterm(subterm, (Cell)hreg);
+        CreateHeapFloat(TSTN_float((float_tst_node_ptr)node));
+      }
+      else {
+        /* TrieVar bound to heap resident float */
         Bind_and_Trail_Subterm(subterm, symbol);
       }
       break;
@@ -526,6 +588,9 @@ void consume_subsumptive_answer(CTXTdeclc BTNptr pAnsLeaf, int sizeTmplt,
 #ifdef SUBSUMPTION_YAP
     case TAG_LONG_INT:
       success = Unify_Node_With_LongInt(subterm,symbol,node,sym_orig_tag);
+      break;
+    case TAG_FLOAT:
+      success = Unify_Node_With_Float(subterm,symbol,node,sym_orig_tag);
       break;
 #endif /* SUBSUMPTION_YAP */
     case XSB_INT:
