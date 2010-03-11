@@ -714,56 +714,26 @@ void *iter_sub_trie_lookup(CTXTdeclc void *trieNode, TriePathType *pathType) {
 #ifdef SUBSUMPTION_YAP
       case TAG_FLOAT:
         if(search_mode == MATCH_SYMBOL_EXACTLY) {
-          symbol = EncodeTrieFunctor(subterm);
-          Set_Matching_and_TrieVar_Chains(symbol, pCurrentBTN, variableChain);
-          
-          volatile Float dbl = FloatOfTerm(subterm);
-          volatile Term *t_dbl = (Term *)((void *) &dbl);
-
-          /* if double is twice the size of int then it
-           * is spread across three trie nodes, thus we
-           * must match 3 nodes before trying to match
-           * variables
-           */
-#if SIZEOF_DOUBLE == 2 * SIZEOF_INT_P
-          Term match1 = *(t_dbl + 1);
-          Term match2 = *t_dbl;
+          Float flt = FloatOfTerm(subterm);
+          Set_Matching_and_TrieVar_Chains(EncodedFloatFunctor, pCurrentBTN, variableChain);
           
           while(IsNonNULL(pCurrentBTN)) {
-            if(symbol == BTN_Symbol(pCurrentBTN)) {
-              BTNptr child1 = BTN_Child(pCurrentBTN);
+            if(TrNode_is_long(pCurrentBTN))
+            {
+              int go = FALSE;
               
-              Set_Hash_Match(child1, match1);
+              if(TrNode_is_call(pCurrentBTN))
+                go = (flt == TrNode_float((float_sg_node_ptr)pCurrentBTN));
+              else
+                go = (flt == TSTN_float((float_tst_node_ptr)pCurrentBTN));
               
-              while(IsNonNULL(child1)) {
-                if(match1 == BTN_Symbol(child1)) {
-                  BTNptr child2 = BTN_Child(child1);
-                  
-                  Set_Hash_Match(child2, match2);
-                  NonVarSearchChain_ExactMatch(match2, child2, variableChain, TermStack_NOOP);
-                }
-                
-                child1 = BTN_Sibling(child1);
+              if(go) {
+                Conditionally_Create_ChoicePoint(variableChain)
+                Descend_In_Trie_and_Continue(pCurrentBTN);
               }
             }
-            
             pCurrentBTN = BTN_Sibling(pCurrentBTN);
           }
-#else
-          Term match1 = *t_dbl;
-          
-          while(IsNonNULL(pCurrentBTN)) {
-            if(symbol == BTN_Symbol(pCurrentBTN)) {
-              BTNptr child1 = BTN_Child(pCurrentBTN);
-              
-              Set_Hash_Match(child1, match);
-              
-              NonVarSearchChain_ExactMatch(match, child1, variableChain, TermStack_NOOP);
-            }
-            
-            pCurrentBTN = BTN_Sibling(pCurrentBTN);
-          }
-#endif /* SIZEOF_DOUBLE x SIZEOF_INT_P */
           
           /* failed to find a float */
           pCurrentBTN = variableChain;
@@ -774,22 +744,27 @@ void *iter_sub_trie_lookup(CTXTdeclc void *trieNode, TriePathType *pathType) {
         break;
       case TAG_LONG_INT:
         if(search_mode == MATCH_SYMBOL_EXACTLY) {
-          symbol = EncodeTrieFunctor(subterm);
-          Set_Matching_and_TrieVar_Chains(symbol, pCurrentBTN, variableChain);
-          
           Int li = LongIntOfTerm(subterm);
-          
-          /* first match the functor node, then the long int itself */
+          Set_Matching_and_TrieVar_Chains(EncodedLongFunctor, pCurrentBTN, variableChain);
+
           while(IsNonNULL(pCurrentBTN)) {
-            if(symbol == BTN_Symbol(pCurrentBTN)) {
-              BTNptr child = BTN_Child(pCurrentBTN);
-              
-              Set_Hash_Match(child, li);
-              NonVarSearchChain_ExactMatch(li, child, variableChain, TermStack_NOOP);
+            if(TrNode_is_long(pCurrentBTN))
+            {
+              int go = FALSE;
+
+              if(TrNode_is_call(pCurrentBTN))
+                go = (li == TrNode_long_int((long_sg_node_ptr)pCurrentBTN));
+              else
+                go = (li == TSTN_long_int((long_tst_node_ptr)pCurrentBTN));
+
+              if(go) {
+                Conditionally_Create_ChoicePoint(variableChain)
+                Descend_In_Trie_and_Continue(pCurrentBTN);
+              }
             }
             pCurrentBTN = BTN_Sibling(pCurrentBTN);
           }
-          
+
           /* failed to find a long int */
           pCurrentBTN = variableChain;
           SetNoVariant(pParentBTN);
