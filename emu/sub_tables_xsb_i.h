@@ -355,7 +355,7 @@ inline static  void *newAnswerSet(CTXTdeclc int n, TSTNptr Parent) {
     symbol = EncodeTriePSC(get_ret_psc(n));
   else
     symbol = EncodeTrieConstant(makestring(get_ret_string()));
-  New_TSTN(root, TS_ANSWER_TRIE_TT, TRIE_ROOT_NT, symbol, Parent, NULL );
+  New_TSTN(root, TS_ANSWER_TRIE_TT, TRIE_ROOT_NT, (Cell *)symbol, Parent, NULL );
   TSTN_TimeStamp(root) = EMPTY_TST_TIMESTAMP;
   return root;
 }

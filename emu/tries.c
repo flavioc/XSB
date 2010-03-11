@@ -282,13 +282,19 @@ BTNptr new_btn(CTXTdeclc int trie_t, int node_t, Cell symbol, BTNptr parent,
 
 /*-------------------------------------------------------------------------*/
 
-TSTNptr new_tstn(CTXTdeclc int trie_t, int node_t, Cell symbol, TSTNptr parent,
+TSTNptr new_tstn(CTXTdeclc int trie_t, int node_t, Cell *symbol, TSTNptr parent,
 		TSTNptr sibling) {
 
   void * tstn;
-
+  Cell symbol0;
+  if(node_t == TRIE_ROOT_NT)
+    symbol0 = (Cell)symbol;
+  else if((Cell)symbol == ESCAPE_NODE_SYMBOL)
+    symbol0 = ESCAPE_NODE_SYMBOL;
+  else
+    symbol0 = symbol[0];
   SM_AllocateStruct(smTSTN,tstn);
-  TN_Init(((TSTNptr)tstn),trie_t,node_t,symbol,parent,sibling);
+  TN_Init(((TSTNptr)tstn),trie_t,node_t,symbol0,parent,sibling);
   TSTN_TimeStamp(((TSTNptr)tstn)) = TSTN_DEFAULT_TIMESTAMP;
   return (TSTNptr)tstn;
 }
