@@ -700,7 +700,7 @@ extern Structure_Manager *smBTHT;
 extern Structure_Manager smTSTN;
 #endif
 
-extern TSTNptr new_tstn(CTXTdeclc int TrieType, int NodeType, Cell Symbol,
+extern TSTNptr new_tstn(CTXTdeclc int TrieType, int NodeType, Cell *Symbol,
 			TSTNptr Parent, TSTNptr Sibling);
 
 #define New_TSTN(TSTN,TrieType,NodeType,Symbol,Parent,Sibling)	\
