@@ -407,38 +407,6 @@ Unify_Symbol_With_Variable_Subterm(CTXTdeclc Cell subterm, Cell symbol, Cell sym
 #endif  
      ) {
   switch(TrieSymbolType(symbol)) {
-#ifdef SUBSUMPTION_YAP
-    case TAG_LONG_INT:
-      /*
-       * Need to be careful here, because TrieVars can be bound to heap-
-       * resident structures and a deref of the (trie) symbol doesn't
-       * tell you whether we have something in the trie or in the heap.
-       */
-      if(sym_orig_tag == TAG_LONG_INT) {
-        Bind_and_Trail_Subterm(subterm, (Cell)hreg);
-        CreateHeapLongInt(TSTN_long_int((long_tst_node_ptr)node));
-      }
-      else {
-        /* TrieVar bound to heap resident long int */
-        Bind_and_Trail_Subterm(subterm, symbol);
-      }
-      break;
-    case TAG_FLOAT:
-      /*
-       * Need to be careful here, because TrieVars can be bound to heap-
-       * resident structures and a deref of the (trie) symbol doesn't
-       * tell you whether we have something in the trie or in the heap.
-       */
-      if(sym_orig_tag == TAG_FLOAT) {
-        Bind_and_Trail_Subterm(subterm, (Cell)hreg);
-        CreateHeapFloat(TSTN_float((float_tst_node_ptr)node));
-      }
-      else {
-        /* TrieVar bound to heap resident float */
-        Bind_and_Trail_Subterm(subterm, symbol);
-      }
-      break;
-#endif /* SUBSUMPTION_YAP */
     case XSB_INT:
 #ifdef SUBSUMPTION_XSB
    case XSB_FLOAT:
@@ -501,6 +469,39 @@ Unify_Symbol_With_Variable_Subterm(CTXTdeclc Cell subterm, Cell symbol, Cell sym
        */
       Bind_and_Trail_Vars(symbol,subterm)
       break;
+      
+#ifdef SUBSUMPTION_YAP
+    case TAG_LONG_INT:
+      /*
+       * Need to be careful here, because TrieVars can be bound to heap-
+       * resident structures and a deref of the (trie) symbol doesn't
+       * tell you whether we have something in the trie or in the heap.
+       */
+      if(sym_orig_tag == TAG_LONG_INT) {
+        Bind_and_Trail_Subterm(subterm, (Cell)hreg);
+        CreateHeapLongInt(TSTN_long_int((long_tst_node_ptr)node));
+      }
+      else {
+        /* TrieVar bound to heap resident long int */
+        Bind_and_Trail_Subterm(subterm, symbol);
+      }
+      break;
+    case TAG_FLOAT:
+      /*
+       * Need to be careful here, because TrieVars can be bound to heap-
+       * resident structures and a deref of the (trie) symbol doesn't
+       * tell you whether we have something in the trie or in the heap.
+       */
+      if(sym_orig_tag == TAG_FLOAT) {
+        Bind_and_Trail_Subterm(subterm, (Cell)hreg);
+        CreateHeapFloat(TSTN_float((float_tst_node_ptr)node));
+      }
+      else {
+        /* TrieVar bound to heap resident float */
+        Bind_and_Trail_Subterm(subterm, symbol);
+      }
+      break;
+#endif /* SUBSUMPTION_YAP */
    
     default:
       consumption_error(CTXTc "Unsupported tag on trie node symbol");
@@ -585,14 +586,6 @@ void consume_subsumptive_answer(CTXTdeclc BTNptr pAnsLeaf, int sizeTmplt,
     sym_orig_tag = TrieSymbolType(symbol);
     TrieSymbol_Deref(symbol);
     switch ( cell_tag(subterm) ) {
-#ifdef SUBSUMPTION_YAP
-    case TAG_LONG_INT:
-      success = Unify_Node_With_LongInt(subterm,symbol,node,sym_orig_tag);
-      break;
-    case TAG_FLOAT:
-      success = Unify_Node_With_Float(subterm,symbol,node,sym_orig_tag);
-      break;
-#endif /* SUBSUMPTION_YAP */
     case XSB_INT:
     case XSB_STRING:
 #ifdef SUBSUMPTION_XSB
@@ -619,6 +612,14 @@ void consume_subsumptive_answer(CTXTdeclc BTNptr pAnsLeaf, int sizeTmplt,
     case XSB_LIST:
       success = Unify_Symbol_With_List_Subterm(CTXTc subterm,symbol,sym_orig_tag);
       break;
+#ifdef SUBSUMPTION_YAP
+    case TAG_LONG_INT:
+      success = Unify_Node_With_LongInt(subterm,symbol,node,sym_orig_tag);
+      break;
+    case TAG_FLOAT:
+      success = Unify_Node_With_Float(subterm,symbol,node,sym_orig_tag);
+      break;
+#endif /* SUBSUMPTION_YAP */
 
     default:
       consumption_error(CTXTc "Unsupported subterm tag");
