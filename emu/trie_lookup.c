@@ -939,7 +939,7 @@ void *iter_sub_trie_lookup(CTXTdeclc void *trieNode, TriePathType *pathType) {
         Set_Matching_and_TrieVar_Chains((Term)flt, pCurrentBTN, variableChain);
         
         while(IsNonNULL(pCurrentBTN)) {
-          if(TrNode_is_long(pCurrentBTN))
+          if(TrNode_is_float(pCurrentBTN))
           {
             int go = FALSE;
             
