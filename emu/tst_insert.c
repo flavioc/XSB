@@ -312,7 +312,7 @@ void tstnHashifyChildren(CTXTdeclc TSTNptr parent, TSTNptr root, xsbBool createT
  */
 
 inline static
-TSTNptr tstnAddSymbol(CTXTdeclc TSTNptr parent, Cell *symbol, int trieType, int nodeType) {
+TSTNptr tstnAddSymbol(CTXTdeclc TSTNptr parent, Cell symbol, int trieType, int nodeType) {
 
   TSTNptr newTSTN;
 
@@ -343,7 +343,7 @@ BTNptr btnAddSymbol(CTXTdeclc BTNptr parent, Cell symbol, int trieType) {
  */
 
 inline static
-TSTNptr tstnInsertSymbol(CTXTdeclc TSTNptr parent, Cell *symbol, int trieType,
+TSTNptr tstnInsertSymbol(CTXTdeclc TSTNptr parent, Cell symbol, int trieType,
 			 int nodeType, TSTNptr root, xsbBool createTSI) {
 
   TSTNptr tstn, chain;
@@ -395,7 +395,7 @@ BTNptr btnInsertSymbol(CTXTdeclc BTNptr parent, Cell symbol, int trieType) {
  */
 
 inline static
-TSTNptr tsthtInsertSymbol(CTXTdeclc TSTNptr parent, Cell *symbol, int trieType,
+TSTNptr tsthtInsertSymbol(CTXTdeclc TSTNptr parent, Cell symbol, int trieType,
 			  int nodeType, xsbBool maintainsTSI) {
 
   TSTHTptr ht;
@@ -404,9 +404,9 @@ TSTNptr tsthtInsertSymbol(CTXTdeclc TSTNptr parent, Cell *symbol, int trieType,
 
   ht = TSTN_GetHashHdr(parent);
 #ifdef SUBSUMPTION_YAP
-  bucket = CalculateBucketForSymbol(ht, GET_HASH_SYMBOL(symbol[0], nodeType));
+  bucket = CalculateBucketForSymbol(ht, GET_HASH_SYMBOL(symbol, nodeType));
 #else
-  bucket = CalculateBucketForSymbol(ht,symbol[0]);
+  bucket = CalculateBucketForSymbol(ht,symbol);
 #endif
   chain = *bucket;
   New_TSTN(tstn,trieType,HASHED_INTERIOR_NT | nodeType,symbol,parent,chain);
@@ -538,26 +538,22 @@ inline static  void update_timestamps(TSTNptr tstLeaf, TSTNptr tstRoot,
 TSTNptr tst_insert(CTXTdeclc TSTNptr tstRoot, TSTNptr lastMatch, Cell firstSymbol,
 		   xsbBool maintainTSI) {
 #ifdef SUBSUMPTION_YAP
-#if SIZEOF_DOUBLE == 2 * SIZEOF_INT
-  Cell symbol[2]; /* for floats */
-#else
-  Cell symbol[1];
+  Int li;
+  Float flt;
 #endif
-#else
-  Cell symbol[1];
-#endif
+  Cell symbol;
   int std_var_num,
       trieType,
       nodeType = INTERIOR_NT;
 
-  symbol[0] = firstSymbol;
+  symbol = firstSymbol;
   std_var_num = Trail_NumBindings;
   trieType = TSTN_TrieType(tstRoot);
 
   /* Insert initial symbol
      --------------------- */
-  if ( firstSymbol == NO_INSERT_SYMBOL )
-    ProcessNextSubtermFromTrieStacks(symbol[0],nodeType,std_var_num);
+  if ( symbol == NO_INSERT_SYMBOL )
+    ProcessNextSubtermFromTrieStacks(symbol,nodeType,std_var_num);
 
   if ( IsNULL(TSTN_Child(lastMatch)) )
     lastMatch = tstnAddSymbol(CTXTc lastMatch,symbol,trieType,nodeType);
@@ -570,13 +566,13 @@ TSTNptr tst_insert(CTXTdeclc TSTNptr tstRoot, TSTNptr lastMatch, Cell firstSymbo
   /* Insert remaining symbols
      ------------------------ */
   while ( ! TermStack_IsEmpty ) {
-    ProcessNextSubtermFromTrieStacks(symbol[0],nodeType,std_var_num);
+    ProcessNextSubtermFromTrieStacks(symbol,nodeType,std_var_num);
     lastMatch = tstnAddSymbol(CTXTc lastMatch,symbol,trieType,nodeType);
   }
   update_timestamps(lastMatch,tstRoot,maintainTSI);
   MakeLeafNode(lastMatch);
 #ifdef SUBSUMPTION_XSB
-  TN_UpgradeInstrTypeToSUCCESS(lastMatch,TrieSymbolType(symbol[0]));
+  TN_UpgradeInstrTypeToSUCCESS(lastMatch,TrieSymbolType(symbol));
 #endif
   AnsVarCtr = AnsVarCtr + std_var_num;
   return lastMatch;
