@@ -201,7 +201,7 @@ Unify_Node_With_LongInt(Cell subterm, Cell symbol, Cell sym_orig_tag) {
       if(sym_orig_tag == TAG_LONG_INT) {
         long_tst_node_ptr node;
         
-        SymbolStack_Pop(node);
+        SymbolStack_PopOther(node, long_tst_node_ptr);
         
         if(TSTN_long_int(node) != li) {
           
@@ -253,7 +253,7 @@ Unify_Node_With_Float(Cell subterm, Cell symbol, Cell sym_orig_tag) {
       if(sym_orig_tag == TAG_FLOAT) {
         float_tst_node_ptr node;
         
-        SymbolStack_Pop(node);
+        SymbolStack_PopOther(node, float_tst_node_ptr);
         
         if(TSTN_float(node) != flt) {
           consumption_error("Distinct float symbols");
@@ -485,7 +485,7 @@ Unify_Symbol_With_Variable_Subterm(CTXTdeclc Cell subterm, Cell symbol, Cell sym
       if(sym_orig_tag == TAG_LONG_INT) {
         long_tst_node_ptr node;
         
-        SymbolStack_Pop(node);
+        SymbolStack_PopOther(node, long_tst_node_ptr);
         
         Bind_and_Trail_Subterm(subterm, (Cell)hreg);
         CreateHeapLongInt(TSTN_long_int(node));
@@ -504,7 +504,7 @@ Unify_Symbol_With_Variable_Subterm(CTXTdeclc Cell subterm, Cell symbol, Cell sym
       if(sym_orig_tag == TAG_FLOAT) {
         float_tst_node_ptr node;
         
-        SymbolStack_Pop(node);
+        SymbolStack_PopOther(node, float_tst_node_ptr);
         
         Bind_and_Trail_Subterm(subterm, (Cell)hreg);
         CreateHeapFloat(TSTN_float(node));

@@ -869,7 +869,7 @@ Unify_with_Variable(CTXTdeclc Cell symbol, Cell subterm, TSTNptr node) {
    TrieSymbol_Deref(symbol);						   \
    if(!Unify_with_Variable(CTXTc symbol,Subterm,Chain)) { \
      fprintf(stderr, "subterm: unbound var (%ld),  symbol: unknown "	   \
- 	     "(%ld)\n", cell_tag(Subterm), TrieSymbolType(symbol));	   \
+ 	     "(%ld)\n", (long int)cell_tag(Subterm), (long int)TrieSymbolType(symbol));	   \
       TST_Collection_Error("Trie symbol with bogus tag!", RequiresCleanup); \
    } \
    Descend_Into_TST_and_Continue_Search
@@ -1160,7 +1160,7 @@ ALNptr tst_collect_relevant_answers(CTXTdeclc TSTNptr tstRoot, TimeStamp ts,
 
     default:
       fprintf(stderr, "subterm: unknown (%ld),  symbol: ? (%ld)\n",
-	      cell_tag(subterm), TrieSymbolType(symbol));
+	      (long int)cell_tag(subterm), (long int)TrieSymbolType(symbol));
       TST_Collection_Error("Trie symbol with bogus tag!", RequiresCleanup);
       break;
     } /* END switch(subterm_tag) */
