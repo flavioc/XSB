@@ -667,26 +667,17 @@ extern Structure_Manager *smBTHT;
  *			    ==================
  */
 
+#include "xsb.tst.h"
+
 /*
  *			  Time-Stamped Trie Nodes
  *			  -----------------------
  */
 
-/* For roots of TS Answer Tries
-   ---------------------------- */
-#define TSTRoot_SetHTList(pTST,pTSTHT)  TSTN_Sibling(pTST) = (TSTNptr)pTSTHT
-#define TSTRoot_GetHTList(pTST)         ((TSTHTptr)TSTN_Sibling(pTST))
-
 /* For TSTNs which hash children
    ----------------------------- */
 #define TSTN_SetHashHdr(pTSTN,pTSTHT)	TN_SetHashHdr(pTSTN,pTSTHT)
 #define TSTN_GetHashHdr(pTSTN)		( (TSTHTptr)TN_GetHashHdr(pTSTN) )
-
-/* For Hashed TSTNs
-   ---------------- */
-#define TSTN_SetTSIN(pTSTN,TSIN)    TSTN_TimeStamp(pTSTN) = (TimeStamp)(TSIN)
-#define TSTN_GetTSIN(pTSTN)	    ((TSINptr)TSTN_TimeStamp(pTSTN))
-#define TSTN_GetTSfromTSIN(pTSTN)   TSIN_TimeStamp(TSTN_GetTSIN(pTSTN))
 
 /* For leaves of TS Answer Tries
    ----------------------------- */
@@ -703,16 +694,13 @@ extern Structure_Manager smTSTN;
 extern TSTNptr new_tstn(CTXTdeclc int TrieType, int NodeType, Cell Symbol,
 			TSTNptr Parent, TSTNptr Sibling);
 
-#define New_TSTN(TSTN,TrieType,NodeType,Symbol,Parent,Sibling)	\
-   TSTN = new_tstn(CTXTc TrieType,NodeType,Symbol,Parent,Sibling)
+
 
 #define CreateEscapeTSTN(pTSTN,TrieType,Parent) {			\
    New_TSTN(pTSTN,TrieType,LEAF_NT,ESCAPE_NODE_SYMBOL,Parent,NULL);	\
    TSTN_Instr(pTSTN) = trie_proceed;					\
  }
 
-#define EMPTY_TST_TIMESTAMP	0
-#define TSTN_DEFAULT_TIMESTAMP	1
 #define PRODUCER_SF_INITIAL_TS	TSTN_DEFAULT_TIMESTAMP
 #define CONSUMER_SF_INITIAL_TS	EMPTY_TST_TIMESTAMP
 
@@ -756,9 +744,6 @@ typedef struct TimeStamp_Index_Node {
 #define TSIN_Next(TSIN)			((TSIN)->next)
 #define TSIN_TimeStamp(TSIN)		((TSIN)->ts)
 #define TSIN_TSTNode(TSIN)		((TSIN)->tstn)
-
-#define IsTSindexHead(TSIN)		IsNULL(TSIN_Prev(TSIN))
-#define IsTSindexTail(TSIN)		IsNULL(TSIN_Next(TSIN))
 
 /* Memory Management
    ----------------- */
